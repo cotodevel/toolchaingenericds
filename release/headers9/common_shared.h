@@ -1,0 +1,201 @@
+
+/*
+
+			Copyright (C) 2017  Coto
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
+USA
+
+*/
+
+
+//Coto: these are my FIFO handling libs. Works fine with NIFI (trust me this is very tricky to do without falling into freezes).
+//Use it at your will, just make sure you read WELL the descriptions below.
+
+#ifndef __common_shared_h__
+#define __common_shared_h__
+
+#include <stdbool.h>
+
+#include "spitsc.h"
+#include "usrsettings.h"
+#include <time.h>
+
+
+#define fifo_requires_ack	(uint32)(0xffff1010)
+#define fifo_requires_ack_execok	(uint32)(0xe1e2e3e4)
+
+
+//---------------------------------------------------------------------------------
+typedef struct sMyIPC {
+//---------------------------------------------------------------------------------
+    //new 
+	tEXTKEYIN	EXTKEYINInst;
+	uint16 buttons7;  			// X, Y, /PENIRQ buttons
+    
+	uint16 touchX,   touchY;   // raw x/y TSC SPI
+	int16 touchXpx, touchYpx; // TFT x/y pixel (converted)
+	
+	int16 touchZ1,  touchZ2;  // TSC x-panel measurements
+    uint16 tdiode1,  tdiode2;  // TSC temperature diodes
+    uint32 temperature;        // TSC computed temperature
+		
+	struct tm tmInst;	//DateTime
+	
+	uint8 consoletype;
+	/*
+	Language and Flags (Entry 064h)
+	Bit
+	0..2 Language (0=Japanese, 1=English, 2=French, 3=German,
+		4=Italian, 5=Spanish, 6..7=Reserved) (for Chinese see Entry 075h)
+		(the language setting also implies time/data format)
+	3    GBA mode screen selection (0=Upper, 1=Lower)
+	4-5  Backlight Level    (0..3=Low,Med,High,Max) (DS-Lite only)
+	6    Bootmenu Disable   (0=Manual/bootmenu, 1=Autostart Cartridge)
+	9    Settings Lost (1=Prompt for User Info, and Language, and Calibration)
+	10   Settings Okay (0=Prompt for User Info)
+	11   Settings Okay (0=Prompt for User Info) (Same as Bit10)
+	12   No function
+	13   Settings Okay (0=Prompt for User Info, and Language)
+	14   Settings Okay (0=Prompt for User Info) (Same as Bit10)
+	15   Settings Okay (0=Prompt for User Info) (Same as Bit10)
+	The Health and Safety message is skipped if Bit9=1, or if one or more of the following bits is zero: Bits 10,11,13,14,15. However, as soon as entering the bootmenu, the Penalty-Prompt occurs.
+	*/
+	uint8 nickname_schar8[0x20];	//converted from UTF-16 to char*
+	
+	//DS Firmware	Settings default set
+	volatile tDSFWSETTINGS DSFWSETTINGSInst;
+	bool valid_dsfwsettings;	//true or false
+	
+	uint8 lang_flags[0x2];
+	
+	
+	//Internal use, use functions inside mem_handler_shared.c for accessing those from BOTH ARM Cores.
+	uint32 arm7startaddress;
+	uint32 arm7endaddress;
+	
+	uint32 arm9startaddress;
+	uint32 arm9endaddress;
+	
+	uint32 WRAM_CR_ISSET;	//0 when ARM7 boots / 1 by ARM9 when its done
+	
+	uint32 fiforeply;	//for ret status
+	
+	//debug
+	uint32 debugvar;
+	uint32 debugvar2;
+	
+} tMyIPC __attribute__ ((aligned (4)));
+
+//Shared Work     027FF000h 4KB    -     -    -    R/W
+
+//IPC Struct
+#define MyIPC ((tMyIPC volatile *)(0x027FF000))
+//#define Specific_1.....
+//#define Specific_2.....
+//#define Specific_etc....
+
+
+//irqs
+#define VCOUNT_LINE_INTERRUPT 0
+
+//FIFO SPECIAL
+#define FIFO_NDS_HW_SIZE (16*4)
+#define FIFO_SEND_EXT	0xffff0001	//stream 64 bytes of data to other ARM Core, can be received through GetSoftFIFO 4 bytes a time, until it returns false (empty)
+#define FIFO_RECV_EXT	0xffff00a0	//force received signal when the above FIFO_SEND_EXT has sent values properly, so the other core processes those values.
+
+#define FIFO_SEND_EMPTY	0xffff0002	//keeps sending fifo on fifoempty
+#define FIFO_WRITE_ADDR_EXT	0xffff0003	//writes a value from ARM Core A to ARM Core B
+
+//void writemap_ext_armcore(0x04000208,0x000000ff,WRITE_VALUE_8);
+#define WRITE_VALUE_8	0xf0
+#define WRITE_VALUE_16	0xf1
+#define WRITE_VALUE_32	0xf2
+
+//PowerCnt Read / PowerCnt Write
+#define FIFO_POWERCNT_ON	0xffff0004
+#define FIFO_POWERCNT_OFF	0xffff0005
+
+//FIFO - WIFI
+#define WIFI_SYNC 0xffff0006
+#define WIFI_STARTUP 0xffff0007
+
+//Exception Handling
+#define EXCEPTION_ARM7 0xffff0008
+#define EXCEPTION_ARM9 0xffff0009
+
+
+
+#endif
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+//weak symbols : the implementation of these is project-defined
+extern __attribute__((weak))	void HandleFifoNotEmptyWeakRef(uint32 cmd1,uint32 cmd2,uint32 cmd3,uint32 cmd4,uint32 cmd5);
+extern __attribute__((weak))	void HandleFifoEmptyWeakRef(uint32 cmd1,uint32 cmd2,uint32 cmd3,uint32 cmd4,uint32 cmd5);
+
+
+#ifdef ARM9
+extern void SendArm7Command(uint32 command1, uint32 command2, uint32 command3,uint32 command4);
+#endif
+
+#ifdef ARM7
+extern void SendArm9Command(uint32 command1, uint32 command2, uint32 command3,uint32 command4);
+#endif
+
+
+//clock opcodes
+extern u8 nds7_get_yearbytertc();
+extern u8 nds7_get_monthrtc();
+extern u8 nds7_get_dayrtc();
+extern u8 nds7_get_dayofweekrtc();
+extern u8 nds7_get_hourrtc();
+extern u8 nds7_get_minrtc();
+extern u8 nds7_get_secrtc();
+
+//FIFO 
+extern void FIFO_DRAINWRITE();
+extern bool SetSoftFIFO(uint32 value);
+extern bool GetSoftFIFO(uint32 * var);
+
+extern volatile int FIFO_SOFT_PTR;
+extern volatile uint32 FIFO_BUF_SOFT[FIFO_NDS_HW_SIZE/4];
+extern volatile uint32 FIFO_IN_BUF[FIFO_NDS_HW_SIZE/4];
+
+extern void HandleFifoNotEmpty();
+extern void HandleFifoEmpty();
+
+extern void Handle_SoftFIFORECV();
+extern void SoftFIFOSEND(uint32 value0,uint32 value1,uint32 value2,uint32 value3);
+
+extern void writeuint32extARM(uint32 address,uint32 value);
+
+extern int SendFIFOCommand(uint32 * buf,int size);
+extern int RecvFIFOCommand(uint32 * buf);
+
+extern void writemap_ext_armcore(uint32 address, uint32 value, uint32 mode);
+extern void powerON(u16 values);
+extern void powerOFF(u16 values);
+
+
+
+extern uint32 SendMultipleWordByFifo(uint32 data0, uint32 data1, uint32 data2, uint32 data3, uint32 data4);
+extern bool SendMultipleWordACK(uint32 data0, uint32 data1, uint32 data2, uint32 data3);
+
+#ifdef __cplusplus
+}
+#endif
