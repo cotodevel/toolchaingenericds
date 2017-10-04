@@ -245,9 +245,9 @@ int _unlink(const sint8 *path)
 }
 
 //override stat();
-int _stat(const sint8 *path, struct stat *buf)
+int	_stat_r ( struct _reent *_r, const char *file, struct stat *pstat )
 {
-	return fatfs_stat(path, buf);
+	return fatfs_stat(file, pstat);
 }
 
 int rename(const sint8 *old, const sint8 *new)

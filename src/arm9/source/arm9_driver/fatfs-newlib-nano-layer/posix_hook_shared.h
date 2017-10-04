@@ -99,7 +99,7 @@ extern int _vfprintf_r(struct _reent *reent, FILE *fp,const sint8 *fmt, va_list 
 extern int _vfiprintf_r(struct _reent *reent, FILE *fp,const sint8 *fmt, va_list list);
 
 extern int _link(const sint8 *path1, const sint8 *path2);
-extern int _stat(const sint8 *path, struct stat *buf);
+extern int	_stat_r ( struct _reent *_r, const char *file, struct stat *pstat );
 extern int _unlink(const sint8 *path);
 extern int rename(const sint8 *old, const sint8 *new);
 extern int fsync(int fd);
