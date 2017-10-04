@@ -1099,3 +1099,20 @@ int fatfs_init()
 {
     return (f_mount(&dldiFs, "0:", 1));
 }
+
+
+
+/*-----------------------------------------------------------------------*/
+/* Get sector# from cluster#                                             */
+/*-----------------------------------------------------------------------*/
+/* Hidden API for hacks and disk tools */
+ 
+DWORD clust2sect (  /* !=0:Sector number, 0:Failed (invalid cluster#) */
+    FATFS* fs,      /* File system object */
+    DWORD clst      /* Cluster# to be converted */
+)
+{
+    clst -= 2;
+    if (clst >= fs->n_fatent - 2) return 0;       /* Invalid cluster# */
+    return clst * fs->csize + fs->database;
+}
