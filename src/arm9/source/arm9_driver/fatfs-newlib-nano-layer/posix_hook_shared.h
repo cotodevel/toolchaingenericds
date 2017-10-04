@@ -89,6 +89,9 @@ extern int _gettimeofday(struct timeval *ptimeval,void *ptimezone);
 extern int _isatty(int fd);
 
 //overriden re entrant posix hooks
+
+extern int _fork_r ( struct _reent *ptr );
+
 extern _ssize_t _read_r ( struct _reent *ptr, int fd, void *buf, size_t cnt );
 extern _ssize_t _write_r ( struct _reent *ptr, int fd, const void *buf, size_t cnt );
 extern int _open_r ( struct _reent *ptr, const sint8 *file, int flags, int mode );
@@ -127,6 +130,12 @@ extern size_t 	fwrite_fs (_PTR buf, size_t blocksize, size_t readsize, FILE * fi
 extern int	fclose_fs(FILE * fileInst);
 extern int	fseek_fs(FILE *fileInst, long offset, int whence);
 extern long ftell_fs (FILE * fileInst);
+extern int fputs_fs(const char * s , FILE * fileInst );
+extern int fputc_fs(int c, FILE * fileInst);
+extern int putc_fs(int c, FILE * fileInst);
+extern int fprintf_fs (FILE *stream, const char *format, ...);
+extern int fgetc_fs(FILE *fp);
+extern char *fgets_fs(char *s, int n, FILE * f);
 
 #ifdef __cplusplus
 }

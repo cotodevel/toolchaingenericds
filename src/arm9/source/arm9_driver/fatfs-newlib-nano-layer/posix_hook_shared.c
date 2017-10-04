@@ -35,11 +35,21 @@ USA
 #include "file.h"
 #include "fsfat_layer.h"
 
+#include <stdio.h>
+#include <string.h>
+#include <stdarg.h>
+#include <ctype.h>
+#include <stdlib.h>
+
 //Notes:
 //	- 	Before you get confused, the layer order is: POSIX file operations-> newlib POSIX fd assign-> devoptab filesystem -> fsfat_layer (n file descriptors for each file op) -> fsfat driver -> dldi.
 //		So we can have a portable/compatible filesystem with multiple file operations.
 //
 //	-	Newlib nano dictates to override reentrant weak functions, overriding non reentrant is undefined behaviour.
+
+//required:
+
+
 
 int _fork_r ( struct _reent *ptr )
 {
@@ -173,7 +183,10 @@ int _isatty (int   file)
 
 }       /* _isatty () */
 
-//don't care for toolchain printf/iprintf, just override this so it's compatible with SnemulDS framebuffer console render.
+//File IO is stubbed even in buffered writes, so as a workaround I redirect the weak-symbol _vfprint_f (and that means good bye file stream operations on fatfs, thus we re-implement those by hand)
+//while allowing to use printf in DS 
+
+//if file buffered writes weren't stubbed in newlib nano we could have a way for switching between a file descriptor write, or render to stdout
 int _vfprintf_r(struct _reent *reent, FILE *fp,const sint8 *fmt, va_list list){
 	
 	#ifdef ARM7
@@ -408,5 +421,82 @@ long ftell_fs (FILE * fileInst){
 	return fatfs_lseek(fd, 0, SEEK_CUR);
 }
 
+int fputs_fs(const char * s , FILE * fileInst ){
+	int length = strlen(s);
+	int wlen = 0;
+	int res;
+	
+	sint32 fd = fileno(fileInst);
+	
+	
+	wlen = write(fd, s, (sint32)length);	//returns written size from buf to file
+	wlen += write(fd, "\n", 1);	//returns written size from buf to file 
 
+	if (wlen == (length+1))
+	{
+		res = 0;
+	}
+	else
+	{
+		res = 0;	/* EOF */
+	}
+
+	return res;
+}
+
+int fputc_fs(int c, FILE * fileInst){
+	char ch = (char) c;
+	sint32 fd = fileno(fileInst);
+	if (write(fd, &ch, 1) != 1){
+		c = 0;	/*EOF*/
+	}
+	return c;
+}
+
+int putc_fs(int c, FILE * fileInst){
+	return fputc_fs(c,fileInst);
+}
+
+int fprintf_fs (FILE *stream, const char *format, ...)
+{
+	va_list arg;
+	volatile sint8 g_printfbuf[512];
+	va_start (arg, format);
+	vsnprintf((sint8*)g_printfbuf, 100, format, arg);
+	va_end (arg);
+	
+	return fwrite_fs((char*)g_printfbuf, 1, strlen((char*)g_printfbuf), stream);
+}
+
+
+int fgetc_fs(FILE *fp)
+{
+	unsigned char ch;
+    return (fread_fs(&ch, 1, 1, fp) == 1) ? (int)ch : 0; /* EOF */
+}
+
+
+
+char *fgets_fs(char *s, int n, FILE * f)
+{
+    int ch;
+    char *p = s;
+
+    while (n > 1) {
+		ch = fgetc_fs(f);
+		if (ch == 0) {	/*EOF*/
+			*p = '\0';
+			return (p == s) ? NULL : s;
+		}
+		*p++ = ch;
+		if (ch == '\n'){
+			break;
+		}
+		n--;
+    }
+    if (n){
+		*p = '\0';
+	}
+    return s;
+}
 #endif
