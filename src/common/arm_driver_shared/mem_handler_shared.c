@@ -42,7 +42,7 @@ uint32 get_arm7_end_address(){
 }
 
 sint32 get_arm7_ext_size(){
-	return (sint32)((u8*)(uint32*)get_arm7_end_address() - (sint32)(get_arm7_start_address()));
+	return (sint32)((uint8*)(uint32*)get_arm7_end_address() - (sint32)(get_arm7_start_address()));
 }
 
 
@@ -55,7 +55,7 @@ uint32 get_arm9_end_address(){
 }
 
 sint32 get_arm9_ext_size(){
-	return (sint32)((u8*)(uint32*)get_arm9_end_address() - (sint32)(get_arm9_start_address()));
+	return (sint32)((uint8*)(uint32*)get_arm9_end_address() - (sint32)(get_arm9_start_address()));
 }
 
 
@@ -64,7 +64,7 @@ uint32 get_iwram_start(){
 	return (uint32)(&_iwram_start);
 }
 sint32 get_iwram_size(){
-	return (sint32)((u8*)(uint32*)&_iwram_end - (sint32)(&_iwram_start));
+	return (sint32)((uint8*)(uint32*)&_iwram_end - (sint32)(&_iwram_start));
 }
 
 
@@ -84,7 +84,7 @@ uint32 get_ewram_start(){
 }
 
 sint32 get_ewram_size(){
-	return (sint32)((u8*)(uint32*)&_ewram_end - (sint32)(&_ewram_start));
+	return (sint32)((uint8*)(uint32*)&_ewram_end - (sint32)(&_ewram_start));
 }
 
 uint32 get_itcm_start(){
@@ -92,7 +92,7 @@ uint32 get_itcm_start(){
 }
 
 sint32 get_itcm_size(){
-	return (sint32)((u8*)(uint32*)&_itcm_end - (sint32)(&_itcm_start));
+	return (sint32)((uint8*)(uint32*)&_itcm_end - (sint32)(&_itcm_start));
 }
 
 uint32 get_dtcm_start(){
@@ -100,7 +100,7 @@ uint32 get_dtcm_start(){
 }
 
 sint32 get_dtcm_size(){
-	return (sint32)((u8*)(uint32*)&_dtcm_end - (sint32)(&_dtcm_start));
+	return (sint32)((uint8*)(uint32*)&_dtcm_end - (sint32)(&_dtcm_start));
 }
 
 #endif
@@ -116,7 +116,7 @@ void sbrk_init(){
 
 //call after sbrk_init
 sint32 get_available_mem(){
-	return (sint32)((u8*)(uint32*)this_heap_ptr - (sint32)(get_lma_libend()));
+	return (sint32)((uint8*)(uint32*)this_heap_ptr - (sint32)(get_lma_libend()));
 }
 //
 sint32 calc_heap(sint32 size){

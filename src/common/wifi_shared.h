@@ -224,7 +224,7 @@ typedef struct WIFI_MAINSTRUCT {
 	uint16 curChannel, reqChannel;
 	uint16 curMode, reqMode;
 	uint16 authlevel,authctr;
-	vu32 flags9, flags7;
+	vuint32 flags9, flags7;
 	uint32 reqPacketFlags;
 	uint16 curReqFlags, reqReqFlags;
 	uint32 counter7,bootcounter7;

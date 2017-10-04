@@ -323,12 +323,12 @@ typedef struct
 	int hide;	
 	int ScanJoypad; 
 	
-	u16	*DSFrameBuffer; // Frame Buffer Layer
-	u16	*DSText; // Text Layer
-	u16	*DSBack; // Back Text Layer;
-	u16	*DSTileMemory;
+	uint16	*DSFrameBuffer; // Frame Buffer Layer
+	uint16	*DSText; // Text Layer
+	uint16	*DSBack; // Back Text Layer;
+	uint16	*DSTileMemory;
 	
-	u16	*Palette;
+	uint16	*Palette;
 	
 	t_GUIScreen	*screen;
 	

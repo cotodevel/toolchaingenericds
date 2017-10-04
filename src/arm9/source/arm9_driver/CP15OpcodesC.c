@@ -24,7 +24,7 @@ USA
 #include "nds_cp15_misc.h"
 
 void coherent_user_range_by_size(uint32 start,sint32 size){
-	uint32 end = (uint32)((u8*)(uint32*)start + (sint32)size);
+	uint32 end = (uint32)((uint8*)(uint32*)start + (sint32)size);
 	coherent_user_range(start,end);
 }
 

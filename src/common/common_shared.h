@@ -45,9 +45,9 @@ typedef struct sMyIPC {
 	uint16 buttons7;  			// X, Y, /PENIRQ buttons
     
 	uint16 touchX,   touchY;   // raw x/y TSC SPI
-	int16 touchXpx, touchYpx; // TFT x/y pixel (converted)
+	sint16 touchXpx, touchYpx; // TFT x/y pixel (converted)
 	
-	int16 touchZ1,  touchZ2;  // TSC x-panel measurements
+	sint16 touchZ1,  touchZ2;  // TSC x-panel measurements
     uint16 tdiode1,  tdiode2;  // TSC temperature diodes
     uint32 temperature;        // TSC computed temperature
 		
@@ -110,18 +110,15 @@ typedef struct sMyIPC {
 //irqs
 #define VCOUNT_LINE_INTERRUPT 0
 
-//FIFO SPECIAL
-#define FIFO_NDS_HW_SIZE (16*4)
-#define FIFO_SEND_EXT	0xffff0001	//stream 64 bytes of data to other ARM Core, can be received through GetSoftFIFO 4 bytes a time, until it returns false (empty)
-#define FIFO_RECV_EXT	0xffff00a0	//force received signal when the above FIFO_SEND_EXT has sent values properly, so the other core processes those values.
-
-#define FIFO_SEND_EMPTY	0xffff0002	//keeps sending fifo on fifoempty
-#define FIFO_WRITE_ADDR_EXT	0xffff0003	//writes a value from ARM Core A to ARM Core B
-
 //void writemap_ext_armcore(0x04000208,0x000000ff,WRITE_VALUE_8);
 #define WRITE_VALUE_8	0xf0
 #define WRITE_VALUE_16	0xf1
 #define WRITE_VALUE_32	0xf2
+
+//FIFO Hardware -> FIFO Software: GetSoftFIFO / SetSoftFIFO	/ 
+#define FIFO_NDS_HW_SIZE (16*4)
+#define FIFO_SOFTFIFO_WRITE_EXT	(uint32)(0xffff1017)
+#define FIFO_SOFTFIFO_READ_EXT	(uint32)(0xffff1018)
 
 //PowerCnt Read / PowerCnt Write
 #define FIFO_POWERCNT_ON	0xffff0004
@@ -135,7 +132,8 @@ typedef struct sMyIPC {
 #define EXCEPTION_ARM7 0xffff0008
 #define EXCEPTION_ARM9 0xffff0009
 
-
+//PowerManagementWrite
+#define FIFO_POWERMGMT_WRITE	(uint32)(0xffff1019)
 
 #endif
 
@@ -145,8 +143,8 @@ extern "C" {
 #endif
 
 //weak symbols : the implementation of these is project-defined
-extern __attribute__((weak))	void HandleFifoNotEmptyWeakRef(uint32 cmd1,uint32 cmd2,uint32 cmd3,uint32 cmd4,uint32 cmd5);
-extern __attribute__((weak))	void HandleFifoEmptyWeakRef(uint32 cmd1,uint32 cmd2,uint32 cmd3,uint32 cmd4,uint32 cmd5);
+extern __attribute__((weak))	void HandleFifoNotEmptyWeakRef(uint32 cmd1,uint32 cmd2,uint32 cmd3,uint32 cmd4);
+extern __attribute__((weak))	void HandleFifoEmptyWeakRef(uint32 cmd1,uint32 cmd2,uint32 cmd3,uint32 cmd4);
 
 
 #ifdef ARM9
@@ -158,17 +156,9 @@ extern void SendArm9Command(uint32 command1, uint32 command2, uint32 command3,ui
 #endif
 
 
-//clock opcodes
-extern u8 nds7_get_yearbytertc();
-extern u8 nds7_get_monthrtc();
-extern u8 nds7_get_dayrtc();
-extern u8 nds7_get_dayofweekrtc();
-extern u8 nds7_get_hourrtc();
-extern u8 nds7_get_minrtc();
-extern u8 nds7_get_secrtc();
 
 //FIFO 
-extern void FIFO_DRAINWRITE();
+extern int GetSoftFIFOCount();
 extern bool SetSoftFIFO(uint32 value);
 extern bool GetSoftFIFO(uint32 * var);
 
@@ -188,13 +178,13 @@ extern int SendFIFOCommand(uint32 * buf,int size);
 extern int RecvFIFOCommand(uint32 * buf);
 
 extern void writemap_ext_armcore(uint32 address, uint32 value, uint32 mode);
-extern void powerON(u16 values);
-extern void powerOFF(u16 values);
+extern void powerON(uint16 values);
+extern void powerOFF(uint16 values);
 
 
 
-extern uint32 SendMultipleWordByFifo(uint32 data0, uint32 data1, uint32 data2, uint32 data3, uint32 data4);
-extern bool SendMultipleWordACK(uint32 data0, uint32 data1, uint32 data2, uint32 data3);
+extern void SendMultipleWordByFifo(uint32 data0, uint32 data1, uint32 data2, uint32 data3);
+extern void SendMultipleWordACK(uint32 data0, uint32 data1, uint32 data2, uint32 data3);
 
 #ifdef __cplusplus
 }

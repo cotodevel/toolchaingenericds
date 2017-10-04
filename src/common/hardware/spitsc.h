@@ -26,12 +26,12 @@ USA
 
 //TouchScreen
 typedef struct XYTscPos {
-	u16	rawx; 
-	u16	rawy; 
-	u16	px;   
-	u16	py;
-	u16	z1;   
-	u16	z2;
+	uint16	rawx; 
+	uint16	rawy; 
+	uint16	px;   
+	uint16	py;
+	uint16	z1;   
+	uint16	z2;
 }	XYTscPos;
 
 //XY / PenIRQ

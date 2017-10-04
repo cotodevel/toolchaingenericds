@@ -57,7 +57,12 @@ __attribute__((section(".dtcm")))
 #endif    
 volatile uint32 FIFO_BUF_SOFT[FIFO_NDS_HW_SIZE/4];
 
-//GetSoftFIFO: Stores up to FIFO_NDS_HW_SIZE. Exposed to usercode for fetching 64 bytes sent from other core, until it returns false (empty buffer).
+//useful for checking if something is pending
+int GetSoftFIFOCount(){
+	return FIFO_SOFT_PTR;
+}
+
+//GetSoftFIFO: Stores up to FIFO_NDS_HW_SIZE. Exposed to usercode for fetching up to 64 bytes (in 4 bytes each) sent from other core, until it returns false (empty buffer).
 
 //Example: 
 //uint32 n = 0;
@@ -67,14 +72,12 @@ volatile uint32 FIFO_BUF_SOFT[FIFO_NDS_HW_SIZE/4];
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif    
-inline bool GetSoftFIFO(uint32 * var)
+bool GetSoftFIFO(uint32 * var)
 {
-	if(FIFO_SOFT_PTR > 0){
+	if(FIFO_SOFT_PTR >= 1){
 		FIFO_SOFT_PTR--;
-		
 		*var = (uint32)FIFO_BUF_SOFT[FIFO_SOFT_PTR];
 		FIFO_BUF_SOFT[FIFO_SOFT_PTR] = (uint32)0;
-		
 		return true;
 	}
 	else
@@ -86,7 +89,7 @@ inline bool GetSoftFIFO(uint32 * var)
 __attribute__((section(".itcm")))
 #endif    
 //returns ammount of inserted uint32 blocks into FIFO hardware regs
-inline bool SetSoftFIFO(uint32 value)
+bool SetSoftFIFO(uint32 value)
 {
 	if(FIFO_SOFT_PTR < (int)(FIFO_NDS_HW_SIZE/4)){
 		FIFO_BUF_SOFT[FIFO_SOFT_PTR] = value;
@@ -96,9 +99,6 @@ inline bool SetSoftFIFO(uint32 value)
 	else
 		return false;
 }
-
-
-
 
 
 //Software FIFO Handler receiver, add it wherever its required. (This is a FIFO that runs on software logic, rather than NDS FIFO).
@@ -138,75 +138,27 @@ void writeuint32extARM(uint32 address,uint32 value){
 
 
 
-//int PXI_SendWordByFifo(int fifotag, u32 data, bool err);
-
-
-
-
-//Hardware FIFO
-//deprecated
-/*
-//SendArm[7/9]Command: These send a command and up to 15 arguments. 
-//The other ARM Core through a FIFO interrupt will execute HandleFifo()
-//By default I use 4 (you can fill them with 0s if you want to use fewer)
-#ifdef ARM9
-__attribute__((section(".itcm")))
-inline void SendArm7Command(uint32 command1, uint32 command2, uint32 command3, uint32 command4)
-#endif
-#ifdef ARM7
-inline void SendArm9Command(uint32 command1, uint32 command2, uint32 command3, uint32 command4)
-#endif    
-{	
-	FIFO_DRAINWRITE();
-	
-	REG_IPC_FIFO_TX = command1;
-	REG_IPC_FIFO_TX = command2;
-	REG_IPC_FIFO_TX = command3;
-	REG_IPC_FIFO_TX = command4;
-	
-	FIFO_DRAINWRITE();
-}
-*/
-
-// Ensures a SendArm[7/9]Command (FIFO message) command to be forcefully executed at target ARM Core, while the host ARM Core awaits. 
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
-inline void FIFO_DRAINWRITE(){
-	while (!(REG_IPC_FIFO_CR & SEND_FIFO_IPC_EMPTY)){}
-}
-
 
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
-inline bool SendMultipleWordACK(uint32 data0, uint32 data1, uint32 data2, uint32 data3){
-	uint32 reply = SendMultipleWordByFifo(fifo_requires_ack, data0, data1, data2, data3);
-	if(reply == fifo_requires_ack_execok){
-		return true;
-	}
-	return false;
+void SendMultipleWordACK(uint32 data0, uint32 data1, uint32 data2, uint32 data3){
+	SendMultipleWordByFifo(data0, data1, data2, data3);
 }
 
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
-inline uint32 SendMultipleWordByFifo(uint32 data0, uint32 data1, uint32 data2, uint32 data3, uint32 data4)	//channel / multiple words / err reporting
-{	
-	FIFO_DRAINWRITE();
+void SendMultipleWordByFifo(uint32 data0, uint32 data1, uint32 data2, uint32 data3)	//channel / multiple words / err reporting
+{
+	while(!(REG_IPC_FIFO_CR & (1<<0))){}	//WAIT for RECVFIFO to absorb all queued cmds
 	
 	//data4 to be used from other core
 	REG_IPC_FIFO_TX =	(uint32)data0; 	//raise irq here
 	REG_IPC_FIFO_TX = 	(uint32)data1;
 	REG_IPC_FIFO_TX = 	(uint32)data2;
 	REG_IPC_FIFO_TX = 	(uint32)data3;
-	REG_IPC_FIFO_TX = 	(uint32)data4;
 	
-	FIFO_DRAINWRITE();
-	 
-	REG_IPC_FIFO_CR |= (1<<3); //3     W    Send Fifo Clear             (0=Nothing, 1=Flush Send Fifo)
-	
-	return MyIPC->fiforeply;
 }
 
 //FIFO HANDLER INIT
@@ -214,7 +166,7 @@ inline uint32 SendMultipleWordByFifo(uint32 data0, uint32 data1, uint32 data2, u
 __attribute__((section(".itcm")))
 #endif
 void HandleFifoEmpty(){
-	HandleFifoEmptyWeakRef((uint32)0,(uint32)0,(uint32)0,(uint32)0,(uint32)0);
+	HandleFifoEmptyWeakRef((uint32)0,(uint32)0,(uint32)0,(uint32)0);
 }
 
 //FIFO HANDLER INIT
@@ -225,32 +177,27 @@ void HandleFifoNotEmpty(){
 	
 	volatile uint32 cmd1 = 0,cmd2 = 0,cmd3 = 0,cmd4 = 0,cmd5 = 0,cmd6 = 0,cmd7 = 0,cmd8 = 0,cmd9 = 0,cmd10 = 0,cmd11 = 0,cmd12 = 0,cmd13 = 0,cmd14 = 0,cmd15 = 0;
 	
-	if(!(REG_IPC_FIFO_CR & RECV_FIFO_IPC_EMPTY)){
+	while(!(REG_IPC_FIFO_CR & RECV_FIFO_IPC_EMPTY)){
 		cmd1 = REG_IPC_FIFO_RX;
+		
+		if(!(REG_IPC_FIFO_CR & RECV_FIFO_IPC_EMPTY)){
+			cmd2 = REG_IPC_FIFO_RX;
+		}
+		
+		if(!(REG_IPC_FIFO_CR & RECV_FIFO_IPC_EMPTY)){
+			cmd3 = REG_IPC_FIFO_RX;
+		}
+		
+		if(!(REG_IPC_FIFO_CR & RECV_FIFO_IPC_EMPTY)){
+			cmd4 = REG_IPC_FIFO_RX;
+		}
+		
+		HandleFifoNotEmptyWeakRef(cmd1,cmd2,cmd3,cmd4);
 	}
 	
-	if(!(REG_IPC_FIFO_CR & RECV_FIFO_IPC_EMPTY)){
-		cmd2 = REG_IPC_FIFO_RX;
-	}
+	//clear fifo
+	REG_IPC_FIFO_CR |= (1<<3);
 	
-	if(!(REG_IPC_FIFO_CR & RECV_FIFO_IPC_EMPTY)){
-		cmd3 = REG_IPC_FIFO_RX;
-	}
-	
-	if(!(REG_IPC_FIFO_CR & RECV_FIFO_IPC_EMPTY)){
-		cmd4 = REG_IPC_FIFO_RX;
-	}
-	
-	if(!(REG_IPC_FIFO_CR & RECV_FIFO_IPC_EMPTY)){
-		cmd5 = REG_IPC_FIFO_RX;
-	}
-	
-	HandleFifoNotEmptyWeakRef(cmd1,cmd2,cmd3,cmd4,cmd5);
-	
-	//ok, send empty signal
-	REG_IPC_FIFO_CR |= FIFO_IPC_ERROR;
-	
-	//can we clear then send again, to recv parses the response into shared RAM?
 }
 
 
@@ -279,7 +226,7 @@ inline void writemap_ext_armcore(uint32 address, uint32 value, uint32 mode){
 
 //writemap_ext_armcore(REG_POWERCNT_ADDR, (uint32)value, WRITE_VALUE_16);
 
-void powerON(u16 values){
+void powerON(uint16 values){
 	#ifdef ARM7
 	REG_POWERCNT |= values;
 	#endif
@@ -295,7 +242,7 @@ void powerON(u16 values){
 	#endif
 }
 
-void powerOFF(u16 values){
+void powerOFF(uint16 values){
 	#ifdef ARM7
 	REG_POWERCNT &= ~values;
 	#endif
@@ -310,5 +257,3 @@ void powerOFF(u16 values){
 	}
 	#endif
 }
-
-

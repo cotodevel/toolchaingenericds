@@ -129,7 +129,7 @@ int _open_r ( struct _reent *ptr, const sint8 *file, int flags, int mode )
 	sint8 **tokens;
 	int count = 0, i = 0;
 	volatile sint8 str[256];	//file safe buf
-	memcpy ( (u8*)str, (u8*)file, 256);
+	memcpy ( (uint8*)str, (uint8*)file, 256);
 
 	count = split ((const sint8*)str, '/', &tokens);	
 	volatile sint8 token_str[64];

@@ -31,50 +31,26 @@ USA
 typedef	unsigned	short	ushort;
 typedef	unsigned	char	uchar;
 
-typedef	unsigned	int		uint32;	//reenable when using this lib
-typedef	unsigned	short	uint16;
-typedef	uchar				uint8;
-
+typedef	long long			sint64;
 typedef	int					sint32;
-typedef volatile sint32		vsint32;
 typedef	short				sint16;
-typedef volatile sint16		vsint16;
 typedef	char				sint8;
+typedef	sint8				bool8;
+
+typedef volatile sint64		vsint64;
+typedef volatile sint32		vsint32;
+typedef volatile sint16		vsint16;
 typedef volatile sint8		vsint8;
-typedef	char				bool8;
 
-typedef int64_t 			uint64;
+typedef unsigned 	long long uint64;
+typedef	unsigned	int		uint32;
+typedef	unsigned	short	uint16;
+typedef	unsigned	char	uint8;
 
+typedef volatile uint64		vuint64;
 typedef volatile uint32		vuint32;
 typedef volatile uint16		vuint16;
 typedef volatile uint8		vuint8;
-
-
-//deprecated: let stdbool.h handle these defs because toolchain itself provides these variables.
-/*
-#if (TRUE != 1)
-#undef TRUE
-#define TRUE    1
-#endif
-
-#if (FALSE != 0)
-#undef FALSE
-#define FALSE   0
-#endif
-*/
-
-//snemul specific end
-//misc (libraries)
-//typedef	uint32				u32;		//DSWIFI compatibility
-typedef	uchar				u8;		
-typedef	uint16				u16;		
-typedef	sint16				int16;
-//typedef uchar 				bool;
-typedef volatile uint32		vu32;
-typedef volatile uint16		vu16;
-typedef volatile uchar		vu8;
-
-
 
 #endif
 

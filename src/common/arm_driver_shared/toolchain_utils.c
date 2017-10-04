@@ -89,7 +89,7 @@ METHOD_DESCRIPTOR Methods[8];
 METHOD_DESCRIPTOR * callback_append_signature(uint32 * func_addr, uint32 * func_addr_end, char * methodname,METHOD_DESCRIPTOR * method_inst){
 	
 	method_inst->cback_address 	= 	func_addr;
-	method_inst->cback_size		=	(sint32)((u8*)(uint32*)func_addr_end - (sint32)(func_addr));
+	method_inst->cback_size		=	(sint32)((uint8*)(uint32*)func_addr_end - (sint32)(func_addr));
 	memcpy ((uint8*)method_inst->methodname, (uint8*)methodname, strlen(methodname));
 	
 	return (METHOD_DESCRIPTOR *)method_inst;
