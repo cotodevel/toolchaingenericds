@@ -95,6 +95,7 @@ export DIRS_ARM9_SRC = source/	\
 			source/arm9_driver/fatfs-newlib-nano-layer/	\
 			source/arm9_driver/fatfs-newlib-nano-layer/dldi/	\
 			source/arm9_driver/fatfs-newlib-nano-layer/fatfs/source/	\
+			source/arm9_driver/zlib/	\
 			source/dswifi_arm9/	\
 			source/wnifilib/	\
 			../include/	\
@@ -113,6 +114,7 @@ export DIRS_ARM9_HEADER = source/	\
 			source/arm9_driver/fatfs-newlib-nano-layer/	\
 			source/arm9_driver/fatfs-newlib-nano-layer/dldi/	\
 			source/arm9_driver/fatfs-newlib-nano-layer/fatfs/source/	\
+			source/arm9_driver/zlib/nintendods/include/	\
 			source/dswifi_arm9/	\
 			source/wnifilib/	\
 			../include/	\
