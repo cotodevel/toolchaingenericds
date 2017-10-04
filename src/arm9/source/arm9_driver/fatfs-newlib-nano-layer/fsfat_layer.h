@@ -143,6 +143,8 @@ extern DWORD clust2sect (  /* !=0:Sector number, 0:Failed (invalid cluster#) */
     DWORD clst      /* Cluster# to be converted */
 );
 
+extern sint32 getStructFDFirstSector(struct fd *f);
+
 #ifdef __cplusplus
 }
 #endif

@@ -1116,3 +1116,15 @@ DWORD clust2sect (  /* !=0:Sector number, 0:Failed (invalid cluster#) */
     if (clst >= fs->n_fatent - 2) return 0;       /* Invalid cluster# */
     return clst * fs->csize + fs->database;
 }
+
+//returns the First Sector for a given file opened:
+//returns -1 if the file was not open or not a file (directory or fsfat error)
+//	struct File Descriptor (FILE * opened through fopen_fs() -> then converted to int32 from fileno())
+sint32 getStructFDFirstSector(struct fd *f){
+	if(f->filPtr){
+		return clust2sect(f->filPtr->obj.fs, f->filPtr->obj.sclust);  /* Return file start sector */
+	}
+	else{
+		return -1;
+	}
+}
