@@ -117,9 +117,9 @@ static void pwinerror (s)
     const char *s;
 {
     if (s && *s)
-        fprintf(stderr, "%s: %s\n", s, strwinerror(GetLastError ()));
+        fprintf_fs(stderr, "%s: %s\n", s, strwinerror(GetLastError ()));
     else
-        fprintf(stderr, "%s\n", strwinerror(GetLastError ()));
+        fprintf_fs(stderr, "%s\n", strwinerror(GetLastError ()));
 }
 
 #endif /* UNDER_CE */
@@ -157,7 +157,7 @@ int  main             OF((int argc, char *argv[]));
 void error(msg)
     const char *msg;
 {
-    fprintf(stderr, "%s: %s\n", prog, msg);
+    fprintf_fs(stderr, "%s: %s\n", prog, msg);
     exit(1);
 }
 
@@ -269,7 +269,7 @@ void file_compress(file, mode)
     gzFile out;
 
     if (strlen(file) + strlen(GZ_SUFFIX) >= sizeof(outfile)) {
-        fprintf(stderr, "%s: filename too long\n", prog);
+        fprintf_fs(stderr, "%s: filename too long\n", prog);
         exit(1);
     }
 
@@ -283,7 +283,7 @@ void file_compress(file, mode)
     }
     out = gzopen(outfile, mode);
     if (out == NULL) {
-        fprintf(stderr, "%s: can't gzopen %s\n", prog, outfile);
+        fprintf_fs(stderr, "%s: can't gzopen %s\n", prog, outfile);
         exit(1);
     }
     gz_compress(in, out);
@@ -305,7 +305,7 @@ void file_uncompress(file)
     size_t len = strlen(file);
 
     if (len + strlen(GZ_SUFFIX) >= sizeof(buf)) {
-        fprintf(stderr, "%s: filename too long\n", prog);
+        fprintf_fs(stderr, "%s: filename too long\n", prog);
         exit(1);
     }
 
@@ -322,7 +322,7 @@ void file_uncompress(file)
     }
     in = gzopen(infile, "rb");
     if (in == NULL) {
-        fprintf(stderr, "%s: can't gzopen %s\n", prog, infile);
+        fprintf_fs(stderr, "%s: can't gzopen %s\n", prog, infile);
         exit(1);
     }
     out = fopen_fs(outfile, "wb");
@@ -412,7 +412,7 @@ int main(argc, argv)
                 if (copyout) {
                     file = gzopen(*argv, "rb");
                     if (file == NULL)
-                        fprintf(stderr, "%s: can't gzopen %s\n", prog, *argv);
+                        fprintf_fs(stderr, "%s: can't gzopen %s\n", prog, *argv);
                     else
                         gz_uncompress(file, stdout);
                 } else {

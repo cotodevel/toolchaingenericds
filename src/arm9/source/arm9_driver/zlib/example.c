@@ -21,7 +21,7 @@
 
 #define CHECK_ERR(err, msg) { \
     if (err != Z_OK) { \
-        fprintf(stderr, "%s error: %d\n", msg, err); \
+        fprintf_fs(stderr, "%s error: %d\n", msg, err); \
         exit(1); \
     } \
 }
@@ -72,7 +72,7 @@ void test_compress(compr, comprLen, uncompr, uncomprLen)
     CHECK_ERR(err, "uncompress");
 
     if (strcmp((char*)uncompr, hello)) {
-        fprintf(stderr, "bad uncompress\n");
+        fprintf_fs(stderr, "bad uncompress\n");
         exit(1);
     } else {
         printf("uncompress(): %s\n", (char *)uncompr);
@@ -88,7 +88,7 @@ void test_gzio(fname, uncompr, uncomprLen)
     uLong uncomprLen;
 {
 #ifdef NO_GZCOMPRESS
-    fprintf(stderr, "NO_GZCOMPRESS -- gz* functions cannot compress\n");
+    fprintf_fs(stderr, "NO_GZCOMPRESS -- gz* functions cannot compress\n");
 #else
     int err;
     int len = (int)strlen(hello)+1;
@@ -97,16 +97,16 @@ void test_gzio(fname, uncompr, uncomprLen)
 
     file = gzopen(fname, "wb");
     if (file == NULL) {
-        fprintf(stderr, "gzopen error\n");
+        fprintf_fs(stderr, "gzopen error\n");
         exit(1);
     }
     gzputc(file, 'h');
     if (gzputs(file, "ello") != 4) {
-        fprintf(stderr, "gzputs err: %s\n", gzerror(file, &err));
+        fprintf_fs(stderr, "gzputs err: %s\n", gzerror(file, &err));
         exit(1);
     }
     if (gzprintf(file, ", %s!", "hello") != 8) {
-        fprintf(stderr, "gzprintf err: %s\n", gzerror(file, &err));
+        fprintf_fs(stderr, "gzprintf err: %s\n", gzerror(file, &err));
         exit(1);
     }
     gzseek(file, 1L, SEEK_CUR); /* add one zero byte */
@@ -114,17 +114,17 @@ void test_gzio(fname, uncompr, uncomprLen)
 
     file = gzopen(fname, "rb");
     if (file == NULL) {
-        fprintf(stderr, "gzopen error\n");
+        fprintf_fs(stderr, "gzopen error\n");
         exit(1);
     }
     strcpy((char*)uncompr, "garbage");
 
     if (gzread(file, uncompr, (unsigned)uncomprLen) != len) {
-        fprintf(stderr, "gzread err: %s\n", gzerror(file, &err));
+        fprintf_fs(stderr, "gzread err: %s\n", gzerror(file, &err));
         exit(1);
     }
     if (strcmp((char*)uncompr, hello)) {
-        fprintf(stderr, "bad gzread: %s\n", (char*)uncompr);
+        fprintf_fs(stderr, "bad gzread: %s\n", (char*)uncompr);
         exit(1);
     } else {
         printf("gzread(): %s\n", (char*)uncompr);
@@ -132,28 +132,28 @@ void test_gzio(fname, uncompr, uncomprLen)
 
     pos = gzseek(file, -8L, SEEK_CUR);
     if (pos != 6 || gztell(file) != pos) {
-        fprintf(stderr, "gzseek error, pos=%ld, gztell=%ld\n",
+        fprintf_fs(stderr, "gzseek error, pos=%ld, gztell=%ld\n",
                 (long)pos, (long)gztell(file));
         exit(1);
     }
 
     if (gzgetc(file) != ' ') {
-        fprintf(stderr, "gzgetc error\n");
+        fprintf_fs(stderr, "gzgetc error\n");
         exit(1);
     }
 
     if (gzungetc(' ', file) != ' ') {
-        fprintf(stderr, "gzungetc error\n");
+        fprintf_fs(stderr, "gzungetc error\n");
         exit(1);
     }
 
     gzgets(file, (char*)uncompr, (int)uncomprLen);
     if (strlen((char*)uncompr) != 7) { /* " hello!" */
-        fprintf(stderr, "gzgets err after gzseek: %s\n", gzerror(file, &err));
+        fprintf_fs(stderr, "gzgets err after gzseek: %s\n", gzerror(file, &err));
         exit(1);
     }
     if (strcmp((char*)uncompr, hello + 6)) {
-        fprintf(stderr, "bad gzgets after gzseek\n");
+        fprintf_fs(stderr, "bad gzgets after gzseek\n");
         exit(1);
     } else {
         printf("gzgets() after gzseek: %s\n", (char*)uncompr);
@@ -235,7 +235,7 @@ void test_inflate(compr, comprLen, uncompr, uncomprLen)
     CHECK_ERR(err, "inflateEnd");
 
     if (strcmp((char*)uncompr, hello)) {
-        fprintf(stderr, "bad inflate\n");
+        fprintf_fs(stderr, "bad inflate\n");
         exit(1);
     } else {
         printf("inflate(): %s\n", (char *)uncompr);
@@ -270,7 +270,7 @@ void test_large_deflate(compr, comprLen, uncompr, uncomprLen)
     err = deflate(&c_stream, Z_NO_FLUSH);
     CHECK_ERR(err, "deflate");
     if (c_stream.avail_in != 0) {
-        fprintf(stderr, "deflate not greedy\n");
+        fprintf_fs(stderr, "deflate not greedy\n");
         exit(1);
     }
 
@@ -290,7 +290,7 @@ void test_large_deflate(compr, comprLen, uncompr, uncomprLen)
 
     err = deflate(&c_stream, Z_FINISH);
     if (err != Z_STREAM_END) {
-        fprintf(stderr, "deflate should report Z_STREAM_END\n");
+        fprintf_fs(stderr, "deflate should report Z_STREAM_END\n");
         exit(1);
     }
     err = deflateEnd(&c_stream);
@@ -331,7 +331,7 @@ void test_large_inflate(compr, comprLen, uncompr, uncomprLen)
     CHECK_ERR(err, "inflateEnd");
 
     if (d_stream.total_out != 2*uncomprLen + comprLen/2) {
-        fprintf(stderr, "bad large inflate: %ld\n", d_stream.total_out);
+        fprintf_fs(stderr, "bad large inflate: %ld\n", d_stream.total_out);
         exit(1);
     } else {
         printf("large_inflate(): OK\n");
@@ -410,7 +410,7 @@ void test_sync(compr, comprLen, uncompr, uncomprLen)
 
     err = inflate(&d_stream, Z_FINISH);
     if (err != Z_DATA_ERROR) {
-        fprintf(stderr, "inflate should report DATA_ERROR\n");
+        fprintf_fs(stderr, "inflate should report DATA_ERROR\n");
         /* Because of incorrect adler32 */
         exit(1);
     }
@@ -450,7 +450,7 @@ void test_dict_deflate(compr, comprLen)
 
     err = deflate(&c_stream, Z_FINISH);
     if (err != Z_STREAM_END) {
-        fprintf(stderr, "deflate should report Z_STREAM_END\n");
+        fprintf_fs(stderr, "deflate should report Z_STREAM_END\n");
         exit(1);
     }
     err = deflateEnd(&c_stream);
@@ -487,7 +487,7 @@ void test_dict_inflate(compr, comprLen, uncompr, uncomprLen)
         if (err == Z_STREAM_END) break;
         if (err == Z_NEED_DICT) {
             if (d_stream.adler != dictId) {
-                fprintf(stderr, "unexpected dictionary");
+                fprintf_fs(stderr, "unexpected dictionary");
                 exit(1);
             }
             err = inflateSetDictionary(&d_stream, (const Bytef*)dictionary,
@@ -500,7 +500,7 @@ void test_dict_inflate(compr, comprLen, uncompr, uncomprLen)
     CHECK_ERR(err, "inflateEnd");
 
     if (strcmp((char*)uncompr, hello)) {
-        fprintf(stderr, "bad inflate with dict\n");
+        fprintf_fs(stderr, "bad inflate with dict\n");
         exit(1);
     } else {
         printf("inflate with dictionary: %s\n", (char *)uncompr);
@@ -521,11 +521,11 @@ int main(argc, argv)
     static const char* myVersion = ZLIB_VERSION;
 
     if (zlibVersion()[0] != myVersion[0]) {
-        fprintf(stderr, "incompatible zlib version\n");
+        fprintf_fs(stderr, "incompatible zlib version\n");
         exit(1);
 
     } else if (strcmp(zlibVersion(), ZLIB_VERSION) != 0) {
-        fprintf(stderr, "warning: different zlib version\n");
+        fprintf_fs(stderr, "warning: different zlib version\n");
     }
 
     printf("zlib version %s = 0x%04x, compile flags = 0x%lx\n",

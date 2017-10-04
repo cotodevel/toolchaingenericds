@@ -247,11 +247,11 @@ extern const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
    extern int ZLIB_INTERNAL z_verbose;
    extern void ZLIB_INTERNAL z_error OF((char *m));
 #  define Assert(cond,msg) {if(!(cond)) z_error(msg);}
-#  define Trace(x) {if (z_verbose>=0) fprintf x ;}
-#  define Tracev(x) {if (z_verbose>0) fprintf x ;}
-#  define Tracevv(x) {if (z_verbose>1) fprintf x ;}
-#  define Tracec(c,x) {if (z_verbose>0 && (c)) fprintf x ;}
-#  define Tracecv(c,x) {if (z_verbose>1 && (c)) fprintf x ;}
+#  define Trace(x) {if (z_verbose>=0) fprintf_fs x ;}
+#  define Tracev(x) {if (z_verbose>0) fprintf_fs x ;}
+#  define Tracevv(x) {if (z_verbose>1) fprintf_fs x ;}
+#  define Tracec(c,x) {if (z_verbose>0 && (c)) fprintf_fs x ;}
+#  define Tracecv(c,x) {if (z_verbose>1 && (c)) fprintf_fs x ;}
 #else
 #  define Assert(cond,msg)
 #  define Trace(x)

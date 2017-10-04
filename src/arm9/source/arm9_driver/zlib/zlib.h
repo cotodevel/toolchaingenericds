@@ -1259,7 +1259,7 @@ ZEXTERN int ZEXPORT gzwrite OF((gzFile file,
 ZEXTERN int ZEXPORTVA gzprintf OF((gzFile file, const char *format, ...));
 /*
      Converts, formats, and writes the arguments to the compressed file under
-   control of the format string, as in fprintf.  gzprintf returns the number of
+   control of the format string, as in fprintf_fs.  gzprintf returns the number of
    uncompressed bytes actually written, or 0 in case of error.  The number of
    uncompressed bytes written is limited to 8191, or one less than the buffer
    size given to gzbuffer().  The caller should assure that this limit is not
