@@ -1128,3 +1128,20 @@ sint32 getStructFDFirstSector(struct fd *f){
 		return -1;
 	}
 }
+
+sint32 getDiskClusterSize(){
+	return(sint32)(dldiFs.csize);
+}
+
+sint32 getDiskSectorSize(){
+	int diskSectorSize = 0;
+	if(FF_MAX_SS == FF_MIN_SS){
+		diskSectorSize = (int)FF_MIN_SS;
+	}
+	else{
+		#if (FF_MAX_SS != FF_MIN_SS)
+		diskSectorSize = dldiFs.ssize;	//when fsfat sectorsize is variable, by default its 512
+		#endif
+	}
+	return diskSectorSize;
+}
