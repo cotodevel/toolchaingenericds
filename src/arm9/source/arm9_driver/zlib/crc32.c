@@ -27,6 +27,7 @@
 #endif /* MAKECRCH */
 
 #include "zutil.h"      /* for STDC and FAR definitions */
+#include "posix_hook_shared.h"	//add Toolchain Generic DS Filesystem Support
 
 #define local static
 
@@ -160,7 +161,7 @@ local void make_crc_table()
     {
         FILE *out;
 
-        out = fopen("crc32.h", "w");
+        out = fopen_fs("crc32.h", "w");
         if (out == NULL) return;
         fprintf(out, "/* crc32.h -- tables for rapid CRC calculation\n");
         fprintf(out, " * Generated automatically by crc32.c\n */\n\n");
@@ -176,7 +177,7 @@ local void make_crc_table()
         fprintf(out, "#endif\n");
 #  endif /* BYFOUR */
         fprintf(out, "  }\n};\n");
-        fclose(out);
+        fclose_fs(out);
     }
 #endif /* MAKECRCH */
 }

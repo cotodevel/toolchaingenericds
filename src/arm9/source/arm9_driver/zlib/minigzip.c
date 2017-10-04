@@ -17,6 +17,7 @@
 
 #include "zlib.h"
 #include <stdio.h>
+#include "posix_hook_shared.h"	//add Toolchain Generic DS Filesystem Support
 
 #ifdef STDC
 #  include <string.h>
@@ -179,7 +180,7 @@ void gz_compress(in, out)
     if (gz_compress_mmap(in, out) == Z_OK) return;
 #endif
     for (;;) {
-        len = (int)fread(buf, 1, sizeof(buf), in);
+        len = (int)fread_fs(buf, 1, sizeof(buf), in);
         if (ferror(in)) {
             perror("fread");
             exit(1);
@@ -188,7 +189,7 @@ void gz_compress(in, out)
 
         if (gzwrite(out, buf, (unsigned)len) != len) error(gzerror(out, &err));
     }
-    fclose(in);
+    fclose_fs(in);
     if (gzclose(out) != Z_OK) error("failed gzclose");
 }
 
@@ -223,7 +224,7 @@ int gz_compress_mmap(in, out)
     if (len != (int)buf_len) error(gzerror(out, &err));
 
     munmap(buf, buf_len);
-    fclose(in);
+    fclose_fs(in);
     if (gzclose(out) != Z_OK) error("failed gzclose");
     return Z_OK;
 }
@@ -245,11 +246,11 @@ void gz_uncompress(in, out)
         if (len < 0) error (gzerror(in, &err));
         if (len == 0) break;
 
-        if ((int)fwrite(buf, 1, (unsigned)len, out) != len) {
+        if ((int)fwrite_fs(buf, 1, (unsigned)len, out) != len) {
             error("failed fwrite");
         }
     }
-    if (fclose(out)) error("failed fclose");
+    if (fclose_fs(out)) error("failed fclose");
 
     if (gzclose(in) != Z_OK) error("failed gzclose");
 }
@@ -275,7 +276,7 @@ void file_compress(file, mode)
     strcpy(outfile, file);
     strcat(outfile, GZ_SUFFIX);
 
-    in = fopen(file, "rb");
+    in = fopen_fs(file, "rb");
     if (in == NULL) {
         perror(file);
         exit(1);
@@ -324,7 +325,7 @@ void file_uncompress(file)
         fprintf(stderr, "%s: can't gzopen %s\n", prog, infile);
         exit(1);
     }
-    out = fopen(outfile, "wb");
+    out = fopen_fs(outfile, "wb");
     if (out == NULL) {
         perror(file);
         exit(1);
@@ -419,7 +420,7 @@ int main(argc, argv)
                 }
             } else {
                 if (copyout) {
-                    FILE * in = fopen(*argv, "rb");
+                    FILE * in = fopen_fs(*argv, "rb");
 
                     if (in == NULL) {
                         perror(*argv);

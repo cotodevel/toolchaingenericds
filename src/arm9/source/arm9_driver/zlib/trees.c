@@ -35,6 +35,7 @@
 /* #define GEN_TREES_H */
 
 #include "deflate.h"
+#include "posix_hook_shared.h"	//add Toolchain Generic DS Filesystem Support
 
 #ifdef DEBUG
 #  include <ctype.h>
@@ -332,7 +333,7 @@ local void tr_static_init()
 
 void gen_trees_header()
 {
-    FILE *header = fopen("trees.h", "w");
+    FILE *header = fopen_fs("trees.h", "w");
     int i;
 
     Assert (header != NULL, "Can't open trees.h");
@@ -376,7 +377,7 @@ void gen_trees_header()
                 SEPARATOR(i, D_CODES-1, 10));
     }
 
-    fclose(header);
+    fclose_fs(header);
 }
 #endif /* GEN_TREES_H */
 
