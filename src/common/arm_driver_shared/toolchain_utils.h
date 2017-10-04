@@ -102,6 +102,8 @@ extern int		FS_extram_init();
 extern void	FS_lock();
 extern void	FS_unlock();
 
+extern char *str_replace(char *orig, char *rep, char *with);
+
 #endif
 
 #endif
