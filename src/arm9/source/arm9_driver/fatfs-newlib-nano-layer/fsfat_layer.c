@@ -45,6 +45,12 @@ FATFS dldiFs;
 
 /* functions */
 
+//For initializing Filesystem
+int		FS_init()
+{
+	return fatfs_init();
+}
+
 //converts a "folder/folder.../file.fil" into a proper filesystem fullpath
 volatile sint8 charbuf[NAME_MAX+1];
 sint8 * getfatfsPath(sint8 * filename){

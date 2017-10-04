@@ -90,10 +90,9 @@ extern "C" {
 
 extern FATFS dldiFs;
 
-/* Macro definitions */
-
 /* Function prototypes */
 
+extern int		FS_init();
 extern int fatfs_init();
 extern int fatfs_write (int fd, sint8 *ptr, int len);
 extern int fatfs_read (int fd, sint8 *ptr, int len);
