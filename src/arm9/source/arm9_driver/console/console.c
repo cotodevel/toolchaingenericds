@@ -30,42 +30,18 @@ USA
 #include "console.h"
 #include "dma.h"
 #include "bios.h"
-
+#include "video.h"
 t_GUI GUI;
 
 volatile sint8	g_printfbuf[consolebuf_size];
 
-ConsoleInstance DefaultConsole;
+ConsoleInstance DefaultConsole = {0};		//generic console
+ConsoleInstance CustomConsole = {0};		//project specific console
+
 ConsoleInstance * DefaultSessionConsole;	//Default Console Instance Chosen
-//
-//Uses subEngine.
-bool InitDefaultConsole(){
-	DefaultSessionConsole = (ConsoleInstance *)(&DefaultConsole);
-	
-	//Set subEngine
-	SetEngineConsole(subEngine,DefaultSessionConsole);
-	
-	//Set subEngine properties
-	DefaultSessionConsole->ConsoleEngineStatus.ENGINE_DISPCNT	=	(uint32)(MODE_5_2D | DISPLAY_BG3_ACTIVE | DISPLAY_BG0_ACTIVE | DISPLAY_BG1_ACTIVE);
-	
-	// BG0: Background layer :
-	DefaultSessionConsole->ConsoleEngineStatus.EngineBGS[0].BGNUM = 0;
-	DefaultSessionConsole->ConsoleEngineStatus.EngineBGS[0].REGBGCNT = BG_MAP_BASE(30) | BG_TILE_BASE(7) | BG_32x32 | BG_COLOR_16 | BG_PRIORITY_3;
-	// Available : 0 - 60 Ko
-	
-	// BG1: Text layer : 
-	DefaultSessionConsole->ConsoleEngineStatus.EngineBGS[1].BGNUM = 1;
-	DefaultSessionConsole->ConsoleEngineStatus.EngineBGS[1].REGBGCNT = BG_MAP_BASE(31) | BG_TILE_BASE(7) | BG_32x32 | BG_COLOR_16;
-	
-	// BG3: FrameBuffer : 64(TILE:4) - 128 Kb
-	DefaultSessionConsole->ConsoleEngineStatus.EngineBGS[3].BGNUM = 3;
-	DefaultSessionConsole->ConsoleEngineStatus.EngineBGS[3].REGBGCNT = BG_BMP_BASE(4) | BG_BMP8_256x256 | BG_PRIORITY_1;
-	
-	
-	InitializeConsole(DefaultSessionConsole);
-	
-	return true;
-}
+
+
+
 
 bool InitializeConsole(ConsoleInstance * ConsoleInst){
 	
@@ -77,10 +53,10 @@ void UpdateConsoleSettings(ConsoleInstance * ConsoleInst){
 	
 	//setup DISPCNT
 	if(ConsoleInst->ppuMainEngine == mainEngine){
-		REG_DISPCNT = (uint32)ConsoleInst->ConsoleEngineStatus.ENGINE_DISPCNT;
+		SETDISPCNT_MAIN((uint32)ConsoleInst->ConsoleEngineStatus.ENGINE_DISPCNT);
 	}
 	else if(ConsoleInst->ppuMainEngine == subEngine){
-		REG_DISPCNT_SUB = (uint32)ConsoleInst->ConsoleEngineStatus.ENGINE_DISPCNT;
+		SETDISPCNT_SUB((uint32)ConsoleInst->ConsoleEngineStatus.ENGINE_DISPCNT);
 	}
 	
 	//setup Backgrounds
@@ -468,7 +444,7 @@ void	GUI_clear()
 {
 	//flush buffers
 	//void * memset ( void * ptr, int value, size_t num );.
-	memset ((uint32 *)&g_printfbuf[0], 0, (size_t) consolebuf_size);
+	memset ((uint32 *)&g_printfbuf[0], 0, sizeof(g_printfbuf));
 	
 	consoleClear(DefaultSessionConsole);
 	GUI.printfy = 0;

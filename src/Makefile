@@ -91,6 +91,7 @@ export DIRS_ARM7_HEADER = source/	\
 export DIRS_ARM9_SRC = source/	\
 			source/arm9_driver/	\
 			source/arm9_driver/console/	\
+			source/arm9_driver/console/gui_draw/source/	\
 			source/arm9_driver/fatfs-newlib-nano-layer/	\
 			source/arm9_driver/fatfs-newlib-nano-layer/dldi/	\
 			source/arm9_driver/fatfs-newlib-nano-layer/fatfs/source/	\
@@ -108,6 +109,7 @@ export DIRS_ARM9_SRC = source/	\
 export DIRS_ARM9_HEADER = source/	\
 			source/arm9_driver/	\
 			source/arm9_driver/console/	\
+			source/arm9_driver/console/gui_draw/include/	\
 			source/arm9_driver/fatfs-newlib-nano-layer/	\
 			source/arm9_driver/fatfs-newlib-nano-layer/dldi/	\
 			source/arm9_driver/fatfs-newlib-nano-layer/fatfs/source/	\

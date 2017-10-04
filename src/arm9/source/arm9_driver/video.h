@@ -192,8 +192,16 @@ extern void DISABLE_BG_SUB(int number);
 extern vramSetup vramSetupGlobal[1];
 extern bool VRAM_SETUP(vramSetup * vramSetupInst);
 
-//project specific
-extern vramSetup * SNEMULDS_2DVRAM_SETUP();
+//weak symbols : the implementation of this is project-defined
+extern  __attribute__((weak))	vramSetup * getProjectSpecificVRAMSetup();
+
+
+//Default console VRAM layout setup
+//1) VRAM Layout
+extern vramSetup * DEFAULT_CONSOLE_VRAMSETUP();
+//2) Uses subEngine: VRAM Layout -> Console Setup
+extern bool InitDefaultConsole();
+
 
 #ifdef __cplusplus
 }

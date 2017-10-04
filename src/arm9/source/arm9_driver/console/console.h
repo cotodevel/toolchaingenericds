@@ -18,8 +18,8 @@ USA
 
 */
 
-#ifndef generic_console_ds
-#define generic_console_ds
+#ifndef __console_toolchain_h__
+#define __console_toolchain_h__
 
 #include <stdbool.h>
 #include "mem_handler_shared.h"
@@ -324,9 +324,9 @@ typedef struct
 	int ScanJoypad; 
 	
 	uint16	*DSFrameBuffer; // Frame Buffer Layer
-	uint16	*DSText; // Text Layer
-	uint16	*DSBack; // Back Text Layer;
-	uint16	*DSTileMemory;
+	uint16	*DSText; // Text Layer	/ not used
+	uint16	*DSBack; // Back Text Layer;	/ not used
+	uint16	*DSTileMemory;	// not used
 	
 	uint16	*Palette;
 	
@@ -357,10 +357,13 @@ extern "C" {
 
 extern	t_GUI	GUI;
 
-extern ConsoleInstance DefaultConsole;
+extern ConsoleInstance DefaultConsole;	//default console
+extern ConsoleInstance CustomConsole;	//project specific
 extern ConsoleInstance * DefaultSessionConsole;
 
-extern bool InitDefaultConsole();
+//weak symbols : the implementation of this is project-defined
+extern __attribute__((weak))	bool InitProjectSpecificConsole();
+
 extern bool InitializeConsole(ConsoleInstance * ConsoleInst);
 extern void UpdateConsoleSettings(ConsoleInstance * ConsoleInst);
 extern void SetEngineConsole(PPUEngine engine,ConsoleInstance * ConsoleInst);

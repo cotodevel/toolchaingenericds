@@ -29,6 +29,11 @@ USA
 #include <stdbool.h>
 #include <string.h>
 
+#ifndef MIN
+#define MIN(a, b) (((a) < (b))?(a):(b))
+#define MAX(a, b) (((a) > (b))?(a):(b))
+#endif
+
 
 #define toolchain_generic_version ((char*)"0.1");
 
@@ -82,8 +87,22 @@ extern sint32 glueARMHandlerConfig(VERSION_DESCRIPTOR * versionInst,METHOD_DESCR
 
 //misc
 extern int	split (const sint8 *txt, sint8 delim, sint8 ***tokens);
+
+#ifdef ARM9
 extern int	FS_loadFile(sint8 *filename, sint8 *buf, int size);
 extern int	FS_saveFile(sint8 *filename, sint8 *buf, int size,bool force_file_creation);
+extern int	FS_getFileSize(sint8 *filename);
+
+extern int	setBacklight(int flags);
+
+extern uint16	*g_extRAM;
+int		g_UseExtRAM;
+
+extern int		FS_extram_init();
+extern void	FS_lock();
+extern void	FS_unlock();
+
+#endif
 
 #endif
 

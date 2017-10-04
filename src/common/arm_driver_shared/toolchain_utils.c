@@ -243,8 +243,6 @@ int	FS_loadFile(sint8 *filename, sint8 *buf, int size)
 	return 0;
 }
 
-//
-
 //force_file_creation == true: create a savefile regardless. false otherwise
 int	FS_saveFile(sint8 *filename, sint8 *buf, int size,bool force_file_creation)
 {
@@ -267,6 +265,69 @@ int	FS_saveFile(sint8 *filename, sint8 *buf, int size,bool force_file_creation)
 	fclose_fs(f);	//old: fclose(f);	
 	return 0;
 }
+
+int	FS_getFileSize(sint8 *filename)
+{	
+	FILE * f = fopen_fs(filename, "r");
+	if (f == NULL)
+	{
+		FS_unlock();
+		return -1;
+	}
+	fseek_fs(f, 0, SEEK_END);
+	int size = ftell_fs(f);
+	fseek_fs(f, 0, SEEK_SET);
+	fclose_fs(f);
+	
+	return size;
+}
+
+int	setBacklight(int flags)
+{
+	#ifdef ARM7
+	//todo ARM7
+	#endif
+	
+	#ifdef ARM9
+	//SendArm7Command(0x00000008,(flags << 16),0x00000000,0x00000000);
+	SendMultipleWordACK(0x00000008, (flags << 16), 0, 0);
+	#endif
+	
+	return 0;
+}
+
+
+uint16	*g_extRAM = NULL;
+int		g_UseExtRAM = 0;
+
+int		FS_extram_init()
+{
+	/*
+	g_extRAM = (uint16*) ram_init();
+	if (g_extRAM)
+	{
+		return ram_size();
+	}
+	*/
+	return -1;
+}
+
+void	FS_lock()
+{
+	/*
+	if (g_extRAM)
+		ram_lock();
+	*/
+}
+
+void	FS_unlock()
+{
+	/*
+	if (g_extRAM)
+		ram_unlock();
+	*/
+}
+
 
 #endif
 //

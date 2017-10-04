@@ -61,6 +61,11 @@ void initHardware(void) {
 	
 	setupExceptionHandler();
 	
+	//PPU Engines Default
+	SETDISPCNT_MAIN(0); 
+	SETDISPCNT_SUB(0);
+	REG_BG0CNT = REG_BG1CNT = REG_BG2CNT = REG_BG3CNT = 0;
+	
 	/*
 	#ifndef TIMER_Y
 		TIMERXCNT(3) &= ~TIMER_ENABLE; // not strictly necessary if the timer hasn't been enabled before
