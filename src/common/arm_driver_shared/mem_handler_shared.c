@@ -72,11 +72,11 @@ sint32 get_iwram_size(){
 
 #ifdef ARM9
 uint32 get_lma_libend(){
-	return (uint32)(&__lib__end__);
+	return (uint32)(&__lib__end__);	//linear memory top
 }
 
 uint32 get_lma_ewramend(){
-	return (uint32)(&_ewram_end);
+	return (uint32)(&_ewram_end);	//(ewram end - linear memory top ) = malloc free memory
 }
 
 uint32 get_ewram_start(){
