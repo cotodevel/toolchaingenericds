@@ -179,10 +179,16 @@ extern "C"{
 
 //power
 extern void SWAP_LCDS();
+extern void SET_MAIN_TOP_LCD();
+extern void SET_MAIN_BOTTOM_LCD();
 
 //VRAM
 extern void SETDISPCNT_MAIN(uint32 mode);
 extern void SETDISPCNT_SUB(uint32 mode);
+extern void ENABLE_BG_MAIN(int bg);
+extern void ENABLE_BG_SUB(int bg);
+extern void DISABLE_BG_MAIN(int number);
+extern void DISABLE_BG_SUB(int number);
 extern vramSetup vramSetupGlobal[1];
 extern bool VRAM_SETUP(vramSetup * vramSetupInst);
 

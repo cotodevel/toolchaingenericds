@@ -24,6 +24,14 @@ void SWAP_LCDS(){
 	REG_POWERCNT ^= POWER_SWAP_LCDS;
 }
 
+void SET_MAIN_TOP_LCD() { 
+	REG_POWERCNT |= POWER_SWAP_LCDS; 
+}
+
+void SET_MAIN_BOTTOM_LCD() { 
+	REG_POWERCNT &= ~POWER_SWAP_LCDS; 
+}
+
 //VRAM 
 //TODO: create default setups for every DS BG Video mode. 
 //I just offer a custom setup + Validate custom setup
@@ -83,6 +91,22 @@ void VRAMBLOCK_SETBANK_H(uint8 vrambits)
 void VRAMBLOCK_SETBANK_I(uint8 vrambits)  
 {
 	VRAM_I_CR = vrambits | VRAM_ENABLE;
+}
+
+void ENABLE_BG_MAIN(int bg) {
+	REG_DISPCNT |= (1 << (8 + bg));
+}
+
+void ENABLE_BG_SUB(int bg) {
+	REG_DISPCNT_SUB |= (1 << (8 + bg));
+}
+
+void DISABLE_BG_MAIN(int bg) {
+	REG_DISPCNT &= ~(1 << (8 + bg));
+}
+
+void DISABLE_BG_SUB(int bg) {
+	REG_DISPCNT_SUB &= ~(1 << (8 + bg));
 }
 
 bool VRAM_SETUP(vramSetup * vramSetupInst){
