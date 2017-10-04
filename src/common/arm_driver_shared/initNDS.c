@@ -39,6 +39,8 @@ USA
 
 void initHardware(void) {
 //---------------------------------------------------------------------------------
+	//Reset Both Cores
+	resetMemory_ARMCores();
 	
 	//Set processor specific:
 	
@@ -56,26 +58,13 @@ void initHardware(void) {
 	
 	#ifdef ARM9
 	
-	resetMemory_ARM9();
 	powerON(POWERMAN_ARM9 | POWER_LCD | POWER_2D_A | POWER_2D_B | POWER_SWAP_LCDS);
-	
 	setupExceptionHandler();
 	
 	//PPU Engines Default
 	SETDISPCNT_MAIN(0); 
 	SETDISPCNT_SUB(0);
 	REG_BG0CNT = REG_BG1CNT = REG_BG2CNT = REG_BG3CNT = 0;
-	
-	/*
-	#ifndef TIMER_Y
-		TIMERXCNT(3) &= ~TIMER_ENABLE; // not strictly necessary if the timer hasn't been enabled before
-		TIMERXDATA(3) = 0;
-		TIMERXCNT(3) = TIMER_ENABLE | TIMER_DIV_1;
-	#endif
-	*/
-	
-	
-	
 	
 	//Library init code
 	
@@ -98,8 +87,7 @@ void initHardware(void) {
 	
 }
 
-#ifdef ARM9
-void resetMemory_ARM9()
+void resetMemory_ARMCores()
 {
 	while(REG_VCOUNT!=191){}
  	register int i;
@@ -111,7 +99,8 @@ void resetMemory_ARM9()
 		TIMERXCNT(i) = 0;
 		TIMERXDATA(i) = 0;
 	}
- 
+	
+	#ifdef ARM9
 	VRAM_CR = 0x80808080;
 	VRAM_E_CR = 0x80;
 	VRAM_F_CR = 0x80;
@@ -162,6 +151,6 @@ void resetMemory_ARM9()
 	//0-1   ARM9/ARM7 (0-3 = 32K/0K, 2nd 16K/1st 16K, 1st 16K/2nd 16K, 0K/32K)
 	//set shared ram to ARM7
 	WRAM_CR = 0x03; 
+	#endif
 	
 }
-#endif

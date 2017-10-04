@@ -30,9 +30,7 @@ USA
 extern "C"{
 #endif
 
-#ifdef ARM9
-extern void resetMemory_ARM9();
-#endif
+extern void resetMemory_ARMCores();
 
 //Shared
 extern void initHardware(void);
