@@ -101,8 +101,7 @@ int		g_UseExtRAM;
 extern int		FS_extram_init();
 extern void	FS_lock();
 extern void	FS_unlock();
-
-extern char *str_replace(char *orig, char *rep, char *with);
+extern char * str_replace (char *string, const char *substr, const char *replacement);
 
 #endif
 

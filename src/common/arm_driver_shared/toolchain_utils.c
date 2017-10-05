@@ -192,53 +192,45 @@ sint32 glueARMHandlerConfig(VERSION_DESCRIPTOR * versionInst,METHOD_DESCRIPTOR *
 	return 0;
 }
 
+// fork from https://github.com/irl/la-cucina/blob/master/str_replace.c
+char * str_replace (char *string, const char *substr, const char *replacement)
+{
+	char *tok = NULL;
+	char *newstr = NULL;
+	char *oldstr = NULL;
 
-//thanks to : https://stackoverflow.com/questions/779875/what-is-the-function-to-replace-string-in-c
-// You must free the result if result is non-NULL.
-char *str_replace(char *orig, char *rep, char *with) {
-    char *result; // the return string
-    char *ins;    // the next insert point
-    char *tmp;    // varies
-    int len_rep;  // length of rep (the string to remove)
-    int len_with; // length of with (the string to replace rep with)
-    int len_front; // distance between rep and end of last rep
-    int count;    // number of replacements
+	/* if either substr or replacement is NULL, duplicate string a let caller handle it */
 
-    // sanity checks and initialization
-    if (!orig || !rep)
-        return NULL;
-    len_rep = strlen(rep);
-    if (len_rep == 0)
-        return NULL; // empty rep causes infinite loop during count
-    if (!with)
-        with = "";
-    len_with = strlen(with);
+	if ( substr == NULL || replacement == NULL )
+	{
+		return strdup (string);
+	}
 
-    // count the number of replacements needed
-    ins = orig;
-    for (count = 0; tmp = strstr(ins, rep); ++count) {
-        ins = tmp + len_rep;
-    }
+	newstr = strdup (string);
 
-    tmp = result = malloc(strlen(orig) + (len_with - len_rep) * count + 1);
+	while ( ( tok = strstr( newstr, substr ) ) )
+	{
+		oldstr = newstr;
+		newstr = malloc ( strlen ( oldstr ) - strlen ( substr ) + strlen ( replacement ) + 1 );
 
-    if (!result)
-        return NULL;
+		/* If failed to alloc mem, free old string and return NULL */
+		if ( newstr == NULL )
+		{
+			free (oldstr);
+			return NULL;
+		}
 
-    // first time through the loop, all the variable are set correctly
-    // from here on,
-    //    tmp points to the end of the result string
-    //    ins points to the next occurrence of rep in orig
-    //    orig points to the remainder of orig after "end of rep"
-    while (count--) {
-        ins = strstr(orig, rep);
-        len_front = ins - orig;
-        tmp = strncpy(tmp, orig, len_front) + len_front;
-        tmp = strcpy(tmp, with) + len_with;
-        orig += len_front + len_rep; // move to next "end of rep"
-    }
-    strcpy(tmp, orig);
-    return result;
+		memcpy ( newstr, oldstr, tok - oldstr );
+		memcpy ( newstr + (tok - oldstr), replacement, strlen ( replacement ) );
+		memcpy ( newstr + (tok - oldstr) + strlen( replacement ), tok + strlen ( substr ), strlen ( oldstr ) - strlen ( substr ) - ( tok - oldstr ) );
+		memset ( newstr + strlen ( oldstr ) - strlen ( substr ) + strlen ( replacement ) , 0, 1 );
+
+		free (oldstr);
+	}
+
+	free (string);
+
+	return newstr;
 }
 
 int split (const sint8 *txt, sint8 delim, sint8 ***tokens)
