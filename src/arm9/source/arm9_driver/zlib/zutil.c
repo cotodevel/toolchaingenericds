@@ -290,7 +290,7 @@ void ZLIB_INTERNAL zcfree (voidpf opaque, voidpf ptr)
 
 
 #ifndef MY_ZCALLOC /* Any system without a special alloc function */
-
+//Coto: this is the malloc / free methods used in ToolchainGenericDS by default.
 #ifndef STDC
 extern voidp  malloc OF((uInt size));
 extern voidp  calloc OF((uInt items, uInt size));
