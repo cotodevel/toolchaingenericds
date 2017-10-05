@@ -137,6 +137,9 @@ extern int fprintf_fs (FILE *stream, const char *format, ...);
 extern int fgetc_fs(FILE *fp);
 extern char *fgets_fs(char *s, int n, FILE * f);
 
+extern int feof_fs(FILE * stream);
+extern int ferror_fs(FILE * stream);
+
 #ifdef __cplusplus
 }
 #endif

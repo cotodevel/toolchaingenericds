@@ -225,6 +225,7 @@ _off_t _lseek_r(struct _reent *ptr,int fd, _off_t offset, int whence )		//(FileD
 	return fatfs_lseek(fd, offset, whence);
 }
 
+//this copies stat from internal struct fd to external code
 int _fstat_r ( struct _reent *_r, int fd, struct stat *buf )	//(FileDescriptor :struct fd index)
 {
     int ret;
@@ -499,4 +500,31 @@ char *fgets_fs(char *s, int n, FILE * f)
 	}
     return s;
 }
+
+int feof_fs(FILE * stream)
+{
+	int offset = -1;
+	sint32 fd = fileno(stream);
+	struct fd * fdinst = fd_struct_get(fd);
+	offset = ftell_fs(stream);
+	if(fdinst->stat.st_size <= offset){
+		stream->_flags &= ~_EOF;
+	}
+	else{
+		stream->_flags |= _EOF;
+		offset = 0;
+	}
+	
+	return offset;
+}
+
+//stub
+int ferror_fs(FILE * stream){
+	if(!stream){
+		return 1;
+	}
+	
+	return 0;
+}
+
 #endif

@@ -144,7 +144,6 @@ extern DWORD clust2sect (  /* !=0:Sector number, 0:Failed (invalid cluster#) */
 );
 
 extern sint32 getStructFDFirstSector(struct fd *f);
-
 extern sint32 getDiskClusterSize();
 extern sint32 getDiskSectorSize();
 
