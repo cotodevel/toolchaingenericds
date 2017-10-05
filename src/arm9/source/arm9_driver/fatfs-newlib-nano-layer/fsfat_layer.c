@@ -338,6 +338,9 @@ int fatfs_close (int structFDIndex)
 		(result == FR_DISK_ERR)		//create file (fwrite + w): file didn't exist before open(); thus file descriptor didn't have any data of sectors to compare with. Exception expected
 		)
         {
+			//struct stat buf;	//flush stat
+			memset (&pfd->stat, 0, sizeof(pfd->stat));
+			
 			fatfs_free(pfd);
 			FileHandleFree(pfd->cur_entry.d_ino);	//deallocates a file descriptor index that is struct fd
             ret = 0;
