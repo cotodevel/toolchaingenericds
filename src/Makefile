@@ -47,7 +47,11 @@ export TARGET_LIBRARY_NAME_7 = toolchaingen7
 export TARGET_LIBRARY_NAME_9 = toolchaingen9
 export TOOLCHAIN_LIBRARY_SRCPATH = $(GCC_BUILD_ENV)arm-none-eabi
 export LIBPATH	= 	$(TOOLCHAIN_LIBRARY_SRCPATH)/lib/
-export DIRLIBS_SHARED =	-I	"$(TOOLCHAIN_LIBRARY_SRCPATH)/include"
+export DIRLIBS_SHARED_PROHIBITED =	$(TOOLCHAIN_LIBRARY_SRCPATH)/include/
+export DIRLIBS_SHARED_ALLOWED =	$(LIBPATH)newlib-nano-2.1-nds/
+export DIRLIBS_SHARED_ALLOWED_HEADERS_7 =	-I	$(DIRLIBS_SHARED_ALLOWED)/include 	-I	$(DIRLIBS_SHARED_ALLOWED)/newlib-nds-headers	-I	$(DIRLIBS_SHARED_ALLOWED)/newlib-nds-headers/machine	-I	$(DIRLIBS_SHARED_ALLOWED)/newlib-nds-headers/sys
+export DIRLIBS_SHARED_ALLOWED_HEADERS_9 =	-I	$(DIRLIBS_SHARED_ALLOWED)/include 	-I	$(DIRLIBS_SHARED_ALLOWED)/newlib-nds-headers	-I	$(DIRLIBS_SHARED_ALLOWED)/newlib-nds-headers/machine	-I	$(DIRLIBS_SHARED_ALLOWED)/newlib-nds-headers/sys
+
 export TARGET_LIBRARY_PATH =	$(TOOLCHAIN_LIBRARY_SRCPATH)/lib/toolchain_generic
 export TARGET_LIBRARY_LINKER_SRC = /linkers
 export TARGET_LIBRARY_LINKER_DEST = $(TARGET_LIBRARY_PATH)

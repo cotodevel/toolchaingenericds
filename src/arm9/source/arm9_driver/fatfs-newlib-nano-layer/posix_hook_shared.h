@@ -33,6 +33,7 @@ USA
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <_ansi.h>
 #include <reent.h>
 #include <sys/lock.h>
