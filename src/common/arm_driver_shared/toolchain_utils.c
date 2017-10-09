@@ -336,20 +336,6 @@ int	setBacklight(int flags)
 }
 
 
-uint16	*g_extRAM = NULL;
-int		g_UseExtRAM = 0;
-
-int		FS_extram_init()
-{
-	/*
-	g_extRAM = (uint16*) ram_init();
-	if (g_extRAM)
-	{
-		return ram_size();
-	}
-	*/
-	return -1;
-}
 
 void	FS_lock()
 {

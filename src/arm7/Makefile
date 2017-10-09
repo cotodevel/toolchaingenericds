@@ -21,8 +21,8 @@
 RELATIVE_PATH =	
 
 #Prepare ARM7 dirs
-DIRLIBS_HDR = $(foreach dirres,$(DIRS_ARM7_HEADER),-I "$(CURDIR)/$(RELATIVE_PATH)/$(dirres)/" )	$(DIRLIBS_SHARED_ALLOWED_HEADERS_7)
-DIRLIBS_SRC = $(foreach dirres,$(DIRS_ARM7_SRC),-I "$(CURDIR)/$(RELATIVE_PATH)/$(dirres)/" )
+DIRLIBS_HDR = $(foreach dirres,$(DIRS_ARM7_HEADER),-I "$(CURDIR)/$(RELATIVE_PATH)/$(dirres)/" )	
+DIRLIBS_SRC = $(foreach dirres,$(DIRS_ARM7_SRC),-I "$(CURDIR)/$(RELATIVE_PATH)/$(dirres)/" )	
 
 dir_arm7_src_h=  $(foreach dir,$(DIRS_ARM7_HEADER), $(wildcard $(CURDIR)/$(RELATIVE_PATH)/$(dir)*.h))
 
@@ -36,16 +36,16 @@ d_objs_arm7:=	${file_arm7_src_c:.c=.d}	${file_arm7_src_s:.s=.d}	${file_arm7_src_
 
 #ARM7 specific definitions.
 MAPFILE = $(DIR_ARM7).map
-CPU_SHARED_FLAGS	=	-march=armv4t	-mthumb-interwork
-AS_ASFLAGS		=	$(CPU_SHARED_FLAGS)	-defsym debug=0	-defsym	readvertoolchain='$(TOOLCHAIN_VERSION)'
-CC_ASFLAGS		=	$(CPU_SHARED_FLAGS)	-marm	-Wall	-O2	-DASM_OPCODES -DARM7	-fomit-frame-pointer	-ffast-math	-Ddebug=0	-Dreadvertoolchain='$(TOOLCHAIN_VERSION)'
+SHARED_FLAGS	=	-mcpu=arm7tdmi
+AS_ASFLAGS		=	$(SHARED_FLAGS)	-defsym debug=0	-defsym	readvertoolchain='$(TOOLCHAIN_VERSION)'
+CC_ASFLAGS		=	$(SHARED_FLAGS)	-Wall	-O2	-DASM_OPCODES -DARM7 -mtune=arm7tdmi	-marm -fomit-frame-pointer	-ffast-math	-Ddebug=0	-Dreadvertoolchain='$(TOOLCHAIN_VERSION)'
 BUILD			= 	$(BUILD_ARM7)
 DIR_SRC			= 	$(DIRS_ARM7_SRC)
 
 #--gc-sections: allows relocatable sections linked (already) to be included, otherwise unused sections are discarded.
 #check arm9.map "Discarded input sections" to see --gc-sections in action.
-LDFLAGS	=	-specs=$(LIBPATH)nds_arm7_ld.specs	-Wl,--gc-sections,-Map,$(MAPFILE)	-nostartfiles
-LIBRARIES =	-lcnanosadff
+LDFLAGS	=	-specs=$(LIBPATH)nds_arm7_ld.specs	-Wl,--no-gc-sections,-Map,$(MAPFILE)	-nostartfiles
+LIBRARIES =	-lc_nanodfdagdsagg
 
 
 ################################################################################################
@@ -67,7 +67,7 @@ $(OBJDIR):
 #Do C Compile now!
 $(OBJDIR)/%.o : %.c
 	-@echo 'C Compile start: $@'
-	$(CC)	$(CC_ASFLAGS)	$(DIRLIBS_HDR)	$(DIRLIBS_SRC)	-nostdinc $(DIRLIBS_SHARED_PROHIBITED)	-o $@ -c $<
+	$(CC)	$(CC_ASFLAGS)	$(DIRLIBS_HDR)	$(DIRLIBS_SRC)	-nostdinc -I	$(DIRLIBS_PROHIBITED)	-o $@ -c $<
 	-@echo 'C Compile End: $@'
 
 #Coto: Special "exception" rule. Fixes tricky projects such as SnemulDS's opcodes2.s where GCC AS is used, while compatibility with .S is required for newer projects.
@@ -102,7 +102,3 @@ $(TARGET_LIBRARY_FILE_7): $(OBJPROG)
 clean:
 	-@echo 'cleanup $(TARGET_LIBRARY_FILE_7)'
 	-@rm -fr $(OBJDIR)	$(TARGET_LIBRARY_FILE_7)	$(MAPFILE)	$(TARGET_LIBRARY_PATH)/$(TARGET_LIBRARY_FILE_7)
-	
-debug:
-	-@echo 'debug $(DIRLIBS_SHARED_ALLOWED_HEADERS_7)'
-	

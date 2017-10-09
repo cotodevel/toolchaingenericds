@@ -96,7 +96,6 @@ extern int	FS_getFileSize(sint8 *filename);
 extern int	setBacklight(int flags);
 
 extern uint16	*g_extRAM;
-int		g_UseExtRAM;
 
 extern int		FS_extram_init();
 extern void	FS_lock();

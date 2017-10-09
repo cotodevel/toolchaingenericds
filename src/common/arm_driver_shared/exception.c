@@ -57,8 +57,7 @@ void setupExceptionHandler(){
 
 
 
-
-
+uint32 exceptionArmRegs[0x20];
 
 //crt0 wrong exit
 //__attribute__((section(".itcm"))) //cant be at ITCM
@@ -100,20 +99,19 @@ void exception_handler(uint32 arg)
 	else if(arg == dataabort_9){	
 		printf("ARM9: DATA ABORT. ");
 	
-		uint32 * debugVector = (uint32 *)0x023EFFFC;
-		uint32 pc_abort = (uint32)debugVector[0xd];
+		uint32 * debugVector = (uint32 *)&exceptionArmRegs[0];
+		uint32 pc_abort = (uint32)exceptionArmRegs[0xf];
 		
 		if((debugVector[0xe] & 0x1f) == 0x17){
 			pc_abort = pc_abort - 8;
 		}
 		
-		
 		printf("R0[%x] R1[%X] R2[%X] \n",debugVector[0],debugVector[1],debugVector[2]);
 		printf("R3[%x] R4[%X] R5[%X] \n",debugVector[3],debugVector[4],debugVector[5]);
 		printf("R6[%x] R7[%X] R8[%X] \n",debugVector[6],debugVector[7],debugVector[8]);
 		printf("R9[%x] R10[%X] R11[%X] \n",debugVector[9],debugVector[0xa],debugVector[0xb]);
-		printf("R12[%x] R13[%X] R14[%X]  \n",debugVector[0xc],debugVector[0x10],debugVector[0xd]);
-		printf("R15[%x] SPSR[%x] CPSR[%X]  \n",pc_abort,debugVector[0xe],debugVector[0xf]);
+		printf("R12[%x] R13[%X] R14[%X]  \n",debugVector[0xc],debugVector[0xd],debugVector[0xe]);
+		printf("R15[%x] SPSR[%x] CPSR[%X]  \n",pc_abort,debugVector[17],debugVector[16]);
 		
 		
 		//red

@@ -114,45 +114,9 @@ bxeq	lr
 mov	r0, #0
 str	r0, [r12, #0x208]	@REG_IME = 0;
 
-@spsr
-mrs	r0, spsr
-
-@sp_irq
-mov r3,sp
-
-@enter UND mode
-mrs	r2, cpsr
-mov	r4, r2
-bic	r4, r4, #0xdf		
-orr	r4, r4, #0xdb		@ /  --> Misuse UND mode/stack to handle IRQ exception, irqs disabled.
-msr	cpsr,r4
-
-@psr & 0x1f stack
-mov r5,sp
-
-#ifdef ARM7
-ldr sp,=sp_IRQCHANDLER
-#endif
-
-#ifdef ARM9
-ldr sp,=sp_IRQCHANDLER
-#endif
-
-stmfd	sp!, {r0,r1,r2,r3,r5,r12,lr}	@ {spsr, ime, cpsr, sp_irq, sp_psr, REG_BASE , lr_irq}
+push {r0,r1,r12,lr}
 bl NDS_IRQHandler
-ldmfd   sp!, {r0,r1,r2,r3,r5,r12,lr}	@ {spsr, ime, cpsr, sp_irq, sp_psr, REG_BASE , lr_irq}
-
-@restore sp_psr
-mov sp,r5
-
-@restore cpsr
-msr cpsr,r2
-
-@restore sp_irq
-mov sp,r3
-
-@restore spsr
-msr spsr,r0
+pop {r0,r1,r12,lr}
 
 str r1,[r12,#0x208]	@REG_IME = 1;
 

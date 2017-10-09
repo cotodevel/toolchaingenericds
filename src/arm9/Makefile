@@ -21,8 +21,8 @@
 RELATIVE_PATH =	
 
 #Prepare ARM9 dirs
-DIRLIBS_HDR = $(foreach dirres,$(DIRS_ARM9_HEADER),-I "$(CURDIR)/$(RELATIVE_PATH)/$(dirres)/" )	$(DIRLIBS_SHARED_ALLOWED_HEADERS_9)
-DIRLIBS_SRC = $(foreach dirres,$(DIRS_ARM9_SRC),-I "$(CURDIR)/$(RELATIVE_PATH)/$(dirres)/" )
+DIRLIBS_HDR = $(foreach dirres,$(DIRS_ARM9_HEADER),-I "$(CURDIR)/$(RELATIVE_PATH)/$(dirres)/" )	$(DIRLIBS_SHARED)
+DIRLIBS_SRC = $(foreach dirres,$(DIRS_ARM9_SRC),-I "$(CURDIR)/$(RELATIVE_PATH)/$(dirres)/" )	$(DIRLIBS_SHARED)
 
 #deprecate...
 dir_arm9_src_h=  $(foreach dir,$(DIRS_ARM9_HEADER), $(wildcard $(CURDIR)/$(RELATIVE_PATH)/$(dir)*.h))
@@ -40,16 +40,16 @@ d_objs_arm9:=	${file_arm9_src_c:.c=.d}	${file_arm9_src_s:.s=.d}	${file_arm9_src_
 
 #ARM9 specific definitions.
 MAPFILE = $(DIR_ARM9).map
-CPU_SHARED_FLAGS	=	-march=armv5te	-mthumb-interwork
-AS_ASFLAGS		=	$(CPU_SHARED_FLAGS)	-defsym debug=0	-defsym	readvertoolchain='$(TOOLCHAIN_VERSION)'	-defsym ASM_OPCODES='1'	-defsym	ARM9='1'
-CC_ASFLAGS		=	$(CPU_SHARED_FLAGS)	-marm	-Wall	-DNDS -DASM_OPCODES -DARM9	-O2 -ffast-math -fomit-frame-pointer	-Ddebug=0	-Dreadvertoolchain='$(TOOLCHAIN_VERSION)'
+SHARED_FLAGS	=	-mcpu=arm946e-s	-mthumb-interwork
+AS_ASFLAGS		=	$(SHARED_FLAGS)	-defsym debug=0	-defsym	readvertoolchain='$(TOOLCHAIN_VERSION)'	-defsym ASM_OPCODES='1'	-defsym	ARM9='1'
+CC_ASFLAGS		=	$(SHARED_FLAGS)	-Wall	-DNDS -DASM_OPCODES -DARM9	-marm	-mtune=arm946e-s	-O2 -ffast-math -fomit-frame-pointer	-Ddebug=0	-Dreadvertoolchain='$(TOOLCHAIN_VERSION)'
 BUILD			= 	$(BUILD_ARM9)
 DIR_SRC			=	$(DIRS_ARM9_SRC)
 
 #--gc-sections: allows relocatable sections linked (already) to be included, otherwise unused sections are discarded.
 #check arm9.map "Discarded input sections" to see --gc-sections in action.
-LDFLAGS	=	-specs=$(LIBPATH)nds_arm9_ld.specs	-Wl,--gc-sections,-Map,$(MAPFILE)	-nostartfiles
-LIBRARIES =	-lcnano9qefqewf
+LDFLAGS	=	-specs=$(LIBPATH)nds_arm9_ld.specs	-Wl,,--no-gc-sections,-Map,$(MAPFILE)	-nostartfiles
+LIBRARIES =	-lc_nanoadsgdsag
 
 
 ################################################################################################
@@ -71,7 +71,7 @@ $(OBJDIR):
 #Do C Compile now!
 $(OBJDIR)/%.o : %.c
 	-@echo 'C Compile start: $@'
-	$(CC)	$(CC_ASFLAGS)	$(DIRLIBS_HDR)	$(DIRLIBS_SRC)	-nostdinc $(DIRLIBS_SHARED_PROHIBITED)	-o $@ -c $<
+	$(CC)	$(CC_ASFLAGS)	$(DIRLIBS_HDR)	$(DIRLIBS_SRC)	-o $@ -c $<
 	-@echo 'C Compile End: $@'
 
 #Coto: Special "exception" rule. Fixes tricky projects such as SnemulDS's opcodes2.s where GCC AS is used, while compatibility with .S is required for newer projects.

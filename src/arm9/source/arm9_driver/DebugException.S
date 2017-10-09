@@ -34,30 +34,42 @@
 DebugException:
 	
 	@exception stack
-	ldr sp,=0x23EFFFC
-	stmia sp!, {r0-r12,lr}	@0x0 -- 0xd
+	ldr sp,=exceptionArmRegs
+	stmia sp, {r0-r12}	@r0 -- r12 
 	
-	// disable MPU to prevent endless MPU interrupts
+	@disable MPU
 	mrc	p15,0,r0,c1,c0,0
 	bic	r0,r0,#1
 	mcr	p15,0,r0,c1,c0,0
 	
-	mov r1,sp
-	
-	mrs r2,cpsr
+	mov r8,sp
+	mrs r10,cpsr
 	
 	@save processor regs according to spsr
-	mrs	r0, spsr
-	msr cpsr,r0
+	mrs	r9, spsr
+	msr cpsr,r9
 	
-	stmia r1!, {r0,r2,sp}	@spsr (0xe), cpsr (0xf), sp_psr (0x1?)
+	str r0, [r8, #(4*0)]
+	str sp, [r8, #(4*13)]
+	str lr, [r8, #(4*14)]
 	
-	msr	cpsr,r2
+	mrs r0,cpsr
+	mrs r1,spsr
+	
+	str r0, [r8, #(4*16)]	@cpsr
+	str r1, [r8, #(4*17)]	@spsr
+	
+	msr	cpsr,r10
+	
+	@get PC from source abort
+	ldr r1, =(0x02FFFD98)
+	ldr	r2,[r1]
+	str r2, [sp, #(4*15)]
 	
 	@new stack
 	ldr	r13,=sp_ABT
 	push {r0-r12,lr}
-	ldr	r12,=exception_data_abort	@spsr : r0-r12,lr,sp at 0x23EFFFC
+	ldr	r12,=exception_data_abort
 	blx	r12
 	pop {r0-r12,lr}
 	

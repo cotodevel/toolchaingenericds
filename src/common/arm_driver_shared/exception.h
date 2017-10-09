@@ -48,7 +48,7 @@ extern "C" {
 
 extern void setupExceptionHandler();
 
-
+extern uint32 exceptionArmRegs[0x20];
 extern void exception_sysexit();
 extern void exception_data_abort();
 

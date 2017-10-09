@@ -44,20 +44,17 @@ void initHardware(void) {
 	
 	//Set processor specific:
 	
-	#ifdef ARM7
-	
 	//Init Shared Address Region
 	memset((uint32*)MyIPC, 0, sizeof(MyIPC));
 	setFWSettingsstatus(false);
 	
 	
+	#ifdef ARM7
 	MyIPC->arm7startaddress = get_iwram_start();
 	MyIPC->arm7endaddress = (uint32)(get_iwram_start() + get_iwram_size());
-	
 	#endif
 	
 	#ifdef ARM9
-	
 	powerON(POWERMAN_ARM9 | POWER_LCD | POWER_2D_A | POWER_2D_B | POWER_SWAP_LCDS);
 	setupExceptionHandler();
 	
@@ -89,7 +86,7 @@ void initHardware(void) {
 
 void resetMemory_ARMCores()
 {
-	while(REG_VCOUNT!=191){}
+	//while(REG_VCOUNT!=191){}
  	register int i;
     //clear out ARM9 DMA channels
 	for (i=0; i<4; i++) {
