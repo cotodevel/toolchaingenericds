@@ -38,11 +38,11 @@ file_arm9_src_SUPP=  $(foreach dir,$(DIRS_ARM9_SRC), $(subst $(CURDIR)/$(RELATIV
 objs_arm9:=	${file_arm9_src_c:.c=.o}	${file_arm9_src_s:.s=.o}	${file_arm9_src_SUPP:.S=.o}
 d_objs_arm9:=	${file_arm9_src_c:.c=.d}	${file_arm9_src_s:.s=.d}	${file_arm9_src_SUPP:.S=.d}
 
-#ARM9 specific definitions.
+#ARM9 specific definitions. -fno-common so we force initialized data to rodata
 MAPFILE = $(DIR_ARM9).map
 SHARED_FLAGS	=	-mcpu=arm946e-s	-mthumb-interwork
 AS_ASFLAGS		=	$(SHARED_FLAGS)	-defsym debug=0	-defsym	readvertoolchain='$(TOOLCHAIN_VERSION)'	-defsym ASM_OPCODES='1'	-defsym	ARM9='1'
-CC_ASFLAGS		=	$(SHARED_FLAGS)	-Wall	-DNDS -DASM_OPCODES -DARM9	-marm	-mtune=arm946e-s	-O2 -ffast-math -fomit-frame-pointer	-Ddebug=0	-Dreadvertoolchain='$(TOOLCHAIN_VERSION)'
+CC_ASFLAGS		=	$(SHARED_FLAGS)	-Wall	-DNDS -DASM_OPCODES -DARM9	-fno-common	-mtune=arm946e-s	-marm	-O2 -ffast-math -fomit-frame-pointer	-Ddebug=0	-Dreadvertoolchain='$(TOOLCHAIN_VERSION)'
 BUILD			= 	$(BUILD_ARM9)
 DIR_SRC			=	$(DIRS_ARM9_SRC)
 
