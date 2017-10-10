@@ -23,6 +23,9 @@ USA
 #ifndef __posix_hook_shared_h__
 #define __posix_hook_shared_h__
 
+#include <ctype.h>
+#include <stdlib.h>
+
 #include <sys/reent.h>
 #include <sys/select.h>
 #include <sys/types.h>
@@ -83,21 +86,30 @@ struct devoptab_t{
 #ifdef __cplusplus
 extern "C"{
 #endif
-//ok
+
+//used these
 extern void * _sbrk (int size);
-extern off_t _lseek(int fd, off_t pos, int whence);
+//extern void *sbrk(int nbytes);	//todo: test if malloc works @ sbrk_r
+//but after implementing fs
+
+extern int open_fs(const sint8 *file, int flags, int mode );
+
+
+extern int fork();
+extern int close(int fd);
+extern int isatty(int file);
+extern int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list list);
+extern int vfiprintf(FILE *fp,const sint8 *fmt, va_list list);
+extern _off_t _lseek_r(struct _reent *ptr,int fd, _off_t offset, int whence );
+
+
 extern int _gettimeofday(struct timeval *ptimeval,void *ptimezone);
-extern int _isatty(int fd);
-
-//overriden re entrant posix hooks
-
-extern int _fork_r ( struct _reent *ptr );
+extern int _end(int file);
 
 extern _ssize_t _read_r ( struct _reent *ptr, int fd, void *buf, size_t cnt );
 extern _ssize_t _write_r ( struct _reent *ptr, int fd, const void *buf, size_t cnt );
 extern int _open_r ( struct _reent *ptr, const sint8 *file, int flags, int mode );
 extern int _close_r ( struct _reent *ptr, int fd );
-
 
 extern int _vfprintf_r(struct _reent *reent, FILE *fp,const sint8 *fmt, va_list list);
 extern int _vfiprintf_r(struct _reent *reent, FILE *fp,const sint8 *fmt, va_list list);
@@ -121,7 +133,6 @@ extern DIR *fdopendir(int fd);
 extern void seekdir(DIR *dirp, long loc);
 
 
-extern _off_t _lseek_r(struct _reent *ptr,int fd, _off_t offset, int whence );
 extern int _fstat_r ( struct _reent *_r, int fd, struct stat *buf );
 
 //posix file descriptor replacement
@@ -140,6 +151,8 @@ extern char *fgets_fs(char *s, int n, FILE * f);
 
 extern int feof_fs(FILE * stream);
 extern int ferror_fs(FILE * stream);
+
+extern FILE * fdopen_fs(int fd,const char *mode);
 
 #ifdef __cplusplus
 }

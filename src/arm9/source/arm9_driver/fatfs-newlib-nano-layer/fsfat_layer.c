@@ -1008,7 +1008,13 @@ int fatfs_readdir_r(
 				topsize = (sint32)(NAME_MAX+1);
 			}
 			strncpy((sint8*)entry->d_name, (sint8*)fno.fname, topsize);
+			/*
+			printf("filesize detected:%d",topsize);
+			printf("sizeof:entry->d_name:%d",sizeof(entry->d_name));
+			printf("sizeof:entry->d_name:%s",(char*)entry->d_name);
 			
+			while(1);
+			*/	//parsed correctly
             *result = entry;
         }
     }

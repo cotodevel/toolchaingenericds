@@ -26,6 +26,7 @@ SOFTWARE.
 #ifndef NETINET_IN_H
 #define NETINET_IN_H
 
+#include <sys/time.h>
 #include "socket.h"
 
 #define INADDR_ANY			0x00000000

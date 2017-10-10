@@ -150,7 +150,6 @@ _ssize_t read_r_stdin ( struct _reent *r, int fd, sint8 *ptr, int len ){
 	return len;
 }
 
-//stdout: printf output is messed up for framebuffer rendering, so instead just override int _vfprintf_r for proper printf-ability
 int open_r_stdout ( struct _reent *r, const sint8 *path, int flags, int mode ){
 	return 0;
 }

@@ -21,11 +21,10 @@
 RELATIVE_PATH =	
 
 #Prepare ARM7 dirs
-DIRLIBS_HDR = $(foreach dirres,$(DIRS_ARM7_HEADER),-I "$(CURDIR)/$(RELATIVE_PATH)/$(dirres)/" )	
+DIRLIBS_HDR = $(foreach dirres,$(DIRS_ARM7_HEADER),-I "$(CURDIR)/$(RELATIVE_PATH)/$(dirres)/" )	$(DIRLIBS_ALLOWED)
 DIRLIBS_SRC = $(foreach dirres,$(DIRS_ARM7_SRC),-I "$(CURDIR)/$(RELATIVE_PATH)/$(dirres)/" )	
 
 dir_arm7_src_h=  $(foreach dir,$(DIRS_ARM7_HEADER), $(wildcard $(CURDIR)/$(RELATIVE_PATH)/$(dir)*.h))
-
 file_arm7_src_c=  $(foreach dir,$(DIRS_ARM7_SRC), $(subst $(CURDIR)/$(RELATIVE_PATH)/$(dir)/,,$(wildcard $(CURDIR)/$(RELATIVE_PATH)/$(dir)/*.c))  )
 file_arm7_src_s=  $(foreach dir,$(DIRS_ARM7_SRC), $(subst $(CURDIR)/$(RELATIVE_PATH)/$(dir)/,,$(wildcard $(CURDIR)/$(RELATIVE_PATH)/$(dir)/*.s))  )
 file_arm7_src_SUPP=  $(foreach dir,$(DIRS_ARM7_SRC), $(subst $(CURDIR)/$(RELATIVE_PATH)/$(dir)/,,$(wildcard $(CURDIR)/$(RELATIVE_PATH)/$(dir)/*.S))  )
@@ -45,7 +44,7 @@ DIR_SRC			= 	$(DIRS_ARM7_SRC)
 #--gc-sections: allows relocatable sections linked (already) to be included, otherwise unused sections are discarded.
 #check arm9.map "Discarded input sections" to see --gc-sections in action.
 LDFLAGS	=	-specs=$(LIBPATH)nds_arm7_ld.specs	-Wl,--no-gc-sections,-Map,$(MAPFILE)	-nostartfiles
-LIBRARIES =	-lc_nanodfdagdsagg
+LIBRARIES =
 
 
 ################################################################################################
@@ -67,7 +66,7 @@ $(OBJDIR):
 #Do C Compile now!
 $(OBJDIR)/%.o : %.c
 	-@echo 'C Compile start: $@'
-	$(CC)	$(CC_ASFLAGS)	$(DIRLIBS_HDR)	$(DIRLIBS_SRC)	-nostdinc -I	$(DIRLIBS_PROHIBITED)	-o $@ -c $<
+	$(CC)	$(CC_ASFLAGS)	$(DIRLIBS_HDR)	$(DIRLIBS_SRC)	-nostdinc	$(DIRLIBS_PROHIBITED)	-o $@ -c $<
 	-@echo 'C Compile End: $@'
 
 #Coto: Special "exception" rule. Fixes tricky projects such as SnemulDS's opcodes2.s where GCC AS is used, while compatibility with .S is required for newer projects.

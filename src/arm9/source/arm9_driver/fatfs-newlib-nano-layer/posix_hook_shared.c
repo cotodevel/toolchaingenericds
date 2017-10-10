@@ -41,6 +41,10 @@ USA
 #include <ctype.h>
 #include <stdlib.h>
 
+#include <_ansi.h>
+#include <reent.h>
+
+
 //Notes:
 //	- 	Before you get confused, the layer order is: POSIX file operations-> newlib POSIX fd assign-> devoptab filesystem -> fsfat_layer (n file descriptors for each file op) -> fsfat driver -> dldi.
 //		So we can have a portable/compatible filesystem with multiple file operations.
@@ -49,17 +53,15 @@ USA
 
 //required:
 
-
-
-int _fork_r ( struct _reent *ptr )
+int fork()
 {
-   /* return "not supported" */
-    ptr->_errno = ENOTSUP;
-  return -1;
+	return -1;
 }
 
 
-void *_sbrk_r (struct _reent *ptr, int nbytes){
+//void *sbrk(int nbytes)
+void * _sbrk (int nbytes)
+{
 	//Coto: own implementation, libc's own malloc implementation does not like it.
 	//but helps as standalone sbrk implementation except it will always alloc in linear way and not malloc/free (requires keeping track of pointers)
 
@@ -106,67 +108,51 @@ void *_sbrk_r (struct _reent *ptr, int nbytes){
 }
 
 //read (get struct FD index from FILE * handle)
-_ssize_t _read_r ( struct _reent *ptr, int fd, void *buf, size_t cnt ) 
-{
+
+
+
+//ok _read_r reentrant called
+_ssize_t _read_r ( struct _reent *ptr, int fd, void *buf, size_t cnt ){
+	
 	//Conversion here 
 	struct fd * fdinst = fd_struct_get(fd);
 	
 	if( (fdinst != NULL) && ((sint32)fdinst->fd_posix != (sint32)structfd_posixFileDescrdefault)  ) {
-		return (_ssize_t)devoptab_list[fdinst->fd_posix]->read_r( ptr, fdinst->cur_entry.d_ino, buf, cnt );
+		return (_ssize_t)devoptab_list[fdinst->fd_posix]->read_r( NULL, fdinst->cur_entry.d_ino, buf, cnt );
+	}
+	
+	return -1;
+}
+//ok _write_r reentrant called
+//write (get struct FD index from FILE * handle)
+_ssize_t _write_r ( struct _reent *ptr, int fd, const void *buf, size_t cnt ){
+	
+	//Conversion here 
+	struct fd * fdinst = fd_struct_get(fd);
+	
+	if( (fdinst != NULL) && ((sint32)fdinst->fd_posix != (sint32)structfd_posixFileDescrdefault)  ) {
+		return (_ssize_t)devoptab_list[fdinst->fd_posix]->write_r( NULL, fdinst->cur_entry.d_ino, buf, cnt );
 	}
 	
 	return -1;
 }
 
-//write (get struct FD index from FILE * handle)
-_ssize_t _write_r ( struct _reent *ptr, int fd, const void *buf, size_t cnt )	
-{
-	//Conversion here 
-	struct fd * fdinst = fd_struct_get(fd);
-	
-	if( (fdinst != NULL) && ((sint32)fdinst->fd_posix != (sint32)structfd_posixFileDescrdefault)  ) {
-		return (_ssize_t)devoptab_list[fdinst->fd_posix]->write_r( ptr, fdinst->cur_entry.d_ino, buf, cnt );
-	}
-	
-	return -1;
+int _open_r ( struct _reent *ptr, const sint8 *file, int flags, int mode ){	
+	return open_fs(file, flags, mode );	//ok reentrant open(); calls this
 }
+
 
 //POSIX Logic: hook devoptab descriptor into devoptab functions
 
 //allocates a new struct fd index with either DIR or FIL structure allocated
-int _open_r ( struct _reent *ptr, const sint8 *file, int flags, int mode )
-{
-	sint8 **tokens;
-	int count = 0, i = 0;
-	volatile sint8 str[256];	//file safe buf
-	memcpy ( (uint8*)str, (uint8*)file, 256);
-
-	count = split ((const sint8*)str, '/', &tokens);	
-	volatile sint8 token_str[64];
-	
-	sint32 countPosixFDescOpen = open_posix_filedescriptor_devices() + 1;
-	/* search for "file:/" in "file:/folder1/folder.../file.test" in dotab_list[].name */
-	for (i = 0; i < countPosixFDescOpen ; i++){
-		if(count > 0){
-			sprintf((sint8*)token_str,"%s/",tokens[0]);	//format properly
-			if (strcmp((sint8*)token_str,devoptab_list[i]->name) == 0)
-			{
-				return devoptab_list[i]->open_r( ptr, file, flags, mode ); //returns / allocates a new struct fd index with either DIR or FIL structure allocated
-			}
-		}
-	}
-
-	ptr->_errno = ENODEV;
-	return -1;
-}
-
+//not overriden, we force the call from fd_close
 int _close_r ( struct _reent *ptr, int fd )
 {
 	//Conversion here 
 	struct fd * fdinst = fd_struct_get(fd);
 	
 	if( (fdinst != NULL) && ((sint32)fdinst->fd_posix != (sint32)structfd_posixFileDescrdefault)  ) {
-		return (_ssize_t)devoptab_list[fdinst->fd_posix]->close_r( ptr, fdinst->cur_entry.d_ino );
+		return (_ssize_t)devoptab_list[fdinst->fd_posix]->close_r( NULL, fdinst->cur_entry.d_ino );
 	}
 	
 	return -1;
@@ -177,17 +163,19 @@ int _close_r ( struct _reent *ptr, int fd )
  isatty
  Query whether output stream is a terminal.
  */
-int _isatty (int   file)
+int _isatty(int file)
 {
-  return  1;
+	return  1;
+}	// _isatty()
 
-}       /* _isatty () */
+int _end(int file)
+{
+	return  1;
+}	// _isatty()
 
 //File IO is stubbed even in buffered writes, so as a workaround I redirect the weak-symbol _vfprint_f (and that means good bye file stream operations on fatfs, thus we re-implement those by hand)
-//while allowing to use printf in DS 
-
-//if file buffered writes weren't stubbed in newlib nano we could have a way for switching between a file descriptor write, or render to stdout
-int _vfprintf_r(struct _reent *reent, FILE *fp,const sint8 *fmt, va_list list){
+//while allowing to use printf in DS
+int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list list){
 	
 	#ifdef ARM7
 	volatile uint8 g_printfbuf[100];
@@ -210,19 +198,13 @@ int _vfprintf_r(struct _reent *reent, FILE *fp,const sint8 *fmt, va_list list){
 	#endif
 	
 	return (strlen((sint8*)&g_printfbuf[0]));
-	
-}
-
-int _vfiprintf_r(struct _reent *reent, FILE *fp,const sint8 *fmt, va_list list){
-	return _vfprintf_r(reent, fp,fmt, list);
 }
 
 
 //	-	All below high level posix calls for FSFAT access must use the function getfatfsPath("file_or_dir_path") for file (dldi sd) handling
 
-_off_t _lseek_r(struct _reent *ptr,int fd, _off_t offset, int whence )		//(FileDescriptor :struct fd index)
-{
-	return fatfs_lseek(fd, offset, whence);
+_off_t _lseek_r(struct _reent *ptr,int fd, _off_t offset, int whence ){	//(FileDescriptor :struct fd index)
+	return fatfs_lseek(fd, offset, whence);	
 }
 
 //this copies stat from internal struct fd to external code
@@ -340,11 +322,30 @@ int _gettimeofday(struct timeval *ptimeval,void *ptimezone){
 }
 
 
+int open_fs(const sint8 *file, int flags, int mode ){
+	
+	sint8 **tokens;
+	int count = 0, i = 0;
+	volatile sint8 str[256];	//file safe buf
+	memcpy ( (uint8*)str, (uint8*)file, 256);
 
+	count = split ((const sint8*)str, '/', &tokens);	
+	volatile sint8 token_str[64];
+	
+	sint32 countPosixFDescOpen = open_posix_filedescriptor_devices() + 1;
+	/* search for "file:/" in "file:/folder1/folder.../file.test" in dotab_list[].name */
+	for (i = 0; i < countPosixFDescOpen ; i++){
+		if(count > 0){
+			sprintf((sint8*)token_str,"%s/",tokens[0]);	//format properly
+			if (strcmp((sint8*)token_str,devoptab_list[i]->name) == 0)
+			{
+				return devoptab_list[i]->open_r( NULL, file, flags, mode ); //returns / allocates a new struct fd index with either DIR or FIL structure allocated
+			}
+		}
+	}
 
-
-
-
+	return -1;
+}
 
 //toolchain newlib nano lib stripped buffered fwrite support.
 //so we restore POSIX file implementation. User code. 
@@ -386,15 +387,22 @@ FILE *	fopen_fs(sint8 * filepath, sint8 * args){
 		posix_flags |= O_RDWR|O_CREAT|O_APPEND;
 	}
 	
-	//must be struct fd Index returned here 
-	sint32 fd = open(filepath, posix_flags);	//returns / allocates a new struct fd index with either DIR or FIL structure allocated
+	//must be struct fd Index returned here
+	sint32 fd = open(filepath, posix_flags,0);	//returns / allocates a new struct fd index with either DIR or FIL structure allocated
 	
 	if (fd < 0)
 	{
 		return NULL;	//return NULL filehandle
 	}
 	
-	return fdopen(fd,args);	//Use "fdopen()" for struct fd index ->FILE handle conversion
+	FILE * FRET = fdopen(fd,args);	//Use "fdopen()" for struct fd index ->FILE handle conversion
+	/*
+	//assign the struct fd here
+	int structFD = fileno(FRET);
+	struct fd * fdinst = fd_struct_get(structFD);
+	fdinst->cur_entry.d_ino = structFD;
+	*/
+	return FRET;
 }
 
 size_t	fread_fs(_PTR buf, size_t blocksize, size_t readsize, FILE * fileInst){
@@ -409,7 +417,7 @@ size_t fwrite_fs (_PTR buf, size_t blocksize, size_t readsize, FILE * fileInst){
 
 int	fclose_fs(FILE * fileInst){
 	sint32 fd = fileno(fileInst);
-	return close(fd);
+	return _close_r(NULL,fd);	//no reentrancy so we don't care. Close handle
 }
 
 int	fseek_fs(FILE *f, long offset, int whence){

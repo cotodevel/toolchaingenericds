@@ -30,6 +30,7 @@ SOFTWARE.
 #define __LINUX_ERRNO_EXTENSIONS__
 #include <errno.h>
 
+#include <sys/time.h>
 #include "InterruptsARMCores_h.h"
 
 //////////////////////////////////////////////////////////////////////////

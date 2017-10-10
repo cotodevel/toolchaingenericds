@@ -51,7 +51,7 @@ struct  DISC_INTERFACE_STRUCT{
 	FN_MEDIUM_WRITESECTORS	writeSectors ;
 	FN_MEDIUM_CLEARSTATUS	clearStatus ;
 	FN_MEDIUM_SHUTDOWN		shutdown ;
-} DISC_INTERFACE_STRUCT;
+} ;
 
 
 #define FIX_ALL						0x01

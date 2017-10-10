@@ -28,7 +28,7 @@ SOFTWARE.
 #include "sgIP_UDP.h"
 #include "sgIP_ICMP.h"
 #include "sgIP_DNS.h"
-#include <sys/time.h>
+
 
 sgIP_socket_data socketlist[SGIP_SOCKET_MAXSOCKETS];
 extern unsigned long sgIP_timems;
