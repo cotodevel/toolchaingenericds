@@ -52,6 +52,8 @@ void initHardware(void) {
 	#ifdef ARM7
 	MyIPC->arm7startaddress = get_iwram_start();
 	MyIPC->arm7endaddress = (uint32)(get_iwram_start() + get_iwram_size());
+	//Init Shared FIFO Buffer
+	setARM7ARM9SharedBuffer(NULL);
 	#endif
 	
 	#ifdef ARM9
@@ -62,6 +64,10 @@ void initHardware(void) {
 	SETDISPCNT_MAIN(0); 
 	SETDISPCNT_SUB(0);
 	REG_BG0CNT = REG_BG1CNT = REG_BG2CNT = REG_BG3CNT = 0;
+	
+	//Init Shared FIFO Buffer
+	memset((uint32*)&arm7arm9sharedBuffer[0], 0, sizeof(arm7arm9sharedBuffer));
+	setARM7ARM9SharedBuffer((uint32*)&arm7arm9sharedBuffer[0]);
 	
 	//Library init code
 	

@@ -1034,7 +1034,7 @@ void arm9_synctoarm7() {
 	//fifoSendValue32(FIFO_DSWIFI, WIFI_SYNC);
 	//SendArm7Command(WIFI_SYNC,0x0,0x0,0x0);
 	
-	SendMultipleWordACK(WIFI_SYNC, 0, 0, 0);
+	SendMultipleWordACK(WIFI_SYNC, 0, 0, NULL);
 }
 
 /*
@@ -1073,10 +1073,9 @@ bool Wifi_InitDefault(bool useFirmwareSettings) {
 
 	//fifoSendAddress(FIFO_DSWIFI, (void *)wifi_pass);
 	//SendArm7Command(WIFI_STARTUP,(uint32)wifi_pass,0x0,0x0);
-	SendMultipleWordACK(WIFI_STARTUP, (uint32)wifi_pass, 0, 0);
+	SendMultipleWordACK(WIFI_STARTUP, (uint32)wifi_pass, 0, NULL);
 	
 	while(Wifi_CheckInit()==0) {
-		//swiWaitForVBlank();
 		IRQWait(1,IRQ_VBLANK);
 	}
 
@@ -1087,19 +1086,7 @@ bool Wifi_InitDefault(bool useFirmwareSettings) {
 
 		while(wifiStatus != ASSOCSTATUS_ASSOCIATED) {
 			wifiStatus = Wifi_AssocStatus(); // check status
-			
-			printf("Wifi_AssocStatus():%d	\n",wifiStatus);
-			while (1)
-			{
-				if (keysPressed() & KEY_A){
-					break;
-				}
-				IRQWait(1,IRQ_VBLANK);
-			}
-			GUI_clear();
-			
 			if(wifiStatus == ASSOCSTATUS_CANNOTCONNECT) return false;
-			//swiWaitForVBlank();
 			IRQWait(1,IRQ_VBLANK);
 		}  
 	}

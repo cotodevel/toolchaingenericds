@@ -40,15 +40,11 @@ __attribute__((section(".dtcm")))
 volatile uint32 interrupts_to_wait_arm9 = 0;
 #endif
 
-uint32 enterSafeInterrupts(){
-	GLOBAL_IME = REG_IME;
-	REG_IME = 0;
-	return GLOBAL_IME;
-}
-
-void leaveSafeInterrupts(){
-	REG_IME = GLOBAL_IME;
-}
+//stubs because we don't disable IME on DSWIFI
+void SGIP_INTR_PROTECT(){}
+void SGIP_INTR_REPROTECT(){}
+void SGIP_INTR_UNPROTECT(){}
+void SGIP_WAITEVENT(){}
 
 void IRQInit(){
 	

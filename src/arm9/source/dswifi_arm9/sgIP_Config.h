@@ -236,6 +236,7 @@ extern "C" {
 #ifdef __cplusplus
 };
 #endif
+/*
 #define SGIP_INTR_PROTECT() \
 	int tIME; \
 	tIME=enterSafeInterrupts()
@@ -245,11 +246,14 @@ extern "C" {
 	leaveSafeInterrupts()
 #define SGIP_WAITEVENT() \
    sgIP_IntrWaitEvent()
+*/
 #else // !SGIP_INTERRUPT_THREADING_MODEL
+/*
 #define SGIP_INTR_PROTECT()
 #define SGIP_INTR_REPROTECT()
 #define SGIP_INTR_UNPROTECT()
 #define SGIP_WAITEVENT();
+*/
 #endif // SGIP_INTERRUPT_THREADING_MODEL
 
 #ifdef SGIP_DEBUG

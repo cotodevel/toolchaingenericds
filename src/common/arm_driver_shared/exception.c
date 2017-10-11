@@ -64,7 +64,7 @@ uint32 exceptionArmRegs[0x20];
 void exception_sysexit(){
 	#ifdef ARM7
 	//SendArm9Command(EXCEPTION_ARM7,unexpectedsysexit_7,0x0,0x0);
-	SendMultipleWordACK(EXCEPTION_ARM7, unexpectedsysexit_7, 0, 0);
+	SendMultipleWordACK(EXCEPTION_ARM7, unexpectedsysexit_7, 0, NULL);
 	while(1){
 		IRQWait(1,IRQ_VBLANK);
 	}

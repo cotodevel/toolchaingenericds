@@ -70,9 +70,12 @@ extern void IRQVBlankWait();
 extern void IRQInit();
 extern void InterruptServiceRoutineARMCores();	//Actual Interrupt Handler
 
-extern uint32 GLOBAL_IME;
-extern uint32 enterSafeInterrupts();
-extern void leaveSafeInterrupts();
+//stubs because we don't disable IME on DSWIFI
+extern void SGIP_INTR_PROTECT();
+extern void SGIP_INTR_REPROTECT();
+extern void SGIP_INTR_UNPROTECT();
+extern void SGIP_WAITEVENT();
+
 
 #ifdef __cplusplus
 }

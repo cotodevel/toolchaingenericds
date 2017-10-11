@@ -329,7 +329,7 @@ int	setBacklight(int flags)
 	
 	#ifdef ARM9
 	//SendArm7Command(0x00000008,(flags << 16),0x00000000,0x00000000);
-	SendMultipleWordACK(0x00000008, (flags << 16), 0, 0);
+	SendMultipleWordACK(0x00000008, (flags << 16), 0, NULL);
 	#endif
 	
 	return 0;

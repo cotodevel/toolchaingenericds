@@ -33,10 +33,8 @@ USA
 #include <time.h>
 
 
-#define fifo_requires_ack	(uint32)(0xffff1010)
-#define fifo_requires_ack_execok	(uint32)(0xe1e2e3e4)
-
-
+#define FIFO_IPC_MESSAGE	(uint32)(0xffff1010)
+#define ARM7ARM9SHAREDBUFFERSIZE	(sint32)(1024*2)	//2K Shared buffer. ARM9 defines it.
 //---------------------------------------------------------------------------------
 typedef struct sMyIPC {
 //---------------------------------------------------------------------------------
@@ -78,8 +76,11 @@ typedef struct sMyIPC {
 	volatile tDSFWSETTINGS DSFWSETTINGSInst;
 	bool valid_dsfwsettings;	//true or false
 	
+	uint32 IPC_FIFOMSG[0x100];	//256 bytes FIFO, use top word aligned sections for command handles
+	
 	uint8 lang_flags[0x2];
 	
+	uint32 * arm7arm9sharedBuffer;	//set up by ARM9. Both cores must see the definition.
 	
 	//Internal use, use functions inside mem_handler_shared.c for accessing those from BOTH ARM Cores.
 	uint32 arm7startaddress;
@@ -91,6 +92,7 @@ typedef struct sMyIPC {
 	uint32 WRAM_CR_ISSET;	//0 when ARM7 boots / 1 by ARM9 when its done
 	
 	uint32 fiforeply;	//for ret status
+	
 	
 	//debug
 	uint32 debugvar;
@@ -142,7 +144,7 @@ typedef struct sMyIPC {
 extern "C" {
 #endif
 
-//weak symbols : the implementation of these is project-defined
+//weak symbols : the implementation of these is project-defined, also abstracted from the hardware IPC FIFO Implementation for easier programming.
 extern __attribute__((weak))	void HandleFifoNotEmptyWeakRef(uint32 cmd1,uint32 cmd2,uint32 cmd3,uint32 cmd4);
 extern __attribute__((weak))	void HandleFifoEmptyWeakRef(uint32 cmd1,uint32 cmd2,uint32 cmd3,uint32 cmd4);
 
@@ -177,14 +179,18 @@ extern void writeuint32extARM(uint32 address,uint32 value);
 extern int SendFIFOCommand(uint32 * buf,int size);
 extern int RecvFIFOCommand(uint32 * buf);
 
-extern void writemap_ext_armcore(uint32 address, uint32 value, uint32 mode);
 extern void powerON(uint16 values);
 extern void powerOFF(uint16 values);
 
+extern void SendMultipleWordByFifo(uint32 data0, uint32 data1, uint32 data2, uint32 * buffer_shared);
+extern void SendMultipleWordACK(uint32 data0, uint32 data1, uint32 data2, uint32 * buffer_shared);
 
+#ifdef ARM9
+extern volatile uint8 arm7arm9sharedBuffer[ARM7ARM9SHAREDBUFFERSIZE];
+#endif
 
-extern void SendMultipleWordByFifo(uint32 data0, uint32 data1, uint32 data2, uint32 data3);
-extern void SendMultipleWordACK(uint32 data0, uint32 data1, uint32 data2, uint32 data3);
+extern void setARM7ARM9SharedBuffer(uint32 * shared_buffer_address);
+extern uint32 * getARM7ARM9SharedBuffer();
 
 #ifdef __cplusplus
 }

@@ -126,39 +126,39 @@ void Handle_SoftFIFORECV()
 __attribute__((section(".itcm")))
 #endif
 void SoftFIFOSEND(uint32 value0,uint32 value1,uint32 value2,uint32 value3){
-	
+	//todo: needs hardware IPC FIFO implementation.
 }
 
-
-void writeuint32extARM(uint32 address,uint32 value){
-	
-}
-
-
-
-
-
+//64K Shared buffer. ARM9 defines it. To be used with IPC FIFO Hardware uint32 * buffer_shared arg
+#ifdef ARM9
+volatile uint8 arm7arm9sharedBuffer[ARM7ARM9SHAREDBUFFERSIZE];
+#endif
 
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
-void SendMultipleWordACK(uint32 data0, uint32 data1, uint32 data2, uint32 data3){
-	SendMultipleWordByFifo(data0, data1, data2, data3);
+void SendMultipleWordACK(uint32 data0, uint32 data1, uint32 data2, uint32 * buffer_shared){
+	SendMultipleWordByFifo(data0, data1, data2, buffer_shared);
 }
 
+//command0, command1, command2, buffer to pass to other core.
+//IPC FIFO non blocking
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
-void SendMultipleWordByFifo(uint32 data0, uint32 data1, uint32 data2, uint32 data3)	//channel / multiple words / err reporting
+void SendMultipleWordByFifo(uint32 data0, uint32 data1, uint32 data2, uint32 * buffer_shared)
 {
-	while(!(REG_IPC_FIFO_CR & (1<<0))){}	//WAIT for RECVFIFO to absorb all queued cmds
+	volatile uint32 * data0ptr = (uint32*)&MyIPC->IPC_FIFOMSG[0];
+	volatile uint32 * data1ptr = (uint32*)&MyIPC->IPC_FIFOMSG[1];
+	volatile uint32 * data2ptr = (uint32*)&MyIPC->IPC_FIFOMSG[2];
+	volatile uint32 * data3ptr = (uint32*)&MyIPC->IPC_FIFOMSG[3];
 	
-	//data4 to be used from other core
-	REG_IPC_FIFO_TX =	(uint32)data0; 	//raise irq here
-	REG_IPC_FIFO_TX = 	(uint32)data1;
-	REG_IPC_FIFO_TX = 	(uint32)data2;
-	REG_IPC_FIFO_TX = 	(uint32)data3;
+	*data0ptr = (uint32)data0;
+	*data1ptr = (uint32)data1;
+	*data2ptr = (uint32)data2;
+	*data3ptr = (uint32)(uint32*)buffer_shared;
 	
+	REG_IPC_FIFO_TX =	(uint32)FIFO_IPC_MESSAGE;
 }
 
 //FIFO HANDLER INIT
@@ -180,28 +180,43 @@ void HandleFifoNotEmpty(){
 	while(!(REG_IPC_FIFO_CR & RECV_FIFO_IPC_EMPTY)){
 		cmd1 = REG_IPC_FIFO_RX;
 		
-		if(!(REG_IPC_FIFO_CR & RECV_FIFO_IPC_EMPTY)){
-			cmd2 = REG_IPC_FIFO_RX;
+		if((uint32)FIFO_IPC_MESSAGE == (uint32)cmd1){
+			
+			volatile uint32 * data0ptr = (uint32*)&MyIPC->IPC_FIFOMSG[0];
+			volatile uint32 * data1ptr = (uint32*)&MyIPC->IPC_FIFOMSG[1];
+			volatile uint32 * data2ptr = (uint32*)&MyIPC->IPC_FIFOMSG[2];
+			volatile uint32 * data3ptr = (uint32*)&MyIPC->IPC_FIFOMSG[3];
+			
+			volatile uint32 data0 = *data0ptr;
+			volatile uint32 data1 = *data1ptr;
+			volatile uint32 data2 = *data2ptr;
+			volatile uint32 data3 = *data3ptr;
+			
+			HandleFifoNotEmptyWeakRef(data0,data1,data2,data3);
+			
+			*data0ptr = (uint32)0;
+			*data1ptr = (uint32)0;
+			*data2ptr = (uint32)0;
+			*data3ptr = (uint32)0;
+			
 		}
 		
-		if(!(REG_IPC_FIFO_CR & RECV_FIFO_IPC_EMPTY)){
-			cmd3 = REG_IPC_FIFO_RX;
-		}
-		
-		if(!(REG_IPC_FIFO_CR & RECV_FIFO_IPC_EMPTY)){
-			cmd4 = REG_IPC_FIFO_RX;
-		}
-		
-		HandleFifoNotEmptyWeakRef(cmd1,cmd2,cmd3,cmd4);
+		//clear fifo inmediately
+		REG_IPC_FIFO_CR |= (1<<3);
 	}
-	
-	//clear fifo
-	REG_IPC_FIFO_CR |= (1<<3);
 	
 }
 
 
+void setARM7ARM9SharedBuffer(uint32 * shared_buffer_address){
+	volatile uint32 * ptr = (uint32*)&MyIPC->arm7arm9sharedBuffer;
+	*ptr = (uint32)(uint32*)shared_buffer_address;
+}
 
+uint32 * getARM7ARM9SharedBuffer(){
+	volatile uint32 * ptr = (uint32*)&MyIPC->arm7arm9sharedBuffer;
+	return (uint32)(*ptr);
+}
 
 
 //FIFO HANDLER END
@@ -211,17 +226,8 @@ void HandleFifoNotEmpty(){
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
-inline void writemap_ext_armcore(uint32 address, uint32 value, uint32 mode){
-	
-	//ARM7 command handler
-	#ifdef ARM7
-	//SendArm9Command(FIFO_WRITE_ADDR_EXT, address, value, mode);
-	#endif
-	
-	//ARM9 command handler
-	#ifdef ARM9
-	//SendArm7Command(FIFO_WRITE_ADDR_EXT, address, value, mode);
-	#endif
+void writemap_ext_armcore(uint32 address, uint32 value, uint32 mode){
+	//todo.
 }
 
 //writemap_ext_armcore(REG_POWERCNT_ADDR, (uint32)value, WRITE_VALUE_16);
