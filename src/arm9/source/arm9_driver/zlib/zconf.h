@@ -329,6 +329,14 @@
 #  define FAR
 #endif
 
+//special
+#if defined(WIN32) || (!defined(__GNUC__) && !defined(__clang__))
+	#include <fcntl.h>
+#else
+	#include <unistd.h>
+	#include <sys/stat.h>
+#endif
+
 #if !defined(__MACTYPES__)
 typedef unsigned char  Byte;  /* 8 bits */
 #endif
