@@ -82,9 +82,17 @@ uint8 getLanguage(){
 }
 
 bool getFWSettingsstatus(){
+	#ifdef ARM9
+	//Prevent Cache problems.
+	coherent_user_range_by_size((uint32)MyIPC, sizeof(tMyIPC));
+	#endif
 	return (bool)MyIPC->valid_dsfwsettings;
 }
 
 void setFWSettingsstatus(bool status){
+	#ifdef ARM9
+	//Prevent Cache problems.
+	coherent_user_range_by_size((uint32)MyIPC, sizeof(tMyIPC));
+	#endif
 	MyIPC->valid_dsfwsettings = status;
 }

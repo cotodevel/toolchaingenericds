@@ -42,18 +42,19 @@ void initHardware(void) {
 	//Reset Both Cores
 	resetMemory_ARMCores();
 	
-	//Set processor specific:
+	#ifdef ARM7
 	
 	//Init Shared Address Region
-	memset((uint32*)MyIPC, 0, sizeof(MyIPC));
-	setFWSettingsstatus(false);
+	memset((uint32*)MyIPC, 0, sizeof(tMyIPC));
 	
+	//Read DHCP settings (in order)
+	LoadFirmwareSettingsFromFlash();
 	
-	#ifdef ARM7
 	MyIPC->arm7startaddress = get_iwram_start();
 	MyIPC->arm7endaddress = (uint32)(get_iwram_start() + get_iwram_size());
 	//Init Shared FIFO Buffer
 	setARM7ARM9SharedBuffer(NULL);
+	
 	#endif
 	
 	#ifdef ARM9
