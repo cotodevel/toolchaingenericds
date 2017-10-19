@@ -116,7 +116,7 @@ extern int fatfs_open(const sint8 *pathname, int flags);
 extern off_t fatfs_lseek(int fd, off_t offset, int whence );
 extern int fatfs_unlink(const sint8 *path);
 extern int fatfs_link(const sint8 *path1, const sint8 *path2);
-extern int fatfs_rename(const sint8 *old, const sint8 *new);
+extern int fatfs_rename(const sint8 *oldpathfile, const sint8 *newpathfile);
 extern int fatfs_fsync(int fd);
 extern int fatfs_stat(const sint8 *path, struct stat *buf);
 extern int fatfs_mkdir(const sint8 *path, mode_t mode);

@@ -58,6 +58,23 @@ int fork()
 	return -1;
 }
 
+//C++ requires this
+void _exit (int status)
+{
+	//clrscr();
+	//printf("C++ abort()!");
+	//printf("End.");
+	//for (;;) { }
+}
+
+int _kill (pid_t pid, int sig){
+}
+
+pid_t _getpid (void){
+}
+//C++ requires this end
+
+
 
 //void *sbrk(int nbytes)
 void * _sbrk (int nbytes)
@@ -108,8 +125,6 @@ void * _sbrk (int nbytes)
 }
 
 //read (get struct FD index from FILE * handle)
-
-
 
 //ok _read_r reentrant called
 _ssize_t _read_r ( struct _reent *ptr, int fd, void *buf, size_t cnt ){

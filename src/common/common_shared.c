@@ -239,7 +239,6 @@ void powerON(uint16 values){
 	
 	#ifdef ARM9
 	if(!(values & POWERMAN_ARM9)){
-		//SendArm7Command(FIFO_POWERCNT_ON, (uint32)values, 0x00000000, 0x00000000);
 		SendMultipleWordACK(FIFO_POWERCNT_ON, (uint32)values, 0, 0);
 	}
 	else{
@@ -255,7 +254,6 @@ void powerOFF(uint16 values){
 	
 	#ifdef ARM9
 	if(!(values & POWERMAN_ARM9)){
-		//SendArm7Command(FIFO_POWERCNT_OFF, (uint32)values, 0x00000000, 0x00000000);
 		SendMultipleWordACK(FIFO_POWERCNT_OFF, (uint32)values, 0, 0);
 	}
 	else{

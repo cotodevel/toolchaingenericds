@@ -33,8 +33,8 @@ USA
 
 #define		KEYINPUT	(*((uint16 volatile *) 0x04000130))
 #define		KEYCNT		(*((uint16 volatile *) 0x04000132))
-
 #define		WAITCNT		(*((uint16 volatile *) 0x04000204))
+#define		WAIT_CR		WAITCNT
 #define		IME			(*((uint16 volatile *) 0x04000208))
 #define		IE			(*((uint32 volatile *) 0x04000210))
 #define		IF			(*((uint32 volatile *) 0x04000214))
@@ -100,8 +100,8 @@ USA
 #ifdef ARM9
 
 #define		PAL			((uint16 *) 0x05000000)
-#define		VRAM1		((uint16 *) 0x06000000)
-#define		VRAM2		((uint16 *) 0x06200000)
+#define		VRAMBLOCK1		((uint16 *) 0x06000000)
+#define		VRAMBLOCK2		((uint16 *) 0x06200000)
 
 #define		BG0CNT		(*((uint16 volatile *) 0x04000008))
 #define		BG1CNT		(*((uint16 volatile *) 0x0400000A))

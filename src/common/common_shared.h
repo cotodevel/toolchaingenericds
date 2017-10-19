@@ -149,13 +149,6 @@ extern __attribute__((weak))	void HandleFifoNotEmptyWeakRef(uint32 cmd1,uint32 c
 extern __attribute__((weak))	void HandleFifoEmptyWeakRef(uint32 cmd1,uint32 cmd2,uint32 cmd3,uint32 cmd4);
 
 
-#ifdef ARM9
-extern void SendArm7Command(uint32 command1, uint32 command2, uint32 command3,uint32 command4);
-#endif
-
-#ifdef ARM7
-extern void SendArm9Command(uint32 command1, uint32 command2, uint32 command3,uint32 command4);
-#endif
 
 
 

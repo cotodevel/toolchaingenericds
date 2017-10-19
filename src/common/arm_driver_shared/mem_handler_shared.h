@@ -43,6 +43,15 @@ USA
 extern "C"{
 #endif
 
+extern uint32 	__shwram_start;	
+extern uint32 	__shwram_end;	
+
+extern uint32 	__shwram2_start;	
+extern uint32 	__shwram2_end;	
+
+extern uint32 	__shwram3_start;	
+extern uint32 	__shwram3_end;	
+
 //newlib
 extern uint32 get_lma_libend();
 extern uint32 get_lma_ewramend();

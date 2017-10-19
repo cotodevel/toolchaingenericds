@@ -106,6 +106,9 @@ extern uint32 Wifi_GetIP();
 
 extern int Wifi_RawTxFrame_NIFI(uint16 datalen, uint16 rate, uint16 * data);
 
+extern uint32 Wifi_TxBufferWordsAvailable();
+extern void Wifi_TxBufferWrite(sint32 start, sint32 len, uint16 * data);
+
 extern void Timer_50ms(void);
 #ifdef __cplusplus
 }

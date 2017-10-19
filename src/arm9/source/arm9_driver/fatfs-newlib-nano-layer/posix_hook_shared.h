@@ -117,7 +117,7 @@ extern int _vfiprintf_r(struct _reent *reent, FILE *fp,const sint8 *fmt, va_list
 extern int _link(const sint8 *path1, const sint8 *path2);
 extern int	_stat_r ( struct _reent *_r, const char *file, struct stat *pstat );
 extern int _unlink(const sint8 *path);
-extern int rename(const sint8 *old, const sint8 *new);
+extern int rename(const sint8 *oldpathfile, const sint8 *newpathfile);
 extern int fsync(int fd);
 extern int mkdir(const sint8 *path, mode_t mode);
 extern int rmdir(const sint8 *path);
@@ -153,6 +153,10 @@ extern int feof_fs(FILE * stream);
 extern int ferror_fs(FILE * stream);
 
 extern FILE * fdopen_fs(int fd,const char *mode);
+
+extern void _exit (int status);
+extern int _kill (pid_t pid, int sig);
+extern pid_t _getpid (void);
 
 #ifdef __cplusplus
 }

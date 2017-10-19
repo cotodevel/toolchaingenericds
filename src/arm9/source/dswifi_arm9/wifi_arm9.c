@@ -72,10 +72,6 @@ void sgIP_IntrWaitEvent() {
 	}
 }
 
-void * sgIP_malloc(int size) __attribute__((weak));
-void sgIP_free(void * ptr) __attribute__((weak));
-
-
 
 //////////////////////////////////////////////////////////////////////////
 // wifi heap allocator system

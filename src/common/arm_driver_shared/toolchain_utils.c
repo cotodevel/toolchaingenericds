@@ -339,18 +339,12 @@ int	setBacklight(int flags)
 
 void	FS_lock()
 {
-	/*
-	if (g_extRAM)
-		ram_lock();
-	*/
+	
 }
 
 void	FS_unlock()
 {
-	/*
-	if (g_extRAM)
-		ram_unlock();
-	*/
+	
 }
 
 

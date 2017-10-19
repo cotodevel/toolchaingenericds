@@ -52,6 +52,23 @@ typedef volatile uint32		vuint32;
 typedef volatile uint16		vuint16;
 typedef volatile uint8		vuint8;
 
+//legacy code
+
+typedef vuint64		vu64;
+typedef vuint32		vu32;
+typedef vuint16		vu16;
+typedef vuint8		vu8;
+
+typedef uint64		u64;
+typedef uint32		u32;
+typedef uint16		u16;
+typedef uint8		u8;
+
+typedef sint32		s32;
+typedef sint16		s16;
+typedef sint8		s8;
+
+
 #endif
 
 #ifdef __cplusplus
