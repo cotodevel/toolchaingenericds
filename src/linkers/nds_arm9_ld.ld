@@ -26,6 +26,9 @@ MEMORY
 	ITCM : ORIGIN = 0x01000000, LENGTH = 32K - 4K
 	VECTORS : ORIGIN = 0x01000000 + 32K - 4K, LENGTH = 4K
 	EWRAM : ORIGIN = 0x02000000, LENGTH = 4M
+	EWRAM_SHARED1	(rwx)	: ORIGIN = 0x02000000 + 4M - 128k - 128k -128k, LENGTH = 128k
+	EWRAM_SHARED2	(rwx)	: ORIGIN = 0x02000000 + 4M - 128k -128k, LENGTH = 128k
+	EWRAM_SHARED3	(rwx)	: ORIGIN = 0x02000000 + 4M - 128k, LENGTH = 128k
 	GBAROM : ORIGIN = 0x08000000, LENGTH = 32M
 }
 
@@ -37,6 +40,16 @@ _vector_end = ORIGIN(VECTORS)	+	LENGTH(VECTORS);
 
 _ewram_start = ORIGIN(EWRAM);
 _ewram_end = ORIGIN(EWRAM)	+	LENGTH(EWRAM);
+
+__shwram_start = ORIGIN(EWRAM_SHARED1);
+__shwram_end = ORIGIN(EWRAM_SHARED1)	+	LENGTH(EWRAM_SHARED1);
+
+__shwram2_start = ORIGIN(EWRAM_SHARED2);
+__shwram2_end = ORIGIN(EWRAM_SHARED2)	+	LENGTH(EWRAM_SHARED2);
+
+__shwram3_start = ORIGIN(EWRAM_SHARED3);
+__shwram3_end = ORIGIN(EWRAM_SHARED3)	+	LENGTH(EWRAM_SHARED3);
+
 
 _gba_start = ORIGIN(GBAROM);
 _gba_end = ORIGIN(GBAROM)	+	LENGTH(GBAROM);
@@ -135,6 +148,11 @@ SECTIONS
 		. = ALIGN(4);
 	} > EWRAM = 0xff
 	__vfp11_veneer_end__ = .;
+	__exidx_start = .;
+    .ARM.exidx   : { 
+		*(.ARM.exidx* .gnu.linkonce.armexidx.*) 	/* newlib C++ require these constructors */
+	} > EWRAM = 0xff
+    __exidx_end = .;
 	__v4_bx_start__ = .;
 	.v4_bx : {
 		KEEP (*(.v4_bx*))
