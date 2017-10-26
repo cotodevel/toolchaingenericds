@@ -99,6 +99,10 @@ extern void		FS_lock();
 extern void		FS_unlock();
 extern char 	* str_replace (char *string, const char *substr, const char *replacement);
 
+
+extern sint8 ip_decimal[0x10];
+extern sint8 * print_ip(uint32 ip);
+
 #endif
 
 #endif
