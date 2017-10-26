@@ -33,9 +33,11 @@ export GCC_BUILD_ENV	= $(DEFAULT_GCC_PATH)
 export GCC_BIN_PATH	= bin/
 export ASGCC	=	arm-none-eabi-as.exe
 export GCC_C++	=	arm-none-eabi-gcc.exe
+export GCC_G++	=	arm-none-eabi-gcc.exe
 export GCC_OBJCOPY	=	arm-none-eabi-objcopy.exe
 export CC = $(GCC_BUILD_ENV)$(GCC_BIN_PATH)$(GCC_C++)
 export AS	= $(GCC_BUILD_ENV)$(GCC_BIN_PATH)$(ASGCC)
+export G++	= $(GCC_BUILD_ENV)$(GCC_BIN_PATH)$(GCC_G++)
 export OBJCOPY	=	$(GCC_BUILD_ENV)$(GCC_BIN_PATH)$(GCC_OBJCOPY)
 export NDSTOOL	=	$(GCC_BUILD_ENV)$(GCC_BIN_PATH)ndstool.exe
 export AR	=	$(GCC_BUILD_ENV)$(GCC_BIN_PATH)arm-none-eabi-ar.exe
@@ -98,6 +100,7 @@ export DIRS_ARM9_SRC = source/	\
 			source/arm9_driver/fatfs-newlib-nano-layer/dldi/	\
 			source/arm9_driver/fatfs-newlib-nano-layer/fatfs/source/	\
 			source/arm9_driver/zlib/	\
+			source/arm9_driver/	\
 			source/dswifi_arm9/	\
 			source/wnifilib/	\
 			../include/	\
@@ -117,6 +120,7 @@ export DIRS_ARM9_HEADER = source/	\
 			source/arm9_driver/fatfs-newlib-nano-layer/dldi/	\
 			source/arm9_driver/fatfs-newlib-nano-layer/fatfs/source/	\
 			source/arm9_driver/zlib/	\
+			source/arm9_driver/	\
 			source/dswifi_arm9/	\
 			source/wnifilib/	\
 			../include/	\
