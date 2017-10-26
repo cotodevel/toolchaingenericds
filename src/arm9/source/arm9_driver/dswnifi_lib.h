@@ -118,7 +118,7 @@ typedef struct {
 
 //returned by HandleSendUserspace. Converts the user buffer and size into a struct the ToolchainGenericDS library understands.
 struct frameBlock{
-    uint32 * framebuffer;
+    uint8 * framebuffer;
 	sint32	frameSize;
 };
 
@@ -145,6 +145,8 @@ extern client_http_handler client_http_handler_context;
 #ifdef __cplusplus
 extern "C"{
 #endif
+
+//These calls are implemented in TGDS layer
 
 //NIFI Part
 //DSWNIFI: NIFI
@@ -179,9 +181,6 @@ extern int topvalue(int a,int b);
 extern int bottomvalue(int a,int b);
 extern int getintdiff(int a,int b);
 
-
-
-
 //TCP UDP DSWNIFI Part
 extern int Wifi_RawTxFrame_WIFI(uint8 datalen, uint8 * data);
 extern int Wifi_RawTxFrame_NIFI(uint16 datalen, uint16 rate, uint16 * data);
@@ -192,36 +191,34 @@ extern sint32 getMULTIMode();			//idle(dswifi_idlemode) / raw packet(dswifi_loca
 extern bool getWIFISetup();
 extern void setConnectionStatus(sint32 flag);
 extern void getConnectionStatus(sint32 flag);
-
-
 extern struct frameBlock * FrameSenderUser;	//if !NULL, then must sendFrame. HandleSendUserspace(); generates this one
-
 //the process that runs on vblank and ensures DS - DS Comms
 extern sint32 doMULTIDaemon();
-
 extern struct sockaddr_in stSockAddrServer;
 extern int SocketFDLocal;
 extern int SocketFDServer;
 extern int port;
-
-
 extern struct frameBlock FrameSenderBlock;	//used by the user sender process, must be valid so the ToolchainGenericDS library sends proper frame data.
 extern struct frameBlock FrameRecvBlock;	//used by the user receiver process, can be NULL if no data frame was received.
 
 //frame receiver implementation, has all receiver-like modes here. Returns true if correct frame received from TCP/UDP
 extern struct frameBlock * 	receiveDSWNIFIFrame(uint8 * databuf_src,int frameSizeRecv);	//framesize is calculated inside (crc over udp requires framesize previously to here calculated anyway)
-extern void 				sendDSWNIFIFame(uint32 * databuf_src,int sizetoSend);
+extern bool sendDSWNIFIFame(struct frameBlock * frameInst);
 extern sint8* server_ip;
 
-//below are calls that userCode must override
+//Send a frame to the other connected DS
+//example: 
+//if(!FrameSenderUser){
+//				FrameSenderUser = HandleSendUserspace((uint8*)nfdata,sizeof(nfdata)-sizeof(volatile uint16));	//make room for crc16 frame
+//}
+extern struct frameBlock * HandleSendUserspace(uint8 * databuf_src, int bufsize);
 
-//weak symbols : the implementation of these is project-defined, UDP NIFI/WIFI or local NIFI
-//these are process the specific project can use to queue (ie: read from non looped program flow, but once a time, to send/receive frames)
-extern __attribute__((weak))	void HandleRecvUserspace(uint8 * databuf_src, int bufsize);	//called by receiveDSWNIFIFrame(); 
-//frame sender implementation, has all sender-like modes here
-extern __attribute__((weak))	struct frameBlock * HandleSendUserspace(uint32 * databuf_src, int bufsize);
+//userCode must override, provide these functions.
+
+//As long you define this ReceiveHandler, everytime the outter connected DS to this DS sends a packet, it will be received here.
+extern __attribute__((weak))	void HandleRecvUserspace(struct frameBlock * frameBlockRecv);	//called by receiveDSWNIFIFrame(); when a frame is valid
 //implementation defined. can map a buffer/shared object between DS or keymaps
-extern __attribute__((weak))	bool do_multi();
+extern __attribute__((weak))	bool do_multi(struct frameBlock * frameBlockRecv);
 
 #ifdef __cplusplus
 }
