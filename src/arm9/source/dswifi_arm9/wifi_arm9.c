@@ -810,11 +810,11 @@ unsigned long Wifi_Init(int initflags) {
 	
 #ifdef WIFI_USE_TCP_SGIP
     switch(initflags & WIFIINIT_OPTION_HEAPMASK) {
-    case WIFIINIT_OPTION_USEHEAP_128://default
-        wHeapAllocInit(128*1024);
-        break;
-    case WIFIINIT_OPTION_USEHEAP_64:     
+    case WIFIINIT_OPTION_USEHEAP_64:
         wHeapAllocInit(64*1024);
+        break;
+	case WIFIINIT_OPTION_USEHEAP_128:
+        wHeapAllocInit(128*1024);
         break;
     case WIFIINIT_OPTION_USEHEAP_256:    
         wHeapAllocInit(256*1024);
@@ -1053,7 +1053,7 @@ void wifiValue32Handler(uint32 value, void* data) {
 bool Wifi_InitDefault(bool useFirmwareSettings) {
 //---------------------------------------------------------------------------------
 	//fifoSetValue32Handler(FIFO_DSWIFI,  wifiValue32Handler, 0);
-	uint32 wifi_pass = Wifi_Init(WIFIINIT_OPTION_USELED);
+	uint32 wifi_pass = Wifi_Init(WIFIINIT_OPTION_USELED|WIFIINIT_OPTION_USEHEAP_64);	//use 64K DSWIFI stack
 	
 	if(!wifi_pass) return false;
 
