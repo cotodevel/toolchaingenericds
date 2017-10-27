@@ -70,6 +70,10 @@ USA
 #define NDSMULTI_UDP_PORT_HOST 8889			//host 	listener - listener is local - sender is multi IP NDS
 #define NDSMULTI_UDP_PORT_GUEST 8890		//guest listener - 
 
+//WIFI TCP defs:	7777 to 7788, 8080, 8777, 9777, 27900, 42292
+#define TCP_PORT 7777		//used for TCP Server - NDS Companion connecting
+#define NDSMULTI_TCP_PORT_HOST 7778			//host 	listener - listener is local - sender is multi IP NDS
+#define NDSMULTI_TCP_PORT_GUEST 7779		//guest listener - 
 
 //process status
 #define proc_idle (sint32)(0)
@@ -95,18 +99,19 @@ USA
 
 //struct that spinlocks a current request
 typedef struct {
-    //dswifi socket @ PORT 8888
-    struct sockaddr_in sain_UDP_PORT;			//local nds, any IP takes 127.0.0.1 or current IP @ port 8888 // really used for sending udp packets
-	struct sockaddr_in server_addr;		//server: APP UDP companion address	/ unused
-    int socket_id__multi_notconnected;	//initial stage required PORT (server -- DS)	/used for ds - server
     
-	//listener IP-port
-	struct sockaddr_in sain_listener;			//local nds, any IP takes 127.0.0.1 or current IP @ port 8889 (this IP, which is special for each ds console connected)
-	int socket_multi_listener;		//multi NDS UDP PORT reserved / used for ds - ds comms
+	//dswifi socket @ PORT 8888
+    struct sockaddr_in sain_UDP_PORT;	//UDP: Listener sockaddr_in
+	struct sockaddr_in server_addr;		//UDP Sender sockaddr_in: Desktop Server UDP companion Sender
+    int socket_id__multi_notconnected;	//UDP/TCP: Listener FD. For handshake with server so both DS can connect each other.
     
-	//sender IP-port
-	struct sockaddr_in sain_sender;	//ndsmulti IP (second DS ip): UDP multiplayer stores other NDS IP / used from guest mode -> socket_id__multi_connected 
-	int socket_multi_sender;		//multi NDS UDP PORT reserved / used for ds - ds comms
+	//DS is server here (this DS)
+	struct sockaddr_in sain_listener;	//UDP: Unused, TCP: DS sockaddr_in server structure
+	int socket_multi_listener;			//TCP: DS Server Listener. For handshake with server so both DS can connect each other/ DS-DS Multiplay
+    
+	//The other DS this DS is connected to
+	struct sockaddr_in sain_sender;	//UDP/TCP: Client DS sockaddr_in assigned by the server
+	int socket_multi_sender;		//UDP/TCP: Client DS File Descriptor assigned by the server to send messages to.
     
 	//host socket entry
     struct hostent myhost;
@@ -194,9 +199,6 @@ extern void getConnectionStatus(sint32 flag);
 extern struct frameBlock * FrameSenderUser;	//if !NULL, then must sendFrame. HandleSendUserspace(); generates this one
 //the process that runs on vblank and ensures DS - DS Comms
 extern sint32 doMULTIDaemon();
-extern struct sockaddr_in stSockAddrServer;
-extern int SocketFDLocal;
-extern int SocketFDServer;
 extern int port;
 extern struct frameBlock FrameSenderBlock;	//used by the user sender process, must be valid so the ToolchainGenericDS library sends proper frame data.
 extern struct frameBlock FrameRecvBlock;	//used by the user receiver process, can be NULL if no data frame was received.

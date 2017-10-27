@@ -246,16 +246,9 @@ void initNiFi()
 
 ////////////////////////////////////////////////////////////////////////////TCP UDP DSWNIFI Part
 client_http_handler client_http_handler_context;
-
 sint8* server_ip = (sint8*)"192.168.43.220";
-
-//these cant be in shared memory, gets stuck
 int port = 8888; 	//gdb stub port
 //SOCK_STREAM = TCP / SOCK_DGRAM = UDP
-struct sockaddr_in stSockAddrServer;
-
-int SocketFDLocal = -1;
-int SocketFDServer = -1;
 
 //below calls are internal, used by DSWNIFI library. Not for user code
 //true == sends and frees the queued frame / false == didn't send, no frame
@@ -428,6 +421,7 @@ sint32 getConnectionStatus(){
 }
 
 
+
 struct frameBlock * FrameSenderUser = NULL;
 
 //ret: -1 not connected, 0 UDP NIFI ok, 1 TCP NIFI ok, 2 LOCAL NIFI ok (connect, execute and disconnect)
@@ -446,129 +440,88 @@ sint32 doMULTIDaemon(){
 			
 			//UDP NIFI
 			if(getMULTIMode() == dswifi_udpnifimode){
-				
-				//DSWNIFI library uses this for UDP handshake for any IP that writes to our own IP @ PORT
-				//opens port 32123 @ UDP (any IP inbound from sender)
-				client_http_handler_context.socket_id__multi_notconnected=socket(AF_INET,SOCK_DGRAM,0);
-				
+				//UDP: DSClient - Server IP / Desktop Server UDP companion Listener.
+				client_http_handler_context.socket_id__multi_notconnected=socket(AF_INET,SOCK_DGRAM,0);	
 				int i=1;
 				i=ioctl(client_http_handler_context.socket_id__multi_notconnected,FIONBIO,&i); // set non-blocking port
+				memset((uint8*)&client_http_handler_context.sain_UDP_PORT, 0, sizeof(client_http_handler_context.sain_UDP_PORT));
 				client_http_handler_context.sain_UDP_PORT.sin_family=AF_INET;
 				client_http_handler_context.sain_UDP_PORT.sin_addr.s_addr=0;
 				client_http_handler_context.sain_UDP_PORT.sin_port=htons((int)UDP_PORT);
-				
 				if(bind(client_http_handler_context.socket_id__multi_notconnected,(struct sockaddr *)&client_http_handler_context.sain_UDP_PORT,sizeof(client_http_handler_context.sain_UDP_PORT))) {
-					//sint8 buf[64];
-					//sprintf(buf,"binding ERROR ");
-					//printf((sint8 *)&buf[0]);
+					//binding ERROR
 					close(client_http_handler_context.socket_id__multi_notconnected);
 					retDaemonCode = -1;
-					//while(1);
 					return retDaemonCode;
 				}
 				else{
-					//sint8 buf[64];
-					//sprintf(buf,"binding OK: port %d IP: %s ",(int)UDP_PORT, (sint8*)print_ip((uint32)Wifi_GetIP()));//(sint8*)print_ip((uint32)Wifi_GetIP()));
-					//printf((sint8 *)&buf[0]);
-					//while(1);	//ok reaches here
+					//binding OK
 				}
-				
-				
-				//for server IP / used for sending msges
-				memset((sint8 *) &client_http_handler_context.server_addr, 0, sizeof(client_http_handler_context.server_addr));
+				//UDP: DSClient - Server IP / Desktop Server UDP companion Sender
+				memset((uint8*)&client_http_handler_context.server_addr, 0, sizeof(client_http_handler_context.server_addr));
 				client_http_handler_context.server_addr.sin_family = AF_INET;
-				client_http_handler_context.server_addr.sin_addr.s_addr = inet_addr(server_ip);//SERV_HOST_ADDR);
-				client_http_handler_context.server_addr.sin_port = htons((int)UDP_PORT); //SERVER_PORT_ID);
+				client_http_handler_context.server_addr.sin_addr.s_addr = inet_addr(server_ip);
+				client_http_handler_context.server_addr.sin_port = htons((int)UDP_PORT);
+				//no binding since we have no control of server port and we should not know it anyway, DGRAM specific.
 				
-				
-				////Default UDP method for connecting to server, DSWNIFI library does not use this.
-				/*
-				memset(&stSockAddrClient, 0, sizeof(stSockAddrClient));
-				SocketFDLocal = socket(AF_INET, SOCK_DGRAM, 0);
-				if(-1 == SocketFDLocal)
-				{
-					return -1;
-				}
-				
-				int enable = 1;
-				if (setsockopt(SocketFDLocal, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0){
-					
-				}
-				
-				int i=1;
-				i=ioctl(SocketFDLocal,FIONBIO,&i); // set non-blocking port
-				
-				
-				stSockAddrClient.sin_family = AF_INET;
-				stSockAddrClient.sin_port = htons(port);
-				stSockAddrClient.sin_addr.s_addr = INADDR_ANY;	//local/any ip listen to desired port //inet_addr((sint8*)"192.168.43.220");
-				
-				if(bind(SocketFDLocal,(struct sockaddr *)&stSockAddrClient, sizeof(stSockAddrClient)))
-				{
-					return -1;
-				}
-				
-				//Server Setup
-				memset((uint8*)&stSockAddrServer, 0, sizeof(stSockAddrServer));
-				
-				SocketFDServer = socket(PF_INET, SOCK_DGRAM, 0);
-				
-				stSockAddrServer.sin_family = AF_INET;
-				stSockAddrServer.sin_port = htons(port);
-				stSockAddrServer.sin_addr.s_addr = inet_addr(server_ip);
-				*/
-				
-				//no binding since we have no control of server port and we should not know it anyway
 				setConnectionStatus(proc_execution);
 				retDaemonCode = 0;
 				return retDaemonCode;
 			}
 			//TCP NIFI
 			if(getMULTIMode() == dswifi_tcpnifimode){
-				SocketFDLocal = socket(AF_INET, SOCK_STREAM, 0);
-				if(-1 == SocketFDLocal)
-				{
+				//client_http_handler_context.socket_id__multi_notconnected --> UDP : Used by connect to acknowledge the server, the DS ip.												
+				//client_http_handler_context.socket_multi_listener			-->	TCP : Used as DS Server listening port, for handshake with server so both DS can connect each other.	
+				//UDP: DSClient - Server IP / Desktop Server UDP companion Listener.
+				client_http_handler_context.socket_id__multi_notconnected=socket(AF_INET,SOCK_DGRAM,0);
+				int i=1;
+				i=ioctl(client_http_handler_context.socket_id__multi_notconnected,FIONBIO,&i); // set non-blocking port
+				memset((uint8*)&client_http_handler_context.sain_UDP_PORT, 0, sizeof(client_http_handler_context.sain_UDP_PORT));
+				client_http_handler_context.sain_UDP_PORT.sin_family=AF_INET;
+				client_http_handler_context.sain_UDP_PORT.sin_addr.s_addr=0;
+				client_http_handler_context.sain_UDP_PORT.sin_port=htons((int)UDP_PORT);
+				if(bind(client_http_handler_context.socket_id__multi_notconnected,(struct sockaddr *)&client_http_handler_context.sain_UDP_PORT,sizeof(client_http_handler_context.sain_UDP_PORT))) {
+					//binding ERROR
+					close(client_http_handler_context.socket_id__multi_notconnected);
 					retDaemonCode = -1;
 					return retDaemonCode;
-				}
-				int i=1;
-				i=ioctl(SocketFDLocal,FIONBIO,&i); // set non-blocking port (otherwise emulator blocks)
-				
-				int optval = 1;
-				setsockopt(SocketFDLocal, SOL_SOCKET, SO_REUSEADDR, (const void *)&optval , sizeof(int));
-				//Server Setup
-				memset((uint8*)&stSockAddrServer, 0, sizeof(stSockAddrServer));
-				
-				/* this is an Internet address */
-				stSockAddrServer.sin_family = AF_INET;
-				/* let the system figure out our IP address */
-				stSockAddrServer.sin_addr.s_addr = INADDR_ANY;
-				/* this is the port we will listen on */
-				stSockAddrServer.sin_port = htons(port);
-				//connect wont work since we want the DS to open TCP at 8888 port
-				/*
-				if (connect(SocketFDLocal,&stSockAddrServer,sizeof(stSockAddrServer)) < 0){
-					printf("ERROR connecting");
-					close(SocketFDLocal);
 				}
 				else{
-					printf("OK connecting");
+					//binding OK
 				}
-				*/
-				if(bind(SocketFDLocal,(struct sockaddr *)&stSockAddrServer, sizeof(stSockAddrServer)))
+				//UDP: DSClient - Server IP / Desktop Server UDP companion Sender
+				memset((uint8*)&client_http_handler_context.server_addr, 0, sizeof(client_http_handler_context.server_addr));
+				client_http_handler_context.server_addr.sin_family = AF_INET;
+				client_http_handler_context.server_addr.sin_addr.s_addr = inet_addr(server_ip);
+				client_http_handler_context.server_addr.sin_port = htons((int)UDP_PORT);
+				//no binding since we have no control of server port and we should not know it anyway, DGRAM specific.
+				
+				//TCP DS Server
+				client_http_handler_context.socket_multi_listener = socket(AF_INET, SOCK_STREAM, 0);	//UDP: unused,	TCP: Used as DS Server listening port, for handshake with server so both DS can connect each other.
+				if(-1 == client_http_handler_context.socket_multi_listener)
 				{
 					retDaemonCode = -1;
 					return retDaemonCode;
 				}
+				i=1;
+				i=ioctl(client_http_handler_context.socket_multi_listener,FIONBIO,&i); // TCP DS Server: set non-blocking port (otherwise emulator blocks)
 				
-				listen(SocketFDLocal,5);	//DS Acts as server at desired port
+				//Server Setup
+				memset((uint8*)&client_http_handler_context.sain_listener, 0, sizeof(client_http_handler_context.sain_listener));
+				client_http_handler_context.sain_listener.sin_family = AF_INET;			/* Internet/IP */
+				client_http_handler_context.sain_listener.sin_addr.s_addr = INADDR_ANY;	/* let the system figure out our IP address */
+				client_http_handler_context.sain_listener.sin_port = htons((int)TCP_PORT);	/* this is the port we will listen on */
+				if(bind(client_http_handler_context.socket_multi_listener,(struct sockaddr *)&client_http_handler_context.sain_listener, sizeof(client_http_handler_context.sain_listener)))
+				{
+					retDaemonCode = -1;
+					return retDaemonCode;
+				}
+				listen(client_http_handler_context.socket_multi_listener,5);	//DS Acts as server at desired port
+				
 				setConnectionStatus(proc_execution);
-				
 				retDaemonCode = 1;
 				return retDaemonCode;
 			}
-			
-			
 			//LOCAL NIFI: runs on DSWIFI process
 			if(getMULTIMode() == dswifi_localnifimode){
 				initNiFi();
@@ -809,10 +762,10 @@ sint32 doMULTIDaemon(){
 					break;
 				}
 				
-				//Internal Sender Handshake. Does run during the DS - DS handshake, when DS are connected through UDP NetPlay, they this does not run anymore.
+				//UDP:Internal Sender Handshake. Does run during the DS - DS handshake, when DS are connected through UDP NetPlay, they this does not run anymore.
 				switch(dswifiSrv.dsnwifisrv_stat){
 					//#1 DS is not connected, wait until server acknowledges this info
-					case(ds_searching_for_multi_servernotaware):{		
+					case(ds_searching_for_multi_servernotaware):{
 						//NDS MAC Address
 						//volatile uint8 macbuf[6];
 						//Wifi_GetData(WIFIGETDATA_MACADDRESS, sizeof(macbuf), (uint8*)macbuf);
@@ -821,13 +774,12 @@ sint32 doMULTIDaemon(){
 						ioctl(client_http_handler_context.socket_id__multi_notconnected, FIONREAD, (uint8*)&available_ds);
 						
 						if(available_ds == 0){
-							char outgoingbuf[256];
+							char outgoingbuf[256] = {0};
 							sprintf(outgoingbuf,"dsnotaware-NIFINintendoDS-%s-",(char*)print_ip((uint32)Wifi_GetIP()));	//DS udp ports on server inherit the logic from "//Server aware" handler
 							sendto(client_http_handler_context.socket_id__multi_notconnected,outgoingbuf,strlen(outgoingbuf),0,(struct sockaddr *)&client_http_handler_context.server_addr,sizeof(client_http_handler_context.server_addr));
 						}
 					}
 					break;
-					
 					
 					//servercheck phase. DS's are binded each other. safe to send data between DSes
 					case(ds_netplay_host_servercheck):case(ds_netplay_guest_servercheck):{
@@ -851,11 +803,10 @@ sint32 doMULTIDaemon(){
 								sprintf(status,"guest");
 							}
 							
-							char buf2[64];
+							char buf2[64] = {0};
 							sprintf(buf2,"dsaware-%s-bindOK-%d-%s-",status,LISTENER_PORT,(char*)print_ip((uint32)Wifi_GetIP()));
 							//consoletext(64*2-32,(char *)&buf2[0],0);
 							sendto(client_http_handler_context.socket_id__multi_notconnected,buf2,sizeof(buf2),0,(struct sockaddr *)&client_http_handler_context.server_addr,sizeof(client_http_handler_context.server_addr));
-							
 						}
 					}
 					break;
@@ -880,43 +831,290 @@ sint32 doMULTIDaemon(){
 				int stSockAddrClientSize = sizeof(struct sockaddr_in);
 				memset((uint8*)&stSockAddrClient, 0, sizeof(struct sockaddr_in));
 				
-				volatile uint8 sendbuf[512];
-				volatile uint8 recvbuf[512];
+				volatile uint8 incomingbuf[512] = {0};
+				char cmd[12] = {0};	//srv->ds command handler
+				
+				switch(dswifiSrv.dsnwifisrv_stat){
+					//#1 DS is not connected, serve any upcoming commands related to non connected to multi
+					//ds_searching_for_multi_servernotaware -> ds_wait_for_multi here
+					case(ds_searching_for_multi_servernotaware):{
+						if(!(-1 == client_http_handler_context.socket_multi_listener))
+						{
+							//TCP
+							if ((connectedSD = accept(client_http_handler_context.socket_multi_listener, (struct sockaddr *)(&stSockAddrClient), &stSockAddrClientSize)) == -1)
+							{ 
+								//perror("accept"); exit(1); 
+							}
+							else{
+								/* Read from the socket */
+								//Receive a message from client (only data > 0 ), socket will be closed anyway
+								while( (read_size = recv(connectedSD , (uint8*)incomingbuf , sizeof(incomingbuf) , 0)) > 0 )
+								{
+									
+								}
+								//recvbuf[read_size] = '\0';
+								memcpy((uint8*)cmd,(uint8*)incomingbuf,sizeof(cmd));	//cmd recv
+								
+								//Handle Remote Procedure Commands
+								//sprintf((char*)sendbuf,"DSTime:%d:%d:%d",getTime()->tm_hour,getTime()->tm_min,getTime()->tm_sec);
+								
+								//Server aware
+								if(strncmp((const char *)cmd, (const char *)"srvaware", 8) == 0){
+									
+									//server send other NDS ip format: cmd-ip-multi_mode- (last "-" goes as well!)
+									char **tokens;
+									int count, i;
+									volatile char str[256] = {0};
+									memcpy ( (uint8*)str, (uint8*)incomingbuf, 256);
 
-				if(!(-1 == SocketFDLocal))
-				{
+									count = split ((const char*)str, '-', &tokens);
+									for (i = 0; i < count; i++) {
+										//then send back "dsaware"
+										//char outgoingbuf[64];
+										//sprintf(outgoingbuf,"%s",tokens[i]);
+										//sendto(client_http_handler_context.socket_id__multi_notconnected,outgoingbuf,strlen(outgoingbuf),0,(struct sockaddr *)&client_http_handler_context.server_addr,sizeof(client_http_handler_context.server_addr));
+									}
+									
+									//tokens[0];	//cmd
+									//tokens[1];	//external NDS ip to connect
+									//tokens[2];	//host or guest
+									
+									int host_mode = strncmp((const char*)tokens[2], (const char *)"host", 4); //host == 0
+									int guest_mode = strncmp((const char*)tokens[2], (const char *)"guest", 5); //guest == 0
+									
+									int cmd=1;
+									// set non-blocking ports
+									client_http_handler_context.socket_multi_listener=socket(AF_INET,SOCK_STREAM,0);
+									cmd=ioctl(client_http_handler_context.socket_multi_listener,FIONBIO,&cmd); 
+									setsockopt(client_http_handler_context.socket_multi_listener, SOL_SOCKET, SO_REUSEADDR, (const void *)&cmd , sizeof(int));
+									
+									client_http_handler_context.socket_multi_sender=socket(AF_INET,SOCK_STREAM,0);
+									cmd=ioctl(client_http_handler_context.socket_multi_sender,FIONBIO,&cmd); 
+									setsockopt(client_http_handler_context.socket_multi_sender, SOL_SOCKET, SO_REUSEADDR, (const void *)&cmd , sizeof(int));
+									
+									int LISTENER_PORT 	=	0;
+									int SENDER_PORT		=	0;
+									if(host_mode == 0){
+										LISTENER_PORT 	= 	(int)NDSMULTI_TCP_PORT_HOST;
+										SENDER_PORT		=	(int)NDSMULTI_TCP_PORT_GUEST;
+									}
+									else if(guest_mode == 0){
+										LISTENER_PORT 	= 	(int)NDSMULTI_TCP_PORT_GUEST;
+										SENDER_PORT		=	(int)NDSMULTI_TCP_PORT_HOST;
+									}
+									
+									//bind conn to LOCAL ip-port listener
+									memset((uint8*)&client_http_handler_context.sain_listener, 0, sizeof(client_http_handler_context.sain_listener));
+									client_http_handler_context.sain_listener.sin_family = AF_INET;
+									client_http_handler_context.sain_listener.sin_addr.s_addr=INADDR_ANY;	//local/any ip listen to desired port
+									//int atoi ( const char * str );
+									//int nds_multi_port = atoi((const char*)tokens[2]);
+									client_http_handler_context.sain_listener.sin_port = htons(LISTENER_PORT); //nds_multi_port
+									
+									
+									//NDS MULTI IP: No need to bind / sendto use
+									memset((uint8*)&client_http_handler_context.sain_sender, 0, sizeof(client_http_handler_context.sain_sender));
+									client_http_handler_context.sain_sender.sin_family = AF_INET;
+									client_http_handler_context.sain_sender.sin_addr.s_addr = INADDR_BROADCAST;//((const char*)"191.161.23.11");// //ip was reversed 
+									client_http_handler_context.sain_sender.sin_port = htons(SENDER_PORT); 
+									
+									struct sockaddr_in *addr_in2= (struct sockaddr_in *)&client_http_handler_context.sain_sender;
+									char *IP_string_sender = inet_ntoa(addr_in2->sin_addr);
+									
+									//bind ThisIP(each DS network hardware) against the current DS UDP port
+									if(bind(client_http_handler_context.socket_multi_listener,(struct sockaddr *)&client_http_handler_context.sain_listener,sizeof(client_http_handler_context.sain_listener))) {
+										if(host_mode == 0){
+											printf("TCP:[host]binding error");
+											while(1==1);
+										}
+										else if(guest_mode == 0){
+											printf("TCP:[guest]binding error");
+											while(1==1);
+										}
+										
+										close(client_http_handler_context.socket_multi_listener);
+										retDaemonCode = -1;
+										return retDaemonCode;
+									}
+									else{
+										char buf[96] = {0};
+										char id[16] = {0};
+										//read IP from sock interface binded
+										struct sockaddr_in *addr_in= (struct sockaddr_in *)&client_http_handler_context.sain_listener;	//0.0.0.0 == (char*)print_ip((uint32)Wifi_GetIP()) 
+										char *IP_string = inet_ntoa(addr_in->sin_addr);
+										
+										if(host_mode == 0){
+											sprintf(buf,"[host]binding OK MULTI: port [%d] IP: [%s]  ",LISTENER_PORT, (const char*)print_ip((uint32)Wifi_GetIP()));//(char*)print_ip((uint32)Wifi_GetIP()));
+											sprintf(id,"[host]");
+											printf("TCP:%s",buf);
+											//stop sending data, server got it already.
+											dswifiSrv.dsnwifisrv_stat = ds_netplay_host_servercheck;
+											while(1==1);
+										}
+										else if(guest_mode == 0){
+											sprintf(buf,"[guest]binding OK MULTI: port [%d] IP: [%s]  ",LISTENER_PORT, (const char*)print_ip((uint32)Wifi_GetIP()));//(char*)print_ip((uint32)Wifi_GetIP()));
+											sprintf(id,"[guest]");
+											printf("TCP:%s",buf);
+											//stop sending data, server got it already.
+											dswifiSrv.dsnwifisrv_stat = ds_netplay_guest_servercheck;
+											while(1==1);
+										}
+										
+										//note: bind UDPsender?: does not work with UDP Datagram socket format (UDP basically)
+									}
+								}
+								
+								/*
+								//Send some data
+								if( send(connectedSD , (uint8*)sendbuf , sizeof(sendbuf) , 0) > 0)
+								{
+									//Send ok
+								}
+								else{
+									//Send error
+								}
+								*/
+								
+								//only after we accepted we can close Server socket.
+								//setConnectionStatus(proc_shutdown);
+							}
+							close(connectedSD);
+						}
+						
+						//TCP:Internal Sender Handshake. Does run during the DS - DS handshake, when DS are connected through UDP NetPlay, they this does not run anymore.
+						volatile unsigned long available_ds = 0;
+						ioctl(client_http_handler_context.socket_id__multi_notconnected, FIONREAD, (uint8*)&available_ds);
+						
+						if(available_ds == 0){
+							char outgoingbuf[256] = {0};
+							sprintf(outgoingbuf,"dsnotaware-NIFINintendoDS-%s-",(char*)print_ip((uint32)Wifi_GetIP()));	//DS udp ports on server inherit the logic from "//Server aware" handler
+							sendto(client_http_handler_context.socket_id__multi_notconnected,outgoingbuf,strlen(outgoingbuf),0,(struct sockaddr *)&client_http_handler_context.server_addr,sizeof(client_http_handler_context.server_addr));
+						}
+					}
+					break;
+					
+					//servercheck phase acknow
+					case(ds_netplay_host_servercheck):case(ds_netplay_guest_servercheck):{
+						if(!(-1 == client_http_handler_context.socket_multi_listener))
+						{
+							//TCP
+							if ((connectedSD = accept(client_http_handler_context.socket_multi_listener, (struct sockaddr *)(&stSockAddrClient), &stSockAddrClientSize)) == -1)
+							{ 
+								//perror("accept"); exit(1); 
+							}
+							else{
+								/* Read from the socket */
+								//Receive a message from client (only data > 0 ), socket will be closed anyway
+								while( (read_size = recv(connectedSD , (uint8*)incomingbuf , sizeof(incomingbuf) , 0)) > 0 )
+								{
+									
+								}
+								memcpy((uint8*)cmd,(uint8*)incomingbuf,sizeof(cmd));	//cmd recv
+								
+								if(strncmp((const char *)cmd, (const char *)"dsconnect", 9) == 0){							
+									int LISTENER_PORT 	=	0;
+									int SENDER_PORT		=	0;
+									if(dswifiSrv.dsnwifisrv_stat == ds_netplay_host_servercheck){
+										LISTENER_PORT 	= 	(int)NDSMULTI_TCP_PORT_HOST;
+										SENDER_PORT		=	(int)NDSMULTI_TCP_PORT_GUEST;
+										
+										clrscr();
+										printf("//////TCP:DSCONNECTED[HOST]-PORT:%d",LISTENER_PORT);
+										dswifiSrv.dsnwifisrv_stat = ds_netplay_host;
+										//nifi_stat = 5;
+									}
+									else if(dswifiSrv.dsnwifisrv_stat == ds_netplay_guest_servercheck){
+										LISTENER_PORT 	= 	(int)NDSMULTI_TCP_PORT_GUEST;
+										SENDER_PORT		=	(int)NDSMULTI_TCP_PORT_HOST;
+										
+										clrscr();
+										printf("///////TCP:DSCONNECTED[GUEST]-PORT:%d",LISTENER_PORT);
+										dswifiSrv.dsnwifisrv_stat = ds_netplay_guest;
+										//nifi_stat = 6;
+									}
+									
+									//client_http_handler_context.socket_multi_listener (listens on TCP PORT)
+									listen(client_http_handler_context.socket_multi_listener,5);	//DS Acts as server at desired port
+									
+									//client_http_handler_context.socket_multi_sender (sends to TCP PORT)
+
+									
+									close(client_http_handler_context.socket_id__multi_notconnected); //closer server socket to prevent problems when udp multiplayer
+									
+								}
+						
+								/*
+								//Send some data
+								if( send(connectedSD , (uint8*)sendbuf , sizeof(sendbuf) , 0) > 0)
+								{
+									//Send ok
+								}
+								else{
+									//Send error
+								}
+								*/
+								
+								//CONNECT
+								
+								//LISTEN
+								
+								
+							}
+							close(connectedSD);
+						}
+						
+					}
+					break;
+					
+					
+					
+					//#last:connected!
 					//TCP
-					if ((connectedSD = accept(SocketFDLocal, (struct sockaddr *)(&stSockAddrClient), &stSockAddrClientSize)) == -1)
-					{ 
-						//perror("accept"); exit(1); 
-					}
-					else{
-						/* Read from the socket */
-						//Receive a message from client (only data > 0 ), socket will be closed anyway
-						while( (read_size = recv(connectedSD , (uint8*)recvbuf , sizeof(recvbuf) , 0)) > 0 )
+					//logic: recv data(256byte buf) from port
+					case(ds_netplay_host):case(ds_netplay_guest):{
+						
+						//DS-DS TCP Handler listener
+						if(!(-1 == client_http_handler_context.socket_multi_listener))
 						{
-							
+							//TCP
+							if ((connectedSD = accept(client_http_handler_context.socket_multi_listener, (struct sockaddr *)(&stSockAddrClient), &stSockAddrClientSize)) == -1)
+							{ 
+								//perror("accept"); exit(1); 
+							}
+							else{
+								/* Read from the socket */
+								//Receive a message from client (only data > 0 ), socket will be closed anyway
+								while( (read_size = recv(connectedSD , (uint8*)incomingbuf , sizeof(incomingbuf) , 0)) > 0 )
+								{
+									
+								}
+								//decide whether to put data in userbuffer and if frame is valid here
+								struct frameBlock * frameHandled = receiveDSWNIFIFrame((uint8*)incomingbuf,read_size);
+								if(frameHandled != NULL){
+									//trigger the User Recv Process here
+									HandleRecvUserspace(frameHandled);	//Valid Frame
+								}
+								else{
+									//Invalid Frame
+								}
+								
+								/*
+								//Send some data TCP example
+								if( send(connectedSD , (uint8*)sendbuf , sizeof(sendbuf) , 0) > 0)
+								{
+									//Send ok
+								}
+								else{
+									//Send error
+								}
+								*/
+								
+							}
+							close(connectedSD);
 						}
-						recvbuf[read_size] = '\0';
-						
-						//Handle Remote Procedure Commands
-						//sprintf((char*)sendbuf,"DSTime:%d:%d:%d",getTime()->tm_hour,getTime()->tm_min,getTime()->tm_sec);
-						
-						//Send some data
-						if( send(connectedSD , (uint8*)sendbuf , sizeof(sendbuf) , 0) > 0)
-						{
-							//Send ok
-						}
-						else{
-							//Send error
-						}
-						
-						//only after we accepted we can close Server socket.
-						setConnectionStatus(proc_shutdown);
 					}
-					close(connectedSD);
+					break;
 				}
-		
 				retDaemonCode = 1;
 			}
 			
@@ -943,7 +1141,7 @@ sint32 doMULTIDaemon(){
 		
 		//shutdown
 		case (proc_shutdown):{
-			close(SocketFDLocal);
+			//close(client_http_handler_context.socket_multi_listener);	//todo
 			setMULTIMode(proc_connect);
 			retDaemonCode = 0;
 			return retDaemonCode;
