@@ -59,7 +59,7 @@ USA
 //NIFI defs
 #define arm7_header_framesize 	(12 + 2)									//arm7 
 #define arm9_header_framesize	(12 + 6)
-#define frame_header_size 		(arm9_header_framesize + arm7_header_framesize)	
+#define frame_header_size 		(sint32)(arm9_header_framesize + arm7_header_framesize)		//32
 
 #define CRC_CRC_STAGE 		0x81
 #define CRC_OK_SAYS_HOST	0x88
@@ -161,6 +161,8 @@ extern void Handler(int packetID, int readlength);
 extern bool NiFiHandler(int packetID, int readlength, uint8 * data);
 extern void initNiFi();
 extern void Timer_10ms(void);
+
+extern bool nifiFrame;
 
 //DSWNIFI: nifi buffer IO
 extern volatile uint8	 data[4096];		//data[32] + is recv TX'd frame nfdata[128]

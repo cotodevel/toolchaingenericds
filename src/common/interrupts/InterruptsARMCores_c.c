@@ -24,6 +24,7 @@ USA
 
 #ifdef ARM9
 #include "wifi_arm9.h"
+#include "dswnifi_lib.h"
 #endif
 
 #include "InterruptsARMCores_h.h"

@@ -60,7 +60,7 @@ USA
 //If you use: switch_dswnifi_mode(dswifi_idlemode);		//Stable, Release code
 //If you use: switch_dswnifi_mode(dswifi_udpnifimode);	//UDP NIFI: Stable Release code
 //If you use: switch_dswnifi_mode(dswifi_tcpnifimode);	//TCP NIFI: Disabled, issues so I didn't bother, please use dswifi_udpnifimode (UDP NIFI)
-//If you use: switch_dswnifi_mode(dswifi_localnifimode);		//Stable, Release code
+//If you use: switch_dswnifi_mode(dswifi_localnifimode);//Stable, Release code
 
 
 TdsnwifisrvStr dswifiSrv;
@@ -96,26 +96,27 @@ volatile 	uint8 nfdata[128]			= {0xB2, 0xD1, (uint8)CRC_OK_SAYS_HOST, 0, 0, 0, 0
 
 //all sender frames must be crc'd otherwise the receiver will discard them
 //Handler that runs on DSWIFI timings, handle NIFI
+__attribute__((section(".itcm")))
 bool NiFiHandler(int packetID, int readlength, uint8 * data){
-	bool validFrame = false;
-	//decide whether to put data in userbuffer and if frame is valid here
-	struct frameBlock * frameHandled = receiveDSWNIFIFrame(data,readlength);	
-	if(frameHandled != NULL){
-		clrscr();
-		printf("LOCAL:Valid Frame");
-		//trigger the User Recv Process here
-		HandleRecvUserspace(frameHandled);	//Valid Frame
-		validFrame = true;
-	}
-	else{
-		//Invalid Frame
-		clrscr();
-		printf("LOCAL:InValid Frame");
-	}
 	
-	return validFrame;
+	//accept a valid NIFI frame (no crc required here)
+	if((data[frame_header_size + 0] == nifitoken[0]) && (data[frame_header_size + 1] == nifitoken[1])){
+	
+		//decide whether to put data in userbuffer and if frame is valid here
+		struct frameBlock * frameHandled = receiveDSWNIFIFrame(data+frame_header_size,readlength);	//sender always cut off 2 bytes for crc16 we use	
+		if(frameHandled != NULL){
+			//LOCAL:Valid Frame
+			//trigger the User Recv Process here
+			HandleRecvUserspace(frameHandled);	//Valid Frame
+			return true;
+		}
+		else{
+			//LOCAL:InValid Frame
+			return false;
+		}
+	
+	}
 }
-
 
 void Handler(int packetID, int readlength)
 {
@@ -123,7 +124,7 @@ void Handler(int packetID, int readlength)
 	switch(getMULTIMode()){
 		case (dswifi_localnifimode):{
 			Wifi_RxRawReadPacket(packetID, readlength, (unsigned short *)data);
-			NiFiHandler(packetID, readlength, (uint8*)(&data[0]));	//recv packet
+			NiFiHandler(packetID, readlength, (uint8*)(&data[0]));	
 		}
 		break;
 		
@@ -150,16 +151,13 @@ void initNiFi()
 {
 	Wifi_InitDefault(false);
 	Wifi_SetPromiscuousMode(1);
-	//Wifi_EnableWifi();
 	Wifi_RawSetPacketHandler(Handler);
 	Wifi_SetChannel(10);
-
+	
 	if(1) {
 		//for secial configuration for wifi
 		DisableIrq(IRQ_TIMER3);
-		//ori:irqSet(IRQ_TIMER3, Timer_10ms); // replace timer IRQ
 		//irqSet(IRQ_TIMER3, Timer_50ms); // replace timer IRQ
-		//ori: TIMER3_DATA = -(6553 / 5); // 6553.1 * 256 / 5 cycles = ~10ms;
 		TIMERXDATA(3) = -6553; // 6553.1 * 256 cycles = ~50ms;
 		TIMERXCNT(3) = 0x00C2; // enable, irq, 1/256 clock
 		EnableIrq(IRQ_TIMER3);
@@ -217,13 +215,14 @@ __attribute__((section(".itcm")))
 struct frameBlock * receiveDSWNIFIFrame(uint8 * databuf_src,int frameSizeRecv)	//the idea is that we append DSWNIFI Frame + extended frame. so copy the extra data to buffer
 {
 	struct frameBlock * frameRecvInst =  NULL;
-	
+	volatile uint16 crc16_recv_frame = 0;
 	//1: check the header localnifi appends, udp nifi/wifi does not append this header
 	int frame_hdr_size = 0;	//nifi raw only frame has this header
 	switch(getMULTIMode()){
 		case(dswifi_localnifimode):
 		{
 			frame_hdr_size = frame_header_size;	//localframe has this header
+			frameSizeRecv-=frame_hdr_size;
 		}
 		break;
 		
@@ -231,15 +230,15 @@ struct frameBlock * receiveDSWNIFIFrame(uint8 * databuf_src,int frameSizeRecv)	/
 		//case(dswifi_tcpnifimode):
 		{
 			frame_hdr_size = 0;					//udp nifi frame has not this header
+			frameSizeRecv-=frame_hdr_size;
 		}
 	}
 	
 	//read crc from nifi frame so we dont end up with corrupted data.
-	volatile uint16 crc16_recv_frame = *(uint16*)(databuf_src + frame_hdr_size + frameSizeRecv - (int)sizeof(volatile uint16));
-	
+	crc16_recv_frame = *(uint16*)(databuf_src + frameSizeRecv - (int)sizeof(volatile uint16));
 	//generate crc per nifi frame so we dont end up with corrupted data.
 	volatile uint16 crc16_frame_gen = swiCRC16	(	0xffff, //uint16 	crc,
-		(databuf_src + frame_hdr_size),
+		(databuf_src),
 		(frameSizeRecv - (int)sizeof(volatile uint16))		//cant have this own crc here
 		);
 	
@@ -270,6 +269,7 @@ void switch_dswnifi_mode(sint32 mode){
 	else if (mode == (sint32)dswifi_localnifimode){
 		//nifi
 		dswifiSrv.dsnwifisrv_stat	= ds_searching_for_multi_servernotaware;
+		initNiFi();
 		setMULTIMode(dswifi_localnifimode);
 		dswifiSrv.dswifi_setup = false;
 	}
@@ -483,7 +483,7 @@ sint32 doMULTIDaemon(){
 			*/
 			//LOCAL NIFI: runs on DSWIFI process
 			if(getMULTIMode() == dswifi_localnifimode){
-				initNiFi();
+				Wifi_EnableWifi();
 				setConnectionStatus(proc_execution);
 				retDaemonCode = 2;
 				return retDaemonCode;
@@ -960,7 +960,6 @@ sint32 doMULTIDaemon(){
 			*/
 			//Local Nifi: runs from within the DSWIFI frame handler itself so ignored here.
 			if(getMULTIMode() == dswifi_localnifimode){
-				
 				retDaemonCode = 2;
 			}
 			
