@@ -65,15 +65,15 @@ USA
 #define CRC_OK_SAYS_HOST	0x88
 
 //WIFI UDP defs
-#define UDP_PORT 8888				//used for UDP Server - NDS Companion connecting
+#define UDP_PORT (sint32)(8888)				//used for UDP Server - NDS Companion connecting
 //used for UDP transfers between NDS Multi mode
-#define NDSMULTI_UDP_PORT_HOST 8889			//host 	listener - listener is local - sender is multi IP NDS
-#define NDSMULTI_UDP_PORT_GUEST 8890		//guest listener - 
+#define NDSMULTI_UDP_PORT_HOST (sint32)(8889)			//host 	listener - listener is local - sender is multi IP NDS
+#define NDSMULTI_UDP_PORT_GUEST (sint32)(8890)		//guest listener - 
 
 //WIFI TCP defs:	7777 to 7788, 8080, 8777, 9777, 27900, 42292
-#define TCP_PORT 7777		//used for TCP Server - NDS Companion connecting
-#define NDSMULTI_TCP_PORT_HOST 7778			//host 	listener - listener is local - sender is multi IP NDS
-#define NDSMULTI_TCP_PORT_GUEST 7779		//guest listener - 
+#define TCP_PORT (sint32)(7777)		//used for TCP Server - NDS Companion connecting
+#define NDSMULTI_TCP_PORT_HOST (sint32)(7778)			//host 	listener - listener is local - sender is multi IP NDS
+#define NDSMULTI_TCP_PORT_GUEST (sint32)(7779)		//guest listener - 
 
 //process status
 #define proc_idle (sint32)(0)
@@ -97,22 +97,24 @@ USA
 #define ds_netplay_host (sint32)(12)
 #define ds_netplay_guest (sint32)(13)
 
-//struct that spinlocks a current request
 typedef struct {
-    
 	//dswifi socket @ PORT 8888
     struct sockaddr_in sain_UDP_PORT;	//UDP: Listener sockaddr_in
 	struct sockaddr_in server_addr;		//UDP Sender sockaddr_in: Desktop Server UDP companion Sender
-    int socket_id__multi_notconnected;	//UDP/TCP: Listener FD. For handshake with server so both DS can connect each other.
+    int socket_id__multi_notconnected;	//UDP/TCP: Listener FD. For handshake with server so both DS can connect each other. sendto uses for sending to PC
     
-	//DS is server here (this DS)
-	struct sockaddr_in sain_listener;	//UDP: Unused, TCP: DS sockaddr_in server structure
+	//(this)DS Server Companion Listener: TCP 7777
+	struct sockaddr_in sain_listener;	//UDP: Unused, TCP: DS sockaddr_in Server Companion Listen Socket: TCP 7777
 	int socket_multi_listener;			//TCP: DS Server Listener. For handshake with server so both DS can connect each other/ DS-DS Multiplay
     
-	//The other DS this DS is connected to
+	//(The other) DS Multi: TCP NDSMULTI_TCP_PORT_HOST || NDSMULTI_TCP_PORT_GUEST
 	struct sockaddr_in sain_sender;	//UDP/TCP: Client DS sockaddr_in assigned by the server
 	int socket_multi_sender;		//UDP/TCP: Client DS File Descriptor assigned by the server to send messages to.
     
+	//(this)DS Server Multi: TCP NDSMULTI_TCP_PORT_HOST || NDSMULTI_TCP_PORT_GUEST
+	struct sockaddr_in sain_listenerNetplay;	//UDP: Unused, TCP: (this)DS Server Multi sockaddr_in TCP NDSMULTI_TCP_PORT_HOST || NDSMULTI_TCP_PORT_GUEST
+	int socket_multi_listenerNetplay;			//UDP: Unused, TCP: (this)DS Server Multi SocketDescriptor TCP NDSMULTI_TCP_PORT_HOST || NDSMULTI_TCP_PORT_GUEST
+	
 	//host socket entry
     struct hostent myhost;
     
