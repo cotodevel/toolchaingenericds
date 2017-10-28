@@ -94,37 +94,23 @@ volatile 	uint8 nificrc[32]				= {0xB2, 0xD1, (uint8)CRC_CRC_STAGE, 0, 0, 0};
 volatile 	uint8 data[4096];			//receiver frame, data + frameheader is recv TX'd frame nfdata[128]. Used by NIFI Mode
 volatile 	uint8 nfdata[128]			= {0xB2, 0xD1, (uint8)CRC_OK_SAYS_HOST, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};	//sender frame, recv as data[4096], see above. all valid frames have CRC_OK_SAYS_HOST sent.
 
-//all sender frames must be crc'd otherwise the receiver will discard them
-//Handler that runs on DSWIFI timings, handle NIFI
-__attribute__((section(".itcm")))
-bool NiFiHandler(int packetID, int readlength, uint8 * data){
-	
-	//accept a valid NIFI frame (no crc required here)
-	if((data[frame_header_size + 0] == nifitoken[0]) && (data[frame_header_size + 1] == nifitoken[1])){
-	
-		//decide whether to put data in userbuffer and if frame is valid here
-		struct frameBlock * frameHandled = receiveDSWNIFIFrame(data+frame_header_size,readlength);	//sender always cut off 2 bytes for crc16 we use	
-		if(frameHandled != NULL){
-			//LOCAL:Valid Frame
-			//trigger the User Recv Process here
-			HandleRecvUserspace(frameHandled);	//Valid Frame
-			return true;
-		}
-		else{
-			//LOCAL:InValid Frame
-			return false;
-		}
-	
-	}
-}
 
 void Handler(int packetID, int readlength)
 {
-	//coto
 	switch(getMULTIMode()){
 		case (dswifi_localnifimode):{
 			Wifi_RxRawReadPacket(packetID, readlength, (unsigned short *)data);
-			NiFiHandler(packetID, readlength, (uint8*)(&data[0]));	
+			//decide whether to put data in userbuffer and if frame is valid here
+			struct frameBlock * frameHandled = receiveDSWNIFIFrame((uint8*)(data+frame_header_size),readlength);	//sender always cut off 2 bytes for crc16 we use	
+			if(frameHandled != NULL){
+				//LOCAL:Valid Frame
+				//trigger the User Recv Process here
+				HandleRecvUserspace(frameHandled);	//Valid Frame
+			}
+			else{
+				//LOCAL:InValid Frame
+			}
+			
 		}
 		break;
 		
@@ -624,7 +610,7 @@ sint32 doMULTIDaemon(){
 								
 								//note: bind UDPsender?: does not work with UDP Datagram socket format (UDP basically)
 							}
-							
+							clrscr();
 						}
 						
 					}
@@ -709,10 +695,15 @@ sint32 doMULTIDaemon(){
 								//decide whether to put data in userbuffer and if frame is valid here
 								struct frameBlock * frameHandled = receiveDSWNIFIFrame((uint8*)inputbuf,datalen2);
 								if(frameHandled != NULL){
+									clrscr();
+									printf("valid frame!");
 									//trigger the User Recv Process here
 									HandleRecvUserspace(frameHandled);	//Valid Frame
 								}
 								else{
+									clrscr();
+									printf("INvalid frame!");
+									
 									//Invalid Frame
 								}
 							}

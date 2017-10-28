@@ -158,7 +158,6 @@ extern "C"{
 //NIFI Part
 //DSWNIFI: NIFI
 extern void Handler(int packetID, int readlength);
-extern bool NiFiHandler(int packetID, int readlength, uint8 * data);
 extern void initNiFi();
 extern void Timer_10ms(void);
 

@@ -334,7 +334,7 @@ namespace ConsoleApplication1
                                     //DS1
                                     string udpmsgds1 = "srvaware" + "-" + ip_dest_ds1 + "-" + ds1_mode + "-";
                                     SendUDPMsg(udpmsgds1, nds_session_list[nds1_index].ip, udp_port.ToString());
-                                    Thread.Sleep(3000);  //3s for UDP
+                                    Thread.Sleep(3000);  //for UDP
                                     //DS2
                                     string udpmsgds2 = "srvaware" + "-" + ip_dest_ds2 + "-" + ds2_mode + "-";
                                     SendUDPMsg(udpmsgds2, nds_session_list[nds2_index].ip, udp_port.ToString());
