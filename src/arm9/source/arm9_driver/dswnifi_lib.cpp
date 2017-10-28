@@ -56,6 +56,13 @@ USA
 
 #endif
 
+//DSWNifi Library status:
+//If you use: switch_dswnifi_mode(dswifi_idlemode);		//Stable, Release code
+//If you use: switch_dswnifi_mode(dswifi_udpnifimode);	//UDP NIFI: Stable Release code
+//If you use: switch_dswnifi_mode(dswifi_tcpnifimode);	//TCP NIFI: Disabled, issues so I didn't bother, please use dswifi_udpnifimode (UDP NIFI)
+//If you use: switch_dswnifi_mode(dswifi_localnifimode);		//Stable, Release code
+
+
 TdsnwifisrvStr dswifiSrv;
 
 ///////////////////////////////////////////////////////////////////////////NIFI Part
@@ -89,103 +96,21 @@ volatile 	uint8 nfdata[128]			= {0xB2, 0xD1, (uint8)CRC_OK_SAYS_HOST, 0, 0, 0, 0
 
 //all sender frames must be crc'd otherwise the receiver will discard them
 //Handler that runs on DSWIFI timings, handle NIFI
-//true 	== 	dswnifi frame
-//false ==	invalid frame
 bool NiFiHandler(int packetID, int readlength, uint8 * data){
 	bool validFrame = false;
-	
 	//decide whether to put data in userbuffer and if frame is valid here
-	struct frameBlock * frameHandled = receiveDSWNIFIFrame(data,readlength);
+	struct frameBlock * frameHandled = receiveDSWNIFIFrame(data,readlength);	
 	if(frameHandled != NULL){
-		//#1: nifi-handshake  
-		//accept a valid NIFI frame (no crc nifi frame will be used)
-		if((data[frame_header_size + 0] == nifitoken[0]) && (data[frame_header_size + 1] == nifitoken[1])){
-		
-			switch(nifi_stat) {
-				case 0:{
-					return validFrame;
-				}
-				break;
-				case 1:			
-					if(strncmp((const char *)(data + frame_header_size + 2), (const char *)(nifitoken + 2), 6) == 0) {	//token "nifids"
-						validFrame = true;
-						nifi_stat = 3;	
-					}
-					break;
-				case 2:			
-					if(strncmp((const char *)(data + frame_header_size + 2), (const char *)(nificonnect + 2), 7) == 0) {	//token "connect"
-						validFrame = true;
-						nifi_stat = 4;
-					}
-					break;
-				case 3:
-					if(data[frame_header_size + 2] == CRC_CRC_STAGE) {		//Check the CRC (cmd from MP). Make sure that both players are using the same game.
-						/*
-						int remotecrc = (data[frame_header_size + 3] | (data[frame_header_size + 4] << 8));
-						if(debuginfo[17] == remotecrc) {	//ok. same game
-							valid_nifi_frame = true;
-							nifi_stat = 5;
-							nifi_cmd |= MP_CONN;
-							sendcmd((uint8*)&nfdata[0]);
-							hideconsole();
-							NES_reset();
-							nifi_keys = 0;
-							plykeys1 = 0;
-							plykeys2 = 0;
-							guest_framecount = 0;
-							global_playcount = 0;
-							joyflags &= ~AUTOFIRE;
-							__af_st = __af_start;
-							menu_game_reset();	//menu is closed.
-						}
-						else {		//bad crc. disconnect the comm.
-							nifi_stat = 0;
-							nifi_cmd &= ~MP_CONN;
-							sendcmd((uint8*)&nfdata[0]);
-						}
-						*/
-					}
-					break;
-				case 4:
-					if(data[frame_header_size + 2] == CRC_OK_SAYS_HOST) {
-						/*
-						if(nifi_cmd & MP_CONN) {	//CRC ok, get ready for multi-play.
-							valid_nifi_frame = true;
-							nifi_stat = 6;
-							hideconsole();
-							NES_reset();
-							nifi_keys = 0;
-							plykeys1 = 0;
-							plykeys2 = 0;
-							guest_framecount = 0;
-							global_playcount = 0;
-							joyflags &= ~AUTOFIRE;
-							__af_st = __af_start;
-							menu_game_reset();	//menu is closed.
-						}
-						else {					//CRC error, the both sides should choose the some game.
-							nifi_stat = 0;
-						}
-						*/
-							
-					}
-					break;
-			}
-		}
-		
-		//#2: crc nifi-frame
-		if((nifi_stat == 5) || (nifi_stat == 6)){ //validate frames only if we are past the nifi handshake
-			int framesize = 0;
-			
-			if(nifi_stat == 5) {	//host receives from guest
-				framesize = 3 + sizeof(nifi_cmd) + sizeof(plykeys2) + sizeof(guest_vcount) + sizeof(nifi_keys_sync) + sizeof(guest_framecount);
-			} 
-			else if(nifi_stat == 6){//guest receives from host
-				framesize = 3 + sizeof(nifi_cmd) + sizeof(host_vcount) + sizeof(plykeys1) + sizeof(host_framecount);
-			}
-		}
-		
+		clrscr();
+		printf("LOCAL:Valid Frame");
+		//trigger the User Recv Process here
+		HandleRecvUserspace(frameHandled);	//Valid Frame
 		validFrame = true;
+	}
+	else{
+		//Invalid Frame
+		clrscr();
+		printf("LOCAL:InValid Frame");
 	}
 	
 	return validFrame;
@@ -273,7 +198,7 @@ bool sendDSWNIFIFame(struct frameBlock * frameInst)
 		}
 		break;
 		case(dswifi_udpnifimode):
-		case(dswifi_tcpnifimode):
+		//case(dswifi_tcpnifimode):
 		{
 			Wifi_RawTxFrame_WIFI(sizetoSend , (uint8*)databuf_src);
 		}
@@ -303,7 +228,7 @@ struct frameBlock * receiveDSWNIFIFrame(uint8 * databuf_src,int frameSizeRecv)	/
 		break;
 		
 		case(dswifi_udpnifimode):
-		case(dswifi_tcpnifimode):
+		//case(dswifi_tcpnifimode):
 		{
 			frame_hdr_size = 0;					//udp nifi frame has not this header
 		}
@@ -351,8 +276,8 @@ void switch_dswnifi_mode(sint32 mode){
 	//UDP Nifi/WIFI
 	else if (
 		(mode == (sint32)dswifi_udpnifimode)
-		||
-		(mode == (sint32)dswifi_tcpnifimode)
+		//||
+		//(mode == (sint32)dswifi_tcpnifimode)
 	){
 		dswifiSrv.dsnwifisrv_stat = ds_searching_for_multi_servernotaware;
 		setMULTIMode(mode);
@@ -376,8 +301,8 @@ void switch_dswnifi_mode(sint32 mode){
 	else if(
 		(
 		(getMULTIMode() == dswifi_udpnifimode)
-		||
-		(getMULTIMode() == dswifi_tcpnifimode)
+		//||
+		//(getMULTIMode() == dswifi_tcpnifimode)
 		)
 		&& (dswifiSrv.dswifi_setup == false)
 	){
@@ -468,7 +393,9 @@ sint32 doMULTIDaemon(){
 				retDaemonCode = 0;
 				return retDaemonCode;
 			}
-			//TCP NIFI
+			
+			//TCP NIFI Disabled
+			/*
 			if(getMULTIMode() == dswifi_tcpnifimode){
 				//client_http_handler_context.socket_id__multi_notconnected --> UDP : Used by connect to acknowledge the server, the DS ip.												
 				//client_http_handler_context.socket_multi_listener			-->	TCP : Used as DS Server listening port, for handshake with server so both DS can connect each other.	
@@ -510,9 +437,9 @@ sint32 doMULTIDaemon(){
 				
 				//Server Companion Listen Socket: TCP 7777
 				memset((uint8*)&client_http_handler_context.sain_listener, 0, sizeof(client_http_handler_context.sain_listener));
-				client_http_handler_context.sain_listener.sin_family = AF_INET;			/* Internet/IP */
-				client_http_handler_context.sain_listener.sin_addr.s_addr = INADDR_ANY;	/* let the system figure out our IP address */
-				client_http_handler_context.sain_listener.sin_port = htons((int)TCP_PORT);	/* this is the port we will listen on */
+				client_http_handler_context.sain_listener.sin_family = AF_INET;			// Internet/IP 
+				client_http_handler_context.sain_listener.sin_addr.s_addr = INADDR_ANY;	// let the system figure out our IP address 
+				client_http_handler_context.sain_listener.sin_port = htons((int)TCP_PORT);	// this is the port we will listen on 
 				if(bind(client_http_handler_context.socket_multi_listener,(struct sockaddr *)&client_http_handler_context.sain_listener, sizeof(client_http_handler_context.sain_listener)))
 				{
 					retDaemonCode = -1;
@@ -553,6 +480,7 @@ sint32 doMULTIDaemon(){
 				retDaemonCode = 1;
 				return retDaemonCode;
 			}
+			*/
 			//LOCAL NIFI: runs on DSWIFI process
 			if(getMULTIMode() == dswifi_localnifimode){
 				initNiFi();
@@ -840,7 +768,8 @@ sint32 doMULTIDaemon(){
 				retDaemonCode = 0;
 			}
 			
-			//TCP NIFI
+			//TCP NIFI Disabled
+			/*
 			if(getMULTIMode() == dswifi_tcpnifimode){
 				int connectedSD = -1;
 				int read_size = 0;
@@ -866,7 +795,7 @@ sint32 doMULTIDaemon(){
 								
 							}
 							else{
-								/* Read from the socket */
+								// Read from the socket 
 								//Receive a message from client (only data > 0 ), socket will be closed anyway
 								while( (read_size = recv(connectedSD , (uint8*)incomingbuf , sizeof(incomingbuf) , 0)) > 0 )
 								{
@@ -918,9 +847,9 @@ sint32 doMULTIDaemon(){
 									
 									//2# This NDS IP MULTI:
 									memset((uint8*)&client_http_handler_context.sain_listenerNetplay, 0, sizeof(client_http_handler_context.sain_listenerNetplay));
-									client_http_handler_context.sain_listenerNetplay.sin_family = AF_INET;			/* Internet/IP */
-									client_http_handler_context.sain_listenerNetplay.sin_addr.s_addr = INADDR_ANY;	/* let the system figure out our IP address */
-									client_http_handler_context.sain_listenerNetplay.sin_port = htons((int)LISTENER_PORT);	/* this is the port we will listen on */
+									client_http_handler_context.sain_listenerNetplay.sin_family = AF_INET;			// Internet/IP 
+									client_http_handler_context.sain_listenerNetplay.sin_addr.s_addr = INADDR_ANY;	// let the system figure out our IP address 
+									client_http_handler_context.sain_listenerNetplay.sin_port = htons((int)LISTENER_PORT);	// this is the port we will listen on 
 									
 									if(bind(client_http_handler_context.socket_multi_listenerNetplay,(struct sockaddr *)&client_http_handler_context.sain_listenerNetplay, sizeof(client_http_handler_context.sain_listenerNetplay)))
 									{
@@ -1001,7 +930,7 @@ sint32 doMULTIDaemon(){
 								//perror("accept"); exit(1); 
 							}
 							else{
-								/* Read from the socket */
+								// Read from the socket 
 								//Receive a message from client (only data > 0 ), socket will be closed anyway
 								while( (read_size = recv(connectedSD , (uint8*)incomingbuf , sizeof(incomingbuf) , 0)) > 0 )
 								{
@@ -1028,7 +957,7 @@ sint32 doMULTIDaemon(){
 				}
 				retDaemonCode = 1;
 			}
-			
+			*/
 			//Local Nifi: runs from within the DSWIFI frame handler itself so ignored here.
 			if(getMULTIMode() == dswifi_localnifimode){
 				
@@ -1162,10 +1091,12 @@ int Wifi_RawTxFrame_WIFI(uint8 datalen, uint8 * data) {
 		//#last:connected!
 		case(ds_netplay_host):case(ds_netplay_guest):{
 			
-			if(getMULTIMode() == dswifi_tcpnifimode){
-				sendto(client_http_handler_context.socket_multi_sender,data,datalen,0,(struct sockaddr *)&client_http_handler_context.sain_sender,sizeof(client_http_handler_context.sain_sender));
-			}
-			else if(getMULTIMode() == dswifi_udpnifimode){
+			//Disabled
+			//if(getMULTIMode() == dswifi_tcpnifimode){
+			//	sendto(client_http_handler_context.socket_multi_sender,data,datalen,0,(struct sockaddr *)&client_http_handler_context.sain_sender,sizeof(client_http_handler_context.sain_sender));
+			//}
+			
+			if(getMULTIMode() == dswifi_udpnifimode){
 				//send NIFI Frame here
 				sendto(client_http_handler_context.socket_multi_sender,data,datalen,0,(struct sockaddr *)&client_http_handler_context.sain_sender,sizeof(client_http_handler_context.sain_sender));
 			}

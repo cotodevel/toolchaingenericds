@@ -82,7 +82,7 @@ USA
 #define proc_shutdown (sint32)(3)
 
 //coto: nifi & wifi support. todo: test in order
-#define dswifi_tcpnifimode (sint32)(4)	//TCP
+//#define dswifi_tcpnifimode (sint32)(4)	//TCP, disabled
 #define dswifi_udpnifimode (sint32)(5)	//UDP Nifi
 #define dswifi_localnifimode (sint32)(6)	//Raw Network Packet Nifi
 #define dswifi_idlemode (sint32)(7)	//Idle
