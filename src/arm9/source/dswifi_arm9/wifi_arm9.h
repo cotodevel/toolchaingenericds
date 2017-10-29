@@ -104,8 +104,6 @@ extern void Wifi_SetIP(uint32 IPaddr, uint32 gateway, uint32 subnetmask, uint32 
 extern uint32 Wifi_GetIP();
 #endif
 
-extern int Wifi_RawTxFrame_NIFI(uint16 datalen, uint16 rate, uint16 * data);
-
 extern uint32 Wifi_TxBufferWordsAvailable();
 extern void Wifi_TxBufferWrite(sint32 start, sint32 len, uint16 * data);
 

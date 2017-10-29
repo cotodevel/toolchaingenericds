@@ -18,6 +18,8 @@ USA
 
 */
 
+//DSWNifi Library 1.2
+
 #include "common_shared.h"
 #include "wifi_shared.h"
 #include "clock.h"
@@ -62,10 +64,9 @@ USA
 //If you use: switch_dswnifi_mode(dswifi_tcpnifimode);	//TCP NIFI: Disabled, issues so I didn't bother, please use dswifi_udpnifimode (UDP NIFI)
 //If you use: switch_dswnifi_mode(dswifi_localnifimode);//Stable, Release code
 
-
 TdsnwifisrvStr dswifiSrv;
 
-///////////////////////////////////////////////////////////////////////////NIFI Part
+////////////////////////////////////////////////////////////////////////////NIFI DSWNIFI Part
 
 //nifi_stat: 0 not ready, 1 act as a host and waiting, 2 act as a guest and waiting, 3 connecting, 4 connected, 5 host ready, 6 guest ready
 
@@ -165,7 +166,7 @@ __attribute__((section(".itcm")))
 bool sendDSWNIFIFame(struct frameBlock * frameInst)
 {
 	uint8 * databuf_src = 	frameInst->framebuffer;
-	int sizetoSend 		= 	frameInst->frameSize;
+	sint32 sizetoSend 		= 	frameInst->frameSize;
 	
 	//coto: generate crc per nifi frame so we dont end up with corrupted data.
 	volatile uint16 crc16_frame = swiCRC16	(	0xffff, //uint16 	crc,
@@ -184,7 +185,7 @@ bool sendDSWNIFIFame(struct frameBlock * frameInst)
 		case(dswifi_udpnifimode):
 		//case(dswifi_tcpnifimode):
 		{
-			Wifi_RawTxFrame_WIFI(sizetoSend , (uint8*)databuf_src);
+			Wifi_RawTxFrame_WIFI(sizetoSend , databuf_src);
 		}
 		break;
 	}
@@ -241,7 +242,6 @@ struct frameBlock * receiveDSWNIFIFrame(uint8 * databuf_src,int frameSizeRecv)	/
 	return frameRecvInst;
 }
 
-
 //0 idle, 1 nifi, 2 dswnifi
 void switch_dswnifi_mode(sint32 mode){
 	
@@ -269,7 +269,6 @@ void switch_dswnifi_mode(sint32 mode){
 		setMULTIMode(mode);
 		dswifiSrv.dswifi_setup = false;
 	}
-	
 	
 	// Idle
 	if(getMULTIMode() == dswifi_idlemode){
@@ -303,7 +302,6 @@ void switch_dswnifi_mode(sint32 mode){
 			setConnectionStatus(proc_idle);
 		}
 	}
-	
 }
 
 __attribute__((section(".itcm")))
@@ -432,8 +430,6 @@ sint32 doMULTIDaemon(){
 				}
 				listen(client_http_handler_context.socket_multi_listener,5);	//DS Acts as server at desired port
 				
-				
-				
 				//This NDS IP MULTI: PORT
 				client_http_handler_context.socket_multi_sender = socket(AF_INET, SOCK_STREAM, 0);	//UDP: unused,	TCP: Used as DS Server listening port, for handshake with server so both DS can connect each other.
 				if(-1 == client_http_handler_context.socket_multi_sender)
@@ -477,7 +473,6 @@ sint32 doMULTIDaemon(){
 		break;
 		
 		case (proc_execution):{
-		
 			//////////////////////////////////////////Handle Internal Send/Recv
 			
 			//Server UDP Handler listener
@@ -545,7 +540,6 @@ sint32 doMULTIDaemon(){
 							cmd=ioctl(client_http_handler_context.socket_multi_listener,FIONBIO,&cmd); // set non-blocking port
 							
 							client_http_handler_context.socket_multi_sender=socket(AF_INET,SOCK_DGRAM,0);
-							
 							int optval = 1, len;
 							setsockopt(client_http_handler_context.socket_multi_sender, SOL_SOCKET, SO_BROADCAST, (char *)&optval, sizeof(optval));
 		
@@ -563,16 +557,17 @@ sint32 doMULTIDaemon(){
 							//bind conn to LOCAL ip-port listener
 							memset((char *) &client_http_handler_context.sain_listener, 0, sizeof(client_http_handler_context.sain_listener));
 							client_http_handler_context.sain_listener.sin_family = AF_INET;
-							client_http_handler_context.sain_listener.sin_addr.s_addr=INADDR_ANY;	//local/any ip listen to desired port
+							client_http_handler_context.sain_listener.sin_addr.s_addr = htonl(INADDR_ANY);	//local/any ip listen to desired port
 							//int atoi ( const char * str );
 							//int nds_multi_port = atoi((const char*)tokens[2]);
 							client_http_handler_context.sain_listener.sin_port = htons(LISTENER_PORT); //nds_multi_port
 							
 							
-							//NDS MULTI IP: No need to bind / sendto use
+							//printf("IPToConnect:%s",tokens[1]);	//ok EXT DS
+							//NDS MULTI IP: No need to bind / connect / sendto use
 							memset((char *) &client_http_handler_context.sain_sender, 0, sizeof(client_http_handler_context.sain_sender));
 							client_http_handler_context.sain_sender.sin_family = AF_INET;
-							client_http_handler_context.sain_sender.sin_addr.s_addr = INADDR_BROADCAST;//((const char*)"191.161.23.11");// //ip was reversed 
+							client_http_handler_context.sain_sender.sin_addr.s_addr = inet_addr((char*)tokens[1]);//INADDR_BROADCAST;//((const char*)"191.161.23.11");// //ip was reversed 
 							client_http_handler_context.sain_sender.sin_port = htons(SENDER_PORT); 
 							
 							struct sockaddr_in *addr_in2= (struct sockaddr_in *)&client_http_handler_context.sain_sender;
@@ -614,7 +609,6 @@ sint32 doMULTIDaemon(){
 								}
 								
 								sentReq = false;	//prepare next issuer msg
-						
 								//note: bind UDPsender?: does not work with UDP Datagram socket format (UDP basically)
 							}
 							
@@ -667,7 +661,15 @@ sint32 doMULTIDaemon(){
 								LISTENER_PORT 	= 	(int)NDSMULTI_UDP_PORT_GUEST;
 								SENDER_PORT		=	(int)NDSMULTI_UDP_PORT_HOST;
 							}
-							
+							//ain't TCP socket so yeah
+							/*
+							//force the UDP sender to reach the IP detected in earlier step
+							while(connect(client_http_handler_context.socket_multi_sender,(struct sockaddr*)&client_http_handler_context.sain_sender,sizeof(client_http_handler_context.sain_sender))==-1) {
+								//clrscr();
+								//printf("error, couldn't connect");
+								//while(1==1){}
+							}
+							*/
 							if(dswifiSrv.dsnwifisrv_stat == ds_netplay_host_servercheck){	
 								clrscr();
 								printf("//////////DSCONNECTED[HOST]-PORT:%d",LISTENER_PORT);
@@ -687,24 +689,19 @@ sint32 doMULTIDaemon(){
 					
 					//#last:connected!
 					//logic: recv data: dsnifi_udp_packet_size from port
-					case(ds_netplay_host):case(ds_netplay_guest):{
-						
+					case(ds_netplay_host):case(ds_netplay_guest):{						
 						sain_len = sizeof(sender_server);
 						memset((uint8*)&sender_server, 0, sizeof(sender_server));
-						available_ds_server = 0;
-						ioctl(client_http_handler_context.socket_id__multi_notconnected, FIONREAD, (uint8*)&available_ds_server);
-						if(available_ds_server > 0){
-							int datalen2=recvfrom(client_http_handler_context.socket_multi_listener,(uint8*)incomingbuf,sizeof(incomingbuf),0,(struct sockaddr *)&sender_server,(int*)&sain_len);
-							if(datalen2>0) {
-								//decide whether to put data in userbuffer and if frame is valid here
-								struct frameBlock * frameHandled = receiveDSWNIFIFrame((uint8*)incomingbuf,datalen2);
-								if(frameHandled != NULL){
-									//trigger the User Recv Process here
-									HandleRecvUserspace(frameHandled);	//Valid Frame
-								}
-								else{
-									//Invalid Frame
-								}
+						int datalen2=recvfrom(client_http_handler_context.socket_multi_listener,(uint8*)incomingbuf,sizeof(incomingbuf),0,(struct sockaddr *)&sender_server,(int*)&sain_len);
+						if(datalen2>0) {
+							//decide whether to put data in userbuffer and if frame is valid here
+							struct frameBlock * frameHandled = receiveDSWNIFIFrame((uint8*)incomingbuf,datalen2);
+							if(frameHandled != NULL){
+								//trigger the User Recv Process here
+								HandleRecvUserspace(frameHandled);	//Valid Frame
+							}
+							else{
+								//Invalid Frame
 							}
 						}
 					}
@@ -936,17 +933,11 @@ sint32 doMULTIDaemon(){
 		break;
 		
 	}
-	
 }
-
-
-
-
-
 
 // datalen = size of packet from beginning of 802.11 header to end, but not including CRC.
 __attribute__((section(".itcm")))
-int Wifi_RawTxFrame_NIFI(uint16 datalen, uint16 rate, uint16 * data) {
+int Wifi_RawTxFrame_NIFI(sint32 datalen, uint16 rate, uint16 * data) {
 	int base,framelen, hdrlen, writelen;
 	int copytotal, copyexpect;
 	
@@ -1032,7 +1023,7 @@ int Wifi_RawTxFrame_NIFI(uint16 datalen, uint16 rate, uint16 * data) {
 //coto: wifi udp netplay code (:
 // datalen = size of packet from beginning of 802.11 header to end, but not including CRC.
 __attribute__((section(".itcm")))
-int Wifi_RawTxFrame_WIFI(uint8 datalen, uint8 * data) {
+int Wifi_RawTxFrame_WIFI(sint32 datalen, uint8 * data) {
 	//sender phase: only send packets if we are connected!
 	switch(dswifiSrv.dsnwifisrv_stat){
 		//#last:connected!
@@ -1042,22 +1033,19 @@ int Wifi_RawTxFrame_WIFI(uint8 datalen, uint8 * data) {
 			//if(getMULTIMode() == dswifi_tcpnifimode){
 			//	sendto(client_http_handler_context.socket_multi_sender,data,datalen,0,(struct sockaddr *)&client_http_handler_context.sain_sender,sizeof(client_http_handler_context.sain_sender));
 			//}
-			
-			if(getMULTIMode() == dswifi_udpnifimode){
+			//Default to UDP
+			//if(getMULTIMode() == dswifi_udpnifimode){
 				//send NIFI Frame here
 				sendto(client_http_handler_context.socket_multi_sender,data,datalen,0,(struct sockaddr *)&client_http_handler_context.sain_sender,sizeof(client_http_handler_context.sain_sender));
-			}
+			//}
 		}
 		break;
 	}
-		
 	return 0;
 }
 
-
 //UserCodeHandlers that belong to TGDS
 struct frameBlock * HandleSendUserspace(uint8 * databuf_src, int bufsize){
-
 	if(!databuf_src){
 		return NULL;
 	}
@@ -1077,6 +1065,5 @@ struct frameBlock * HandleSendUserspace(uint8 * databuf_src, int bufsize){
 	else {
 		frameSenderInst = NULL;
 	}
-	
 	return frameSenderInst;
 }

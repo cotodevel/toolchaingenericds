@@ -18,7 +18,7 @@ USA
 
 */
 
-//DSWNIFI Library revision: 1.x
+//DSWNifi Library 1.2
 
 #ifndef __dswnifi_lib_h__
 #define __dswnifi_lib_h__
@@ -192,8 +192,8 @@ extern int bottomvalue(int a,int b);
 extern int getintdiff(int a,int b);
 
 //TCP UDP DSWNIFI Part
-extern int Wifi_RawTxFrame_WIFI(uint8 datalen, uint8 * data);
-extern int Wifi_RawTxFrame_NIFI(uint16 datalen, uint16 rate, uint16 * data);
+extern int Wifi_RawTxFrame_WIFI(sint32 datalen, uint8 * data);
+extern int Wifi_RawTxFrame_NIFI(sint32 datalen, uint16 rate, uint16 * data);
 
 extern void switch_dswnifi_mode(sint32 mode);
 extern void setMULTIMode(sint32 flag);	//idle(dswifi_idlemode) / raw packet(dswifi_localnifimode) / UDP nifi(dswifi_udpnifimode) / TCP wifi(dswifi_wifimode)

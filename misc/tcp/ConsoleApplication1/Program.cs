@@ -165,6 +165,8 @@ namespace ConsoleApplication1
 
             Console.WriteLine(" Inter-DS UDP Companion Program. \n Usage: Connect this computer to the same network a DS is setup. \n Any connected DS through the DSWNIFI library should connect automatically.\n Developed by coto. Press ESC to quit");
 
+            //test UDP RECV on DS: SendUDPMsg("hi", "192.168.43.128", "8890");
+
             //start listening for messages and copy the messages back to the client
             Task.Factory.StartNew(async () =>
             {
@@ -337,6 +339,7 @@ namespace ConsoleApplication1
                                     string udpmsgds2 = "srvaware" + "-" + ip_dest_ds2 + "-" + ds2_mode + "-";
 
                                     SendUDPMsg(udpmsgds1, nds_session_list[nds1_index].ip, udp_port.ToString());
+                                    Thread.Sleep(1000);
                                     SendUDPMsg(udpmsgds2, nds_session_list[nds2_index].ip, udp_port.ToString());
 
                                     Console.WriteLine("UDP: DS's are binded correctly :)");
