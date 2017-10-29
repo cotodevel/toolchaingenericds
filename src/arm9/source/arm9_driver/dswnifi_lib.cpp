@@ -505,7 +505,7 @@ sint32 doMULTIDaemon(){
 							char outgoingbuf[dsnifi_udp_packet_size] = {0};
 							sprintf(outgoingbuf,"dsnotaware-NIFINintendoDS-%s-",(char*)print_ip((uint32)Wifi_GetIP()));	//DS udp ports on server inherit the logic from "//Server aware" handler
 							sendto(client_http_handler_context.socket_id__multi_notconnected,outgoingbuf,strlen(outgoingbuf),0,(struct sockaddr *)&client_http_handler_context.server_addr,sizeof(client_http_handler_context.server_addr));
-							sentReq = true;
+							sentReq = true;	//acknowledge DS send
 						}
 						if( (datalen = recvfrom(client_http_handler_context.socket_id__multi_notconnected, (uint8*)incomingbuf, sizeof(incomingbuf), 0, (struct sockaddr *)&sender_server,(int*)&sain_len)) > 0 ){
 							if(datalen>0) {
@@ -613,6 +613,8 @@ sint32 doMULTIDaemon(){
 									dswifiSrv.dsnwifisrv_stat = ds_netplay_guest_servercheck;
 								}
 								
+								sentReq = false;	//prepare next issuer msg
+						
 								//note: bind UDPsender?: does not work with UDP Datagram socket format (UDP basically)
 							}
 							
@@ -621,18 +623,37 @@ sint32 doMULTIDaemon(){
 					}
 					break;
 					
+						
 					//servercheck phase acknow
 					case(ds_netplay_host_servercheck):case(ds_netplay_guest_servercheck):{
-						available_ds_server = 0;
-						ioctl(client_http_handler_context.socket_id__multi_notconnected, FIONREAD, (uint8*)&available_ds_server);
+						if(sentReq == false){
+							//check pending receive
+							int LISTENER_PORT 	=	0;
+							int SENDER_PORT		=	0;
+							char status[10];
+							if(dswifiSrv.dsnwifisrv_stat == ds_netplay_host_servercheck){
+								LISTENER_PORT 	= 	(int)NDSMULTI_UDP_PORT_HOST;
+								SENDER_PORT		=	(int)NDSMULTI_UDP_PORT_GUEST;
+								sprintf(status,"host");
+							}
+							else if(dswifiSrv.dsnwifisrv_stat == ds_netplay_guest_servercheck){
+								LISTENER_PORT 	= 	(int)NDSMULTI_UDP_PORT_GUEST;
+								SENDER_PORT		=	(int)NDSMULTI_UDP_PORT_HOST;
+								sprintf(status,"guest");
+							}
+							
+							char buf2[dsnifi_udp_packet_size] = {0};
+							sprintf(buf2,"dsaware-%s-bindOK-%d-%s-",status,LISTENER_PORT,(char*)print_ip((uint32)Wifi_GetIP()));
+							//consoletext(64*2-32,(char *)&buf2[0],0);
+							sendto(client_http_handler_context.socket_id__multi_notconnected,buf2,sizeof(buf2),0,(struct sockaddr *)&client_http_handler_context.server_addr,sizeof(client_http_handler_context.server_addr));
+							sentReq = true;	//acknowledge DS send
+						}
 						sain_len = sizeof(sender_server);
 						memset((uint8*)&sender_server, 0, sizeof(sender_server));
-						if(available_ds_server > 0){
-							datalen=recvfrom(client_http_handler_context.socket_id__multi_notconnected,(uint8*)incomingbuf,sizeof(incomingbuf),0,(struct sockaddr *)&sender_server,(int*)&sain_len);
-							if(datalen>0) {
-								//incomingbuf[datalen]=0;
-								memcpy((uint8*)cmd,(uint8*)incomingbuf,sizeof(cmd));	//cmd recv
-							}
+						datalen=recvfrom(client_http_handler_context.socket_id__multi_notconnected,(uint8*)incomingbuf,sizeof(incomingbuf),0,(struct sockaddr *)&sender_server,(int*)&sain_len);
+						if(datalen>0) {
+							//incomingbuf[datalen]=0;
+							memcpy((uint8*)cmd,(uint8*)incomingbuf,sizeof(cmd));	//cmd recv
 						}
 						
 						if(strncmp((const char *)cmd, (const char *)"dsconnect", 9) == 0){	
@@ -690,42 +711,6 @@ sint32 doMULTIDaemon(){
 					break;
 				}
 				
-				//UDP:Internal Sender Handshake. Does run during the DS - DS handshake, when DS are connected through UDP NetPlay, they this does not run anymore.
-				switch(dswifiSrv.dsnwifisrv_stat){
-					//#1 DS is not connected, wait until server acknowledges this info
-					case(ds_searching_for_multi_servernotaware):{
-						
-					}
-					break;
-					
-					//servercheck phase. DS's are binded each other. safe to send data between DSes
-					case(ds_netplay_host_servercheck):case(ds_netplay_guest_servercheck):{
-						available_ds_server = 0;
-						ioctl(client_http_handler_context.socket_id__multi_notconnected, FIONREAD, (uint8*)&available_ds_server);
-						if(available_ds_server == 0){
-							//check pending receive
-							int LISTENER_PORT 	=	0;
-							int SENDER_PORT		=	0;
-							char status[10];
-							if(dswifiSrv.dsnwifisrv_stat == ds_netplay_host_servercheck){
-								LISTENER_PORT 	= 	(int)NDSMULTI_UDP_PORT_HOST;
-								SENDER_PORT		=	(int)NDSMULTI_UDP_PORT_GUEST;
-								sprintf(status,"host");
-							}
-							else if(dswifiSrv.dsnwifisrv_stat == ds_netplay_guest_servercheck){
-								LISTENER_PORT 	= 	(int)NDSMULTI_UDP_PORT_GUEST;
-								SENDER_PORT		=	(int)NDSMULTI_UDP_PORT_HOST;
-								sprintf(status,"guest");
-							}
-							
-							char buf2[dsnifi_udp_packet_size] = {0};
-							sprintf(buf2,"dsaware-%s-bindOK-%d-%s-",status,LISTENER_PORT,(char*)print_ip((uint32)Wifi_GetIP()));
-							//consoletext(64*2-32,(char *)&buf2[0],0);
-							sendto(client_http_handler_context.socket_id__multi_notconnected,buf2,sizeof(buf2),0,(struct sockaddr *)&client_http_handler_context.server_addr,sizeof(client_http_handler_context.server_addr));
-						}
-					}
-					break;
-				}
 				//only after we accepted we can close Server socket.
 				//setConnectionStatus(proc_shutdown);
 				retDaemonCode = 0;

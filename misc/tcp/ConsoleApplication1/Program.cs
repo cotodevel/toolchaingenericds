@@ -337,7 +337,6 @@ namespace ConsoleApplication1
                                     string udpmsgds2 = "srvaware" + "-" + ip_dest_ds2 + "-" + ds2_mode + "-";
 
                                     SendUDPMsg(udpmsgds1, nds_session_list[nds1_index].ip, udp_port.ToString());
-                                    Thread.Sleep(1000);  //ms interval
                                     SendUDPMsg(udpmsgds2, nds_session_list[nds2_index].ip, udp_port.ToString());
 
                                     Console.WriteLine("UDP: DS's are binded correctly :)");
