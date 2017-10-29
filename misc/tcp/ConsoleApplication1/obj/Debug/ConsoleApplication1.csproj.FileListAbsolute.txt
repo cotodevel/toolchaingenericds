@@ -9,9 +9,3 @@ C:\devkitPro\msys\home\nesds13d-dswnifi\ds_server\udp\serverudp\ConsoleApplicati
 C:\devkitPro\msys\home\nesds13d-dswnifi\ds_server\udp\serverudp\ConsoleApplication1\obj\Debug\ConsoleApplication1.csprojResolveAssemblyReference.cache
 C:\devkitPro\msys\home\nesds13d-dswnifi\ds_server\udp\serverudp\ConsoleApplication1\obj\Debug\ConsoleApplication1.exe
 C:\devkitPro\msys\home\nesds13d-dswnifi\ds_server\udp\serverudp\ConsoleApplication1\obj\Debug\ConsoleApplication1.pdb
-C:\github_clone\ToolchainGenericDS\misc\tcp\ConsoleApplication1\bin\Debug\ConsoleApplication1.exe.config
-C:\github_clone\ToolchainGenericDS\misc\tcp\ConsoleApplication1\obj\Debug\ConsoleApplication1.exe
-C:\github_clone\ToolchainGenericDS\misc\tcp\ConsoleApplication1\obj\Debug\ConsoleApplication1.pdb
-C:\github_clone\ToolchainGenericDS\misc\tcp\ConsoleApplication1\bin\Debug\ConsoleApplication1.exe
-C:\github_clone\ToolchainGenericDS\misc\tcp\ConsoleApplication1\bin\Debug\ConsoleApplication1.pdb
-C:\github_clone\ToolchainGenericDS\misc\tcp\ConsoleApplication1\obj\Debug\ConsoleApplication1.csprojResolveAssemblyReference.cache

@@ -74,6 +74,8 @@ USA
 #define TCP_PORT (sint32)(7777)		//used for TCP Server - NDS Companion connecting
 #define NDSMULTI_TCP_PORT_HOST (sint32)(7778)			//host 	listener - listener is local - sender is multi IP NDS
 #define NDSMULTI_TCP_PORT_GUEST (sint32)(7779)		//guest listener - 
+//this is the top packet size
+#define dsnifi_udp_packet_size (sint32)(0x200)
 
 //process status
 #define proc_idle (sint32)(0)
@@ -225,6 +227,7 @@ extern __attribute__((weak))	void HandleRecvUserspace(struct frameBlock * frameB
 //implementation defined. can map a buffer/shared object between DS or keymaps
 extern __attribute__((weak))	bool do_multi(struct frameBlock * frameBlockRecv);
 
+extern bool sentReq;
 #ifdef __cplusplus
 }
 #endif
