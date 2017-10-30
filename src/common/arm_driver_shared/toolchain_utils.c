@@ -66,12 +66,28 @@ size_t ucs2tombs(uint8* dst, const unsigned short* src, size_t len) {
 
 #ifdef ARM9
 
+#include "devoptab_devices.h"
+#include "fsfat_layer.h"
+#include "posix_hook_shared.h"
+#include "toolchain_utils.h"
+
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/reent.h>
+#include <sys/select.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <errno.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <_ansi.h>
+#include <reent.h>
+#include <sys/lock.h>
+#include <fcntl.h>
 
-#include "posix_hook_shared.h"
 
 //Coto: These functions allow to export ARM code to plaintext and backwards, so handlers can be added to config file.
 //Note: each handler albeit exported, is ONLY compatible with the current emuCore version + timestamp it was compiled for. Do not try to
@@ -360,6 +376,154 @@ sint8 * print_ip(uint32 ip)
     sprintf(ip_decimal,"%d.%d.%d.%d\n", bytes[0], bytes[1], bytes[2], bytes[3]);        
 
 return ip_decimal;
+}
+
+
+
+
+//FileSystem utils
+
+
+sint8 *_FS_getFileExtension(sint8 *filename)
+{
+	static sint8 ext[4];
+	sint8	*ptr;
+	int		i = 0;
+	
+	ptr = filename;
+	do
+	{
+		ptr = strchr(ptr, '.');
+		if (!ptr)
+			return NULL;
+		ptr++;
+	}
+	while (strlen(ptr) > 3);
+		
+	for (i = 0; i < (int)strlen(ptr); i++)
+		ext[i] = toupper((int)(ptr[i])); 
+	ext[i] = 0;
+	return ext;
+}
+
+sint8 *FS_getFileName(sint8 *filename)
+{
+	static sint8 name[100];
+	sint8	*ptr;
+	int		i;
+	
+	ptr = filename;
+	ptr = strrchr(ptr, '.');
+		
+	for (i = 0; i < ptr-filename; i++)
+		name[i] = filename[i]; 
+	name[i] = 0;
+	return name;
+}
+
+int		FS_chdir(const sint8 *path)
+{
+	int ret = fatfs_chdir(path);
+	return ret;
+}
+
+
+sint8	**FS_getDirectoryList(sint8 *path, sint8 *mask, int *cnt)
+{	
+	int			size;
+		
+	FS_lock();	
+	DIR *dir = opendir (path); 
+	*cnt = size = 0;
+	if( NULL != dir )
+	{
+		while (1)
+		{
+			struct dirent* pent = readdir(dir);
+			if(pent == NULL){
+				break;
+			}
+			
+			struct fd * fdinst = fd_struct_get(pent->d_ino);
+			if(fdinst){
+				//OK
+			}
+			else{
+				//NULL!. This should never happen.
+				continue;
+			}
+			
+			if (!S_ISDIR(fdinst->stat.st_mode)) { 
+				continue;
+			}
+			
+			if (!strcmp(pent->d_name, ".")){
+				continue;
+			}
+			
+			if (mask)
+			{
+				sint8 *ext = _FS_getFileExtension(pent->d_name);
+				if (ext && strstr(mask, ext))
+				{
+					//filecount Increase
+					(*cnt)++;
+					size += strlen(pent->d_name)+1;
+				}
+			} 
+			else
+			{
+				//filecount Increase
+				(*cnt)++;
+				size += strlen(pent->d_name)+1;
+			}
+		}
+	}
+	rewinddir(dir);
+	
+	sint8	**list = (sint8	**)malloc((*cnt)*sizeof(sint8 *)+size);
+	sint8	*ptr = ((sint8 *)list) + (*cnt)*sizeof(sint8 *);
+	
+	int i = 0; 
+	if( NULL != dir )
+	{
+		while (1)
+		{
+			struct dirent* pent = readdir(dir);	//if NULL already not a dir
+			if(pent == NULL){
+				break;
+			}
+			
+			struct fd * fdinst = fd_struct_get(pent->d_ino);
+			if (!S_ISDIR(fdinst->stat.st_mode)) {
+				continue;
+			}
+			
+			if (!strcmp(pent->d_name, ".")){
+				continue;		
+			}
+			
+			if (mask)
+			{
+				sint8 *ext = _FS_getFileExtension(pent->d_name);
+				if (ext && strstr(mask, ext))
+				{
+					strcpy(ptr, pent->d_name);
+					list[i++] = ptr;
+					ptr += strlen(pent->d_name)+1;  
+				}
+			} else
+			{
+				strcpy(ptr, pent->d_name);
+				list[i++] = ptr;
+				ptr += strlen(pent->d_name)+1;
+			}
+		}
+	}
+	
+	closedir(dir);
+	FS_unlock();
+	return list;
 }
 
 #endif

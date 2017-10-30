@@ -103,6 +103,12 @@ extern char 	* str_replace (char *string, const char *substr, const char *replac
 extern sint8 ip_decimal[0x10];
 extern sint8 * print_ip(uint32 ip);
 
+//FileSystem utils
+extern sint8 	*_FS_getFileExtension(sint8 *filename);
+extern sint8 	*FS_getFileName(sint8 *filename);
+extern int		FS_chdir(const sint8 *path);
+extern sint8	**FS_getDirectoryList(sint8 *path, sint8 *mask, int *cnt);
+
 #endif
 
 #endif
