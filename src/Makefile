@@ -100,6 +100,7 @@ export DIRS_ARM9_SRC = source/	\
 			source/arm9_driver/fatfs-newlib-nano-layer/dldi/	\
 			source/arm9_driver/fatfs-newlib-nano-layer/fatfs/source/	\
 			source/arm9_driver/zlib/	\
+			source/arm9_driver/zip/	\
 			source/arm9_driver/	\
 			source/dswifi_arm9/	\
 			source/wnifilib/	\
@@ -120,6 +121,7 @@ export DIRS_ARM9_HEADER = source/	\
 			source/arm9_driver/fatfs-newlib-nano-layer/dldi/	\
 			source/arm9_driver/fatfs-newlib-nano-layer/fatfs/source/	\
 			source/arm9_driver/zlib/	\
+			source/arm9_driver/zip/	\
 			source/arm9_driver/	\
 			source/dswifi_arm9/	\
 			source/wnifilib/	\
