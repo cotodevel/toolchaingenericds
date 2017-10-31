@@ -20,6 +20,11 @@ USA
 
 #include "toolchain_utils.h"
 
+#include <string.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "dsregs.h"
 #include "dsregs_asm.h"
 #include "common_shared.h"
@@ -70,6 +75,7 @@ size_t ucs2tombs(uint8* dst, const unsigned short* src, size_t len) {
 #include "fsfat_layer.h"
 #include "posix_hook_shared.h"
 #include "toolchain_utils.h"
+#include "file.h"
 
 #include <stdio.h>
 #include <time.h>
@@ -227,7 +233,7 @@ char * str_replace (char *string, const char *substr, const char *replacement)
 	while ( ( tok = strstr( newstr, substr ) ) )
 	{
 		oldstr = newstr;
-		newstr = malloc ( strlen ( oldstr ) - strlen ( substr ) + strlen ( replacement ) + 1 );
+		newstr = (char*)malloc ( strlen ( oldstr ) - strlen ( substr ) + strlen ( replacement ) + 1 );
 
 		/* If failed to alloc mem, free old string and return NULL */
 		if ( newstr == NULL )
