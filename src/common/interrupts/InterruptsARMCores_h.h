@@ -45,20 +45,16 @@ extern volatile uint32 interrupts_to_wait_arm9;
 // Common
 
 //weak symbols : the implementation of these is project-defined
-#ifdef ARM7
-extern __attribute__((weak))	void Timer1handler();
-#endif
-#ifdef ARM9
-extern __attribute__((weak))	void Timer_50ms();
-#endif
+extern __attribute__((weak))	void HblankUser();
+extern __attribute__((weak))	void VblankUser();
+extern __attribute__((weak))	void VcounterUser();
 
-extern __attribute__((weak))	void Hblank();
-extern __attribute__((weak))	void Vblank();
-extern __attribute__((weak))	void Vcounter();
-extern __attribute__((weak))	void HandleFifoEmpty();
-extern __attribute__((weak))	void HandleFifoNotEmpty();
+extern __attribute__((weak))	void Timer0handlerUser();
+extern __attribute__((weak))	void Timer1handlerUser();
+extern __attribute__((weak))	void Timer2handlerUser();
+extern __attribute__((weak))	void Timer3handlerUser();
+
 extern __attribute__((weak))	int main(int _argc, sint8 **_argv);
-
 //weak symbols end
 
 extern uint32 getIRQs();

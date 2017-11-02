@@ -98,13 +98,6 @@ void NDS_IRQHandler(){
 	REG_IE_SET |= SWI_CHECKBITS;
 	
 	#ifdef ARM7
-	
-	//arm7 sound
-	if(REG_IE_SET & IRQ_TIMER1){
-		Timer1handler();
-		REG_IF=IRQ_TIMER1;
-	}
-	
 	//arm7 wifi cart irq
 	if(REG_IE_SET & IRQ_WIFI){
 		Wifi_Interrupt();
@@ -113,37 +106,67 @@ void NDS_IRQHandler(){
 	
 	//clock //could cause freezes
 	if(REG_IE_SET & IRQ_RTCLOCK){
-		//syncRTC();
-		REG_IF = IRQ_RTCLOCK;	//aka  IRQ_NETWORK
-	}
-	
-	#endif
-	
-	#ifdef ARM9
-	
-	//wifi arm9 irq
-	if(REG_IE_SET & IRQ_TIMER3){
-		Timer_50ms();
-		REG_IF = IRQ_TIMER3;
+		REG_IF = IRQ_RTCLOCK;
 	}
 	#endif
-	
-	
 	
 	////			Common
 	
+	if(REG_IE_SET & IRQ_TIMER0){
+		Timer0handlerUser();
+		REG_IF = IRQ_TIMER0;
+	}
+	
+	if(REG_IE_SET & IRQ_TIMER1){
+		#ifdef ARM7
+		//arm7 sound here...
+		#endif
+		Timer1handlerUser();
+		REG_IF = IRQ_TIMER1;
+	}
+	
+	if(REG_IE_SET & IRQ_TIMER2){
+		Timer2handlerUser();
+		REG_IF = IRQ_TIMER2;
+	}
+	
+	if(REG_IE_SET & IRQ_TIMER3){
+		#ifdef ARM9
+		//wifi arm9 irq
+		Timer_50ms();
+		#endif
+		Timer3handlerUser();
+		REG_IF = IRQ_TIMER3;
+	}
+	
 	if(REG_IE_SET & IRQ_HBLANK){
-		Hblank();
+		HblankUser();
 		REG_IF = IRQ_HBLANK;
 	}
 	
 	if(REG_IE_SET & IRQ_VBLANK){
-		Vblank();
+		#ifdef ARM7
+		Wifi_Update();
+		#endif
+		
+		#ifdef ARM9
+		//handles DS-DS Comms
+		if(doMULTIDaemon() >=0){
+		}
+		#endif
+		
+		//key event between frames
+		do_keys();
+		
+		VblankUser();
 		REG_IF = IRQ_VBLANK;
 	}
 	
 	if(REG_IE_SET & IRQ_VCOUNT){
-		Vcounter();
+		#ifdef ARM7
+		doSPIARM7IO();
+		#endif
+		VcounterUser();
 		REG_IF = IRQ_VCOUNT;
 	}
 	
@@ -187,9 +210,4 @@ void DisableIrq(uint32 IRQ){
 	#endif
 	
 	REG_IE	&=	~(IRQ);
-	
 }
-
-
-
-
