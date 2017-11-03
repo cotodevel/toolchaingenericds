@@ -26,9 +26,11 @@ USA
 #include "InterruptsARMCores_h.h"
 #include "ipc.h"
 
+#include "mem_handler_shared.h"
 
 #ifdef ARM7
 #include <string.h>
+#include "wifi_arm7.h"
 #endif
 
 #ifdef ARM9
@@ -191,6 +193,79 @@ void HandleFifoNotEmpty(){
 			volatile uint32 data1 = *data1ptr;
 			volatile uint32 data2 = *data2ptr;
 			volatile uint32 data3 = *data3ptr;
+			
+			//Do ToolchainGenericDS IPC handle here
+			switch (data0) {
+			
+				//Shared 
+				case(WIFI_SYNC):{
+					Wifi_Sync();
+				}
+				break;
+				
+				//Process the packages (signal) that sent earlier FIFO_SEND_EXT
+				case(FIFO_SOFTFIFO_READ_EXT):{
+				
+				}
+				break;
+				
+				case(FIFO_SOFTFIFO_WRITE_EXT):{
+					SetSoftFIFO(data1);
+				}
+				break;
+				
+				
+				//ARM7 command handler
+				#ifdef ARM7
+				
+				//ARM7 Only
+				case(FIFO_POWERCNT_ON):{
+					powerON((uint16)data1);
+				}
+				break;
+				
+				case (FIFO_POWERMGMT_WRITE):{
+					PowerManagementDeviceWrite(PM_SOUND_AMP, (int)data1>>16);  // void * data == command2
+				}
+				break;
+				
+				//arm9 wants to send a WIFI context block address / userdata is always zero here
+				case(WIFI_STARTUP):{
+					//	wifiAddressHandler( void * address, void * userdata )
+					wifiAddressHandler((Wifi_MainStruct *)(uint32)data1, 0);
+				}
+				break;
+				
+				#endif
+				
+				
+				
+				//ARM9 command handler
+				#ifdef ARM9
+				//exception handler: arm7
+				case(EXCEPTION_ARM7):{
+					
+					if((uint32)data1 == (uint32)unexpectedsysexit_7){
+						exception_handler((uint32)unexpectedsysexit_7);	//r0 = EXCEPTION_ARM7 / r1 = unexpectedsysexit_7
+					}
+				}
+				break;
+				
+				//albeit limited, printf ability from ARM7
+				case(FIFO_PRINTF_7):{
+					clrscr();
+					char * printfBuf7 = (char*)getPrintfBuffer();
+					//Prevent Cache problems.
+					coherent_user_range_by_size((uint32)printfBuf7, (int)sizeof(AlignedIPC->arm7PrintfBuf));
+					printf("ARM7:%s",printfBuf7);
+					printf("arg:0:%x,1:%x,2:%x",(unsigned int)data1,(unsigned int)data2,(unsigned int)data3);
+				}
+				break;
+				
+				#endif
+			
+				
+			}
 			
 			HandleFifoNotEmptyWeakRef(data0,data1,data2,data3);
 			
