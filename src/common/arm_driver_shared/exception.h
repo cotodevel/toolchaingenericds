@@ -25,6 +25,28 @@ USA
 #include "dsregs_asm.h"
 #include "typedefs.h"
 
+#include "common_shared.h"
+
+#include <ctype.h>
+#include <stdlib.h>
+
+#include <sys/reent.h>
+#include <sys/select.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <errno.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdarg.h>
+#include <_ansi.h>
+#include <reent.h>
+#include <sys/lock.h>
+#include <fcntl.h>
+
+
 #ifdef ARM7
 #endif
 
@@ -46,6 +68,10 @@ USA
 extern "C" {
 #endif
 
+#ifdef ARM7
+extern void halfPrintf(char * strBuf,uint32 arg0,uint32 arg1,uint32 arg2);
+#endif
+
 extern void setupExceptionHandler();
 
 extern uint32 exceptionArmRegs[0x20];
@@ -54,6 +80,9 @@ extern void exception_data_abort();
 
 extern void exception_handler(uint32 arg);
 extern void DebugException();
+
+
+extern int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list list);
 
 #ifdef __cplusplus
 }

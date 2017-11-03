@@ -43,18 +43,9 @@ USA
 extern "C"{
 #endif
 
-extern uint32 	__shwram_start;	
-extern uint32 	__shwram_end;	
-
-extern uint32 	__shwram2_start;	
-extern uint32 	__shwram2_end;	
-
-extern uint32 	__shwram3_start;	
-extern uint32 	__shwram3_end;	
-
 //newlib
-extern uint32 get_lma_libend();
-extern uint32 get_lma_ewramend();
+extern uint32 get_lma_libend();		//linear memory top
+extern uint32 get_lma_wramend();	//(ewram end - linear memory top ) = malloc free memory
 
 //initNDS.c -> initHardware(); init these, dont call them before.
 extern uint32 get_arm7_start_address();
@@ -65,12 +56,14 @@ extern uint32 get_arm9_start_address();
 extern uint32 get_arm9_end_address();
 extern sint32 get_arm9_ext_size();
 
+extern sint32 get_arm7_printfBufSize();
+
 #ifdef ARM7
 extern uint32 _iwram_start;
 extern uint32 _iwram_end;
 extern uint32 get_iwram_start();
 extern sint32 get_iwram_size();
-
+extern uint32 get_iwram_end();
 #endif
 
 #ifdef ARM9
@@ -116,6 +109,21 @@ extern uint32 * this_heap_ptr;
 extern sint32 get_available_mem();
 #endif
 
+extern void * _sbrk (int size);
+
+//MyIPC unaligned
+extern uint32 getToolchainIPCAddress();		
+extern sint32 getToolchainIPCSize();
+
+//AlignIPC aligned
+extern uint32 getToolchainAlignedIPCAddress();	
+extern sint32 getToolchainAlignedIPCSize();
+
+//Project Specific IPC
+extern uint32 getUserIPCAddress();
+
+//Printf7 Buffer
+extern uint32 getPrintfBuffer();
 #ifdef __cplusplus
 }
 #endif

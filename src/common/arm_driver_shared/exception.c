@@ -18,10 +18,77 @@ USA
 
 */
 
+#include <stdio.h>
+#include <string.h>
+#include <stdarg.h>
+#include <ctype.h>
+#include <stdlib.h>
+
+#include <_ansi.h>
+#include <reent.h>
+
+
+#include <string.h>
+#include <stdio.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <time.h>
+
+#include "dsregs.h"
+#include "typedefs.h"
+#include "dma.h"
+#include "bios.h"
+
 #include "dsregs.h"
 #include "dsregs_asm.h"
 #include "exception.h"
 #include "common_shared.h"
+
+#include "InterruptsARMCores_h.h"
+#include "mem_handler_shared.h"
+
+
+#ifdef ARM7
+//half printf
+//the variadic stuff don't work from the ARM7. IWRAM space is not enough sadly. :(
+// the malloc memory footprint required by variadic is not enough for ARM7, perhaps using EWRAM would help but I 
+//will simply resort to 1 arg per printf line
+void halfPrintf(char * strBuf,uint32 arg0,uint32 arg1,uint32 arg2){
+	uint8 * Buf = (uint8*)getPrintfBuffer();
+	memset(Buf, 0, sizeof(AlignedIPC->arm7PrintfBuf));
+	strcpy(Buf,(const char*)strBuf);
+	SendMultipleWordACK(FIFO_PRINTF_7, (uint32)arg0, (uint32)arg1, (uint32)arg2);
+}
+#endif
+
+
+//File IO is stubbed even in buffered writes, so as a workaround I redirect the weak-symbol _vfprint_f (and that means good bye file stream operations on fatfs, thus we re-implement those by hand)
+//while allowing to use printf in DS
+int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list list){
+	#ifdef ARM7
+	return 0;
+	#endif
+	
+	#ifdef ARM9
+	char * Buf = NULL;
+	Buf = (uint8*)&g_printfbuf[0];
+	
+	//merge any "..." special arguments where sint8 * ftm requires , store into g_printfbuf
+	vsnprintf ((sint8*)Buf, (int)sizeof(g_printfbuf), fmt, list);
+	
+	// FIXME
+	t_GUIZone zone;
+	zone.x1 = 0; zone.y1 = 0; zone.x2 = 256; zone.y2 = 192;
+	zone.font = &trebuchet_9_font;
+	GUI_drawText(&zone, 0, GUI.printfy, 255, (sint8*)g_printfbuf);
+	GUI.printfy += GUI_getFontHeight(&zone);
+	return (strlen((char*)Buf));
+	#endif
+	
+}
+
+
 
 #include "InterruptsARMCores_h.h"
 

@@ -87,18 +87,12 @@ struct devoptab_t{
 extern "C"{
 #endif
 
-//used these
-extern void * _sbrk (int size);
-//extern void *sbrk(int nbytes);	//todo: test if malloc works @ sbrk_r
-//but after implementing fs
-
 extern int open_fs(const sint8 *file, int flags, int mode );
 
 
 extern int fork();
 extern int close(int fd);
 extern int isatty(int file);
-extern int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list list);
 extern int vfiprintf(FILE *fp,const sint8 *fmt, va_list list);
 extern _off_t _lseek_r(struct _reent *ptr,int fd, _off_t offset, int whence );
 
@@ -111,7 +105,6 @@ extern _ssize_t _write_r ( struct _reent *ptr, int fd, const void *buf, size_t c
 extern int _open_r ( struct _reent *ptr, const sint8 *file, int flags, int mode );
 extern int _close_r ( struct _reent *ptr, int fd );
 
-extern int _vfprintf_r(struct _reent *reent, FILE *fp,const sint8 *fmt, va_list list);
 extern int _vfiprintf_r(struct _reent *reent, FILE *fp,const sint8 *fmt, va_list list);
 
 extern int _link(const sint8 *path1, const sint8 *path2);

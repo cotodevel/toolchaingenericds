@@ -63,21 +63,33 @@ sint32 get_arm9_ext_size(){
 uint32 get_iwram_start(){
 	return (uint32)(&_iwram_start);
 }
+
 sint32 get_iwram_size(){
 	return (sint32)((uint8*)(uint32*)&_iwram_end - (sint32)(&_iwram_start));
 }
 
+uint32 get_iwram_end(){
+	return (uint32)(&_iwram_end);
+}
 
 #endif
 
-#ifdef ARM9
 uint32 get_lma_libend(){
-	return (uint32)(&__lib__end__);	//linear memory top
+	return (uint32)(&__vma_stub_end__);	//linear memory top (start)
 }
 
-uint32 get_lma_ewramend(){
-	return (uint32)(&_ewram_end);	//(ewram end - linear memory top ) = malloc free memory
+//(ewram end - linear memory top ) = malloc free memory (bottom, end)
+uint32 get_lma_wramend(){
+	#ifdef ARM7
+	return (uint32)(&_iwram_end);
+	#endif
+	#ifdef ARM9
+	return (uint32)(&_ewram_end);	
+	#endif
 }
+
+#ifdef ARM9
+
 
 uint32 get_ewram_start(){
 	return (uint32)(&_ewram_start);
@@ -149,3 +161,97 @@ sint32 calc_heap(sint32 size){
 }
 
 #endif
+
+//Coto: Posix (by default) memory allocator that works on ARM7 (iwram like 3k free) and ARM9 (3M~ free)
+void * _sbrk (int nbytes)
+{
+	//Coto: own implementation, libc's own malloc implementation does not like it.
+	//but helps as standalone sbrk implementation except it will always alloc in linear way and not malloc/free (requires keeping track of pointers)
+
+	#ifdef own_allocator
+	int retcode = calc_heap(alloc);
+	void * retptr = (void *)alloc_failed;
+	switch(retcode){
+		case(0):{
+			//ok
+			retptr = this_heap_ptr;
+		}
+		break;
+		//error handling code
+		case(-1):{
+			
+		}
+		break;
+	}
+	
+	return retptr;
+	#endif
+	
+	//Standard newlib implementation
+	#ifndef own_allocator
+
+	static sint8 *heap_end;
+	sint8 *prev_heap_end;
+
+	if (heap_end == NULL){
+		heap_end = (sint8*)get_lma_libend();
+	}
+	prev_heap_end = heap_end;
+
+	if (heap_end + nbytes > (sint8*)get_lma_wramend())
+	{
+		//errno = ENOMEM;
+		return (void *) -1;
+	}
+
+	heap_end += nbytes;
+
+	return prev_heap_end;
+	#endif
+}
+
+//IPC 
+
+//Internal
+#ifdef ARM9
+__attribute__((section(".itcm")))
+#endif
+uint32 getToolchainIPCAddress(){
+	return (uint32)(0x027FF000);
+}
+#ifdef ARM9
+__attribute__((section(".itcm")))
+#endif
+sint32 getToolchainIPCSize(){
+	return (sint32)(sizeof(tMyIPC));
+}
+
+//Internal Aligned
+#ifdef ARM9
+__attribute__((section(".itcm")))
+#endif
+uint32 getToolchainAlignedIPCAddress(){
+	return (uint32)(getToolchainIPCAddress()+getToolchainIPCSize());
+}
+
+#ifdef ARM9
+__attribute__((section(".itcm")))
+#endif
+sint32 getToolchainAlignedIPCSize(){
+	return (sint32)(sizeof(struct sAlignedIPC));
+}
+
+//Printf7 Buffer
+#ifdef ARM9
+__attribute__((section(".itcm")))
+#endif
+uint32 getPrintfBuffer(){
+	return (uint32)(&AlignedIPC->arm7PrintfBuf[0]);
+}
+
+#ifdef ARM9
+__attribute__((section(".itcm")))
+#endif
+uint32 getUserIPCAddress(){
+	return (uint32)(getToolchainAlignedIPCAddress()+getToolchainAlignedIPCSize());
+}

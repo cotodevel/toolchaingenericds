@@ -32,6 +32,8 @@ USA
 #include "usrsettings.h"
 #include <time.h>
 
+//printf7 misc
+#define printf7bufferSize	(sint32)(0x40)	//64bytes
 
 #define FIFO_IPC_MESSAGE	(uint32)(0xffff1010)
 #define ARM7ARM9SHAREDBUFFERSIZE	(sint32)(1024*2)	//2K Shared buffer. ARM9 defines it.
@@ -91,19 +93,19 @@ typedef struct sMyIPC {
 	
 	uint32 WRAM_CR_ISSET;	//0 when ARM7 boots / 1 by ARM9 when its done
 	
-	uint32 fiforeply;	//for ret status
-	
-	
-	//debug
-	uint32 debugvar;
-	uint32 debugvar2;
-	
 } tMyIPC __attribute__ ((aligned (4)));
+
+//Special IPC section for Aligned access memory from both ARM Cores.
+struct sAlignedIPC{
+	uint8 arm7PrintfBuf[printf7bufferSize];
+};
 
 //Shared Work     027FF000h 4KB    -     -    -    R/W
 
 //IPC Struct
-#define MyIPC ((tMyIPC volatile *)(0x027FF000))
+#define MyIPC ((tMyIPC volatile *)(getToolchainIPCAddress()))	//unaligned (for byte access, like ldrb/strb since its always 4 alignment)
+#define AlignedIPC ((volatile struct sAlignedIPC *)(getToolchainAlignedIPCAddress()))	//allows ldrb/strb byte access
+
 //#define Specific_1.....
 //#define Specific_2.....
 //#define Specific_etc....
@@ -136,6 +138,9 @@ typedef struct sMyIPC {
 
 //PowerManagementWrite
 #define FIFO_POWERMGMT_WRITE	(uint32)(0xffff1019)
+
+//printf7 FIFO
+#define FIFO_PRINTF_7	(uint32)(0xffff101a)
 
 #endif
 

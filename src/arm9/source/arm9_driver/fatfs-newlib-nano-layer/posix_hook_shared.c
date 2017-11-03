@@ -76,53 +76,7 @@ pid_t _getpid (void){
 
 
 
-//void *sbrk(int nbytes)
-void * _sbrk (int nbytes)
-{
-	//Coto: own implementation, libc's own malloc implementation does not like it.
-	//but helps as standalone sbrk implementation except it will always alloc in linear way and not malloc/free (requires keeping track of pointers)
 
-	#ifdef own_allocator
-	int retcode = calc_heap(alloc);
-	void * retptr = (void *)alloc_failed;
-	switch(retcode){
-		case(0):{
-			//ok
-			retptr = this_heap_ptr;
-		}
-		break;
-		//error handling code
-		case(-1):{
-			
-		}
-		break;
-	}
-	
-	return retptr;
-	#endif
-	
-	//Standard newlib implementation
-	#ifndef own_allocator
-
-	static sint8 *heap_end;
-	sint8 *prev_heap_end;
-
-	if (heap_end == NULL)
-		heap_end = (sint8*)get_lma_libend();
-
-	prev_heap_end = heap_end;
-
-	if (heap_end + nbytes > (sint8*)get_lma_ewramend())
-	{
-		//errno = ENOMEM;
-		return (void *) -1;
-	}
-
-	heap_end += nbytes;
-
-	return prev_heap_end;
-	#endif
-}
 
 //read (get struct FD index from FILE * handle)
 
@@ -188,32 +142,7 @@ int _end(int file)
 	return  1;
 }	// _isatty()
 
-//File IO is stubbed even in buffered writes, so as a workaround I redirect the weak-symbol _vfprint_f (and that means good bye file stream operations on fatfs, thus we re-implement those by hand)
-//while allowing to use printf in DS
-int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list list){
-	
-	#ifdef ARM7
-	volatile uint8 g_printfbuf[100];
-	#endif
-	
-	//merge any "..." special arguments where sint8 * ftm requires , store into g_printfbuf
-	vsnprintf ((sint8*)g_printfbuf, 64, fmt, list);
-	
-	#ifdef ARM7
-	//redirect: todo
-	#endif
-	
-	#ifdef ARM9
-	// FIXME
-	t_GUIZone zone;
-	zone.x1 = 0; zone.y1 = 0; zone.x2 = 256; zone.y2 = 192;
-	zone.font = &trebuchet_9_font;
-	GUI_drawText(&zone, 0, GUI.printfy, 255, (sint8*)g_printfbuf);
-	GUI.printfy += GUI_getFontHeight(&zone);
-	#endif
-	
-	return (strlen((sint8*)&g_printfbuf[0]));
-}
+
 
 
 //	-	All below high level posix calls for FSFAT access must use the function getfatfsPath("file_or_dir_path") for file (dldi sd) handling
