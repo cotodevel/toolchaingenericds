@@ -23,23 +23,10 @@ OUTPUT_FORMAT("elf32-littlearm")
 MEMORY
 {
 	IWRAM	(rwx)	: ORIGIN = 0x03800000, LENGTH = 64K
-	EWRAM_SHARED1	(rwx)	: ORIGIN = 0x02000000 + 4M - 128k - 128k -128k, LENGTH = 128k
-	EWRAM_SHARED2	(rwx)	: ORIGIN = 0x02000000 + 4M - 128k -128k, LENGTH = 128k
-	EWRAM_SHARED3	(rwx)	: ORIGIN = 0x02000000 + 4M - 128k, LENGTH = 128k
-	
 }
 
 _iwram_start = ORIGIN(IWRAM);
 _iwram_end = ORIGIN(IWRAM)	+	LENGTH(IWRAM);
-
-__shwram_start = ORIGIN(EWRAM_SHARED1);
-__shwram_end = ORIGIN(EWRAM_SHARED1)	+	LENGTH(EWRAM_SHARED1);
-
-__shwram2_start = ORIGIN(EWRAM_SHARED2);
-__shwram2_end = ORIGIN(EWRAM_SHARED2)	+	LENGTH(EWRAM_SHARED2);
-
-__shwram3_start = ORIGIN(EWRAM_SHARED3);
-__shwram3_end = ORIGIN(EWRAM_SHARED3)	+	LENGTH(EWRAM_SHARED3);
 
 /* ARM7 Specific */
 _arm7_irqcheckbits = 0x04000000 - 8;	/* __irq_flags */
