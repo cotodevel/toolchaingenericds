@@ -55,25 +55,6 @@ USA
 
 #define		BITMASK_SPI_DATA	0xff
 
-//PowerMan
-#define 	POWMAN_CONTROL_BIT   0
-#define 	POWMAN_BATTERY_BIT   1
-#define 	POWMAN_AMPLIFIER_BIT   2
-#define 	POWMAN_READ_BIT   (1<<7)
-#define 	POWMAN_SOUND_AMP_BIT   (1<<0)
-#define 	POWMAN_SOUND_MUTE_BIT   (1<<1)
-#define 	POWMAN_BACKLIGHT_BOTTOM_BIT   (1<<2)
-#define 	POWMAN_BACKLIGHT_TOP_BIT   (1<<3)
-#define 	POWMAN_SYSTEM_PWR_BIT   (1<<6)
-#define 	POWMAN_POWER_DOWN_BIT   (1<<6)
-#define 	POWMAN_LED_CONTROL(m)_BIT   ((m)<<4)
-#define 	POWMAN_LED_ON_BIT   (0<<4)
-#define 	POWMAN_LED_SLEEP_BIT   (1<<4)
-#define 	POWMAN_LED_BLINK_BIT   (3<<4)
-#define 	POWMAN_AMP_OFFSET_BIT   2
-#define 	POWMAN_AMP_ON_BIT   1
-#define 	POWMAN_AMP_OFF_BIT   0
-
 #endif
 
 #ifdef __cplusplus
