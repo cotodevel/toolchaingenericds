@@ -30,7 +30,7 @@
 #include "dsregs_asm.h"
 
 
-@swiDelay
+@void swiDelay(uint32 delayvalue);
 .global 	swiDelay
 .type   	swiDelay STT_FUNC
 swiDelay:
@@ -44,6 +44,14 @@ swiCRC16:
 	swi 0xe0000
 bx r14
 
+#ifdef ARM7
+@void swiChangeSndBias(int enable, int delayvalue);
+.global 	swiChangeSndBias
+.type   	swiChangeSndBias STT_FUNC
+swiChangeSndBias:
+	swi	0x80000
+bx	r14
+#endif
 
 .pool
 .end

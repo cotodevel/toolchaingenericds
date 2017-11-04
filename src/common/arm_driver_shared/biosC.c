@@ -18,29 +18,19 @@ USA
 
 */
 
-//Software BIOS functionality replacement for official NDS Bios. C part.
+//Software BIOS modules by either replacement or native BIOS support.
 
 /////////////////////////////////////////////////// Shared BIOS ARM7/9 /////////////////////////////////////////////////////////////////
 #include "bios.h"
 #include "dma.h"
 
-///////////////////////////////////////////////// swiCRC16 /////////////////////////////////////////////////////////////////////////////
-unsigned char mess[12] ={0x15, 0x47, 0xC3, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF}; // dont touch this array, its used by the CRC16
-
-//crc == initial seed 
-unsigned short crc16(const unsigned char* data_p, unsigned char length,unsigned short crc){
-    unsigned char x;
-    //unsigned short crc = 0xFFFF;
-
-    while (length--){
-        x = crc >> 8 ^ *data_p++;
-        x ^= x>>4;
-        crc = (crc << 8) ^ ((unsigned short)(x << 12)) ^ ((unsigned short)(x <<5)) ^ ((unsigned short)x);
-    }
-    return crc;
-}
-
 //NDS BIOS Routines.
+
+
+
+//extern extern void swiDelay(uint32 delayvalue);
+
+
 //SWI 0Eh (NDS7/NDS9) - GetCRC16
 //  r0  Initial CRC value (16bit, usually FFFFh)
 //  r1  Start Address   (must be aligned by 2)
@@ -48,24 +38,11 @@ unsigned short crc16(const unsigned char* data_p, unsigned char length,unsigned 
 
 //Return:
 //  r0  Calculated 16bit CRC Value
-/*
-uint16 swiCRC16(uint16 crcvalue, uint8 * data,sint32 len){
-	return (uint16)crc16((const unsigned char*)data, (unsigned char)len,(unsigned short)crcvalue);
-}
-*/
-///////////////////////////////////////////////// swiCRC16 end //////////////////////////////////////////////////////////////////////////
+
+//extern uint16 swiCRC16(uint16 crcvalue, uint8 * data,sint32 len);
 
 
 
-
-
-
-/////////////////////////////////////////////////////////////// SwiDelay /////////////////////////////////////////////////////////////
-//asm
-/////////////////////////////////////////////////////////////// SwiDelay end /////////////////////////////////////////////////////////
-
-
-/////////////////////////////////////////////////////////////// swiFastCopy /////////////////////////////////////////////////////////////
 
 //problem kaputt docs say DS uses a rounded 4 byte copy, be it a fillvalue to dest or direct copy from src to dest, by size.
 //Dont optimize as vram is 16 or 32bit, optimization can end up in 8bit writes.
@@ -86,26 +63,11 @@ void swiFastCopy(uint32 * source, uint32 * dest, int flags){
 	}
 }
 
-/////////////////////////////////////////////////////////////// swiFastCopy end //////////////////////////////////////////////////////////
+
+
 
 //dmaFillWords todo:
 
 
 
-
-/////////////////////////////////////////////////// Shared BIOS ARM7/9 end //////////////////////////////////////////////////////////////
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+//extern void swiChangeSndBias(int enable, int delayvalue);

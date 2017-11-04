@@ -28,9 +28,8 @@ USA
 #include <stdint.h>
 
 #define COPY_FIXED_SOURCE (uint32)(1<<24)
-
-
 #define swiDelay1ms (sint32)(8388)
+
 #endif
 
 #ifdef __cplusplus
@@ -38,13 +37,15 @@ extern "C"{
 #endif
 
 //NDS7/9 Bios 
-extern unsigned short crc16(const unsigned char* data_p, unsigned char length,unsigned short crc);
-//extern uint16 swiCRC16(uint16 crcvalue, uint8 * data,sint32 len);
 extern void swiDelay(uint32 delayvalue);
+extern uint16 swiCRC16(uint16 crc, void * data, uint32 size);
 extern void swiFastCopy(uint32 * source, uint32 * dest, int flags);
 
-extern uint16 swiCRC16(uint16 crc, void * data, uint32 size);
 //NDS7 Bios 
+#ifdef ARM7
+extern void swiChangeSndBias(int enable, int delayvalue);
+#endif
+
 
 //NDS9 Bios (useful when vectors @ 0x00000000 and manual processor vectors handling is required)
 
