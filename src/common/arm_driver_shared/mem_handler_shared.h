@@ -83,6 +83,9 @@ extern uint32 	_gba_start;
 extern uint32 	_gba_end;
 //todo: read from gba cart or something
 
+extern uint32	_gbawram_start;
+extern uint32	_gbawram_end;
+
 extern uint32 	_itcm_start;
 extern uint32 	_itcm_end;
 extern uint32 	get_itcm_start();
