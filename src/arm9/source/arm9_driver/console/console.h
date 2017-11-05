@@ -86,7 +86,7 @@ USA
 
 
 
-//Console uses 2D. used by REG_DISPCNT
+//Console uses 2D. used by REG_DISPCNT / REG_DISPCNT_SUB
 typedef enum {
 	MODE_0_2D = 0x10000, 
 	MODE_1_2D = 0x10001, 
