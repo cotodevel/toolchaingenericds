@@ -44,6 +44,8 @@ USA
 
 #define		DMAENABLED	(1<<(16+15))	//DMAs disable itself when transfer done
 
+#define 	DMARAISEIRQ     (1<<(16+14))	//DMAs will raise a DMA IRQ when Word Count fed (transfer) is complete
+
 #define DMAXSAD(dmaindx)     (*(vuint32*)(0x040000B0+(dmaindx*0xc)))
 #define DMAXDAD(dmaindx)    (*(vuint32*)(0x040000B4+(dmaindx*0xc)))
 #define DMAXCNT(dmaindx)      (*(vuint32*)(0x040000B8+(dmaindx*0xc)))	//DMAXCNT_L (0xB8 & 0xB9) DMAXCNT_H (0xBA & 0xBB)
