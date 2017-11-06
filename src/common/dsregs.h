@@ -237,7 +237,6 @@ USA
 #define VRAM_ENABLE		(1<<7)
 #define VRAM_OFFSET(n)	((n)<<3)
 
-#define REG_BG0VOFS BG0VOFS
 #define REG_BG1VOFS BG1VOFS
 #define REG_BG2VOFS BG2VOFS
 #define REG_BG3VOFS BG3VOFS
