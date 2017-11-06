@@ -52,6 +52,7 @@ typedef struct sMyIPC {
     uint32 temperature;        // TSC computed temperature
 		
 	struct tm tmInst;	//DateTime
+	uint8	dayOfWeek;	//Updated when the above inst is updated
 	
 	uint8 consoletype;
 	/*

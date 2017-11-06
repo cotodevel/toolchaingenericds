@@ -76,6 +76,9 @@ extern void sec2tm(ulong secs, struct tm *tmInst);
 #endif
 
 extern struct tm * getTime();
+extern uint8 getDayOfWeek();
+extern void setDayOfWeek(uint8 DayOfWeek);
+
 #ifdef __cplusplus
 }
 #endif

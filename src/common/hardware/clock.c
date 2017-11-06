@@ -99,6 +99,9 @@ ulong get_nds_seconds(uchar *time)
 	tmInst.tm_sec  = time[6];
 	tmInst.tm_min  = time[5];
 	tmInst.tm_hour = hours;
+	
+	setDayOfWeek((uint8)time[3]);	//get day of week
+	
 	tmInst.tm_mday = time[2];
 	tmInst.tm_mon  = time[1];
 	tmInst.tm_year = time[0] + 2000;	
@@ -261,4 +264,20 @@ void sec2tm(ulong secs, struct tm *tmInst)
 //Shared:
 struct tm * getTime(){
 	return(struct tm *)(&MyIPC->tmInst);
+}
+
+uint8 getDayOfWeek(){
+	#ifdef ARM9
+	//Prevent Cache problems.
+	coherent_user_range_by_size((uint32)MyIPC, sizeof(tMyIPC));
+	#endif
+	return (uint8)MyIPC->dayOfWeek;
+}
+
+void setDayOfWeek(uint8 DayOfWeek){
+	#ifdef ARM9
+	//Prevent Cache problems.
+	coherent_user_range_by_size((uint32)MyIPC, sizeof(tMyIPC));
+	#endif
+	MyIPC->dayOfWeek = DayOfWeek;
 }
