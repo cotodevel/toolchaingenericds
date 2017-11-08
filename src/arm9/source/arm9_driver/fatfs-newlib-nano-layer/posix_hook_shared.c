@@ -293,7 +293,7 @@ int open_fs(const sint8 *file, int flags, int mode ){
 
 //toolchain newlib nano lib stripped buffered fwrite support.
 //so we restore POSIX file implementation. User code. 
-FILE *	fopen_fs(sint8 * filepath, sint8 * args){
+FILE *	fopen_fs(const char * filepath, sint8 * args){
 
 	sint32 posix_flags = 0;
 	

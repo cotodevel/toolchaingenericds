@@ -129,22 +129,20 @@ extern void seekdir(DIR *dirp, long loc);
 extern int _fstat_r ( struct _reent *_r, int fd, struct stat *buf );
 
 //posix file descriptor replacement
-extern FILE *	fopen_fs(sint8 * filepath, sint8 * args);
+extern FILE *	fopen_fs(const char * filepath, sint8 * args);
 extern size_t	fread_fs(_PTR buf, size_t blocksize, size_t readsize, FILE * fileInst);
-extern size_t 	fwrite_fs (_PTR buf, size_t blocksize, size_t readsize, FILE * fileInst);
+extern size_t 	fwrite_fs(_PTR buf, size_t blocksize, size_t readsize, FILE * fileInst);
 extern int	fclose_fs(FILE * fileInst);
 extern int	fseek_fs(FILE *fileInst, long offset, int whence);
-extern long ftell_fs (FILE * fileInst);
+extern long ftell_fs(FILE * fileInst);
 extern int fputs_fs(const char * s , FILE * fileInst );
 extern int fputc_fs(int c, FILE * fileInst);
 extern int putc_fs(int c, FILE * fileInst);
-extern int fprintf_fs (FILE *stream, const char *format, ...);
+extern int fprintf_fs(FILE *stream, const char *format, ...);
 extern int fgetc_fs(FILE *fp);
 extern char *fgets_fs(char *s, int n, FILE * f);
-
 extern int feof_fs(FILE * stream);
 extern int ferror_fs(FILE * stream);
-
 extern FILE * fdopen_fs(int fd,const char *mode);
 
 extern void _exit (int status);
