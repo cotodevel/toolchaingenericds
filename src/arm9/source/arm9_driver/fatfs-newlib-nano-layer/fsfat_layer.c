@@ -1138,8 +1138,12 @@ sint32 getStructFDFirstSector(struct fd *f){
 	}
 }
 
-sint32 getDiskClusterSize(){
+sint32 getDiskClusterSize(){		/* Cluster size [sectors] */
 	return(sint32)(dldiFs.csize);
+}
+
+sint32 getDiskClusterSizeBytes(){	/* Cluster size [sectors] in bytes */
+	return (sint32)(getDiskClusterSize() * getDiskSectorSize());
 }
 
 sint32 getDiskSectorSize(){
