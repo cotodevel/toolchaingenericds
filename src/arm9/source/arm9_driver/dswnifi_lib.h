@@ -74,8 +74,6 @@ USA
 #define TCP_PORT (sint32)(7777)		//used for TCP Server - NDS Companion connecting
 #define NDSMULTI_TCP_PORT_HOST (sint32)(7778)			//host 	listener - listener is local - sender is multi IP NDS
 #define NDSMULTI_TCP_PORT_GUEST (sint32)(7779)		//guest listener - 
-//this is the top packet size
-#define dsnifi_udp_packet_size (sint32)(0x200)
 
 //process status
 #define proc_idle (sint32)(0)
@@ -98,6 +96,9 @@ USA
 
 #define ds_netplay_host (sint32)(12)
 #define ds_netplay_guest (sint32)(13)
+
+//Standard Frame Size
+#define frameDSsize (sint32)((256)+sizeof(volatile uint16))	//256 bytes
 
 typedef struct {
 	//dswifi socket @ PORT 8888
@@ -156,6 +157,7 @@ extern "C"{
 #endif
 
 //These calls are implemented in TGDS layer
+#ifdef ARM9
 
 //NIFI Part
 //DSWNIFI: NIFI
@@ -228,6 +230,9 @@ extern __attribute__((weak))	void HandleRecvUserspace(struct frameBlock * frameB
 extern __attribute__((weak))	bool do_multi(struct frameBlock * frameBlockRecv);
 
 extern bool sentReq;
+
+#endif
+
 #ifdef __cplusplus
 }
 #endif
