@@ -2,11 +2,11 @@ This is the Toolchain Generic DS:
 
 For building the toolchain you need three steps:
 
-Recompile newlib-nano2.1 for Nintendo DS (mandatory, not on this guide)
+- Recompile newlib-nano2.1 for Nintendo DS (mandatory, not on this guide). See: https://github.com/cotodevel/newlib-nano-2/tree/newlibnano2.1-nds
 
-Recompile ToolchainGenericDS (this guide)
+- Recompile ToolchainGenericDS (this guide)
 
-Recompile project (optional, not on this guide)
+- Recompile project (optional, not on this guide)
 
 After you followed "Recompile newlib-nano2.1 for Nintendo DS" you need to follow the below steps.
 
