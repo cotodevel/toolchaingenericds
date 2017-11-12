@@ -1126,12 +1126,11 @@ DWORD clust2sect (  /* !=0:Sector number, 0:Failed (invalid cluster#) */
     return clst * fs->csize + fs->database;
 }
 
-//returns the First Sector for a given file opened:
-//returns -1 if the file was not open or not a file (directory or fsfat error)
-//	struct File Descriptor (FILE * opened through fopen_fs() -> then converted to int32 from fileno())
-sint32 getStructFDFirstSector(struct fd *f){
-	if(f->filPtr){
-		return clust2sect(f->filPtr->obj.fs, f->filPtr->obj.sclust);  /* Return file start sector */
+//args: int ClusterOffset (1) : int SectorOffset (N). = 1 physical sector in disk. Each sector is getDiskSectorSize() bytes. Cluster 0 + Sector 0 == Begin of FileHandle
+//returns -1 if : file not open, directory or fsfat error
+sint32 getStructFDSectorOffset(struct fd *fdinst,int ClusterOffset,int SectorOffset){	//	struct File Descriptor (FILE * open through fopen_fs() -> then converted to int32 from fileno())
+	if(fdinst->filPtr){
+		return clust2sect(fdinst->filPtr->obj.fs, fdinst->filPtr->obj.sclust + ClusterOffset) + SectorOffset; 
 	}
 	else{
 		return -1;

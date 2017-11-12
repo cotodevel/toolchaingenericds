@@ -143,7 +143,7 @@ extern DWORD clust2sect (  /* !=0:Sector number, 0:Failed (invalid cluster#) */
     DWORD clst      /* Cluster# to be converted */
 );
 
-extern sint32 getStructFDFirstSector(struct fd *f);
+extern sint32 getStructFDSectorOffset(struct fd *fdinst,int ClusterOffset,int SectorOffset);
 extern sint32 getDiskClusterSize();			/* Cluster size [sectors] */
 extern sint32 getDiskClusterSizeBytes();	/* Cluster size [sectors] in bytes */
 extern sint32 getDiskSectorSize();
