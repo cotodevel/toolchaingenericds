@@ -75,8 +75,7 @@ export DIRS_ARM7_SRC = source/	\
 			../common/	\
 			../common/arm_driver_shared/	\
 			../common/dswifi/	\
-			../common/hardware/	\
-			../common/interrupts/
+			../common/hardware/
 			
 export DIRS_ARM7_HEADER = source/	\
 			source/wireless/	\
@@ -87,8 +86,7 @@ export DIRS_ARM7_HEADER = source/	\
 			../common/	\
 			../common/arm_driver_shared/	\
 			../common/dswifi/	\
-			../common/hardware/	\
-			../common/interrupts/
+			../common/hardware/
 			
 #####################################################ARM9#####################################################
 
@@ -110,8 +108,7 @@ export DIRS_ARM9_SRC = source/	\
 			../common/	\
 			../common/arm_driver_shared/	\
 			../common/dswifi/	\
-			../common/hardware/	\
-			../common/interrupts/
+			../common/hardware/
 			
 export DIRS_ARM9_HEADER = source/	\
 			source/arm9_driver/	\
@@ -131,9 +128,8 @@ export DIRS_ARM9_HEADER = source/	\
 			../common/	\
 			../common/arm_driver_shared/	\
 			../common/dswifi/	\
-			../common/hardware/	\
-			../common/interrupts/
-
+			../common/hardware/
+			
 #cleanup default C/C++/ASM flags
 export CFLAGS	=''
 export CPPFLAGS	=''
