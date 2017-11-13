@@ -28,7 +28,7 @@ USA
 #endif
 
 #include "InterruptsARMCores_h.h"
-#include "ipc.h"
+#include "ipcfifo.h"
 
 #ifdef ARM7
 uint32 interrupts_to_wait_arm7 = 0;

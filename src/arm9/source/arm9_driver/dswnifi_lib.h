@@ -23,7 +23,7 @@ USA
 #ifndef __dswnifi_lib_h__
 #define __dswnifi_lib_h__
 
-#include "common_shared.h"
+#include "ipcfifo.h"
 #include "wifi_shared.h"
 #include "clock.h"
 

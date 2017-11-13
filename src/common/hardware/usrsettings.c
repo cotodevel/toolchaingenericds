@@ -19,7 +19,7 @@ USA
 */
 
 #include "usrsettings.h"
-#include "common_shared.h"
+#include "ipcfifo.h"
 #include "bios.h"
 #include "dma.h"
 

@@ -22,7 +22,7 @@ USA
 
 #include "dsregs.h"
 #include "dsregs_asm.h"
-#include "common_shared.h"
+#include "ipcfifo.h"
 #include <string.h>
 #include "dma.h"
 #include "bios.h"

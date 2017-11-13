@@ -19,9 +19,8 @@ USA
 */
 
 #include <stdbool.h>
-#include "common_shared.h"
+#include "ipcfifo.h"
 #include "spitsc.h"
-#include "common_shared.h"
 
 #ifdef ARM7
 #include "spi.h"

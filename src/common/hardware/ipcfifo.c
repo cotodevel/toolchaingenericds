@@ -21,10 +21,9 @@ USA
 //Coto: these are my FIFO handling libs. Works fine with NIFI (trust me this is very tricky to do without falling into freezes).
 //Use it at your will, just make sure you read WELL the descriptions below.
 
-
-#include "common_shared.h"
+#include "ipcfifo.h"
 #include "InterruptsARMCores_h.h"
-#include "ipc.h"
+#include "ipcfifo.h"
 
 #include "mem_handler_shared.h"
 
@@ -44,11 +43,6 @@ USA
 #endif
 
 
-
-
-
-
-
 //Software FIFO calls, Rely on Hardware FIFO calls so it doesnt matter if they are in different maps 
 #ifdef ARM9
 __attribute__((section(".dtcm")))
@@ -65,7 +59,6 @@ int GetSoftFIFOCount(){
 }
 
 //GetSoftFIFO: Stores up to FIFO_NDS_HW_SIZE. Exposed to usercode for fetching up to 64 bytes (in 4 bytes each) sent from other core, until it returns false (empty buffer).
-
 //Example: 
 //uint32 n = 0;
 //while(GetSoftFIFO(&n)== true){
@@ -102,7 +95,6 @@ bool SetSoftFIFO(uint32 value)
 		return false;
 }
 
-
 //Software FIFO Handler receiver, add it wherever its required. (This is a FIFO that runs on software logic, rather than NDS FIFO).
 //Supports multiple arguments, in FIFO format.
 #ifdef ARM9
@@ -113,13 +105,11 @@ void Handle_SoftFIFORECV()
 	uint32 msg = 0;
 	
 	while(GetSoftFIFO((uint32*)&msg) == true){
-		
 		//process incoming packages
 		switch(msg){
 			
 			
 		}
-		
 	}
 }
 
@@ -263,8 +253,6 @@ void HandleFifoNotEmpty(){
 				break;
 				
 				#endif
-			
-				
 			}
 			
 			HandleFifoNotEmptyWeakRef(data0,data1,data2,data3);
@@ -273,15 +261,12 @@ void HandleFifoNotEmpty(){
 			*data1ptr = (uint32)0;
 			*data2ptr = (uint32)0;
 			*data3ptr = (uint32)0;
-			
 		}
 		
 		//clear fifo inmediately
 		REG_IPC_FIFO_CR |= (1<<3);
-	}
-	
+	}	
 }
-
 
 void setARM7ARM9SharedBuffer(uint32 * shared_buffer_address){
 	volatile uint32 * ptr = (uint32*)&MyIPC->arm7arm9sharedBuffer;
@@ -291,48 +276,4 @@ void setARM7ARM9SharedBuffer(uint32 * shared_buffer_address){
 uint32 * getARM7ARM9SharedBuffer(){
 	volatile uint32 * ptr = (uint32*)&MyIPC->arm7arm9sharedBuffer;
 	return (uint32)(*ptr);
-}
-
-
-//FIFO HANDLER END
-
-
-//Hardware Shared Functions
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
-void writemap_ext_armcore(uint32 address, uint32 value, uint32 mode){
-	//todo.
-}
-
-//writemap_ext_armcore(REG_POWERCNT_ADDR, (uint32)value, WRITE_VALUE_16);
-
-void powerON(uint16 values){
-	#ifdef ARM7
-	REG_POWERCNT |= values;
-	#endif
-	
-	#ifdef ARM9
-	if(!(values & POWERMAN_ARM9)){
-		SendMultipleWordACK(FIFO_POWERCNT_ON, (uint32)values, 0, 0);
-	}
-	else{
-		REG_POWERCNT |= values;
-	}
-	#endif
-}
-
-void powerOFF(uint16 values){
-	#ifdef ARM7
-	REG_POWERCNT &= ~values;
-	#endif
-	
-	#ifdef ARM9
-	if(!(values & POWERMAN_ARM9)){
-		SendMultipleWordACK(FIFO_POWERCNT_OFF, (uint32)values, 0, 0);
-	}
-	else{
-		REG_POWERCNT &= ~values;
-	}
-	#endif
 }

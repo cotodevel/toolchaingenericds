@@ -18,40 +18,54 @@ USA
 
 */
 
-#ifndef __nds_ipc_h__
-#define __nds_ipc_h__
+#include "ipcfifo.h"
+#include "InterruptsARMCores_h.h"
+#include "ipcfifo.h"
 
-#include "typedefs.h"
+#include "mem_handler_shared.h"
+
+#ifdef ARM7
+#include <string.h>
+#include "wifi_arm7.h"
+#endif
+
+#ifdef ARM9
+#include <stdbool.h>
+
 #include "dsregs.h"
 #include "dsregs_asm.h"
-
-#define SEND_FIFO_IPC_EMPTY	(1<<0)	
-#define SEND_FIFO_IPC_FULL	(1<<1)	
-#define SEND_FIFO_IPC_IRQ	(1<<2)		
-#define SEND_FIFO_IPC_CLEAR	(1<<3)	
-#define RECV_FIFO_IPC_EMPTY	(1<<8)	
-#define RECV_FIFO_IPC_FULL	(1<<9)	
-#define RECV_FIFO_IPC_IRQ	(1<<10)	
-
-#define FIFO_IPC_ERROR	(1<<14)	
-#define FIFO_IPC_ENABLE	(1<<15)
-
-//fifo 
-#define REG_IPC_FIFO_TX		(*(vuint32*)0x4000188)
-#define REG_IPC_FIFO_RX		(*(vuint32*)0x4100000)
-#define REG_IPC_FIFO_CR		(*(vuint16*)0x4000184)
-
-//ipc fifo sync
-#define REG_IPC_SYNC	(*(vuint16*)0x04000180)
-
+#include "InterruptsARMCores_h.h"
+#include "wifi_arm9.h"
 
 #endif
 
-#ifdef __cplusplus
-extern "C"{
-#endif
 
-
-#ifdef __cplusplus
+void powerON(uint16 values){
+	#ifdef ARM7
+	REG_POWERCNT |= values;
+	#endif
+	
+	#ifdef ARM9
+	if(!(values & POWERMAN_ARM9)){
+		SendMultipleWordACK(FIFO_POWERCNT_ON, (uint32)values, 0, 0);
+	}
+	else{
+		REG_POWERCNT |= values;
+	}
+	#endif
 }
-#endif
+
+void powerOFF(uint16 values){
+	#ifdef ARM7
+	REG_POWERCNT &= ~values;
+	#endif
+	
+	#ifdef ARM9
+	if(!(values & POWERMAN_ARM9)){
+		SendMultipleWordACK(FIFO_POWERCNT_OFF, (uint32)values, 0, 0);
+	}
+	else{
+		REG_POWERCNT &= ~values;
+	}
+	#endif
+}

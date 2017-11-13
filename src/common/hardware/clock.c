@@ -26,7 +26,7 @@ USA
 #include "dsregs_asm.h"
 
 #include "clock.h"
-#include "common_shared.h"
+#include "ipcfifo.h"
 #include <string.h>
 #include "bios.h"
 

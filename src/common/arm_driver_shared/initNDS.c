@@ -32,7 +32,7 @@ USA
 
 #ifdef ARM9
 #include "devoptab_devices.h"
-#include "common_shared.h"
+#include "ipcfifo.h"
 #include "file.h"
 #include "video.h"
 #endif

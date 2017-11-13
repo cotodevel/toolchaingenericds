@@ -43,7 +43,7 @@ USA
 #include "dsregs.h"
 #include "dsregs_asm.h"
 #include "exception.h"
-#include "common_shared.h"
+#include "ipcfifo.h"
 
 #include "InterruptsARMCores_h.h"
 #include "mem_handler_shared.h"

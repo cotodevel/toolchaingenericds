@@ -1,4 +1,3 @@
-
 /*
 
 			Copyright (C) 2017  Coto
@@ -19,15 +18,13 @@ USA
 
 */
 
+#ifndef __nds_ipc_h__
+#define __nds_ipc_h__
 
-//Coto: these are my FIFO handling libs. Works fine with NIFI (trust me this is very tricky to do without falling into freezes).
-//Use it at your will, just make sure you read WELL the descriptions below.
-
-#ifndef __common_shared_h__
-#define __common_shared_h__
-
+#include "typedefs.h"
+#include "dsregs.h"
+#include "dsregs_asm.h"
 #include <stdbool.h>
-
 #include "spitsc.h"
 #include "usrsettings.h"
 #include <time.h>
@@ -35,11 +32,62 @@ USA
 //printf7 misc
 #define printf7bufferSize	(sint32)(0x40)	//64bytes
 
+
+//irqs
+#define VCOUNT_LINE_INTERRUPT 0
+
+//void writemap_ext_armcore(0x04000208,0x000000ff,WRITE_VALUE_8);
+#define WRITE_VALUE_8	0xf0
+#define WRITE_VALUE_16	0xf1
+#define WRITE_VALUE_32	0xf2
+
+//FIFO Hardware -> FIFO Software: GetSoftFIFO / SetSoftFIFO	/ 
+#define FIFO_NDS_HW_SIZE (16*4)
+#define FIFO_SOFTFIFO_WRITE_EXT	(uint32)(0xffff1017)
+#define FIFO_SOFTFIFO_READ_EXT	(uint32)(0xffff1018)
+
+//PowerCnt Read / PowerCnt Write
+#define FIFO_POWERCNT_ON	0xffff0004
+#define FIFO_POWERCNT_OFF	0xffff0005
+
+//FIFO - WIFI
+#define WIFI_SYNC 0xffff0006
+#define WIFI_STARTUP 0xffff0007
+
+//Exception Handling
+#define EXCEPTION_ARM7 0xffff0008
+#define EXCEPTION_ARM9 0xffff0009
+
+//PowerManagementWrite
+#define FIFO_POWERMGMT_WRITE	(uint32)(0xffff1019)
+
+//printf7 FIFO
+#define FIFO_PRINTF_7	(uint32)(0xffff101a)
+
 #define FIFO_IPC_MESSAGE	(uint32)(0xffff1010)
 #define ARM7ARM9SHAREDBUFFERSIZE	(sint32)(1024*2)	//2K Shared buffer. ARM9 defines it.
-//---------------------------------------------------------------------------------
+
+#define SEND_FIFO_IPC_EMPTY	(1<<0)	
+#define SEND_FIFO_IPC_FULL	(1<<1)	
+#define SEND_FIFO_IPC_IRQ	(1<<2)		
+#define SEND_FIFO_IPC_CLEAR	(1<<3)	
+#define RECV_FIFO_IPC_EMPTY	(1<<8)	
+#define RECV_FIFO_IPC_FULL	(1<<9)	
+#define RECV_FIFO_IPC_IRQ	(1<<10)	
+
+#define FIFO_IPC_ERROR	(1<<14)	
+#define FIFO_IPC_ENABLE	(1<<15)
+
+//fifo 
+#define REG_IPC_FIFO_TX		(*(vuint32*)0x4000188)
+#define REG_IPC_FIFO_RX		(*(vuint32*)0x4100000)
+#define REG_IPC_FIFO_CR		(*(vuint16*)0x4000184)
+
+//ipc fifo sync
+#define REG_IPC_SYNC	(*(vuint16*)0x04000180)
+
+
 typedef struct sMyIPC {
-//---------------------------------------------------------------------------------
     //new 
 	tEXTKEYIN	EXTKEYINInst;
 	uint16 buttons7;  			// X, Y, /PENIRQ buttons
@@ -112,50 +160,15 @@ struct sAlignedIPC{
 //#define Specific_etc....
 
 
-//irqs
-#define VCOUNT_LINE_INTERRUPT 0
-
-//void writemap_ext_armcore(0x04000208,0x000000ff,WRITE_VALUE_8);
-#define WRITE_VALUE_8	0xf0
-#define WRITE_VALUE_16	0xf1
-#define WRITE_VALUE_32	0xf2
-
-//FIFO Hardware -> FIFO Software: GetSoftFIFO / SetSoftFIFO	/ 
-#define FIFO_NDS_HW_SIZE (16*4)
-#define FIFO_SOFTFIFO_WRITE_EXT	(uint32)(0xffff1017)
-#define FIFO_SOFTFIFO_READ_EXT	(uint32)(0xffff1018)
-
-//PowerCnt Read / PowerCnt Write
-#define FIFO_POWERCNT_ON	0xffff0004
-#define FIFO_POWERCNT_OFF	0xffff0005
-
-//FIFO - WIFI
-#define WIFI_SYNC 0xffff0006
-#define WIFI_STARTUP 0xffff0007
-
-//Exception Handling
-#define EXCEPTION_ARM7 0xffff0008
-#define EXCEPTION_ARM9 0xffff0009
-
-//PowerManagementWrite
-#define FIFO_POWERMGMT_WRITE	(uint32)(0xffff1019)
-
-//printf7 FIFO
-#define FIFO_PRINTF_7	(uint32)(0xffff101a)
-
 #endif
 
-
 #ifdef __cplusplus
-extern "C" {
+extern "C"{
 #endif
 
 //weak symbols : the implementation of these is project-defined, also abstracted from the hardware IPC FIFO Implementation for easier programming.
 extern __attribute__((weak))	void HandleFifoNotEmptyWeakRef(uint32 cmd1,uint32 cmd2,uint32 cmd3,uint32 cmd4);
 extern __attribute__((weak))	void HandleFifoEmptyWeakRef(uint32 cmd1,uint32 cmd2,uint32 cmd3,uint32 cmd4);
-
-
-
 
 
 //FIFO 

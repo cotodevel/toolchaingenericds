@@ -25,7 +25,7 @@ USA
 #include <malloc.h>
 #include <string.h>
 #include "linker_ext.h"
-#include "common_shared.h"
+#include "ipcfifo.h"
 
 #endif
 #ifdef __cplusplus

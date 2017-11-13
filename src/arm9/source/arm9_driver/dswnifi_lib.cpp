@@ -20,7 +20,7 @@ USA
 
 //DSWNifi Library 1.2
 
-#include "common_shared.h"
+#include "ipcfifo.h"
 #include "wifi_shared.h"
 #include "clock.h"
 

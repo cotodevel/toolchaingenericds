@@ -30,7 +30,7 @@ SOFTWARE.
 #include "dsregs_asm.h"
 #include "typedefs.h"
 
-#include "common_shared.h"
+#include "ipcfifo.h"
 
 #include "wifi_arm9.h"
 #include "dswifi9.h"

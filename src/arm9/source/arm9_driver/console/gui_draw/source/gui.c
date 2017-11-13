@@ -22,7 +22,7 @@ GNU General Public License for more details.
 #include <stdarg.h>
 #include <malloc.h>
 #include <ctype.h>
-#include "common_shared.h"
+#include "ipcfifo.h"
 
 #include "typedefs.h"
 #include "dsregs.h"

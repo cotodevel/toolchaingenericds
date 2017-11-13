@@ -25,7 +25,7 @@ USA
 #include "dsregs_asm.h"
 #include "typedefs.h"
 
-#include "common_shared.h"
+#include "ipcfifo.h"
 
 #include <ctype.h>
 #include <stdlib.h>

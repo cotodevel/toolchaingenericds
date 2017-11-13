@@ -29,7 +29,7 @@ SOFTWARE.
 #include "wifi_arm7.h"
 
 #include "spinlock.h" // .h file with code for spinlocking in it.
-#include "common_shared.h" 
+#include "ipcfifo.h" 
 #include "InterruptsARMCores_h.h"
 #include "spi.h"
 #include "bios.h"

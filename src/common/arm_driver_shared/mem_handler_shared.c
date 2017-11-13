@@ -24,7 +24,7 @@ USA
 #include "reent.h"	//sbrk
 #include "sys/types.h"
 
-#include "common_shared.h"
+#include "ipcfifo.h"
 
 
 //linker to C proper memory layouts.
