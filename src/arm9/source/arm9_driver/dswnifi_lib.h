@@ -144,10 +144,38 @@ typedef struct dsnwifisrvStr {
 	bool dswifi_setup;	//false: not setup / true: setup already
 	
 	bool incoming_packet;	//when any of the above methods received a packet == true / no == false
+	
+	
+	bool GDBStubEnable;	
 }TdsnwifisrvStr;
 
 extern TdsnwifisrvStr dswifiSrv;
 extern client_http_handler client_http_handler_context;
+  
+//GDB Stub part
+
+
+#define debuggerReadMemory(addr) \
+  (*(u32*)addr)
+
+#define debuggerReadHalfWord(addr) \
+  (*(u16*)addr)
+
+#define debuggerReadByte(addr) \
+  (*(u8*)addr)
+
+#define debuggerWriteMemory(addr, value) \
+  *(u32*)addr = (value)
+
+#define debuggerWriteHalfWord(addr, value) \
+  *(u16*)addr = (value)
+
+#define debuggerWriteByte(addr, value) \
+  *(u8*)addr = (value)
+
+#define InternalRAM ((u8*)0x03000000)
+#define WorkRAM ((u8*)0x02000000)
+
 
 #endif
 
@@ -230,6 +258,42 @@ extern __attribute__((weak))	void HandleRecvUserspace(struct frameBlock * frameB
 extern __attribute__((weak))	bool do_multi(struct frameBlock * frameBlockRecv);
 
 extern bool sentReq;
+
+
+//GDB stub
+extern bool gdbNdsStart();
+extern int remotePort;
+extern int remoteSignal;
+extern int remoteSocket;
+extern int remoteListenSocket;
+extern bool remoteConnected;
+extern bool remoteResumed;
+
+extern int remoteTcpSend(char *data, int len);
+extern int remoteTcpRecv(char *data, int len);
+extern bool remoteTcpInit();
+extern void remoteTcpCleanUp();
+extern int remotePipeSend(char *data, int len);
+extern int remotePipeRecv(char *data, int len);
+extern bool remotePipeInit();
+extern void remotePipeCleanUp();
+extern void remoteSetPort(int port);
+extern void remoteSetProtocol(int p);
+extern void remoteInit();
+extern void remotePutPacket(char *packet);
+extern void remoteOutput(char *s, u32 addr);
+extern void remoteSendSignal();
+extern void remoteSendStatus();
+extern void remoteBinaryWrite(char *p);
+extern void remoteMemoryWrite(char *p);
+extern void remoteMemoryRead(char *p);
+extern void remoteStepOverRange(char *p);
+extern void remoteWriteWatch(char *p, bool active);
+extern void remoteReadRegisters(char *p);
+extern void remoteWriteRegister(char *p);
+extern void remoteStubMain();
+extern void remoteStubSignal(int sig, int number);
+extern void remoteCleanUp();
 
 #endif
 

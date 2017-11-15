@@ -162,7 +162,6 @@ namespace ConsoleApplication1
             var server = new UdpListener();
 
             Console.ForegroundColor = ConsoleColor.Yellow;
-
             Console.WriteLine(" Inter-DS UDP Companion Program. \n Usage: Connect this computer to the same network a DS is setup. \n Any connected DS through the DSWNIFI library should connect automatically.\n Developed by coto. Press ESC to quit");
 
             //test UDP RECV on DS: SendUDPMsg("hi", "192.168.43.128", "8890");
@@ -426,12 +425,10 @@ namespace ConsoleApplication1
                         break;
                 }
             });
-            
 
 
-            /*
-            //TCP sender example
-            const int ourPort = 8888; // This needs to match the server's port
+            /* TCP Client, connect to example 
+            const int ourPort = 55555; // This needs to match the server's port
 
             TcpClient ourMagicClient = new TcpClient();
 
@@ -442,11 +439,15 @@ namespace ConsoleApplication1
             NetworkStream ourStream = ourMagicClient.GetStream();
 
             //Let's set up some data!
-            byte[] data = Encoding.ASCII.GetBytes("What a cute widdle robot you have there!");
-            */
-
+            byte[] data = Encoding.ASCII.GetBytes("What a cute widdle robot you have there!\n");
             //Everyone ready? Send that bad-boy! (sender part)
-            // ourStream.Write(data, 0, data.Length); //Start at the 0'th position in our string and send until the end of the string, but we can stop there...
+            ourStream.Write(data, 0, data.Length); //Start at the 0'th position in our string and send until the end of the string, but we can stop there...
+
+            Console.WriteLine("trying TCP send");
+            ourStream.Close();
+
+            while (1==1) ;
+            */
             
             /* TCP Server/Listener example
             IPAddress ipAddress = IPAddress.Parse(LocalIPAddress());

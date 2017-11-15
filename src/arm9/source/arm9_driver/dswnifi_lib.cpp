@@ -34,6 +34,10 @@ USA
 
 #include "timer.h"
 
+#include <string.h>
+#include <unistd.h>
+#include <socket.h>
+
 #ifdef ARM9
 
 #include "wifi_arm9.h"
@@ -277,7 +281,7 @@ void switch_dswnifi_mode(sint32 mode){
 	){
 		if(Wifi_InitDefault(WFC_CONNECT) == true)
 		{
-			printf("connected: IP: %s",(char*)print_ip((uint32)Wifi_GetIP()));
+			//printf("connected: IP: %s",(char*)print_ip((uint32)Wifi_GetIP()));
 			setConnectionStatus(proc_connect);
 			dswifiSrv.dswifi_setup = true;
 		}
@@ -419,7 +423,7 @@ sint32 doMULTIDaemon(){
 				if(-1 == client_http_handler_context.socket_multi_sender)
 				{
 					clrscr();
-					printf("cannot open DS EXT socket.");
+					//printf("cannot open DS EXT socket.");
 					while(1==1){}
 					
 					retDaemonCode = -1;
@@ -433,7 +437,7 @@ sint32 doMULTIDaemon(){
 				if(-1 == client_http_handler_context.socket_multi_listenerNetplay)
 				{
 					clrscr();
-					printf("cannot open DS Server socket.");
+					//printf("cannot open DS Server socket.");
 					while(1==1){}
 					retDaemonCode = -1;
 					return retDaemonCode;
@@ -543,7 +547,7 @@ sint32 doMULTIDaemon(){
 							client_http_handler_context.sain_listener.sin_port = htons(LISTENER_PORT); //nds_multi_port
 							
 							
-							//printf("IPToConnect:%s",tokens[1]);	//ok EXT DS
+							////printf("IPToConnect:%s",tokens[1]);	//ok EXT DS
 							//NDS MULTI IP: No need to bind / connect / sendto use
 							memset((char *) &client_http_handler_context.sain_sender, 0, sizeof(client_http_handler_context.sain_sender));
 							client_http_handler_context.sain_sender.sin_family = AF_INET;
@@ -556,10 +560,10 @@ sint32 doMULTIDaemon(){
 							//bind ThisIP(each DS network hardware) against the current DS UDP port
 							if(bind(client_http_handler_context.socket_multi_listener,(struct sockaddr *)&client_http_handler_context.sain_listener,sizeof(client_http_handler_context.sain_listener))) {
 								if(host_mode == 0){
-									//printf("%s ","[host]binding error");
+									////printf("%s ","[host]binding error");
 								}
 								else if(guest_mode == 0){
-									//printf("%s ","[guest]binding error");
+									////printf("%s ","[guest]binding error");
 								}
 								
 								close(client_http_handler_context.socket_multi_listener);
@@ -576,14 +580,14 @@ sint32 doMULTIDaemon(){
 								if(host_mode == 0){
 									//sprintf(buf,"[host]binding OK MULTI: port [%d] IP: [%s]  ",LISTENER_PORT, (const char*)print_ip((uint32)Wifi_GetIP()));//(char*)print_ip((uint32)Wifi_GetIP()));
 									//sprintf(id,"[host]");
-									//printf("%s",buf);
+									////printf("%s",buf);
 									//stop sending data, server got it already.
 									dswifiSrv.dsnwifisrv_stat = ds_netplay_host_servercheck;
 								}
 								else if(guest_mode == 0){
 									//sprintf(buf,"[guest]binding OK MULTI: port [%d] IP: [%s]  ",LISTENER_PORT, (const char*)print_ip((uint32)Wifi_GetIP()));//(char*)print_ip((uint32)Wifi_GetIP()));
 									//sprintf(id,"[guest]");
-									//printf("%s",buf);
+									////printf("%s",buf);
 									//stop sending data, server got it already.
 									dswifiSrv.dsnwifisrv_stat = ds_netplay_guest_servercheck;
 								}
@@ -642,13 +646,13 @@ sint32 doMULTIDaemon(){
 							}
 							if(dswifiSrv.dsnwifisrv_stat == ds_netplay_host_servercheck){	
 								clrscr();
-								printf("//////////DSCONNECTED[HOST]-PORT:%d",LISTENER_PORT);
+								//printf("//////////DSCONNECTED[HOST]-PORT:%d",LISTENER_PORT);
 								dswifiSrv.dsnwifisrv_stat = ds_netplay_host;
 								nifi_stat = 5;
 							}
 							else if(dswifiSrv.dsnwifisrv_stat == ds_netplay_guest_servercheck){
 								clrscr();
-								printf("//////////DSCONNECTED[GUEST]-PORT:%d",LISTENER_PORT);
+								//printf("//////////DSCONNECTED[GUEST]-PORT:%d",LISTENER_PORT);
 								dswifiSrv.dsnwifisrv_stat = ds_netplay_guest;
 								nifi_stat = 6;
 							}
@@ -717,7 +721,7 @@ sint32 doMULTIDaemon(){
 								memcpy((uint8*)cmd,(uint8*)incomingbuf,sizeof(cmd));	//cmd recv
 								
 								//clrscr();
-								//printf("recvpacketdata!");
+								////printf("recvpacketdata!");
 								//Server aware
 								if(strncmp((const char *)cmd, (const char *)"srvaware", 8) == 0){
 									
@@ -766,7 +770,7 @@ sint32 doMULTIDaemon(){
 									if(bind(client_http_handler_context.socket_multi_listenerNetplay,(struct sockaddr *)&client_http_handler_context.sain_listenerNetplay, sizeof(client_http_handler_context.sain_listenerNetplay)))
 									{
 										clrscr();
-										printf("cannot bind DS Server socket.");
+										//printf("cannot bind DS Server socket.");
 										while(1==1){}
 										
 										retDaemonCode = -1;
@@ -775,8 +779,8 @@ sint32 doMULTIDaemon(){
 									
 									listen(client_http_handler_context.socket_multi_listenerNetplay,5);	//DS Acts as server at desired port
 									
-									//printf("this IP Address:%s",(char*)print_ip((uint32)Wifi_GetIP()));
-									//printf("destination IP Address:%s",(char*)tokens[1]);
+									////printf("this IP Address:%s",(char*)print_ip((uint32)Wifi_GetIP()));
+									////printf("destination IP Address:%s",(char*)tokens[1]);
 									//while(1==1){}
 									
 									//3# External NDS IP MULTI: sockaddr_in: sain_sender and use Connect(); !
@@ -788,24 +792,24 @@ sint32 doMULTIDaemon(){
 									
 									//if connect fails:
 									if (connect(client_http_handler_context.socket_multi_sender,(struct sockaddr *)&client_http_handler_context.sain_sender,sizeof(client_http_handler_context.sain_sender)) < 0){
-										printf("ERROR connecting");
+										//printf("ERROR connecting");
 										while(1==1){}
 									}
 									//if connect success:
 									else{
 										clrscr();
-										printf("connect OK");
+										//printf("connect OK");
 										//if host
 										if(host_mode == 0){
 											dswifiSrv.dsnwifisrv_stat = ds_netplay_host;
 											//nifi_stat = 5;
-											printf("DSCONNECTED:HOST!");
+											//printf("DSCONNECTED:HOST!");
 										}
 										//if guest
 										else if(guest_mode == 0){
 											dswifiSrv.dsnwifisrv_stat = ds_netplay_guest;
 											//nifi_stat = 6;
-											printf("DSCONNECTED:GUEST!");
+											//printf("DSCONNECTED:GUEST!");
 										}
 									}
 									
@@ -852,13 +856,13 @@ sint32 doMULTIDaemon(){
 								struct frameBlock * frameHandled = receiveDSWNIFIFrame((uint8*)incomingbuf,read_size);
 								if(frameHandled != NULL){
 									clrscr();
-									printf("TCP: Frame recv OK");
+									//printf("TCP: Frame recv OK");
 									//trigger the User Recv Process here
 									HandleRecvUserspace(frameHandled);	//Valid Frame
 								}
 								else{
 									clrscr();
-									printf("TCP: Frame recv ERROR");
+									//printf("TCP: Frame recv ERROR");
 									//Invalid Frame
 								}
 							}
@@ -1025,4 +1029,655 @@ struct frameBlock * HandleSendUserspace(uint8 * databuf_src, int bufsize){
 }
 #endif
 
-//ARM7 Code here
+
+
+
+
+
+
+
+
+// VisualBoyAdvance - Nintendo Gameboy/GameboyAdvance (TM) emulator.
+// Copyright (C) 1999-2003 Forgotten
+// Copyright (C) 2004 Forgotten and the VBA development team
+
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 2, or(at your option)
+// any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation,
+// Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+
+
+//GDB Stub
+
+int (*remoteSendFnc)(char *, int) = NULL;
+int (*remoteRecvFnc)(char *, int) = NULL;
+bool (*remoteInitFnc)() = NULL;
+void (*remoteCleanUpFnc)() = NULL;
+
+
+
+int remotePort = 55555;
+int remoteSignal = 5;
+int remoteSocket = -1;
+int remoteListenSocket = -1;
+bool remoteConnected = false;
+bool remoteResumed = false;
+
+bool gdbNdsStart(){
+	if(dswifiSrv.dswifi_setup == false){
+		if(Wifi_InitDefault(WFC_CONNECT) == true)
+		{
+			printf("Connected: IP: %s",(char*)print_ip((uint32)Wifi_GetIP()));
+			dswifiSrv.dswifi_setup = true;
+		}
+	}
+	
+	if(dswifiSrv.dswifi_setup == true){
+		printf("GDBPort:%d",remotePort);
+		remoteInit();
+		dswifiSrv.GDBStubEnable = true;
+		return true;
+	}
+		
+	return false;
+}
+
+int remoteTcpSend(char *data, int len)
+{
+	return send(remoteSocket, data, len, 0);
+}
+
+int remoteTcpRecv(char *data, int len)
+{
+	return recv(remoteSocket, data, len, 0);
+}
+
+bool remoteTcpInit()
+{
+
+if(remoteSocket == -1) {
+    int s = socket(PF_INET, SOCK_STREAM, 0);
+    remoteListenSocket = s;
+	if(s < 0) {
+		//printf("Error opening socket ");
+		while(1==1){}
+	}
+    int tmp = 1;
+    setsockopt (s, SOL_SOCKET, SO_REUSEADDR, (char *) &tmp, sizeof (tmp));
+	
+    //    char hostname[256];
+    //    gethostname(hostname, 256);
+
+    //    hostent *ent = gethostbyname(hostname);
+    //    unsigned long a = *((unsigned long *)ent->h_addr);
+
+    sockaddr_in addr;
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(remotePort);
+    addr.sin_addr.s_addr = htonl(0);
+    int count = 0;
+    while(count < 3) {
+      if(bind(s, (sockaddr *)&addr, sizeof(addr))) {
+        addr.sin_port = htons(ntohs(addr.sin_port)+1);
+      } else
+        break;
+    }
+    if(count == 3) {
+		//printf("Error binding ");
+		while(1==1){}
+    }
+
+    //printf("Listening for a connection at port %d ",ntohs(addr.sin_port));
+
+    if(listen(s, 1)) {
+		//printf("Error listening ");
+		while(1==1){}
+    }
+    int len = sizeof(addr);	//socklen_t
+
+    int s2 = accept(s, (sockaddr *)&addr, &len);
+    if(s2 > 0) {
+		//printf("Got a connection from %s %d ",inet_ntoa((in_addr)addr.sin_addr),ntohs(addr.sin_port));
+    }
+	
+	/*	//works fine here
+	int read_size = 0;
+	char climsg[0x1000];
+	while( (read_size = recv(s2, climsg,sizeof(climsg), 0)) > 0){
+	}
+	//printf("%s",climsg);
+    */
+	
+    char dummy;
+    recv(s2, &dummy, 1, 0);
+    if(dummy != '+') {
+		//printf("ACK NOT received ");
+		while(1==1);
+    }else{
+		//printf("ACK RECEIVED");
+	}
+	
+    remoteSocket = s2;
+    //    close(s);
+  }
+  return true;
+}
+
+void remoteTcpCleanUp()
+{
+	if(remoteSocket > 0) {
+		//printf("Closing remote socket ");
+		close(remoteSocket);
+		remoteSocket = -1;
+	}
+	if(remoteListenSocket > 0) {
+		//printf("Closing listen socket ");
+		close(remoteListenSocket);
+		remoteListenSocket = -1;
+	}
+}
+
+int remotePipeSend(char *data, int len)
+{
+	int res = write(1, data, len);
+	return res;
+}
+
+int remotePipeRecv(char *data, int len)
+{
+	int res = read(0, data, len);
+	return res;
+}
+
+bool remotePipeInit()
+{
+	char dummy;
+	read(0, &dummy, 1);
+	if(dummy != '+') {
+		//printf("ACK not received ");
+		while(1==1);
+	}
+
+	return true;
+}
+
+void remotePipeCleanUp()
+{
+}
+
+void remoteSetPort(int port)
+{
+	remotePort = port;
+}
+
+void remoteSetProtocol(int p)
+{
+  if(p == 0) {
+    remoteSendFnc = remoteTcpSend;
+    remoteRecvFnc = remoteTcpRecv;
+    remoteInitFnc = remoteTcpInit;
+    remoteCleanUpFnc = remoteTcpCleanUp;
+  } else {
+    remoteSendFnc = remotePipeSend;
+    remoteRecvFnc = remotePipeRecv;
+    remoteInitFnc = remotePipeInit;
+    remoteCleanUpFnc = remotePipeCleanUp;
+  }
+}
+
+void remoteInit()
+{
+	remoteSetProtocol(0);	//use TCP
+	if(remoteInitFnc){
+		remoteInitFnc();
+	}
+}
+
+void remotePutPacket(char *packet)
+{
+  char *hex = "0123456789abcdef";
+  char buffer[1024] = {0};
+
+  int count = strlen(packet);
+
+  unsigned char csum = 0;
+
+  char *p = buffer;
+  *p++ = '$';
+
+  for(int i = 0 ;i < count; i++) {
+    csum += packet[i];
+    *p++ = packet[i];
+  }
+  *p++ = '#';
+  *p++ = hex[csum>>4];
+  *p++ = hex[csum & 15];
+  *p++ = 0;
+  //  //printf("Sending %s\n", buffer);
+  remoteSendFnc(buffer, count + 4);
+
+  char c = 0;
+  remoteRecvFnc(&c, 1);
+  /*
+  if(c == '+')
+    //printf("ACK\n");
+  else if(c=='-')
+    //printf("NACK\n");
+  */
+}
+
+
+
+void remoteOutput(char *s, u32 addr)
+{
+  char buffer[16384] = {0};
+
+  char *d = buffer;
+  *d++ = 'O';
+
+  if(s) {
+    char c = *s++;
+    while(c) {
+      sprintf(d, "%02x", c);
+      d += 2;
+      c = *s++;
+    }
+  } else {
+    char c= debuggerReadByte(addr);
+    addr++;
+    while(c) {
+      sprintf(d, "%02x", c);
+      d += 2;
+      c = debuggerReadByte(addr);
+      addr++;
+    }
+  }
+  remotePutPacket(buffer);
+  //  fprintf(stderr, "Output sent %s\n", buffer);
+  
+}
+
+void remoteSendSignal()
+{
+  char buffer[1024] = {0};
+  sprintf(buffer, "S%02x", remoteSignal);
+  remotePutPacket(buffer);
+}
+
+void remoteSendStatus()
+{
+  char buffer[1024] = {0};
+  sprintf(buffer, "T%02x", remoteSignal);
+  char *s = buffer;
+  s += 3;
+  for(int i = 0; i < 15; i++) {
+    u32 v = i+(0x08000000);	//mockup ARM Core Registers
+    sprintf(s, "%02x:%02x%02x%02x%02x;",i,
+            (v & 255),
+            (v >> 8) & 255,
+            (v >> 16) & 255,
+            (v >> 24) & 255);
+    s += 12;
+  }
+  u32 v = (0x08000000);	//Next ARM PC
+  sprintf(s, "0f:%02x%02x%02x%02x;", (v & 255),
+          (v >> 8) & 255,
+          (v >> 16) & 255,
+          (v >> 24) & 255);
+  s += 12;
+  //CPUUpdateCPSR();
+  v = 0;	//reg[16].I;	//read CPSR
+  sprintf(s, "19:%02x%02x%02x%02x;", (v & 255),
+          (v >> 8) & 255,
+          (v >> 16) & 255,
+          (v >> 24) & 255);
+  s += 12;
+  *s = 0;
+  //  //printf("Sending %s\n", buffer);
+  remotePutPacket(buffer);
+}
+
+void remoteBinaryWrite(char *p)
+{
+  u32 address;
+  int count;
+  sscanf(p,"%x,%x:", &address, &count);
+  //  //printf("Binary write for %08x %d\n", address, count);
+
+  p = strchr(p, ':');
+  p++;
+  for(int i = 0; i < count; i++) {
+    u8 b = *p++;
+    switch(b) {
+    case 0x7d:
+      b = *p++;
+      debuggerWriteByte(address, (b^0x20));
+      address++;
+      break;
+    default:
+      debuggerWriteByte(address, b);
+      address++;
+      break;
+    }
+  }
+  //  //printf("ROM is %08x\n", debuggerReadMemory(0x8000254));
+  remotePutPacket("OK");
+}
+
+void remoteMemoryWrite(char *p)
+{
+  u32 address;
+  int count;
+  sscanf(p,"%x,%x:", &address, &count);
+  //  //printf("Memory write for %08x %d\n", address, count);
+
+  p = strchr(p, ':');
+  p++;
+  for(int i = 0; i < count; i++) {
+    u8 v = 0;
+    char c = *p++;
+    if(c <= '9')
+      v = (c - '0') << 4;
+    else
+      v = (c + 10 - 'a') << 4;
+    c = *p++;
+    if(c <= '9')
+      v += (c - '0');
+    else
+      v += (c + 10 - 'a');
+    debuggerWriteByte(address, v);
+    address++;
+  }
+  //  //printf("ROM is %08x\n", debuggerReadMemory(0x8000254));
+  remotePutPacket("OK");
+}
+
+void remoteMemoryRead(char *p)
+{
+  u32 address;
+  int count;
+  sscanf(p,"%x,%x:", &address, &count);
+  //  //printf("Memory read for %08x %d\n", address, count);
+
+  char buffer[1024];
+
+  char *s = buffer;
+  for(int i = 0; i < count; i++) {
+    u8 b = debuggerReadByte(address);
+    sprintf(s, "%02x", b);
+    address++;
+    s += 2;
+  }
+  *s = 0;
+  remotePutPacket(buffer);
+}
+
+void remoteStepOverRange(char *p)
+{
+  u32 address;
+  u32 final;
+  sscanf(p, "%x,%x", &address, &final);
+
+  remotePutPacket("OK");
+
+  remoteResumed = true;
+  /*
+  do {
+    CPULoop(1);
+    if(debugger)
+      break;
+  } while(armNextPC >= address && armNextPC < final);
+	*/
+  remoteResumed = false;
+
+  remoteSendStatus();
+}
+
+void remoteWriteWatch(char *p, bool active)
+{
+  u32 address;
+  int count;
+  sscanf(p, ",%x,%x#", &address, &count);
+
+  //printf("Write watch for %08x %d ", address, count);
+
+  if(address < 0x2000000 || address > 0x3007fff) {
+    remotePutPacket("E01");
+    return;
+  }
+
+  if(address > 0x203ffff && address < 0x3000000) {
+    remotePutPacket("E01");
+    return;
+  }
+
+  u32 final = address + count;
+
+  if(address < 0x2040000 && final > 0x2040000) {
+    remotePutPacket("E01");
+    return;
+  } else if(address < 0x3008000 && final > 0x3008000) {
+    remotePutPacket("E01");
+    return;
+  }
+
+  for(int i = 0; i < count; i++) {
+    if((address >> 24) == 2)
+      WorkRAM[address & 0x3ffff] = active;
+    else
+      InternalRAM[address & 0x7fff] = active;
+    address++;
+  }
+
+  remotePutPacket("OK");
+}
+
+void remoteReadRegisters(char *p)
+{
+  char buffer[1024] = {0};
+
+  char *s = buffer;
+  int i;
+  // regular registers
+  for(i = 0; i < 15; i++) {
+    u32 v = i + (0x08000000);//reg[i].I;
+    sprintf(s, "%02x%02x%02x%02x",  v & 255, (v >> 8) & 255,
+            (v >> 16) & 255, (v >> 24) & 255);
+    s += 8;
+  }
+  // PC
+  u32 pc = i;	//armNextPC;
+  sprintf(s, "%02x%02x%02x%02x", pc & 255, (pc >> 8) & 255,
+          (pc >> 16) & 255, (pc >> 24) & 255);
+  s += 8;
+
+  // floating point registers (24-bit)
+  for(i = 0; i < 8; i++) {
+    sprintf(s, "000000000000000000000000");
+    s += 24;
+  }
+
+  // FP status register
+  sprintf(s, "00000000");
+  s += 8;
+  // CPSR
+  //CPUUpdateCPSR();
+  u32 v = 0;	//reg[16].I;
+  sprintf(s, "%02x%02x%02x%02x",  v & 255, (v >> 8) & 255,
+          (v >> 16) & 255, (v >> 24) & 255);
+  s += 8;
+  *s = 0;
+  remotePutPacket(buffer);
+}
+
+void remoteWriteRegister(char *p)
+{
+  int r;
+
+  sscanf(p, "%x=", &r);
+
+  p = strchr(p, '=');
+  p++;
+
+  char c = *p++;
+
+  u32 v = 0;
+
+  u8 data[4] = {0,0,0,0};
+
+  int i = 0;
+
+  while(c != '#') {
+    u8 b = 0;
+    if(c <= '9')
+      b = (c - '0') << 4;
+    else
+      b = (c + 10 - 'a') << 4;
+    c = *p++;
+    if(c <= '9')
+      b += (c - '0');
+    else
+      b += (c + 10 - 'a');
+    data[i++] = b;
+    c = *p++;
+  }
+
+  v = data[0] | (data[1] << 8) | (data[2] << 16) | (data[3] << 24);
+
+  //  //printf("Write register %d=%08x\n", r, v);
+  
+  //todo
+  /*
+  reg[r].I = v;
+  if(r == 15) {
+    armNextPC = v;
+    if(armState)
+      reg[15].I = v + 4;
+    else
+      reg[15].I = v + 2;
+  }
+  */
+  remotePutPacket("OK");
+}
+
+void remoteStubMain()
+{
+	if( (dswifiSrv.dswifi_setup == true) && (dswifiSrv.GDBStubEnable == true) ){
+	
+		if(remoteResumed) {
+			remoteSendStatus();
+			remoteResumed = false;
+		}
+
+		char buffer[1024] = {0};
+		int res = remoteRecvFnc(buffer, 1024);
+
+		if(res == -1) {
+			//printf("GDB connection lost ");
+		}
+
+		char *p = buffer;
+		char c = *p++;
+		char pp = '+';
+		remoteSendFnc(&pp, 1);
+
+		if(c != '$'){
+			//try next time
+		}
+		else{
+			c= *p++;
+			switch(c) {
+			case '?':
+			  remoteSendSignal();
+			  break;
+			case 'D':
+			  remotePutPacket("OK");
+			  remoteResumed = true;
+			  return;
+			case 'e':
+			  remoteStepOverRange(p);
+			  break;
+			case 'k':
+			  remotePutPacket("OK");
+			  return;
+			case 'C':
+			  remoteResumed = true;
+			  return;
+			case 'c':
+			  remoteResumed = true;
+			  return;
+			case 's':
+			  remoteResumed = true;
+			  remoteSignal = 5;
+			  //CPULoop(1);
+			  if(remoteResumed) {
+				remoteResumed = false;
+				remoteSendStatus();
+			  }
+			  break;
+			case 'g':
+			  remoteReadRegisters(p);
+			  break;
+			case 'P':
+			  remoteWriteRegister(p);
+			  break;
+			case 'M':
+			  remoteMemoryWrite(p);
+			  break;
+			case 'm':
+			  remoteMemoryRead(p);
+			  break;
+			case 'X':
+			  remoteBinaryWrite(p);
+			  break;
+			case 'H':
+			  remotePutPacket("OK");
+			  break;
+			case 'q':
+			  remotePutPacket("");
+			  break;
+			case 'Z':
+			  if(*p++ == '2') {
+				remoteWriteWatch(p, true);
+			  } else
+				remotePutPacket("");
+			  break;
+			case 'z':
+			  if(*p++ == '2') {
+			remoteWriteWatch(p, false);
+			  } else
+			remotePutPacket("");
+			  break;
+			default:
+			  {
+				*(strchr(p, '#') + 3) = 0;
+				//printf("Unknown packet %s ", --p);
+				remotePutPacket("");
+			  }
+			  break;
+			}
+		}
+	}
+}
+
+void remoteStubSignal(int sig, int number)
+{
+  remoteSignal = sig;
+  remoteResumed = false;
+  remoteSendStatus();
+}
+
+void remoteCleanUp()
+{
+  if(remoteCleanUpFnc)
+    remoteCleanUpFnc();
+}
