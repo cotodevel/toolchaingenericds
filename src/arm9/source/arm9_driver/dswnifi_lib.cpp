@@ -1149,21 +1149,12 @@ if(remoteSocket == -1) {
 		//printf("Got a connection from %s %d ",inet_ntoa((in_addr)addr.sin_addr),ntohs(addr.sin_port));
     }
 	
-	/*	//works fine here
-	int read_size = 0;
-	char climsg[0x1000];
-	while( (read_size = recv(s2, climsg,sizeof(climsg), 0)) > 0){
-	}
-	//printf("%s",climsg);
-    */
-	
     char dummy;
     recv(s2, &dummy, 1, 0);
     if(dummy != '+') {
-		//printf("ACK NOT received ");
-		while(1==1);
-    }else{
-		//printf("ACK RECEIVED");
+		//ACK NOT received
+	}else{
+		//ACK RECEIVED
 	}
 	
     remoteSocket = s2;
@@ -1245,12 +1236,10 @@ void remoteInit()
 void remotePutPacket(char *packet)
 {
   char *hex = "0123456789abcdef";
-  char buffer[1024] = {0};
-
+  char * buffer = (char *)malloc(1024);
+	
   int count = strlen(packet);
-
   unsigned char csum = 0;
-
   char *p = buffer;
   *p++ = '$';
 
@@ -1273,14 +1262,14 @@ void remotePutPacket(char *packet)
   else if(c=='-')
     //printf("NACK\n");
   */
+  free(buffer);
 }
 
 
 
 void remoteOutput(char *s, u32 addr)
 {
-  char buffer[16384] = {0};
-
+  char * buffer = (char *)malloc(16384);
   char *d = buffer;
   *d++ = 'O';
 
@@ -1302,20 +1291,20 @@ void remoteOutput(char *s, u32 addr)
     }
   }
   remotePutPacket(buffer);
-  //  fprintf(stderr, "Output sent %s\n", buffer);
-  
+  free(buffer);
 }
 
 void remoteSendSignal()
 {
-  char buffer[1024] = {0};
-  sprintf(buffer, "S%02x", remoteSignal);
-  remotePutPacket(buffer);
+    char * buffer = (char *)malloc(1024);
+	sprintf(buffer, "S%02x", remoteSignal);
+	remotePutPacket(buffer);
+	free(buffer);
 }
 
 void remoteSendStatus()
 {
-  char buffer[1024] = {0};
+  char * buffer = (char *)malloc(1024);
   sprintf(buffer, "T%02x", remoteSignal);
   char *s = buffer;
   s += 3;
@@ -1344,6 +1333,7 @@ void remoteSendStatus()
   *s = 0;
   //  //printf("Sending %s\n", buffer);
   remotePutPacket(buffer);
+  free(buffer);
 }
 
 void remoteBinaryWrite(char *p)
@@ -1408,8 +1398,7 @@ void remoteMemoryRead(char *p)
   sscanf(p,"%x,%x:", &address, &count);
   //  //printf("Memory read for %08x %d\n", address, count);
 
-  char buffer[1024];
-
+  char * buffer = (char *)malloc(1024);
   char *s = buffer;
   for(int i = 0; i < count; i++) {
     u8 b = debuggerReadByte(address);
@@ -1419,6 +1408,7 @@ void remoteMemoryRead(char *p)
   }
   *s = 0;
   remotePutPacket(buffer);
+  free(buffer);
 }
 
 void remoteStepOverRange(char *p)
@@ -1426,10 +1416,9 @@ void remoteStepOverRange(char *p)
   u32 address;
   u32 final;
   sscanf(p, "%x,%x", &address, &final);
-
   remotePutPacket("OK");
-
   remoteResumed = true;
+  
   /*
   do {
     CPULoop(1);
@@ -1438,7 +1427,6 @@ void remoteStepOverRange(char *p)
   } while(armNextPC >= address && armNextPC < final);
 	*/
   remoteResumed = false;
-
   remoteSendStatus();
 }
 
@@ -1483,8 +1471,7 @@ void remoteWriteWatch(char *p, bool active)
 
 void remoteReadRegisters(char *p)
 {
-  char buffer[1024] = {0};
-
+  char * buffer = (char *)malloc(1024);
   char *s = buffer;
   int i;
   // regular registers
@@ -1517,25 +1504,20 @@ void remoteReadRegisters(char *p)
   s += 8;
   *s = 0;
   remotePutPacket(buffer);
+  free(buffer);
 }
 
 void remoteWriteRegister(char *p)
 {
   int r;
-
   sscanf(p, "%x=", &r);
-
   p = strchr(p, '=');
   p++;
-
   char c = *p++;
-
   u32 v = 0;
-
   u8 data[4] = {0,0,0,0};
 
   int i = 0;
-
   while(c != '#') {
     u8 b = 0;
     if(c <= '9')
@@ -1577,95 +1559,94 @@ void remoteStubMain()
 			remoteSendStatus();
 			remoteResumed = false;
 		}
-
-		char buffer[1024] = {0};
+		char * buffer = (char *)malloc(1024);
 		int res = remoteRecvFnc(buffer, 1024);
-
 		if(res == -1) {
 			//printf("GDB connection lost ");
 		}
-
-		char *p = buffer;
-		char c = *p++;
-		char pp = '+';
-		remoteSendFnc(&pp, 1);
-
-		if(c != '$'){
-			//try next time
-		}
 		else{
-			c= *p++;
-			switch(c) {
-			case '?':
-			  remoteSendSignal();
-			  break;
-			case 'D':
-			  remotePutPacket("OK");
-			  remoteResumed = true;
-			  return;
-			case 'e':
-			  remoteStepOverRange(p);
-			  break;
-			case 'k':
-			  remotePutPacket("OK");
-			  return;
-			case 'C':
-			  remoteResumed = true;
-			  return;
-			case 'c':
-			  remoteResumed = true;
-			  return;
-			case 's':
-			  remoteResumed = true;
-			  remoteSignal = 5;
-			  //CPULoop(1);
-			  if(remoteResumed) {
-				remoteResumed = false;
-				remoteSendStatus();
-			  }
-			  break;
-			case 'g':
-			  remoteReadRegisters(p);
-			  break;
-			case 'P':
-			  remoteWriteRegister(p);
-			  break;
-			case 'M':
-			  remoteMemoryWrite(p);
-			  break;
-			case 'm':
-			  remoteMemoryRead(p);
-			  break;
-			case 'X':
-			  remoteBinaryWrite(p);
-			  break;
-			case 'H':
-			  remotePutPacket("OK");
-			  break;
-			case 'q':
-			  remotePutPacket("");
-			  break;
-			case 'Z':
-			  if(*p++ == '2') {
-				remoteWriteWatch(p, true);
-			  } else
+			char *p = buffer;
+			char c = *p++;
+			char pp = '+';
+			remoteSendFnc(&pp, 1);
+			if(c != '$'){
+				//try next time
+			}
+			else{
+				c= *p++;
+				switch(c) {
+				case '?':
+				  remoteSendSignal();
+				  break;
+				case 'D':
+				  remotePutPacket("OK");
+				  remoteResumed = true;
+				  return;
+				case 'e':
+				  remoteStepOverRange(p);
+				  break;
+				case 'k':
+				  remotePutPacket("OK");
+				  return;
+				case 'C':
+				  remoteResumed = true;
+				  return;
+				case 'c':
+				  remoteResumed = true;
+				  return;
+				case 's':
+				  remoteResumed = true;
+				  remoteSignal = 5;
+				  //CPULoop(1);
+				  if(remoteResumed) {
+					remoteResumed = false;
+					remoteSendStatus();
+				  }
+				  break;
+				case 'g':
+				  remoteReadRegisters(p);
+				  break;
+				case 'P':
+				  remoteWriteRegister(p);
+				  break;
+				case 'M':
+				  remoteMemoryWrite(p);
+				  break;
+				case 'm':
+				  remoteMemoryRead(p);
+				  break;
+				case 'X':
+				  remoteBinaryWrite(p);
+				  break;
+				case 'H':
+				  remotePutPacket("OK");
+				  break;
+				case 'q':
+				  remotePutPacket("");
+				  break;
+				case 'Z':
+				  if(*p++ == '2') {
+					remoteWriteWatch(p, true);
+				  } else
+					remotePutPacket("");
+				  break;
+				case 'z':
+				  if(*p++ == '2') {
+				remoteWriteWatch(p, false);
+				  } else
 				remotePutPacket("");
-			  break;
-			case 'z':
-			  if(*p++ == '2') {
-			remoteWriteWatch(p, false);
-			  } else
-			remotePutPacket("");
-			  break;
-			default:
-			  {
-				*(strchr(p, '#') + 3) = 0;
-				//printf("Unknown packet %s ", --p);
-				remotePutPacket("");
-			  }
-			  break;
+				  break;
+				default:
+				  {
+					*(strchr(p, '#') + 3) = 0;
+					//printf("Unknown packet %s ", --p);
+					remotePutPacket("");
+				  }
+				  break;
+				}
 			}
 		}
+		free(buffer);
 	}
 }
 
