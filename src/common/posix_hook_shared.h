@@ -18,7 +18,6 @@ USA
 
 */
 
-#ifdef ARM9
 
 #ifndef __posix_hook_shared_h__
 #define __posix_hook_shared_h__
@@ -42,6 +41,7 @@ USA
 #include <sys/lock.h>
 #include <fcntl.h>
 
+#ifdef ARM9
 
 #include "ff.h"
 #include "mem_handler_shared.h"
@@ -79,6 +79,8 @@ struct devoptab_t{
    _ssize_t (*read_r )( struct _reent *r, int fd, sint8 *ptr, int len );
 };
 
+#endif
+
 
 #endif
 
@@ -87,28 +89,11 @@ struct devoptab_t{
 extern "C"{
 #endif
 
+#ifdef ARM7
+#endif
+
+#ifdef ARM9
 extern int open_fs(const sint8 *file, int flags, int mode );
-
-
-extern int fork();
-extern int close(int fd);
-extern int isatty(int file);
-extern int vfiprintf(FILE *fp,const sint8 *fmt, va_list list);
-extern _off_t _lseek_r(struct _reent *ptr,int fd, _off_t offset, int whence );
-
-
-extern int _gettimeofday(struct timeval *ptimeval,void *ptimezone);
-extern int _end(int file);
-
-extern _ssize_t _read_r ( struct _reent *ptr, int fd, void *buf, size_t cnt );
-extern _ssize_t _write_r ( struct _reent *ptr, int fd, const void *buf, size_t cnt );
-extern int _open_r ( struct _reent *ptr, const sint8 *file, int flags, int mode );
-extern int _close_r ( struct _reent *ptr, int fd );
-
-extern int _vfiprintf_r(struct _reent *reent, FILE *fp,const sint8 *fmt, va_list list);
-
-extern int _link(const sint8 *path1, const sint8 *path2);
-extern int	_stat_r ( struct _reent *_r, const char *file, struct stat *pstat );
 extern int _unlink(const sint8 *path);
 extern int rename(const sint8 *oldpathfile, const sint8 *newpathfile);
 extern int fsync(int fd);
@@ -124,10 +109,7 @@ extern void rewinddir(DIR *dirp);
 extern int dirfd(DIR *dirp);
 extern DIR *fdopendir(int fd);
 extern void seekdir(DIR *dirp, long loc);
-
-
 extern int _fstat_r ( struct _reent *_r, int fd, struct stat *buf );
-
 //posix file descriptor replacement
 extern FILE *	fopen_fs(const char * filepath, sint8 * args);
 extern size_t	fread_fs(_PTR buf, size_t blocksize, size_t readsize, FILE * fileInst);
@@ -144,13 +126,26 @@ extern char *fgets_fs(char *s, int n, FILE * f);
 extern int feof_fs(FILE * stream);
 extern int ferror_fs(FILE * stream);
 extern FILE * fdopen_fs(int fd,const char *mode);
+#endif
 
+extern int fork();
+extern int close(int fd);
+extern int isatty(int file);
+extern int vfiprintf(FILE *fp,const sint8 *fmt, va_list list);
+extern _off_t _lseek_r(struct _reent *ptr,int fd, _off_t offset, int whence );
+extern int _gettimeofday(struct timeval *ptimeval,void *ptimezone);
+extern int _end(int file);
+extern _ssize_t _read_r ( struct _reent *ptr, int fd, void *buf, size_t cnt );
+extern _ssize_t _write_r ( struct _reent *ptr, int fd, const void *buf, size_t cnt );
+extern int _open_r ( struct _reent *ptr, const sint8 *file, int flags, int mode );
+extern int _close_r ( struct _reent *ptr, int fd );
+extern int _vfiprintf_r(struct _reent *reent, FILE *fp,const sint8 *fmt, va_list list);
+extern int _link(const sint8 *path1, const sint8 *path2);
+extern int	_stat_r ( struct _reent *_r, const char *file, struct stat *pstat );
 extern void _exit (int status);
 extern int _kill (pid_t pid, int sig);
 extern pid_t _getpid (void);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

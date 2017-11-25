@@ -21,6 +21,11 @@ USA
 //Coto: this was rewritten by me so it could fit the following setup:
 //The overriden stock POSIX calls are specifically targeted to newlib libc nano ARM Toolchain
 
+
+#ifdef ARM7
+
+#endif
+
 #ifdef ARM9
 
 #include "posix_hook_shared.h"
