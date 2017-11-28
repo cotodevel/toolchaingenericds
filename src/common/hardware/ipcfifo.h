@@ -29,8 +29,8 @@ USA
 #include "usrsettings.h"
 #include <time.h>
 
-//printf7 misc
-#define printf7bufferSize	(sint32)(0x40)	//64bytes
+//printf size buffer
+#define consolebuf_size (sint32)(100)
 
 
 //irqs
@@ -146,7 +146,7 @@ typedef struct sMyIPC {
 
 //Special IPC section for Aligned access memory from both ARM Cores.
 struct sAlignedIPC{
-	uint8 arm7PrintfBuf[printf7bufferSize];
+	uint8 arm7PrintfBuf[consolebuf_size];
 };
 
 //Shared Work     027FF000h 4KB    -     -    -    R/W

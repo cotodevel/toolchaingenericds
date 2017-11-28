@@ -31,6 +31,8 @@ USA
 #include "dma.h"
 #include "bios.h"
 #include "video.h"
+#include "ipcfifo.h"
+
 t_GUI GUI;
 
 volatile sint8	g_printfbuf[consolebuf_size];

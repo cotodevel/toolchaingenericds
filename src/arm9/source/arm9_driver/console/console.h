@@ -25,9 +25,7 @@ USA
 #include "mem_handler_shared.h"
 #include "typedefs.h"
 #include "dsregs.h"
-
-#define consolebuf_size 100
-
+#include "ipcfifo.h"
 
 
 #define ENABLE_3D    (1<<3)

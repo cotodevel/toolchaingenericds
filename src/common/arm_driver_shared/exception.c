@@ -50,15 +50,21 @@ USA
 
 
 #ifdef ARM7
-//half printf
-//the variadic stuff don't work from the ARM7. IWRAM space is not enough sadly. :(
-// the malloc memory footprint required by variadic is not enough for ARM7, perhaps using EWRAM would help but I 
-//will simply resort to 1 arg per printf line
-void halfPrintf(char * strBuf,uint32 arg0,uint32 arg1,uint32 arg2){
+
+volatile sint8	g_printfbuf[consolebuf_size];
+
+//arm7 printf, uses variadic functions from libc
+void printf7(char *fmt, ...){
+	
+	va_list args;
+	va_start (args, fmt);
+	vsnprintf ((sint8*)g_printfbuf, 64, fmt, args);
+	va_end (args);
+	
 	uint8 * Buf = (uint8*)getPrintfBuffer();
 	memset(Buf, 0, sizeof(AlignedIPC->arm7PrintfBuf));
-	strcpy(Buf,(const char*)strBuf);
-	SendMultipleWordACK(FIFO_PRINTF_7, (uint32)arg0, (uint32)arg1, (uint32)arg2);
+	strcpy(Buf,(const char*)g_printfbuf);
+	SendMultipleWordACK(FIFO_PRINTF_7, (uint32)0, (uint32)0, (uint32)0);
 }
 #endif
 

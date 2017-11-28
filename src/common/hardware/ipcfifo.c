@@ -241,14 +241,13 @@ void HandleFifoNotEmpty(){
 				}
 				break;
 				
-				//albeit limited, printf ability from ARM7
+				//printf ability from ARM7
 				case(FIFO_PRINTF_7):{
 					clrscr();
 					char * printfBuf7 = (char*)getPrintfBuffer();
 					//Prevent Cache problems.
 					coherent_user_range_by_size((uint32)printfBuf7, (int)sizeof(AlignedIPC->arm7PrintfBuf));
 					printf("ARM7:%s",printfBuf7);
-					printf("arg:0:%x,1:%x,2:%x",(unsigned int)data1,(unsigned int)data2,(unsigned int)data3);
 				}
 				break;
 				

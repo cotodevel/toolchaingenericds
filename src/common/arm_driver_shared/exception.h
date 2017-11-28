@@ -69,7 +69,8 @@ extern "C" {
 #endif
 
 #ifdef ARM7
-extern void halfPrintf(char * strBuf,uint32 arg0,uint32 arg1,uint32 arg2);
+extern volatile sint8	g_printfbuf[consolebuf_size];
+extern void printf7(char *fmt, ...);
 #endif
 
 extern void setupExceptionHandler();
