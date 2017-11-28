@@ -191,7 +191,7 @@ SECTIONS
 	.vectors : {
 		KEEP (*(.vectors*))
 		. = ALIGN(4);
-	} > ITCM AT > EWRAM
+	} > VECTORS AT > EWRAM
 	__vectors_vma_end__ = .;
 	__vma_stub_end__ = __lib__end__ + SIZEOF(.itcm) + SIZEOF(.dtcm) + SIZEOF(.vectors);
 }
