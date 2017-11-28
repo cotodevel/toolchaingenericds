@@ -148,6 +148,23 @@ extern sint32 getDiskClusterSize();			/* Cluster size [sectors] */
 extern sint32 getDiskClusterSizeBytes();	/* Cluster size [sectors] in bytes */
 extern sint32 getDiskSectorSize();
 
+extern int _fstat_r ( struct _reent *_r, int fd, struct stat *buf );
+extern int rename(const sint8 *oldpathfile, const sint8 *newpathfile);
+extern int fsync(int fd);
+extern int mkdir(const sint8 *path, mode_t mode);
+extern int rmdir(const sint8 *path);
+extern int chdir(const sint8 *path);
+extern sint8 *getcwd(sint8 *buf, size_t size);
+extern DIR *opendir(const sint8 *path);
+extern int closedir(DIR *dirp);
+extern struct dirent *readdir(DIR *dirp);
+extern int  readdir_r(DIR * dirp,struct dirent * entry,struct dirent ** result);
+extern void rewinddir(DIR *dirp);
+extern int dirfd(DIR *dirp);
+extern DIR *fdopendir(int fd);
+extern void seekdir(DIR *dirp, long loc);
+
+
 #ifdef __cplusplus
 }
 #endif

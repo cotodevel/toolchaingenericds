@@ -29,9 +29,9 @@ int funzipstdio(FILE *in, FILE *out){
 	int size = -1;
 
 	//info-zip's funzip stuff
-	n = fgetc_fs(in);  n |= fgetc_fs(in) << 8;
+	n = fgetc(in);  n |= fgetc(in) << 8;
 	if (n == ZIPMAG){
-		if (fread_fs((char *)h, 1, LOCHDR, in) != LOCHDR || SH(h) != LOCREM)
+		if (fread((char *)h, 1, LOCHDR, in) != LOCHDR || SH(h) != LOCREM)
 			err("invalid zipfile");
 		switch (method = SH(h + LOCHOW)) {
 			case STORED:
@@ -41,14 +41,14 @@ int funzipstdio(FILE *in, FILE *out){
 				err("first entry not deflated or stored");
 				break;
 		}
-		for (n = SH(h + LOCFIL); n--; ) g = fgetc_fs(in);
-		for (n = SH(h + LOCEXT); n--; ) g = fgetc_fs(in);
+		for (n = SH(h + LOCFIL); n--; ) g = fgetc(in);
+		for (n = SH(h + LOCEXT); n--; ) g = fgetc(in);
 		g = 0;
 		size = LG(h+LOCSIZ);
 		encrypted = h[LOCFLG] & CRPFLG;
 	}
 	else if (n == GZPMAG){
-		if (fread_fs((char *)h, 1, GZPHDR, in) != GZPHDR){
+		if (fread((char *)h, 1, GZPHDR, in) != GZPHDR){
 			err("invalid gzip file");
 		}
 		if ((method = h[GZPHOW]) != DEFLATED && method != ENHDEFLATED){
@@ -58,14 +58,14 @@ int funzipstdio(FILE *in, FILE *out){
 			err("cannot handle multi-part gzip files");
 		}
 		if (h[GZPFLG] & GZPISX){
-			n = fgetc_fs(in);  n |= fgetc_fs(in) << 8;
-			while (n--) g = fgetc_fs(in);
+			n = fgetc(in);  n |= fgetc(in) << 8;
+			while (n--) g = fgetc(in);
 		}
 		if (h[GZPFLG] & GZPISF){
-			while ((g = fgetc_fs(in)) != 0 && g != EOF) ;
+			while ((g = fgetc(in)) != 0 && g != EOF) ;
 		}
 		if (h[GZPFLG] & GZPISC){
-			while ((g = fgetc_fs(in)) != 0 && g != EOF) ;
+			while ((g = fgetc(in)) != 0 && g != EOF) ;
 		}
 		g = 1;
 		encrypted = h[GZPFLG] & GZPISE;
@@ -115,11 +115,11 @@ int funzipstdio(FILE *in, FILE *out){
 				z.next_in = ibuffer;
 				if(size>=0){
 					if(size>0){
-						z.avail_in = fread_fs( ibuffer, 1, min(size,BUFFER_SIZE), in );
+						z.avail_in = fread( ibuffer, 1, min(size,BUFFER_SIZE), in );
 						size-=min(size,BUFFER_SIZE);
 					}
 				}else{
-					z.avail_in = fread_fs( ibuffer, 1, BUFFER_SIZE, in );
+					z.avail_in = fread( ibuffer, 1, BUFFER_SIZE, in );
 				}
 			}
 			result = inflate( &z, Z_SYNC_FLUSH );
@@ -130,7 +130,7 @@ int funzipstdio(FILE *in, FILE *out){
 				err(buf);
 			}
 			
-			int wrote = fwrite_fs( obuffer, 1, BUFFER_SIZE - z.avail_out, out );
+			int wrote = fwrite( obuffer, 1, BUFFER_SIZE - z.avail_out, out );
 			if(wrote >= 0){
 				sint32 FDToSync = fileno(out);
 				fsync(FDToSync);
@@ -147,7 +147,7 @@ int funzipstdio(FILE *in, FILE *out){
 		
 	}else{ //stored
 		while (size--) {
-			int c = fgetc_fs(in);fputc_fs(c,out);
+			int c = fgetc(in);fputc(c,out);
 		}
 	}
 
@@ -166,14 +166,14 @@ int load_gz(char *fname, char *newtempfname)	//fname,newtempfname must use getfa
 }
 
 int do_decompression(char *inname, char *outname){ //dszip frontend
-	FILE *in=fopen_fs(inname,"r");
+	FILE *in=fopen(inname,"r");
 	if(!in)return -1;
-	FILE *out=fopen_fs(outname,"w+");
-	if(!out){fclose_fs(in);return -1;}
+	FILE *out=fopen(outname,"w+");
+	if(!out){fclose(in);return -1;}
 	int ret = funzipstdio(in,out);
 	
-	fclose_fs(in);
-	fclose_fs(out);
+	fclose(in);
+	fclose(out);
 	
 	return ret;
 }

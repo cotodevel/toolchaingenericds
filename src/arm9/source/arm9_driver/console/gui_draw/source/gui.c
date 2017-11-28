@@ -226,7 +226,7 @@ void		GUI_drawImage(t_GUIZone *zone, t_GUIImage *image, int x, int y)
 	if (image->flags == IMG_NOLOAD)
 	{		
 		FS_lock();
-		f = fopen_fs(image->data, "r");
+		f = fopen(image->data, "r");
 		//f_open(&fhandler,image->data,FA_READ);
 	}
 	else
@@ -237,7 +237,7 @@ void		GUI_drawImage(t_GUIZone *zone, t_GUIImage *image, int x, int y)
 	{
 		if (image->flags == IMG_NOLOAD)
 		{
-			fread_fs(ptr, 4, image->width/4, f);
+			fread(ptr, 4, image->width/4, f);
 			//unsigned int read_so_far;
 			//f_read(&fhandler, ptr, image->width, &read_so_far);
 	
@@ -252,7 +252,7 @@ void		GUI_drawImage(t_GUIZone *zone, t_GUIImage *image, int x, int y)
 	
 	if (image->flags == IMG_NOLOAD)
 	{
-		fclose_fs(f);
+		fclose(f);
 		//f_close(&fhandler);
 		FS_unlock();
 	}

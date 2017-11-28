@@ -284,23 +284,23 @@ int	FS_loadFile(sint8 *filename, sint8 *buf, int size)
 	FILE *f;
 	int file_size;
 	
-	f = fopen_fs(filename, "r");	//old: f = fopen(filename, "rb");
+	f = fopen(filename, "r");	//old: f = fopen(filename, "rb");
 	if (f == NULL)
 	{
 		return -1;
 	}
-	fseek_fs(f, 0, SEEK_END);	//old: fseek(f, 0, SEEK_END);
-	file_size = ftell_fs(f);		//old:	file_size = ftell(f);
+	fseek(f, 0, SEEK_END);
+	file_size = ftell(f);
 	if (file_size < size)
 	{
-		fclose_fs(f);	//old: fclose(f);
+		fclose(f);
 		return -1;
 	}
 	
-    fseek_fs(f, 0, SEEK_SET);	//old: fseek(f, 0, SEEK_SET);
-    fread_fs(buf, 1, size, f);		//old: fread(buf, 1, size, f);
+    fseek(f, 0, SEEK_SET);
+    fread(buf, 1, size, f);
 	
-    fclose_fs(f);	//old:	fclose(f);	
+    fclose(f);
 	return 0;
 }
 
@@ -317,28 +317,28 @@ int	FS_saveFile(sint8 *filename, sint8 *buf, int size,bool force_file_creation)
 		sprintf((sint8*)var,"%s","w");
 	}
 	
-	if((f = fopen_fs(filename, (sint8*)var)) == NULL)
+	if((f = fopen(filename, (sint8*)var)) == NULL)
 	{
 		return -1;
   	}
 	
-	fwrite_fs(buf, 1, size, f);	//old: fwrite(buf, 1, size, f);
-	fclose_fs(f);	//old: fclose(f);	
+	fwrite(buf, 1, size, f);	//old: fwrite(buf, 1, size, f);
+	fclose(f);	//old: fclose(f);	
 	return 0;
 }
 
 int	FS_getFileSize(sint8 *filename)
 {	
-	FILE * f = fopen_fs(filename, "r");
+	FILE * f = fopen(filename, "r");
 	if (f == NULL)
 	{
 		FS_unlock();
 		return -1;
 	}
-	fseek_fs(f, 0, SEEK_END);
-	int size = ftell_fs(f);
-	fseek_fs(f, 0, SEEK_SET);
-	fclose_fs(f);
+	fseek(f, 0, SEEK_END);
+	int size = ftell(f);
+	fseek(f, 0, SEEK_SET);
+	fclose(f);
 	
 	return size;
 }

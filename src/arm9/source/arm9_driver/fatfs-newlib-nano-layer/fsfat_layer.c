@@ -1110,6 +1110,106 @@ int fatfs_init()
 }
 
 
+//this copies stat from internal struct fd to external code
+int _fstat_r ( struct _reent *_r, int fd, struct stat *buf )	//(FileDescriptor :struct fd index)
+{
+    int ret;
+    struct fd * f = fd_struct_get(fd);
+    if (f == NULL)
+    {
+        _r->_errno = EBADF;
+        ret = -1;
+    }
+    else if (f->isused == structfd_isunused)
+    {
+        _r->_errno = EBADF;
+        ret = -1;
+    }
+    else
+    {
+        *buf = f->stat;
+        ret = 0;
+    }
+    return ret;
+}
+
+
+int rename(const sint8 *old, const sint8 *new)
+{
+    return fatfs_rename(old, new);
+}
+
+int fsync(int fd)	//(FileDescriptor :struct fd index)
+{
+    return fatfs_fsync(fd);
+}
+
+int mkdir(const sint8 *path, mode_t mode)
+{
+    return fatfs_mkdir(path, mode);
+}
+
+int rmdir(const sint8 *path)
+{
+    return fatfs_rmdir(path);
+}
+
+int chdir(const sint8 *path)
+{
+    return fatfs_chdir(path);
+}
+
+sint8 *getcwd(sint8 *buf, size_t size)
+{
+    return fatfs_getcwd(buf, size);
+}
+
+DIR *opendir(const sint8 *path)
+{
+	return fatfs_opendir(path);
+}
+
+int closedir(DIR *dirp)
+{
+    return fatfs_closedir(dirp);
+}
+
+struct dirent *readdir(DIR *dirp)
+{
+    return fatfs_readdir(dirp);
+}
+
+int  readdir_r(DIR * dirp,struct dirent * entry,struct dirent ** result)
+{
+    return fatfs_readdir_r(dirp, entry, result);
+}
+
+void rewinddir(DIR *dirp)
+{
+    fatfs_rewinddir(dirp);
+}
+
+int dirfd(DIR *dirp)
+{
+    return fatfs_dirfd(dirp);
+}
+
+
+DIR *fdopendir(int fd)	//(FileDescriptor :struct fd index)
+{
+    return fatfs_fdopendir(fd);
+}
+
+void seekdir(DIR *dirp, long loc)
+{
+    fatfs_seekdir(dirp, loc);
+}
+
+
+
+
+
+
 
 /*-----------------------------------------------------------------------*/
 /* Get sector# from cluster#                                             */
@@ -1128,7 +1228,7 @@ DWORD clust2sect (  /* !=0:Sector number, 0:Failed (invalid cluster#) */
 
 //args: int ClusterOffset (1) : int SectorOffset (N). = 1 physical sector in disk. Each sector is getDiskSectorSize() bytes. Cluster 0 + Sector 0 == Begin of FileHandle
 //returns -1 if : file not open, directory or fsfat error
-sint32 getStructFDSectorOffset(struct fd *fdinst,int ClusterOffset,int SectorOffset){	//	struct File Descriptor (FILE * open through fopen_fs() -> then converted to int32 from fileno())
+sint32 getStructFDSectorOffset(struct fd *fdinst,int ClusterOffset,int SectorOffset){	//	struct File Descriptor (FILE * open through fopen() -> then converted to int32 from fileno())
 	if(fdinst->filPtr){
 		return clust2sect(fdinst->filPtr->obj.fs, fdinst->filPtr->obj.sclust + ClusterOffset) + SectorOffset; 
 	}
