@@ -20,15 +20,20 @@ USA
 */
 
 
-#ifndef __nds9_global_settings_h__
-#define __nds9_global_settings_h__
+#ifndef __nds_global_settings_h__
+#define __nds_global_settings_h__
 
-//pick one of them, not TWO of them.
+//These settings affect both ARM7 and ARM9, pick one of them, not TWO of them.
 //#define EXCEPTION_VECTORS_0x00000000
 #define EXCEPTION_VECTORS_0xffff0000
 
 #if defined(EXCEPTION_VECTORS_0x00000000) && defined(EXCEPTION_VECTORS_0xffff0000)
 #error "Please provide either EXCEPTION_VECTORS_0xffff0000 or EXCEPTION_VECTORS_0x00000000"
+#endif
+
+#ifdef ARM7
+//uncomment for arm7 printf support. projects that use arm7 wram fully won't compile if newlib arm7 uses variadic functions.
+//#define DEBUGPRINTF7
 #endif
 
 #endif

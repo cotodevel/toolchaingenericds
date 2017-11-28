@@ -47,6 +47,7 @@ USA
 
 #include "InterruptsARMCores_h.h"
 #include "mem_handler_shared.h"
+#include "global_settings.h"
 
 
 #ifdef ARM7
@@ -55,12 +56,12 @@ volatile sint8	g_printfbuf[consolebuf_size];
 
 //arm7 printf, uses variadic functions from libc
 void printf7(char *fmt, ...){
-	
+	#ifdef DEBUGPRINTF7
 	va_list args;
 	va_start (args, fmt);
 	vsnprintf ((sint8*)g_printfbuf, 64, fmt, args);
 	va_end (args);
-	
+	#endif
 	uint8 * Buf = (uint8*)getPrintfBuffer();
 	memset(Buf, 0, sizeof(AlignedIPC->arm7PrintfBuf));
 	strcpy(Buf,(const char*)g_printfbuf);
