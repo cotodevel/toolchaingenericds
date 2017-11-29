@@ -43,9 +43,11 @@ int chdata_save5 = 0;
 //
 //  Flash support functions
 //
-char FlashData[512];
+//char FlashData[512];
+char * FlashData;		//use new section to prevent using ARM7 upper 32K memory
 
 void InitFlashData() {
+	FlashData = (char *)vramAlloc(vramBlockD,0x06000000,512);
 	readFirmwareSPI(0,FlashData,512);
 }
 

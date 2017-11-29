@@ -84,6 +84,7 @@ extern "C" {
 
 
 extern void Read_Flash(int address, char * destination, int length);
+extern char * FlashData;
 extern void InitFlashData();
 extern int ReadFlashByte(int address);
 extern int ReadFlashHWord(int address);

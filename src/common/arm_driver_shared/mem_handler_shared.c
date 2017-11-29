@@ -27,6 +27,83 @@ USA
 #include "ipcfifo.h"
 
 
+
+
+//vram linear memory allocator 
+sint32 vramABlockOfst	=	0;	//offset pointer to free memory, user alloced memory is (baseAddr + (sizeAlloced - vramBlockPtr))
+sint32 vramBBlockOfst	=	0;
+sint32 vramCBlockOfst	=	0;
+sint32 vramDBlockOfst	=	0;
+
+uint32 * vramAlloc(uint32 vramBlock,uint32 StartAddr,int size){
+	uint32 * vramBlockAssign = NULL;
+	switch(vramBlock){
+		case(vramBlockA):{
+			vramBlockAssign = (uint32 *)&vramABlockOfst;
+		}
+		break;
+		case(vramBlockB):{
+			vramBlockAssign = (uint32 *)&vramBBlockOfst;
+		}
+		break;
+		case(vramBlockC):{
+			vramBlockAssign = (uint32 *)&vramCBlockOfst;
+		}
+		break;
+		case(vramBlockD):{
+			vramBlockAssign = (uint32 *)&vramDBlockOfst;
+		}
+		break;
+	}
+	if(vramBlockAssign == NULL){
+		return NULL;
+	}
+	if((StartAddr + (int)*vramBlockAssign + size) <= (StartAddr+vramSize)){
+		//memset((uint32*)(StartAddr + (int)*vramBlockAssign) , 0, size);
+		*vramBlockAssign = (uint32)((int)*vramBlockAssign + size);
+	}
+	else{
+		return NULL;
+	}
+	uint32 AllocBuf = (StartAddr + ((int)*vramBlockAssign - size));
+	if(AllocBuf < StartAddr){
+		AllocBuf = StartAddr;
+	}
+	return (uint32*)AllocBuf;
+}
+
+uint32 * vramFree(uint32 vramBlock,uint32 StartAddr,int size){
+	uint32 * vramBlockAssign = NULL;
+	switch(vramBlock){
+		case(vramBlockA):{
+			vramBlockAssign = (uint32 *)&vramABlockOfst;
+		}
+		break;
+		case(vramBlockB):{
+			vramBlockAssign = (uint32 *)&vramBBlockOfst;
+		}
+		break;
+		case(vramBlockC):{
+			vramBlockAssign = (uint32 *)&vramCBlockOfst;
+		}
+		break;
+		case(vramBlockD):{
+			vramBlockAssign = (uint32 *)&vramDBlockOfst;
+		}
+		break;
+	}
+	if(vramBlockAssign == NULL){
+		return NULL;
+	}
+	if(((StartAddr + (int)*vramBlockAssign) - size) >= (StartAddr)){
+		*vramBlockAssign = (uint32)((int)*vramBlockAssign - size);
+	}
+	else{
+		return NULL;
+	}
+	return (uint32*)(StartAddr + ((int)*vramBlockAssign));
+}
+
 //linker to C proper memory layouts.
 
 //Shared:
@@ -246,7 +323,7 @@ sint32 getToolchainAlignedIPCSize(){
 __attribute__((section(".itcm")))
 #endif
 uint32 getPrintfBuffer(){
-	return (uint32)(&AlignedIPC->arm7PrintfBuf[0]);
+	return (uint32)(&IPCAlignShared->arm7PrintfBuf[0]);
 }
 
 #ifdef ARM9

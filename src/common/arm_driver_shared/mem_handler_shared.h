@@ -37,11 +37,26 @@ USA
 
 #define nds_ewram_mask (get_ewram_size()-1)
 
+
+//add vram alloc
+#define vramSize (sint32)(128*1024)
+#define vramBlockA (uint32)(0xa)
+#define vramBlockB (uint32)(0xb)
+#define vramBlockC (uint32)(0xc)
+#define vramBlockD (uint32)(0xd)
+
 #endif
 
 #ifdef __cplusplus
 extern "C"{
 #endif
+
+extern sint32 vramABlockOfst;	//offset pointer to free memory, user alloced memory is (baseAddr + (sizeAlloced - vramBlockPtr))
+extern sint32 vramBBlockOfst;
+extern sint32 vramCBlockOfst;
+extern sint32 vramDBlockOfst;
+extern uint32 * vramAlloc(uint32 vramBlock,uint32 StartAddr,int size);
+extern uint32 * vramFree(uint32 vramBlock,uint32 StartAddr,int size);
 
 //newlib
 extern uint32 get_lma_libend();		//linear memory top
