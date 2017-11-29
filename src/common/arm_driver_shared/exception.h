@@ -69,7 +69,6 @@ extern "C" {
 #endif
 
 #ifdef ARM7
-extern volatile sint8	g_printfbuf[consolebuf_size];
 extern void printf7(char *fmt, ...);
 #endif
 

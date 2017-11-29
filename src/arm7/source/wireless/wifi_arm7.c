@@ -490,7 +490,9 @@ int Wifi_CopyFirstTxData(sint32 macbase) {
 
 
 
-uint16 arm7q[1024];
+//uint16 arm7q[1024];	
+uint16 * arm7q = NULL;		//use vram allocator
+
 uint16 arm7qlen = 0;
 
 void Wifi_TxRaw(uint16 * data, int datalen) {
@@ -844,7 +846,8 @@ void Wifi_Init(uint32 wifidata) {
 	*((volatile uint16 *)0x04000206) = 0x30; // ???
 
 	InitFlashData();
-
+	arm7q = (uint16 *)vramAlloc(vramBlockD,0x06000000,1024);	//tx queue init
+	
 	// reset/shutdown wifi:
 	WIFI_REG(0x4)=0xffff;
 	Wifi_Stop();

@@ -28,6 +28,7 @@ USA
 #include "spitsc.h"
 #include "usrsettings.h"
 #include <time.h>
+#include "mem_handler_shared.h"
 
 //printf size buffer
 #define consolebuf_size (sint32)(100)
@@ -146,14 +147,16 @@ typedef struct sMyIPC {
 
 //Special IPC section for Aligned access memory from both ARM Cores.
 struct sAlignedIPC{
-	uint8 arm7PrintfBuf[consolebuf_size];
+	volatile uint8 arm7PrintfBuf[consolebuf_size];
+	//used by softFIFO
+	volatile uint32 FIFO_BUF_SOFT[FIFO_NDS_HW_SIZE/4];
 };
 
 //Shared Work     027FF000h 4KB    -     -    -    R/W
 
 //IPC Struct
 #define MyIPC ((tMyIPC volatile *)(getToolchainIPCAddress()))	//unaligned (for byte access, like ldrb/strb since its always 4 alignment)
-#define AlignedIPC ((volatile struct sAlignedIPC *)(getToolchainAlignedIPCAddress()))	//allows ldrb/strb byte access
+#define IPCAlignShared ((volatile struct sAlignedIPC *)(getToolchainAlignedIPCAddress()))	//allows ldrb/strb byte access
 
 //#define Specific_1.....
 //#define Specific_2.....
@@ -177,7 +180,6 @@ extern bool SetSoftFIFO(uint32 value);
 extern bool GetSoftFIFO(uint32 * var);
 
 extern volatile int FIFO_SOFT_PTR;
-extern volatile uint32 FIFO_BUF_SOFT[FIFO_NDS_HW_SIZE/4];
 extern volatile uint32 FIFO_IN_BUF[FIFO_NDS_HW_SIZE/4];
 
 extern void HandleFifoNotEmpty();

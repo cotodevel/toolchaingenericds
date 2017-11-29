@@ -32,7 +32,7 @@ USA
 #endif
 
 #ifdef ARM7
-//uncomment for arm7 printf support. projects that use arm7 wram fully won't compile if newlib arm7 uses variadic functions.
+//uncomment for arm7 printf support.
 //#define DEBUGPRINTF7
 #endif
 

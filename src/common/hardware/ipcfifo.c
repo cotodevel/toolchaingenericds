@@ -48,10 +48,6 @@ USA
 __attribute__((section(".dtcm")))
 #endif    
 volatile int FIFO_SOFT_PTR = 0;
-#ifdef ARM9
-__attribute__((section(".dtcm")))
-#endif    
-volatile uint32 FIFO_BUF_SOFT[FIFO_NDS_HW_SIZE/4];
 
 //useful for checking if something is pending
 int GetSoftFIFOCount(){
@@ -71,8 +67,8 @@ bool GetSoftFIFO(uint32 * var)
 {
 	if(FIFO_SOFT_PTR >= 1){
 		FIFO_SOFT_PTR--;
-		*var = (uint32)FIFO_BUF_SOFT[FIFO_SOFT_PTR];
-		FIFO_BUF_SOFT[FIFO_SOFT_PTR] = (uint32)0;
+		*var = (uint32)IPCAlignShared->FIFO_BUF_SOFT[FIFO_SOFT_PTR];
+		IPCAlignShared->FIFO_BUF_SOFT[FIFO_SOFT_PTR] = (uint32)0;
 		return true;
 	}
 	else
@@ -87,7 +83,7 @@ __attribute__((section(".itcm")))
 bool SetSoftFIFO(uint32 value)
 {
 	if(FIFO_SOFT_PTR < (int)(FIFO_NDS_HW_SIZE/4)){
-		FIFO_BUF_SOFT[FIFO_SOFT_PTR] = value;
+		IPCAlignShared->FIFO_BUF_SOFT[FIFO_SOFT_PTR] = value;
 		FIFO_SOFT_PTR++;
 		return true;
 	}
@@ -246,7 +242,7 @@ void HandleFifoNotEmpty(){
 					clrscr();
 					char * printfBuf7 = (char*)getPrintfBuffer();
 					//Prevent Cache problems.
-					coherent_user_range_by_size((uint32)printfBuf7, (int)sizeof(AlignedIPC->arm7PrintfBuf));
+					coherent_user_range_by_size((uint32)printfBuf7, (int)sizeof(IPCAlignShared->arm7PrintfBuf));
 					printf("ARM7:%s",printfBuf7);
 				}
 				break;

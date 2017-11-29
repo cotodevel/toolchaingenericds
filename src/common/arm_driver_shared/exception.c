@@ -52,20 +52,17 @@ USA
 
 #ifdef ARM7
 
-volatile sint8	g_printfbuf[consolebuf_size];
-
 //arm7 printf, uses variadic functions from libc
 void printf7(char *fmt, ...){
 	#ifdef DEBUGPRINTF7
 	va_list args;
 	va_start (args, fmt);
-	vsnprintf ((sint8*)g_printfbuf, 64, fmt, args);
-	va_end (args);
-	#endif
 	uint8 * Buf = (uint8*)getPrintfBuffer();
-	memset(Buf, 0, sizeof(AlignedIPC->arm7PrintfBuf));
-	strcpy(Buf,(const char*)g_printfbuf);
+	memset(Buf, 0, sizeof(IPCAlignShared->arm7PrintfBuf));
+	vsnprintf ((sint8*)Buf, consolebuf_size, fmt, args);
+	va_end (args);
 	SendMultipleWordACK(FIFO_PRINTF_7, (uint32)0, (uint32)0, (uint32)0);
+	#endif
 }
 #endif
 
