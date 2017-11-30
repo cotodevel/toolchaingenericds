@@ -471,23 +471,26 @@ int fatfs_open_file(const sint8 *pathname, int flags, const FILINFO *fno)
         FILINFO fno_after;
         mode = flags2mode(flags);
         result = f_open(fdinst->filPtr, pathname, mode);
-		if ((result == FR_OK) && (fno->fname[0] == '\0'))
+		if (result == FR_OK)
         {
             result = f_stat(pathname, &fno_after);
-            fno = &fno_after;		
+            fno = &fno_after;			
+			if (result == FR_OK)
+			{
+				fill_fd_fil(fdinst->cur_entry.d_ino, fdinst->filPtr, flags, fno);
+			}
+			else
+			{
+				fatfs_free(fdinst);
+				structfdIndex = -1;
+			}
 		}
-		if (result == FR_OK)
-		{
-			fill_fd_fil(fdinst->cur_entry.d_ino, fdinst->filPtr, flags, fno);
-		}
-		else
-		{
+        else if(result == FR_NO_FILE){
 			fatfs_free(fdinst);
 			structfdIndex = -1;
 		}
-        if(result == FR_NO_FILE){
-			fatfs_free(fdinst);
-			structfdIndex = -1;
+		else{
+			
 		}
     }
 	
