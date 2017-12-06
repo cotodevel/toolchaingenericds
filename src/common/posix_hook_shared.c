@@ -106,7 +106,27 @@ _ssize_t _write_r ( struct _reent *ptr, int fd, const void *buf, size_t cnt ){
 }
 
 int _open_r ( struct _reent *ptr, const sint8 *file, int flags, int mode ){	
-	return open_fs(file, flags, mode );	//ok reentrant open(); calls this
+	sint8 **tokens;
+	int count = 0, i = 0;
+	volatile sint8 str[256];	//file safe buf
+	memcpy ( (uint8*)str, (uint8*)file, 256);
+
+	count = split ((const sint8*)str, '/', &tokens);	
+	volatile sint8 token_str[64];
+	
+	sint32 countPosixFDescOpen = open_posix_filedescriptor_devices() + 1;
+	/* search for "file:/" in "file:/folder1/folder.../file.test" in dotab_list[].name */
+	for (i = 0; i < countPosixFDescOpen ; i++){
+		if(count > 0){
+			sprintf((sint8*)token_str,"%s/",tokens[0]);	//format properly
+			if (strcmp((sint8*)token_str,devoptab_list[i]->name) == 0)
+			{
+				return devoptab_list[i]->open_r( NULL, file, flags, mode ); //returns / allocates a new struct fd index with either DIR or FIL structure allocated
+			}
+		}
+	}
+
+	return -1;
 }
 
 
@@ -181,30 +201,6 @@ int _gettimeofday(struct timeval *ptimeval,void *ptimezone){
 }
 
 
-int open_fs(const sint8 *file, int flags, int mode ){
-	
-	sint8 **tokens;
-	int count = 0, i = 0;
-	volatile sint8 str[256];	//file safe buf
-	memcpy ( (uint8*)str, (uint8*)file, 256);
-
-	count = split ((const sint8*)str, '/', &tokens);	
-	volatile sint8 token_str[64];
-	
-	sint32 countPosixFDescOpen = open_posix_filedescriptor_devices() + 1;
-	/* search for "file:/" in "file:/folder1/folder.../file.test" in dotab_list[].name */
-	for (i = 0; i < countPosixFDescOpen ; i++){
-		if(count > 0){
-			sprintf((sint8*)token_str,"%s/",tokens[0]);	//format properly
-			if (strcmp((sint8*)token_str,devoptab_list[i]->name) == 0)
-			{
-				return devoptab_list[i]->open_r( NULL, file, flags, mode ); //returns / allocates a new struct fd index with either DIR or FIL structure allocated
-			}
-		}
-	}
-
-	return -1;
-}
 
 //todo: retest all of them in default newlib posix fs.
 /*

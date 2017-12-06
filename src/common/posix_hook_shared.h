@@ -93,7 +93,6 @@ extern "C"{
 #endif
 
 #ifdef ARM9
-extern int open_fs(const sint8 *file, int flags, int mode );
 extern int _unlink(const sint8 *path);
 #endif
 
