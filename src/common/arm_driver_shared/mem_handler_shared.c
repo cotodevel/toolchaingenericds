@@ -18,16 +18,16 @@ USA
 
 */
 
+#include <sys/types.h>
+#include <errno.h>
+#include <stddef.h>
+
 #include "mem_handler_shared.h"
 #include "dsregs.h"
 #include "dsregs_asm.h"
 #include "reent.h"	//sbrk
 #include "sys/types.h"
-
 #include "ipcfifo.h"
-
-
-
 
 //vram linear memory allocator 
 sint32 vramABlockOfst	=	0;	//offset pointer to free memory, user alloced memory is (baseAddr + (sizeAlloced - vramBlockPtr))
@@ -193,99 +193,131 @@ sint32 get_dtcm_size(){
 }
 
 #endif
-#ifdef own_allocator
 
-//at start 0
-uint32 * this_heap_ptr = 0;
 
-//libc init code
-void sbrk_init(){
-	this_heap_ptr = (uint32*)get_lma_ewramend();
-}
-
-//call after sbrk_init
-sint32 get_available_mem(){
-	return (sint32)((uint8*)(uint32*)this_heap_ptr - (sint32)(get_lma_libend()));
-}
-//
-sint32 calc_heap(sint32 size){
-	if(size >= 0){	//will alloc from heap
-		sint32 offset = 0;
-		if((size % sizeof(sint32)) > 0){	//ARM requires pointers to be sizeof(sint32) bytes, offset will always round to such boundary if misalignment
-			offset = 1;
-		}
-		if(
-			(get_available_mem() >= size)
-			&&
-			( ((uint32*)get_lma_libend()) <= (this_heap_ptr	-	(sint32)(size/sizeof(sint32))	-	offset)	)
-		){	
-			this_heap_ptr	= (this_heap_ptr - (size/sizeof(sint32)) - offset);	//size/4 and offset for sizeof(sint32) pointers
-		}
-		else{
-			return -1;
-		}
-	}
-	else{			//will free to heap		
-		if( ((uint32*)get_lma_ewramend()) >= (this_heap_ptr	+	(sint32)(abs(size)/sizeof(sint32)))	){
-			this_heap_ptr	= (this_heap_ptr	+	(sint32)(abs(size)/sizeof(sint32)));
-		}
-		else{
-			return -1;
-		}
-	}
-	
-	return 0;
-}
-
-#endif
-
-//Coto: Posix (by default) memory allocator that works on ARM7 (iwram like 3k free) and ARM9 (3M~ free)
-void * _sbrk (int nbytes)
+/* ------------------------------------------------------------------------- */
+/*!Increase program data space
+   This is a minimal implementation.  Assuming the heap is growing upwards
+   from __heap_start towards __heap_end.
+   See linker file for definition.
+   @param[in] incr  The number of bytes to increment the stack by.
+   @return  A pointer to the start of the new block of memory                */
+/* ------------------------------------------------------------------------- */
+void *
+_sbrk (int  incr)
 {
-	//Coto: own implementation, libc's own malloc implementation does not like it.
-	//but helps as standalone sbrk implementation except it will always alloc in linear way and not malloc/free (requires keeping track of pointers)
+	extern char __heap_start;//set by linker
+	extern char __heap_end;//set by linker
 
-	#ifdef own_allocator
-	int retcode = calc_heap(alloc);
-	void * retptr = (void *)alloc_failed;
-	switch(retcode){
-		case(0):{
-			//ok
-			retptr = this_heap_ptr;
-		}
-		break;
-		//error handling code
-		case(-1):{
-			
-		}
-		break;
-	}
-	
-	return retptr;
-	#endif
-	
-	//Standard newlib implementation
-	#ifndef own_allocator
+	static char *heap_end;		/* Previous end of heap or 0 if none */
+	char        *prev_heap_end;
 
-	static sint8 *heap_end;
-	sint8 *prev_heap_end;
-
-	if (heap_end == NULL){
-		heap_end = (sint8*)get_lma_libend();
-	}
-	prev_heap_end = heap_end;
-
-	if (heap_end + nbytes > (sint8*)get_lma_wramend())
-	{
-		//errno = ENOMEM;
-		return (void *) -1;
+	if (0 == heap_end) {
+		heap_end = (sint8*)get_lma_libend();			/* Initialize first time round */
 	}
 
-	heap_end += nbytes;
+	prev_heap_end  = heap_end;
+	heap_end      += incr;
+	//check
+	if( heap_end < (char*)get_lma_wramend()) {
 
-	return prev_heap_end;
-	#endif
-}
+	} else {
+		errno = ENOMEM;
+		return (char*)-1;
+	}
+	return (void *) prev_heap_end;
+
+}	/* _sbrk () */
+
+
+
+///* sbrk support */
+//
+///* The current plan is to have one sbrk handler for all cpus.
+//   Hence use `asm' for each global variable here to avoid the cpu prefix.
+//   We can't intrude on the user's namespace (another reason to use asm).  */
+//
+//#include <sys/types.h>
+///*#include <sys/syscall.h>*/
+//#include <errno.h>
+//#include <stddef.h>
+//
+///* These variables are publicly accessible for debugging purposes.
+//   The user is also free to set sbrk_size to something different.
+//   See mem-layout.c.  */
+//
+//extern int sbrk_size asm ("sbrk_size");
+//
+//caddr_t sbrk_start asm ("sbrk_start");
+//caddr_t sbrk_loc asm ("sbrk_loc");
+//extern char  end;                    /* Defined by linker.  */
+//
+///*caddr_t _sbrk_r (struct _reent *, size_t) asm ("__sbrk_r");*/
+//
+//
+///* This symbol can be defined with the --defsym linker option.  */
+//extern char __heap_end __attribute__((weak));
+//
+//
+///* FIXME: We need a semaphore here.  */
+//
+//caddr_t
+//_sbrk_r (struct _reent *r, size_t nbytes)
+//{
+//   extern char  end;			/* Defined by linker.  */
+//   static char *heap_end;		/* Previous end of heap or 0 if none */
+//   char        *prev_heap_end;
+//   register char* stack asm("sp");
+//
+//   if (0 == heap_end)
+//     {
+//       heap_end = &end;			/* Initialize first time round */
+//     }
+//
+//   prev_heap_end  = heap_end;
+//
+//   if (stack < (prev_heap_end+nbytes)) {
+//     /* heap would overlap the current stack depth.
+//      * Future:  use sbrk() system call to make simulator grow memory beyond
+//      * the stack and allocate that
+//      */
+//     errno = ENOMEM;
+//     return (char*)-1;
+//   }
+//
+//   heap_end      += nbytes;
+//
+//   return (caddr_t) prev_heap_end;
+//
+//}	/* _sbrk () */
+
+
+//caddr_t
+//_sbrk_r (struct _reent *r, size_t nbytes)
+//{
+//  caddr_t result;
+//
+//  void *heap_end;
+//
+//  heap_end = &__heap_end;
+//  if (!heap_end)
+//    heap_end = sbrk_start + sbrk_size;
+//  if (
+//      /* Ensure we don't underflow.  */
+//      sbrk_loc + nbytes < sbrk_start
+//      /* Ensure we don't overflow.  */
+//      || sbrk_loc + nbytes > (caddr_t)heap_end)
+//    {
+//      errno = ENOMEM;
+//      return ((caddr_t) -1);
+//    }
+//
+//  if (0 == sbrk_loc)
+//    sbrk_loc = &end;                 /* Initialize first time round */
+//  result = sbrk_loc;
+//  sbrk_loc += nbytes;
+//  return result;
+//}
 
 //IPC 
 
