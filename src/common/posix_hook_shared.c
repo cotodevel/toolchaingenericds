@@ -131,7 +131,14 @@ int _open_r ( struct _reent *ptr, const sint8 *file, int flags, int mode ){
 
 
 //POSIX Logic: hook devoptab descriptor into devoptab functions
-
+int _close (int fd){
+	
+	return _close_r(NULL, fd);
+}
+int close (int fd){
+	
+	return _close(fd);
+}
 //allocates a new struct fd index with either DIR or FIL structure allocated
 //not overriden, we force the call from fd_close
 int _close_r ( struct _reent *ptr, int fd )
@@ -141,21 +148,9 @@ int _close_r ( struct _reent *ptr, int fd )
 	
 	if( (fdinst != NULL) && ((sint32)fdinst->fd_posix != (sint32)structfd_posixFileDescrdefault)  ) {
 		return (_ssize_t)devoptab_list[fdinst->fd_posix]->close_r( NULL, fdinst->cur_entry.d_ino );
-	}
-	
+	}	
 	return -1;
 }
-
-int _close (int fd){
-	
-	return _close_r(NULL, fd);
-}
-
-int close (int fd){
-	
-	return _close(fd);
-}
-
 
 /*
  isatty

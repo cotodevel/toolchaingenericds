@@ -113,10 +113,9 @@ extern void _exit (int status);
 extern int _kill (pid_t pid, int sig);
 extern pid_t _getpid (void);
 
-
-extern int _close_r ( struct _reent *ptr, int fd );
 extern int _close (int fd);
 extern int close (int fd);
+extern int _close_r ( struct _reent *ptr, int fd );
 
 #ifdef __cplusplus
 }

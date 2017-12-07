@@ -135,54 +135,54 @@ sint32 get_posix_fd_from_devicename(sint8 * deviceName){
 
 //stdin: todo
 int open_r_stdin ( struct _reent *r, const sint8 *path, int flags, int mode ){
-	return 0;
+	return -1;
 }
 
 int close_r_stdin ( struct _reent *r, int fd ){
-	return 0;
+	return -1;
 }
 
 _ssize_t write_r_stdin( struct _reent *r, int fd, const sint8 *ptr, int len ){
-	return len;
+	return -1;
 }
 
 _ssize_t read_r_stdin ( struct _reent *r, int fd, sint8 *ptr, int len ){
-	return len;
+	return -1;
 }
 
 int open_r_stdout ( struct _reent *r, const sint8 *path, int flags, int mode ){
-	return 0;
+	return -1;
 }
 
 int close_r_stdout ( struct _reent *r, int fd ){
-	return 0;
+	return -1;
 }
 
-//int _vfiprintf_r/_vfprintf_r is overrided in posix_hook_shared.c due to how newlib parses the printf buffer. So we retarget printf to GUI_Printf which already works.
+//int _vfiprintf_r/_vfprintf_r is overriden in posix_hook_shared.c due to how newlib parses the printf buffer. So we retarget printf to GUI_Printf which already works.
 _ssize_t write_r_stdout( struct _reent *r, int fd, const sint8 *ptr, int len ){
-	return len;
+	return -1;
 }
 
 _ssize_t read_r_stdout ( struct _reent *r, int fd, sint8 *ptr, int len ){
-	return len;
+	return -1;
 }
 
 
 //stderr: todo
 int open_r_stderr ( struct _reent *r, const sint8 *path, int flags, int mode ){
-	return 0;
+	return -1;
 }
 
 int close_r_stderr ( struct _reent *r, int fd ){
-	return 0;
+	return -1;
 }
 
 _ssize_t write_r_stderr( struct _reent *r, int fd, const sint8 *ptr, int len ){
-	return len;
+	return -1;
 }
 
 _ssize_t read_r_stderr ( struct _reent *r, int fd, sint8 *ptr, int len ){
-	return len;
+	return -1;
 }
 
 //fatfs: 
