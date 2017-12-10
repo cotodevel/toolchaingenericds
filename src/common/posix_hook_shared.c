@@ -185,7 +185,6 @@ int _unlink(const sint8 *path)
     return f_unlink(path);
 }
 
-//override stat();
 int	_stat_r ( struct _reent *_r, const char *file, struct stat *pstat )
 {
 	return fatfs_stat(file, pstat);

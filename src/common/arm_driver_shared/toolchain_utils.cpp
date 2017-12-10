@@ -71,6 +71,7 @@ size_t ucs2tombs(uint8* dst, const unsigned short* src, size_t len) {
 
 #ifdef ARM9
 
+#include "console.h"
 #include "devoptab_devices.h"
 #include "fsfat_layer.h"
 #include "posix_hook_shared.h"
@@ -433,7 +434,6 @@ int		FS_chdir(const sint8 *path)
 	return ret;
 }
 
-
 sint8	**FS_getDirectoryList(sint8 *path, sint8 *mask, int *cnt)
 {	
 	int			size;
@@ -449,7 +449,6 @@ sint8	**FS_getDirectoryList(sint8 *path, sint8 *mask, int *cnt)
 			if(pent == NULL){
 				break;
 			}
-			
 			struct fd * fdinst = fd_struct_get(pent->d_ino);
 			if(fdinst){
 				//OK
@@ -458,15 +457,12 @@ sint8	**FS_getDirectoryList(sint8 *path, sint8 *mask, int *cnt)
 				//NULL!. This should never happen.
 				continue;
 			}
-			
 			if (!S_ISDIR(fdinst->stat.st_mode)) { 
 				continue;
 			}
-			
 			if (!strcmp(pent->d_name, ".")){
 				continue;
 			}
-			
 			if (mask)
 			{
 				sint8 *ext = _FS_getFileExtension(pent->d_name);
@@ -499,16 +495,13 @@ sint8	**FS_getDirectoryList(sint8 *path, sint8 *mask, int *cnt)
 			if(pent == NULL){
 				break;
 			}
-			
 			struct fd * fdinst = fd_struct_get(pent->d_ino);
 			if (!S_ISDIR(fdinst->stat.st_mode)) {
 				continue;
 			}
-			
 			if (!strcmp(pent->d_name, ".")){
 				continue;		
 			}
-			
 			if (mask)
 			{
 				sint8 *ext = _FS_getFileExtension(pent->d_name);
@@ -533,4 +526,3 @@ sint8	**FS_getDirectoryList(sint8 *path, sint8 *mask, int *cnt)
 }
 
 #endif
-//
