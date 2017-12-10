@@ -27,7 +27,7 @@ USA
 #include <limits.h>
 #include <fcntl.h>
 #include <dirent.h>
-#include "file.h"
+#include "fileHandleTGDS.h"
 #include "fsfat_layer.h"
 #include "typedefs.h"
 #include "dsregs.h"

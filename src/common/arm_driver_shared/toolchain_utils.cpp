@@ -76,7 +76,7 @@ size_t ucs2tombs(uint8* dst, const unsigned short* src, size_t len) {
 #include "fsfat_layer.h"
 #include "posix_hook_shared.h"
 #include "toolchain_utils.h"
-#include "file.h"
+#include "fileHandleTGDS.h"
 
 #include <stdio.h>
 #include <time.h>

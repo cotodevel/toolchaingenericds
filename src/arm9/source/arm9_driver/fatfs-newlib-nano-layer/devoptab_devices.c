@@ -38,7 +38,7 @@ USA
 #include "fsfat_layer.h"
 #include "posix_hook_shared.h"
 
-#include "file.h"
+#include "fileHandleTGDS.h"
 
 
 //device name for stdin driver descriptor (max devoptab_fname_size size)

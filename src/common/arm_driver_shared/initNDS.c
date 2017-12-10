@@ -33,7 +33,7 @@ USA
 #ifdef ARM9
 #include "devoptab_devices.h"
 #include "ipcfifo.h"
-#include "file.h"
+#include "fileHandleTGDS.h"
 #include "video.h"
 #endif
 
