@@ -447,7 +447,7 @@ void fill_fd_dir(int fd, DIR *fp, int flags, const FILINFO *fno, char * fullFile
 	if((sint32)topsize > (sint32)(NAME_MAX+1)){
 		topsize = (sint32)(NAME_MAX+1);
 	}
-	strncpy((sint8*)fdinst->fd_name, (sint8*)fullFilePath, topsize);
+	strncpy(fdinst->fd_name, fullFilePath, topsize);
 }
 
 //called from :
@@ -489,7 +489,7 @@ int fatfs_open_file(const sint8 *pathname, int flags, const FILINFO *fno)
             fno = &fno_after;			
 			if (result == FR_OK)
 			{
-				fill_fd_fil(fdinst->cur_entry.d_ino, fdinst->filPtr, flags, fno, pathname);
+				fill_fd_fil(fdinst->cur_entry.d_ino, fdinst->filPtr, flags, fno, (char*)pathname);
 			}
 			else
 			{
@@ -526,7 +526,7 @@ int fatfs_open_dir(const sint8 *pathname, int flags, const FILINFO *fno)
 		
         if (result == FR_OK)
         {
-			fill_fd_dir(fdret, fdinst->dirPtr, flags, fno, pathname);
+			fill_fd_dir(fdret, fdinst->dirPtr, flags, fno, (char*)pathname);
         }
         else
         {
