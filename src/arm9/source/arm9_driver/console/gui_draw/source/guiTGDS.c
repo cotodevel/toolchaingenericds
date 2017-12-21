@@ -28,7 +28,7 @@ GNU General Public License for more details.
 #include "dsregs.h"
 #include "consoleTGDS.h"
 
-#include "gui.h"
+#include "guiTGDS.h"
 #include "biosTGDS.h"
 
 #include "gui_widgets.h"

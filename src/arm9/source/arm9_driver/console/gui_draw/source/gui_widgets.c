@@ -5,7 +5,7 @@
 #include "typedefsTGDS.h"
 #include "dsregs.h"
 #include "gui_widgets.h"
-#include "gui.h"
+#include "guiTGDS.h"
 #include "console_str.h"
 #include "keypadTGDS.h"
 

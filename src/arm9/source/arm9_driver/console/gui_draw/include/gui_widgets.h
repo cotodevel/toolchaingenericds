@@ -1,4 +1,4 @@
-#include "gui.h"
+#include "guiTGDS.h"
 
 #ifndef __GUI_WIDGETS_H__
 #define __GUI_WIDGETS_H__
