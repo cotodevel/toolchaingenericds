@@ -135,6 +135,7 @@ _start:
 	#endif
 	
 	/*  Clear BSS */
+	#ifdef ARM9
 	ldr                 r0,=__bss_vma_start
 	ldr                 r1,=__bss_vma_end
 	bl clear
@@ -143,6 +144,7 @@ _start:
 	ldr                 r0,=__lib__end__
 	ldr                 r1,=__vma_stub_end__
 	bl clear
+	#endif
 	
 	push	{r0-r3,lr}
 	ldr	r3, =initHardware

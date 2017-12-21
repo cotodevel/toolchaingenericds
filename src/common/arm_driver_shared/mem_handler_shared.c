@@ -111,11 +111,11 @@ uint32 * vramFree(uint32 vramBlock,uint32 StartAddr,int size){
 //these toggle the WRAM_CR register depending on linker settings
 
 uint32 get_arm7_start_address(){
-	return (uint32)MyIPC->arm7startaddress;
+	return (uint32)getsIPCSharedTGDS()->arm7startaddress;
 }
 
 uint32 get_arm7_end_address(){
-	return (uint32)MyIPC->arm7endaddress;
+	return (uint32)getsIPCSharedTGDS()->arm7endaddress;
 }
 
 sint32 get_arm7_ext_size(){
@@ -124,11 +124,11 @@ sint32 get_arm7_ext_size(){
 
 
 uint32 get_arm9_start_address(){
-	return (uint32)MyIPC->arm9startaddress;
+	return (uint32)getsIPCSharedTGDS()->arm9startaddress;
 }
 
 uint32 get_arm9_end_address(){
-	return (uint32)MyIPC->arm9endaddress;
+	return (uint32)getsIPCSharedTGDS()->arm9endaddress;
 }
 
 sint32 get_arm9_ext_size(){
@@ -151,14 +151,34 @@ uint32 get_iwram_end(){
 
 #endif
 
+//ARM7:
+//use 0x06000000 ~ 32K for playBuffer
+//use 0x06008000 ~ 32K for malloc / stacks
+uint32 * vramLMALibendARM7 = NULL;	//relocated end section, alloced by vram alloc, used as sbrk
+
+#ifdef ARM7
+void initvramLMALibend(){
+	if(vramLMALibendARM7 == NULL){
+		vramLMALibendARM7 = vramAlloc(vramBlockC,(0x06008100),((32*1024)-256));	//it is VRAMBLOCK D currently mapped to ARM7 VRAM, use vramBlockC to keep different maps
+	}
+}
+#endif
+
+
 uint32 get_lma_libend(){
+	#ifdef ARM7
+	return (uint32)(0x06000000 + (32*1024) + (256));
+	#endif
+	 
+	#ifdef ARM9
 	return (uint32)(&__vma_stub_end__);	//linear memory top (start)
+	#endif
 }
 
 //(ewram end - linear memory top ) = malloc free memory (bottom, end)
 uint32 get_lma_wramend(){
 	#ifdef ARM7
-	return (uint32)(&_iwram_end);
+	return (uint32)(0x06000000 + (32*1024) + (256) + (((32*1024)-256)));
 	#endif
 	#ifdef ARM9
 	return (uint32)(&_ewram_end);	
@@ -332,22 +352,7 @@ uint32 getToolchainIPCAddress(){
 __attribute__((section(".itcm")))
 #endif
 sint32 getToolchainIPCSize(){
-	return (sint32)(sizeof(tMyIPC));
-}
-
-//Internal Aligned
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
-uint32 getToolchainAlignedIPCAddress(){
-	return (uint32)(getToolchainIPCAddress()+getToolchainIPCSize());
-}
-
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
-sint32 getToolchainAlignedIPCSize(){
-	return (sint32)(sizeof(struct sAlignedIPC));
+	return (sint32)(sizeof(struct sIPCSharedTGDS));
 }
 
 //Printf7 Buffer
@@ -355,12 +360,12 @@ sint32 getToolchainAlignedIPCSize(){
 __attribute__((section(".itcm")))
 #endif
 uint32 getPrintfBuffer(){
-	return (uint32)(&IPCAlignShared->arm7PrintfBuf[0]);
+	return (uint32)(&getsIPCSharedTGDS()->arm7PrintfBuf[0]);
 }
 
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
 uint32 getUserIPCAddress(){
-	return (uint32)(getToolchainAlignedIPCAddress()+getToolchainAlignedIPCSize());
+	return (uint32)(getToolchainIPCAddress()+getToolchainIPCSize());
 }

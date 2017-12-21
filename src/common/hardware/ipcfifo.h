@@ -18,6 +18,8 @@ USA
 
 */
 
+//TGDS IPC Version: 1.3
+
 #ifndef __nds_ipc_h__
 #define __nds_ipc_h__
 
@@ -29,10 +31,10 @@ USA
 #include "usrsettings.h"
 #include <time.h>
 #include "mem_handler_shared.h"
+#include "audioTGDS.h"
 
 //printf size buffer
 #define consolebuf_size (sint32)(100)
-
 
 //irqs
 #define VCOUNT_LINE_INTERRUPT 0
@@ -86,10 +88,9 @@ USA
 
 //ipc fifo sync
 #define REG_IPC_SYNC	(*(vuint16*)0x04000180)
-
-
-typedef struct sMyIPC {
-    //new 
+	
+struct sIPCSharedTGDS {
+    struct sIPCSharedTGDSAudioGlobal sIPCSharedTGDSAudioGlobalInst;
 	tEXTKEYIN	EXTKEYINInst;
 	uint16 buttons7;  			// X, Y, /PENIRQ buttons
     
@@ -143,25 +144,13 @@ typedef struct sMyIPC {
 	
 	uint32 WRAM_CR_ISSET;	//0 when ARM7 boots / 1 by ARM9 when its done
 	
-} tMyIPC __attribute__ ((aligned (4)));
-
-//Special IPC section for Aligned access memory from both ARM Cores.
-struct sAlignedIPC{
-	volatile uint8 arm7PrintfBuf[consolebuf_size];
+	uint8 arm7PrintfBuf[consolebuf_size];
+	
 	//used by softFIFO
-	volatile uint32 FIFO_BUF_SOFT[FIFO_NDS_HW_SIZE/4];
+	uint32 FIFO_BUF_SOFT[FIFO_NDS_HW_SIZE/4];
 };
 
 //Shared Work     027FF000h 4KB    -     -    -    R/W
-
-//IPC Struct
-#define MyIPC ((tMyIPC volatile *)(getToolchainIPCAddress()))	//unaligned (for byte access, like ldrb/strb since its always 4 alignment)
-#define IPCAlignShared ((volatile struct sAlignedIPC *)(getToolchainAlignedIPCAddress()))	//allows ldrb/strb byte access
-
-//#define Specific_1.....
-//#define Specific_2.....
-//#define Specific_etc....
-
 
 #endif
 
@@ -205,6 +194,7 @@ extern volatile uint8 arm7arm9sharedBuffer[ARM7ARM9SHAREDBUFFERSIZE];
 
 extern void setARM7ARM9SharedBuffer(uint32 * shared_buffer_address);
 extern uint32 * getARM7ARM9SharedBuffer();
+extern struct sIPCSharedTGDS* getsIPCSharedTGDS();
 
 #ifdef __cplusplus
 }

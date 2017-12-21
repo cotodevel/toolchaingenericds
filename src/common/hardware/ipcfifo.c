@@ -18,8 +18,9 @@ USA
 
 */
 
-//Coto: these are my FIFO handling libs. Works fine with NIFI (trust me this is very tricky to do without falling into freezes).
-//Use it at your will, just make sure you read WELL the descriptions below.
+//TGDS IPC Version: 1.3
+
+//Coto: Use them as you want , just make sure you read WELL the descriptions below.
 
 #include "ipcfifo.h"
 #include "InterruptsARMCores_h.h"
@@ -42,6 +43,11 @@ USA
 
 #endif
 
+//Coto: Hardware IPC struct packed 
+struct sIPCSharedTGDS* getsIPCSharedTGDS(){
+	struct sIPCSharedTGDS* getsIPCSharedTGDSInst = (__attribute__((packed)) struct sIPCSharedTGDS*)(getToolchainIPCAddress());
+	return getsIPCSharedTGDSInst;
+}
 
 //Software FIFO calls, Rely on Hardware FIFO calls so it doesnt matter if they are in different maps 
 #ifdef ARM9
@@ -67,8 +73,8 @@ bool GetSoftFIFO(uint32 * var)
 {
 	if(FIFO_SOFT_PTR >= 1){
 		FIFO_SOFT_PTR--;
-		*var = (uint32)IPCAlignShared->FIFO_BUF_SOFT[FIFO_SOFT_PTR];
-		IPCAlignShared->FIFO_BUF_SOFT[FIFO_SOFT_PTR] = (uint32)0;
+		*var = (uint32)getsIPCSharedTGDS()->FIFO_BUF_SOFT[FIFO_SOFT_PTR];
+		getsIPCSharedTGDS()->FIFO_BUF_SOFT[FIFO_SOFT_PTR] = (uint32)0;
 		return true;
 	}
 	else
@@ -83,7 +89,7 @@ __attribute__((section(".itcm")))
 bool SetSoftFIFO(uint32 value)
 {
 	if(FIFO_SOFT_PTR < (int)(FIFO_NDS_HW_SIZE/4)){
-		IPCAlignShared->FIFO_BUF_SOFT[FIFO_SOFT_PTR] = value;
+		getsIPCSharedTGDS()->FIFO_BUF_SOFT[FIFO_SOFT_PTR] = value;
 		FIFO_SOFT_PTR++;
 		return true;
 	}
@@ -136,10 +142,10 @@ __attribute__((section(".itcm")))
 #endif
 void SendMultipleWordByFifo(uint32 data0, uint32 data1, uint32 data2, uint32 * buffer_shared)
 {
-	volatile uint32 * data0ptr = (uint32*)&MyIPC->IPC_FIFOMSG[0];
-	volatile uint32 * data1ptr = (uint32*)&MyIPC->IPC_FIFOMSG[1];
-	volatile uint32 * data2ptr = (uint32*)&MyIPC->IPC_FIFOMSG[2];
-	volatile uint32 * data3ptr = (uint32*)&MyIPC->IPC_FIFOMSG[3];
+	volatile uint32 * data0ptr = (uint32*)&getsIPCSharedTGDS()->IPC_FIFOMSG[0];
+	volatile uint32 * data1ptr = (uint32*)&getsIPCSharedTGDS()->IPC_FIFOMSG[1];
+	volatile uint32 * data2ptr = (uint32*)&getsIPCSharedTGDS()->IPC_FIFOMSG[2];
+	volatile uint32 * data3ptr = (uint32*)&getsIPCSharedTGDS()->IPC_FIFOMSG[3];
 	
 	*data0ptr = (uint32)data0;
 	*data1ptr = (uint32)data1;
@@ -170,10 +176,10 @@ void HandleFifoNotEmpty(){
 		
 		if((uint32)FIFO_IPC_MESSAGE == (uint32)cmd1){
 			
-			volatile uint32 * data0ptr = (uint32*)&MyIPC->IPC_FIFOMSG[0];
-			volatile uint32 * data1ptr = (uint32*)&MyIPC->IPC_FIFOMSG[1];
-			volatile uint32 * data2ptr = (uint32*)&MyIPC->IPC_FIFOMSG[2];
-			volatile uint32 * data3ptr = (uint32*)&MyIPC->IPC_FIFOMSG[3];
+			volatile uint32 * data0ptr = (uint32*)&getsIPCSharedTGDS()->IPC_FIFOMSG[0];
+			volatile uint32 * data1ptr = (uint32*)&getsIPCSharedTGDS()->IPC_FIFOMSG[1];
+			volatile uint32 * data2ptr = (uint32*)&getsIPCSharedTGDS()->IPC_FIFOMSG[2];
+			volatile uint32 * data3ptr = (uint32*)&getsIPCSharedTGDS()->IPC_FIFOMSG[3];
 			
 			volatile uint32 data0 = *data0ptr;
 			volatile uint32 data1 = *data1ptr;
@@ -242,7 +248,7 @@ void HandleFifoNotEmpty(){
 					clrscr();
 					char * printfBuf7 = (char*)getPrintfBuffer();
 					//Prevent Cache problems.
-					coherent_user_range_by_size((uint32)printfBuf7, (int)sizeof(IPCAlignShared->arm7PrintfBuf));
+					coherent_user_range_by_size((uint32)printfBuf7, (int)sizeof(getsIPCSharedTGDS()->arm7PrintfBuf));
 					printf("ARM7:%s",printfBuf7);
 				}
 				break;
@@ -264,11 +270,11 @@ void HandleFifoNotEmpty(){
 }
 
 void setARM7ARM9SharedBuffer(uint32 * shared_buffer_address){
-	volatile uint32 * ptr = (uint32*)&MyIPC->arm7arm9sharedBuffer;
+	volatile uint32 * ptr = (uint32*)&getsIPCSharedTGDS()->arm7arm9sharedBuffer;
 	*ptr = (uint32)(uint32*)shared_buffer_address;
 }
 
 uint32 * getARM7ARM9SharedBuffer(){
-	volatile uint32 * ptr = (uint32*)&MyIPC->arm7arm9sharedBuffer;
+	volatile uint32 * ptr = (uint32*)&getsIPCSharedTGDS()->arm7arm9sharedBuffer;
 	return (uint32)(*ptr);
 }

@@ -68,31 +68,32 @@ void LoadFirmwareSettingsFromFlash(){
 }
 
 void ParseFWSettings(uint32 usersetting_offset){
-	readFirmwareSPI((uint32)usersetting_offset, (uint8*)&MyIPC->DSFWSETTINGSInst, sizeof(tDSFWSETTINGS));
-	readFirmwareSPI((uint32)usersetting_offset+0x01D, (uint8*)&MyIPC->consoletype, sizeof(MyIPC->consoletype));
-	ucs2tombs((uint8*)&MyIPC->nickname_schar8[0],(unsigned short*)&MyIPC->DSFWSETTINGSInst.nickname_utf16[0],32);
-	readFirmwareSPI((uint32)usersetting_offset+0x64, (uint8*)&MyIPC->lang_flags[0], 0x2);
+	readFirmwareSPI((uint32)usersetting_offset, (uint8*)&getsIPCSharedTGDS()->DSFWSETTINGSInst, sizeof(tDSFWSETTINGS));
+	readFirmwareSPI((uint32)usersetting_offset+0x01D, (uint8*)&getsIPCSharedTGDS()->consoletype, sizeof(getsIPCSharedTGDS()->consoletype));
+	ucs2tombs((uint8*)&getsIPCSharedTGDS()->nickname_schar8[0],(unsigned short*)&getsIPCSharedTGDS()->DSFWSETTINGSInst.nickname_utf16[0],32);
+	readFirmwareSPI((uint32)usersetting_offset+0x64, (uint8*)&getsIPCSharedTGDS()->lang_flags[0], 0x2);
 }
 
 #endif
 
 //DS when accessing shared region through Indirect function methods works fine. Where as direct access is undefined reads
 uint8 getLanguage(){
-	return (uint8)(((MyIPC->lang_flags[1]<<8)|MyIPC->lang_flags[0])&language_mask);
+	while(getFWSettingsstatus() == false){}	//could cause issues
+	return (uint8)(((getsIPCSharedTGDS()->lang_flags[1]<<8)|getsIPCSharedTGDS()->lang_flags[0])&language_mask);
 }
 
 bool getFWSettingsstatus(){
 	#ifdef ARM9
 	//Prevent Cache problems.
-	coherent_user_range_by_size((uint32)MyIPC, sizeof(tMyIPC));
+	coherent_user_range_by_size((uint32)getsIPCSharedTGDS(), sizeof(struct sIPCSharedTGDS));
 	#endif
-	return (bool)MyIPC->valid_dsfwsettings;
+	return (bool)getsIPCSharedTGDS()->valid_dsfwsettings;
 }
 
 void setFWSettingsstatus(bool status){
 	#ifdef ARM9
 	//Prevent Cache problems.
-	coherent_user_range_by_size((uint32)MyIPC, sizeof(tMyIPC));
+	coherent_user_range_by_size((uint32)getsIPCSharedTGDS(), sizeof(struct sIPCSharedTGDS));
 	#endif
-	MyIPC->valid_dsfwsettings = status;
+	getsIPCSharedTGDS()->valid_dsfwsettings = status;
 }

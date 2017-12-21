@@ -23,20 +23,9 @@ USA
 
 #include "typedefs.h"
 #include "dsregs.h"
-
-//define for own linear allocator
-//undefine for default newlib malloc, linear heap implementation. If unsure just leave this undefined
-//#define own_allocator
-
 #include "reent.h"
 
-
-#ifdef own_allocator
-#define alloc_failed (uint32)(0xffffc070)
-#endif
-
 #define nds_ewram_mask (get_ewram_size()-1)
-
 
 //add vram alloc
 #define vramSize (sint32)(128*1024)
@@ -45,6 +34,9 @@ USA
 #define vramBlockC (uint32)(0xc)
 #define vramBlockD (uint32)(0xd)
 
+//IPC specific: Shared Work     027FF000h 4KB    -     -    -    R/W
+#define IPCRegionSize	(sint32)(4*1024)
+ 
 #endif
 
 #ifdef __cplusplus
@@ -74,6 +66,8 @@ extern sint32 get_arm9_ext_size();
 extern sint32 get_arm7_printfBufSize();
 
 #ifdef ARM7
+extern uint32 * vramLMALibendARM7;
+extern void initvramLMALibend();
 extern uint32 _iwram_start;
 extern uint32 _iwram_end;
 extern uint32 get_iwram_start();
@@ -129,19 +123,16 @@ extern sint32 get_available_mem();
 
 extern void * _sbrk (int size);
 
-//MyIPC unaligned
+//TGDS IPC
 extern uint32 getToolchainIPCAddress();		
 extern sint32 getToolchainIPCSize();
-
-//AlignIPC aligned
-extern uint32 getToolchainAlignedIPCAddress();	
-extern sint32 getToolchainAlignedIPCSize();
 
 //Project Specific IPC
 extern uint32 getUserIPCAddress();
 
 //Printf7 Buffer
 extern uint32 getPrintfBuffer();
+
 #ifdef __cplusplus
 }
 #endif

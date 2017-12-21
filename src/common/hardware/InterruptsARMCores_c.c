@@ -160,6 +160,10 @@ void NDS_IRQHandler(){
 		do_keys();
 		
 		VblankUser();
+		
+		//Handle Audio
+		updateSound();
+		
 		REG_IF = IRQ_VBLANK;
 	}
 	
@@ -211,4 +215,18 @@ void DisableIrq(uint32 IRQ){
 	#endif
 	
 	REG_IE	&=	~(IRQ);
+}
+
+
+
+void RemoveQueuedIrq(uint32 IRQ){
+	if(REG_IF & IRQ){
+		REG_IF|=IRQ;
+	}
+}
+
+void QueueIrq(uint32 IRQ){
+	if(!(REG_IF & IRQ)){
+		REG_IF|=IRQ;
+	}
 }

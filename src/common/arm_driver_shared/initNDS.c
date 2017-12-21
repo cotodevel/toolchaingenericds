@@ -29,6 +29,7 @@ USA
 #include <string.h>
 #include "dma.h"
 #include "timer.h"
+#include "mem_handler_shared.h"
 
 #ifdef ARM9
 #include "devoptab_devices.h"
@@ -45,16 +46,22 @@ void initHardware(void) {
 	#ifdef ARM7
 	
 	//Init Shared Address Region
-	memset((uint32*)MyIPC, 0, sizeof(tMyIPC));
+	memset((uint32*)getsIPCSharedTGDS(), 0, sizeof(struct sIPCSharedTGDS));
 	
 	//Read DHCP settings (in order)
 	LoadFirmwareSettingsFromFlash();
 	
-	MyIPC->arm7startaddress = get_iwram_start();
-	MyIPC->arm7endaddress = (uint32)(get_iwram_start() + get_iwram_size());
+	getsIPCSharedTGDS()->arm7startaddress = get_iwram_start();
+	getsIPCSharedTGDS()->arm7endaddress = (uint32)(get_iwram_start() + get_iwram_size());
 	//Init Shared FIFO Buffer
 	setARM7ARM9SharedBuffer(NULL);
 	
+	//set libend: use malloc from vramAlloc so ARM7 can use malloc
+	initvramLMALibend();
+	
+	//Init Audio NDS7
+	initTGDSAudioSystem();
+ 
 	#endif
 	
 	#ifdef ARM9
@@ -70,6 +77,7 @@ void initHardware(void) {
 	memset((uint32*)&arm7arm9sharedBuffer[0], 0, sizeof(arm7arm9sharedBuffer));
 	setARM7ARM9SharedBuffer((uint32*)&arm7arm9sharedBuffer[0]);
 	
+ 
 	//Library init code
 	
 	//Newlib init
@@ -84,8 +92,8 @@ void initHardware(void) {
 	//init file handles
 	file_default_init();
 	
-	MyIPC->arm9startaddress = get_ewram_start();
-	MyIPC->arm9endaddress = (uint32)(get_ewram_start() + get_ewram_size());
+	getsIPCSharedTGDS()->arm9startaddress = get_ewram_start();
+	getsIPCSharedTGDS()->arm9endaddress = (uint32)(get_ewram_start() + get_ewram_size());
 	
 	#endif
 	

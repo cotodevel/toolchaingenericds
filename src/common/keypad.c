@@ -32,7 +32,7 @@ USA
 #endif
 
 uint32 KEYCNT_READ(){
-	return (uint32)(( ((~KEYINPUT)&0x3ff) | (((~MyIPC->buttons7)&3)<<10) | (((~MyIPC->buttons7)<<6) & (KEY_TOUCH|KEY_LID) ))^KEY_LID);
+	return (uint32)(( ((~KEYINPUT)&0x3ff) | (((~getsIPCSharedTGDS()->buttons7)&3)<<10) | (((~getsIPCSharedTGDS()->buttons7)<<6) & (KEY_TOUCH|KEY_LID) ))^KEY_LID);
 }
 
 uint32 global_keys_arm9;

@@ -28,34 +28,34 @@ USA
 
 //Source http://problemkaputt.de/gbatek.htm
 void doSPIARM7IO(){
-	MyIPC->EXTKEYINInst.PenDown = penIRQread();
+	getsIPCSharedTGDS()->EXTKEYINInst.PenDown = penIRQread();
 	
 	//external X Y Struct
 	uint8 readEXTKEYIN = (uint8)REG_KEYXY;
 	if(!(readEXTKEYIN & KEY_XARM7)){
-		MyIPC->EXTKEYINInst.butX = true;
+		getsIPCSharedTGDS()->EXTKEYINInst.butX = true;
 	}
 	else{
-		MyIPC->EXTKEYINInst.butX = false;
+		getsIPCSharedTGDS()->EXTKEYINInst.butX = false;
 	}
 	
 	if(!(readEXTKEYIN & KEY_YARM7)){
-		MyIPC->EXTKEYINInst.butY = true;
+		getsIPCSharedTGDS()->EXTKEYINInst.butY = true;
 	}
 	else{
-		MyIPC->EXTKEYINInst.butY = false;
+		getsIPCSharedTGDS()->EXTKEYINInst.butY = false;
 	}
 	
 	//Folding
 	if(!(readEXTKEYIN & KEY_HINGE)){
-		MyIPC->EXTKEYINInst.hinge_folded = true;
+		getsIPCSharedTGDS()->EXTKEYINInst.hinge_folded = true;
 	}
 	else{
-		MyIPC->EXTKEYINInst.hinge_folded = false;
+		getsIPCSharedTGDS()->EXTKEYINInst.hinge_folded = false;
 	}
 	
 	//NDS Format ARM7 XY/PENIRQ/HINGE buttons
-	MyIPC->buttons7 = REG_KEYXY;
+	getsIPCSharedTGDS()->buttons7 = REG_KEYXY;
 	
 	//do touchscreen process
 	XYReadPos();
@@ -84,7 +84,7 @@ bool penIRQread(){
 	#endif
 	
 	#ifdef ARM9
-	if(MyIPC->EXTKEYINInst.PenDown == 1){
+	if(getsIPCSharedTGDS()->EXTKEYINInst.PenDown == 1){
 		return true;
 	}
 	
@@ -121,8 +121,8 @@ void XYReadPos(){
 		uint16 read_raw_y = ((resulty1 & 0x7F) << 5) | resulty2;
 		
 		//raw x/y
-		MyIPC->touchX    = read_raw_x;
-		MyIPC->touchY    = read_raw_y;
+		getsIPCSharedTGDS()->touchX    = read_raw_x;
+		getsIPCSharedTGDS()->touchY    = read_raw_y;
 		
 		//required
 		SPICSHIGH();
@@ -135,28 +135,28 @@ void XYReadPos(){
 		//scr.x = (adc.x-adc.x1) * (scr.x2-scr.x1) / (adc.x2-adc.x1) + (scr.x1-1)
 		//scr.y = (adc.y-adc.y1) * (scr.y2-scr.y1) / (adc.y2-adc.y1) + (scr.y1-1)
 		
-		uint16 adc_x1 = (MyIPC->DSFWSETTINGSInst.tsc_adcposx1y112bit[1]<<8) | MyIPC->DSFWSETTINGSInst.tsc_adcposx1y112bit[0];
-		uint16 adc_y1 = (MyIPC->DSFWSETTINGSInst.tsc_adcposx1y112bit[3]<<8) | MyIPC->DSFWSETTINGSInst.tsc_adcposx1y112bit[2];
+		uint16 adc_x1 = (getsIPCSharedTGDS()->DSFWSETTINGSInst.tsc_adcposx1y112bit[1]<<8) | getsIPCSharedTGDS()->DSFWSETTINGSInst.tsc_adcposx1y112bit[0];
+		uint16 adc_y1 = (getsIPCSharedTGDS()->DSFWSETTINGSInst.tsc_adcposx1y112bit[3]<<8) | getsIPCSharedTGDS()->DSFWSETTINGSInst.tsc_adcposx1y112bit[2];
 		
-		uint8 scr_x1  = (MyIPC->DSFWSETTINGSInst.tsc_tsccalx1y18bit[0]);
-		uint8 scr_y1  = (MyIPC->DSFWSETTINGSInst.tsc_tsccalx1y18bit[1]);
+		uint8 scr_x1  = (getsIPCSharedTGDS()->DSFWSETTINGSInst.tsc_tsccalx1y18bit[0]);
+		uint8 scr_y1  = (getsIPCSharedTGDS()->DSFWSETTINGSInst.tsc_tsccalx1y18bit[1]);
 		
-		uint16 adc_x2 = (MyIPC->DSFWSETTINGSInst.tsc_adcposx2y212bit[1]<<8) | MyIPC->DSFWSETTINGSInst.tsc_adcposx2y212bit[0];
-		uint16 adc_y2 = (MyIPC->DSFWSETTINGSInst.tsc_adcposx2y212bit[3]<<8) | MyIPC->DSFWSETTINGSInst.tsc_adcposx2y212bit[2];
+		uint16 adc_x2 = (getsIPCSharedTGDS()->DSFWSETTINGSInst.tsc_adcposx2y212bit[1]<<8) | getsIPCSharedTGDS()->DSFWSETTINGSInst.tsc_adcposx2y212bit[0];
+		uint16 adc_y2 = (getsIPCSharedTGDS()->DSFWSETTINGSInst.tsc_adcposx2y212bit[3]<<8) | getsIPCSharedTGDS()->DSFWSETTINGSInst.tsc_adcposx2y212bit[2];
 		
-		uint8 scr_x2  = (MyIPC->DSFWSETTINGSInst.tsc_tsccalx2y28bit[0]);
-		uint8 scr_y2  = (MyIPC->DSFWSETTINGSInst.tsc_tsccalx2y28bit[1]);
+		uint8 scr_x2  = (getsIPCSharedTGDS()->DSFWSETTINGSInst.tsc_tsccalx2y28bit[0]);
+		uint8 scr_y2  = (getsIPCSharedTGDS()->DSFWSETTINGSInst.tsc_tsccalx2y28bit[1]);
 		
 		sint32 scrx = (read_raw_x-adc_x1) * (scr_x2-scr_x1) / (adc_x2-adc_x1) + (scr_x1-1);
 		sint32 scry = (read_raw_y-adc_y1) * (scr_y2-scr_y1) / (adc_y2-adc_y1) + (scr_y1-1);
 		
-		//MyIPC->DSFWSETTINGSInst.tsc_adcposx1y112bit	//4 bytes, 2 adc.x1, 2 adc.y1 //12 bit
-		//MyIPC->DSFWSETTINGSInst.tsc_tsccalx1y18bit	//2 bytes, 1 scr.x1, 1 scr.y1 //8 bit
-		//MyIPC->DSFWSETTINGSInst.tsc_adcposx2y212bit	//4 bytes, 2 adc.x2, 2 adc.y2 //12bit
-		//MyIPC->DSFWSETTINGSInst.tsc_tsccalx2y28bit	//2 bytes, 1 scr.x2, 1 scr.y2	//8bit
+		//getsIPCSharedTGDS()->DSFWSETTINGSInst.tsc_adcposx1y112bit	//4 bytes, 2 adc.x1, 2 adc.y1 //12 bit
+		//getsIPCSharedTGDS()->DSFWSETTINGSInst.tsc_tsccalx1y18bit	//2 bytes, 1 scr.x1, 1 scr.y1 //8 bit
+		//getsIPCSharedTGDS()->DSFWSETTINGSInst.tsc_adcposx2y212bit	//4 bytes, 2 adc.x2, 2 adc.y2 //12bit
+		//getsIPCSharedTGDS()->DSFWSETTINGSInst.tsc_tsccalx2y28bit	//2 bytes, 1 scr.x2, 1 scr.y2	//8bit
 		
-		MyIPC->touchXpx = scrx;
-		MyIPC->touchYpx = scry;
+		getsIPCSharedTGDS()->touchXpx = scrx;
+		getsIPCSharedTGDS()->touchYpx = scry;
 		
 	}
 	
@@ -167,14 +167,14 @@ void XYReadPos(){
 //relies on doSPIARM7IO() XY Readings
 void XYReadScrPos(XYTscPos * StouchScrPosInst){
     
-    StouchScrPosInst->rawx =   MyIPC->touchX;
-    StouchScrPosInst->rawy =   MyIPC->touchY;
+    StouchScrPosInst->rawx =   getsIPCSharedTGDS()->touchX;
+    StouchScrPosInst->rawy =   getsIPCSharedTGDS()->touchY;
     
     //TFT x/y pixel
-    StouchScrPosInst->px   =   MyIPC->touchXpx;
-    StouchScrPosInst->py   =   MyIPC->touchYpx;
+    StouchScrPosInst->px   =   getsIPCSharedTGDS()->touchXpx;
+    StouchScrPosInst->py   =   getsIPCSharedTGDS()->touchYpx;
     
-    StouchScrPosInst->z1   =   MyIPC->touchZ1;
-    StouchScrPosInst->z2   =   MyIPC->touchZ2;
+    StouchScrPosInst->z1   =   getsIPCSharedTGDS()->touchZ1;
+    StouchScrPosInst->z2   =   getsIPCSharedTGDS()->touchZ2;
 	
 }
