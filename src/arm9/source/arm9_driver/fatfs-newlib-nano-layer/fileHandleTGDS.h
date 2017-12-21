@@ -27,10 +27,10 @@ USA
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "fsfat_layer.h"
+#include "fsfatlayerTGDS.h"
 #include "limits.h"
 #include "devoptab_devices.h"
-#include "posix_hook_shared.h"
+#include "posixHandleTGDS.h"
 
 #endif
 

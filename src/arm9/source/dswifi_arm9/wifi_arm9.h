@@ -28,7 +28,7 @@ SOFTWARE.
 #ifndef WIFI_ARM9_H
 #define WIFI_ARM9_H
 
-#include "typedefs.h"
+#include "typedefsTGDS.h"
 #include "dsregs.h"
 #include "dsregs_asm.h"
 

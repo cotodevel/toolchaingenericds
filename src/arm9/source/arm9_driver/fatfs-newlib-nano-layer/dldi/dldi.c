@@ -1,6 +1,6 @@
 #include "dsregs.h"
 #include "dldi.h"
-#include "bus.h"
+#include "busTGDS.h"
 
 const uint32  DLDI_MAGIC_NUMBER = 
 	0xBF8DA5ED;	

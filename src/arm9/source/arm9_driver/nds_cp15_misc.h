@@ -22,7 +22,7 @@ USA
 #define _cp15_misc_
 
 #include "dsregs.h"
-#include "typedefs.h"
+#include "typedefsTGDS.h"
 #include "dsregs_asm.h"
 
 //Each MPU setting

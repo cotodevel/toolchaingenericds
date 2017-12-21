@@ -23,16 +23,15 @@ USA
 #ifndef __devoptab_devices_h__
 #define __devoptab_devices_h__
 
-#include "posix_hook_shared.h"
+#include "posixHandleTGDS.h"
 #include "devoptab_devices.h"
 
-#include "typedefs.h"
+#include "typedefsTGDS.h"
 #include "dsregs.h"
 #include "dsregs_asm.h"
 
 #include "ff.h"
-#include "limits.h"
-
+#include "limitsTGDS.h"
 
 
 #ifdef __cplusplus

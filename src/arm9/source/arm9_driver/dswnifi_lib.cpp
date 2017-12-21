@@ -20,19 +20,19 @@ USA
 
 //DSWNifi Library 1.2
 
-#include "ipcfifo.h"
+#include "ipcfifoTGDS.h"
 #include "wifi_shared.h"
-#include "clock.h"
+#include "clockTGDS.h"
 
 #include "dsregs.h"
 #include "dsregs_asm.h"
-#include "typedefs.h"
+#include "typedefsTGDS.h"
 
-#include "bios.h"
+#include "biosTGDS.h"
 #include "InterruptsARMCores_h.h"
 #include "dswnifi_lib.h"
 
-#include "timer.h"
+#include "timerTGDS.h"
 
 #include <string.h>
 #include <unistd.h>
@@ -45,7 +45,7 @@ USA
 #include "wifi_shared.h"
 #include "sgIP_Config.h"
 
-#include "toolchain_utils.h"
+#include "utilsTGDS.h"
 #include <netdb.h>
 #include <ctype.h>
 #include <string.h>

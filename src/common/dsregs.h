@@ -23,8 +23,8 @@ USA
 #ifndef __dsregs_h__
 #define __dsregs_h__
 
-#include "typedefs.h"
-#include "spitsc.h"
+#include "typedefsTGDS.h"
+#include "spitscTGDS.h"
 
 
 /////////////////////////////////////////////////////////////// Shared

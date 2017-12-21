@@ -2,12 +2,12 @@
 #include <malloc.h>
 #include <string.h>
 
-#include "typedefs.h"
+#include "typedefsTGDS.h"
 #include "dsregs.h"
 #include "gui_widgets.h"
 #include "gui.h"
 #include "console_str.h"
-#include "keypad.h"
+#include "keypadTGDS.h"
 
 int	GUIList_handler(t_GUIZone *zone, int message, int param, void *arg)
 {

@@ -25,12 +25,12 @@ SOFTWARE.
 ******************************************************************************/
 
 
-#include "mem_handler_shared.h"
+#include "memoryHandleTGDS.h"
 #include "dsregs.h"
 #include "dsregs_asm.h"
-#include "typedefs.h"
+#include "typedefsTGDS.h"
 
-#include "ipcfifo.h"
+#include "ipcfifoTGDS.h"
 
 #include "wifi_arm9.h"
 #include "dswifi9.h"
@@ -44,7 +44,7 @@ SOFTWARE.
 #include "in.h"
 
 #include "InterruptsARMCores_h.h"
-#include "timer.h"
+#include "timerTGDS.h"
 
 #ifdef WIFI_USE_TCP_SGIP
 

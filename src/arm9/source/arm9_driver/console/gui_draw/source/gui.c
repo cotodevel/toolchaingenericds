@@ -22,25 +22,24 @@ GNU General Public License for more details.
 #include <stdarg.h>
 #include <malloc.h>
 #include <ctype.h>
-#include "ipcfifo.h"
+#include "ipcfifoTGDS.h"
 
-#include "typedefs.h"
+#include "typedefsTGDS.h"
 #include "dsregs.h"
-#include "console.h"
+#include "consoleTGDS.h"
 
 #include "gui.h"
-#include "bios.h"
+#include "biosTGDS.h"
 
 #include "gui_widgets.h"
 #include "console_str.h"
 #include "InterruptsARMCores_h.h"
-#include "dma.h"
+#include "dmaTGDS.h"
 
-#include "posix_hook_shared.h"
-#include "fsfat_layer.h"
-#include "keypad.h"
-
-#include "toolchain_utils.h"
+#include "posixHandleTGDS.h"
+#include "fsfatlayerTGDS.h"
+#include "keypadTGDS.h"
+#include "utilsTGDS.h"
 
 t_GUIScreen	*GUI_newScreen(int nb_elems)
 {

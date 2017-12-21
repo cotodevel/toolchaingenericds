@@ -21,7 +21,7 @@ USA
 #ifndef __nds_audiotgds_h__
 #define __nds_audiotgds_h__
 
-#include "typedefs.h"
+#include "typedefsTGDS.h"
 #include "dsregs.h"
 #include "dsregs_asm.h"
 #include <unistd.h>

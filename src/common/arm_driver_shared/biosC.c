@@ -21,8 +21,8 @@ USA
 //Software BIOS modules by either replacement or native BIOS support.
 
 /////////////////////////////////////////////////// Shared BIOS ARM7/9 /////////////////////////////////////////////////////////////////
-#include "bios.h"
-#include "dma.h"
+#include "biosTGDS.h"
+#include "dmaTGDS.h"
 
 //NDS BIOS Routines.
 

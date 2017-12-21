@@ -8,13 +8,13 @@
 
 #include "xenofunzip.h"
 
-#include "typedefs.h"
+#include "typedefsTGDS.h"
 #include "dsregs.h"
-#include "console.h"
+#include "consoleTGDS.h"
 #include <stdlib.h>
 #include "zlib.h"
-#include "posix_hook_shared.h"	//add Toolchain Generic DS Filesystem Support
-#include "mem_handler_shared.h"	//malloc support
+#include "posixHandleTGDS.h"	//add Toolchain Generic DS Filesystem Support
+#include "memoryHandleTGDS.h"	//malloc support
 
 //zalloc / zfree (zlib) default function prototypes look like:
 //void * 	zalloc (void *opaque, unsigned items, unsigned size)

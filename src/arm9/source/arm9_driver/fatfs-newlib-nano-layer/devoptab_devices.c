@@ -21,10 +21,10 @@ USA
 #ifdef ARM9
 
 #include "devoptab_devices.h"
-#include "console.h"
+#include "consoleTGDS.h"
 #include "dsregs.h"
-#include "typedefs.h"
-#include "console.h"
+#include "typedefsTGDS.h"
+#include "consoleTGDS.h"
 
 #include "errno.h"
 
@@ -35,8 +35,8 @@ USA
 #include <stdarg.h>
 #include <time.h>
 
-#include "fsfat_layer.h"
-#include "posix_hook_shared.h"
+#include "fsfatlayerTGDS.h"
+#include "posixHandleTGDS.h"
 
 #include "fileHandleTGDS.h"
 

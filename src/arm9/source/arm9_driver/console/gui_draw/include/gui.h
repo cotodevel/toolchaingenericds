@@ -18,8 +18,8 @@ GNU General Public License for more details.
 #ifndef GUI_H_
 #define GUI_H_
 
-#include "typedefs.h"
-#include "console.h"
+#include "typedefsTGDS.h"
+#include "consoleTGDS.h"
 
 
 /* --------------------------------------------------------------------------- */

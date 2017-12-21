@@ -28,7 +28,7 @@
 #ifndef NDS_DLDI_INCLUDE
 #define NDS_DLDI_INCLUDE
 
-#include "typedefs.h"
+#include "typedefsTGDS.h"
 
 #define FEATURE_MEDIUM_CANREAD		0x00000001
 #define FEATURE_MEDIUM_CANWRITE		0x00000002

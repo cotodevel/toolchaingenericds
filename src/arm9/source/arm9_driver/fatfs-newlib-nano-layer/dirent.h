@@ -53,7 +53,7 @@
 #ifndef _DIRENT_H_
 #define _DIRENT_H_
 
-#include "typedefs.h"
+#include "typedefsTGDS.h"
 #include "dsregs.h"
 #include "dsregs_asm.h"
 

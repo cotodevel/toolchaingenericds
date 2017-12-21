@@ -18,7 +18,7 @@ USA
 
 */
 
-#include "mem_handler_shared.h"
+#include "memoryHandleTGDS.h"
 #include "dsregs.h"
 #include "dsregs_asm.h"
 #include "nds_cp15_misc.h"

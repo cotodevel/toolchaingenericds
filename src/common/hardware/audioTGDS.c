@@ -18,12 +18,12 @@ USA
 
 */
 
-#include "typedefs.h"
+#include "typedefsTGDS.h"
 #include "dsregs.h"
 #include "dsregs_asm.h"
 #include <unistd.h>
 #include "audioTGDS.h"
-#include "ipcfifo.h"
+#include "ipcfifoTGDS.h"
 
 #ifdef ARM7
 int currentChannelSeek = 0;

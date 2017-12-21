@@ -18,9 +18,9 @@ USA
 
 */
 
-#include "typedefs.h"
+#include "typedefsTGDS.h"
 #include "nds_cp15_misc.h"
-#include "mem_handler_shared.h"
+#include "memoryHandleTGDS.h"
 
 //Each region listed.
 //Use one for MPU settings : vectors @0x00000000

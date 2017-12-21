@@ -28,11 +28,11 @@ SOFTWARE.
 #include "dsregs.h"
 #include "wifi_arm7.h"
 
-#include "spinlock.h" // .h file with code for spinlocking in it.
-#include "ipcfifo.h" 
+#include "spinlockTGDS.h" // .h file with code for spinlocking in it.
+#include "ipcfifoTGDS.h" 
 #include "InterruptsARMCores_h.h"
-#include "spi.h"
-#include "bios.h"
+#include "spiTGDS.h"
+#include "biosTGDS.h"
 
 volatile Wifi_MainStruct * WifiData = 0;
 WifiSyncHandler synchandler = 0;
