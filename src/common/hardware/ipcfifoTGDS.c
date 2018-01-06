@@ -24,8 +24,6 @@ USA
 
 #include "ipcfifoTGDS.h"
 #include "InterruptsARMCores_h.h"
-#include "ipcfifoTGDS.h"
-
 #include "memoryHandleTGDS.h"
 
 #ifdef ARM7
@@ -44,6 +42,9 @@ USA
 #endif
 
 //Coto: Hardware IPC struct packed 
+#ifdef ARM9
+__attribute__((section(".itcm")))
+#endif    
 struct sIPCSharedTGDS* getsIPCSharedTGDS(){
 	struct sIPCSharedTGDS* getsIPCSharedTGDSInst = (__attribute__((packed)) struct sIPCSharedTGDS*)(getToolchainIPCAddress());
 	return getsIPCSharedTGDSInst;
@@ -105,7 +106,6 @@ __attribute__((section(".itcm")))
 void Handle_SoftFIFORECV()
 {
 	uint32 msg = 0;
-	
 	while(GetSoftFIFO((uint32*)&msg) == true){
 		//process incoming packages
 		switch(msg){
@@ -142,16 +142,10 @@ __attribute__((section(".itcm")))
 #endif
 void SendMultipleWordByFifo(uint32 data0, uint32 data1, uint32 data2, uint32 * buffer_shared)
 {
-	volatile uint32 * data0ptr = (uint32*)&getsIPCSharedTGDS()->IPC_FIFOMSG[0];
-	volatile uint32 * data1ptr = (uint32*)&getsIPCSharedTGDS()->IPC_FIFOMSG[1];
-	volatile uint32 * data2ptr = (uint32*)&getsIPCSharedTGDS()->IPC_FIFOMSG[2];
-	volatile uint32 * data3ptr = (uint32*)&getsIPCSharedTGDS()->IPC_FIFOMSG[3];
-	
-	*data0ptr = (uint32)data0;
-	*data1ptr = (uint32)data1;
-	*data2ptr = (uint32)data2;
-	*data3ptr = (uint32)(uint32*)buffer_shared;
-	
+	REG_IPC_FIFO_TX = (uint32)data0;
+	REG_IPC_FIFO_TX = (uint32)data1;			
+	REG_IPC_FIFO_TX = (uint32)data2;
+	REG_IPC_FIFO_TX = (uint32)(uint32*)buffer_shared;
 	REG_IPC_FIFO_TX =	(uint32)FIFO_IPC_MESSAGE;
 }
 
@@ -168,83 +162,73 @@ void HandleFifoEmpty(){
 __attribute__((section(".itcm")))
 #endif
 void HandleFifoNotEmpty(){
-	
-	volatile uint32 cmd1 = 0,cmd2 = 0,cmd3 = 0,cmd4 = 0,cmd5 = 0,cmd6 = 0,cmd7 = 0,cmd8 = 0,cmd9 = 0,cmd10 = 0,cmd11 = 0,cmd12 = 0,cmd13 = 0,cmd14 = 0,cmd15 = 0;
-	
+	volatile uint32 data0 = 0,data1 = 0,data2 = 0,data3 = 0,data4 = 0;
 	while(!(REG_IPC_FIFO_CR & RECV_FIFO_IPC_EMPTY)){
-		cmd1 = REG_IPC_FIFO_RX;
-		
-		if((uint32)FIFO_IPC_MESSAGE == (uint32)cmd1){
-			
-			volatile uint32 * data0ptr = (uint32*)&getsIPCSharedTGDS()->IPC_FIFOMSG[0];
-			volatile uint32 * data1ptr = (uint32*)&getsIPCSharedTGDS()->IPC_FIFOMSG[1];
-			volatile uint32 * data2ptr = (uint32*)&getsIPCSharedTGDS()->IPC_FIFOMSG[2];
-			volatile uint32 * data3ptr = (uint32*)&getsIPCSharedTGDS()->IPC_FIFOMSG[3];
-			
-			volatile uint32 data0 = *data0ptr;
-			volatile uint32 data1 = *data1ptr;
-			volatile uint32 data2 = *data2ptr;
-			volatile uint32 data3 = *data3ptr;
-			
+		data0 = REG_IPC_FIFO_RX;
+		data1 = REG_IPC_FIFO_RX;
+		data2 = REG_IPC_FIFO_RX;
+		data3 = REG_IPC_FIFO_RX;
+		data4 = REG_IPC_FIFO_RX;	
+		if((uint32)FIFO_IPC_MESSAGE == (uint32)data4){
 			//Do ToolchainGenericDS IPC handle here
 			switch (data0) {
-			
 				//Shared 
-				case(WIFI_SYNC):{
+				case((uint32)WIFI_SYNC):{
 					Wifi_Sync();
 				}
 				break;
-				
 				//Process the packages (signal) that sent earlier FIFO_SEND_EXT
-				case(FIFO_SOFTFIFO_READ_EXT):{
+				case((uint32)FIFO_SOFTFIFO_READ_EXT):{
 				
 				}
 				break;
-				
-				case(FIFO_SOFTFIFO_WRITE_EXT):{
+				case((uint32)FIFO_SOFTFIFO_WRITE_EXT):{
 					SetSoftFIFO(data1);
 				}
 				break;
-				
-				
 				//ARM7 command handler
 				#ifdef ARM7
-				
-				//ARM7 Only
-				case(FIFO_POWERCNT_ON):{
+				case((uint32)FIFO_POWERCNT_ON):{
 					powerON((uint16)data1);
 				}
 				break;
-				
-				case (FIFO_POWERMGMT_WRITE):{
+				case ((uint32)FIFO_POWERMGMT_WRITE):{
 					PowerManagementDeviceWrite(PM_SOUND_AMP, (int)data1>>16);  // void * data == command2
 				}
 				break;
-				
 				//arm9 wants to send a WIFI context block address / userdata is always zero here
-				case(WIFI_STARTUP):{
+				case((uint32)WIFI_STARTUP):{
 					//	wifiAddressHandler( void * address, void * userdata )
 					wifiAddressHandler((Wifi_MainStruct *)(uint32)data1, 0);
 				}
 				break;
-				
-				#endif
-				
-				
-				
+				//Audio API
+				case((uint32)FIFO_SETSHAREDAUDIOHANDLER):{
+					//data1 == struct sIPCSharedTGDSAudioGlobal AudioGlobalInst (EWRAM definition)
+					//AudioGlobalInst = (struct sIPCSharedTGDSAudioGlobal *)data1;
+				}
+				break;
+				case(FIFO_STOPSAMPLE):{
+					//data1 == struct sIPCSharedTGDSAudioChannel* CurrentAudioChannel <-- (int channel)
+					StopChannel((int)data1);
+				}
+				break;
+				case(FIFO_STARTSAMPLE):{
+					//data1 == struct sIPCSharedTGDSAudioChannel* CurrentAudioChannel <-- (int channel)
+					PlayChannel((int)data1);
+				}
+				#endif	
 				//ARM9 command handler
 				#ifdef ARM9
 				//exception handler: arm7
-				case(EXCEPTION_ARM7):{
-					
+				case((uint32)EXCEPTION_ARM7):{
 					if((uint32)data1 == (uint32)unexpectedsysexit_7){
 						exception_handler((uint32)unexpectedsysexit_7);	//r0 = EXCEPTION_ARM7 / r1 = unexpectedsysexit_7
 					}
 				}
 				break;
-				
 				//printf ability from ARM7
-				case(FIFO_PRINTF_7):{
+				case((uint32)FIFO_PRINTF_7):{
 					clrscr();
 					char * printfBuf7 = (char*)getPrintfBuffer();
 					//Prevent Cache problems.
@@ -252,21 +236,13 @@ void HandleFifoNotEmpty(){
 					printf("ARM7:%s",printfBuf7);
 				}
 				break;
-				
 				#endif
 			}
-			
 			HandleFifoNotEmptyWeakRef(data0,data1,data2,data3);
-			
-			*data0ptr = (uint32)0;
-			*data1ptr = (uint32)0;
-			*data2ptr = (uint32)0;
-			*data3ptr = (uint32)0;
 		}
-		
 		//clear fifo inmediately
 		REG_IPC_FIFO_CR |= (1<<3);
-	}	
+	}
 }
 
 void setARM7ARM9SharedBuffer(uint32 * shared_buffer_address){

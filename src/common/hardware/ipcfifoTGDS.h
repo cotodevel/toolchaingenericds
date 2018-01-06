@@ -88,10 +88,15 @@ USA
 
 //ipc fifo sync
 #define REG_IPC_SYNC	(*(vuint16*)0x04000180)
-	
+
+//audio API
+#define FIFO_STOPSAMPLE		(uint32)(0xffff1020)
+#define FIFO_STARTSAMPLE	(uint32)(0xffff1021)
+
+#define FIFO_SETSHAREDAUDIOHANDLER	(uint32)(0xffff1022)
+
 struct sIPCSharedTGDS {
-    struct sIPCSharedTGDSAudioGlobal sIPCSharedTGDSAudioGlobalInst;
-	tEXTKEYIN	EXTKEYINInst;
+    tEXTKEYIN	EXTKEYINInst;
 	uint16 buttons7;  			// X, Y, /PENIRQ buttons
     
 	uint16 touchX,   touchY;   // raw x/y TSC SPI
@@ -126,10 +131,8 @@ struct sIPCSharedTGDS {
 	uint8 nickname_schar8[0x20];	//converted from UTF-16 to char*
 	
 	//DS Firmware	Settings default set
-	volatile tDSFWSETTINGS DSFWSETTINGSInst;
+	tDSFWSETTINGS DSFWSETTINGSInst;
 	bool valid_dsfwsettings;	//true or false
-	
-	uint32 IPC_FIFOMSG[0x100];	//256 bytes FIFO, use top word aligned sections for command handles
 	
 	uint8 lang_flags[0x2];
 	
@@ -148,6 +151,8 @@ struct sIPCSharedTGDS {
 	
 	//used by softFIFO
 	uint32 FIFO_BUF_SOFT[FIFO_NDS_HW_SIZE/4];
+	
+	struct sIPCSharedTGDSAudioGlobal audioglobal;
 };
 
 //Shared Work     027FF000h 4KB    -     -    -    R/W

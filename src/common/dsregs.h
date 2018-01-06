@@ -91,6 +91,31 @@ USA
 #define		DISPCNT2	(*((uint32 volatile *) 0x04001000))
 #define		DISPSTAT2	(*((uint16 volatile *) 0x04001004))
 
+#define SCHANNEL_CR(n)				(*(vuint32*)(0x04000400 + ((n)<<4)))
+#define SCHANNEL_VOL(n)				(*(vuint8*)(0x04000400 + ((n)<<4)))
+#define SCHANNEL_PAN(n)				(*(vuint8*)(0x04000402 + ((n)<<4)))
+#define SCHANNEL_SOURCE(n)			(*(vuint32*)(0x04000404 + ((n)<<4)))
+#define SCHANNEL_TIMER(n)			(*(vuint16*)(0x04000408 + ((n)<<4)))
+#define SCHANNEL_REPEAT_POINT(n)	(*(vuint16*)(0x0400040A + ((n)<<4)))
+#define SCHANNEL_LENGTH(n)			(*(vuint32*)(0x0400040C + ((n)<<4)))
+
+#define SOUND_VOL(n)	(n)
+#define SOUND_FREQ(n)	((-0x1000000 / (n)))
+#define SOUND_ENABLE	(1<<15)
+
+#define SOUND_REPEAT    (1<<17)
+#define SOUND_ONE_SHOT  (1<<28)	
+
+#define SOUND_FORMAT_16BIT (1<<29)
+#define SOUND_FORMAT_8BIT	(0<<29)
+#define SOUND_FORMAT_PSG    (3<<29)
+#define SOUND_FORMAT_ADPCM  (2<<29)
+
+#define SOUND_PAN(n)	((n) << 16)
+
+#define SCHANNEL_ENABLE (1<<31)	
+
+
 /////////////////////////////////////////////////////////////// Shared End
 
 
@@ -508,30 +533,6 @@ USA
 #define REG_MASTER_VOLUME	(*(vuint8*)0x4000500)
 #define REG_SOUNDCNT		(*(vuint16*)0x4000500)
 #define REG_SOUNDBIAS		(*(vuint32*)0x4000504)
-
-#define SCHANNEL_CR(n)				(*(vuint32*)(0x04000400 + ((n)<<4)))
-#define SCHANNEL_VOL(n)				(*(vuint8*)(0x04000400 + ((n)<<4)))
-#define SCHANNEL_PAN(n)				(*(vuint8*)(0x04000402 + ((n)<<4)))
-#define SCHANNEL_SOURCE(n)			(*(vuint32*)(0x04000404 + ((n)<<4)))
-#define SCHANNEL_TIMER(n)			(*(vuint16*)(0x04000408 + ((n)<<4)))
-#define SCHANNEL_REPEAT_POINT(n)	(*(vuint16*)(0x0400040A + ((n)<<4)))
-#define SCHANNEL_LENGTH(n)			(*(vuint32*)(0x0400040C + ((n)<<4)))
-
-#define SOUND_VOL(n)	(n)
-#define SOUND_FREQ(n)	((-0x1000000 / (n)))
-#define SOUND_ENABLE	(1<<15)
-
-#define SOUND_REPEAT    (1<<17)
-#define SOUND_ONE_SHOT  (1<<28)	
-
-#define SOUND_FORMAT_16BIT (1<<29)
-#define SOUND_FORMAT_8BIT	(0<<29)
-#define SOUND_FORMAT_PSG    (3<<29)
-#define SOUND_FORMAT_ADPCM  (2<<29)
-
-#define SOUND_PAN(n)	((n) << 16)
-
-#define SCHANNEL_ENABLE (1<<31)	
 
 #endif
 //ARM7 END

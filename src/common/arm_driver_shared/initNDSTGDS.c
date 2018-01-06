@@ -61,7 +61,7 @@ void initHardware(void) {
 	
 	//Init Audio NDS7
 	initTGDSAudioSystem();
- 
+	
 	#endif
 	
 	#ifdef ARM9
@@ -77,6 +77,8 @@ void initHardware(void) {
 	memset((uint32*)&arm7arm9sharedBuffer[0], 0, sizeof(arm7arm9sharedBuffer));
 	setARM7ARM9SharedBuffer((uint32*)&arm7arm9sharedBuffer[0]);
 	
+	//AUDIO init
+	setAudioGlobalInst();
  
 	//Library init code
 	
