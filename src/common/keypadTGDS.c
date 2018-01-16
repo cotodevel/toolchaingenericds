@@ -19,7 +19,7 @@ USA
 
 */
 
-
+#include "keypadTGDS.h"
 #include "dsregs.h"
 #include "dsregs_asm.h"
 #include "ipcfifoTGDS.h"
@@ -57,4 +57,17 @@ uint32 keysHeld(){
 
 uint32 keysRepeated(){
 	return (uint32)( keysPressed() | last_frame_keys_arm9);
+}
+
+//usage:
+//struct touchScr touchScrStruct;
+//touchScrRead(&touchScrStruct);
+//read values..
+void touchScrRead(struct touchScr * touchScrInst){
+	struct sIPCSharedTGDS * sIPCSharedTGDSInst = getsIPCSharedTGDS();
+	touchScrInst->buttons7	=	sIPCSharedTGDSInst->buttons7;			// X, Y, /PENIRQ buttons
+	touchScrInst->touchX	=	sIPCSharedTGDSInst->touchX;
+	touchScrInst->touchY	=	sIPCSharedTGDSInst->touchY;				// raw x/y TSC SPI
+	touchScrInst->touchXpx	=	sIPCSharedTGDSInst->touchXpx;
+	touchScrInst->touchYpx	=	sIPCSharedTGDSInst->touchYpx;			// TFT x/y pixel (converted)
 }

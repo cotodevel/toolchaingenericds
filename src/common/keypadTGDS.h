@@ -27,6 +27,13 @@ USA
 #include "dsregs.h"
 #include "dsregs_asm.h"
 
+//TouchScreen 
+struct touchScr {
+    uint16 buttons7;  			// X, Y, /PENIRQ buttons
+	uint16 touchX,   touchY;   // raw x/y TSC SPI
+	sint16 touchXpx, touchYpx; // TFT x/y pixel (converted)
+};
+
 #endif
 
 
@@ -43,6 +50,7 @@ extern uint32 keysReleased();
 extern uint32 keysHeld();
 extern uint32 keysRepeated();
 
+extern void touchScrRead(struct touchScr * touchScrInst);
 #ifdef __cplusplus
 }
 #endif
