@@ -51,8 +51,8 @@ extern const struct devoptab_t devoptab_stdin;
 extern const struct devoptab_t devoptab_stdout;
 extern const struct devoptab_t devoptab_sterr;
 extern const struct devoptab_t devoptab_fatfs;
-extern const struct devoptab_t devoptab_stub;	//initialize up to OPEN_MAX POSIX
-extern const struct devoptab_t *devoptab_list[OPEN_MAX];
+extern const struct devoptab_t devoptab_stub;	//initialize up to OPEN_MAXTGDS POSIX
+extern const struct devoptab_t *devoptab_list[OPEN_MAXTGDS];
 
 extern void initdevoptab();
 

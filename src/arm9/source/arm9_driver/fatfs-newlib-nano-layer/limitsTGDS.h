@@ -17,10 +17,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 USA
 
 */
-#ifndef LIMITS_H
-#define LIMITS_H
+#ifndef TGDSLIMITS_H
+#define TGDSLIMITS_H
 
-#define OPEN_MAX 20	//Available POSIX File Descriptors
+#define OPEN_MAXTGDS 20	//Available POSIX File Descriptors
 
 #endif
 

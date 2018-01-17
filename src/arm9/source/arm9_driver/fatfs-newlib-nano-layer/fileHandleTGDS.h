@@ -28,7 +28,7 @@ USA
 #include <sys/stat.h>
 
 #include "fsfatlayerTGDS.h"
-#include "limits.h"
+#include "limitsTGDS.h"
 #include "devoptab_devices.h"
 #include "posixHandleTGDS.h"
 
@@ -39,7 +39,7 @@ USA
 extern "C" {
 #endif
 
-extern volatile struct fd files[OPEN_MAX];	//file/dir attrs, pointers for below struct
+extern volatile struct fd files[OPEN_MAXTGDS];	//file/dir attrs, pointers for below struct
 
 extern void file_default_init();
 extern struct fd *fd_struct_get(int fd);	//the fd here is the internal FD index

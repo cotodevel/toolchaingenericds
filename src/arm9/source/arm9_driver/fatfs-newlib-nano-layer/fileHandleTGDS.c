@@ -37,13 +37,13 @@ USA
 #include "fsfatlayerTGDS.h"
 #include "dsregs_asm.h"
 
-volatile struct fd files[OPEN_MAX] __attribute__ ((aligned (4)));	//has file/dir descriptors and pointers
+volatile struct fd files[OPEN_MAXTGDS] __attribute__ ((aligned (4)));	//has file/dir descriptors and pointers
 
 struct fd *fd_struct_get(int fd)
 {
     struct fd *f;
 
-    if ((fd >= OPEN_MAX) || (fd < 0))
+    if ((fd >= OPEN_MAXTGDS) || (fd < 0))
     {
         f = NULL;
     }
@@ -64,7 +64,7 @@ struct fd *fd_struct_get(int fd)
 void file_default_init(){
 	int fd = 0;
 	/* search in all struct fd instances*/
-    for (fd = 0; fd < OPEN_MAX; fd++)
+    for (fd = 0; fd < OPEN_MAXTGDS; fd++)
     {
 		memset((uint8*)&files[fd], 0, sizeof(struct fd));
 		
@@ -91,7 +91,7 @@ int FileHandleAlloc(struct devoptab_t * devoptabInst )
     int fd;
     int ret = -1;
 
-    for (fd = 0; fd < OPEN_MAX; fd++)
+    for (fd = 0; fd < OPEN_MAXTGDS; fd++)
     {
         if ((sint32)files[fd].isused == (sint32)structfd_isunused)
         {
@@ -123,7 +123,7 @@ int FileHandleAlloc(struct devoptab_t * devoptabInst )
 int FileHandleFree(int fd)
 {
 	int ret = -1;
-    if ((fd < OPEN_MAX) && (fd >= 0) && (files[fd].isused == structfd_isused))
+    if ((fd < OPEN_MAXTGDS) && (fd >= 0) && (files[fd].isused == structfd_isused))
     {
 		
         files[fd].isused = (sint32)structfd_isunused;
@@ -138,13 +138,13 @@ int FileHandleFree(int fd)
 sint8 * getDeviceNameByStructFDIndex(int StructFDIndex){
 	
 	sint8 * out;
-	if((StructFDIndex < 0) || (StructFDIndex > OPEN_MAX)){
+	if((StructFDIndex < 0) || (StructFDIndex > OPEN_MAXTGDS)){
 		out = NULL;
 	}
 	
 	sint32 i = 0;
 	/* search in all struct fd instances*/
-    for (i = 0; i < OPEN_MAX; i++)
+    for (i = 0; i < OPEN_MAXTGDS; i++)
     {
         if (files[i].cur_entry.d_ino == StructFDIndex)
         {
@@ -162,7 +162,7 @@ int getInternalFileDescriptorFromDIR(DIR *dirp){
     int ret = -1;
 
     /* search in all struct fd instances*/
-    for (fd = 0; fd < OPEN_MAX; fd++)
+    for (fd = 0; fd < OPEN_MAXTGDS; fd++)
     {
         if (files[fd].dirPtr)
         {

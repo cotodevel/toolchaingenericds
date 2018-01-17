@@ -69,7 +69,7 @@ const struct devoptab_t devoptab_fatfs = { "", &open_r_fatfs, &close_r_fatfs, &w
 /* dtab for a stream device : STUB */
 const struct devoptab_t devoptab_stub = { "stub:/", 0, 0, 0, 0 };
 
-const struct devoptab_t *devoptab_list[OPEN_MAX] = {
+const struct devoptab_t *devoptab_list[OPEN_MAXTGDS] = {
    &devoptab_stdin, /* standard input */
    &devoptab_stdout, /* standard output */
    &devoptab_sterr, /* standard error */
@@ -108,7 +108,7 @@ void initdevoptab(){
 sint32 open_posix_filedescriptor_devices(){
 	sint32 i = 0;
 	sint32 items = 0;	//POSIX devoptabs start at index 0
-	for(i = 0; i < OPEN_MAX; i++){
+	for(i = 0; i < OPEN_MAXTGDS; i++){
 		if( strcmp( (sint8*)(&devoptab_list[i]->name), "stub:/" ) == 0 ){
 			//ignore stubs
 		}
@@ -123,7 +123,7 @@ sint32 open_posix_filedescriptor_devices(){
 sint32 get_posix_fd_from_devicename(sint8 * deviceName){
 	sint32 i = 0;	//devoptab_list starts from index 0
 	sint32 latest = -1;
-	for(i = 0; i < OPEN_MAX; i++){
+	for(i = 0; i < OPEN_MAXTGDS; i++){
 		if( strcmp( (sint8*)(&devoptab_list[i]->name), deviceName ) == 0) {
 			latest = i;
 			break;
