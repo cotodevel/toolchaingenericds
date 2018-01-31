@@ -25,8 +25,8 @@
 #define min(a,b) ((a)<(b)?(a):(b))
 #define err(e) {clrscr();printf("%s",(char*)e);while(1);}
 
-//128K Buffer: speedup .zip operation
-#define BUFFER_SIZE (sint32)(1024 * 128)
+//Buffer size: higher value will speed up file compression/decompression
+#define BUFFER_SIZE (sint32)(1024 * 384)
 
 /* PKZIP header definitions */
 #define ZIPMAG 0x4b50           /* two-byte zip lead-in */
@@ -104,7 +104,6 @@ extern int do_decompression_ewramstack(char *inname, char *outname);	//Coto: use
 
 //UserCode: (char*)"path1ToFileZipped","path2ToFileToCreateUnzipped"
 extern int load_gz(char *fname, char *newtempfname);
-extern char * tmpFile;
 
 #ifdef __cplusplus
 }

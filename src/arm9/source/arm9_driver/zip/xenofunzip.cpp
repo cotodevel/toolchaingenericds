@@ -15,11 +15,11 @@
 #include "zlib.h"
 #include "posixHandleTGDS.h"	//add Toolchain Generic DS Filesystem Support
 #include "memoryHandleTGDS.h"	//malloc support
+#include "global_settings.h"
 
 //zalloc / zfree (zlib) default function prototypes look like:
 //void * 	zalloc (void *opaque, unsigned items, unsigned size)
 //void 		zfree (void *opaque, void *ptr)
-
 int funzipstdio(FILE *in, FILE *out){
 	int encrypted;
 	ush n;
@@ -156,13 +156,10 @@ int funzipstdio(FILE *in, FILE *out){
 }
 
 
-char * tmpFile = "TempFile.smc";
-
 //UserCode: (char*)"path1ToFileZipped","path2ToFileToCreateUnzipped"
 int load_gz(char *fname, char *newtempfname)	//fname,newtempfname must use getfatfsPath() outside!
 {
-	int ret = do_decompression_ewramstack(fname, newtempfname);	//use EWRAM as STACK
-	return ret;
+	return do_decompression_ewramstack(fname, newtempfname);	//use EWRAM as STACK
 }
 
 int do_decompression(char *inname, char *outname){ //dszip frontend
