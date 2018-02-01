@@ -43,6 +43,7 @@ typedef volatile sint16		vsint16;
 typedef volatile sint8		vsint8;
 
 typedef unsigned 	long long uint64;
+typedef unsigned 	long 	uLong;
 typedef	unsigned	int		uint32;
 typedef	unsigned	short	uint16;
 typedef	unsigned	char	uint8;
