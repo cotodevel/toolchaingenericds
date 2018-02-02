@@ -569,15 +569,22 @@ int fatfs_open_file_or_dir(const sint8 *pathname, int flags)
 
 /* exported functions */
 
-/* TODO: maybe put in diskio? use real time? */
+/* Use NDS RTC to update timestamps into files when certain operations require it*/
 DWORD get_fattime (void)
 {
+	struct tm * tmStruct = getTime();
     return (
-            ((2015-1980)<<25)
+            (((sint32)tmStruct->tm_year-60)<<25)
             |
-            (1<<21)
+            (((sint32)tmStruct->tm_mon)<<21)
             |
-            (1<<16)
+            (((sint32)tmStruct->tm_mday)<<16)
+			|
+			(((sint32)tmStruct->tm_hour)<<11)
+			|
+			(((sint32)tmStruct->tm_min)<<5)
+			|
+			(((sint32)tmStruct->tm_sec)<<0)
            );
 }
 
