@@ -114,7 +114,7 @@ USA
 #define SOUND_PAN(n)	((n) << 16)
 
 #define SCHANNEL_ENABLE (1<<31)	
-
+#define REG_KEYINPUT (*(uint16*)0x04000132)
 
 /////////////////////////////////////////////////////////////// Shared End
 

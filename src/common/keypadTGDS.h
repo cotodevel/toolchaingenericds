@@ -30,6 +30,7 @@ USA
 //TouchScreen 
 struct touchScr {
     uint16 buttons7;  			// X, Y, /PENIRQ buttons
+	uint16 KEYINPUT7;			//REG_KEYINPUT ARM7
 	uint16 touchX,   touchY;   // raw x/y TSC SPI
 	sint16 touchXpx, touchYpx; // TFT x/y pixel (converted)
 };

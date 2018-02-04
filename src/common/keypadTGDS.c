@@ -70,4 +70,5 @@ void touchScrRead(struct touchScr * touchScrInst){
 	touchScrInst->touchY	=	sIPCSharedTGDSInst->touchY;				// raw x/y TSC SPI
 	touchScrInst->touchXpx	=	sIPCSharedTGDSInst->touchXpx;
 	touchScrInst->touchYpx	=	sIPCSharedTGDSInst->touchYpx;			// TFT x/y pixel (converted)
+	touchScrInst->KEYINPUT7	=	sIPCSharedTGDSInst->KEYINPUT7;			// TFT x/y pixel (converted)
 }

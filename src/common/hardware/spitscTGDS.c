@@ -57,6 +57,9 @@ void doSPIARM7IO(){
 	//NDS Format ARM7 XY/PENIRQ/HINGE buttons
 	getsIPCSharedTGDS()->buttons7 = REG_KEYXY;
 	
+	//REG_KEYINPUT ARM7 
+	getsIPCSharedTGDS()->KEYINPUT7	=	(uint16)REG_KEYINPUT; 
+	
 	//do touchscreen process
 	XYReadPos();
 	
