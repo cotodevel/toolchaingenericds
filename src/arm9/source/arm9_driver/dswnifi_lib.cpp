@@ -66,7 +66,7 @@ USA
 //If you use: switch_dswnifi_mode(dswifi_tcpnifimode);	//TCP NIFI: Disabled, issues so I didn't bother, please use dswifi_udpnifimode (UDP NIFI)
 //If you use: switch_dswnifi_mode(dswifi_localnifimode);//Stable, Release code
 
-TdsnwifisrvStr dswifiSrv;
+struct dsnwifisrvStr dswifiSrv;
 
 /////////////////////////////////NIFI DSWNIFI Part////////////////////////////////////
 //nifi_stat: 0 not ready, 1 act as a host and waiting, 2 act as a guest and waiting, 3 connecting, 4 connected, 5 host ready, 6 guest ready
@@ -1027,6 +1027,11 @@ struct frameBlock * HandleSendUserspace(uint8 * databuf_src, int bufsize){
 	frameSenderInst->frameSize = bufsize;
 	return frameSenderInst;
 }
+
+struct dsnwifisrvStr * getDSWNIFIStr(){
+	return (struct dsnwifisrvStr *)&dswifiSrv;
+}
+
 #endif
 
 

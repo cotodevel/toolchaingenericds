@@ -134,22 +134,17 @@ struct frameBlock{
 
 //shared memory cant use #ifdef ARMX since corrupts both definition sides for each ARM Core
 //---------------------------------------------------------------------------------
-typedef struct dsnwifisrvStr {
+struct dsnwifisrvStr {
 //---------------------------------------------------------------------------------
 	sint32 dsnwifisrv_mode;	//dswifi_idlemode / dswifi_localnifimode / dswifi_udpnifimode / dswifi_tcpnifimode				//used by setMULTIMode() getMULTIMode()
-	
 	sint32	connectionStatus;	//proc_idle / proc_connect / proc_execution / proc_shutdown	//used by getConnectionStatus() setConnectionStatus()
 	sint32 	dsnwifisrv_stat;	//MULTI: inter DS Connect status: ds_multi_notrunning / ds_searching_for_multi / (ds_multiplay): ds_netplay_host ds_netplay_guest
-	
 	bool dswifi_setup;	//false: not setup / true: setup already
-	
 	bool incoming_packet;	//when any of the above methods received a packet == true / no == false
-	
-	
 	bool GDBStubEnable;	
-}TdsnwifisrvStr;
+};
 
-extern TdsnwifisrvStr dswifiSrv;
+extern struct dsnwifisrvStr dswifiSrv;
 extern client_http_handler client_http_handler_context;
   
 //GDB Stub part
@@ -258,7 +253,7 @@ extern __attribute__((weak))	void HandleRecvUserspace(struct frameBlock * frameB
 extern __attribute__((weak))	bool do_multi(struct frameBlock * frameBlockRecv);
 
 extern bool sentReq;
-
+extern struct dsnwifisrvStr * getDSWNIFIStr();
 
 //GDB stub
 extern bool gdbNdsStart();
