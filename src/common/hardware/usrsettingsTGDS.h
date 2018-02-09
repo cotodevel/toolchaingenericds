@@ -32,7 +32,7 @@ USA
 #define DS_FW_HEADER_ADDRESS (uint32)(0x00000000)
 #define DS_FW_HEADER_SIZE (sint32)(0x0200)
 
-typedef struct sDSFWHEADER {
+struct sDSFWHEADER {
   //Addr Size Expl.
   uint8	romaddrarm9guicode[2];	//000h 2    part3 romaddr/8 (arm9 gui code) (LZ/huffman compression)
   uint8	romaddrarm7wificode[2];	//002h 2    part4 romaddr/8 (arm7 wifi code) (LZ/huffman compression)
@@ -71,7 +71,7 @@ typedef struct sDSFWHEADER {
   //02Ah-1FFh Wifi Calibration Data ignored
   uint8	stub[206+256];
   
-}tDSFWHEADER;	//must match DS_FW_HEADER_SIZE
+};	//must match DS_FW_HEADER_SIZE
 
 //DS Firmware Wifi Internet Access Points
 
@@ -121,7 +121,7 @@ User Settings 1 (Firmware 3FF00h-3FFFFh) ;see Firmware Header [020h])
 #define DS_FW_USERSETTINGS0ADDR (uint32)(0x0003FE00)
 #define DS_FW_USERSETTINGS1ADDR (uint32)(0x0003FF00)
 
-typedef struct sDSFWSETTINGS {
+struct sDSFWSETTINGS {
 	uint8 Version[2];	//000h  2   Version (5) (Always 5, for all NDS/DSi Firmware versions)
 	uint8	color;	//002h  1   Favorite color (0..15) (0=Gray, 1=Brown, etc.)
 	uint8	birthday_month;	//003h  1   Birthday month (1..12) (Binary, non-BCD)
@@ -160,7 +160,7 @@ typedef struct sDSFWSETTINGS {
 	//078h  86h Not used (FFh-filled on iQue DS, 00h-filled on DSi)
 	//0FEh  2   CRC16 of entries 74h..FDh (8Ah bytes)
 	
-}tDSFWSETTINGS;
+};
 
 //language flags
 /*

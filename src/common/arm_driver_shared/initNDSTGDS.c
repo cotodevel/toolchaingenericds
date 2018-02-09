@@ -44,23 +44,17 @@ void initHardware(void) {
 	resetMemory_ARMCores();
 	
 	#ifdef ARM7
-	
 	//Init Shared Address Region
-	memset((uint32*)getsIPCSharedTGDS(), 0, sizeof(struct sIPCSharedTGDS));
+	memset((uint32*)getsIPCSharedTGDS(), 0, getToolchainIPCSize());
 	
 	//Read DHCP settings (in order)
 	LoadFirmwareSettingsFromFlash();
 	
 	getsIPCSharedTGDS()->arm7startaddress = get_iwram_start();
 	getsIPCSharedTGDS()->arm7endaddress = (uint32)(get_iwram_start() + get_iwram_size());
-	//Init Shared FIFO Buffer
-	setARM7ARM9SharedBuffer(NULL);
 	
 	//set libend: use malloc from vramAlloc so ARM7 can use malloc
 	initvramLMALibend();
-	
-	//Init Audio NDS7
-	initTGDSAudioSystem();
 	
 	#endif
 	
@@ -73,13 +67,6 @@ void initHardware(void) {
 	SETDISPCNT_SUB(0);
 	REG_BG0CNT = REG_BG1CNT = REG_BG2CNT = REG_BG3CNT = 0;
 	
-	//Init Shared FIFO Buffer
-	memset((uint32*)&arm7arm9sharedBuffer[0], 0, sizeof(arm7arm9sharedBuffer));
-	setARM7ARM9SharedBuffer((uint32*)&arm7arm9sharedBuffer[0]);
-	
-	//AUDIO init
-	setAudioGlobalInst();
- 
 	//Library init code
 	
 	//Newlib init

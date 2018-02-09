@@ -29,7 +29,7 @@ USA
 void LoadFirmwareSettingsFromFlash(){
 	
 	//Load firmware from FLASH
-	volatile tDSFWHEADER DSFWHEADERInst;
+	struct sDSFWHEADER DSFWHEADERInst;
 	
 	readFirmwareSPI((uint32)0x20, (uint8*)&DSFWHEADERInst.usersettings_offset[0], 0x2);	//020h 2    User Settings Offset (div8) (usually last 200h flash bytes)
 	
@@ -40,12 +40,12 @@ void LoadFirmwareSettingsFromFlash(){
 	uint32 usersetting_offset1 = usersetting_offset0 + (sint32)DS_FW_USERSETTINGS_SIZE;
 	
 	//Load DS Firmware User Settings
-	volatile tDSFWSETTINGS UserSettings0;
-	volatile tDSFWSETTINGS UserSettings1;
+	struct sDSFWSETTINGS UserSettings0;
+	struct sDSFWSETTINGS UserSettings1;
 	
 	//Load UserSettings
-	readFirmwareSPI((uint32)usersetting_offset0, (uint8*)&UserSettings0, sizeof(tDSFWSETTINGS));
-	readFirmwareSPI((uint32)usersetting_offset1, (uint8*)&UserSettings1, sizeof(tDSFWSETTINGS));
+	readFirmwareSPI((uint32)usersetting_offset0, (uint8*)&UserSettings0, sizeof(struct sDSFWSETTINGS));
+	readFirmwareSPI((uint32)usersetting_offset1, (uint8*)&UserSettings1, sizeof(struct sDSFWSETTINGS));
 	
 	//getCRC and validate them
 	uint16 crcreadUserSet0 = swiCRC16( 0xffff, (uint8*)&UserSettings0, 0x70);	//CRC16 of entries 00h..6Fh (70h bytes)
@@ -68,7 +68,7 @@ void LoadFirmwareSettingsFromFlash(){
 }
 
 void ParseFWSettings(uint32 usersetting_offset){
-	readFirmwareSPI((uint32)usersetting_offset, (uint8*)&getsIPCSharedTGDS()->DSFWSETTINGSInst, sizeof(tDSFWSETTINGS));
+	readFirmwareSPI((uint32)usersetting_offset, (uint8*)&getsIPCSharedTGDS()->DSFWSETTINGSInst, sizeof(struct sDSFWSETTINGS));
 	readFirmwareSPI((uint32)usersetting_offset+0x01D, (uint8*)&getsIPCSharedTGDS()->consoletype, sizeof(getsIPCSharedTGDS()->consoletype));
 	ucs2tombs((uint8*)&getsIPCSharedTGDS()->nickname_schar8[0],(unsigned short*)&getsIPCSharedTGDS()->DSFWSETTINGSInst.nickname_utf16[0],32);
 	readFirmwareSPI((uint32)usersetting_offset+0x64, (uint8*)&getsIPCSharedTGDS()->lang_flags[0], 0x2);

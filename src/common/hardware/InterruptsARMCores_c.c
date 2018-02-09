@@ -146,6 +146,7 @@ void NDS_IRQHandler(){
 	}
 	
 	if(REG_IE_SET & IRQ_VBLANK){
+		
 		#ifdef ARM7
 		Wifi_Update();
 		#endif
@@ -155,15 +156,9 @@ void NDS_IRQHandler(){
 		if(doMULTIDaemon() >=0){
 		}
 		#endif
-		
 		//key event between frames
 		do_keys();
-		
 		VblankUser();
-		
-		//Handle Audio
-		updateSound();
-		
 		REG_IF = IRQ_VBLANK;
 	}
 	

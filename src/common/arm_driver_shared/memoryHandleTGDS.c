@@ -342,30 +342,18 @@ _sbrk (int  incr)
 //IPC 
 
 //Internal
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
 uint32 getToolchainIPCAddress(){
 	return (uint32)(0x027FF000);
 }
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
 sint32 getToolchainIPCSize(){
 	return (sint32)(sizeof(struct sIPCSharedTGDS));
 }
 
 //Printf7 Buffer
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
 uint32 getPrintfBuffer(){
 	return (uint32)(&getsIPCSharedTGDS()->arm7PrintfBuf[0]);
 }
 
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
 uint32 getUserIPCAddress(){
 	return (uint32)(getToolchainIPCAddress()+getToolchainIPCSize());
 }

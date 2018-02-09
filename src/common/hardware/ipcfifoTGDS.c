@@ -42,18 +42,12 @@ USA
 #endif
 
 //Coto: Hardware IPC struct packed 
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif    
 struct sIPCSharedTGDS* getsIPCSharedTGDS(){
-	struct sIPCSharedTGDS* getsIPCSharedTGDSInst = (__attribute__((packed)) struct sIPCSharedTGDS*)(getToolchainIPCAddress());
+	struct sIPCSharedTGDS* getsIPCSharedTGDSInst = (__attribute__((aligned (4))) struct sIPCSharedTGDS*)(getToolchainIPCAddress());
 	return getsIPCSharedTGDSInst;
 }
 
 //Software FIFO calls, Rely on Hardware FIFO calls so it doesnt matter if they are in different maps 
-#ifdef ARM9
-__attribute__((section(".dtcm")))
-#endif    
 volatile int FIFO_SOFT_PTR = 0;
 
 //useful for checking if something is pending
@@ -123,11 +117,6 @@ void SoftFIFOSEND(uint32 value0,uint32 value1,uint32 value2,uint32 value3){
 	//todo: needs hardware IPC FIFO implementation.
 }
 
-//64K Shared buffer. ARM9 defines it. To be used with IPC FIFO Hardware uint32 * buffer_shared arg
-#ifdef ARM9
-volatile uint8 arm7arm9sharedBuffer[ARM7ARM9SHAREDBUFFERSIZE];
-#endif
-
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
@@ -186,6 +175,7 @@ void HandleFifoNotEmpty(){
 					SetSoftFIFO(data1);
 				}
 				break;
+				
 				//ARM7 command handler
 				#ifdef ARM7
 				case((uint32)FIFO_POWERCNT_ON):{
@@ -202,22 +192,8 @@ void HandleFifoNotEmpty(){
 					wifiAddressHandler((Wifi_MainStruct *)(uint32)data1, 0);
 				}
 				break;
-				//Audio API
-				case((uint32)FIFO_SETSHAREDAUDIOHANDLER):{
-					//data1 == struct sIPCSharedTGDSAudioGlobal AudioGlobalInst (EWRAM definition)
-					//AudioGlobalInst = (struct sIPCSharedTGDSAudioGlobal *)data1;
-				}
-				break;
-				case(FIFO_STOPSAMPLE):{
-					//data1 == struct sIPCSharedTGDSAudioChannel* CurrentAudioChannel <-- (int channel)
-					StopChannel((int)data1);
-				}
-				break;
-				case(FIFO_STARTSAMPLE):{
-					//data1 == struct sIPCSharedTGDSAudioChannel* CurrentAudioChannel <-- (int channel)
-					PlayChannel((int)data1);
-				}
-				#endif	
+				#endif
+				
 				//ARM9 command handler
 				#ifdef ARM9
 				//exception handler: arm7
@@ -243,14 +219,4 @@ void HandleFifoNotEmpty(){
 		//clear fifo inmediately
 		REG_IPC_FIFO_CR |= (1<<3);
 	}
-}
-
-void setARM7ARM9SharedBuffer(uint32 * shared_buffer_address){
-	volatile uint32 * ptr = (uint32*)&getsIPCSharedTGDS()->arm7arm9sharedBuffer;
-	*ptr = (uint32)(uint32*)shared_buffer_address;
-}
-
-uint32 * getARM7ARM9SharedBuffer(){
-	volatile uint32 * ptr = (uint32*)&getsIPCSharedTGDS()->arm7arm9sharedBuffer;
-	return (uint32)(*ptr);
 }
