@@ -16,12 +16,14 @@
 #USA
 #
 
+#TGDS1.3 compatible Makefile
+
 #ToolchainGenericDS specific: Use Makefiles from either TGDS, or custom
 export SOURCE_MAKEFILE7 = custom
 export SOURCE_MAKEFILE9 = custom
 
-#toolchain version
-export TOOLCHAIN_VERSION_HEADER =	1.1
+#ToolchainGenericDS version
+export TOOLCHAIN_VERSION_HEADER =	1.3
 export TOOLCHAIN_VERSION =	"$(TOOLCHAIN_VERSION_HEADER)"
 
 # TGDS Generic start
