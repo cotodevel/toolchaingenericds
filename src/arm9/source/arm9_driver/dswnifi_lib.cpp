@@ -1343,9 +1343,9 @@ void remoteSendStatus()
 
 void remoteBinaryWrite(char *p)
 {
-  u32 address;
-  int count;
-  sscanf(p,"%x,%x:", &address, &count);
+  u32 address = 0;
+  int count = 0;
+  sscanf(p,"%x,%d:", &address, &count);
   //  //printf("Binary write for %08x %d\n", address, count);
 
   p = strchr(p, ':');
@@ -1370,9 +1370,9 @@ void remoteBinaryWrite(char *p)
 
 void remoteMemoryWrite(char *p)
 {
-  u32 address;
-  int count;
-  sscanf(p,"%x,%x:", &address, &count);
+  u32 address = 0;
+  int count = 0;
+  sscanf(p,"%x,%d:", &address, &count);
   //  //printf("Memory write for %08x %d\n", address, count);
 
   p = strchr(p, ':');
@@ -1398,11 +1398,10 @@ void remoteMemoryWrite(char *p)
 
 void remoteMemoryRead(char *p)
 {
-  u32 address;
-  int count;
-  sscanf(p,"%x,%x:", &address, &count);
-  //  //printf("Memory read for %08x %d\n", address, count);
-
+  u32 address = 0;
+  int count = 0;
+  sscanf(p,"%x,%d:", &address, &count);
+  
   char * buffer = (char *)malloc(1024);
   char *s = buffer;
   for(int i = 0; i < count; i++) {
@@ -1418,8 +1417,8 @@ void remoteMemoryRead(char *p)
 
 void remoteStepOverRange(char *p)
 {
-  u32 address;
-  u32 final;
+  u32 address = 0;
+  u32 final = 0;
   sscanf(p, "%x,%x", &address, &final);
   remotePutPacket("OK");
   remoteResumed = true;
@@ -1437,9 +1436,9 @@ void remoteStepOverRange(char *p)
 
 void remoteWriteWatch(char *p, bool active)
 {
-  u32 address;
-  int count;
-  sscanf(p, ",%x,%x#", &address, &count);
+  u32 address = 0;
+  int count = 0;
+  sscanf(p, ",%x,%d#", &address, &count);
 
   //printf("Write watch for %08x %d ", address, count);
 
@@ -1514,8 +1513,8 @@ void remoteReadRegisters(char *p)
 
 void remoteWriteRegister(char *p)
 {
-  int r;
-  sscanf(p, "%x=", &r);
+  int r = 0;
+  sscanf(p, "%d=", &r);
   p = strchr(p, '=');
   p++;
   char c = *p++;
@@ -1666,4 +1665,92 @@ void remoteCleanUp()
 {
   if(remoteCleanUpFnc)
     remoteCleanUpFnc();
+}
+
+
+u32 debuggerReadMemory(u32 addr){
+if(
+		((u32)addr > (u32)0x00000000)	||
+		((u32)addr < (u32)(0x00000000+16*1024))	||	
+		((u32)addr > (u32)0x01000000)	||	
+		((u32)addr < (u32)(0x01000000+32*1024))	||	
+		((u32)addr > (u32)0x0b000000)	||	
+		((u32)addr < (u32)(0x0b000000+16*1024))	||	
+		((u32)addr > (u32)0x02000000)	||	
+		((u32)addr < (u32)(0x02000000+4*1024*1024))	||	
+		((u32)addr > (u32)0x03000000)	||	
+		((u32)addr < (u32)(0x03000000+32*1024))	||	
+		((u32)addr > (u32)0x04000000)	||	
+		((u32)addr < (u32)(0x04000000+32*1024))	||	
+		((u32)addr > (u32)0x05000000)	||	
+		((u32)addr < (u32)(0x05000000+64*1024))	||	
+		((u32)addr > (u32)0x06000000)	||	
+		((u32)addr < (u32)(0x06000000+512*1024))	||	
+		((u32)addr > (u32)0x08000000)	||	
+		((u32)addr < (u32)(0x08000000+32*1024*1024))
+	){
+		return (*(u32*)addr);
+	}	
+	else{
+		return (u32)(0xffffffff);
+	}
+}
+
+
+
+u16 debuggerReadHalfWord(u32 addr){
+if(
+		((u32)addr > (u32)0x00000000)	||
+		((u32)addr < (u32)(0x00000000+16*1024))	||	
+		((u32)addr > (u32)0x01000000)	||	
+		((u32)addr < (u32)(0x01000000+32*1024))	||	
+		((u32)addr > (u32)0x0b000000)	||	
+		((u32)addr < (u32)(0x0b000000+16*1024))	||	
+		((u32)addr > (u32)0x02000000)	||	
+		((u32)addr < (u32)(0x02000000+4*1024*1024))	||	
+		((u32)addr > (u32)0x03000000)	||	
+		((u32)addr < (u32)(0x03000000+32*1024))	||	
+		((u32)addr > (u32)0x04000000)	||	
+		((u32)addr < (u32)(0x04000000+32*1024))	||	
+		((u32)addr > (u32)0x05000000)	||	
+		((u32)addr < (u32)(0x05000000+64*1024))	||	
+		((u32)addr > (u32)0x06000000)	||	
+		((u32)addr < (u32)(0x06000000+512*1024))	||	
+		((u32)addr > (u32)0x08000000)	||	
+		((u32)addr < (u32)(0x08000000+32*1024*1024))
+	){
+		return (*(u16*)addr);
+	}	
+	else{
+		return (u16)(0xffff);
+	}
+}
+
+
+u8 debuggerReadByte(u32 addr){
+if(
+		((u32)addr > (u32)0x00000000)	||
+		((u32)addr < (u32)(0x00000000+16*1024))	||	
+		((u32)addr > (u32)0x01000000)	||	
+		((u32)addr < (u32)(0x01000000+32*1024))	||	
+		((u32)addr > (u32)0x0b000000)	||	
+		((u32)addr < (u32)(0x0b000000+16*1024))	||	
+		((u32)addr > (u32)0x02000000)	||	
+		((u32)addr < (u32)(0x02000000+4*1024*1024))	||	
+		((u32)addr > (u32)0x03000000)	||	
+		((u32)addr < (u32)(0x03000000+32*1024))	||	
+		((u32)addr > (u32)0x04000000)	||	
+		((u32)addr < (u32)(0x04000000+32*1024))	||	
+		((u32)addr > (u32)0x05000000)	||	
+		((u32)addr < (u32)(0x05000000+64*1024))	||	
+		((u32)addr > (u32)0x06000000)	||	
+		((u32)addr < (u32)(0x06000000+512*1024))	||	
+		((u32)addr > (u32)0x08000000)	||	
+		((u32)addr < (u32)(0x08000000+32*1024*1024))
+	){
+		return (*(u8*)addr);
+	}	
+	else{
+		return (u8)(0xff);
+	}
 }

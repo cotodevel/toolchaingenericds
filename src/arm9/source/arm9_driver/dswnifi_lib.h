@@ -149,16 +149,88 @@ extern client_http_handler client_http_handler_context;
   
 //GDB Stub part
 
-
+/*
 #define debuggerReadMemory(addr) \
-  (*(u32*)addr)
-
+if(	\
+		((u32)addr > (u32)0x00000000)	||	\
+		((u32)addr < (u32)(0x00000000+16*1024))	||	\
+		((u32)addr > (u32)0x01000000)	||	\
+		((u32)addr < (u32)(0x01000000+32*1024))	||	\
+		((u32)addr > (u32)0x0b000000)	||	\
+		((u32)addr < (u32)(0x0b000000+16*1024))	||	\
+		((u32)addr > (u32)0x02000000)	||	\
+		((u32)addr < (u32)(0x02000000+4*1024*1024))	||	\
+		((u32)addr > (u32)0x03000000)	||	\
+		((u32)addr < (u32)(0x03000000+32*1024))	||	\
+		((u32)addr > (u32)0x04000000)	||	\
+		((u32)addr < (u32)(0x04000000+32*1024))	||	\
+		((u32)addr > (u32)0x05000000)	||	\
+		((u32)addr < (u32)(0x05000000+64*1024))	||	\
+		((u32)addr > (u32)0x06000000)	||	\
+		((u32)addr < (u32)(0x06000000+512*1024))	||	\
+		((u32)addr > (u32)0x08000000)	||	\
+		((u32)addr < (u32)(0x08000000+32*1024*1024))\
+	){	\
+		(*(u32*)addr)	\
+	}	\
+	else{	\
+		(0xff)	\
+	}
+	
 #define debuggerReadHalfWord(addr) \
-  (*(u16*)addr)
-
-#define debuggerReadByte(addr) \
-  (*(u8*)addr)
-
+if(	\
+		((u32)addr > (u32)0x00000000)	||	\
+		((u32)addr < (u32)(0x00000000+16*1024))	||	\
+		((u32)addr > (u32)0x01000000)	||	\
+		((u32)addr < (u32)(0x01000000+32*1024))	||	\
+		((u32)addr > (u32)0x0b000000)	||	\
+		((u32)addr < (u32)(0x0b000000+16*1024))	||	\
+		((u32)addr > (u32)0x02000000)	||	\
+		((u32)addr < (u32)(0x02000000+4*1024*1024))	||	\
+		((u32)addr > (u32)0x03000000)	||	\
+		((u32)addr < (u32)(0x03000000+32*1024))	||	\
+		((u32)addr > (u32)0x04000000)	||	\
+		((u32)addr < (u32)(0x04000000+32*1024))	||	\
+		((u32)addr > (u32)0x05000000)	||	\
+		((u32)addr < (u32)(0x05000000+64*1024))	||	\
+		((u32)addr > (u32)0x06000000)	||	\
+		((u32)addr < (u32)(0x06000000+512*1024))	||	\
+		((u32)addr > (u32)0x08000000)	||	\
+		((u32)addr < (u32)(0x08000000+32*1024*1024))\
+	){	\
+		(*(u16*)addr)	\
+	}	\
+	else{	\
+		(0xff)	\
+	}
+	
+#define debuggerReadByte(addr)	\
+	if(	\
+		((u32)addr > (u32)0x00000000)	||	\
+		((u32)addr < (u32)(0x00000000+16*1024))	||	\
+		((u32)addr > (u32)0x01000000)	||	\
+		((u32)addr < (u32)(0x01000000+32*1024))	||	\
+		((u32)addr > (u32)0x0b000000)	||	\
+		((u32)addr < (u32)(0x0b000000+16*1024))	||	\
+		((u32)addr > (u32)0x02000000)	||	\
+		((u32)addr < (u32)(0x02000000+4*1024*1024))	||	\
+		((u32)addr > (u32)0x03000000)	||	\
+		((u32)addr < (u32)(0x03000000+32*1024))	||	\
+		((u32)addr > (u32)0x04000000)	||	\
+		((u32)addr < (u32)(0x04000000+32*1024))	||	\
+		((u32)addr > (u32)0x05000000)	||	\
+		((u32)addr < (u32)(0x05000000+64*1024))	||	\
+		((u32)addr > (u32)0x06000000)	||	\
+		((u32)addr < (u32)(0x06000000+512*1024))	||	\
+		((u32)addr > (u32)0x08000000)	||	\
+		((u32)addr < (u32)(0x08000000+32*1024*1024))\
+	){	\
+		(*(u8*)addr)	\
+	}	\
+	else{	\
+		(0xff)	\
+	}
+*/
 #define debuggerWriteMemory(addr, value) \
   *(u32*)addr = (value)
 
@@ -289,6 +361,10 @@ extern void remoteWriteRegister(char *p);
 extern void remoteStubMain();
 extern void remoteStubSignal(int sig, int number);
 extern void remoteCleanUp();
+
+extern u8 debuggerReadByte(u32 addr);
+extern u16 debuggerReadHalfWord(u32 addr);
+extern u32 debuggerReadMemory(u32 addr);
 
 #endif
 
