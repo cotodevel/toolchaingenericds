@@ -42,6 +42,9 @@ USA
 #endif
 
 //Coto: Hardware IPC struct packed 
+#ifdef ARM9
+__attribute__((section(".itcm")))
+#endif
 struct sIPCSharedTGDS* getsIPCSharedTGDS(){
 	struct sIPCSharedTGDS* getsIPCSharedTGDSInst = (__attribute__((aligned (4))) struct sIPCSharedTGDS*)(getToolchainIPCAddress());
 	return getsIPCSharedTGDSInst;
@@ -63,7 +66,7 @@ int GetSoftFIFOCount(){
 //}
 #ifdef ARM9
 __attribute__((section(".itcm")))
-#endif    
+#endif
 bool GetSoftFIFO(uint32 * var)
 {
 	if(FIFO_SOFT_PTR >= 1){
