@@ -50,26 +50,45 @@ USA
 #include "global_settings.h"
 
 
-#ifdef ARM7
-
-//arm7 printf, uses variadic functions from libc
-void printf7(char *fmt, ...){
-	/*
-	va_list args;
-	va_start (args, fmt);
-	char * Buf = (char *)getPrintfBuffer();
-	memset(Buf, 0, sizeof(getsIPCSharedTGDS()->arm7PrintfBuf));
-	vsnprintf (Buf, consolebuf_size, fmt, args);
-	va_end (args);
-	SendMultipleWordACK(FIFO_PRINTF_7, (uint32)0, (uint32)0, (uint32)0);
-	*/
-}
-#endif
-
 
 //File IO is stubbed even in buffered writes, so as a workaround I redirect the weak-symbol _vfprint_f (and that means good bye file stream operations on fatfs, thus we re-implement those by hand)
 //while allowing to use printf in DS
 int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list list){
+	//only for debugging. In release code breaks ARM7 if ARM7 fully utilizes IWRAM
+	/*
+	char * Buf = NULL;
+	int BufSize = 0;
+	#ifdef ARM7
+	Buf = (uint8*)getPrintfBuffer();
+	BufSize = (int)sizeof(getsIPCSharedTGDS()->arm7PrintfBuf);
+	#endif
+	
+	#ifdef ARM9
+	Buf = (uint8*)&g_printfbuf[0];
+	BufSize = (int)sizeof(g_printfbuf);
+	#endif
+	
+	//merge any "..." special arguments where sint8 * ftm requires , store into g_printfbuf
+	vsnprintf((sint8*)Buf, BufSize, fmt, list);
+	
+	#ifdef ARM7
+	SendMultipleWordACK(FIFO_PRINTF_7, (uint32)0, (uint32)0, (uint32)0);
+	#endif
+	
+	#ifdef ARM9
+	// FIXME
+	t_GUIZone zone;
+	zone.x1 = 0; zone.y1 = 0; zone.x2 = 256; zone.y2 = 192;
+	zone.font = &trebuchet_9_font;
+	GUI_drawText(&zone, 0, GUI.printfy, 255, (sint8*)g_printfbuf);
+	GUI.printfy += GUI_getFontHeight(&zone);
+	#endif
+	
+	return (strlen((char*)Buf));
+	*/
+	
+	
+	//Release code. Safe
 	#ifdef ARM7
 	return 0;
 	#endif
@@ -89,7 +108,6 @@ int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list list){
 	GUI.printfy += GUI_getFontHeight(&zone);
 	return (strlen((char*)Buf));
 	#endif
-	
 }
 
 
