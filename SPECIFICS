@@ -1,4 +1,4 @@
-I been working on this for about 8 months, but development started circa 2014. I just needed the "motivation" to gather the pieces together, and I am glad I wrote this.
+I have been working on this for about 8 months, but development started circa 2014. I just needed the "motivation" to gather the pieces together, and I am glad I wrote this.
 You are free to do almost whatever you want with it, just release the source codes so we all can benefit from it.
 
 The idea is to have a toolchain that is GNU v2 (not GNU v3 as it sucks compared to v2).
@@ -6,22 +6,25 @@ The idea is to have a toolchain that is GNU v2 (not GNU v3 as it sucks compared 
 Features:
 
 linkers
-Makefiles
-fat (fatfs layer that extends POSIX file calls) ,interrupts,exceptions,touchscreen,spi,clock (from inferno DS), etc
-console render (from snemulds)
-newlib nano (removes by default fat compatibility, so it is restored)
+- Default Makefiles per project, through template Makefiles. Or you add your own Makefile for each ARM7/9 Core.
 
-I am basing this toolchain from existing toolchain that is offered precompiled and maintained by GNU Arm Embedded Toolchain devs. 
-Their code is not for ARMv4 and ARMv5 CPUs, but since I recompile everything the Nintendo DS needs, and the linked newlib nano works fine,
-then there is minimal code to recompile to such processors.
+- Fat16/32/exFat (fatfs layer that extends POSIX file calls), interrupts, exceptions, touchscreen, spi, clock (from inferno DS), etc
+- Console render (from snemulds)
+- Newlib nano (removes by default fat compatibility, so it is restored)
+- Modified dswifi library so it supports valid frames sent/received between DS's:
+	-udp nifi 	(like local but through internet, requires a server that forwards WANIP-> local IP).
+	-localnifi	
+	
+I am basing this toolchain from GNU Arm Embedded Toolchain developers: https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads (2016q4).
+TBH, I just use their binutils for building TGDS, since their code is not for ARMv4 and ARMv5 CPUs, so I recompile everything required per processor;
+both newlib nano, and ToolchainGenericDS.
 
 
 Also I liked the idea of weak symbols. Projects will require extensions of this library through weak symbols.
-Toolchain part will extend definitions and override weak symbols. So you have control over the toolchain AND your project. (requires building both)
+Toolchain part will extend definitions and override weak symbols. So you have control over the toolchain AND your project. Requires building both at least once.
+If you are not adding any ToolchainGenericDS specific code, you just compile your project. It will build fast!
 No need for "precompiled releases" as that abstracts the coder from the internals, and coder sometimes needs to use the internal hardware as they wish (:
 
-
-You can see SnemulDS (for now) as a codebase that abstracts this toolchain completely as an example.
 
 
 Coto.
