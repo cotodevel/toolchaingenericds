@@ -86,6 +86,7 @@ extern uint16 * arm7q;
 extern void Read_Flash(int address, char * destination, int length);
 extern char * FlashData;
 extern void InitFlashData();
+extern void DeInitFlashData();
 extern int ReadFlashByte(int address);
 extern int ReadFlashHWord(int address);
 extern int ReadFlashBytes(int address, int numbytes);

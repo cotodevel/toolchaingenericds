@@ -28,8 +28,8 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 // Global vars
 
-int NumHWInterfaces;
-int NumProtocolInterfaces;
+int NumHWInterfaces = 0;
+int NumProtocolInterfaces = 0;
 sgIP_Hub_Protocol ProtocolInterfaces[SGIP_HUB_MAXPROTOCOLINTERFACES];
 sgIP_Hub_HWInterface HWInterfaces[SGIP_HUB_MAXHWINTERFACES];
 
@@ -86,22 +86,26 @@ sgIP_Hub_HWInterface * sgIP_Hub_AddHardwareInterface(int (*TransmitFunction)(sgI
 }
 
 extern void sgIP_Hub_RemoveProtocolInterface(sgIP_Hub_Protocol * protocol) {
-	int n;
-	for(n=0;n<SGIP_HUB_MAXPROTOCOLINTERFACES;n++) {
-		if(ProtocolInterfaces+n ==protocol) break;
+	if(protocol){
+		int n;
+		for(n=0;n<SGIP_HUB_MAXPROTOCOLINTERFACES;n++) {
+			if(ProtocolInterfaces+n ==protocol) break;
+		}
+		if(n==SGIP_HUB_MAXPROTOCOLINTERFACES) return;
+		protocol->flags=0;
+		NumProtocolInterfaces--;
 	}
-	if(n==SGIP_HUB_MAXPROTOCOLINTERFACES) return;
-	protocol->flags=0;
-	NumProtocolInterfaces--;
 }
 extern void sgIP_Hub_RemoveHardwareInterface(sgIP_Hub_HWInterface * hw) {
-	int n;
-	for(n=0;n<SGIP_HUB_MAXHWINTERFACES;n++) {
-		if(HWInterfaces+n == hw) break;
+	if(hw){
+		int n;
+		for(n=0;n<SGIP_HUB_MAXHWINTERFACES;n++) {
+			if(HWInterfaces+n == hw) break;
+		}
+		if(n==SGIP_HUB_MAXHWINTERFACES) return;
+		hw->flags=0;
+		NumHWInterfaces--;
 	}
-	if(n==SGIP_HUB_MAXHWINTERFACES) return;
-	hw->flags=0;
-	NumHWInterfaces--;
 }
 
 int sgIP_Hub_ReceiveHardwarePacket(sgIP_Hub_HWInterface * hw, sgIP_memblock * packet) {

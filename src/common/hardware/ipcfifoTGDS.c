@@ -26,6 +26,8 @@ USA
 #include "InterruptsARMCores_h.h"
 #include "memoryHandleTGDS.h"
 
+#include "timerTGDS.h"
+
 #ifdef ARM7
 #include <string.h>
 #include "wifi_arm7.h"
@@ -190,9 +192,14 @@ void HandleFifoNotEmpty(){
 				}
 				break;
 				//arm9 wants to send a WIFI context block address / userdata is always zero here
-				case((uint32)WIFI_STARTUP):{
+				case((uint32)WIFI_INIT):{
 					//	wifiAddressHandler( void * address, void * userdata )
 					wifiAddressHandler((Wifi_MainStruct *)(uint32)data1, 0);
+				}
+				break;
+				// Deinit WIFI
+				case((uint32)WIFI_DEINIT):{
+					DeInitWIFI();
 				}
 				break;
 				#endif

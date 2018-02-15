@@ -18,7 +18,7 @@ USA
 
 */
 
-//DSWNifi Library 1.2
+//DSWNifi Library 1.3 (update: 15/02/2018)
 
 #include "ipcfifoTGDS.h"
 #include "wifi_shared.h"
@@ -63,8 +63,8 @@ USA
 //DSWNifi Library status:
 //If you use: switch_dswnifi_mode(dswifi_idlemode);		//Stable, Release code
 //If you use: switch_dswnifi_mode(dswifi_udpnifimode);	//UDP NIFI: Stable Release code
-//If you use: switch_dswnifi_mode(dswifi_tcpnifimode);	//TCP NIFI: Disabled, issues so I didn't bother, please use dswifi_udpnifimode (UDP NIFI)
 //If you use: switch_dswnifi_mode(dswifi_localnifimode);//Stable, Release code
+//If you use: switch_dswnifi_mode(dswifi_gdbstubmode);	//Stable, Release code
 
 struct dsnwifisrvStr dswifiSrv;
 
@@ -116,7 +116,6 @@ void Handler(int packetID, int readlength)
 		//DSWNIFI uses its own daemon to process input/output frames
 		/*
 		case (dswifi_udpnifimode):
-		case (dswifi_tcpnifimode):
 		{
 			
 		}
@@ -136,19 +135,18 @@ void initNiFi()
 	Wifi_RawSetPacketHandler(Handler);
 	Wifi_SetChannel(10);
 	
-	if(1) {
-		//for secial configuration for wifi
+	if(1){
 		DisableIrq(IRQ_TIMER3);
-		//irqSet(IRQ_TIMER3, Timer_50ms); // replace timer IRQ
 		TIMERXDATA(3) = -6553; // 6553.1 * 256 cycles = ~50ms;
 		TIMERXCNT(3) = 0x00C2; // enable, irq, 1/256 clock
 		EnableIrq(IRQ_TIMER3);
 	}
+	Wifi_EnableWifi();	//required by localplay, but must not be called when WIFI runs (not localplay)
 }
 
 /////////////////////////////////TCP UDP DSWNIFI Part////////////////////////////////////
 client_http_handler client_http_handler_context;
-sint8* server_ip = (sint8*)"192.168.43.220";
+sint8* server_ip = (sint8*)"192.168.43.23";
 int port = 8888; 	//gdb stub port
 //SOCK_STREAM = TCP / SOCK_DGRAM = UDP
 
@@ -175,7 +173,6 @@ bool sendDSWNIFIFame(struct frameBlock * frameInst)
 		}
 		break;
 		case(dswifi_udpnifimode):
-		//case(dswifi_tcpnifimode):
 		{
 			Wifi_RawTxFrame_WIFI(sizetoSend , databuf_src);
 		}
@@ -205,7 +202,6 @@ struct frameBlock * receiveDSWNIFIFrame(uint8 * databuf_src,int frameSizeRecv)	/
 		}
 		break;
 		case(dswifi_udpnifimode):
-		//case(dswifi_tcpnifimode):
 		{
 			frame_hdr_size = 0;					//udp nifi frame has not this header
 			frameSizeRecv-=frame_hdr_size;
@@ -230,64 +226,57 @@ struct frameBlock * receiveDSWNIFIFrame(uint8 * databuf_src,int frameSizeRecv)	/
 	return frameRecvInst;
 }
 
-//0 idle, 1 nifi, 2 dswnifi
-void switch_dswnifi_mode(sint32 mode){
-	
+//if IDLE: returns true always, 
+//if UDPNIFI connect OK: true, otherwise false. 
+//if NIFI: returns true always
+//if GDBSTUB: connect OK: true, otherwise false.
+bool switch_dswnifi_mode(sint32 mode){
 	//idle mode minimal setup
 	if (mode == (sint32)dswifi_idlemode){
 		dswifiSrv.dsnwifisrv_stat	= ds_multi_notrunning;
-		setMULTIMode(dswifi_idlemode);
-		dswifiSrv.dswifi_setup = false;
+		setMULTIMode(mode);
+		setWIFISetup(false);
+		setConnectionStatus(proc_idle);
+		return true;
 	}
 	//Raw Network Packet Nifi
-	else if (mode == (sint32)dswifi_localnifimode){
-		//nifi
+	else if (mode == (sint32)dswifi_localnifimode){	
+		WNifi_InitSafeDefault(false,false);
 		dswifiSrv.dsnwifisrv_stat	= ds_searching_for_multi_servernotaware;
-		initNiFi();
-		setMULTIMode(dswifi_localnifimode);
-		dswifiSrv.dswifi_setup = false;
-	}
-	//UDP Nifi/WIFI
-	else if (
-		(mode == (sint32)dswifi_udpnifimode)
-		//||
-		//(mode == (sint32)dswifi_tcpnifimode)
-	){
-		dswifiSrv.dsnwifisrv_stat = ds_searching_for_multi_servernotaware;
 		setMULTIMode(mode);
-		dswifiSrv.dswifi_setup = false;
-	}
-	
-	// Idle
-	if(getMULTIMode() == dswifi_idlemode){
-		dswifiSrv.dswifi_setup = false;
-		setConnectionStatus(proc_idle);
-	}
-	
-	//set NIFI mode
-	else if((getMULTIMode() == dswifi_localnifimode) && (dswifiSrv.dswifi_setup == false)){
-		dswifiSrv.dswifi_setup = true;
 		setConnectionStatus(proc_connect);
+		setWIFISetup(true);
+		return true;		
 	}
-	
-	//set UDP/TCP DSWNIFI
-	else if(
-		(
-		(getMULTIMode() == dswifi_udpnifimode)
-		//||
-		//(getMULTIMode() == dswifi_tcpnifimode)
-		)
-		&& (dswifiSrv.dswifi_setup == false)
-	){
-		if(Wifi_InitDefault(WFC_CONNECT) == true)
+	//UDP Nifi (wifi AP)
+	else if (mode == (sint32)dswifi_udpnifimode){
+		dswifiSrv.dsnwifisrv_stat = ds_searching_for_multi_servernotaware;
+		if(WNifi_InitSafeDefault(WFC_CONNECT,true) == true)
 		{
-			//printf("connected: IP: %s",(char*)print_ip((uint32)Wifi_GetIP()));
 			setConnectionStatus(proc_connect);
-			dswifiSrv.dswifi_setup = true;
+			setMULTIMode(mode);
+			setWIFISetup(true);
+			return true;
 		}
 		else{
 			//Could not connect
-			setConnectionStatus(proc_idle);
+			switch_dswnifi_mode(dswifi_idlemode);
+			return false;
+		}
+	}
+	
+	//GDBStub mode
+	else if (mode == (sint32)dswifi_gdbstubmode){
+		dswifiSrv.dsnwifisrv_stat	= ds_multi_notrunning;
+		if (gdbNdsStart() == true){
+			setMULTIMode(mode);
+			setWIFISetup(true);
+			return true;
+		}
+		else{
+			//Could not connect
+			switch_dswnifi_mode(dswifi_idlemode);
+			return false;
 		}
 	}
 }
@@ -306,6 +295,12 @@ __attribute__((section(".itcm")))
 bool getWIFISetup(){
 	return (bool)dswifiSrv.dswifi_setup;
 }
+
+__attribute__((section(".itcm")))
+bool setWIFISetup(bool flag){
+	dswifiSrv.dswifi_setup = (bool)flag;
+}
+
 
 __attribute__((section(".itcm")))
 void setConnectionStatus(sint32 flag){
@@ -364,95 +359,8 @@ sint32 doMULTIDaemon(){
 				retDaemonCode = 0;
 				return retDaemonCode;
 			}
-			
-			//TCP NIFI Disabled
-			/*
-			if(getMULTIMode() == dswifi_tcpnifimode){
-				//client_http_handler_context.socket_id__multi_notconnected --> UDP : Used by connect to acknowledge the server, the DS ip.												
-				//client_http_handler_context.socket_multi_listener			-->	TCP : Used as DS Server listening port, for handshake with server so both DS can connect each other.	
-				//UDP: DSClient - Server IP / Desktop Server UDP companion Listener.
-				client_http_handler_context.socket_id__multi_notconnected=socket(AF_INET,SOCK_DGRAM,0);
-				int i=1;
-				i=ioctl(client_http_handler_context.socket_id__multi_notconnected,FIONBIO,&i); // set non-blocking port
-				memset((uint8*)&client_http_handler_context.sain_UDP_PORT, 0, sizeof(client_http_handler_context.sain_UDP_PORT));
-				client_http_handler_context.sain_UDP_PORT.sin_family=AF_INET;
-				client_http_handler_context.sain_UDP_PORT.sin_addr.s_addr=0;
-				client_http_handler_context.sain_UDP_PORT.sin_port=htons((int)UDP_PORT);
-				if(bind(client_http_handler_context.socket_id__multi_notconnected,(struct sockaddr *)&client_http_handler_context.sain_UDP_PORT,sizeof(client_http_handler_context.sain_UDP_PORT))) {
-					//binding ERROR
-					close(client_http_handler_context.socket_id__multi_notconnected);
-					retDaemonCode = -1;
-					return retDaemonCode;
-				}
-				else{
-					//binding OK
-				}
-				//UDP: DSClient - Server IP / Desktop Server UDP companion Sender
-				memset((uint8*)&client_http_handler_context.server_addr, 0, sizeof(client_http_handler_context.server_addr));
-				client_http_handler_context.server_addr.sin_family = AF_INET;
-				client_http_handler_context.server_addr.sin_addr.s_addr = inet_addr(server_ip);
-				client_http_handler_context.server_addr.sin_port = htons((int)UDP_PORT);
-				//no binding since we have no control of server port and we should not know it anyway, DGRAM specific.
-				
-				//////////////////////////////////////////////////TCP DS Server////////////////////////////////////////////////////////
-				
-				//Set TCP 7777 Companion Listener
-				client_http_handler_context.socket_multi_listener = socket(AF_INET, SOCK_STREAM, 0);	//UDP: unused,	TCP: Used as DS Server listening port, for handshake with server so both DS can connect each other.
-				if(-1 == client_http_handler_context.socket_multi_listener)
-				{
-					retDaemonCode = -1;
-					return retDaemonCode;
-				}
-				i=1;
-				i=ioctl(client_http_handler_context.socket_multi_listener,FIONBIO,&i); // TCP DS Server: set non-blocking port (otherwise emulator blocks)
-				
-				//Server Companion Listen Socket: TCP 7777
-				memset((uint8*)&client_http_handler_context.sain_listener, 0, sizeof(client_http_handler_context.sain_listener));
-				client_http_handler_context.sain_listener.sin_family = AF_INET;			// Internet/IP 
-				client_http_handler_context.sain_listener.sin_addr.s_addr = INADDR_ANY;	// let the system figure out our IP address 
-				client_http_handler_context.sain_listener.sin_port = htons((int)TCP_PORT);	// this is the port we will listen on 
-				if(bind(client_http_handler_context.socket_multi_listener,(struct sockaddr *)&client_http_handler_context.sain_listener, sizeof(client_http_handler_context.sain_listener)))
-				{
-					retDaemonCode = -1;
-					return retDaemonCode;
-				}
-				listen(client_http_handler_context.socket_multi_listener,5);	//DS Acts as server at desired port
-				
-				//This NDS IP MULTI: PORT
-				client_http_handler_context.socket_multi_sender = socket(AF_INET, SOCK_STREAM, 0);	//UDP: unused,	TCP: Used as DS Server listening port, for handshake with server so both DS can connect each other.
-				if(-1 == client_http_handler_context.socket_multi_sender)
-				{
-					clrscr();
-					//printf("cannot open DS EXT socket.");
-					while(1==1){}
-					
-					retDaemonCode = -1;
-					return retDaemonCode;
-				}
-				i=1;
-				i=ioctl(client_http_handler_context.socket_multi_sender,FIONBIO,&i); // TCP DS Server: set non-blocking port (otherwise emulator blocks)
-				
-				//Set TCP MULTI: incoming DS
-				client_http_handler_context.socket_multi_listenerNetplay = socket(AF_INET, SOCK_STREAM, 0);	//UDP: unused,	TCP: Used as DS Server listening port, for handshake with server so both DS can connect each other.
-				if(-1 == client_http_handler_context.socket_multi_listenerNetplay)
-				{
-					clrscr();
-					//printf("cannot open DS Server socket.");
-					while(1==1){}
-					retDaemonCode = -1;
-					return retDaemonCode;
-				}
-				i=1;
-				i=ioctl(client_http_handler_context.socket_multi_listenerNetplay,FIONBIO,&i); // TCP DS Server: set non-blocking port (otherwise emulator blocks)
-				
-				setConnectionStatus(proc_execution);
-				retDaemonCode = 1;
-				return retDaemonCode;
-			}
-			*/
 			//LOCAL NIFI: runs on DSWIFI process
 			if(getMULTIMode() == dswifi_localnifimode){
-				Wifi_EnableWifi();
 				setConnectionStatus(proc_execution);
 				retDaemonCode = 2;
 				return retDaemonCode;
@@ -684,196 +592,6 @@ sint32 doMULTIDaemon(){
 				retDaemonCode = 0;
 			}
 			
-			//TCP NIFI Disabled
-			/*
-			if(getMULTIMode() == dswifi_tcpnifimode){
-				int connectedSD = -1;
-				int read_size = 0;
-				struct sockaddr_in stSockAddrClient;
-				struct timeval timeout;
-				timeout.tv_sec = 0;
-				timeout.tv_usec = 0 * 1000;
-				int stSockAddrClientSize = sizeof(stSockAddrClient);
-				memset((uint8*)&stSockAddrClient, 0, sizeof(stSockAddrClient));
-				
-				volatile uint8 incomingbuf[frameDSsize] = {0};
-				volatile char cmd[12] = {0};	//srv->ds command handler
-				
-				switch(dswifiSrv.dsnwifisrv_stat){
-					//#1 DS is not connected, serve any upcoming commands related to non connected to multi
-					//ds_searching_for_multi_servernotaware -> ds_wait_for_multi here
-					case(ds_searching_for_multi_servernotaware):{
-						if(!(-1 == client_http_handler_context.socket_multi_listener))
-						{
-							//TCP @ PORT 7777 
-							if ((connectedSD = accept(client_http_handler_context.socket_multi_listener, (struct sockaddr *)(&stSockAddrClient), &stSockAddrClientSize)) == -1)
-							{ 
-								
-							}
-							else{
-								// Read from the socket 
-								//Receive a message from client (only data > 0 ), socket will be closed anyway
-								while( (read_size = recv(connectedSD , (uint8*)incomingbuf , sizeof(incomingbuf) , 0)) > 0 )
-								{
-									
-								}
-								//recvbuf[read_size] = '\0';
-								memcpy((uint8*)cmd,(uint8*)incomingbuf,sizeof(cmd));	//cmd recv
-								
-								//clrscr();
-								////printf("recvpacketdata!");
-								//Server aware
-								if(strncmp((const char *)cmd, (const char *)"srvaware", 8) == 0){
-									
-									//server send other NDS ip format: cmd-ip-multi_mode- (last "-" goes as well!)
-									char **tokens;
-									int count, i;
-									volatile char str[frameDSsize] = {0};
-									memcpy ( (uint8*)str, (uint8*)incomingbuf, sizeof(str));
-
-									count = split ((const char*)str, '-', &tokens);
-									for (i = 0; i < count; i++) {
-										//then send back "dsaware"
-										//char outgoingbuf[64];
-										//sprintf(outgoingbuf,"%s",tokens[i]);
-										//sendto(client_http_handler_context.socket_id__multi_notconnected,outgoingbuf,strlen(outgoingbuf),0,(struct sockaddr *)&client_http_handler_context.server_addr,sizeof(client_http_handler_context.server_addr));
-									}
-									
-									//tokens[0];	//cmd
-									//tokens[1];	//external NDS ip to connect
-									//tokens[2];	//host or guest
-									
-									int host_mode = strncmp((const char*)tokens[2], (const char *)"host", 4); //host == 0
-									int guest_mode = strncmp((const char*)tokens[2], (const char *)"guest", 5); //guest == 0
-									
-									int LISTENER_PORT 	=	0;
-									int SENDER_PORT		=	0;
-									if(host_mode == 0){
-										LISTENER_PORT 	= 	(int)NDSMULTI_TCP_PORT_HOST;
-										SENDER_PORT		=	(int)NDSMULTI_TCP_PORT_GUEST;
-									}
-									else if(guest_mode == 0){
-										LISTENER_PORT 	= 	(int)NDSMULTI_TCP_PORT_GUEST;
-										SENDER_PORT		=	(int)NDSMULTI_TCP_PORT_HOST;
-									}
-									
-									//TCP Setup:
-									//1# This NDS IP sockaddr_in: client_http_handler_context.sain_listener DS Server for Server Companion (port TCP 7777) runs in background
-									
-									
-									//2# This NDS IP MULTI:
-									memset((uint8*)&client_http_handler_context.sain_listenerNetplay, 0, sizeof(client_http_handler_context.sain_listenerNetplay));
-									client_http_handler_context.sain_listenerNetplay.sin_family = AF_INET;			// Internet/IP 
-									client_http_handler_context.sain_listenerNetplay.sin_addr.s_addr = INADDR_ANY;	// let the system figure out our IP address 
-									client_http_handler_context.sain_listenerNetplay.sin_port = htons((int)LISTENER_PORT);	// this is the port we will listen on 
-									
-									if(bind(client_http_handler_context.socket_multi_listenerNetplay,(struct sockaddr *)&client_http_handler_context.sain_listenerNetplay, sizeof(client_http_handler_context.sain_listenerNetplay)))
-									{
-										clrscr();
-										//printf("cannot bind DS Server socket.");
-										while(1==1){}
-										
-										retDaemonCode = -1;
-										return retDaemonCode;
-									}
-									
-									listen(client_http_handler_context.socket_multi_listenerNetplay,5);	//DS Acts as server at desired port
-									
-									////printf("this IP Address:%s",(char*)print_ip((uint32)Wifi_GetIP()));
-									////printf("destination IP Address:%s",(char*)tokens[1]);
-									//while(1==1){}
-									
-									//3# External NDS IP MULTI: sockaddr_in: sain_sender and use Connect(); !
-									
-									memset((uint8*)&client_http_handler_context.sain_sender, 0, sizeof(client_http_handler_context.sain_sender));
-									client_http_handler_context.sain_sender.sin_family = AF_INET;
-									client_http_handler_context.sain_sender.sin_addr.s_addr = inet_addr((char*)tokens[1]);	//external IP to connect to.
-									client_http_handler_context.sain_sender.sin_port = htons((int)SENDER_PORT); 
-									
-									//if connect fails:
-									if (connect(client_http_handler_context.socket_multi_sender,(struct sockaddr *)&client_http_handler_context.sain_sender,sizeof(client_http_handler_context.sain_sender)) < 0){
-										//printf("ERROR connecting");
-										while(1==1){}
-									}
-									//if connect success:
-									else{
-										clrscr();
-										//printf("connect OK");
-										//if host
-										if(host_mode == 0){
-											dswifiSrv.dsnwifisrv_stat = ds_netplay_host;
-											//nifi_stat = 5;
-											//printf("DSCONNECTED:HOST!");
-										}
-										//if guest
-										else if(guest_mode == 0){
-											dswifiSrv.dsnwifisrv_stat = ds_netplay_guest;
-											//nifi_stat = 6;
-											//printf("DSCONNECTED:GUEST!");
-										}
-									}
-									
-									//SenderFrame uses: client_http_handler_context.socket_multi_sender
-									//RecvFrameHandler receives msges in: client_http_handler_context.socket_multi_listenerNetplay
-								}
-							}
-							close(connectedSD);
-						}
-						
-						//TCP (use UDP):Internal Sender Handshake. Does run during the DS - DS handshake, when DS are connected through UDP NetPlay, they this does not run anymore.
-						volatile unsigned long available_ds = 0;
-						ioctl(client_http_handler_context.socket_id__multi_notconnected, FIONREAD, (uint8*)&available_ds);
-						
-						if(available_ds == 0){
-							char outgoingbuf[frameDSsize] = {0};
-							sprintf(outgoingbuf,"dsnotaware-NIFINintendoDS-%s-TCP",(char*)print_ip((uint32)Wifi_GetIP()));	//DS udp ports on server inherit the logic from "//Server aware" handler
-							sendto(client_http_handler_context.socket_id__multi_notconnected,outgoingbuf,strlen(outgoingbuf),0,(struct sockaddr *)&client_http_handler_context.server_addr,sizeof(client_http_handler_context.server_addr));
-						}
-					}
-					break;
-					
-					//#last:connected!
-					//TCP
-					//logic: recv data: frameDSsize from port
-					case(ds_netplay_host):case(ds_netplay_guest):{
-						
-						//DS-DS TCP Handler listener
-						if(!(-1 == client_http_handler_context.socket_multi_listenerNetplay))
-						{
-							//TCP
-							if ((connectedSD = accept(client_http_handler_context.socket_multi_listenerNetplay, (struct sockaddr *)(&stSockAddrClient), &stSockAddrClientSize)) == -1)
-							{ 
-								//perror("accept"); exit(1); 
-							}
-							else{
-								// Read from the socket 
-								//Receive a message from client (only data > 0 ), socket will be closed anyway
-								while( (read_size = recv(connectedSD , (uint8*)incomingbuf , sizeof(incomingbuf) , 0)) > 0 )
-								{
-									
-								}
-								//decide whether to put data in userbuffer and if frame is valid here
-								struct frameBlock * frameHandled = receiveDSWNIFIFrame((uint8*)incomingbuf,read_size);
-								if(frameHandled != NULL){
-									clrscr();
-									//printf("TCP: Frame recv OK");
-									//trigger the User Recv Process here
-									HandleRecvUserspace(frameHandled);	//Valid Frame
-								}
-								else{
-									clrscr();
-									//printf("TCP: Frame recv ERROR");
-									//Invalid Frame
-								}
-							}
-							close(connectedSD);
-						}
-					}
-					break;
-				}
-				retDaemonCode = 1;
-			}
-			*/
 			//Local Nifi: runs from within the DSWIFI frame handler itself so ignored here.
 			if(getMULTIMode() == dswifi_localnifimode){
 				retDaemonCode = 2;
@@ -997,15 +715,10 @@ int Wifi_RawTxFrame_WIFI(sint32 datalen, uint8 * data) {
 	switch(dswifiSrv.dsnwifisrv_stat){
 		//#last:connected!
 		case(ds_netplay_host):case(ds_netplay_guest):{
-			//TCP Removed
-			//if(getMULTIMode() == dswifi_tcpnifimode){
-			//	sendto(client_http_handler_context.socket_multi_sender,data,datalen,0,(struct sockaddr *)&client_http_handler_context.sain_sender,sizeof(client_http_handler_context.sain_sender));
-			//}
-			//Default to UDP
-			//if(getMULTIMode() == dswifi_udpnifimode){
+			if(getMULTIMode() == dswifi_udpnifimode){
 				//send NIFI Frame here
 				sendto(client_http_handler_context.socket_multi_sender,data,datalen,0,(struct sockaddr *)&client_http_handler_context.sain_sender,sizeof(client_http_handler_context.sain_sender));
-			//}
+			}
 		}
 		break;
 	}
@@ -1078,21 +791,13 @@ bool remoteConnected = false;
 bool remoteResumed = false;
 
 bool gdbNdsStart(){
-	if(dswifiSrv.dswifi_setup == false){
-		if(Wifi_InitDefault(WFC_CONNECT) == true)
-		{
-			printf("Connected: IP: %s",(char*)print_ip((uint32)Wifi_GetIP()));
-			dswifiSrv.dswifi_setup = true;
-		}
-	}
-	
-	if(dswifiSrv.dswifi_setup == true){
-		printf("GDBPort:%d",remotePort);
+	dswifiSrv.GDBStubEnable = false;
+	if(WNifi_InitSafeDefault(WFC_CONNECT,true) == true){
+		printf("GDBPort:%d",remotePort);	//must show port so client has IP+Port to connect
 		remoteInit();
 		dswifiSrv.GDBStubEnable = true;
 		return true;
 	}
-		
 	return false;
 }
 
@@ -1113,7 +818,7 @@ if(remoteSocket == -1) {
     int s = socket(PF_INET, SOCK_STREAM, 0);
     remoteListenSocket = s;
 	if(s < 0) {
-		//printf("Error opening socket ");
+		printf("Error opening socket ");
 		while(1==1){}
 	}
     int tmp = 1;
@@ -1142,9 +847,8 @@ if(remoteSocket == -1) {
     }
 
     //printf("Listening for a connection at port %d ",ntohs(addr.sin_port));
-
     if(listen(s, 1)) {
-		//printf("Error listening ");
+		printf("Error listening ");
 		while(1==1){}
     }
     int len = sizeof(addr);	//socklen_t
@@ -1557,7 +1261,7 @@ void remoteWriteRegister(char *p)
 
 void remoteStubMain()
 {
-	if( (dswifiSrv.dswifi_setup == true) && (dswifiSrv.GDBStubEnable == true) ){
+	if( (getMULTIMode() == dswifi_gdbstubmode) && (getWIFISetup() == true) && (dswifiSrv.GDBStubEnable == true) ){
 	
 		if(remoteResumed) {
 			remoteSendStatus();
@@ -1565,8 +1269,17 @@ void remoteStubMain()
 		}
 		char * buffer = (char *)malloc(1024);
 		int res = remoteRecvFnc(buffer, 1024);
+		//if DSWIFI connection is lost, re-connect and init GDB Server right now.
 		if(res == -1) {
-			//printf("GDB connection lost ");
+			remoteCleanUp();
+			clrscr();
+			printf("GDB Client must connect to DS now.");
+			if (switch_dswnifi_mode(dswifi_gdbstubmode) == true){
+				//printf("GDB Client Reconnect:OK");
+			}
+			else{
+				//printf("GDB Client Reconnect:ERROR");
+			}
 		}
 		else{
 			char *p = buffer;
@@ -1652,6 +1365,9 @@ void remoteStubMain()
 		}
 		free(buffer);
 	}
+	else{
+		switch_dswnifi_mode(dswifi_gdbstubmode);	//GDB Stub start
+	}
 }
 
 void remoteStubSignal(int sig, int number)
@@ -1665,6 +1381,7 @@ void remoteCleanUp()
 {
   if(remoteCleanUpFnc)
     remoteCleanUpFnc();
+	dswifiSrv.GDBStubEnable = false;
 }
 
 

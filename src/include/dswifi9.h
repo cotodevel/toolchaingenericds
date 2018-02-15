@@ -102,14 +102,6 @@ extern unsigned long Wifi_Init(int initflags);
 //  Returns: 1 if the arm7 is ready for wifi, 0 otherwise
 extern int Wifi_CheckInit();
 
-// Wifi_DisableWifi: Instructs the ARM7 to disengage wireless and stop receiving or
-//   transmitting.
-extern void Wifi_DisableWifi();
-
-// Wifi_EnableWifi: Instructs the ARM7 to go into a basic "active" mode, not actually
-//   associated to an AP, but actively receiving and potentially transmitting
-extern void Wifi_EnableWifi();
-
 // Wifi_SetPromiscuousMode: Allows the DS to enter or leave a "promsicuous" mode, in which 
 //   all data that can be received is forwarded to the arm9 for user processing.
 //   Best used with Wifi_RawSetPacketHandler, to allow user code to use the data
@@ -234,11 +226,8 @@ extern void Wifi_Sync();
 //  WifiSyncHandler sh:    Pointer to the function to be called for notification.
 extern void Wifi_SetSyncHandler(WifiSyncHandler sh);
 
-#define WFC_CONNECT	true
-#define INIT_ONLY	false
-
-
-extern bool Wifi_InitDefault(bool useFirmwareSettings);
+#define WFC_CONNECT	(bool)(true)
+#define INIT_ONLY	(bool)(false)
 
 #ifdef __cplusplus
 };

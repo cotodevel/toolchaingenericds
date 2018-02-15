@@ -286,6 +286,8 @@ extern "C" {
 extern uint32 SLasm_Acquire(volatile uint32 * lockaddr, uint32 lockvalue);
 extern uint32 SLasm_Release(volatile uint32 * lockaddr, uint32 lockvalue);
 
+extern void DeInitWIFI();
+
 #ifdef __cplusplus
 };
 #endif

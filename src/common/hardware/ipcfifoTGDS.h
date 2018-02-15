@@ -36,48 +36,48 @@ USA
 #define consolebuf_size (sint32)(100)
 
 //irqs
-#define VCOUNT_LINE_INTERRUPT 0
+#define VCOUNT_LINE_INTERRUPT (sint32)(0)
 
 //void writemap_ext_armcore(0x04000208,0x000000ff,WRITE_VALUE_8);
-#define WRITE_VALUE_8	0xf0
-#define WRITE_VALUE_16	0xf1
-#define WRITE_VALUE_32	0xf2
+#define WRITE_VALUE_8	(uint32)(0xf0)
+#define WRITE_VALUE_16	(uint32)(0xf1)
+#define WRITE_VALUE_32	(uint32)(0xf2)
 
 //FIFO Hardware -> FIFO Software: GetSoftFIFO / SetSoftFIFO	/ 
-#define FIFO_NDS_HW_SIZE (16*4)
+#define FIFO_NDS_HW_SIZE (sint32)(16*4)
 #define FIFO_SOFTFIFO_WRITE_EXT	(uint32)(0xffff1017)
 #define FIFO_SOFTFIFO_READ_EXT	(uint32)(0xffff1018)
 
 //PowerCnt Read / PowerCnt Write
-#define FIFO_POWERCNT_ON	0xffff0004
-#define FIFO_POWERCNT_OFF	0xffff0005
+#define FIFO_POWERCNT_ON	(uint32)(0xffff0004)
+#define FIFO_POWERCNT_OFF	(uint32)(0xffff0005)
 
 //FIFO - WIFI
-#define WIFI_SYNC 0xffff0006
-#define WIFI_STARTUP 0xffff0007
+#define WIFI_SYNC (uint32)(0xffff0006)
+#define WIFI_INIT (uint32)(0xffff0007)
+#define WIFI_DEINIT (uint32)(0xffff0100)
 
 //Exception Handling
-#define EXCEPTION_ARM7 0xffff0008
-#define EXCEPTION_ARM9 0xffff0009
+#define EXCEPTION_ARM7 (uint32)(0xffff0008)
+#define EXCEPTION_ARM9 (uint32)(0xffff0009)
 
 //PowerManagementWrite
 #define FIFO_POWERMGMT_WRITE	(uint32)(0xffff1019)
 
 //printf7 FIFO
 #define FIFO_PRINTF_7	(uint32)(0xffff101a)
-
 #define FIFO_IPC_MESSAGE	(uint32)(0xffff1010)
 
-#define SEND_FIFO_IPC_EMPTY	(1<<0)	
-#define SEND_FIFO_IPC_FULL	(1<<1)	
-#define SEND_FIFO_IPC_IRQ	(1<<2)		
-#define SEND_FIFO_IPC_CLEAR	(1<<3)	
-#define RECV_FIFO_IPC_EMPTY	(1<<8)	
-#define RECV_FIFO_IPC_FULL	(1<<9)	
-#define RECV_FIFO_IPC_IRQ	(1<<10)	
+#define SEND_FIFO_IPC_EMPTY	(uint32)(1<<0)	
+#define SEND_FIFO_IPC_FULL	(uint32)(1<<1)	
+#define SEND_FIFO_IPC_IRQ	(uint32)(1<<2)		
+#define SEND_FIFO_IPC_CLEAR	(uint32)(1<<3)	
+#define RECV_FIFO_IPC_EMPTY	(uint32)(1<<8)	
+#define RECV_FIFO_IPC_FULL	(uint32)(1<<9)	
+#define RECV_FIFO_IPC_IRQ	(uint32)(1<<10)	
 
-#define FIFO_IPC_ERROR	(1<<14)	
-#define FIFO_IPC_ENABLE	(1<<15)
+#define FIFO_IPC_ERROR	(uint32)(1<<14)	
+#define FIFO_IPC_ENABLE	(uint32)(1<<15)
 
 //fifo 
 #define REG_IPC_FIFO_TX		(*(vuint32*)0x4000188)
@@ -90,8 +90,6 @@ USA
 //audio API
 #define FIFO_STOPSAMPLE		(uint32)(0xffff1020)
 #define FIFO_STARTSAMPLE	(uint32)(0xffff1021)
-
-#define FIFO_SETSHAREDAUDIOHANDLER	(uint32)(0xffff1022)
 
 struct sIPCSharedTGDS {
     uint16 buttons7;  			// X, Y, /PENIRQ buttons
@@ -160,8 +158,7 @@ extern "C"{
 extern __attribute__((weak))	void HandleFifoNotEmptyWeakRef(uint32 cmd1,uint32 cmd2,uint32 cmd3,uint32 cmd4);
 extern __attribute__((weak))	void HandleFifoEmptyWeakRef(uint32 cmd1,uint32 cmd2,uint32 cmd3,uint32 cmd4);
 
-
-//FIFO 
+//FIFO
 extern int GetSoftFIFOCount();
 extern bool SetSoftFIFO(uint32 value);
 extern bool GetSoftFIFO(uint32 * var);

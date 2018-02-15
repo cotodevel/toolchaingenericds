@@ -33,6 +33,7 @@ SOFTWARE.
 #include "dsregs_asm.h"
 
 #include "wifi_shared.h"
+#include "sgIP_Hub.h"
 
 // default option is to use 128k heap
 #define WIFIINIT_OPTION_USEHEAP_128    0x0000
@@ -108,6 +109,11 @@ extern uint32 Wifi_TxBufferWordsAvailable();
 extern void Wifi_TxBufferWrite(sint32 start, sint32 len, uint16 * data);
 
 extern void Timer_50ms(void);
+extern sgIP_Hub_HWInterface * wifi_hw;
+
+//useFirmwareSettings == true: use DS AP settings to connect to AP
+//useWIFI == true: use WIFI connection. useWIFI == false: use NIFI connection.
+extern bool WNifi_InitSafeDefault(bool useFirmwareSettings, bool useWIFI);
 #ifdef __cplusplus
 }
 #endif

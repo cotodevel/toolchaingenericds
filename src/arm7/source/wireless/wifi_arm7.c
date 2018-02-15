@@ -44,12 +44,20 @@ int chdata_save5 = 0;
 //  Flash support functions
 //
 //char FlashData[512];
-char * FlashData;		//use new section to prevent using ARM7 upper 32K memory
+char * FlashData = NULL;		//use new section to prevent using ARM7 upper 32K memory
 
 void InitFlashData() {
-	FlashData = (char *)vramAlloc(vramBlockD,0x06000000,512);
+	FlashData = (char *)malloc(512);
 	readFirmwareSPI(0,FlashData,512);
 }
+
+void DeInitFlashData() {
+	if(FlashData){
+		free(FlashData);
+		FlashData = NULL;
+	}
+}
+
 
 int ReadFlashByte(int address) {
 	if(address<0 || address>511) return 0;
@@ -904,6 +912,8 @@ void Wifi_Init(uint32 wifidata) {
 void Wifi_Deinit() {
 	Wifi_Stop();
 	POWERCNT7 &= ~2;
+	DeInitFlashData();
+	//todo:trace the new vramPTR through print7
 }
 
 void Wifi_Start() {

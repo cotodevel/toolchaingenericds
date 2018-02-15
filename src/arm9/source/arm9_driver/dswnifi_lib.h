@@ -18,7 +18,7 @@ USA
 
 */
 
-//DSWNifi Library 1.2
+//DSWNifi Library 1.3 (update: 15/02/2018)
 
 #ifndef __dswnifi_lib_h__
 #define __dswnifi_lib_h__
@@ -82,10 +82,10 @@ USA
 #define proc_shutdown (sint32)(3)
 
 //coto: nifi & wifi support. todo: test in order
-//#define dswifi_tcpnifimode (sint32)(4)	//TCP, disabled
 #define dswifi_udpnifimode (sint32)(5)	//UDP Nifi
 #define dswifi_localnifimode (sint32)(6)	//Raw Network Packet Nifi
 #define dswifi_idlemode (sint32)(7)	//Idle
+#define dswifi_gdbstubmode (sint32)(14)	//GDB Stub mode
 
 //special udp nifi/wifi mode
 #define ds_multi_notrunning (sint32)(8)
@@ -136,10 +136,10 @@ struct frameBlock{
 //---------------------------------------------------------------------------------
 struct dsnwifisrvStr {
 //---------------------------------------------------------------------------------
-	sint32 dsnwifisrv_mode;	//dswifi_idlemode / dswifi_localnifimode / dswifi_udpnifimode / dswifi_tcpnifimode				//used by setMULTIMode() getMULTIMode()
+	sint32 dsnwifisrv_mode;	//dswifi_idlemode / dswifi_localnifimode / dswifi_udpnifimode / dswifi_gdbstubmode		//used by setMULTIMode() getMULTIMode()
 	sint32	connectionStatus;	//proc_idle / proc_connect / proc_execution / proc_shutdown	//used by getConnectionStatus() setConnectionStatus()
 	sint32 	dsnwifisrv_stat;	//MULTI: inter DS Connect status: ds_multi_notrunning / ds_searching_for_multi / (ds_multiplay): ds_netplay_host ds_netplay_guest
-	bool dswifi_setup;	//false: not setup / true: setup already
+	bool dswifi_setup;	//false: not setup / true: setup already	//used by getWIFISetup() / setWIFISetup()
 	bool incoming_packet;	//when any of the above methods received a packet == true / no == false
 	bool GDBStubEnable;	
 };
@@ -292,10 +292,11 @@ extern int getintdiff(int a,int b);
 extern int Wifi_RawTxFrame_WIFI(sint32 datalen, uint8 * data);
 extern int Wifi_RawTxFrame_NIFI(sint32 datalen, uint16 rate, uint16 * data);
 
-extern void switch_dswnifi_mode(sint32 mode);
+extern bool switch_dswnifi_mode(sint32 mode);
 extern void setMULTIMode(sint32 flag);	//idle(dswifi_idlemode) / raw packet(dswifi_localnifimode) / UDP nifi(dswifi_udpnifimode) / TCP wifi(dswifi_wifimode)
 extern sint32 getMULTIMode();			//idle(dswifi_idlemode) / raw packet(dswifi_localnifimode) / UDP nifi(dswifi_udpnifimode) / TCP wifi(dswifi_wifimode)
 extern bool getWIFISetup();
+extern bool setWIFISetup(bool flag);
 extern void setConnectionStatus(sint32 flag);
 extern void getConnectionStatus(sint32 flag);
 extern struct frameBlock * FrameSenderUser;	//if !NULL, then must sendFrame. HandleSendUserspace(); generates this one
