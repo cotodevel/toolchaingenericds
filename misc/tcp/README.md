@@ -17,39 +17,22 @@ Use any DS game that supports NIFI to setup the DS to connect to the device you 
 if you want you can set the IP your server uses (static I would suggest) in there, recompile TGDS + project so changes are made.
 The Server Companion detects the IP used to Network in the current PC, so if you connect your PC to WIFI hotspot, that IP is the one you must reflect back in the file said above.
 
-3) On the project, at startup (main(); function), you must init the DSWNIFI library like this:
+3) On the TGDS project you use this function to enter UDP NIFI mode:
 
-[
-main(){
-....
-	//stub example FS init
-	int ret=FS_init();
-	if (ret == 0)
-	{
-		printf(_STR(IDS_FS_SUCCESS));
-		//FRESULT res = FS_chdir("0:/");
-	}
-	else if(ret == -1)
-	{
-		printf(_STR(IDS_FS_FAILED));
-	}
-...
-	
-	//single player:
-	switch_dswnifi_mode(dswifi_udpnifimode);
-]
+//udp nifi:
+switch_dswnifi_mode(dswifi_udpnifimode);
 
-Now recompile and copy the project to your DS.
+Once recompiled, you copy TGDS project to your DS, and run. But do not call the above call yet.
 
 3) head to /bin folder, run ConsoleApplication1.exe, a console with yellow letters will pop-up saying to connect two (yes 2) DSs in the same network.
 
-Run the project that supports DSWNIFI, make sure you init'd the code as told above. 
-Then the console running in the server should detect 1 DS connected. Repeat the same steps for the second DS. 
+Now, while running the TGDS project, call the code shown in //udp nifi:
+By then, the Windows console app running in the server companion should detect 1 DS connected. Repeat the same steps for the second DS. 
 When two DSes are connected, they will connect each other!
 
 Check the project specific folder: common/dswnifi.cpp file explaining how to override userCode sender, userCode ReceiveHandler so you add them to your project.
 
-As of now the DSWNIFI library support local nifi and udp nifi, tcp nifi was scrapped. UDP will do just fine.
+As of now the DSWNIFI library support local nifi and udp nifi.
 
 
 
