@@ -39,6 +39,8 @@ USA
 #include <stdarg.h>
 #include <time.h>
 #include "posixHandleTGDS.h"
+#include "dldi.h"
+#include "clockTGDS.h"
 
 //fatfs
 FATFS dldiFs;
@@ -1282,4 +1284,10 @@ sint32 getDiskSectorSize(){
 		#endif
 	}
 	return diskSectorSize;
+}
+
+char * dldi_tryingInterface(){
+	//DS DLDI
+	struct DLDI_INTERFACE * DLDI_INTERFACEInst = dldiGet();
+	return DLDI_INTERFACEInst->friendlyName;
 }
