@@ -21,6 +21,10 @@ const struct DISC_INTERFACE_STRUCT* dldiGetInternal (void) {
 	if (_io_dldi_stub.ioInterface.features & FEATURE_SLOT_NDS) {
 		setCpuNdsBusAccessPrio(NDSSLOT_ARM9BUS);
 	}
+	
+	return &dldiGet()->ioInterface;
+}
 
-	return &_io_dldi_stub.ioInterface;
+struct DLDI_INTERFACE* dldiGet(void) {
+	return &_io_dldi_stub;
 }

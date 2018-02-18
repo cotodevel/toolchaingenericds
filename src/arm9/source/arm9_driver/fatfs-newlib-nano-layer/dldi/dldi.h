@@ -102,10 +102,13 @@ You'll need to set the bus permissions appropriately before using.
 extern const DLDI_INTERFACE* io_dldi_data;
 
 /*
-Return a pointer to the internal IO interface, 
-setting up bus permissions in the process.
+Return a pointer to the internal IO interface, (DLDI handle-> struct DISC_INTERFACE_STRUCT ioInterface)
+while setting hardware bus owner (either SLOT1 or SLOT2, depending from cart nature).
 */
 extern const struct DISC_INTERFACE_STRUCT* dldiGetInternal (void);
+
+/* pointer to DLDI_INTERFACE (DLDI handle) */
+extern struct DLDI_INTERFACE* dldiGet(void);
 
 #ifdef __cplusplus
 }
