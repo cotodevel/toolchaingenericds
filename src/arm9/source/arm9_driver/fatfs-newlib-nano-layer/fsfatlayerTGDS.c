@@ -51,6 +51,12 @@ int		FS_init()
 	return fatfs_init();
 }
 
+//For de-initializing Filesystem
+int		FS_deinit()
+{
+	return fatfs_deinit();
+}
+
 //converts a "folder/folder.../file.fil" into a proper filesystem fullpath
 volatile sint8 charbuf[NAME_MAX+1];
 sint8 * getfatfsPath(sint8 * filename){
@@ -1123,6 +1129,10 @@ void fatfs_seekdir(DIR *dirp, long loc)
 int fatfs_init()
 {
     return (f_mount(&dldiFs, "0:", 1));
+}
+
+int fatfs_deinit(){
+	return (f_unmount("0:"));
 }
 
 

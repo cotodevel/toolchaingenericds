@@ -95,7 +95,9 @@ extern FATFS dldiFs;
 /* Function prototypes */
 
 extern int		FS_init();
+extern int		FS_deinit();
 extern int fatfs_init();
+extern int fatfs_deinit();
 extern int fatfs_write (int fd, sint8 *ptr, int len);
 extern int fatfs_read (int fd, sint8 *ptr, int len);
 extern int fatfs_close (int fd);
