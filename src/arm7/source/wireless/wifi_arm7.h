@@ -132,6 +132,8 @@ extern void wifiAddressHandler( void * address, void * userdata );
 extern void arm7_synctoarm9();
 
 extern void installWifiFIFO();
+extern int crc16_slow(uint8 * data, int length);
+extern void GetWfcSettings();
 
 #ifdef __cplusplus
 }
