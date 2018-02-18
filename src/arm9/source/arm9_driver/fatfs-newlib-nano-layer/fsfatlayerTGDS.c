@@ -1254,6 +1254,24 @@ DWORD clust2sect (  /* !=0:Sector number, 0:Failed (invalid cluster#) */
     return clst * fs->csize + fs->database;
 }
 
+//FATFS: The file handle start cluster is in fp->obj.sclust as long as you haven't read from that file (otherwise its in fp->clust)
+sint32	getStructFDFirstCluster(struct fd *fdinst){
+	if(fdinst){
+		if( (int)fdinst->filPtr->fptr == (int)0 ){
+			return (int)(fdinst->filPtr->obj.sclust);
+		}
+		else{
+			if(fdinst->filPtr){
+				return (int)(fdinst->filPtr->clust);
+			}
+			else{
+				return -1;
+			}
+		}
+	}
+	return -1;
+}
+
 //args: int ClusterOffset (1) : int SectorOffset (N). = 1 physical sector in disk. Each sector is getDiskSectorSize() bytes. Cluster 0 + Sector 0 == Begin of FileHandle
 //returns -1 if : file not open, directory or fsfat error
 sint32 getStructFDSectorOffset(struct fd *fdinst,int ClusterOffset,int SectorOffset){	//	struct File Descriptor (FILE * open through fopen() -> then converted to int32 from fileno())
