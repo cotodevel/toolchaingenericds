@@ -100,7 +100,7 @@ ulong get_nds_seconds(uchar *time)
 	tmInst.tm_min  = time[5];
 	tmInst.tm_hour = hours;
 	
-	setDayOfWeek((uint8)time[3]);	//get day of week
+	TGDSsetDayOfWeek((uint8)time[3]);	//get day of week
 	
 	tmInst.tm_mday = time[2];
 	tmInst.tm_mon  = time[1];
@@ -266,7 +266,7 @@ struct tm * getTime(){
 	return(struct tm *)(&getsIPCSharedTGDS()->tmInst);
 }
 
-uint8 getDayOfWeek(){
+uint8 TGDSgetDayOfWeek(){
 	#ifdef ARM9
 	//Prevent Cache problems.
 	coherent_user_range_by_size((uint32)getsIPCSharedTGDS(), sizeof(struct sIPCSharedTGDS));
@@ -274,7 +274,7 @@ uint8 getDayOfWeek(){
 	return (uint8)getsIPCSharedTGDS()->dayOfWeek;
 }
 
-void setDayOfWeek(uint8 DayOfWeek){
+void TGDSsetDayOfWeek(uint8 DayOfWeek){
 	#ifdef ARM9
 	//Prevent Cache problems.
 	coherent_user_range_by_size((uint32)getsIPCSharedTGDS(), sizeof(struct sIPCSharedTGDS));
