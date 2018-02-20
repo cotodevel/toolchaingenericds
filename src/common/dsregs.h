@@ -81,16 +81,35 @@ USA
 #define REG_IE	IE
 #define REG_IF	IF
 #define REG_IME	IME
+#define IME_DISABLE	(uint32)(0)
+#define IME_ENABLE	(uint32)(1)
+
 #define REG_DISPSTAT	DISPSTAT
 #define REG_DISPCNT		DISPCNT
 #define REG_DISPCNT_SUB		DISPCNT2
 #define REG_POWERCNT 	(*(vuint16*)0x4000304)
 #define REG_POWERCNT_ADDR	(uint32)(0x04000304)
+#define POWER_CR REG_POWERCNT
+
 #define REG_VCOUNT	VCOUNT
 #define		CART		((uint16 *) 0x08000000)
 #define		DISPCNT2	(*((uint32 volatile *) 0x04001000))
 #define		DISPSTAT2	(*((uint16 volatile *) 0x04001004))
 
+//sound
+#define SOUND_VOL(n)	(n)
+#define SOUND_FREQ(n)	((-0x1000000 / (n)))
+#define SOUND_ENABLE	(1<<15)
+#define SOUND_REPEAT    (1<<17)
+#define SOUND_ONE_SHOT  (1<<28)	
+#define SOUND_FORMAT_16BIT (1<<29)
+#define SOUND_FORMAT_8BIT	(0<<29)
+#define SOUND_FORMAT_PSG    (3<<29)
+#define SOUND_FORMAT_ADPCM  (2<<29)
+#define SOUND_16BIT      (1<<29)
+#define SOUND_8BIT       (0)
+#define SOUND_PAN(n)	((n) << 16)
+#define SCHANNEL_ENABLE (1<<31)
 #define SCHANNEL_CR(n)				(*(vuint32*)(0x04000400 + ((n)<<4)))
 #define SCHANNEL_VOL(n)				(*(vuint8*)(0x04000400 + ((n)<<4)))
 #define SCHANNEL_PAN(n)				(*(vuint8*)(0x04000402 + ((n)<<4)))
@@ -99,22 +118,8 @@ USA
 #define SCHANNEL_REPEAT_POINT(n)	(*(vuint16*)(0x0400040A + ((n)<<4)))
 #define SCHANNEL_LENGTH(n)			(*(vuint32*)(0x0400040C + ((n)<<4)))
 
-#define SOUND_VOL(n)	(n)
-#define SOUND_FREQ(n)	((-0x1000000 / (n)))
-#define SOUND_ENABLE	(1<<15)
-
-#define SOUND_REPEAT    (1<<17)
-#define SOUND_ONE_SHOT  (1<<28)	
-
-#define SOUND_FORMAT_16BIT (1<<29)
-#define SOUND_FORMAT_8BIT	(0<<29)
-#define SOUND_FORMAT_PSG    (3<<29)
-#define SOUND_FORMAT_ADPCM  (2<<29)
-
-#define SOUND_PAN(n)	((n) << 16)
-
-#define SCHANNEL_ENABLE (1<<31)	
 #define REG_KEYINPUT (*(uint16*)0x04000132)
+
 
 /////////////////////////////////////////////////////////////// Shared End
 
@@ -511,6 +516,7 @@ USA
 #ifdef ARM7
 #define REG_KEYXY 		(*(vuint16*)0x04000136)
 #define REG_SOUNDCNT 	(*(vuint16*)0x4000500)
+#define SOUND_CR			REG_SOUNDCNT
 #define		POWERCNT7	(*((uint16 volatile *) 0x04000304))
 
 //touch
@@ -528,11 +534,18 @@ USA
 #define POWERMAN_ARM7		0
 #define POWER_SOUND (1<<0)					//	Controls the power for the sound controller.
 
-
 //sound
-#define REG_MASTER_VOLUME	(*(vuint8*)0x4000500)
-#define REG_SOUNDCNT		(*(vuint16*)0x4000500)
+#define REG_SOUNDCNT		(*(vuint16*)0x4000500)	//#define SOUND_CR          (*(vuint16*)0x04000500)
+#define REG_MASTER_VOLUME	(*(vuint8*)0x4000500)	
+
 #define REG_SOUNDBIAS		(*(vuint32*)0x4000504)
+#define SOUND_BIAS        (*(vuint16*)0x04000504)
+#define SOUND508          (*(vuint16*)0x04000508)
+#define SOUND510          (*(vuint16*)0x04000510)
+#define SOUND514                  (*(vuint16*)0x04000514)
+#define SOUND518          (*(vuint16*)0x04000518)
+#define SOUND51C          (*(vuint16*)0x0400051C)
+
 
 #endif
 //ARM7 END

@@ -50,8 +50,8 @@ USA
 // i.e. when we're part of a continuous transfer
 #define BIT_SPICNT_CSHOLDENABLE		(1 << 11)	//#define SPI_CONTINUOUS       (1<<11)
 
-#define		REG_SPI_CR		(*((uint16 volatile *) 0x040001C0))
-#define		REG_SPI_DATA	(*((uint16 volatile *) 0x040001C2))
+#define		REG_SPI_CR		(*((uint16 volatile *) 0x040001C0))	//#define 	REG_SPICNT   (*(vuint16*)0x040001C0)
+#define		REG_SPI_DATA	(*((uint16 volatile *) 0x040001C2))	//#define 	REG_SPIDATA   (*(vuint16*)0x040001C2)
 
 #define		BITMASK_SPI_DATA	0xff
 

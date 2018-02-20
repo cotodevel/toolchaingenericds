@@ -183,8 +183,19 @@ extern void SET_MAIN_TOP_LCD();
 extern void SET_MAIN_BOTTOM_LCD();
 
 //VRAM
-extern void SETDISPCNT_MAIN(uint32 mode);
-extern void SETDISPCNT_SUB(uint32 mode);
+extern void SETDISPCNT_MAIN(uint32 mode);	//videoSetMode
+extern void SETDISPCNT_SUB(uint32 mode);	//videoSetModeSub
+
+extern void VRAMBLOCK_SETBANK_A(uint8 vrambits);
+extern void VRAMBLOCK_SETBANK_B(uint8 vrambits);
+extern void VRAMBLOCK_SETBANK_C(uint8 vrambits);
+extern void VRAMBLOCK_SETBANK_D(uint8 vrambits);
+extern void VRAMBLOCK_SETBANK_E(uint8 vrambits);
+extern void VRAMBLOCK_SETBANK_F(uint8 vrambits);
+extern void VRAMBLOCK_SETBANK_G(uint8 vrambits);
+extern void VRAMBLOCK_SETBANK_H(uint8 vrambits);
+extern void VRAMBLOCK_SETBANK_I(uint8 vrambits);
+
 extern void ENABLE_BG_MAIN(int bg);
 extern void ENABLE_BG_SUB(int bg);
 extern void DISABLE_BG_MAIN(int number);
