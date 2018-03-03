@@ -73,7 +73,7 @@ $(OBJDIR)/%.o : %.c
 #Do C++ (G++) Compile now!
 $(OBJDIR)/%.o : %.cpp
 	-@echo 'C++ Compile start: $@'
-	$(G++)	$(CC_ASFLAGS)	$(CPP_FLAGS)	$(DIRLIBS_HDR)	$(DIRLIBS_SRC)	-nostdinc	$(DIRLIBS_PROHIBITED)	-o $@ -c $<
+	$(CXX)	$(CC_ASFLAGS)	$(CPP_FLAGS)	$(DIRLIBS_HDR)	$(DIRLIBS_SRC)	-nostdinc	$(DIRLIBS_PROHIBITED)	-o $@ -c $<
 	-@echo 'C Compile End: $@'
 
 #Coto: Special "exception" rule. Fixes tricky projects such as SnemulDS's opcodes2.s where GCC AS is used, while compatibility with .S is required for newer projects.
@@ -96,7 +96,7 @@ $(OBJDIR)/%.o : %.S
 $(OBJPROG): $(addprefix $(OBJDIR)/, $(OBJECTS))
 	-@echo 'Entering Build phase'
 	$(AR) rvs	$@	$^
-	-@echo 'Leaving Linking phase. Output: $@'
+	-@echo 'Leaving Build phase. Output: $@'
 
 #build *.o into $(TARGET_LIBRARY_FILE_7)
 $(TARGET_LIBRARY_FILE_7): $(OBJPROG)
