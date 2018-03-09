@@ -52,6 +52,10 @@ USA
 
 //required:
 
+void abort(){
+
+}
+
 int fork()
 {
 	return -1;
