@@ -100,14 +100,26 @@ $(OBJPROG): $(addprefix $(OBJDIR)/, $(OBJECTS))
 
 #build *.o into $(TARGET_LIBRARY_FILE_9).a
 $(TARGET_LIBRARY_FILE_9): $(OBJPROG)
+ifeq ($(TGDS_ENV),windows)
 	-mkdir -p $(TARGET_LIBRARY_PATH) && cp	$(OBJPROG)	$(TARGET_LIBRARY_PATH)
 	-mkdir -p $(TARGET_LIBRARY_HEADERS_9) && cp $(dir_arm9_src_h) $(TARGET_LIBRARY_HEADERS_9)
+endif
+ifeq ($(TGDS_ENV),linux)
+	-sudo mkdir -p $(TARGET_LIBRARY_PATH) && sudo cp	$(OBJPROG)	$(TARGET_LIBRARY_PATH)
+	-sudo mkdir -p $(TARGET_LIBRARY_HEADERS_9) && sudo cp $(dir_arm9_src_h) $(TARGET_LIBRARY_HEADERS_9)
+endif
+
 	-@echo 'build done: $(TARGET_LIBRARY_FILE_9)'
 	
 ################################################################################################
 clean:
 	-@echo 'cleanup $(TARGET_LIBRARY_FILE_9)'
+ifeq ($(TGDS_ENV),windows)
 	-@rm -fr $(OBJDIR)	$(TARGET_LIBRARY_FILE_9)	$(MAPFILE)	$(TARGET_LIBRARY_PATH)/$(TARGET_LIBRARY_FILE_9)
+endif
+ifeq ($(TGDS_ENV),linux)
+	-@sudo rm -fr $(OBJDIR)	$(TARGET_LIBRARY_FILE_9)	$(MAPFILE)	$(TARGET_LIBRARY_PATH)/$(TARGET_LIBRARY_FILE_9)
+endif
 
 debug:
 	-@echo ''
