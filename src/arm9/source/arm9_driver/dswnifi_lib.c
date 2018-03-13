@@ -830,13 +830,13 @@ if(remoteSocket == -1) {
     //    hostent *ent = gethostbyname(hostname);
     //    unsigned long a = *((unsigned long *)ent->h_addr);
 
-    sockaddr_in addr;
+    struct sockaddr_in addr;
     addr.sin_family = AF_INET;
     addr.sin_port = htons(remotePort);
     addr.sin_addr.s_addr = htonl(0);
     int count = 0;
     while(count < 3) {
-      if(bind(s, (sockaddr *)&addr, sizeof(addr))) {
+      if(bind(s, (struct sockaddr *)&addr, sizeof(addr))) {
         addr.sin_port = htons(ntohs(addr.sin_port)+1);
       } else
         break;
@@ -853,7 +853,7 @@ if(remoteSocket == -1) {
     }
     int len = sizeof(addr);	//socklen_t
 
-    int s2 = accept(s, (sockaddr *)&addr, &len);
+    int s2 = accept(s, (struct sockaddr *)&addr, &len);
     if(s2 > 0) {
 		//printf("Got a connection from %s %d ",inet_ntoa((in_addr)addr.sin_addr),ntohs(addr.sin_port));
     }

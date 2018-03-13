@@ -52,7 +52,7 @@ USA
 #include <dirent.h>
 #include <stdbool.h>
 #include <socket.h>
-#include <in.h>
+#include <netinet/in.h>
 #include <assert.h>
 
 #endif
@@ -298,7 +298,7 @@ extern sint32 getMULTIMode();			//idle(dswifi_idlemode) / raw packet(dswifi_loca
 extern bool getWIFISetup();
 extern bool setWIFISetup(bool flag);
 extern void setConnectionStatus(sint32 flag);
-extern void getConnectionStatus(sint32 flag);
+extern sint32	getConnectionStatus();
 extern struct frameBlock * FrameSenderUser;	//if !NULL, then must sendFrame. HandleSendUserspace(); generates this one
 //the process that runs on vblank and ensures DS - DS Comms
 extern sint32 doMULTIDaemon();
