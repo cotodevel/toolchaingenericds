@@ -52,7 +52,7 @@ USA
 #include <dirent.h>
 #include <stdbool.h>
 #include <socket.h>
-#include <netinet/in.h>
+#include <in.h>
 #include <assert.h>
 
 #endif
