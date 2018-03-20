@@ -12,13 +12,32 @@ After you followed "Recompile Newlib 2.1 for Nintendo DS" you need to follow the
 
 
 Build Steps:
-1)
 
-extract to some directory the ToolchainGenericDS sources, open msys.bat, and go to the desired directory (through msys)
+[Windows]
 
-once in that directory, simply:
-	-	make clean <enter>
-	-	make <enter>
+1.1
+-	Extract to some directory the ToolchainGenericDS sources, open msys.bat, and go to the desired directory (through msys)
+
+1.2
+Then:
+ - make clean 
+ - make
+
+
+[Linux]
+
+1.1
+-	Extract to some directory the ToolchainGenericDS sources, open the shell/Terminal, and go to the desired directory (through shell).
+	Note: EVERYTIME you open a new shell/Terminal to compile TGDS homebrew, you must follow the below steps (at least once, per shell/Terminal),
+	If you already recompiled Newlib 2.1 for NDS in the same terminal and you didn't exit, you can skip the below step, and proceed to 1.2
+	https://github.com/cotodevel/newlib-nds/tree/master/newlib-nds
+	
+1.2
+Then:
+ - make clean 
+ - make
+
+
 
 After building ToolchainGenericDS, then you are ready to recompile the project (not covered here, go to the specific project supporting this toolchain)
 
