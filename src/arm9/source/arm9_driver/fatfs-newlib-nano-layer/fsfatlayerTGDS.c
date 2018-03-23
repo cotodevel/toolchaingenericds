@@ -25,6 +25,7 @@ USA
 #include <errno.h>
 #include <sys/stat.h>
 #include <limits.h>
+#include "limitsTGDS.h"
 #include <fcntl.h>
 #include <dirent.h>
 #include "fileHandleTGDS.h"
@@ -42,8 +43,18 @@ USA
 #include "dldi.h"
 #include "clockTGDS.h"
 
+//coffee
 //fatfs
 FATFS dldiFs;
+
+//LongFilename scratchpad: has the latest fullfilepath accessed by updateCurDir("dir");
+char lfnName[MAX_TGDSFILENAME_LENGTH+1];
+
+//current dir emulation (for start);
+char curDirListed[MAX_TGDSFILENAME_LENGTH+1];
+
+//scratchpad struct fd
+struct fd fdCur;
 
 /* functions */
 
@@ -60,7 +71,7 @@ int		FS_deinit()
 }
 
 //converts a "folder/folder.../file.fil" into a proper filesystem fullpath
-volatile sint8 charbuf[NAME_MAX+1];
+volatile sint8 charbuf[MAX_TGDSFILENAME_LENGTH+1];
 sint8 * getfatfsPath(sint8 * filename){
 	
 	sprintf((sint8*)charbuf,"%s%s",devoptab_fatfs.name,filename);
@@ -438,10 +449,10 @@ void fill_fd_fil(int fd, FIL *fp, int flags, const FILINFO *fno, char * fullFile
     fdinst->filPtr = fp;
 	//copy full file path (posix <- fsfat)
 	int topsize = strlen(fullFilePath)+1;
-	if((sint32)topsize > (sint32)(NAME_MAX+1)){
-		topsize = (sint32)(NAME_MAX+1);
+	if((sint32)topsize > (sint32)(MAX_TGDSFILENAME_LENGTH+1)){
+		topsize = (sint32)(MAX_TGDSFILENAME_LENGTH+1);
 	}
-	strncpy((sint8*)fdinst->fd_name, (sint8*)fullFilePath, topsize);
+	strncpy(fdinst->fd_name, fullFilePath, topsize);
 }
 
 //update struct fd with new DIR
@@ -452,8 +463,8 @@ void fill_fd_dir(int fd, DIR *fp, int flags, const FILINFO *fno, char * fullFile
     fdinst->dirPtr = fp;
 	//copy full directory path (posix <- fsfat)
 	int topsize = strlen(fullFilePath)+1;
-	if((sint32)topsize > (sint32)(NAME_MAX+1)){
-		topsize = (sint32)(NAME_MAX+1);
+	if((sint32)topsize > (sint32)(MAX_TGDSFILENAME_LENGTH+1)){
+		topsize = (sint32)(MAX_TGDSFILENAME_LENGTH+1);
 	}
 	strncpy(fdinst->fd_name, fullFilePath, topsize);
 }
@@ -985,6 +996,9 @@ struct dirent *fatfs_readdir(DIR *dirp)
         fatfs_readdir_r(dirp, (struct dirent *)&fdinst->cur_entry, &ret);
         /* ignore return value */
     }
+	
+	//should we read a file here as well isnt
+	
     else
     {
         errno = EBADF;
@@ -994,55 +1008,46 @@ struct dirent *fatfs_readdir(DIR *dirp)
     return ret;
 }
 
+//will read directory object into DIR * either file / dir 
 int fatfs_readdir_r(
         DIR *dirp,
         struct dirent *entry,	//current dirent of file handle struct fd
         struct dirent **result)	//pointer to rewrite above file handle struct fd
 {
     int ret;
-	
 	int fd = getInternalFileDescriptorFromDIR(dirp);
 	struct fd * fdinst = fd_struct_get(fd);
-    if (!S_ISDIR(fdinst->stat.st_mode))
+    
+	FRESULT fresult;
+	FILINFO fno;
+	fresult = f_readdir(dirp, &fno);
+	if (fresult != FR_OK)
 	{
-        errno = EBADF;
-        ret = -1;
-    }
-    else
-    {
-        FRESULT fresult;
-        FILINFO fno;
-
-        fresult = f_readdir(dirp, &fno);
-        if (fresult != FR_OK)
-        {
-            errno = fresult2errno(fresult);
-            ret = -1;
-            *result = NULL;
-        }
-        else if (fno.fname[0] == '\0')
-        {
-            /* end of entries */
-            ret = 0;
-            *result = NULL;
-        }
-        else
-        {
-            ret = 0;
-			
-			//fill dir/file stats
-			fdinst->loc++;
-			
-			//d_name : dir or file name. NOT full path (posix <- fsfat)
-			int topsize = strlen(fno.fname)+1;
-			if((sint32)topsize > (sint32)(NAME_MAX+1)){
-				topsize = (sint32)(NAME_MAX+1);
-			}
-			strncpy((sint8*)entry->d_name, (sint8*)fno.fname, topsize);
-			*result = entry;
-        }
-    }
-
+		errno = fresult2errno(fresult);
+		ret = -1;
+		*result = NULL;
+	}
+	else if (fno.fname[0] == '\0')
+	{
+		/* end of entries */
+		ret = 0;
+		*result = NULL;
+	}
+	else
+	{
+		ret = 0;
+		
+		//fill dir/file stats
+		fdinst->loc++;
+		
+		//d_name : dir or file name. NOT full path (posix <- fsfat)
+		int topsize = strlen(fno.fname)+1;
+		if((sint32)topsize > (sint32)(MAX_TGDSFILENAME_LENGTH+1)){
+			topsize = (sint32)(MAX_TGDSFILENAME_LENGTH+1);
+		}
+		strncpy((sint8*)entry->d_name, (sint8*)fno.fname, topsize);
+		*result = entry;
+	}
     return ret;
 }
 
@@ -1235,8 +1240,169 @@ void seekdir(DIR *dirp, long loc)
 
 
 
+//misc directory functions
+
+//filename must be at least MAX_TGDSFILENAME_LENGTH+1
+bool setLFN(char* filename){
+	if (filename == NULL){
+		return false;
+	}
+	strncpy (lfnName, filename, (MAX_TGDSFILENAME_LENGTH+1) - 1);
+	lfnName[(MAX_TGDSFILENAME_LENGTH+1) - 1] = '\0';
+	return true;	
+}
+
+//filename must be at least MAX_TGDSFILENAME_LENGTH+1
+bool getLFN(char* filename){	//FAT_GetLongFilename(char* filename)
+	if (filename == NULL){
+		return false;
+	}
+	strncpy(filename, lfnName, (MAX_TGDSFILENAME_LENGTH+1) - 1);
+	filename[(MAX_TGDSFILENAME_LENGTH+1) - 1] = '\0';
+	return true;
+}
+
+//int FAT_FindFirstFile(char* filename) //filename must be at least MAX_TGDSFILENAME_LENGTH+1 in size
+int FAT_FindFirstFile(char* filename){
+	if(strlen(filename) == 0){
+		sprintf(filename,"%s","/");	//will start at "/" if filename is empty
+	}
+	int type = updateCurDir(filename); 	//return:  FT_DIR or FT_FILE: use getLFN(char buf[MAX_TGDSFILENAME_LENGTH+1]); to receive full first file
+										//			or FT_NONE if invalid file
+	if(type == FT_FILE){
+		getLFN(filename);
+	}
+	else if(type == FT_DIR){
+		sprintf(filename,"%s",curDirListed);
+		filename[(MAX_TGDSFILENAME_LENGTH+1) - 1] = '\0';
+	}
+	return type;
+}
+
+int FAT_FindNextFile(char* filename){
+	int type = getNextFile(curDirListed);	//return:  FT_DIR or FT_FILE: use getLFN(char buf[MAX_TGDSFILENAME_LENGTH+1]); to receive full first file
+								//			or FT_NONE if invalid file
+	if(type == FT_FILE){
+		getLFN(filename);
+	}
+	else if(type == FT_DIR){
+		sprintf(filename,"%s",curDirListed);
+		filename[(MAX_TGDSFILENAME_LENGTH+1) - 1] = '\0';
+	}
+	return type;
+}
 
 
+FILINFO getFirstFileFILINFO(char * path){
+	FILINFO finfo;
+	DIR dirp;
+	if (f_opendir(&dirp, path) == FR_OK) {
+        if((f_readdir(&dirp, &finfo) == FR_OK) && finfo.fname[0]) {
+            //ok
+        }
+		f_closedir(&dirp);
+    }
+	return finfo;
+}
+
+bool getNextFileFILINFO(char * path,FILINFO * finfo){
+	DIR dirp;
+	FILINFO finfoInst;
+	bool retval = false;
+	if (f_opendir(&dirp, path) == FR_OK) {
+        if((f_readdir(&dirp, &finfoInst) == FR_OK) && finfoInst.fname[0]) {
+            //ok
+			if((f_findnext (&dirp,finfo) == FR_OK) && finfo->fname[0]){
+				retval = true;
+			}
+        }
+		f_closedir(&dirp);
+    }
+	return retval;
+}
+
+//return:  FT_DIR or FT_FILE: use getLFN(char buf[MAX_TGDSFILENAME_LENGTH+1]); to receive full first file
+//			or FT_NONE if invalid file
+int getFirstFile(char * path){
+	int type = 0;
+	FILINFO FILINFOObj = getFirstFileFILINFO(path);
+	if (FILINFOObj.fattrib & AM_DIR) {	//dir
+		type = FT_DIR;
+	}
+	else if (	//file
+	(FILINFOObj.fattrib & AM_RDO)
+	||
+	(FILINFOObj.fattrib & AM_HID)
+	||
+	(FILINFOObj.fattrib & AM_SYS)
+	||
+	(FILINFOObj.fattrib & AM_DIR)
+	||
+	(FILINFOObj.fattrib & AM_ARC)
+	){
+		char fout[MAX_TGDSFILENAME_LENGTH+1] = {0};
+		sprintf(fout,"%s%s%s", "0:",path, &FILINFOObj.fname[0]);
+		setLFN(fout);	//update last full path given a path
+		type = FT_FILE;
+	}
+	else{	//invalid
+		type = FT_NONE;
+	}
+	return type;
+}
+
+
+//requires fullpath of the CURRENT file, it will return the next one
+//return:  FT_DIR or FT_FILE: use getLFN(char buf[MAX_TGDSFILENAME_LENGTH+1]); to receive full first file
+//			or FT_NONE if invalid file
+int getNextFile(char * fullpath){
+	int type = 0;
+	FILINFO fno;
+	char fout[512] = {0};
+	sprintf(fout,"%s%s","0:",fullpath);
+	printf("getNextFile:trying:%s",fout);
+	//while(1==1);
+	if(getNextFileFILINFO(fout,&fno) == true) {
+		if (fno.fattrib & AM_DIR) {	//dir
+			type = FT_DIR;
+		}
+		else if (	//file
+		(fno.fattrib & AM_RDO)
+		||
+		(fno.fattrib & AM_HID)
+		||
+		(fno.fattrib & AM_SYS)
+		||
+		(fno.fattrib & AM_DIR)
+		||
+		(fno.fattrib & AM_ARC)
+		){
+			char fout[MAX_TGDSFILENAME_LENGTH+1] = {0};
+			sprintf(fout,"%s%s%s", "0:",curDirListed, &fno.fname[0]);
+			setLFN(fout);	//update last full path given a path
+			type = FT_FILE;
+		}
+	}
+	else{	//invalid
+		type = FT_NONE;
+		printf("getNextFileFILINFO:fail");
+	}
+	return type;
+}
+
+//updates the global latest directory opened
+//format: "/directory0/directory1/etc"
+//return:  FT_DIR or FT_FILE: use getLFN(char buf[MAX_TGDSFILENAME_LENGTH+1]); to receive full first file
+//			or FT_NONE if invalid file
+int updateCurDir(char * curDir){
+	if(curDir){
+		sprintf(curDirListed,"%s",curDir);
+		curDirListed[(MAX_TGDSFILENAME_LENGTH+1) - 1] = '\0';
+		//if getfirstFile == FT_FILE: use getLFN(char buf[MAX_TGDSFILENAME_LENGTH+1]); to receive full first file found after updateCurDir
+		return getFirstFile(curDirListed);
+	}
+	return FT_NONE;
+}
 
 
 /*-----------------------------------------------------------------------*/
