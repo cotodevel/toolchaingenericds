@@ -100,18 +100,19 @@ void updateMPUSetting(T_mpuSetting * mpuSetting_inst){
 //Region6: EWRAM Uncached
 //Region7:
 void set0xFFFF0000FastMPUSettings(){
+	
 	mpuSetting[VECTORS_0xFFFF0000_MPU].inst_regionSetting[0].regionsettings = (uint32)( PAGE_64M | 0x04000000 | 1);
 	mpuSetting[VECTORS_0xFFFF0000_MPU].inst_regionSetting[1].regionsettings = (uint32)( PAGE_64K | 0xFFFF0000 | 1);
 	mpuSetting[VECTORS_0xFFFF0000_MPU].inst_regionSetting[2].regionsettings = (uint32)( PAGE_4K | 0x00000000 | 1);
 	mpuSetting[VECTORS_0xFFFF0000_MPU].inst_regionSetting[3].regionsettings = (uint32)( PAGE_128M | 0x08000000 | 1);
 	mpuSetting[VECTORS_0xFFFF0000_MPU].inst_regionSetting[4].regionsettings = (uint32)((uint32)(&_itcm_start) | PAGE_32K | 1);
 	mpuSetting[VECTORS_0xFFFF0000_MPU].inst_regionSetting[5].regionsettings = (uint32)((uint32)(&_dtcm_start) | PAGE_16K | 1);
-	mpuSetting[VECTORS_0xFFFF0000_MPU].inst_regionSetting[6].regionsettings = (uint32)( PAGE_16M 	| 0x02000000 | 1);
+	mpuSetting[VECTORS_0xFFFF0000_MPU].inst_regionSetting[6].regionsettings = (uint32)( PAGE_16M 	| 0x02400000 | 1);
 	mpuSetting[VECTORS_0xFFFF0000_MPU].inst_regionSetting[7].regionsettings = (uint32)( PAGE_4M 	| 0x02000000 | 1);
-	mpuSetting[VECTORS_0xFFFF0000_MPU].WriteBufferAvailabilityForRegions = 0b10110000; //EWRAM, DTCM, ITCM
+	mpuSetting[VECTORS_0xFFFF0000_MPU].WriteBufferAvailabilityForRegions = 0b11110000; //EWRAM, DTCM, ITCM
 	
-	mpuSetting[VECTORS_0xFFFF0000_MPU].DCacheAvailabilityForRegions = 0b10000010;	//DTCM & ITCM
-	mpuSetting[VECTORS_0xFFFF0000_MPU].ICacheAvailabilityForRegions = 0b10000010;	//DTCM & ITCM
+	mpuSetting[VECTORS_0xFFFF0000_MPU].DCacheAvailabilityForRegions = 0b10000000;	//DTCM & ITCM
+	mpuSetting[VECTORS_0xFFFF0000_MPU].ICacheAvailabilityForRegions = 0b10000000;	//DTCM & ITCM
 	
 	mpuSetting[VECTORS_0xFFFF0000_MPU].ITCMAccessForRegions = 0x33333363;
 	mpuSetting[VECTORS_0xFFFF0000_MPU].DTCMAccessForRegions = 0x33333363;
