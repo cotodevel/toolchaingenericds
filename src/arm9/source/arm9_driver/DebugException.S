@@ -34,40 +34,52 @@
 DebugException:
 	
 	@exception stack
-	ldr sp,=exceptionArmRegs
-	stmia sp, {r0-r12}	@r0 -- r12 
+	ldr r12,=exceptionArmRegs
+	stmia r12, {r0-r11}	@r0 -- r11
+	
+	@get R12,SPSR & PC from source abort
+	ldr r0, =(0x02FFFD90)
+	
+	ldr	r2,[r0,#0]	@SPSR
+	str r2, [r12, #(4*17)]
+	
+	ldr	r2,[r0,#4]	@source LR
+	str r2, [r12, #(4*14)]
+	
+	ldr	r2,[r0,#8]	@source PC
+	str r2, [r12, #(4*15)]
+	
+	mrs r3, cpsr	@this CPSR
+	str r3, [r12, #(4*18)]
+	
+	mrs r3, spsr	@source CPSR
+	str r3, [r12, #(4*16)]
+	
+	@new stack Data Abort
+	ldr	r13,=sp_ABT
+	mov r7,r12		@highest register that does not change when changing PSR
+	
+	@grab source r13
+	msr cpsr, r3
+	str r13, [r7, #(4*13)]
+	
+	@go back
+	mrs r0, spsr
+	msr cpsr,r0
+	
+	@this PSR USR? Enter SYS
+	mov r2,r0
+	and r2,r2,#0x10
+	cmp r2,#0x10	
+	biceq r2,r0,#0x1f
+	orreq r2,r2,#0x1f
+	msreq cpsr,r2
 	
 	@disable MPU
 	mrc	p15,0,r0,c1,c0,0
 	bic	r0,r0,#1
 	mcr	p15,0,r0,c1,c0,0
 	
-	mov r8,sp
-	mrs r10,cpsr
-	
-	@save processor regs according to spsr
-	mrs	r9, spsr
-	msr cpsr,r9
-	
-	str r0, [r8, #(4*0)]
-	str sp, [r8, #(4*13)]
-	str lr, [r8, #(4*14)]
-	
-	mrs r0,cpsr
-	mrs r1,spsr
-	
-	str r0, [r8, #(4*16)]	@cpsr
-	str r1, [r8, #(4*17)]	@spsr
-	
-	msr	cpsr,r10
-	
-	@get PC from source abort
-	ldr r1, =(0x02FFFD98)
-	ldr	r2,[r1]
-	str r2, [sp, #(4*15)]
-	
-	@new stack
-	ldr	r13,=sp_ABT
 	push {r0-r12,lr}
 	ldr	r12,=exception_data_abort
 	blx	r12
