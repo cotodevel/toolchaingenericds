@@ -31,7 +31,7 @@ USA
 
 uint32 globalVRAMStackStartPtr;
 uint32 allocVRAMStacks(){
-	globalVRAMStackStartPtr = (uint32)malloc(1024 * 8);	//(uint32)vramAlloc(vramBlockA,(uint32)0x06000000 + (32*1024) + (256),(1024 * 8));	//keep 0x06000000 ~ 32K region used by block D. Just use block A
+	globalVRAMStackStartPtr = (uint32)malloc(1024 * 8);	
 	return globalVRAMStackStartPtr;
 }
 

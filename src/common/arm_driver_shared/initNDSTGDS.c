@@ -53,7 +53,7 @@ void initHardware(void) {
 	getsIPCSharedTGDS()->arm7startaddress = get_iwram_start();
 	getsIPCSharedTGDS()->arm7endaddress = (uint32)(get_iwram_start() + get_iwram_size());
 	
-	//set libend: use malloc from vramAlloc so ARM7 can use malloc
+	//set libend: use malloc from vramHeapAlloc so ARM7 can use malloc
 	initvramLMALibend();
 	
 	#endif

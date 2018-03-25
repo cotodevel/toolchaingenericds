@@ -854,7 +854,7 @@ void Wifi_Init(uint32 wifidata) {
 	*((volatile uint16 *)0x04000206) = 0x30; // ???
 
 	InitFlashData();
-	arm7q = (uint16 *)vramAlloc(vramBlockD,0x06000000,1024);	//tx queue init
+	arm7q = (uint16 *)vramHeapAlloc(vramBlockD,0x06000000,1024);	//tx queue init
 	
 	// reset/shutdown wifi:
 	WIFI_REG(0x4)=0xffff;

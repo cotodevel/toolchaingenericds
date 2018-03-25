@@ -35,74 +35,138 @@ sint32 vramBBlockOfst	=	0;
 sint32 vramCBlockOfst	=	0;
 sint32 vramDBlockOfst	=	0;
 
-uint32 * vramAlloc(uint32 vramBlock,uint32 StartAddr,int size){
-	uint32 * vramBlockAssign = NULL;
+sint32 HeapBlockOfst	=	0;
+
+//if ret ptr == NULL, invalid operation  not enough space
+uint32 * vramHeapAlloc(uint32 vramBlock,uint32 StartAddr,int size){
+	uint32 * BlockAssign = NULL;
+	bool isVram = false;
 	switch(vramBlock){
 		case(vramBlockA):{
-			vramBlockAssign = (uint32 *)&vramABlockOfst;
+			BlockAssign = (uint32 *)&vramABlockOfst;
+			isVram = true;
 		}
 		break;
 		case(vramBlockB):{
-			vramBlockAssign = (uint32 *)&vramBBlockOfst;
+			BlockAssign = (uint32 *)&vramBBlockOfst;
+			isVram = true;
 		}
 		break;
 		case(vramBlockC):{
-			vramBlockAssign = (uint32 *)&vramCBlockOfst;
+			BlockAssign = (uint32 *)&vramCBlockOfst;
+			isVram = true;
 		}
 		break;
 		case(vramBlockD):{
-			vramBlockAssign = (uint32 *)&vramDBlockOfst;
+			BlockAssign = (uint32 *)&vramDBlockOfst;
+			isVram = true;
+		}
+		break;
+		case(HeapBlock):{
+			BlockAssign = (uint32 *)&HeapBlockOfst;
 		}
 		break;
 	}
-	if(vramBlockAssign == NULL){
+	if(BlockAssign == NULL){
 		return NULL;
 	}
-	if((StartAddr + (int)*vramBlockAssign + size) <= (StartAddr+vramSize)){
-		//memset((uint32*)(StartAddr + (int)*vramBlockAssign) , 0, size);
-		*vramBlockAssign = (uint32)((int)*vramBlockAssign + size);
+	sint32 heapDetected = (isVram == true) ? vramSize : HeapSize;
+	if((StartAddr + (int)*BlockAssign + size) <= (StartAddr+heapDetected)){
+		//memset((uint8*)(StartAddr + (int)*BlockAssign) , 0, size);
+		*BlockAssign = (uint32)((int)*BlockAssign + size);
 	}
 	else{
 		return NULL;
 	}
-	uint32 AllocBuf = (StartAddr + ((int)*vramBlockAssign - size));
+	uint32 AllocBuf = (StartAddr + ((int)*BlockAssign - size));
 	if(AllocBuf < StartAddr){
 		AllocBuf = StartAddr;
 	}
 	return (uint32*)AllocBuf;
 }
 
-uint32 * vramFree(uint32 vramBlock,uint32 StartAddr,int size){
-	uint32 * vramBlockAssign = NULL;
+//if ret ptr == NULL, invalid operation  not enough space
+uint32 * vramHeapFree(uint32 vramBlock,uint32 StartAddr,int size){
+	uint32 * BlockAssign = NULL;
+	bool isVram = false;
 	switch(vramBlock){
 		case(vramBlockA):{
-			vramBlockAssign = (uint32 *)&vramABlockOfst;
+			BlockAssign = (uint32 *)&vramABlockOfst;
+			isVram = true;
 		}
 		break;
 		case(vramBlockB):{
-			vramBlockAssign = (uint32 *)&vramBBlockOfst;
+			BlockAssign = (uint32 *)&vramBBlockOfst;
+			isVram = true;
 		}
 		break;
 		case(vramBlockC):{
-			vramBlockAssign = (uint32 *)&vramCBlockOfst;
+			BlockAssign = (uint32 *)&vramCBlockOfst;
+			isVram = true;
 		}
 		break;
 		case(vramBlockD):{
-			vramBlockAssign = (uint32 *)&vramDBlockOfst;
+			BlockAssign = (uint32 *)&vramDBlockOfst;
+			isVram = true;
+		}
+		break;
+		case(HeapBlock):{
+			BlockAssign = (uint32 *)&HeapBlockOfst;
 		}
 		break;
 	}
-	if(vramBlockAssign == NULL){
+	if(BlockAssign == NULL){
 		return NULL;
 	}
-	if(((StartAddr + (int)*vramBlockAssign) - size) >= (StartAddr)){
-		*vramBlockAssign = (uint32)((int)*vramBlockAssign - size);
+	if(((StartAddr + (int)*BlockAssign) - size) >= (StartAddr)){
+		*BlockAssign = (uint32)((int)*BlockAssign - size);
 	}
 	else{
 		return NULL;
 	}
-	return (uint32*)(StartAddr + ((int)*vramBlockAssign));
+	return (uint32*)(StartAddr + ((int)*BlockAssign));
 }
+
+/*
+int _tmain(int argc, _TCHAR* argv[])
+{
+	uint32 startLinearVramAddr = 0x06000000;
+	uint32 startLinearHeapAddr = 0x02040100;	//fake ewram address
+
+	sint32 size = 1024 * 32;
+	printf("vram-alloc%x:%x \n",startLinearVramAddr,(uint16 *)vramHeapAlloc(vramBlockD,startLinearVramAddr,size));	//0x06000000
+	printf("vram-alloc%x:%x \n",startLinearVramAddr,(uint16 *)vramHeapAlloc(vramBlockD,startLinearVramAddr,size));	//0x06008000
+	printf("vram-alloc%x:%x \n",startLinearVramAddr,(uint16 *)vramHeapAlloc(vramBlockD,startLinearVramAddr,size));	//0x06010000
+	printf("vram-alloc%x:%x \n",startLinearVramAddr,(uint16 *)vramHeapAlloc(vramBlockD,startLinearVramAddr,size));	//0x06018000
+
+	printf("heap-alloc%x:%x \n",startLinearHeapAddr,(uint16 *)vramHeapAlloc(HeapBlock,startLinearHeapAddr,size));	//0x02040100
+	printf("heap-alloc%x:%x \n",startLinearHeapAddr,(uint16 *)vramHeapAlloc(HeapBlock,startLinearHeapAddr,size));	//0x02048100
+	printf("heap-alloc%x:%x \n",startLinearHeapAddr,(uint16 *)vramHeapAlloc(HeapBlock,startLinearHeapAddr,size));	//0x02050100
+	printf("heap-alloc%x:%x \n",startLinearHeapAddr,(uint16 *)vramHeapAlloc(HeapBlock,startLinearHeapAddr,size));	//0x02058100
+	
+	printf("heap-alloc%x:%x \n",startLinearHeapAddr,(uint16 *)vramHeapAlloc(HeapBlock,startLinearHeapAddr,size));	//0 (invalid)
+	
+	printf("vram-free%x:%x \n",startLinearVramAddr,(uint16 *)vramHeapFree(vramBlockD,startLinearVramAddr,size));	//0x06018000
+	printf("heap-free%x:%x \n",startLinearHeapAddr,(uint16 *)vramHeapFree(HeapBlock,startLinearHeapAddr,size));		//0x02058100
+	
+	printf("vram-free%x:%x \n",startLinearVramAddr,(uint16 *)vramHeapFree(vramBlockD,startLinearVramAddr,size));	//0x06010000
+	printf("heap-free%x:%x \n",startLinearHeapAddr,(uint16 *)vramHeapFree(HeapBlock,startLinearHeapAddr,size));		//0x02050100
+	
+	printf("vram-free%x:%x \n",startLinearVramAddr,(uint16 *)vramHeapFree(vramBlockD,startLinearVramAddr,size));	//0x06008000
+	printf("heap-free%x:%x \n",startLinearHeapAddr,(uint16 *)vramHeapFree(HeapBlock,startLinearHeapAddr,size));		//0x02048100
+	
+	printf("vram-free%x:%x \n",startLinearVramAddr,(uint16 *)vramHeapFree(vramBlockD,startLinearVramAddr,size));	//0x06000000
+	printf("heap-free%x:%x \n",startLinearHeapAddr,(uint16 *)vramHeapFree(HeapBlock,startLinearHeapAddr,size));		//0x02040100
+	
+	printf("vram-free%x:%x \n",startLinearVramAddr,(uint16 *)vramHeapFree(vramBlockD,startLinearVramAddr,size));	//0 (invalid)
+	printf("heap-free%x:%x \n",startLinearHeapAddr,(uint16 *)vramHeapFree(HeapBlock,startLinearHeapAddr,size));		//0 (invalid)
+	
+	while(1==1){}
+	return 0;
+}
+*/
+
+//
 
 //linker to C proper memory layouts.
 
@@ -151,18 +215,33 @@ uint32 get_iwram_end(){
 
 #endif
 
+#ifdef ARM7
 //ARM7:
 //use 0x06000000 ~ 32K for playBuffer
 //use 0x06008000 ~ 32K for malloc / stacks
 uint32 * vramLMALibendARM7 = NULL;	//relocated end section, alloced by vram alloc, used as sbrk
-
-#ifdef ARM7
-void initvramLMALibend(){
-	if(vramLMALibendARM7 == NULL){
-		vramLMALibendARM7 = vramAlloc(vramBlockC,(0x06008100),((32*1024)-256));	//it is VRAMBLOCK D currently mapped to ARM7 VRAM, use vramBlockC to keep different maps
-	}
-}
 #endif
+
+#ifdef ARM9
+//ARM9:
+//heap alloced from malloc
+//this heap is used as:
+//alloc: ptr to start allocated = (start linear ptr *)vramHeapAlloc(HeapBlock,vramLMAstartARM9,int size);
+//free: ptr to freed start unallocated = (start linear ptr *)vramHeapFree(HeapBlock,vramLMAstartARM9,int size);
+uint32 * vramLMAstartARM9 = NULL;
+#endif
+void initvramLMALibend(){
+	#ifdef ARM9
+	if(vramLMAstartARM9 == NULL){
+		vramLMAstartARM9 = malloc((int)HeapSize);
+	}
+	#endif
+	#ifdef ARM7
+	if(vramLMALibendARM7 == NULL){
+		vramLMALibendARM7 = vramHeapAlloc(vramBlockC,(0x06008100),((32*1024)-256));	//it is VRAMBLOCK D currently mapped to ARM7 VRAM, use vramBlockC to keep different maps
+	}
+	#endif
+}
 
 
 uint32 get_lma_libend(){

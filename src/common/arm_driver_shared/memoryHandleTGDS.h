@@ -34,6 +34,9 @@ USA
 #define vramBlockC (uint32)(0xc)
 #define vramBlockD (uint32)(0xd)
 
+#define HeapSize (uint32)(128*1024)
+#define HeapBlock (uint32)(0xe)
+
 //IPC specific: Shared Work     027FF000h 4KB    -     -    -    R/W
 #define IPCRegionSize	(sint32)(4*1024)
  
@@ -47,8 +50,31 @@ extern sint32 vramABlockOfst;	//offset pointer to free memory, user alloced memo
 extern sint32 vramBBlockOfst;
 extern sint32 vramCBlockOfst;
 extern sint32 vramDBlockOfst;
-extern uint32 * vramAlloc(uint32 vramBlock,uint32 StartAddr,int size);
-extern uint32 * vramFree(uint32 vramBlock,uint32 StartAddr,int size);
+extern sint32 HeapBlockOfst;
+
+extern uint32 * vramHeapAlloc(uint32 vramBlock,uint32 StartAddr,int size);
+extern uint32 * vramHeapFree(uint32 vramBlock,uint32 StartAddr,int size);
+
+extern void initvramLMALibend();
+
+#ifdef ARM7
+extern uint32 * vramLMALibendARM7;
+extern uint32 _iwram_start;
+extern uint32 _iwram_end;
+extern uint32 get_iwram_start();
+extern sint32 get_iwram_size();
+extern uint32 get_iwram_end();
+#endif
+
+#ifdef ARM9
+//ARM9:
+//heap alloced from malloc
+//this heap is used as:
+//alloc: ptr to start allocated = (start linear ptr *)vramHeapAlloc(HeapBlock,vramLMAstartARM9,int size);
+//free: ptr to freed start unallocated = (start linear ptr *)vramHeapFree(HeapBlock,vramLMAstartARM9,int size);
+extern uint32 * vramLMAstartARM9;
+#endif
+
 
 //newlib
 extern uint32 get_lma_libend();		//linear memory top
@@ -62,18 +88,7 @@ extern sint32 get_arm7_ext_size();
 extern uint32 get_arm9_start_address();
 extern uint32 get_arm9_end_address();
 extern sint32 get_arm9_ext_size();
-
 extern sint32 get_arm7_printfBufSize();
-
-#ifdef ARM7
-extern uint32 * vramLMALibendARM7;
-extern void initvramLMALibend();
-extern uint32 _iwram_start;
-extern uint32 _iwram_end;
-extern uint32 get_iwram_start();
-extern sint32 get_iwram_size();
-extern uint32 get_iwram_end();
-#endif
 
 #ifdef ARM9
 //linker script hardware address setup (get map addresses from linker file)
