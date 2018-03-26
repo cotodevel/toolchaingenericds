@@ -328,7 +328,9 @@ _sbrk (int  incr)
 
 }	/* _sbrk () */
 
-
+void * _sbrk_r (struct _reent * reent, int size){
+	return _sbrk (size);
+}
 
 ///* sbrk support */
 //

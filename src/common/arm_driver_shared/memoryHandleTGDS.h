@@ -137,6 +137,7 @@ extern sint32 get_available_mem();
 #endif
 
 extern void * _sbrk (int size);
+extern void * _sbrk_r (struct _reent * reent, int size);
 
 //TGDS IPC
 extern uint32 getToolchainIPCAddress();		
