@@ -32,8 +32,8 @@ USA
 extern "C"{
 #endif
 
-extern void powerON(uint16 values);
-extern void powerOFF(uint16 values);
+extern void powerON(uint32 values);
+extern void powerOFF(uint32 values);
 
 #ifdef __cplusplus
 }

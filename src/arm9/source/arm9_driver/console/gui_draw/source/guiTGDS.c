@@ -40,6 +40,7 @@ GNU General Public License for more details.
 #include "fsfatlayerTGDS.h"
 #include "keypadTGDS.h"
 #include "utilsTGDS.h"
+#include "spifwTGDS.h"
 
 t_GUIScreen	*GUI_newScreen(int nb_elems)
 {
@@ -445,7 +446,7 @@ int GUI_update()
 			// Show GUI
 			GUI.hide = 0;
 			powerON(POWER_2D_B);
-			setBacklight(PM_BACKLIGHT_TOP | PM_BACKLIGHT_BOTTOM); 
+			setBacklight(POWMAN_BACKLIGHT_TOP_BIT | POWMAN_BACKLIGHT_BOTTOM_BIT); 
 		}
 	}
 	else{

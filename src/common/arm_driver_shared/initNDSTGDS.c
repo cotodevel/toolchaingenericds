@@ -30,6 +30,7 @@ USA
 #include "dmaTGDS.h"
 #include "timerTGDS.h"
 #include "memoryHandleTGDS.h"
+#include "spifwTGDS.h"
 
 #ifdef ARM9
 #include "devoptab_devices.h"
@@ -59,7 +60,8 @@ void initHardware(void) {
 	#endif
 	
 	#ifdef ARM9
-	powerON(POWERMAN_ARM9 | POWER_LCD | POWER_2D_A | POWER_2D_B | POWER_SWAP_LCDS);
+	powerON(POWER_2D_A | POWER_2D_B | POWER_SWAP_LCDS);
+	setBacklight(POWMAN_BACKLIGHT_TOP_BIT|POWMAN_BACKLIGHT_BOTTOM_BIT);
 	setupExceptionHandler();
 	
 	//PPU Engines Default

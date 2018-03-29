@@ -56,12 +56,12 @@ USA
 #define 	POWMAN_BATTERY_BIT   1
 #define 	POWMAN_AMPLIFIER_BIT   2
 #define 	POWMAN_READ_BIT   (1<<7)
+#define 	POWMAN_WRITE_BIT   (0<<7)
 #define 	POWMAN_SOUND_AMP_BIT   (1<<0)
 #define 	POWMAN_SOUND_MUTE_BIT   (1<<1)
-#define 	POWMAN_BACKLIGHT_BOTTOM_BIT   (1<<2)
-#define 	POWMAN_BACKLIGHT_TOP_BIT   (1<<3)
-#define 	POWMAN_SYSTEM_PWR_BIT   (1<<6)
-#define 	POWMAN_POWER_DOWN_BIT   (1<<6)
+#define 	POWMAN_BACKLIGHT_BOTTOM_BIT   (1<<2)	//#define	PM_BACKLIGHT_BOTTOM	(1<<2)
+#define 	POWMAN_BACKLIGHT_TOP_BIT   (1<<3)		//#define	PM_BACKLIGHT_TOP	(1<<3)
+#define 	POWMAN_SYSTEM_PWR_BIT   (1<<6)			//#define	PM_SYSTEM_PWR		(1<<6)
 #define 	POWMAN_LED_CONTROL(m)_BIT   ((m)<<4)
 #define 	POWMAN_LED_ON_BIT   (0<<4)
 #define 	POWMAN_LED_SLEEP_BIT   (1<<4)

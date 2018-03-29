@@ -64,6 +64,12 @@ USA
 //PowerManagementWrite
 #define FIFO_POWERMGMT_WRITE	(uint32)(0xffff1019)
 
+	//sub PM Bits
+	#define UPDATE_TOP_SCREEN_PWR (uint32)(0xffff1100)
+	#define UPDATE_BOTTOM_SCREEN_PWR (uint32)(0xffff1101)
+	
+	
+
 //printf7 FIFO
 #define FIFO_PRINTF_7	(uint32)(0xffff101a)
 #define FIFO_IPC_MESSAGE	(uint32)(0xffff1010)
@@ -176,9 +182,6 @@ extern void writeuint32extARM(uint32 address,uint32 value);
 
 extern int SendFIFOCommand(uint32 * buf,int size);
 extern int RecvFIFOCommand(uint32 * buf);
-
-extern void powerON(uint16 values);
-extern void powerOFF(uint16 values);
 
 extern void SendMultipleWordByFifo(uint32 data0, uint32 data1, uint32 data2, uint32 * buffer_shared);
 extern void SendMultipleWordACK(uint32 data0, uint32 data1, uint32 data2, uint32 * buffer_shared);

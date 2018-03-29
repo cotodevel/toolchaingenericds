@@ -28,8 +28,7 @@ USA
 #include "dsregs.h"
 #include "dsregs_asm.h"
 #include "ipcfifoTGDS.h"
-
-
+#include "spifwTGDS.h"
 
 size_t ucs2tombs(uint8* dst, const unsigned short* src, size_t len) {
 	size_t i=0,j=0;
@@ -343,20 +342,21 @@ int	FS_getFileSize(sint8 *filename)
 	return size;
 }
 
+//usage:
+//setBacklight(POWMAN_BACKLIGHT_TOP_BIT | POWMAN_BACKLIGHT_BOTTOM_BIT);	//both lit screens
+//setBacklight(POWMAN_BACKLIGHT_TOP_BIT);								//top lit screen
+//setBacklight(POWMAN_BACKLIGHT_BOTTOM_BIT);							//bottom lit screen
+//setBacklight(0);														//non-lit both LCD screens (poweroff)
+	
 int	setBacklight(int flags)
 {
-	#ifdef ARM7
-	//todo ARM7
-	#endif
-	
-	#ifdef ARM9
-	//SendArm7Command(0x00000008,(flags << 16),0x00000000,0x00000000);
-	SendMultipleWordACK(0x00000008, (flags << 16), 0, NULL);
-	#endif
-	
+	SendMultipleWordACK(FIFO_POWERMGMT_WRITE, UPDATE_TOP_SCREEN_PWR|UPDATE_BOTTOM_SCREEN_PWR, (uint32)(flags), NULL);
 	return 0;
 }
 
+int setSoundPower(int flags){
+	return 0;
+}
 
 
 void	FS_lock()

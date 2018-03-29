@@ -37,8 +37,9 @@ USA
 
 #endif
 
-
-void powerON(uint16 values){
+//Turn On the BG/3D engines if ARM9
+//Turn On Sound Speakers / Wifi if ARM7
+void powerON(uint32 values){
 	#ifdef ARM7
 	REG_POWERCNT |= values;
 	#endif
@@ -53,7 +54,9 @@ void powerON(uint16 values){
 	#endif
 }
 
-void powerOFF(uint16 values){
+//Turn Off the BG/3D engines if ARM9
+//Turn Off Sound Speakers / Wifi if ARM7
+void powerOFF(uint32 values){
 	#ifdef ARM7
 	REG_POWERCNT &= ~values;
 	#endif

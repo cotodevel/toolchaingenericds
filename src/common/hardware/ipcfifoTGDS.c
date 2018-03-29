@@ -31,6 +31,8 @@ USA
 #ifdef ARM7
 #include <string.h>
 #include "wifi_arm7.h"
+#include "spifwTGDS.h"
+
 #endif
 
 #ifdef ARM9
@@ -187,8 +189,24 @@ void HandleFifoNotEmpty(){
 					powerON((uint16)data1);
 				}
 				break;
-				case ((uint32)FIFO_POWERMGMT_WRITE):{
-					PowerManagementDeviceWrite(PM_SOUND_AMP, (int)data1>>16);  // void * data == command2
+				case((uint32)FIFO_POWERCNT_OFF):{
+					powerOFF((uint16)data1);
+				}
+				break;
+				//Power Management: supported model so far: DS Phat.
+				//Todo add: DSLite/DSi
+				case((uint32)FIFO_POWERMGMT_WRITE):{
+					int PMBits = 0;
+					if(data1 & UPDATE_TOP_SCREEN_PWR){
+						PMBits |= POWMAN_BACKLIGHT_TOP_BIT;
+					}
+					if(data1 & UPDATE_BOTTOM_SCREEN_PWR){
+						PMBits |= POWMAN_BACKLIGHT_BOTTOM_BIT;
+					}					
+					int PMBitsRead = PowerManagementDeviceRead((int)PMBits);
+					PMBitsRead &= ~PMBits;
+					PMBitsRead|= (int)(data2 & PMBits);
+					PowerManagementDeviceWrite(POWMAN_WRITE_BIT|PMBits, (int)PMBitsRead);				
 				}
 				break;
 				//arm9 wants to send a WIFI context block address / userdata is always zero here
