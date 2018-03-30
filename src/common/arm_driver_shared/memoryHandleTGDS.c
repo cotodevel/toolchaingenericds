@@ -212,7 +212,6 @@ sint32 get_iwram_size(){
 uint32 get_iwram_end(){
 	return (uint32)(&_iwram_end);
 }
-
 #endif
 
 #ifdef ARM7
@@ -238,35 +237,28 @@ void initvramLMALibend(){
 	#endif
 	#ifdef ARM7
 	if(vramLMALibendARM7 == NULL){
-		vramLMALibendARM7 = vramHeapAlloc(vramBlockC,(0x06008100),((32*1024)-256));	//it is VRAMBLOCK D currently mapped to ARM7 VRAM, use vramBlockC to keep different maps
+		//vramLMALibendARM7 = vramHeapAlloc(vramBlockC,(0x06008100),((32*1024)-256));	//it is VRAMBLOCK D currently mapped to ARM7 VRAM, use vramBlockC to keep different maps
 	}
 	#endif
 }
 
 
 uint32 get_lma_libend(){
-	#ifdef ARM7
-	return (uint32)(0x06000000 + (32*1024) + (256));
-	#endif
-	 
-	#ifdef ARM9
 	return (uint32)(&__vma_stub_end__);	//linear memory top (start)
-	#endif
 }
 
 //(ewram end - linear memory top ) = malloc free memory (bottom, end)
 uint32 get_lma_wramend(){
 	#ifdef ARM7
-	return (uint32)(0x06000000 + (32*1024) + (256) + (((32*1024)-256)));
+	extern uint32 sp_SYS;	//the farthest stack from the end memory is our free memory (in ARM7, shared stacks)
+	return (uint32)(&sp_SYS);
 	#endif
 	#ifdef ARM9
-	return (uint32)(&_ewram_end);	
+	return (uint32)(&_ewram_end);	//EWRAM has no stacks shared so we use the end memory 
 	#endif
 }
 
 #ifdef ARM9
-
-
 uint32 get_ewram_start(){
 	return (uint32)(&_ewram_start);
 }
