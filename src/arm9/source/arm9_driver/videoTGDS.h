@@ -59,7 +59,7 @@ typedef struct vramSetup
 }vramSetup;
 
 
-//VRAM Setup 0
+//VRAM Setup 0: //MST 0
 /*
  VRAM    SIZE  MST  OFS   ARM9, Plain ARM9-CPU Access (so-called LCDC mode)
   A       128K  0    -     6800000h-681FFFFh
@@ -83,7 +83,7 @@ typedef struct vramSetup
 #define VRAM_H_LCDC_MODE 	(0)
 #define VRAM_I_LCDC_MODE 	(0)
 
-//VRAM Setup 1
+//VRAM Setup 1: //MST 1
 //ARM9, 2D Graphics Engine A, BG-VRAM (max 512K)
 //Vram A (128K)
 #define VRAM_A_0x06000000_ENGINE_A_BG 	(1 | VRAM_OFFSET(0))	//OFS 0..3
@@ -109,17 +109,20 @@ typedef struct vramSetup
 #define VRAM_D_0x06040000_ENGINE_A_BG 	(1 | VRAM_OFFSET(2))
 #define VRAM_D_0x06060000_ENGINE_A_BG 	(1 | VRAM_OFFSET(3))
 
-//Vram E (64K)
-#define VRAM_E_0x06000000_ENGINE_A_BG 	(1)	//static
+//Vram E  64K   1    -     6000000h
+#define VRAM_E_0x06000000_ENGINE_A_BG 	(1)		//static @ 0x06000000
 
 //Vram F (16K), takes in account OFS0 and OFS1 : 06000000h+(4000h*OFS.0)+(10000h*OFS.1)
-#define VRAM_F_0x060XXXXX_ENGINE_A_BG 	(1)	//OFS 0..3
+#define VRAM_F_0x06000000_ENGINE_A_BG  	(1 | (( 0 )<<3))	//OFS 0
+#define VRAM_F_0x06004000_ENGINE_A_BG 	(1 | (( 1 )<<3))	//OFS 1
+#define VRAM_F_0x06010000_ENGINE_A_BG  	(1 | (( 2 )<<3))	//OFS 2
+#define VRAM_F_0x06014000_ENGINE_A_BG  	(1 | (( 3 )<<3))	//OFS 3
 
 //Vram G (16K),	takes in account OFS0 and OFS1 : 06000000h+(4000h*OFS.0)+(10000h*OFS.1)
 #define VRAM_G_0x060XXXXX_ENGINE_A_BG 	(1)	//OFS 0..3
 
 
-//VRAM Setup 2
+//VRAM Setup 2: //MST 2
 //ARM9, 2D Graphics Engine A, OBJ-VRAM (max 256K) (OFS 0..1)
 #define VRAM_A_0x06400000_ENGINE_A_BG 	(2 | VRAM_OFFSET(0))	//0x064(20000*OFS.0) (OFS.1 always zero)
 #define VRAM_A_0x06420000_ENGINE_A_BG 	(2 | VRAM_OFFSET(1))	
@@ -127,17 +130,20 @@ typedef struct vramSetup
 #define VRAM_B_0x06400000_ENGINE_A_BG 	(2 | VRAM_OFFSET(0))	//0x064(20000*OFS.0) (OFS.1 always zero)
 #define VRAM_B_0x06420000_ENGINE_A_BG 	(2 | VRAM_OFFSET(1))	
 
-//both can coexist through OFS (ofs1 is VRAM start always)
-
-#define VRAM_E_0x06400000_ENGINE_A_BG 	(2)	//static
-
+//both can coexist through OFS 
+#define VRAM_E_0x06400000_ENGINE_A_BG 	(2)	//static	: VRAM_E: Main Engine 0x06400000 64K MST 2
 
 //Vram F (16K), takes in account OFS0 and OFS1 : 6400000h+(4000h*OFS.0)+(10000h*OFS.1)
-#define VRAM_F_0x064XXXXX_ENGINE_A_BG 	(2)	//OFS 0..3
+#define VRAM_F_0x06400000_ENGINE_A_BG  (2 | (( 0 )<<3))	//OFS 0
+#define VRAM_F_0x06404000_ENGINE_A_BG  (2 | (( 1 )<<3))	//OFS 1
+#define VRAM_F_0x06410000_ENGINE_A_BG  (2 | (( 2 )<<3))	//OFS 2
+#define VRAM_F_0x06414000_ENGINE_A_BG  (2 | (( 3 )<<3))	//OFS 3
 
 //Vram G (16K),	takes in account OFS0 and OFS1 : 6400000h+(4000h*OFS.0)+(10000h*OFS.1)
-#define VRAM_G_0x064XXXXX_ENGINE_A_BG 	(2)	//OFS 0..3
-
+#define VRAM_G_0x06400000_ENGINE_A_BG	(2 | (( 0 )<<3))
+#define VRAM_G_0x06404000_ENGINE_A_BG	(2 | (( 1 )<<3))
+#define VRAM_G_0x06410000_ENGINE_A_BG	(2 | (( 2 )<<3))
+#define VRAM_G_0x06414000_ENGINE_A_BG	(2 | (( 3 )<<3))
 
 //VRAM Setup 3
 //2D Graphics Engine A, BG Extended Palette
@@ -153,7 +159,7 @@ typedef struct vramSetup
 #define VRAM_C_0x06200000_ENGINE_B_BG 	(4 | VRAM_OFFSET(0))	//static
 
 //Vram H (32K)
-#define VRAM_H_0x06200000_ENGINE_B_BG 	(1)	//static. 
+#define VRAM_H_0x06200000_ENGINE_B_BG 	(1)	//6200000
 
 //Vram I (16K)
 #define VRAM_I_0x06208000_ENGINE_B_BG 	(1)	//static. 
