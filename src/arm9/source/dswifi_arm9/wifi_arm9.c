@@ -1142,11 +1142,11 @@ bool WNifi_InitSafeDefault(bool useFirmwareSettings,bool useWIFI){
 		if(getWIFISetup() == false){
 			if(Wifi_InitDefault(useFirmwareSettings) == true)
 			{
-				printf("Connected: IP: %s",(char*)print_ip((uint32)Wifi_GetIP()));
+				//printf("Connected: IP: %s",(char*)print_ip((uint32)Wifi_GetIP()));
 				return true;
 			}
 			else{
-				printf("Wifi connection error. Retry later.");
+				//printf("Wifi connection error. Retry later.");
 				return false;
 			}
 		}

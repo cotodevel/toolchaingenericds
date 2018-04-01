@@ -240,22 +240,27 @@ bool switch_dswnifi_mode(sint32 mode){
 		return true;
 	}
 	//Raw Network Packet Nifi
-	else if (mode == (sint32)dswifi_localnifimode){	
-		WNifi_InitSafeDefault(false,false);
-		dswifiSrv.dsnwifisrv_stat	= ds_searching_for_multi_servernotaware;
-		setMULTIMode(mode);
-		setConnectionStatus(proc_connect);
-		setWIFISetup(true);
-		return true;		
+	else if (mode == (sint32)dswifi_localnifimode){
+		bool useWIFIAP = false;
+		if(connectDSWIFIAP(false,useWIFIAP) == true){	//setWIFISetup set inside
+			dswifiSrv.dsnwifisrv_stat	= ds_searching_for_multi_servernotaware;
+			setMULTIMode(mode);
+			setConnectionStatus(proc_connect);
+			return true;
+		}
+		else{
+			//Could not connect
+			switch_dswnifi_mode(dswifi_idlemode);
+			return false;
+		}
 	}
 	//UDP Nifi (wifi AP)
 	else if (mode == (sint32)dswifi_udpnifimode){
 		dswifiSrv.dsnwifisrv_stat = ds_searching_for_multi_servernotaware;
-		if(WNifi_InitSafeDefault(WFC_CONNECT,true) == true)
-		{
+		bool useWIFIAP = true;
+		if(connectDSWIFIAP(WFC_CONNECT,useWIFIAP) == true){	//setWIFISetup set inside
 			setConnectionStatus(proc_connect);
 			setMULTIMode(mode);
-			setWIFISetup(true);
 			return true;
 		}
 		else{
@@ -268,9 +273,8 @@ bool switch_dswnifi_mode(sint32 mode){
 	//GDBStub mode
 	else if (mode == (sint32)dswifi_gdbstubmode){
 		dswifiSrv.dsnwifisrv_stat	= ds_multi_notrunning;
-		if (gdbNdsStart() == true){
+		if (gdbNdsStart() == true){	//setWIFISetup set inside
 			setMULTIMode(mode);
-			setWIFISetup(true);
 			return true;
 		}
 		else{
@@ -790,11 +794,25 @@ int remoteListenSocket = -1;
 bool remoteConnected = false;
 bool remoteResumed = false;
 
+//this one performs the actual connection and toggles the connected status.
+bool connectDSWIFIAP(bool WFC_CONNECTION,bool usewifiAP){
+	if(getWIFISetup() == false){
+		if(WNifi_InitSafeDefault(WFC_CONNECTION,usewifiAP) == true){
+			setWIFISetup(true);
+			return true;
+		}
+		else{
+			setWIFISetup(false);
+			return false;
+		}
+	}
+	return getWIFISetup();
+}
+
 bool gdbNdsStart(){
 	dswifiSrv.GDBStubEnable = false;
-	if(WNifi_InitSafeDefault(WFC_CONNECT,true) == true){
-		printf("GDBPort:%d",remotePort);	//must show port so client has IP+Port to connect
-		remoteInit();
+	bool useWIFIAP = true;
+	if(connectDSWIFIAP(WFC_CONNECT,useWIFIAP) == true){
 		dswifiSrv.GDBStubEnable = true;
 		return true;
 	}
@@ -1259,10 +1277,9 @@ void remoteWriteRegister(char *p)
   remotePutPacket("OK");
 }
 
-void remoteStubMain()
+sint32 remoteStubMain()
 {
 	if( (getMULTIMode() == dswifi_gdbstubmode) && (getWIFISetup() == true) && (dswifiSrv.GDBStubEnable == true) ){
-	
 		if(remoteResumed) {
 			remoteSendStatus();
 			remoteResumed = false;
@@ -1273,12 +1290,12 @@ void remoteStubMain()
 		if(res == -1) {
 			remoteCleanUp();
 			clrscr();
-			printf("GDB Client must connect to DS now.");
 			if (switch_dswnifi_mode(dswifi_gdbstubmode) == true){
-				//printf("GDB Client Reconnect:OK");
+				//printf ip/port here
+				remoteInit();
 			}
 			else{
-				//printf("GDB Client Reconnect:ERROR");
+				//GDB Client Reconnect:ERROR
 			}
 		}
 		else{
@@ -1364,10 +1381,15 @@ void remoteStubMain()
 			}
 		}
 		free(buffer);
+		return remoteStubMainWIFIConnectedGDBRunning;
 	}
 	else{
-		switch_dswnifi_mode(dswifi_gdbstubmode);	//GDB Stub start
+		if(getWIFISetup() == true){
+			return remoteStubMainWIFIConnectedNoGDB;
+		}
 	}
+	
+	return remoteStubMainWIFINotConnected;
 }
 
 void remoteStubSignal(int sig, int number)

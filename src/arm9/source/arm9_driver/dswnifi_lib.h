@@ -100,6 +100,12 @@ USA
 //Standard Frame Size
 #define frameDSsize (sint32)((256)+sizeof(volatile uint16))	//256 bytes
 
+//remoteStubMain retcodes
+#define remoteStubMainWIFINotConnected (sint32)(-1)	
+#define remoteStubMainWIFIConnectedNoGDB (sint32)(16)	//Wifi alone connected, GDB not running
+#define remoteStubMainWIFIConnectedGDBRunning (sint32)(17)	//Wifi & GDB running
+
+
 typedef struct {
 	//dswifi socket @ PORT 8888
     struct sockaddr_in sain_UDP_PORT;	//UDP: Listener sockaddr_in
@@ -327,6 +333,7 @@ extern __attribute__((weak))	bool do_multi(struct frameBlock * frameBlockRecv);
 
 extern bool sentReq;
 extern struct dsnwifisrvStr * getDSWNIFIStr();
+extern bool connectDSWIFIAP(bool WFC_CONNECTION,bool usewifiAP);
 
 //GDB stub
 extern bool gdbNdsStart();
@@ -359,7 +366,7 @@ extern void remoteStepOverRange(char *p);
 extern void remoteWriteWatch(char *p, bool active);
 extern void remoteReadRegisters(char *p);
 extern void remoteWriteRegister(char *p);
-extern void remoteStubMain();
+extern sint32 remoteStubMain();
 extern void remoteStubSignal(int sig, int number);
 extern void remoteCleanUp();
 
