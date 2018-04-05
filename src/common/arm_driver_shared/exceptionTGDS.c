@@ -216,6 +216,8 @@ void exception_handler(uint32 arg)
 		BG_PALETTE_SUB[255] = RGB15(31,31,31);
 	}
 	
-	while(1){}
+	while(1){
+		IRQVBlankWait();
+	}
 }
 #endif
