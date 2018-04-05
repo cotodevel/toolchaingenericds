@@ -146,13 +146,20 @@ typedef struct vramSetup
 #define VRAM_G_0x06414000_ENGINE_A_BG	(2 | (( 3 )<<3))
 
 //VRAM Setup 3
-//2D Graphics Engine A, BG Extended Palette
-//Vram E (64K)
-#define VRAM_E_SLOT_ENGINE_A_BG_EXTENDED 	(4)	//Slot 0-3  ;only lower 32K used (No OFS)
+//2D Graphics Engine A, BG Extended Palette. This mode maps memory to VRAM and not CPU addresses
+//Vram E (64K) : Slot 0-3  ;only lower 32K used (No OFS)
+#define VRAM_E_SLOT0_ENGINE_A_BG_EXTENDED 	(4 | (( 0 )<<3))	
+#define VRAM_E_SLOT1_ENGINE_A_BG_EXTENDED 	(4 | (( 1 )<<3))	
+#define VRAM_E_SLOT2_ENGINE_A_BG_EXTENDED 	(4 | (( 2 )<<3))	
+#define VRAM_E_SLOT3_ENGINE_A_BG_EXTENDED 	(4 | (( 3 )<<3))
 
-//Vram F (16K)
-#define VRAM_F_SLOT_ENGINE_A_BG_EXTENDED 	(4)	//Slot 0-1 (OFS=0), Slot 2-3 (OFS=1) (OFS 0..1)
-#define VRAM_G_SLOT_ENGINE_A_BG_EXTENDED 	(4)	//Slot 0-1 (OFS=0), Slot 2-3 (OFS=1) (OFS 0..1)
+//Vram F (16K): ofst 0..1
+//Vram G (16K): ofst 0..1
+#define VRAM_F_SLOT01_ENGINE_A_BG_EXTENDED 	(4 | (( 0 )<<3))	  	//Slot 0-1 (OFS=0)
+#define VRAM_F_SLOT23_ENGINE_A_BG_EXTENDED 	(4 | (( 1 )<<3))		//Slot 2-3 (OFS=1)
+#define VRAM_G_SLOT01_ENGINE_A_BG_EXTENDED 	(4 | (( 0 )<<3))	  	//Slot 0-1 (OFS=0)
+#define VRAM_G_SLOT23_ENGINE_A_BG_EXTENDED 	(4 | (( 1 )<<3))		//Slot 2-3 (OFS=1)
+
 
 //VRAM Setup 7
 //Vram C (128K)
