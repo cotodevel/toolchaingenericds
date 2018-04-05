@@ -44,8 +44,9 @@ USA
 #include "dswifi9.h"
 #include "wifi_shared.h"
 #include "sgIP_Config.h"
-
 #include "utilsTGDS.h"
+#include "memoryHandleTGDS.h"
+
 #include <netdb.h>
 #include <ctype.h>
 #include <string.h>
@@ -752,13 +753,6 @@ struct dsnwifisrvStr * getDSWNIFIStr(){
 #endif
 
 
-
-
-
-
-
-
-
 // VisualBoyAdvance - Nintendo Gameboy/GameboyAdvance (TM) emulator.
 // Copyright (C) 1999-2003 Forgotten
 // Copyright (C) 2004 Forgotten and the VBA development team
@@ -777,15 +771,12 @@ struct dsnwifisrvStr * getDSWNIFIStr(){
 // along with this program; if not, write to the Free Software Foundation,
 // Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
-
-//GDB Stub
+//GDB Stub implementation
 
 int (*remoteSendFnc)(char *, int) = NULL;
 int (*remoteRecvFnc)(char *, int) = NULL;
 bool (*remoteInitFnc)() = NULL;
 void (*remoteCleanUpFnc)() = NULL;
-
-
 
 int remotePort = 55555;
 int remoteSignal = 5;
@@ -879,9 +870,9 @@ if(remoteSocket == -1) {
     char dummy;
     recv(s2, &dummy, 1, 0);
     if(dummy != '+') {
-		//ACK NOT received
+		//GDB Server: ACK NOT received
 	}else{
-		//ACK RECEIVED
+		//GDB Server: ACK RECEIVED
 	}
 	
     remoteSocket = s2;
@@ -893,12 +884,12 @@ if(remoteSocket == -1) {
 void remoteTcpCleanUp()
 {
 	if(remoteSocket > 0) {
-		//printf("Closing remote socket ");
+		//Closing remote socket
 		close(remoteSocket);
 		remoteSocket = -1;
 	}
 	if(remoteListenSocket > 0) {
-		//printf("Closing listen socket ");
+		//Closing listen socket
 		close(remoteListenSocket);
 		remoteListenSocket = -1;
 	}
@@ -921,10 +912,9 @@ bool remotePipeInit()
 	char dummy;
 	read(0, &dummy, 1);
 	if(dummy != '+') {
-		//printf("ACK not received ");
+		//GDB Server: ACK not received
 		while(1==1);
 	}
-
 	return true;
 }
 
@@ -1406,89 +1396,28 @@ void remoteCleanUp()
 	dswifiSrv.GDBStubEnable = false;
 }
 
-
 u32 debuggerReadMemory(u32 addr){
-if(
-		((u32)addr > (u32)0x00000000)	||
-		((u32)addr < (u32)(0x00000000+16*1024))	||	
-		((u32)addr > (u32)0x01000000)	||	
-		((u32)addr < (u32)(0x01000000+32*1024))	||	
-		((u32)addr > (u32)0x0b000000)	||	
-		((u32)addr < (u32)(0x0b000000+16*1024))	||	
-		((u32)addr > (u32)0x02000000)	||	
-		((u32)addr < (u32)(0x02000000+4*1024*1024))	||	
-		((u32)addr > (u32)0x03000000)	||	
-		((u32)addr < (u32)(0x03000000+32*1024))	||	
-		((u32)addr > (u32)0x04000000)	||	
-		((u32)addr < (u32)(0x04000000+32*1024))	||	
-		((u32)addr > (u32)0x05000000)	||	
-		((u32)addr < (u32)(0x05000000+64*1024))	||	
-		((u32)addr > (u32)0x06000000)	||	
-		((u32)addr < (u32)(0x06000000+512*1024))	||	
-		((u32)addr > (u32)0x08000000)	||	
-		((u32)addr < (u32)(0x08000000+32*1024*1024))
-	){
+	if(isValidMap(addr) == true){
 		return (*(u32*)addr);
-	}	
+	}
 	else{
 		return (u32)(0xffffffff);
 	}
 }
 
-
-
 u16 debuggerReadHalfWord(u32 addr){
-if(
-		((u32)addr > (u32)0x00000000)	||
-		((u32)addr < (u32)(0x00000000+16*1024))	||	
-		((u32)addr > (u32)0x01000000)	||	
-		((u32)addr < (u32)(0x01000000+32*1024))	||	
-		((u32)addr > (u32)0x0b000000)	||	
-		((u32)addr < (u32)(0x0b000000+16*1024))	||	
-		((u32)addr > (u32)0x02000000)	||	
-		((u32)addr < (u32)(0x02000000+4*1024*1024))	||	
-		((u32)addr > (u32)0x03000000)	||	
-		((u32)addr < (u32)(0x03000000+32*1024))	||	
-		((u32)addr > (u32)0x04000000)	||	
-		((u32)addr < (u32)(0x04000000+32*1024))	||	
-		((u32)addr > (u32)0x05000000)	||	
-		((u32)addr < (u32)(0x05000000+64*1024))	||	
-		((u32)addr > (u32)0x06000000)	||	
-		((u32)addr < (u32)(0x06000000+512*1024))	||	
-		((u32)addr > (u32)0x08000000)	||	
-		((u32)addr < (u32)(0x08000000+32*1024*1024))
-	){
+	if(isValidMap(addr) == true){
 		return (*(u16*)addr);
-	}	
+	}
 	else{
 		return (u16)(0xffff);
 	}
 }
 
-
 u8 debuggerReadByte(u32 addr){
-if(
-		((u32)addr > (u32)0x00000000)	||
-		((u32)addr < (u32)(0x00000000+16*1024))	||	
-		((u32)addr > (u32)0x01000000)	||	
-		((u32)addr < (u32)(0x01000000+32*1024))	||	
-		((u32)addr > (u32)0x0b000000)	||	
-		((u32)addr < (u32)(0x0b000000+16*1024))	||	
-		((u32)addr > (u32)0x02000000)	||	
-		((u32)addr < (u32)(0x02000000+4*1024*1024))	||	
-		((u32)addr > (u32)0x03000000)	||	
-		((u32)addr < (u32)(0x03000000+32*1024))	||	
-		((u32)addr > (u32)0x04000000)	||	
-		((u32)addr < (u32)(0x04000000+32*1024))	||	
-		((u32)addr > (u32)0x05000000)	||	
-		((u32)addr < (u32)(0x05000000+64*1024))	||	
-		((u32)addr > (u32)0x06000000)	||	
-		((u32)addr < (u32)(0x06000000+512*1024))	||	
-		((u32)addr > (u32)0x08000000)	||	
-		((u32)addr < (u32)(0x08000000+32*1024*1024))
-	){
+	if(isValidMap(addr) == true){
 		return (*(u8*)addr);
-	}	
+	}
 	else{
 		return (u8)(0xff);
 	}
