@@ -38,8 +38,8 @@ sint8*  g_snemulds_str_pol[] =
       "Dzwiek wlaczony",            /* 30 */
       "Dzwiek wylaczony",            /* 31 */
       "Predkosc:",                  /* 32 */
-      "VBlank enabled (ignored)",					/* 33 */
-	  "VBlank disabled (ignored)",					/* 34 */
+      "VBlank enabled ",					/* 33 */
+	  "VBlank disabled ",					/* 34 */
       "",                        /* 35 */
       "Opcje wyswietlania",      /* 36 */
       "Opcje tla i sprite'ow",   /* 37 */

@@ -38,8 +38,8 @@ sint8*  g_snemulds_str_dan[] =
 		"Lyd på",				/* 30 */
 		"Lyd fra",				/* 31 */
 		"Hastighed:",						/* 32 */
-		"VBlank enabled (ignored)",					/* 33 */
-		"VBlank disabled (ignored)",					/* 34 */
+		"VBlank enabled ",					/* 33 */
+		"VBlank disabled ",					/* 34 */
 		"",								/* 35 */
 		"Skærm indstillinger",		/* 36 */
 		"Baggrunde & Sprites instillinger",	/* 37 */

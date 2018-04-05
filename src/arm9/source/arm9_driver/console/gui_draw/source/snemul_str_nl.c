@@ -38,8 +38,8 @@ sint8*  g_snemulds_str_nl[] =
     "Geluid aan",        /* 30 */
     "Geluid uit",       /* 31 */
     "Snelheid:",           /* 32 */
-    "VBlank enabled (ignored)",					/* 33 */
-	"VBlank disabled (ignored)",					/* 34 */
+    "VBlank enabled ",					/* 33 */
+	"VBlank disabled ",					/* 34 */
     "",               /* 35 */
     "Schermindeling opties",    /* 36 */
     "Achtergronden & sprite opties",  /* 37 */
