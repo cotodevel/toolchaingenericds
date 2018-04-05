@@ -139,6 +139,10 @@ extern sint32 get_available_mem();
 extern void * _sbrk (int size);
 extern void * _sbrk_r (struct _reent * reent, int size);
 
+//NDS Memory Map
+extern bool isValidMap(uint32 addr);
+
+
 //TGDS IPC
 extern uint32 getToolchainIPCAddress();		
 extern sint32 getToolchainIPCSize();

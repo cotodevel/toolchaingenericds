@@ -324,93 +324,62 @@ void * _sbrk_r (struct _reent * reent, int size){
 	return _sbrk (size);
 }
 
-///* sbrk support */
-//
-///* The current plan is to have one sbrk handler for all cpus.
-//   Hence use `asm' for each global variable here to avoid the cpu prefix.
-//   We can't intrude on the user's namespace (another reason to use asm).  */
-//
-//#include <sys/types.h>
-///*#include <sys/syscall.h>*/
-//#include <errno.h>
-//#include <stddef.h>
-//
-///* These variables are publicly accessible for debugging purposes.
-//   The user is also free to set sbrk_size to something different.
-//   See mem-layout.c.  */
-//
-//extern int sbrk_size asm ("sbrk_size");
-//
-//caddr_t sbrk_start asm ("sbrk_start");
-//caddr_t sbrk_loc asm ("sbrk_loc");
-//extern char  end;                    /* Defined by linker.  */
-//
-///*caddr_t _sbrk_r (struct _reent *, size_t) asm ("__sbrk_r");*/
-//
-//
-///* This symbol can be defined with the --defsym linker option.  */
-//extern char __heap_end __attribute__((weak));
-//
-//
-///* FIXME: We need a semaphore here.  */
-//
-//caddr_t
-//_sbrk_r (struct _reent *r, size_t nbytes)
-//{
-//   extern char  end;			/* Defined by linker.  */
-//   static char *heap_end;		/* Previous end of heap or 0 if none */
-//   char        *prev_heap_end;
-//   register char* stack asm("sp");
-//
-//   if (0 == heap_end)
-//     {
-//       heap_end = &end;			/* Initialize first time round */
-//     }
-//
-//   prev_heap_end  = heap_end;
-//
-//   if (stack < (prev_heap_end+nbytes)) {
-//     /* heap would overlap the current stack depth.
-//      * Future:  use sbrk() system call to make simulator grow memory beyond
-//      * the stack and allocate that
-//      */
-//     errno = ENOMEM;
-//     return (char*)-1;
-//   }
-//
-//   heap_end      += nbytes;
-//
-//   return (caddr_t) prev_heap_end;
-//
-//}	/* _sbrk () */
-
-
-//caddr_t
-//_sbrk_r (struct _reent *r, size_t nbytes)
-//{
-//  caddr_t result;
-//
-//  void *heap_end;
-//
-//  heap_end = &__heap_end;
-//  if (!heap_end)
-//    heap_end = sbrk_start + sbrk_size;
-//  if (
-//      /* Ensure we don't underflow.  */
-//      sbrk_loc + nbytes < sbrk_start
-//      /* Ensure we don't overflow.  */
-//      || sbrk_loc + nbytes > (caddr_t)heap_end)
-//    {
-//      errno = ENOMEM;
-//      return ((caddr_t) -1);
-//    }
-//
-//  if (0 == sbrk_loc)
-//    sbrk_loc = &end;                 /* Initialize first time round */
-//  result = sbrk_loc;
-//  sbrk_loc += nbytes;
-//  return result;
-//}
+//NDS Memory Map (valid):
+//todo: detect valid maps according to MPU settings
+__attribute__ ((hot))
+__attribute__((section(".itcm")))
+bool isValidMap(uint32 addr){
+	if( 
+		#ifdef ARM9
+		((addr >= (uint32)0x06000000) && (addr < (uint32)0x06020000))	//NDS VRAM BG Engine Region protected	0x06000000 - 0x0601ffff
+		||
+		((addr >= (uint32)0x06020000) && (addr < (uint32)0x06040000))	//NDS VRAM BG Engine Region protected	0x06020000 - 0x0603ffff
+		||
+		((addr >= (uint32)0x06040000) && (addr < (uint32)0x06060000))	//NDS VRAM BG Engine Region protected	0x06040000 - 0x0605ffff
+		||
+		((addr >= (uint32)0x06060000) && (addr < (uint32)0x06080000))	//NDS VRAM BG Engine Region protected	0x06060000 - 0x0607ffff
+		||
+		((addr >= (uint32)0x06200000) && (addr < (uint32)(0x06200000 + 0x20000)))	//NDS VRAM Engine Region protected	//theoretical map
+		||
+		((addr >= (uint32)0x06400000) && (addr < (uint32)(0x06400000 + 0x14000)))	//NDS VRAM Engine Region protected	// actual map
+		||
+		((addr >= (uint32)0x06600000) && (addr < (uint32)(0x06600000 + 0x20000)))	//NDS VRAM Engine Region protected	// theoretical map
+		||
+		((addr >= (uint32)0x06800000) && (addr < (uint32)(0x06800000 + (656 * 1024) )))	//NDS VRAM Engine Region protected	// actual map
+		||
+		((addr >= (uint32)0x07000000) && (addr < (uint32)(0x07000000 + (2 * 1024) )))	//NDS VRAM OAM Region protected	// theoretical map?
+		||
+		((addr >= (uint32)get_ewram_start()) && (addr <= (uint32)(get_ewram_start() + get_ewram_size())))	//NDS EWRAM Region protected
+		||
+		((addr >= (uint32)(get_itcm_start())) && (addr <= (uint32)(get_itcm_start()+get_itcm_size())))	//NDS ITCM Region protected
+		||
+		((addr >= (uint32)(get_dtcm_start())) && (addr <= (uint32)(get_dtcm_start()+get_dtcm_size())))	//NDS DTCM Region protected
+		||
+		((addr >= (uint32)(0x05000000)) && (addr <= (uint32)(0x05000000 + 2*1024)))	//NDS Palette Region protected
+		||
+		( (WRAM_CR & WRAM_32KARM9_0KARM7) && (addr >= (uint32)(0x03000000)) && (addr <= (uint32)(0x03000000 + 32*1024)) )	//NDS Shared WRAM 32K Region protected
+		||
+		( (WRAM_CR & WRAM_16KARM9_16KARM7FIRSTHALF9) && (addr >= (uint32)(0x03000000)) && (addr <= (uint32)(0x03000000 + 16*1024)) )
+		||
+		( (WRAM_CR & WRAM_16KARM9_16KARM7FIRSTHALF7) && (addr >= (uint32)(0x03000000 + (16*1024))) && (addr <= (uint32)(0x03000000 + (32*1024) )) )
+		#endif
+		#ifdef ARM7
+		((addr >= (uint32)get_iwram_start()) && (addr <= (uint32)(get_iwram_start() + get_iwram_size())))	//NDS EWRAM Region protected
+		||
+		( (WRAM_CR & WRAM_0KARM9_32KARM7) && (addr >= (uint32)(0x03000000)) && (addr <= (uint32)(0x03000000 + 32*1024)) )	//NDS Shared WRAM 32K Region protected
+		||
+		( (WRAM_CR & WRAM_16KARM9_16KARM7FIRSTHALF7) && (addr >= (uint32)(0x03000000)) && (addr <= (uint32)(0x03000000 + 16*1024)) )
+		||
+		( (WRAM_CR & WRAM_16KARM9_16KARM7FIRSTHALF9) && (addr >= (uint32)(0x03000000 + (16*1024))) && (addr <= (uint32)(0x03000000 + (32*1024) )) )
+		#endif
+		||
+		((addr >= (uint32)(0x04000000)) && (addr <= (uint32)(0x04000000 + 4*1024)))	//NDS IO Region protected
+		
+	){
+		return true;
+	}
+	return false;
+}
 
 //IPC 
 
