@@ -123,6 +123,22 @@ USA
 //use POWERMAN_ARM9 | POWER_XXXX to write to ARM9 regs directly.
 #define POWERMAN_ARM9		(uint16)(1<<16)
 
+//DS Memory Control - WRAM
+//0-1   ARM9/ARM7 (0-3 = 32K/0K, 2nd 16K/1st 16K, 1st 16K/2nd 16K, 0K/32K)
+//2-7   Not used
+
+#define WRAM_32KARM9_0KARM7				(uint8)(0)
+#define WRAM_16KARM9_16KARM7FIRSTHALF7 	(uint8)(1)
+#define WRAM_16KARM9_16KARM7FIRSTHALF9 	(uint8)(2)
+#define WRAM_0KARM9_32KARM7 			(uint8)(3)
+
+#ifdef ARM7
+#define WRAM_CR			(*(vuint8*)0x04000241)
+#endif
+
+#ifdef ARM9
+#define WRAM_CR			(*(vuint8*)0x04000247)
+#endif
 
 /////////////////////////////////////////////////////////////// Shared End
 
@@ -263,7 +279,6 @@ USA
 #define VRAM_E_CR		(*(vuint8*)0x04000244)
 #define VRAM_F_CR		(*(vuint8*)0x04000245)
 #define VRAM_G_CR		(*(vuint8*)0x04000246)
-#define WRAM_CR			(*(vuint8*)0x04000247)
 #define VRAM_H_CR		(*(vuint8*)0x04000248)
 #define VRAM_I_CR		(*(vuint8*)0x04000249)
 

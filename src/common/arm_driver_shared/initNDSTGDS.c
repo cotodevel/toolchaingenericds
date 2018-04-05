@@ -148,9 +148,8 @@ void resetMemory_ARMCores()
 	VRAM_CR   = 0x03000000;
 	REG_POWERCNT  = 0x820F;
     
-	//0-1   ARM9/ARM7 (0-3 = 32K/0K, 2nd 16K/1st 16K, 1st 16K/2nd 16K, 0K/32K)
 	//set WORKRAM 32K to ARM9 by default
-	WRAM_CR = 0x00;
+	WRAM_CR = WRAM_32KARM9_0KARM7;
 	#endif
 	
 }
