@@ -124,6 +124,3 @@ endif
 ifeq ($(TGDS_ENV),linux)
 	-@sudo rm -fr $(OBJDIR)	$(TARGET_LIBRARY_FILE_9)	$(MAPFILE)	$(TARGET_LIBRARY_PATH)/$(TARGET_LIBRARY_FILE_9)
 endif
-
-debug:
-	-@echo ''
