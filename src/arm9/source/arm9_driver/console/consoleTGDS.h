@@ -83,7 +83,6 @@ USA
 #define	REG_BG3Y_SUB		(*(vsint32*)0x400103C)
 
 
-
 //Console uses 2D. used by REG_DISPCNT / REG_DISPCNT_SUB
 typedef enum {
 	MODE_0_2D = 0x10000, 
@@ -123,7 +122,6 @@ typedef struct ConsoleInstance
 	uint16* gfx;
 	EngineStatus ConsoleEngineStatus;
 }ConsoleInstance;
-
 
 //font
 typedef struct
@@ -227,8 +225,6 @@ typedef struct
 #define GUI_PARAM(a) (void *)(a)
 #define GUI_PARAM2(a, b) (void *)((((uint16)(a)) << 16) | ((uint16)(b)))
 #define GUI_PARAM3(s, n, c) (void *)((s) | ((n) << 16) | ((c) << 24))
-
-
 
 #define _STR(x) GUI.string[x]
 
@@ -368,13 +364,12 @@ extern void SetEngineConsole(PPUEngine engine,ConsoleInstance * ConsoleInst);
 extern void consoleClear(ConsoleInstance * ConsoleInst);
 extern t_GUIFont katakana_12_font;
 
-extern void GUI_console_printf(int cx, int cy, sint8 *fmt, ...);
-extern void		GUI_align_printf(int flags, sint8 *fmt, ...);
+extern void	GUI_console_printf(int cx, int cy, sint8 *fmt, ...);
+extern void	GUI_align_printf(int flags, sint8 *fmt, ...);
 extern void GUI_printf(sint8 *fmt, ...);
 extern void GUI_printf2(int cx, int cy, sint8 *fmt, ...);
-extern void		GUI_clearScreen(int color);
+extern void	GUI_clearScreen(int color);
 extern void	GUI_clear();
-
 extern volatile sint8 g_printfbuf[consolebuf_size];
 
 //font 
@@ -385,13 +380,13 @@ extern void _glyph_loadline_8(uint8 *dst, uint8 *data, int pos, int size, uint8 
 extern void _glyph_loadline_2(uint8 *dst, uint8 *data, int pos, int size, uint8 *pal);
 extern void _glyph_loadline_1(uint8 *dst, uint8 *data, int pos, int size, uint8 *pal);
 
-extern int GUI_drawVChar(t_GUIZone *zone, t_GUIFont *font, uint16 x, uint16 y, int col, uint8 text);
+extern int 	GUI_drawVChar(t_GUIZone *zone, t_GUIFont *font, uint16 x, uint16 y, int col, uint8 text);
 extern uint8 g_katana_jisx0201_conv[];
-extern int GUI_drawText(t_GUIZone *zone, uint16 x, uint16 y, int col, sint8 *text);
-extern int GUI_getStrWidth(t_GUIZone *zone, sint8 *text);
-extern int GUI_getFontHeight(t_GUIZone *zone);
-extern int		GUI_getZoneTextHeight(t_GUIZone *zone);
-extern int GUI_drawAlignText(t_GUIZone *zone, int flags, int y, int col, sint8 *text);
+extern int 	GUI_drawText(t_GUIZone *zone, uint16 x, uint16 y, int col, sint8 *text);
+extern int 	GUI_getStrWidth(t_GUIZone *zone, sint8 *text);
+extern int 	GUI_getFontHeight(t_GUIZone *zone);
+extern int	GUI_getZoneTextHeight(t_GUIZone *zone);
+extern int 	GUI_drawAlignText(t_GUIZone *zone, int flags, int y, int col, sint8 *text);
 extern void clrscr();
 #ifdef __cplusplus
 }

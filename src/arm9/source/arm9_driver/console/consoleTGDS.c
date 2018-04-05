@@ -34,25 +34,17 @@ USA
 #include "ipcfifoTGDS.h"
 
 t_GUI GUI;
-
 volatile sint8	g_printfbuf[consolebuf_size];
-
 ConsoleInstance DefaultConsole = {0};		//generic console
 ConsoleInstance CustomConsole = {0};		//project specific console
-
 ConsoleInstance * DefaultSessionConsole;	//Default Console Instance Chosen
 
-
-
-
-bool InitializeConsole(ConsoleInstance * ConsoleInst){
-	
+bool InitializeConsole(ConsoleInstance * ConsoleInst){	
 	UpdateConsoleSettings(ConsoleInst);	
 	return true;
 }
 
 void UpdateConsoleSettings(ConsoleInstance * ConsoleInst){
-	
 	//setup DISPCNT
 	if(ConsoleInst->ppuMainEngine == mainEngine){
 		SETDISPCNT_MAIN((uint32)ConsoleInst->ConsoleEngineStatus.ENGINE_DISPCNT);
@@ -60,8 +52,7 @@ void UpdateConsoleSettings(ConsoleInstance * ConsoleInst){
 	else if(ConsoleInst->ppuMainEngine == subEngine){
 		SETDISPCNT_SUB((uint32)ConsoleInst->ConsoleEngineStatus.ENGINE_DISPCNT);
 	}
-	
-	//setup Backgrounds
+	//setup Backgrounds per NDS Render Engine
 	int i = 0;
 	for(i = 0; i < (int)backgroundsPerEngine; i++){
 	
@@ -82,20 +73,15 @@ void consoleClear(ConsoleInstance * ConsoleInst){
 	GUI_clearScreen(0);
 }
 
-
-
 void		GUI_clearScreen(int color)
 {
 	uint16		*ptr;
-	
 	ptr = GUI.DSFrameBuffer;
-
 	uint32	c = color | (color << 8) | (color << 16) | (color << 24);
-
 	swiFastCopy((uint32*)&c, (uint32*)(uint16*)ptr, ((256*192)/4) | COPY_FIXED_SOURCE);
 }
 
-inline void _glyph_loadline_1(uint8 *dst, uint8 *data, int pos, int size, uint8 *pal)
+void _glyph_loadline_1(uint8 *dst, uint8 *data, int pos, int size, uint8 *pal)
 {
 	int	x, x2;
 	for (x = 0, x2 = pos; x < size; x++, x2++)
@@ -107,7 +93,7 @@ inline void _glyph_loadline_1(uint8 *dst, uint8 *data, int pos, int size, uint8 
 		
 }
 
-inline void _glyph_loadline_2(uint8 *dst, uint8 *data, int pos, int size, uint8 *pal)
+void _glyph_loadline_2(uint8 *dst, uint8 *data, int pos, int size, uint8 *pal)
 {
 	int	x, x2;	
 	for (x = 0, x2 = pos; x < size; x++, x2++)
@@ -118,7 +104,7 @@ inline void _glyph_loadline_2(uint8 *dst, uint8 *data, int pos, int size, uint8 
 	}	
 }
 
-inline void _glyph_loadline_8(uint8 *dst, uint8 *data, int pos, int size, uint8 *pal)
+void _glyph_loadline_8(uint8 *dst, uint8 *data, int pos, int size, uint8 *pal)
 {
 	int	x, x2;	
 	for (x = 0, x2 = pos; x < size; x++, x2++)
@@ -257,10 +243,8 @@ int GUI_drawText(t_GUIZone *zone, uint16 x, uint16 y, int col, sint8 *text)
     	else
     		w += GUI_drawVChar(zone, font, x+w, y, col, text[i]) + font->space;
     }
-
     return w - font->space;
 }
-
 
 
 int GUI_getStrWidth(t_GUIZone *zone, sint8 *text)
@@ -394,8 +378,7 @@ int GUI_drawAlignText(t_GUIZone *zone, int flags, int y, int col, sint8 *text)
 
 
 void		GUI_printf(sint8 *fmt, ...)
-{
-	
+{	
 	va_list args;
 	va_start (args, fmt);
 	vsnprintf ((sint8*)g_printfbuf, 64, fmt, args);
@@ -428,8 +411,6 @@ void		GUI_printf2(int cx, int cy, sint8 *fmt, ...)
 void		GUI_align_printf(int flags, sint8 *fmt, ...)
 {
 	va_list ap;
-
-	
     va_start(ap, fmt);
     vsnprintf((sint8*)g_printfbuf, 64, fmt, ap);
     va_end(ap);
@@ -445,9 +426,7 @@ void		GUI_align_printf(int flags, sint8 *fmt, ...)
 void	GUI_clear()
 {
 	//flush buffers
-	//void * memset ( void * ptr, int value, size_t num );.
 	memset ((uint32 *)&g_printfbuf[0], 0, sizeof(g_printfbuf));
-	
 	consoleClear(DefaultSessionConsole);
 	GUI.printfy = 0;
 }

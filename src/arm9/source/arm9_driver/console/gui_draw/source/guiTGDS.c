@@ -419,29 +419,14 @@ t_GUIEvent	g_event;
 int GUI_update()
 {
 	int new_event = 0;
-	
-	//ori:
-	/*	
-	scanKeys();
-	
-	int pressed = keysDown(); 	// buttons pressed this loop
-	//int held = keysHeld(); 		// buttons currently held
-	int released = keysUp();	// buttons unpressed this loop, but pressed past loop
-	int repeated = keysDownRepeat();	//buttons both pressed past loop, and pressed this loop
-	*/
-	
-	//new
 	int pressed = keysPressed(); 	// buttons pressed this loop
 	int released = keysReleased();
 	int held = keysHeld();				//touch screen
 	int repeated = keysRepeated();
 	
-	//printf2(0, 20, "                \n");
-	//printf2(0, 20, "keys = %04x\n", keys);
-	
 	if (GUI.hide)
 	{
-		if (penIRQread() == false)	//(released & KEY_TOUCH)
+		if (penIRQread() == false)
 		{
 			// Show GUI
 			GUI.hide = 0;
@@ -455,8 +440,6 @@ int GUI_update()
 			g_event.event = EVENT_STYLUS_PRESSED;
 			g_event.stl.x = getsIPCSharedTGDS()->touchXpx;
 			g_event.stl.y = getsIPCSharedTGDS()->touchYpx;		
-			//printf2(15, 8, "          \n");					
-			//printf2(15, 8, "pressed\n");
 			new_event = GUI_EVENT_STYLUS;
 		}
 		
@@ -472,38 +455,27 @@ int GUI_update()
 			g_event.stl.dy = getsIPCSharedTGDS()->touchYpx - g_event.stl.y;
 			g_event.stl.x = getsIPCSharedTGDS()->touchXpx;
 			g_event.stl.y = getsIPCSharedTGDS()->touchYpx;
-			//printf2(15, 8, "          \n");											
-			//printf2(15, 8, "dragged\n");
 			new_event = GUI_EVENT_STYLUS;
 		
 		}
 		else if (!(held & KEY_TOUCH) && (released & KEY_TOUCH)) //too much fast: (penIRQread() == false)
 		{
 			g_event.event = EVENT_STYLUS_RELEASED;
-			//printf2(15, 8, "          \n");
-			//printf2(15, 8, "released\n");
 			new_event = GUI_EVENT_STYLUS;
 		}	
 
 		else if((getsIPCSharedTGDS()->buttons7 != 0) && GUI.ScanJoypad){
-			//if ((getsIPCSharedTGDS()->buttons != 0) && GUI.ScanJoypad)
-			//{
 				g_event.event = EVENT_BUTTON_ANY;
 				new_event = GUI_EVENT_BUTTON;
 				g_event.joy.buttons = getsIPCSharedTGDS()->buttons7;
 				g_event.joy.pressed = pressed;
 				g_event.joy.repeated = repeated;
 				g_event.joy.released = released;
-				//printf2(15, 8, "keys\n");
-			//}
 		}
 			
 		//serve & dispatch (destroys) events
 		if (new_event)
 		{
-			//printf2(60, 1, "event = %d\n", new_event);
-			//if (new_event == GUI_EVENT_STYLUS)
-			//	printf2(0, 3, "x = %d y = %d\n", g_event.stl.x, g_event.stl.y);
 			GUI_dispatchEvent(GUI.screen, new_event, &g_event);
 		}
 		
@@ -536,13 +508,11 @@ int		GUI_start()
 	return 0;
 }
 
-//project_specific_console == true : you must provide a InitProjectSpecificConsole() (like SnemulDS does)
+//project_specific_console == true : you must provide an InitProjectSpecificConsole() (like SnemulDS does)
 //project_specific_console == false : default console for printf
-//see gui_console_connector.c (project specific implementation) for details
+//see gui_console_connector.c (project specific implementation)
 void	GUI_init(bool project_specific_console)
 {
-	//keysSetRepeat( 60, 30 );	//no
-	
 	if(project_specific_console == true){
 		VRAM_SETUP(getProjectSpecificVRAMSetup());
 		InitProjectSpecificConsole();
@@ -575,12 +545,6 @@ int		GUI_switchScreen(t_GUIScreen *scr)
 }
 
 // Needed by qsort
-/*
-int sort_strcmp(sint8 **a, sint8 **b)
-{
-	return strcasecmp(*a, *b);
-}*/
-
 int sort_strcmp(const void *a, const void *b)
 {
 	return strcasecmp(*(sint8 **)a, *(sint8 **)b);
@@ -611,8 +575,6 @@ void GUI_buildChoice(t_GUIScreen *scr, int nb, int x, int y, int sx, int str, in
 	GUI_setZone   (scr, nb, x, y, x+sx, y+16); 
 	GUI_linkObject(scr, nb, GUI_CHOICE(str, cnt, val), GUIChoiceButton_handler);	
 }
-
-
 
 
 t_GUIScreen *buildMenu(int nb_elems, int flags, t_GUIFont *font, t_GUIFont *font_2)
