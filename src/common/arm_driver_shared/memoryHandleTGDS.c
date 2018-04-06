@@ -357,20 +357,20 @@ bool isValidMap(uint32 addr){
 		||
 		((addr >= (uint32)(0x05000000)) && (addr <= (uint32)(0x05000000 + 2*1024)))	//NDS Palette Region protected
 		||
-		( (WRAM_CR & WRAM_32KARM9_0KARM7) && (addr >= (uint32)(0x03000000)) && (addr <= (uint32)(0x03000000 + 32*1024)) )	//NDS Shared WRAM 32K Region protected
+		( ((WRAM_CR & WRAM_32KARM9_0KARM7) == WRAM_32KARM9_0KARM7) && (addr >= (uint32)(0x03000000)) && (addr <= (uint32)(0x03000000 + 32*1024)) )	//NDS Shared WRAM 32K ARM9 / 0K ARM7 Region protected
 		||
-		( (WRAM_CR & WRAM_16KARM9_16KARM7FIRSTHALF9) && (addr >= (uint32)(0x03000000)) && (addr <= (uint32)(0x03000000 + 16*1024)) )
+		( ((WRAM_CR & WRAM_16KARM9_16KARM7FIRSTHALF9) == WRAM_16KARM9_16KARM7FIRSTHALF9) && (addr >= (uint32)(0x03000000)) && (addr <= (uint32)(0x03000000 + 16*1024)) )	//NDS Shared WRAM 16K ARM9 (first half) / 16K ARM7 Region protected
 		||
-		( (WRAM_CR & WRAM_16KARM9_16KARM7FIRSTHALF7) && (addr >= (uint32)(0x03000000 + (16*1024))) && (addr <= (uint32)(0x03000000 + (32*1024) )) )
+		( ((WRAM_CR & WRAM_16KARM9_16KARM7FIRSTHALF7) == WRAM_16KARM9_16KARM7FIRSTHALF7) && (addr >= (uint32)(0x03000000 + (16*1024))) && (addr <= (uint32)(0x03000000 + (32*1024) )) )	//NDS Shared WRAM 16K ARM9 (second half) / 16K ARM7 Region protected
 		#endif
 		#ifdef ARM7
-		((addr >= (uint32)get_iwram_start()) && (addr <= (uint32)(get_iwram_start() + get_iwram_size())))	//NDS EWRAM Region protected
+		((addr >= (uint32)get_iwram_start()) && (addr <= (uint32)(get_iwram_start() + get_iwram_size())))	//NDS IWRAM Region protected
 		||
-		( (WRAM_CR & WRAM_0KARM9_32KARM7) && (addr >= (uint32)(0x03000000)) && (addr <= (uint32)(0x03000000 + 32*1024)) )	//NDS Shared WRAM 32K Region protected
+		( ((WRAM_CR & WRAM_0KARM9_32KARM7) == WRAM_0KARM9_32KARM7) && (addr >= (uint32)(0x03000000)) && (addr <= (uint32)(0x03000000 + 32*1024)) )	//NDS Shared WRAM 0K ARM9 / 32K ARM7 Region protected
 		||
-		( (WRAM_CR & WRAM_16KARM9_16KARM7FIRSTHALF7) && (addr >= (uint32)(0x03000000)) && (addr <= (uint32)(0x03000000 + 16*1024)) )
+		( ((WRAM_CR & WRAM_16KARM9_16KARM7FIRSTHALF7) == WRAM_16KARM9_16KARM7FIRSTHALF7) && (addr >= (uint32)(0x03000000)) && (addr <= (uint32)(0x03000000 + 16*1024)) )	//NDS Shared WRAM 16K ARM9 / 16K ARM7 (first half) Region protected
 		||
-		( (WRAM_CR & WRAM_16KARM9_16KARM7FIRSTHALF9) && (addr >= (uint32)(0x03000000 + (16*1024))) && (addr <= (uint32)(0x03000000 + (32*1024) )) )
+		( ((WRAM_CR & WRAM_16KARM9_16KARM7FIRSTHALF9) == WRAM_16KARM9_16KARM7FIRSTHALF9) && (addr >= (uint32)(0x03000000 + (16*1024))) && (addr <= (uint32)(0x03000000 + (32*1024) )) )	//NDS Shared WRAM 16K ARM9 / 16K ARM7 (second half) Region 
 		#endif
 		||
 		((addr >= (uint32)(0x04000000)) && (addr <= (uint32)(0x04000000 + 4*1024)))	//NDS IO Region protected
