@@ -316,8 +316,13 @@ extern bool setWIFISetup(bool flag);
 extern void setConnectionStatus(sint32 flag);
 extern sint32	getConnectionStatus();
 extern struct frameBlock * FrameSenderUser;	//if !NULL, then must sendFrame. HandleSendUserspace(); generates this one
+
 //the process that runs on vblank and ensures DS - DS Comms
-extern sint32 doMULTIDaemon();
+//code that runs from ITCM
+extern sint32 doMULTIDaemonStage1();
+//code can't run from ITCM
+extern sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus);
+
 extern int port;
 extern struct frameBlock FrameSenderBlock;	//used by the user sender process, must be valid so the ToolchainGenericDS library sends proper frame data.
 extern struct frameBlock FrameRecvBlock;	//used by the user receiver process, can be NULL if no data frame was received.
@@ -342,6 +347,7 @@ extern __attribute__((weak))	void HandleRecvUserspace(struct frameBlock * frameB
 extern __attribute__((weak))	bool do_multi(struct frameBlock * frameBlockRecv);
 
 extern bool sentReq;
+extern sint32 LastDSWnifiMode;
 extern struct dsnwifisrvStr * getDSWNIFIStr();
 extern bool connectDSWIFIAP(bool WFC_CONNECTION,bool usewifiAP);
 

@@ -232,6 +232,12 @@ struct frameBlock * receiveDSWNIFIFrame(uint8 * databuf_src,int frameSizeRecv)	/
 //if NIFI: returns true always
 //if GDBSTUB: connect OK: true, otherwise false.
 bool switch_dswnifi_mode(sint32 mode){
+	
+	//save last DSWnifiMode
+	if(mode != LastDSWnifiMode){
+		LastDSWnifiMode = mode;
+	}
+	
 	//idle mode minimal setup
 	if (mode == (sint32)dswifi_idlemode){
 		dswifiSrv.dsnwifisrv_stat	= ds_multi_notrunning;
@@ -321,19 +327,27 @@ sint32 getConnectionStatus(){
 //Used for NIFI server not aware req.
 bool sentReq = false;
 struct frameBlock * FrameSenderUser = NULL;
+__attribute__((section(".dtcm")))
+sint32 LastDSWnifiMode = dswifi_idlemode;
 
 //Performs connect, execute and disconnect phases of a local/udp session between DS's (for now it's 2 DS)
 //ret: dswifi_idlemode (not connected) / dswifi_udpnifimode (UDP NIFI) / dswifi_localnifimode (LOCAL NIFI)
+
 __attribute__((section(".itcm")))
-sint32 doMULTIDaemon(){
+sint32 doMULTIDaemonStage1(){
+	sint32 DSWnifiConnectionStatus =	getConnectionStatus();
+	if(DSWnifiConnectionStatus == proc_idle){
+		//nothing to do for : LOCAL / UDP NIFI
+		return dswifi_idlemode;
+	}
+	else{
+		return doMULTIDaemonStage2(DSWnifiConnectionStatus);
+	}
+}
+
+sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 	sint32 retDaemonCode = 0;
-	switch(getConnectionStatus()){
-		case (proc_idle):{
-			//nothing to do for : LOCAL / UDP NIFI
-			retDaemonCode = dswifi_idlemode;
-		}
-		break;
-		
+	switch(ThisConnectionStatus){
 		case (proc_connect):{
 			//UDP NIFI
 			if(getMULTIMode() == dswifi_udpnifimode){
@@ -617,7 +631,9 @@ sint32 doMULTIDaemon(){
 		break;
 		//shutdown
 		case (proc_shutdown):{
-			close(client_http_handler_context.socket_id__multi_notconnected);
+			if(LastDSWnifiMode == dswifi_udpnifimode){
+				close(client_http_handler_context.socket_id__multi_notconnected);
+			}
 			sentReq = false;
 			setConnectionStatus(proc_idle);
 			retDaemonCode = dswifi_idlemode;

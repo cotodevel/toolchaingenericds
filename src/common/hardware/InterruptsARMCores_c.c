@@ -153,9 +153,9 @@ void NDS_IRQHandler(){
 		
 		#ifdef ARM9
 		//handles DS-DS Comms
-		if(doMULTIDaemon() >=0){
-		}
+		sint32 currentDSWNIFIMode = doMULTIDaemonStage1();
 		#endif
+		
 		//key event between frames
 		do_keys();
 		VblankUser();
