@@ -104,6 +104,7 @@ USA
 #define remoteStubMainWIFINotConnected (sint32)(-1)	
 #define remoteStubMainWIFIConnectedNoGDB (sint32)(16)	//Wifi alone connected, GDB not running
 #define remoteStubMainWIFIConnectedGDBRunning (sint32)(17)	//Wifi & GDB running
+#define remoteStubMainWIFIConnectedGDBDisconnected (sint32)(18)	//Wifi running, GDB disconnected
 
 
 typedef struct {
@@ -343,6 +344,7 @@ extern int remoteSocket;
 extern int remoteListenSocket;
 extern bool remoteConnected;
 extern bool remoteResumed;
+extern int reconnectCount;
 
 extern int remoteTcpSend(char *data, int len);
 extern int remoteTcpRecv(char *data, int len);

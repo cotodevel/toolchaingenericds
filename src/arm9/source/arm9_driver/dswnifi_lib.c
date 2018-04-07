@@ -784,6 +784,7 @@ int remoteSocket = -1;
 int remoteListenSocket = -1;
 bool remoteConnected = false;
 bool remoteResumed = false;
+int reconnectCount = 0;
 
 //this one performs the actual connection and toggles the connected status.
 bool connectDSWIFIAP(bool WFC_CONNECTION,bool usewifiAP){
@@ -1276,17 +1277,10 @@ sint32 remoteStubMain()
 		}
 		char * buffer = (char *)malloc(1024);
 		int res = remoteRecvFnc(buffer, 1024);
-		//if DSWIFI connection is lost, re-connect and init GDB Server right now.
+		//if DSWIFI connection is lost, re-connect and init GDB Server if external logic says so.
 		if(res == -1) {
 			remoteCleanUp();
-			clrscr();
-			if (switch_dswnifi_mode(dswifi_gdbstubmode) == true){
-				//printf ip/port here
-				remoteInit();
-			}
-			else{
-				//GDB Client Reconnect:ERROR
-			}
+			return remoteStubMainWIFIConnectedGDBDisconnected;
 		}
 		else{
 			char *p = buffer;
@@ -1371,15 +1365,16 @@ sint32 remoteStubMain()
 			}
 		}
 		free(buffer);
-		return remoteStubMainWIFIConnectedGDBRunning;
+		return remoteStubMainWIFIConnectedGDBRunning;	//WIFI connected and GDB running
 	}
+	
 	else{
 		if(getWIFISetup() == true){
-			return remoteStubMainWIFIConnectedNoGDB;
+			return remoteStubMainWIFIConnectedNoGDB;	//gdb not running, WIFI connected	(retry connection here)
 		}
 	}
 	
-	return remoteStubMainWIFINotConnected;
+	return remoteStubMainWIFINotConnected;				//gdb not running, WIFI not connected (first time connection)
 }
 
 void remoteStubSignal(int sig, int number)
