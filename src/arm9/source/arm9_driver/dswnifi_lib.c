@@ -18,7 +18,7 @@ USA
 
 */
 
-//DSWNifi Library 1.3 (update: 15/02/2018)
+//DSWNifi Library 1.3 (update: 7/04/2018)	(dd/mm/yyyy)
 
 #include "ipcfifoTGDS.h"
 #include "wifi_shared.h"
@@ -238,6 +238,7 @@ bool switch_dswnifi_mode(sint32 mode){
 		setMULTIMode(mode);
 		setWIFISetup(false);
 		setConnectionStatus(proc_idle);
+		DeInitWIFI();
 		return true;
 	}
 	//Raw Network Packet Nifi
