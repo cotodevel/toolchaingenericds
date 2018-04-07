@@ -81,11 +81,20 @@ USA
 #define proc_execution (sint32)(2)
 #define proc_shutdown (sint32)(3)
 
-//coto: nifi & wifi support. todo: test in order
+//coto: nifi & wifi support.
 #define dswifi_udpnifimode (sint32)(5)	//UDP Nifi
 #define dswifi_localnifimode (sint32)(6)	//Raw Network Packet Nifi
 #define dswifi_idlemode (sint32)(7)	//Idle
 #define dswifi_gdbstubmode (sint32)(14)	//GDB Stub mode
+
+//flag extension 
+//connect stage
+#define dswifi_udpnifimodeFailConnectStage (sint32)(18)
+#define dswifi_localnifimodeFailConnectStage (sint32)(19)
+//execution stage
+#define dswifi_udpnifimodeFailExecutionStage (sint32)(20)
+#define dswifi_localnifimodeFailExecutionStage (sint32)(21)
+
 
 //special udp nifi/wifi mode
 #define ds_multi_notrunning (sint32)(8)

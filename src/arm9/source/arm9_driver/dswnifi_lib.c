@@ -321,15 +321,15 @@ sint32 getConnectionStatus(){
 bool sentReq = false;
 struct frameBlock * FrameSenderUser = NULL;
 
-//ret: -1 not connected, 0 UDP NIFI ok, 1 TCP NIFI ok, 2 LOCAL NIFI ok (connect, execute and disconnect)
+//Performs connect, execute and disconnect phases of a local/udp session between DS's (for now it's 2 DS)
+//ret: dswifi_idlemode (not connected) / dswifi_udpnifimode (UDP NIFI) / dswifi_localnifimode (LOCAL NIFI)
 __attribute__((section(".itcm")))
 sint32 doMULTIDaemon(){
 	sint32 retDaemonCode = 0;
-	
 	switch(getConnectionStatus()){
 		case (proc_idle):{
 			//nothing to do for : LOCAL / UDP NIFI / TCP NIFI
-			retDaemonCode = -1;
+			retDaemonCode = dswifi_idlemode;
 		}
 		break;
 		
@@ -347,8 +347,7 @@ sint32 doMULTIDaemon(){
 				if(bind(client_http_handler_context.socket_id__multi_notconnected,(struct sockaddr *)&client_http_handler_context.sain_UDP_PORT,sizeof(client_http_handler_context.sain_UDP_PORT))) {
 					//binding ERROR
 					close(client_http_handler_context.socket_id__multi_notconnected);
-					retDaemonCode = -1;
-					return retDaemonCode;
+					retDaemonCode = dswifi_udpnifimodeFailConnectStage;
 				}
 				else{
 					//binding OK
@@ -361,14 +360,12 @@ sint32 doMULTIDaemon(){
 				//no binding since we have no control of server port and we should not know it anyway, DGRAM specific.
 				
 				setConnectionStatus(proc_execution);
-				retDaemonCode = 0;
-				return retDaemonCode;
+				retDaemonCode = dswifi_udpnifimode;
 			}
 			//LOCAL NIFI: runs on DSWIFI process
 			if(getMULTIMode() == dswifi_localnifimode){
 				setConnectionStatus(proc_execution);
-				retDaemonCode = 2;
-				return retDaemonCode;
+				retDaemonCode = dswifi_localnifimode;
 			}
 		}
 		break;
@@ -480,8 +477,7 @@ sint32 doMULTIDaemon(){
 								}
 								
 								close(client_http_handler_context.socket_multi_listener);
-								retDaemonCode = -1;
-								return retDaemonCode;
+								retDaemonCode = dswifi_udpnifimodeFailExecutionStage;
 							}
 							else{
 								char buf[96] = {0};
@@ -518,7 +514,7 @@ sint32 doMULTIDaemon(){
 							//check pending receive
 							int LISTENER_PORT 	=	0;
 							int SENDER_PORT		=	0;
-							char status[10];
+							char status[10] = {0};
 							if(dswifiSrv.dsnwifisrv_stat == ds_netplay_host_servercheck){
 								LISTENER_PORT 	= 	(int)NDSMULTI_UDP_PORT_HOST;
 								SENDER_PORT		=	(int)NDSMULTI_UDP_PORT_GUEST;
@@ -594,12 +590,12 @@ sint32 doMULTIDaemon(){
 					}
 					break;
 				}
-				retDaemonCode = 0;
+				retDaemonCode = dswifi_udpnifimode;
 			}
 			
 			//Local Nifi: runs from within the DSWIFI frame handler itself so ignored here.
 			if(getMULTIMode() == dswifi_localnifimode){
-				retDaemonCode = 2;
+				retDaemonCode = dswifi_localnifimode;
 			}
 			
 			///////////////////////////////////////Handle Send UserCode, if the user used the following code:
@@ -612,19 +608,17 @@ sint32 doMULTIDaemon(){
 				sendDSWNIFIFame(FrameSenderUser);
 				FrameSenderUser = NULL;
 			}
-			return retDaemonCode;
 		}
 		break;
 		//shutdown
 		case (proc_shutdown):{
 			//close(client_http_handler_context.socket_multi_listener);	//todo
 			setMULTIMode(proc_connect);
-			retDaemonCode = 0;
-			return retDaemonCode;
+			retDaemonCode = dswifi_idlemode;
 		}
 		break;
-		
 	}
+	return retDaemonCode;
 }
 
 // datalen = size of packet from beginning of 802.11 header to end, but not including CRC.
