@@ -187,7 +187,7 @@ extern int updateCurDir(char * curDir);
 extern int getFirstFile(char * path);
 extern FILINFO getFirstFileFILINFO(char * path);
 extern bool getNextFileFILINFO(char * path, FILINFO * finfo);
-extern int getNextFile();
+extern int getNextFile(char * fullpath);
 extern bool getLFN(char* filename);
 extern bool setLFN(char* filename);
 

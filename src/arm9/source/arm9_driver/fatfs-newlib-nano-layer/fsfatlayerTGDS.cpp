@@ -21,6 +21,16 @@ USA
 //Coto: this was rewritten by me so it could fit the following setup:
 //newlib libc nano ARM Toolchain. dirent.h is not supported in this newlib version so we restore it
 
+//C++ part
+using namespace std;
+#include <iostream>
+#include <fstream>
+#include <list>
+#include <vector>
+#include <cmath>
+#include <cstdlib>
+#include <cstdio>
+
 #include <string.h>
 #include <errno.h>
 #include <sys/stat.h>
@@ -248,7 +258,7 @@ int fatfs_write (int fd, sint8 *ptr, int len)	//(FileDescriptor :struct fd index
             result = f_lseek(filp, size);
         }
 		else if(filp == NULL){
-			result = -1;
+			result = FR_INVALID_OBJECT;
 		}
         else
         {
@@ -721,12 +731,12 @@ int fatfs_link(const sint8 *path1, const sint8 *path2)
     return ret;
 }
 
-int fatfs_rename(const sint8 *old, const sint8 *new)
+int fatfs_rename(const sint8 *oldfname, const sint8 * newfname)
 {
     int ret;
     FRESULT result;
 
-    result = f_rename(old, new);
+    result = f_rename(oldfname, newfname);
     if (result != FR_OK)
     {
         errno = fresult2errno(result);
@@ -1167,9 +1177,9 @@ int _fstat_r ( struct _reent *_r, int fd, struct stat *buf )	//(FileDescriptor :
 }
 
 
-int rename(const sint8 *old, const sint8 *new)
+int rename(const sint8 *oldfname, const sint8 *newfname)
 {
-    return fatfs_rename(old, new);
+    return fatfs_rename(oldfname, newfname);
 }
 
 int fsync(int fd)	//(FileDescriptor :struct fd index)
@@ -1294,6 +1304,7 @@ int FAT_FindNextFile(char* filename){
 
 
 FILINFO getFirstFileFILINFO(char * path){
+	/*//ori works
 	FILINFO finfo;
 	DIR dirp;
 	if (f_opendir(&dirp, path) == FR_OK) {
@@ -1303,21 +1314,47 @@ FILINFO getFirstFileFILINFO(char * path){
 		f_closedir(&dirp);
     }
 	return finfo;
+	*/
+	
+	FRESULT res;
+    DIR dir;
+    UINT i;
+    static FILINFO fno;
+
+    res = f_opendir(&dir, path);                       /* Open the directory */
+    if (res == FR_OK) {
+        for (;;) {
+            res = f_readdir(&dir, &fno);                   /* Read a directory item */
+            if (res != FR_OK || fno.fname[0] == 0) break;  /* Break on error or end of dir */
+            if (fno.fattrib & AM_DIR) {                    /* It is a directory */
+                i = strlen(path);
+                if (res != FR_OK) break;
+                path[i] = 0;
+            } else {                                       /* It is a file. */
+                printf("%s/%s ", path, fno.fname);
+            }
+        }
+        f_closedir(&dir);
+    }
+	
+	return fno;
 }
 
 bool getNextFileFILINFO(char * path,FILINFO * finfo){
-	DIR dirp;
-	FILINFO finfoInst;
 	bool retval = false;
-	if (f_opendir(&dirp, path) == FR_OK) {
-        if((f_readdir(&dirp, &finfoInst) == FR_OK) && finfoInst.fname[0]) {
-            //ok
-			if((f_findnext (&dirp,finfo) == FR_OK) && finfo->fname[0]){
-				retval = true;
-			}
-        }
-		f_closedir(&dirp);
-    }
+	FRESULT fr;     /* Return value */
+    DIR dj;         /* Directory search object */
+    FILINFO fno;    /* File information */
+	
+    fr = f_findfirst(&dj, &fno, "/", "dsc*.jpg");  /* Start to search for photo files */
+
+    while (fr == FR_OK && fno.fname[0]) {         /* Repeat while an item is found */
+        printf("%s ", fno.fname);                /* Display the object name */
+        fr = f_findnext(&dj, &fno);               /* Search for next item */
+		retval = true;
+	}
+	
+	f_closedir(&dj);
 	return retval;
 }
 
@@ -1360,8 +1397,8 @@ int getNextFile(char * fullpath){
 	FILINFO fno;
 	char fout[512] = {0};
 	sprintf(fout,"%s%s","0:",fullpath);
-	printf("getNextFile:trying:%s",fout);
-	//while(1==1);
+	printf("getNextFile:getNextFileFILINFO");
+	printf("trying:%s",fout);
 	if(getNextFileFILINFO(fout,&fno) == true) {
 		if (fno.fattrib & AM_DIR) {	//dir
 			type = FT_DIR;
