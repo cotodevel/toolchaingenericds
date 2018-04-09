@@ -175,3 +175,9 @@ int getInternalFileDescriptorFromDIR(DIR *dirp){
 	
 	return ret;
 }
+
+
+
+void updateLastGlobalPath(char * path){
+	sprintf(lastCurrentPath,"%s",path);
+}

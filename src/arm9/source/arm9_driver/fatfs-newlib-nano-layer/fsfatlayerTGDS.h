@@ -24,6 +24,21 @@ USA
 #ifndef __fsfat_layer_h__
 #define __fsfat_layer_h__
 
+#ifdef __cplusplus
+using namespace std;
+#include <iostream>
+#include <fstream>
+#include <list>
+#include <vector>
+#include <cmath>
+#include <cstdlib>
+#include <cstdio>
+#include <algorithm>
+#include <iterator>
+#include <string>
+
+#endif
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -68,6 +83,60 @@ USA
 #define FT_NONE (int)(0)
 #define FT_FILE (int)(1)
 #define FT_DIR (int)(2)
+
+
+#ifdef __cplusplus
+
+//C++: Shared File Handling for misc directory functions
+class FileClass
+{
+  public:
+    int Index;
+	std::string filename;
+    std::string path;
+    int type = 0;	//FT_DIR / FT_FILE / FT_NONE	//  setup on Constructor / updated by getFileFILINFOfromPath(); / must be init from the outside 
+    // Constructor
+    FileClass(int indexInst, std::string filenameInst, std::string pathInst, int typeInst)
+	{
+		Index = indexInst;
+		filename = filenameInst;
+		path = pathInst;
+		type = typeInst;
+	}
+	
+	//helpers if/when Constructor is not available
+	int getindex()
+    {
+		return Index;
+    }
+    std::string getfilename()
+    {
+		return filename;
+    }
+	std::string getpath()
+    {
+		return path;
+    }
+	int gettype()
+    {
+		return type;
+    }
+	
+	void setindex(int IndexInst){
+		Index = IndexInst;
+	}
+	void setfilename(std::string filenameInst){
+		filename = filenameInst;
+	}
+	void setpath(std::string pathInst){
+		path = pathInst;
+	}
+	void settype(int typeInst){
+		type = typeInst;
+	}
+};
+
+#endif
 
 struct fd {
 	int fd_posix;				//POSIX file descriptor index (so stdin,stdout,stderr are registered here)
@@ -179,21 +248,35 @@ extern char * dldi_tryingInterface();
 
 
 //misc directory functions
+
+//User
+extern int FAT_FindFirstFile(char* filename);
+extern int FAT_FindNextFile(char* filename);
+
+//Internal
 extern char lfnName[MAX_TGDSFILENAME_LENGTH+1];
 extern char curDirListed[MAX_TGDSFILENAME_LENGTH+1];
 extern struct fd fdCur;
 extern bool FAT_GetLongFilename(char* filename);
-extern int updateCurDir(char * curDir);
 extern int getFirstFile(char * path);
-extern FILINFO getFirstFileFILINFO(char * path);
-extern bool getNextFileFILINFO(char * path, FILINFO * finfo);
-extern int getNextFile(char * fullpath);
+extern void updateGlobalListFromPath(char * path);
+extern int getNextFile(char * path);
 extern bool getLFN(char* filename);
 extern bool setLFN(char* filename);
+extern char lastCurrentPath[MAX_TGDSFILENAME_LENGTH];
+extern int CurrentFileDirEntry;
+#ifdef __cplusplus
+extern FILINFO getFileFILINFOfromFileClass(FileClass * FileClassInst);
+extern std::list<FileClass> * GlobalFileList;
+extern std::list<FileClass> * InitGlobalFileList();
+extern void DeInitGlobalFileList(std::list<FileClass> * List);
+extern std::list<FileClass> buildListFromPath(char * path);
+extern FileClass getEntryFromGlobalListByIndex(int EntryIndex);
+extern FileClass getFirstDirEntryFromGlobalList();
+extern FileClass getFirstFileEntryFromGlobalList();
+extern std::string buildFullPathFromFileClass(FileClass * FileClassInst);
+#endif
 
-//required by some DS homebrew so we re-implement them
-extern int FAT_FindFirstFile(char* filename);
-extern int FAT_FindNextFile(char* filename);
 
 #ifdef __cplusplus
 }
