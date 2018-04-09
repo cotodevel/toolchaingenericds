@@ -1294,7 +1294,15 @@ int FAT_FindNextFile(char* filename){
 	return getNextFile(filename);
 }
 
-
+u8 FAT_GetFileAttributes (void){
+	u8	libfatAttributes = 0;
+	if(CurrentFileDirEntry > 0){
+		FileClass FileClassInst = getEntryFromGlobalListByIndex((CurrentFileDirEntry - 1)); 
+		FILINFO finfo = getFileFILINFOfromFileClass(&FileClassInst);
+		libfatAttributes = (uint8)gccnewlibnano_to_fsfat2libfatAttrib((int)finfo.fattrib);
+	}
+	return libfatAttributes;
+}
 
 
 

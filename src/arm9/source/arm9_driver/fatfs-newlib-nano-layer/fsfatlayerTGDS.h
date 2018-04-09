@@ -264,8 +264,9 @@ extern int gccnewlibnano_to_fsfat2libfatAttrib(int fsfatFlags);
 //misc directory functions
 
 //User
-extern int FAT_FindFirstFile(char* filename);
-extern int FAT_FindNextFile(char* filename);
+extern int 	FAT_FindFirstFile(char* filename);
+extern int 	FAT_FindNextFile(char* filename);
+extern u8 	FAT_GetFileAttributes(void);
 
 //Internal
 extern char lfnName[MAX_TGDSFILENAME_LENGTH+1];
