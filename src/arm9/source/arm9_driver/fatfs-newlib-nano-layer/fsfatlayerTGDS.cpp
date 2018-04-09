@@ -1246,6 +1246,12 @@ int remove(const char *filename){
 	return fatfs_unlink((const sint8 *)filename);
 }
 
+
+//chmod: todo convert flags from POSIX -> fsfat
+//int chmod(const char *pathname, int mode){
+	//f_chmod("file.txt", AM_RDO, AM_RDO | AM_ARC);
+//}
+
 DIR *fdopendir(int fd)	//(FileDescriptor :struct fd index)
 {
     return fatfs_fdopendir(fd);
@@ -1254,6 +1260,32 @@ DIR *fdopendir(int fd)	//(FileDescriptor :struct fd index)
 void seekdir(DIR *dirp, long loc)
 {
     fatfs_seekdir(dirp, loc);
+}
+
+//Input: libfat directory flags
+//Output: FILINFO.fattrib 
+int libfat2gccnewlibnano_to_fsfatAttrib(int libfatFlags){
+	int fsfatFlags = 0;
+	if(libfatFlags & ATTRIB_RO){	/* Read only */
+		fsfatFlags|=AM_RDO;
+	}
+	
+	if(libfatFlags & ATTRIB_HID){	/* Hidden */
+		fsfatFlags|=AM_HID;
+	}
+	
+	if(libfatFlags & ATTRIB_SYS){	/* System */
+		fsfatFlags|=AM_SYS;
+	}
+	
+	if(libfatFlags & ATTRIB_DIR){	/* Directory */
+		fsfatFlags|=AM_DIR;
+	}
+	
+	if(libfatFlags & ATTRIB_ARCH){	/* Archive */
+		fsfatFlags|=AM_ARC;
+	}
+	return fsfatFlags;
 }
 
 //Input: FILINFO.fattrib 
@@ -1304,6 +1336,19 @@ u8 FAT_GetFileAttributes (void){
 	return libfatAttributes;
 }
 
+u8 FAT_SetFileAttributes (const char* filename, u8 attributes, u8 mask){
+	u8	libfatAttributesIn = 0;
+	u8	libfatAttributesOut= 0;	
+	FileClass FileClassInst = getFirstFileEntryFromPath((char *)filename); 	//get entry from path
+	FILINFO finfo = getFileFILINFOfromFileClass(&FileClassInst);
+	libfatAttributesIn = (uint8)gccnewlibnano_to_fsfat2libfatAttrib((int)finfo.fattrib);
+	libfatAttributesOut = (libfatAttributesIn & ~(mask & 0x27)) | (attributes & 0x27);
+	int	NEWgccnewlibnano_to_fsfatAttributes = libfat2gccnewlibnano_to_fsfatAttrib((int)libfatAttributesOut);
+	int NEWmask = libfat2gccnewlibnano_to_fsfatAttrib((int)mask);
+	//update new attrib in void Setgccnewlibnano_to_fsfatAttributesToPath((char *)filename,int Newgccnewlibnano_to_fsfatAttributes);
+	Setgccnewlibnano_to_fsfatAttributesToPath((char*)filename, NEWgccnewlibnano_to_fsfatAttributes, NEWmask);
+	return libfatAttributesOut;
+}
 
 
 //Internal
@@ -1468,6 +1513,62 @@ FILINFO getFileFILINFOfromFileClass(FileClass * FileClassInst){
 		//fopen failed
 	}
 	return finfo;
+}
+
+
+vector<string> splitCustom(string str, string token){
+    vector<string>result;
+    while(str.size()){
+        int index = str.find(token);
+        if(index!=string::npos){
+            result.push_back(str.substr(0,index));
+            str = str.substr(index+token.size());
+            if(str.size()==0)result.push_back(str);
+        }else{
+            result.push_back(str);
+            str = "";
+        }
+    }
+    return result;
+}
+
+
+void Setgccnewlibnano_to_fsfatAttributesToPath(char * filename, int Newgccnewlibnano_to_fsfatAttributes, int mask){
+	//f_chmod("file.txt", AM_RDO, AM_RDO | AM_ARC);	/* Set Read-only, clear Archive and others are left unchanged. */
+	f_chmod(filename, Newgccnewlibnano_to_fsfatAttributes, mask);
+}
+//type will tell us if this file exists or not(FT_NONE == no, FT_FILE == yes)
+FileClass getFirstFileEntryFromPath(char * path){
+	FILE * FileHandle = fopen(path,"r");
+	FileClass FileInst(InvalidFileListIndex, std::string(""), std::string(""), FT_NONE);
+	
+	vector<string> vecOut = splitCustom(std::string(path),std::string("/"));	//path == "0:/folder/file.bin"
+    /*
+    for(vector<string>::const_iterator i = vecOut.begin(); i != vecOut.end(); ++i) {
+        // process i
+        cout << *i << " "; // this will print all the contents of *features*
+    }
+	*/
+	int fileIndex = vecOut.size() - 1;
+	std::string Filename = vecOut.at(fileIndex);
+	std::string Path;
+	if(fileIndex > 1){
+	    int PathIndex = fileIndex;  //File is excluded
+	    int i = 0;
+	    for(i = 0; i < PathIndex; i++){
+	        char temp[512] = {0};
+	        sprintf(temp,"%s%s",vecOut.at(i).c_str(),"/");
+	        Path+= temp;
+	    }
+	}
+	
+	if(FileHandle){
+		FileInst.settype(FT_FILE);
+		FileInst.setfilename(Filename);
+		FileInst.setpath(Path);
+		fclose(FileHandle);
+	}
+	return FileInst;
 }
 
 FileClass getEntryFromGlobalListByIndex(int EntryIndex){

@@ -84,6 +84,9 @@ using namespace std;
 #define FT_FILE (int)(1)
 #define FT_DIR (int)(2)
 
+//FileList specific
+#define InvalidFileListIndex (int)(-1)
+
 //libfat attributes so gccnewlibnano_to_fsfat is compatible with libfat homebrew
 #ifndef ATTRIB_ARCH
 #define ATTRIB_ARCH	(int)(0x20)			// Archive
@@ -254,12 +257,14 @@ extern int  readdir_r(DIR * dirp,struct dirent * entry,struct dirent ** result);
 extern void rewinddir(DIR *dirp);
 extern int dirfd(DIR *dirp);
 extern int remove(const char *filename);
+//extern int chmod(const char *pathname, int mode);
 extern DIR *fdopendir(int fd);
 extern void seekdir(DIR *dirp, long loc);
 extern char * dldi_tryingInterface();
 
 extern int gccnewlibnano_to_fsfat2libfatAttrib(int fsfatFlags);
-
+extern int libfat2gccnewlibnano_to_fsfatAttrib(int libfatFlags);
+extern void Setgccnewlibnano_to_fsfatAttributesToPath(char * filename, int Newgccnewlibnano_to_fsfatAttributes, int mask);
 
 //misc directory functions
 
@@ -267,6 +272,7 @@ extern int gccnewlibnano_to_fsfat2libfatAttrib(int fsfatFlags);
 extern int 	FAT_FindFirstFile(char* filename);
 extern int 	FAT_FindNextFile(char* filename);
 extern u8 	FAT_GetFileAttributes(void);
+extern u8 FAT_SetFileAttributes (const char* filename, u8 attributes, u8 mask);
 
 //Internal
 extern char lfnName[MAX_TGDSFILENAME_LENGTH+1];
@@ -281,6 +287,7 @@ extern bool setLFN(char* filename);
 extern char lastCurrentPath[MAX_TGDSFILENAME_LENGTH];
 extern int CurrentFileDirEntry;
 #ifdef __cplusplus
+extern FileClass getFirstFileEntryFromPath(char * path);
 extern FILINFO getFileFILINFOfromFileClass(FileClass * FileClassInst);
 extern std::list<FileClass> * GlobalFileList;
 extern std::list<FileClass> * InitGlobalFileList();
@@ -290,8 +297,9 @@ extern FileClass getEntryFromGlobalListByIndex(int EntryIndex);
 extern FileClass getFirstDirEntryFromGlobalList();
 extern FileClass getFirstFileEntryFromGlobalList();
 extern std::string buildFullPathFromFileClass(FileClass * FileClassInst);
-#endif
+extern vector<string> splitCustom(string str, string token);
 
+#endif
 
 #ifdef __cplusplus
 }
