@@ -242,6 +242,7 @@ extern struct dirent *readdir(DIR *dirp);
 extern int  readdir_r(DIR * dirp,struct dirent * entry,struct dirent ** result);
 extern void rewinddir(DIR *dirp);
 extern int dirfd(DIR *dirp);
+extern int remove(const char *filename);
 extern DIR *fdopendir(int fd);
 extern void seekdir(DIR *dirp, long loc);
 extern char * dldi_tryingInterface();

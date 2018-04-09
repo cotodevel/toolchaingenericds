@@ -703,6 +703,7 @@ off_t fatfs_lseek(int fd, off_t offset, int whence )	//(FileDescriptor :struct f
     return ret;
 }
 
+//delete / remove
 int fatfs_unlink(const sint8 *path)
 {
     int ret;
@@ -1241,6 +1242,9 @@ int dirfd(DIR *dirp)
     return fatfs_dirfd(dirp);
 }
 
+int remove(const char *filename){
+	return fatfs_unlink((const sint8 *)filename);
+}
 
 DIR *fdopendir(int fd)	//(FileDescriptor :struct fd index)
 {
