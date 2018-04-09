@@ -84,6 +84,17 @@ using namespace std;
 #define FT_FILE (int)(1)
 #define FT_DIR (int)(2)
 
+//libfat attributes so gccnewlibnano_to_fsfat is compatible with libfat homebrew
+#ifndef ATTRIB_ARCH
+#define ATTRIB_ARCH	(int)(0x20)			// Archive
+#define ATTRIB_DIR	(int)(0x10)			// Directory
+#define ATTRIB_LFN	(int)(0x0F)			// Long file name
+#define ATTRIB_VOL	(int)(0x08)			// Volume
+#define ATTRIB_SYS	(int)(0x04)			// System
+#define ATTRIB_HID	(int)(0x02)			// Hidden
+#define ATTRIB_RO	(int)(0x01)			// Read only
+#endif
+
 
 #ifdef __cplusplus
 
@@ -246,6 +257,8 @@ extern int remove(const char *filename);
 extern DIR *fdopendir(int fd);
 extern void seekdir(DIR *dirp, long loc);
 extern char * dldi_tryingInterface();
+
+extern int gccnewlibnano_to_fsfat2libfatAttrib(int fsfatFlags);
 
 
 //misc directory functions

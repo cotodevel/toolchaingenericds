@@ -1256,6 +1256,31 @@ void seekdir(DIR *dirp, long loc)
     fatfs_seekdir(dirp, loc);
 }
 
+//Input: FILINFO.fattrib 
+//Output: libfat directory flags
+int gccnewlibnano_to_fsfat2libfatAttrib(int fsfatFlags){
+	int libfatFlags = 0;
+	if(fsfatFlags & AM_RDO){	/* Read only */
+		libfatFlags|=ATTRIB_RO;
+	}
+	
+	if(fsfatFlags & AM_HID){	/* Hidden */
+		libfatFlags|=ATTRIB_HID;
+	}
+	
+	if(fsfatFlags & AM_SYS){	/* System */
+		libfatFlags|=ATTRIB_SYS;
+	}
+	
+	if(fsfatFlags & AM_DIR){	/* Directory */
+		libfatFlags|=ATTRIB_DIR;
+	}
+	
+	if(fsfatFlags & AM_ARC){	/* Archive */
+		libfatFlags|=ATTRIB_ARCH;
+	}
+	return libfatFlags;
+}
 
 
 /////////////////////////////////////////misc directory functions////////////////////////////////////////////////////
