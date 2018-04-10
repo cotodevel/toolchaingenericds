@@ -97,11 +97,11 @@ int funzipstdio(FILE *in, FILE *out){
 			err( buf );
 		}
 		
-		ibuffer = (Bytef *)malloc(BUFFER_SIZE);
-		obuffer = (Bytef *)malloc(BUFFER_SIZE);
+		ibuffer = (Bytef *)malloc(UNZIPBUFFER_SIZE);
+		obuffer = (Bytef *)malloc(UNZIPBUFFER_SIZE);
 		
-		memset ( ibuffer, 0, BUFFER_SIZE);
-		memset ( obuffer, 0, BUFFER_SIZE);
+		memset ( ibuffer, 0, UNZIPBUFFER_SIZE);
+		memset ( obuffer, 0, UNZIPBUFFER_SIZE);
 		
 		z.next_in = (Bytef *)ibuffer;
 		z.avail_in = 0;
@@ -109,17 +109,17 @@ int funzipstdio(FILE *in, FILE *out){
 		for(;;){
 			
 			z.next_out = (Bytef *)obuffer;
-			z.avail_out = BUFFER_SIZE;
+			z.avail_out = UNZIPBUFFER_SIZE;
 		
 			if( z.avail_in == 0 ){
 				z.next_in = ibuffer;
 				if(size>=0){
 					if(size>0){
-						z.avail_in = fread( ibuffer, 1, min(size,BUFFER_SIZE), in );
-						size-=min(size,BUFFER_SIZE);
+						z.avail_in = fread( ibuffer, 1, min(size,UNZIPBUFFER_SIZE), in );
+						size-=min(size,UNZIPBUFFER_SIZE);
 					}
 				}else{
-					z.avail_in = fread( ibuffer, 1, BUFFER_SIZE, in );
+					z.avail_in = fread( ibuffer, 1, UNZIPBUFFER_SIZE, in );
 				}
 			}
 			result = inflate( &z, Z_SYNC_FLUSH );
@@ -130,7 +130,7 @@ int funzipstdio(FILE *in, FILE *out){
 				err(buf);
 			}
 			
-			int wrote = fwrite( obuffer, 1, BUFFER_SIZE - z.avail_out, out );
+			int wrote = fwrite( obuffer, 1, UNZIPBUFFER_SIZE - z.avail_out, out );
 			if(wrote >= 0){
 				sint32 FDToSync = fileno(out);
 				fsync(FDToSync);
