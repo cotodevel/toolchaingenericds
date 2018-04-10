@@ -96,6 +96,7 @@ extern void FAT_preserveVars();
 extern void FAT_restoreVars();
 extern bool FAT_GetAlias(char* alias);
 extern u32	disc_HostType(void);
+extern bool FAT_GetLongFilename(char* Longfilename);
 
 //Internal
 extern char lfnName[MAX_TGDSFILENAME_LENGTH+1];

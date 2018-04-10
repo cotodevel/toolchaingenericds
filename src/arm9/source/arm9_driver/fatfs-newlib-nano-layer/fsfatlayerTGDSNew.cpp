@@ -520,4 +520,50 @@ u32	disc_HostType(void)
 	return 0;
 }
 
+/*-----------------------------------------------------------------
+FAT_GetLongFilename
+Get the long name of the last file or directory retrived with 
+	GetDirEntry. Also works for FindFirstFile and FindNextFile.
+	If a long name doesn't exist, it returns the short name
+	instead.
+char* filename: OUT will be filled with the filename, should be at
+	least 256 bytes long
+bool return OUT: return true if successful
+-----------------------------------------------------------------*/
+bool FAT_GetLongFilename(char* Longfilename)
+{
+	if (Longfilename == NULL){
+		return false;
+	}
+	
+	FileClass fileInst = getEntryFromGlobalListByIndex(CurrentFileDirEntry);	//By current directory index
+	FILINFO FILINFOObj = getFileFILINFOfromFileClass(&fileInst);			//actually open the file and check attributes (rather than read dir contents)
+	
+	if (	 
+	(	//file
+	(FILINFOObj.fattrib & AM_RDO)
+	||
+	(FILINFOObj.fattrib & AM_HID)
+	||
+	(FILINFOObj.fattrib & AM_SYS)
+	||
+	(FILINFOObj.fattrib & AM_DIR)
+	||
+	(FILINFOObj.fattrib & AM_ARC)
+	)
+	||	//dir
+	(FILINFOObj.fattrib & AM_DIR)
+	)
+	{
+		std::string FullPathStr = buildFullPathFromFileClass(&fileInst);	//must store proper filepath
+		sprintf((char*)Longfilename,"%s",FullPathStr.c_str());					//update source path using Long file/directory name
+	}
+	//not file or dir
+	else{
+		return false;
+	}
+	
+	return true;
+}
+
 #endif
