@@ -98,6 +98,7 @@ extern bool FAT_GetAlias(char* alias);
 extern u32	disc_HostType(void);
 extern bool FAT_GetLongFilename(char* Longfilename);
 extern u32 FAT_GetFileSize(void);
+extern u32 FAT_GetFileCluster(void);
 
 //Internal
 extern char lfnName[MAX_TGDSFILENAME_LENGTH+1];

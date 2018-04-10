@@ -436,7 +436,7 @@ int getFirstFile(char * path){
 //			or FT_NONE if invalid file
 int getNextFile(char * path){
 	
-	FileClass fileInst = getEntryFromGlobalListByIndex(CurrentFileDirEntry);	//By current directory index
+	FileClass fileInst = getFirstFileEntryFromGlobalList();	//get last FILE opened (bynextFile)
 	FILINFO FILINFOObj = getFileFILINFOfromFileClass(&fileInst);			//actually open the file and check attributes (rather than read dir contents)
 	
 	if(fileInst.gettype() == FT_DIR){
@@ -471,7 +471,7 @@ bool FAT_GetAlias(char* alias)
 	{
 		return false;
 	}
-	FileClass fileInst = getEntryFromGlobalListByIndex(CurrentFileDirEntry);	//By current directory index
+	FileClass fileInst = getEntryFromGlobalListByIndex(CurrentFileDirEntry);	//By current file/directory index
 	FILINFO FILINFOObj = getFileFILINFOfromFileClass(&fileInst);			//actually open the file and check attributes (rather than read dir contents)
 	
 	if (	 
@@ -536,7 +536,7 @@ bool FAT_GetLongFilename(char* Longfilename)
 		return false;
 	}
 	
-	FileClass fileInst = getEntryFromGlobalListByIndex(CurrentFileDirEntry);	//By current directory index
+	FileClass fileInst = getEntryFromGlobalListByIndex(CurrentFileDirEntry);	//By current file/directory index
 	FILINFO FILINFOObj = getFileFILINFOfromFileClass(&fileInst);			//actually open the file and check attributes (rather than read dir contents)
 	
 	if (	 
@@ -575,7 +575,7 @@ u32 return OUT: the file size
 u32 FAT_GetFileSize(void)
 {
 	u32 fileSize = 0;
-	FileClass fileInst = getEntryFromGlobalListByIndex(CurrentFileDirEntry);	//By current directory index
+	FileClass fileInst = getFirstFileEntryFromGlobalList();	//get last FILE opened (bynextFile)
 	FILINFO FILINFOObj = getFileFILINFOfromFileClass(&fileInst);			//actually open the file and check attributes (rather than read dir contents)
 	
 	if (//file
@@ -593,6 +593,28 @@ u32 FAT_GetFileSize(void)
 		fileSize = (u32)FILINFOObj.fsize;
 	}
 	return 	fileSize;
+}
+
+/*-----------------------------------------------------------------
+FAT_GetFileCluster
+Get the first cluster of the last file found or openned.
+u32 return OUT: the file start cluster
+-----------------------------------------------------------------*/
+u32 FAT_GetFileCluster(void)
+{
+	u32 FirstClusterFromLastFileOpen = -1;
+	FileClass fileInst =	getFirstFileEntryFromGlobalList();	//get last FILE opened (bynextFile)
+	std::string FullPathStr = buildFullPathFromFileClass(&fileInst);	//must store proper filepath
+	FILE * f = fopen(FullPathStr.c_str(),"r");
+	sint32 fd = -1;
+	struct fd * fdinst = NULL;
+	if(f){
+		fd = fileno(f);
+		fdinst = fd_struct_get(fd);
+		FirstClusterFromLastFileOpen = (u32)getStructFDFirstCluster(fdinst);
+		fclose(f);
+	}
+	return 	FirstClusterFromLastFileOpen;
 }
 
 #endif
