@@ -27,7 +27,7 @@ USA
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "fsfatlayerTGDS.h"
+#include "fsfatlayerTGDSLegacy.h"
 #include "limitsTGDS.h"
 #include "devoptab_devices.h"
 #include "posixHandleTGDS.h"
@@ -52,7 +52,6 @@ extern int getInternalFileDescriptorFromDIR(DIR *dirp);
 
 extern sint8 * getDeviceNameByStructFDIndex(int StructFDIndex);
 
-extern void updateLastGlobalPath(char * path);
 #ifdef __cplusplus
 }
 #endif

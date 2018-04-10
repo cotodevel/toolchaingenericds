@@ -21,23 +21,8 @@ USA
 //Coto: this was rewritten by me so it could fit the following setup:
 //newlib libc nano ARM Toolchain. dirent.h is not supported in this newlib version so we restore it
 
-#ifndef __fsfat_layer_h__
-#define __fsfat_layer_h__
-
-#ifdef __cplusplus
-using namespace std;
-#include <iostream>
-#include <fstream>
-#include <list>
-#include <vector>
-#include <cmath>
-#include <cstdlib>
-#include <cstdio>
-#include <algorithm>
-#include <iterator>
-#include <string>
-
-#endif
+#ifndef __fsfatlayerTGDSLegacy_h__
+#define __fsfatlayerTGDSLegacy_h__
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -98,59 +83,6 @@ using namespace std;
 #define ATTRIB_RO	(int)(0x01)			// Read only
 #endif
 
-
-#ifdef __cplusplus
-
-//C++: Shared File Handling for misc directory functions
-class FileClass
-{
-  public:
-    int Index;
-	std::string filename;
-    std::string path;
-    int type = 0;	//FT_DIR / FT_FILE / FT_NONE	//  setup on Constructor / updated by getFileFILINFOfromPath(); / must be init from the outside 
-    // Constructor
-    FileClass(int indexInst, std::string filenameInst, std::string pathInst, int typeInst)
-	{
-		Index = indexInst;
-		filename = filenameInst;
-		path = pathInst;
-		type = typeInst;
-	}
-	
-	//helpers if/when Constructor is not available
-	int getindex()
-    {
-		return Index;
-    }
-    std::string getfilename()
-    {
-		return filename;
-    }
-	std::string getpath()
-    {
-		return path;
-    }
-	int gettype()
-    {
-		return type;
-    }
-	
-	void setindex(int IndexInst){
-		Index = IndexInst;
-	}
-	void setfilename(std::string filenameInst){
-		filename = filenameInst;
-	}
-	void setpath(std::string pathInst){
-		path = pathInst;
-	}
-	void settype(int typeInst){
-		type = typeInst;
-	}
-};
-
-#endif
 
 struct fd {
 	int fd_posix;				//POSIX file descriptor index (so stdin,stdout,stderr are registered here)
@@ -228,7 +160,6 @@ extern void fatfs_rewinddir(DIR *dirp);
 extern long fatfs_tell(struct fd *f);
 extern void fatfs_seekdir(DIR *dirp, long loc);
 
-
 extern sint8 * getfatfsPath(sint8 * filename);
 extern volatile sint8 charbuf[MAX_TGDSFILENAME_LENGTH+1];
 
@@ -265,41 +196,8 @@ extern char * dldi_tryingInterface();
 extern int gccnewlibnano_to_fsfat2libfatAttrib(int fsfatFlags);
 extern int libfat2gccnewlibnano_to_fsfatAttrib(int libfatFlags);
 extern void Setgccnewlibnano_to_fsfatAttributesToPath(char * filename, int Newgccnewlibnano_to_fsfatAttributes, int mask);
-
-//misc directory functions
-
-//User
-extern int 	FAT_FindFirstFile(char* filename);
-extern int 	FAT_FindNextFile(char* filename);
-extern u8 	FAT_GetFileAttributes(void);
-extern u8 FAT_SetFileAttributes (const char* filename, u8 attributes, u8 mask);
-
-//Internal
-extern char lfnName[MAX_TGDSFILENAME_LENGTH+1];
-extern char curDirListed[MAX_TGDSFILENAME_LENGTH+1];
-extern struct fd fdCur;
-extern bool FAT_GetLongFilename(char* filename);
-extern int getFirstFile(char * path);
-extern void updateGlobalListFromPath(char * path);
-extern int getNextFile(char * path);
-extern bool getLFN(char* filename);
-extern bool setLFN(char* filename);
 extern char lastCurrentPath[MAX_TGDSFILENAME_LENGTH];
-extern int CurrentFileDirEntry;
-#ifdef __cplusplus
-extern FileClass getFirstFileEntryFromPath(char * path);
-extern FILINFO getFileFILINFOfromFileClass(FileClass * FileClassInst);
-extern std::list<FileClass> * GlobalFileList;
-extern std::list<FileClass> * InitGlobalFileList();
-extern void DeInitGlobalFileList(std::list<FileClass> * List);
-extern std::list<FileClass> buildListFromPath(char * path);
-extern FileClass getEntryFromGlobalListByIndex(int EntryIndex);
-extern FileClass getFirstDirEntryFromGlobalList();
-extern FileClass getFirstFileEntryFromGlobalList();
-extern std::string buildFullPathFromFileClass(FileClass * FileClassInst);
-extern vector<string> splitCustom(string str, string token);
-
-#endif
+extern void updateLastGlobalPath(char * path);
 
 #ifdef __cplusplus
 }

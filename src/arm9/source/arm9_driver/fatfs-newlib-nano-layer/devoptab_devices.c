@@ -35,7 +35,7 @@ USA
 #include <stdarg.h>
 #include <time.h>
 
-#include "fsfatlayerTGDS.h"
+#include "fsfatlayerTGDSLegacy.h"
 #include "posixHandleTGDS.h"
 
 #include "fileHandleTGDS.h"

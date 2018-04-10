@@ -1,5 +1,4 @@
 /*
-
 			Copyright (C) 2017  Coto
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -15,25 +14,14 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 USA
-
 */
  
 //Coto: this was rewritten by me so it could fit the following setup:
 //newlib libc nano ARM Toolchain. dirent.h is not supported in this newlib version so we restore it
 
-//C++ part
-using namespace std;
-#include <iostream>
-#include <fstream>
-#include <list>
-#include <vector>
-#include <cmath>
-#include <cstdlib>
-#include <cstdio>
-#include <algorithm>
-#include <iterator>
-#include <string>
+//This has all the legacy C code (or: fsfatlayerTGDSLegacy.c + fsfatlayerTGDSNew.cpp / or: fsfatlayerTGDSLegacy.c). Projects that support C/C++ code link this by default.
 
+#include "fsfatlayerTGDSLegacy.h"
 #include <string.h>
 #include <errno.h>
 #include <sys/stat.h>
@@ -42,7 +30,6 @@ using namespace std;
 #include <fcntl.h>
 #include <dirent.h>
 #include "fileHandleTGDS.h"
-#include "fsfatlayerTGDS.h"
 #include "typedefsTGDS.h"
 #include "dsregs.h"
 #include "devoptab_devices.h"
@@ -55,7 +42,6 @@ using namespace std;
 #include "posixHandleTGDS.h"
 #include "dldi.h"
 #include "clockTGDS.h"
-
  
 
 //fatfs
@@ -1314,408 +1300,15 @@ int gccnewlibnano_to_fsfat2libfatAttrib(int fsfatFlags){
 	return libfatFlags;
 }
 
-
-/////////////////////////////////////////misc directory functions////////////////////////////////////////////////////
-//User
-//int FAT_FindFirstFile(char* filename) //filename must be at least MAX_TGDSFILENAME_LENGTH+1 in size
-int FAT_FindFirstFile(char* filename){
-	return getFirstFile(filename);
-}
-
-int FAT_FindNextFile(char* filename){
-	return getNextFile(filename);
-}
-
-u8 FAT_GetFileAttributes (void){
-	u8	libfatAttributes = 0;
-	if(CurrentFileDirEntry > 0){
-		FileClass FileClassInst = getEntryFromGlobalListByIndex((CurrentFileDirEntry - 1)); 
-		FILINFO finfo = getFileFILINFOfromFileClass(&FileClassInst);
-		libfatAttributes = (uint8)gccnewlibnano_to_fsfat2libfatAttrib((int)finfo.fattrib);
-	}
-	return libfatAttributes;
-}
-
-u8 FAT_SetFileAttributes (const char* filename, u8 attributes, u8 mask){
-	u8	libfatAttributesIn = 0;
-	u8	libfatAttributesOut= 0;	
-	FileClass FileClassInst = getFirstFileEntryFromPath((char *)filename); 	//get entry from path
-	FILINFO finfo = getFileFILINFOfromFileClass(&FileClassInst);
-	libfatAttributesIn = (uint8)gccnewlibnano_to_fsfat2libfatAttrib((int)finfo.fattrib);
-	libfatAttributesOut = (libfatAttributesIn & ~(mask & 0x27)) | (attributes & 0x27);
-	int	NEWgccnewlibnano_to_fsfatAttributes = libfat2gccnewlibnano_to_fsfatAttrib((int)libfatAttributesOut);
-	int NEWmask = libfat2gccnewlibnano_to_fsfatAttrib((int)mask);
-	//update new attrib in void Setgccnewlibnano_to_fsfatAttributesToPath((char *)filename,int Newgccnewlibnano_to_fsfatAttributes);
-	Setgccnewlibnano_to_fsfatAttributesToPath((char*)filename, NEWgccnewlibnano_to_fsfatAttributes, NEWmask);
-	return libfatAttributesOut;
-}
-
-
-//Internal
-//filename must be at least MAX_TGDSFILENAME_LENGTH+1
-bool setLFN(char* filename){
-	if (filename == NULL){
-		return false;
-	}
-	strncpy (lfnName, filename, (MAX_TGDSFILENAME_LENGTH+1) - 1);
-	lfnName[(MAX_TGDSFILENAME_LENGTH+1) - 1] = '\0';
-	return true;	
-}
-
-//filename must be at least MAX_TGDSFILENAME_LENGTH+1
-bool getLFN(char* filename){	//FAT_GetLongFilename(char* filename)
-	if (filename == NULL){
-		return false;
-	}
-	strncpy(filename, lfnName, (MAX_TGDSFILENAME_LENGTH+1) - 1);
-	filename[(MAX_TGDSFILENAME_LENGTH+1) - 1] = '\0';
-	return true;
-}
-
-std::list<FileClass> buildListFromPath(char * path){
-	FRESULT res;
-    DIR dir;
-    sint32 i = 0;
-    FILINFO fno;
-	std::list<FileClass> CurrentFileList;
-
-    res = f_opendir(&dir, path);                       /* Open the directory */
-    if (res == FR_OK) {
-        for (;;) {
-            res = f_readdir(&dir, &fno);                   /* Read a directory item */
-            if (res != FR_OK || fno.fname[0] == 0) break;  /* Break on error or end of dir */
-            
-			int type = 0;
-			if (fno.fattrib & AM_DIR) {			           /* It is a directory */
-				type = FT_DIR;	
-            }
-			else if (	//file
-			(fno.fattrib & AM_RDO)
-			||
-			(fno.fattrib & AM_HID)
-			||
-			(fno.fattrib & AM_SYS)
-			||
-			(fno.fattrib & AM_DIR)
-			||
-			(fno.fattrib & AM_ARC)
-			){
-				type = FT_FILE;			/* It is a file. */
-			}
-			else{	//invalid
-				type = FT_NONE;
-			}
-			CurrentFileList.push_back(FileClass(i,std::string(fno.fname),std::string(path),type));
-			i++;
-		}
-        f_closedir(&dir);
-    }
-	//debug char * from list
-	/*
-	std::list<std::string>::iterator it;
-	for (it=CurrentFileList.begin(); it!=CurrentFileList.end(); ++it){
-		std::string my_str = *it;
-		printf("Fname:%s",my_str.c_str());
-	}
-	*/
-	return CurrentFileList;
-}
-
-std::list<FileClass> * GlobalFileList = NULL;
-
-std::list<FileClass> * InitGlobalFileList(){
-	return (std::list<FileClass> *) new std::list<FileClass>;
-}
-
-void DeInitGlobalFileList(std::list<FileClass> * List){
-	delete List;
-}
-
-char lastCurrentPath[MAX_TGDSFILENAME_LENGTH];
-void updateGlobalListFromPath(char * path){
-	
-	//update last path (destroys the last one)
-	updateLastGlobalPath(path);
-	
-	if(GlobalFileList){
-		DeInitGlobalFileList(GlobalFileList);
-	}
-	GlobalFileList = InitGlobalFileList();
-	std::list<FileClass> FileList = buildListFromPath(path);	//do copy here (safer)
-	std::list<FileClass>::iterator it;
-	for (it=FileList.begin(); it!=FileList.end(); ++it){
-		FileClass fileInst = *it;
-		GlobalFileList->push_back(fileInst);
-	}
-	/* //debug
-	for (it=GlobalFileList->begin(); it!=GlobalFileList->end(); ++it){
-		FileClass fileInst = *it;
-		printf("Index:%d",fileInst.getindex());
-		printf("File:%s",fileInst.getfilename().c_str());
-		printf("Path:%s",fileInst.getpath().c_str());
-	}
-	*/
-}
-
-
-std::string buildFullPathFromFileClass(FileClass * FileClassInst){
-	char FullPath[MAX_TGDSFILENAME_LENGTH] = {0};
-	std::string PathFix = std::string(getfatfsPath(""));
-	PathFix.erase(PathFix.length()-1);
-	
-	std:string fname = string(FileClassInst->getfilename());
-	//if getfilename/path has no leading / add one
-	if ( (fname.find("/") == string::npos) && (FileClassInst->getpath().find("/") == string::npos)){
-			char TempName[MAX_TGDSFILENAME_LENGTH] = {0};
-			sprintf(TempName,"/%s",fname.c_str());
-			fname = string(TempName);
-	}
-	else{
-		//at least one of them has a leading / which is used below
-		
-		//but if both have /, then ... 
-		if ( (fname.find("/") != string::npos) && (FileClassInst->getpath().find("/") != string::npos)){
-			fname.erase(0,1);	//delete the first 1 char(s) from filename
-		}
-		
-	}
-	sprintf(FullPath,"%s%s%s",PathFix.c_str(),FileClassInst->getpath().c_str(),fname.c_str());
-	std::string FullPathStr = std::string(FullPath);
-	return FullPathStr;
-}
-
-FILINFO getFileFILINFOfromFileClass(FileClass * FileClassInst){
-	std::string FullPathStr = buildFullPathFromFileClass(FileClassInst);
-	//printf("path:%s",FullPathStr.c_str());
-	FILINFO finfo;
-	FRESULT result;
-	sint32 fd = -1;
-	struct fd * fdinst = NULL;
-	FILE * FileInst = fopen(FullPathStr.c_str(),"r");
-	if(FileInst){
-		fd = fileno(FileInst);
-		fdinst = fd_struct_get(fd);
-		if(fdinst->filPtr){
-			result = f_stat(FullPathStr.c_str(), &finfo);
-			if (result == FR_OK){
-				//ok works correctly
-			}
-			else{
-				//finfo fill error
-			}
-		}
-		else{
-			//filPtr open ERROR
-		}
-		fclose(FileInst);
-	}
-	else{
-		//fopen failed
-	}
-	return finfo;
-}
-
-
-vector<string> splitCustom(string str, string token){
-    vector<string>result;
-    while(str.size()){
-        int index = str.find(token);
-        if(index!=string::npos){
-            result.push_back(str.substr(0,index));
-            str = str.substr(index+token.size());
-            if(str.size()==0)result.push_back(str);
-        }else{
-            result.push_back(str);
-            str = "";
-        }
-    }
-    return result;
-}
-
-
 void Setgccnewlibnano_to_fsfatAttributesToPath(char * filename, int Newgccnewlibnano_to_fsfatAttributes, int mask){
 	//f_chmod("file.txt", AM_RDO, AM_RDO | AM_ARC);	/* Set Read-only, clear Archive and others are left unchanged. */
 	f_chmod(filename, Newgccnewlibnano_to_fsfatAttributes, mask);
 }
-//type will tell us if this file exists or not(FT_NONE == no, FT_FILE == yes)
-FileClass getFirstFileEntryFromPath(char * path){
-	FILE * FileHandle = fopen(path,"r");
-	FileClass FileInst(InvalidFileListIndex, std::string(""), std::string(""), FT_NONE);
-	
-	vector<string> vecOut = splitCustom(std::string(path),std::string("/"));	//path == "0:/folder/file.bin"
-    /*
-    for(vector<string>::const_iterator i = vecOut.begin(); i != vecOut.end(); ++i) {
-        // process i
-        cout << *i << " "; // this will print all the contents of *features*
-    }
-	*/
-	int fileIndex = vecOut.size() - 1;
-	std::string Filename = vecOut.at(fileIndex);
-	std::string Path;
-	if(fileIndex > 1){
-	    int PathIndex = fileIndex;  //File is excluded
-	    int i = 0;
-	    for(i = 0; i < PathIndex; i++){
-	        char temp[512] = {0};
-	        sprintf(temp,"%s%s",vecOut.at(i).c_str(),"/");
-	        Path+= temp;
-	    }
-	}
-	
-	if(FileHandle){
-		FileInst.settype(FT_FILE);
-		FileInst.setfilename(Filename);
-		FileInst.setpath(Path);
-		fclose(FileHandle);
-	}
-	return FileInst;
+
+char lastCurrentPath[MAX_TGDSFILENAME_LENGTH];
+void updateLastGlobalPath(char * path){
+	sprintf(lastCurrentPath,"%s",path);
 }
-
-FileClass getEntryFromGlobalListByIndex(int EntryIndex){
-	FileClass FileInst(0, std::string(""), std::string(""), 0);
-	if(EntryIndex > (GlobalFileList->size() - 1)){
-		return FileInst;
-	} 
-	
-	std::list<FileClass>::iterator it = GlobalFileList->begin();
-    std::advance(it, EntryIndex);
-	FileInst = *it;
-	return FileInst;
-}
-
-//Note: Requires a fresh call to updateGlobalListFromPath prior to calling this
-FileClass getFirstDirEntryFromGlobalList(){
-	FileClass FileInst(0, std::string(""), std::string(""), 0);
-	std::list<FileClass>::iterator it;
-	for (it=GlobalFileList->begin(); it!=GlobalFileList->end(); ++it){
-		if((*it).gettype() == FT_DIR){
-			FileInst = *it;
-			break;
-		}
-	}
-	return FileInst;
-}
-
-//Note: Requires a fresh call to updateGlobalListFromPath prior to calling this
-FileClass getFirstFileEntryFromGlobalList(){
-	int CurFileIndex = 0;
-	FileClass FileInst(0, std::string(""), std::string(""), 0);
-	std::list<FileClass>::iterator it;
-	for (it=GlobalFileList->begin(); it!=GlobalFileList->end(); ++it){
-		if((*it).gettype() == FT_FILE){
-			FileInst = *it;
-			break;
-		}
-		CurFileIndex++;
-	}
-	
-	CurrentFileDirEntry = CurFileIndex;	//acknowledge CurrentFileDirEntry
-	
-	return FileInst;
-}
-
-
-int CurrentFileDirEntry = 0;	//the actual pointer inside the directory listing
-
-//return:  FT_DIR or FT_FILE: use getLFN(char buf[MAX_TGDSFILENAME_LENGTH+1]); to receive full first file
-//			or FT_NONE if invalid file
-int getFirstFile(char * path){
-
-	//if path is different, rebuild filelist
-	if (!(strcmp(lastCurrentPath, path) == 0))
-	{
-		updateLastGlobalPath(path);
-	}
-	
-	//lastCurrentPath is globally accesible by all code. But updated only in getFirstFile (getNextFile just retrieves the next ptr file info)
-	updateGlobalListFromPath(lastCurrentPath);
-	CurrentFileDirEntry = 0;
-	
-	/*
-	//test
-	FileClass fileInst = getEntryFromGlobalListByIndex(0);
-	printf("Index:%d",fileInst.getindex());
-	printf("File:%s",fileInst.getfilename().c_str());
-	printf("Path:%s",fileInst.getpath().c_str());
-	printf("type:%d",fileInst.gettype());
-	
-	while(1==1){};
-	*/
-	
-	//FileClass fileInst = getEntryFromGlobalListByIndex(CurrentFileDirEntry);	//By current directory index
-	//FileClass fileInst = getFirstDirEntryFromGlobalList();					//get First directory entry
-	FileClass fileInst = getFirstFileEntryFromGlobalList();						//get First file entry (appears to be a FAT system file?) so it generates a valid FILE CurrentFileDirEntry
-	FileClass fileInstDebug = getEntryFromGlobalListByIndex(CurrentFileDirEntry);	//generate a valid FILE from CurrentFileDirEntry
-	FILINFO FILINFOObj = getFileFILINFOfromFileClass(&fileInst);				//actually open the file and check attributes (rather than read dir contents)
-	
-	//printf("Index:%d",fileInstDebug.getindex());
-	//printf("File:%s",fileInstDebug.getfilename().c_str());
-	//printf("Path:%s",fileInstDebug.getpath().c_str());
-	//printf("type:%d",fileInstDebug.gettype());
-	
-	//while(1==1){}
-	
-	if (FILINFOObj.fattrib & AM_DIR) {	//dir
-		
-	}
-	else if (	//file
-	(FILINFOObj.fattrib & AM_RDO)
-	||
-	(FILINFOObj.fattrib & AM_HID)
-	||
-	(FILINFOObj.fattrib & AM_SYS)
-	||
-	(FILINFOObj.fattrib & AM_DIR)
-	||
-	(FILINFOObj.fattrib & AM_ARC)
-	){
-		std::string FullPathStr = buildFullPathFromFileClass(&fileInst);	//must store proper filepath
-		setLFN((char*)FullPathStr.c_str());		//update last full path access
-		getLFN((char*)path);					//update source path
-	}
-	else{	//invalid
-		
-	}
-	
-	//increase the file counter after operation
-	if(CurrentFileDirEntry < (GlobalFileList->size()-1)){ 
-		CurrentFileDirEntry++;	
-	}
-	else{
-		CurrentFileDirEntry = 0;
-		return FT_NONE;	//actually end of list
-	}
-	return fileInst.gettype();
-}
-
-//requires fullpath of the CURRENT file, it will return the next one
-//return:  FT_DIR or FT_FILE: use getLFN(char buf[MAX_TGDSFILENAME_LENGTH+1]); to receive full first file
-//			or FT_NONE if invalid file
-int getNextFile(char * path){
-	
-	FileClass fileInst = getEntryFromGlobalListByIndex(CurrentFileDirEntry);	//By current directory index
-	FILINFO FILINFOObj = getFileFILINFOfromFileClass(&fileInst);			//actually open the file and check attributes (rather than read dir contents)
-	
-	if(fileInst.gettype() == FT_DIR){
-		
-	}
-	else if(fileInst.gettype() == FT_FILE){
-		std::string FullPathStr = buildFullPathFromFileClass(&fileInst);
-		setLFN((char*)FullPathStr.c_str());		//update last full path access
-		getLFN((char*)path);					//update source path
-	}
-	
-	//increase the file counter after operation
-	if(CurrentFileDirEntry < (GlobalFileList->size()-1)){ 
-		CurrentFileDirEntry++;	
-	}
-	else{
-		CurrentFileDirEntry = 0;
-		return FT_NONE;	//actually end of list
-	}
-	return fileInst.gettype();
-}
-
 
 /*-----------------------------------------------------------------------*/
 /* Get sector# from cluster#                                             */

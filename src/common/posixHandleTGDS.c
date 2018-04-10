@@ -35,7 +35,7 @@ USA
 #include "dirent.h"
 #include "consoleTGDS.h"
 #include "fileHandleTGDS.h"
-#include "fsfatlayerTGDS.h"
+#include "fsfatlayerTGDSLegacy.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>

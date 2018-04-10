@@ -34,7 +34,7 @@ USA
 #include "sys/stat.h"
 #include "dirent.h"
 #include "consoleTGDS.h"
-#include "fsfatlayerTGDS.h"
+#include "fsfatlayerTGDSLegacy.h"
 #include "dsregs_asm.h"
 
 volatile struct fd files[OPEN_MAXTGDS] __attribute__ ((aligned (4)));	//has file/dir descriptors and pointers
@@ -174,10 +174,4 @@ int getInternalFileDescriptorFromDIR(DIR *dirp){
     }
 	
 	return ret;
-}
-
-
-
-void updateLastGlobalPath(char * path){
-	sprintf(lastCurrentPath,"%s",path);
 }
