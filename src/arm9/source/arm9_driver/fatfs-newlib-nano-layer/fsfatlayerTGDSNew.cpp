@@ -459,4 +459,55 @@ int getNextFile(char * path){
 	return fileInst.gettype();
 }
 
+//FAT_GetAlias
+//Get the alias (short name) of the last file or directory entry read
+//char* alias OUT: will be filled with the alias (short filename),
+//	should be at least 13 bytes long
+//bool return OUT: return true if successful
+
+bool FAT_GetAlias(char* alias)
+{
+	if (alias == NULL)
+	{
+		return false;
+	}
+	FileClass fileInst = getEntryFromGlobalListByIndex(CurrentFileDirEntry);	//By current directory index
+	FILINFO FILINFOObj = getFileFILINFOfromFileClass(&fileInst);			//actually open the file and check attributes (rather than read dir contents)
+	
+	if (	 
+	(	//file
+	(FILINFOObj.fattrib & AM_RDO)
+	||
+	(FILINFOObj.fattrib & AM_HID)
+	||
+	(FILINFOObj.fattrib & AM_SYS)
+	||
+	(FILINFOObj.fattrib & AM_DIR)
+	||
+	(FILINFOObj.fattrib & AM_ARC)
+	)
+	||	//dir
+	(FILINFOObj.fattrib & AM_DIR)
+	)
+	{
+		sprintf((char*)alias,"%s",fileInst.getfilename().c_str());					//update source path using short file/directory name
+	}
+	//not file or dir
+	else{
+		return false;
+	}
+	
+	return true;
+}
+
+
+//stubbed because what these do is a workaround, described below:
+//in TGDS: while listing a dir, create/read/update/delete a new file works
+void FAT_preserveVars()
+{
+}
+
+void FAT_restoreVars()
+{
+}
 #endif

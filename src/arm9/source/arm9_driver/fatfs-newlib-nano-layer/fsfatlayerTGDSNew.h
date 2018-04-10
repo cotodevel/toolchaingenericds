@@ -92,6 +92,9 @@ extern int 	FAT_FindFirstFile(char* filename);
 extern int 	FAT_FindNextFile(char* filename);
 extern u8 	FAT_GetFileAttributes(void);
 extern u8 FAT_SetFileAttributes (const char* filename, u8 attributes, u8 mask);
+extern void FAT_preserveVars();
+extern void FAT_restoreVars();
+extern bool FAT_GetAlias(char* alias);
 
 //Internal
 extern char lfnName[MAX_TGDSFILENAME_LENGTH+1];
