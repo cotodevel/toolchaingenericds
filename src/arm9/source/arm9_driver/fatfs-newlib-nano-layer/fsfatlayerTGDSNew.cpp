@@ -566,4 +566,33 @@ bool FAT_GetLongFilename(char* Longfilename)
 	return true;
 }
 
+/*-----------------------------------------------------------------
+FAT_GetFileSize
+Get the file size of the last file found or openned.
+This idea is based on a modification by MoonLight
+u32 return OUT: the file size
+-----------------------------------------------------------------*/
+u32 FAT_GetFileSize(void)
+{
+	u32 fileSize = 0;
+	FileClass fileInst = getEntryFromGlobalListByIndex(CurrentFileDirEntry);	//By current directory index
+	FILINFO FILINFOObj = getFileFILINFOfromFileClass(&fileInst);			//actually open the file and check attributes (rather than read dir contents)
+	
+	if (//file
+	(FILINFOObj.fattrib & AM_RDO)
+	||
+	(FILINFOObj.fattrib & AM_HID)
+	||
+	(FILINFOObj.fattrib & AM_SYS)
+	||
+	(FILINFOObj.fattrib & AM_DIR)
+	||
+	(FILINFOObj.fattrib & AM_ARC)
+	)
+	{
+		fileSize = (u32)FILINFOObj.fsize;
+	}
+	return 	fileSize;
+}
+
 #endif
