@@ -482,7 +482,7 @@ struct hostent * gethostbyname(const sint8 * name) {
 };
 
 
-extern int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct timeval *timeout) {
+int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct timeval *timeout) {
 	// 31 days = 2678400 seconds
 	unsigned long timeout_ms, lasttime, temp;
 	sgIP_Record_TCP * rec;

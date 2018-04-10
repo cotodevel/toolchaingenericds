@@ -137,9 +137,6 @@ extern "C" {
 	unsigned long htonl(unsigned long num);
 
 
-	extern int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct timeval *timeout);
-
-
 #ifdef __cplusplus
 };
 #endif
