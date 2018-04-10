@@ -510,4 +510,14 @@ void FAT_preserveVars()
 void FAT_restoreVars()
 {
 }
+
+
+u32	disc_HostType(void)
+{
+	if(FS_InitStatus == true){
+		return dldiGet()->ioInterface.ioType;
+	}
+	return 0;
+}
+
 #endif

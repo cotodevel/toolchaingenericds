@@ -95,6 +95,7 @@ extern u8 FAT_SetFileAttributes (const char* filename, u8 attributes, u8 mask);
 extern void FAT_preserveVars();
 extern void FAT_restoreVars();
 extern bool FAT_GetAlias(char* alias);
+extern u32	disc_HostType(void);
 
 //Internal
 extern char lfnName[MAX_TGDSFILENAME_LENGTH+1];

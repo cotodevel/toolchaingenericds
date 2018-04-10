@@ -57,17 +57,29 @@ char curDirListed[MAX_TGDSFILENAME_LENGTH+1];
 struct fd fdCur;
 
 /* functions */
+bool FS_InitStatus = false;	//if FS_init() inited SD: true / if FS_deinit() or sd driver uninitialized: false
 
 //For initializing Filesystem
 int		FS_init()
 {
-	return fatfs_init();
+	int ret = fatfs_init();
+	if (ret == 0){
+		FS_InitStatus = true;
+	}
+	else{
+		FS_InitStatus = false;
+	}
+	return ret;
 }
 
 //For de-initializing Filesystem
 int		FS_deinit()
 {
-	return fatfs_deinit();
+	int ret = fatfs_deinit();
+	if (ret == 0){
+		FS_InitStatus = false;
+	}
+	return ret;
 }
 
 //converts a "folder/folder.../file.fil" into a proper filesystem fullpath

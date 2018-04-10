@@ -115,7 +115,7 @@ extern "C" {
 extern FATFS dldiFs;
 
 /* Function prototypes */
-
+extern bool FS_InitStatus;
 extern int		FS_init();
 extern int		FS_deinit();
 extern int fatfs_init();
