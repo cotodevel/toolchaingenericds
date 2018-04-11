@@ -65,9 +65,27 @@ typedef uint32		u32;
 typedef uint16		u16;
 typedef uint8		u8;
 
+typedef sint64		s64;
 typedef sint32		s32;
 typedef sint16		s16;
 typedef sint8		s8;
+
+//posix
+typedef vuint64		vuint64_t;
+typedef vuint32		vuint32_t;
+typedef vuint16		vuint16_t;
+typedef vuint8		vuint8_t;
+
+typedef uint64		uint64_t;
+//typedef uint32		uint32_t;
+typedef uint16		uint16_t;
+typedef uint8		uint8_t;
+
+typedef sint64		int64_t;
+//typedef sint32		int32_t;
+typedef sint16		int16_t;
+//typedef sint8		int8_t;
+
 
 
 #endif
