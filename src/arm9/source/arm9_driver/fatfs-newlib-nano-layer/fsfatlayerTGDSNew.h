@@ -84,6 +84,7 @@ class FileClass
 	}
 };
 
+#define InvalidFileDirEntry (sint32)(-1)
 
 //misc directory functions
 
@@ -111,6 +112,8 @@ extern int getNextFile(char * path);
 extern bool getLFN(char* filename);
 extern bool setLFN(char* filename);
 extern int CurrentFileDirEntry;
+extern int LastFileEntry;
+extern int LastDirEntry;
 extern FileClass getFirstFileEntryFromPath(char * path);
 extern FILINFO getFileFILINFOfromFileClass(FileClass * FileClassInst);
 extern std::list<FileClass> * GlobalFileList;

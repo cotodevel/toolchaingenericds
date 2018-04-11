@@ -314,6 +314,7 @@ FileClass getFirstFileEntryFromPath(char * path){
 	return FileInst;
 }
 
+
 FileClass getEntryFromGlobalListByIndex(int EntryIndex){
 	FileClass FileInst(0, std::string(""), std::string(""), 0);
 	if(EntryIndex > (GlobalFileList->size() - 1)){
@@ -359,6 +360,9 @@ FileClass getFirstFileEntryFromGlobalList(){
 
 
 int CurrentFileDirEntry = 0;	//the actual pointer inside the directory listing
+//these update on getFirstFile/Dir getNextFile/Dir
+int LastFileEntry = 0;
+int LastDirEntry = 0;
 
 //return:  FT_DIR or FT_FILE: use getLFN(char buf[MAX_TGDSFILENAME_LENGTH+1]); to receive full first file
 //			or FT_NONE if invalid file
@@ -385,11 +389,10 @@ int getFirstFile(char * path){
 	while(1==1){};
 	*/
 	
-	//FileClass fileInst = getEntryFromGlobalListByIndex(CurrentFileDirEntry);	//By current directory index
-	//FileClass fileInst = getFirstDirEntryFromGlobalList();					//get First directory entry
-	FileClass fileInst = getFirstFileEntryFromGlobalList();						//get First file entry (appears to be a FAT system file?) so it generates a valid FILE CurrentFileDirEntry
-	FileClass fileInstDebug = getEntryFromGlobalListByIndex(CurrentFileDirEntry);	//generate a valid FILE from CurrentFileDirEntry
-	FILINFO FILINFOObj = getFileFILINFOfromFileClass(&fileInst);				//actually open the file and check attributes (rather than read dir contents)
+	//FileClass fileInst = getFirstDirEntryFromGlobalList();					//get First directory entry	:	so it generates a valid DIR CurrentFileDirEntry
+	//FileClass fileInst = getFirstFileEntryFromGlobalList();					//get First file entry 		:	so it generates a valid FILE CurrentFileDirEntry
+	FileClass fileInst = getEntryFromGlobalListByIndex(CurrentFileDirEntry);	//get First file/directory	:	can be file/dir/none(invalid)
+	FILINFO FILINFOObj = getFileFILINFOfromFileClass(&fileInst);				//actually open the file and check attributes
 	
 	//printf("Index:%d",fileInstDebug.getindex());
 	//printf("File:%s",fileInstDebug.getfilename().c_str());
@@ -399,7 +402,7 @@ int getFirstFile(char * path){
 	//while(1==1){}
 	
 	if (FILINFOObj.fattrib & AM_DIR) {	//dir
-		
+		LastDirEntry=CurrentFileDirEntry;
 	}
 	else if (	//file
 	(FILINFOObj.fattrib & AM_RDO)
@@ -415,9 +418,10 @@ int getFirstFile(char * path){
 		std::string FullPathStr = buildFullPathFromFileClass(&fileInst);	//must store proper filepath
 		setLFN((char*)FullPathStr.c_str());		//update last full path access
 		getLFN((char*)path);					//update source path
+		
+		LastFileEntry=CurrentFileDirEntry;
 	}
 	else{	//invalid
-		
 	}
 	
 	//increase the file counter after operation
@@ -426,6 +430,8 @@ int getFirstFile(char * path){
 	}
 	else{
 		CurrentFileDirEntry = 0;
+		LastDirEntry=InvalidFileDirEntry;
+		LastFileEntry=InvalidFileDirEntry;
 		return FT_NONE;	//actually end of list
 	}
 	return fileInst.gettype();
@@ -436,16 +442,19 @@ int getFirstFile(char * path){
 //			or FT_NONE if invalid file
 int getNextFile(char * path){
 	
-	FileClass fileInst = getFirstFileEntryFromGlobalList();	//get last FILE opened (bynextFile)
+	FileClass fileInst = getEntryFromGlobalListByIndex(CurrentFileDirEntry);	//get next FILE listed
 	FILINFO FILINFOObj = getFileFILINFOfromFileClass(&fileInst);			//actually open the file and check attributes (rather than read dir contents)
 	
 	if(fileInst.gettype() == FT_DIR){
-		
+		LastDirEntry=CurrentFileDirEntry;
 	}
 	else if(fileInst.gettype() == FT_FILE){
 		std::string FullPathStr = buildFullPathFromFileClass(&fileInst);
 		setLFN((char*)FullPathStr.c_str());		//update last full path access
 		getLFN((char*)path);					//update source path
+		LastFileEntry=CurrentFileDirEntry;
+	}
+	else{	//invalid
 	}
 	
 	//increase the file counter after operation
@@ -454,6 +463,8 @@ int getNextFile(char * path){
 	}
 	else{
 		CurrentFileDirEntry = 0;
+		LastDirEntry=InvalidFileDirEntry;
+		LastFileEntry=InvalidFileDirEntry;
 		return FT_NONE;	//actually end of list
 	}
 	return fileInst.gettype();
@@ -471,7 +482,18 @@ bool FAT_GetAlias(char* alias)
 	{
 		return false;
 	}
-	FileClass fileInst = getEntryFromGlobalListByIndex(CurrentFileDirEntry);	//By current file/directory index
+	int CurEntry = InvalidFileDirEntry;
+	if(LastFileEntry > LastDirEntry){
+		CurEntry = LastFileEntry;
+	}
+	else{
+		CurEntry = LastDirEntry;
+	}
+	//for some reason the CurEntry is invalid (trying to call and fileList hasn't been rebuilt)
+	if(CurEntry == InvalidFileDirEntry){
+		return false;
+	}
+	FileClass fileInst = getEntryFromGlobalListByIndex(CurEntry);	//By current file/directory index
 	FILINFO FILINFOObj = getFileFILINFOfromFileClass(&fileInst);			//actually open the file and check attributes (rather than read dir contents)
 	
 	if (	 
@@ -536,7 +558,18 @@ bool FAT_GetLongFilename(char* Longfilename)
 		return false;
 	}
 	
-	FileClass fileInst = getEntryFromGlobalListByIndex(CurrentFileDirEntry);	//By current file/directory index
+	int CurEntry = InvalidFileDirEntry;
+	if(LastFileEntry > LastDirEntry){
+		CurEntry = LastFileEntry;
+	}
+	else{
+		CurEntry = LastDirEntry;
+	}
+	//for some reason the CurEntry is invalid (trying to call and fileList hasn't been rebuilt)
+	if(CurEntry == InvalidFileDirEntry){
+		return false;
+	}
+	FileClass fileInst = getEntryFromGlobalListByIndex(CurEntry);	//By current file/directory index
 	FILINFO FILINFOObj = getFileFILINFOfromFileClass(&fileInst);			//actually open the file and check attributes (rather than read dir contents)
 	
 	if (	 
@@ -575,7 +608,7 @@ u32 return OUT: the file size
 u32 FAT_GetFileSize(void)
 {
 	u32 fileSize = 0;
-	FileClass fileInst = getFirstFileEntryFromGlobalList();	//get last FILE opened (bynextFile)
+	FileClass fileInst = getEntryFromGlobalListByIndex(LastFileEntry);	//get last FILE opened (by firstFile/ nextFile)
 	FILINFO FILINFOObj = getFileFILINFOfromFileClass(&fileInst);			//actually open the file and check attributes (rather than read dir contents)
 	
 	if (//file
@@ -603,7 +636,7 @@ u32 return OUT: the file start cluster
 u32 FAT_GetFileCluster(void)
 {
 	u32 FirstClusterFromLastFileOpen = -1;
-	FileClass fileInst =	getFirstFileEntryFromGlobalList();	//get last FILE opened (bynextFile)
+	FileClass fileInst = getEntryFromGlobalListByIndex(LastFileEntry);	//get last FILE opened (by firstFile/ nextFile)
 	std::string FullPathStr = buildFullPathFromFileClass(&fileInst);	//must store proper filepath
 	FILE * f = fopen(FullPathStr.c_str(),"r");
 	sint32 fd = -1;
