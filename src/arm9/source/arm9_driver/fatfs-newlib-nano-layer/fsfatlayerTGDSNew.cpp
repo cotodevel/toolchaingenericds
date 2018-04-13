@@ -650,4 +650,15 @@ u32 FAT_GetFileCluster(void)
 	return 	FirstClusterFromLastFileOpen;
 }
 
+/*-----------------------------------------------------------------
+FAT_DisableWriting
+Disables writing to the card at the driver level.
+Cannot be re-enabled.
+-----------------------------------------------------------------*/
+bool disableWriting = false;
+void FAT_DisableWriting (void)
+{
+	disableWriting = true;
+}
+
 #endif

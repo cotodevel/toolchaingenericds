@@ -100,6 +100,8 @@ extern u32	disc_HostType(void);
 extern bool FAT_GetLongFilename(char* Longfilename);
 extern u32 FAT_GetFileSize(void);
 extern u32 FAT_GetFileCluster(void);
+extern bool disableWriting;
+extern void FAT_DisableWriting (void);
 
 //Internal
 extern char lfnName[MAX_TGDSFILENAME_LENGTH+1];
@@ -128,3 +130,4 @@ extern vector<string> splitCustom(string str, string token);
 
 #endif
 #endif
+
