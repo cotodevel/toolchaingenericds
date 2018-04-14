@@ -22,7 +22,6 @@ USA
 //Projects that do NOT support C++ code (smaller footprint, simpler projects) will resort to simpler implementation @ fsfatlayerTGDSLegacy.c, so by logic, core logic should
 //be dealt in C code, and extension should be in C++ code
 
-
 #ifdef __cplusplus
 
 //C++ part
@@ -61,14 +60,14 @@ using namespace std;
 #include "dldi.h"
 #include "clockTGDS.h"
 
-
 /////////////////////////////////////////misc directory functions////////////////////////////////////////////////////
-//User
-//int FAT_FindFirstFile(char* filename) //filename must be at least MAX_TGDSFILENAME_LENGTH+1 in size
-int FAT_FindFirstFile(char* filename){
+
+//Filename must be at least MAX_TGDSFILENAME_LENGTH+1 in size
+int FAT_FindFirstFile(char* filename){	
 	return getFirstFile(filename);
 }
 
+//Filename must be at least MAX_TGDSFILENAME_LENGTH+1 in size
 int FAT_FindNextFile(char* filename){
 	return getNextFile(filename);
 }
@@ -92,14 +91,13 @@ u8 FAT_SetFileAttributes (const char* filename, u8 attributes, u8 mask){
 	libfatAttributesOut = (libfatAttributesIn & ~(mask & 0x27)) | (attributes & 0x27);
 	int	NEWgccnewlibnano_to_fsfatAttributes = libfat2gccnewlibnano_to_fsfatAttrib((int)libfatAttributesOut);
 	int NEWmask = libfat2gccnewlibnano_to_fsfatAttrib((int)mask);
-	//update new attrib in void Setgccnewlibnano_to_fsfatAttributesToPath((char *)filename,int Newgccnewlibnano_to_fsfatAttributes);
 	Setgccnewlibnano_to_fsfatAttributesToPath((char*)filename, NEWgccnewlibnano_to_fsfatAttributes, NEWmask);
 	return libfatAttributesOut;
 }
 
 
 //Internal
-//filename must be at least MAX_TGDSFILENAME_LENGTH+1
+//Filename must be at least MAX_TGDSFILENAME_LENGTH+1
 bool setLFN(char* filename){
 	if (filename == NULL){
 		return false;
@@ -109,8 +107,8 @@ bool setLFN(char* filename){
 	return true;	
 }
 
-//filename must be at least MAX_TGDSFILENAME_LENGTH+1
-bool getLFN(char* filename){	//FAT_GetLongFilename(char* filename)
+//Filename must be at least MAX_TGDSFILENAME_LENGTH+1
+bool getLFN(char* filename){
 	if (filename == NULL){
 		return false;
 	}
@@ -136,7 +134,7 @@ std::list<FileClass> buildListFromPath(char * path){
 			if (fno.fattrib & AM_DIR) {			           /* It is a directory */
 				type = FT_DIR;	
             }
-			else if (	//file
+			else if (									   /* It is a file */
 			(fno.fattrib & AM_RDO)
 			||
 			(fno.fattrib & AM_HID)
@@ -147,9 +145,9 @@ std::list<FileClass> buildListFromPath(char * path){
 			||
 			(fno.fattrib & AM_ARC)
 			){
-				type = FT_FILE;			/* It is a file. */
+				type = FT_FILE;			
 			}
-			else{	//invalid
+			else{	/* It is Invalid. */
 				type = FT_NONE;
 			}
 			CurrentFileList.push_back(FileClass(i,std::string(fno.fname),std::string(path),type));
@@ -157,19 +155,10 @@ std::list<FileClass> buildListFromPath(char * path){
 		}
         f_closedir(&dir);
     }
-	//debug char * from list
-	/*
-	std::list<std::string>::iterator it;
-	for (it=CurrentFileList.begin(); it!=CurrentFileList.end(); ++it){
-		std::string my_str = *it;
-		printf("Fname:%s",my_str.c_str());
-	}
-	*/
 	return CurrentFileList;
 }
 
 std::list<FileClass> * GlobalFileList = NULL;
-
 std::list<FileClass> * InitGlobalFileList(){
 	return (std::list<FileClass> *) new std::list<FileClass>;
 }
@@ -180,27 +169,19 @@ void DeInitGlobalFileList(std::list<FileClass> * List){
 
 void updateGlobalListFromPath(char * path){
 	
-	//update last path (destroys the last one)
+	//Update last path (destroys the last one)
 	updateLastGlobalPath(path);
 	
 	if(GlobalFileList){
 		DeInitGlobalFileList(GlobalFileList);
 	}
 	GlobalFileList = InitGlobalFileList();
-	std::list<FileClass> FileList = buildListFromPath(path);	//do copy here (safer)
+	std::list<FileClass> FileList = buildListFromPath(path);	//Do copy here (safer)
 	std::list<FileClass>::iterator it;
 	for (it=FileList.begin(); it!=FileList.end(); ++it){
 		FileClass fileInst = *it;
 		GlobalFileList->push_back(fileInst);
 	}
-	/* //debug
-	for (it=GlobalFileList->begin(); it!=GlobalFileList->end(); ++it){
-		FileClass fileInst = *it;
-		printf("Index:%d",fileInst.getindex());
-		printf("File:%s",fileInst.getfilename().c_str());
-		printf("Path:%s",fileInst.getpath().c_str());
-	}
-	*/
 }
 
 
@@ -212,18 +193,17 @@ std::string buildFullPathFromFileClass(FileClass * FileClassInst){
 	std:string fname = string(FileClassInst->getfilename());
 	//if getfilename/path has no leading / add one
 	if ( (fname.find("/") == string::npos) && (FileClassInst->getpath().find("/") == string::npos)){
-			char TempName[MAX_TGDSFILENAME_LENGTH] = {0};
-			sprintf(TempName,"/%s",fname.c_str());
-			fname = string(TempName);
+		char TempName[MAX_TGDSFILENAME_LENGTH] = {0};
+		sprintf(TempName,"/%s",fname.c_str());
+		fname = string(TempName);
 	}
 	else{
-		//at least one of them has a leading / which is used below
+		//At least one of them has a leading / which is used below
 		
 		//but if both have /, then ... 
 		if ( (fname.find("/") != string::npos) && (FileClassInst->getpath().find("/") != string::npos)){
-			fname.erase(0,1);	//delete the first 1 char(s) from filename
+			fname.erase(0,1);	//Delete the first 1 char(s) from filename
 		}
-		
 	}
 	sprintf(FullPath,"%s%s%s",PathFix.c_str(),FileClassInst->getpath().c_str(),fname.c_str());
 	std::string FullPathStr = std::string(FullPath);
@@ -232,7 +212,6 @@ std::string buildFullPathFromFileClass(FileClass * FileClassInst){
 
 FILINFO getFileFILINFOfromFileClass(FileClass * FileClassInst){
 	std::string FullPathStr = buildFullPathFromFileClass(FileClassInst);
-	//printf("path:%s",FullPathStr.c_str());
 	FILINFO finfo;
 	FRESULT result;
 	sint32 fd = -1;
@@ -261,7 +240,6 @@ FILINFO getFileFILINFOfromFileClass(FileClass * FileClassInst){
 	return finfo;
 }
 
-
 vector<string> splitCustom(string str, string token){
     vector<string>result;
     while(str.size()){
@@ -278,21 +256,12 @@ vector<string> splitCustom(string str, string token){
     return result;
 }
 
-
-
-//type will tell us if this file exists or not(FT_NONE == no, FT_FILE == yes)
+//Type will tell us if this file exists or not(FT_NONE == no, FT_FILE == yes)
 FileClass getFirstFileEntryFromPath(char * path){
 	FILE * FileHandle = fopen(path,"r");
 	FileClass FileInst(InvalidFileListIndex, std::string(""), std::string(""), FT_NONE);
-	
 	vector<string> vecOut = splitCustom(std::string(path),std::string("/"));	//path == "0:/folder/file.bin"
-    /*
-    for(vector<string>::const_iterator i = vecOut.begin(); i != vecOut.end(); ++i) {
-        // process i
-        cout << *i << " "; // this will print all the contents of *features*
-    }
-	*/
-	int fileIndex = vecOut.size() - 1;
+    int fileIndex = vecOut.size() - 1;
 	std::string Filename = vecOut.at(fileIndex);
 	std::string Path;
 	if(fileIndex > 1){
@@ -304,7 +273,6 @@ FileClass getFirstFileEntryFromPath(char * path){
 	        Path+= temp;
 	    }
 	}
-	
 	if(FileHandle){
 		FileInst.settype(FT_FILE);
 		FileInst.setfilename(Filename);
@@ -314,13 +282,11 @@ FileClass getFirstFileEntryFromPath(char * path){
 	return FileInst;
 }
 
-
 FileClass getEntryFromGlobalListByIndex(int EntryIndex){
 	FileClass FileInst(0, std::string(""), std::string(""), 0);
 	if(EntryIndex > (GlobalFileList->size() - 1)){
 		return FileInst;
-	} 
-	
+	}
 	std::list<FileClass>::iterator it = GlobalFileList->begin();
     std::advance(it, EntryIndex);
 	FileInst = *it;
@@ -352,15 +318,13 @@ FileClass getFirstFileEntryFromGlobalList(){
 		}
 		CurFileIndex++;
 	}
-	
 	CurrentFileDirEntry = CurFileIndex;	//acknowledge CurrentFileDirEntry
-	
 	return FileInst;
 }
 
-
-int CurrentFileDirEntry = 0;	//the actual pointer inside the directory listing
-//these update on getFirstFile/Dir getNextFile/Dir
+//The actual pointer inside the directory listing
+int CurrentFileDirEntry = 0;	
+//These update on getFirstFile/Dir getNextFile/Dir
 int LastFileEntry = 0;
 int LastDirEntry = 0;
 
@@ -378,28 +342,10 @@ int getFirstFile(char * path){
 	updateGlobalListFromPath(lastCurrentPath);
 	CurrentFileDirEntry = 0;
 	
-	/*
-	//test
-	FileClass fileInst = getEntryFromGlobalListByIndex(0);
-	printf("Index:%d",fileInst.getindex());
-	printf("File:%s",fileInst.getfilename().c_str());
-	printf("Path:%s",fileInst.getpath().c_str());
-	printf("type:%d",fileInst.gettype());
-	
-	while(1==1){};
-	*/
-	
 	//FileClass fileInst = getFirstDirEntryFromGlobalList();					//get First directory entry	:	so it generates a valid DIR CurrentFileDirEntry
 	//FileClass fileInst = getFirstFileEntryFromGlobalList();					//get First file entry 		:	so it generates a valid FILE CurrentFileDirEntry
 	FileClass fileInst = getEntryFromGlobalListByIndex(CurrentFileDirEntry);	//get First file/directory	:	can be file/dir/none(invalid)
 	FILINFO FILINFOObj = getFileFILINFOfromFileClass(&fileInst);				//actually open the file and check attributes
-	
-	//printf("Index:%d",fileInstDebug.getindex());
-	//printf("File:%s",fileInstDebug.getfilename().c_str());
-	//printf("Path:%s",fileInstDebug.getpath().c_str());
-	//printf("type:%d",fileInstDebug.gettype());
-	
-	//while(1==1){}
 	
 	if (FILINFOObj.fattrib & AM_DIR) {	//dir
 		LastDirEntry=CurrentFileDirEntry;
@@ -522,7 +468,6 @@ bool FAT_GetAlias(char* alias)
 	return true;
 }
 
-
 //stubbed because what these do is a workaround, described below:
 //in TGDS: while listing a dir, create/read/update/delete a new file works
 void FAT_preserveVars()
@@ -532,7 +477,6 @@ void FAT_preserveVars()
 void FAT_restoreVars()
 {
 }
-
 
 u32	disc_HostType(void)
 {
