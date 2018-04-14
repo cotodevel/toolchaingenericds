@@ -72,7 +72,7 @@ extern "C" {
 extern void printf7(char *fmt, ...);
 #endif
 
-extern void setupExceptionHandler();
+extern void setupDefaultExceptionHandler();
 
 extern uint32 exceptionArmRegs[0x20];
 extern void exception_sysexit();
@@ -81,6 +81,10 @@ extern void exception_data_abort();
 extern void exception_handler(uint32 arg);
 extern void DebugException();
 
+//custom handler
+extern void setupCustomExceptionHandler(uint32 * Handler);
+extern uint32 CustomHandler;
+extern void CustomDebugException();
 
 extern int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list list);
 

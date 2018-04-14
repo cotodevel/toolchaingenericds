@@ -114,7 +114,7 @@ int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list list){
 
 #include "InterruptsARMCores_h.h"
 
-void setupExceptionHandler(){
+void setupDefaultExceptionHandler(){
 	
 	//27FFD9Ch - RAM - NDS9 Debug Stacktop / Debug Vector (0=None)
 	//380FFDCh - RAM - NDS7 Debug Stacktop / Debug Vector (0=None)
@@ -138,6 +138,16 @@ void setupExceptionHandler(){
 	
 	#endif
 	
+}
+
+//setupCustomExceptionHandler(&HandlerFunction);
+uint32 CustomHandler = 0;
+void setupCustomExceptionHandler(uint32 * Handler){
+	
+	#ifdef ARM9
+	CustomHandler = (uint32)(uint32 *)Handler;
+	*(uint32*)0x02FFFD9C = (uint32)CustomDebugException;
+	#endif
 }
 
 //Exception Sources
