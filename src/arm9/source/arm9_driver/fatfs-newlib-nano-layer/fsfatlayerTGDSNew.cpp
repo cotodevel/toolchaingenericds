@@ -295,6 +295,7 @@ FileClass getEntryFromGlobalListByIndex(int EntryIndex){
 
 //Note: Requires a fresh call to updateGlobalListFromPath prior to calling this
 FileClass getFirstDirEntryFromGlobalList(){
+	int CurFileDirIndex = 0;
 	FileClass FileInst(0, std::string(""), std::string(""), 0);
 	std::list<FileClass>::iterator it;
 	for (it=GlobalFileList->begin(); it!=GlobalFileList->end(); ++it){
@@ -302,13 +303,15 @@ FileClass getFirstDirEntryFromGlobalList(){
 			FileInst = *it;
 			break;
 		}
+		CurFileDirIndex++;
 	}
+	CurrentFileDirEntry = CurFileDirIndex;	//CurrentFileDirEntry is relative to getFirstDirEntryFromGlobalList() now
 	return FileInst;
 }
 
 //Note: Requires a fresh call to updateGlobalListFromPath prior to calling this
 FileClass getFirstFileEntryFromGlobalList(){
-	int CurFileIndex = 0;
+	int CurFileDirIndex = 0;
 	FileClass FileInst(0, std::string(""), std::string(""), 0);
 	std::list<FileClass>::iterator it;
 	for (it=GlobalFileList->begin(); it!=GlobalFileList->end(); ++it){
@@ -316,9 +319,9 @@ FileClass getFirstFileEntryFromGlobalList(){
 			FileInst = *it;
 			break;
 		}
-		CurFileIndex++;
+		CurFileDirIndex++;
 	}
-	CurrentFileDirEntry = CurFileIndex;	//acknowledge CurrentFileDirEntry
+	CurrentFileDirEntry = CurFileDirIndex;	//CurrentFileDirEntry is relative to getFirstFileEntryFromGlobalList() now
 	return FileInst;
 }
 
