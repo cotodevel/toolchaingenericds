@@ -128,8 +128,7 @@ std::list<FileClass> buildListFromPath(char * path){
     if (res == FR_OK) {
         for (;;) {
             res = f_readdir(&dir, &fno);                   /* Read a directory item */
-            if (res != FR_OK || fno.fname[0] == 0) break;  /* Break on error or end of dir */
-            
+			
 			int type = 0;
 			if (fno.fattrib & AM_DIR) {			           /* It is a directory */
 				type = FT_DIR;	
@@ -150,7 +149,10 @@ std::list<FileClass> buildListFromPath(char * path){
 			else{	/* It is Invalid. */
 				type = FT_NONE;
 			}
-			CurrentFileList.push_back(FileClass(i,std::string(fno.fname),std::string(path),type));
+			CurrentFileList.push_back(FileClass(i,std::string(fno.fname),std::string(path),type));	//save either file/dir or invalid entry
+			if (res != FR_OK || fno.fname[0] == 0){
+				break;  /* Break on error or end of dir */
+            }
 			i++;
 		}
         f_closedir(&dir);
@@ -211,31 +213,35 @@ std::string buildFullPathFromFileClass(FileClass * FileClassInst){
 }
 
 FILINFO getFileFILINFOfromFileClass(FileClass * FileClassInst){
-	std::string FullPathStr = buildFullPathFromFileClass(FileClassInst);
 	FILINFO finfo;
 	FRESULT result;
-	sint32 fd = -1;
-	struct fd * fdinst = NULL;
-	FILE * FileInst = fopen(FullPathStr.c_str(),"r");
-	if(FileInst){
-		fd = fileno(FileInst);
-		fdinst = fd_struct_get(fd);
-		if(fdinst->filPtr){
-			result = f_stat(FullPathStr.c_str(), &finfo);
-			if (result == FR_OK){
-				//ok works correctly
+		
+	//it is a valid entry
+	if(FileClassInst->gettype() != FT_NONE){
+		std::string FullPathStr = buildFullPathFromFileClass(FileClassInst);
+		sint32 fd = -1;
+		struct fd * fdinst = NULL;	
+		FILE * FileInst = fopen(FullPathStr.c_str(),"r");
+		if(FileInst){
+			fd = fileno(FileInst);
+			fdinst = fd_struct_get(fd);
+			if(fdinst->filPtr){
+				result = f_stat(FullPathStr.c_str(), &finfo);
+				if (result == FR_OK){
+					//ok works correctly
+				}
+				else{
+					//finfo fill error
+				}
 			}
 			else{
-				//finfo fill error
+				//filPtr open ERROR
 			}
+			fclose(FileInst);
 		}
 		else{
-			//filPtr open ERROR
+			//fopen failed
 		}
-		fclose(FileInst);
-	}
-	else{
-		//fopen failed
 	}
 	return finfo;
 }
@@ -283,7 +289,7 @@ FileClass getFirstFileEntryFromPath(char * path){
 }
 
 FileClass getEntryFromGlobalListByIndex(int EntryIndex){
-	FileClass FileInst(0, std::string(""), std::string(""), 0);
+	FileClass FileInst(InvalidFileListIndex, std::string(""), std::string(""), FT_NONE);
 	if(EntryIndex > (GlobalFileList->size() - 1)){
 		return FileInst;
 	}
@@ -296,7 +302,7 @@ FileClass getEntryFromGlobalListByIndex(int EntryIndex){
 //Note: Requires a fresh call to updateGlobalListFromPath prior to calling this
 FileClass getFirstDirEntryFromGlobalList(){
 	int CurFileDirIndex = 0;
-	FileClass FileInst(0, std::string(""), std::string(""), 0);
+	FileClass FileInst(InvalidFileListIndex, std::string(""), std::string(""), FT_NONE);
 	std::list<FileClass>::iterator it;
 	for (it=GlobalFileList->begin(); it!=GlobalFileList->end(); ++it){
 		if((*it).gettype() == FT_DIR){
@@ -312,7 +318,7 @@ FileClass getFirstDirEntryFromGlobalList(){
 //Note: Requires a fresh call to updateGlobalListFromPath prior to calling this
 FileClass getFirstFileEntryFromGlobalList(){
 	int CurFileDirIndex = 0;
-	FileClass FileInst(0, std::string(""), std::string(""), 0);
+	FileClass FileInst(InvalidFileListIndex, std::string(""), std::string(""), FT_NONE);
 	std::list<FileClass>::iterator it;
 	for (it=GlobalFileList->begin(); it!=GlobalFileList->end(); ++it){
 		if((*it).gettype() == FT_FILE){
@@ -373,15 +379,18 @@ int getFirstFile(char * path){
 	else{	//invalid
 	}
 	
-	//increase the file counter after operation
-	if(CurrentFileDirEntry < (GlobalFileList->size()-1)){ 
-		CurrentFileDirEntry++;	
-	}
-	else{
-		CurrentFileDirEntry = 0;
-		LastDirEntry=InvalidFileDirEntry;
-		LastFileEntry=InvalidFileDirEntry;
-		return FT_NONE;	//actually end of list
+	//increase the file/dir counter after operation only if valid entry, otherwise it doesn't anymore
+	if((fileInst.gettype() == FT_FILE) || (fileInst.gettype() == FT_DIR)){
+		//is this index indexable? otherwise cleanup
+		if(CurrentFileDirEntry < (GlobalFileList->size()-1)){ 
+			CurrentFileDirEntry++;	
+		}
+		else{
+			CurrentFileDirEntry = 0;
+			LastDirEntry=InvalidFileDirEntry;
+			LastFileEntry=InvalidFileDirEntry;
+			return FT_NONE;	//actually end of list
+		}
 	}
 	return fileInst.gettype();
 }
