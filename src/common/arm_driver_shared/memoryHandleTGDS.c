@@ -374,13 +374,25 @@ bool isValidMap(uint32 addr){
 		#endif
 		||
 		((addr >= (uint32)(0x04000000)) && (addr <= (uint32)(0x04000000 + 4*1024)))	//NDS IO Region protected
-		
+		||
+		((addr >= (uint32)(0x08000000)) && (addr <= (uint32)(0x08000000 + (32*1024*1024))))	//GBA ROM MAP (allows to read GBA carts over GDB)
 	){
 		return true;
 	}
 	return false;
 }
 
+void Write8bitAddrExtArm(uint32 address, uint8 value){
+	SendMultipleWordACK(WRITE_EXTARM_8, (uint32)address, (uint32)value, NULL);
+}
+
+void Write16bitAddrExtArm(uint32 address, uint16 value){
+	SendMultipleWordACK(WRITE_EXTARM_16, (uint32)address, (uint32)value, NULL);
+}
+
+void Write32bitAddrExtArm(uint32 address, uint32 value){
+	SendMultipleWordACK(WRITE_EXTARM_32, (uint32)address, (uint32)value, NULL);
+}
 //IPC 
 
 //Internal

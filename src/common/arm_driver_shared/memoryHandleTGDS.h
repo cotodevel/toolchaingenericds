@@ -153,6 +153,10 @@ extern uint32 getUserIPCAddress();
 //Printf7 Buffer
 extern uint32 getPrintfBuffer();
 
+extern void Write32bitAddrExtArm(uint32 address, uint32 value);
+extern void Write16bitAddrExtArm(uint32 address, uint16 value);
+extern void Write8bitAddrExtArm(uint32 address, uint8 value);
+
 #ifdef __cplusplus
 }
 #endif

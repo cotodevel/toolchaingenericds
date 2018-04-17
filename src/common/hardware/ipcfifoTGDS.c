@@ -183,6 +183,21 @@ void HandleFifoNotEmpty(){
 				}
 				break;
 				
+				// ARM7IO from ARM9
+				// ARM9IO from ARM7
+				case((uint32)WRITE_EXTARM_8):{
+					*(uint8*)data1 = (uint8)(data2);
+				}
+				break;
+				case((uint32)WRITE_EXTARM_16):{
+					*(uint16*)data1 = (uint16)(data2);
+				}
+				break;
+				case((uint32)WRITE_EXTARM_32):{
+					*(uint32*)data1 = (uint32)(data2);
+				}
+				break;
+				
 				//ARM7 command handler
 				#ifdef ARM7
 				case((uint32)FIFO_POWERCNT_ON):{
