@@ -617,4 +617,111 @@ void FAT_DisableWriting (void)
 	disableWriting = true;
 }
 
+/*-----------------------------------------------------------------
+FAT_FileExists
+Returns the type of file 
+char* filename: IN filename of the file to look for
+FILE_TYPE return: OUT returns FT_NONE if there is now file with 
+	that name, FT_FILE if it is a file and FT_DIR if it is a directory
+-----------------------------------------------------------------*/
+int FAT_FileExists(char* filename){
+	int ret = -1;
+	FILE* fil = fopen(filename,"r");
+	if(!fil){
+		DIR * dirOpen = fatfs_opendir((const sint8 *)filename);
+		if(!dirOpen){
+			ret = FT_NONE;
+		}
+		else{
+			ret = FT_DIR;
+		}
+		if(dirOpen){
+			fatfs_closedir(dirOpen);
+		}
+	}
+	else{
+		ret = FT_FILE;
+	}
+	if(fil){
+		fclose(fil);
+	}
+	return ret;
+}
+
+/*
+//saves the CurrentDirEntry context and returns the same CurrentDirEntry context in clean state for other processes to use it
+bool saveCurrentFATContext(char * path){
+	//save current context if any
+	if(GlobalFileList){
+		//build a sub-context to store the actual context
+		if(GlobalFileListStackedContext){
+			DeInitGlobalFileList(GlobalFileListStackedContext);
+		}
+		GlobalFileListStackedContext = InitGlobalFileList();
+		
+		std::list<FileClass>::iterator it;
+		for (it=GlobalFileList->begin(); it!=GlobalFileList->end(); ++it){
+			FileClass fileInst = *it;
+			GlobalFileListStackedContext->push_back(fileInst);
+		}
+		
+		sprintf(ContextlastCurrentPath,"%s",lastCurrentPath);	//save lastCurrentPath
+		sprintf(lastCurrentPath,"%s",path);	//update new lastCurrentPath
+		
+		CurrentFileDirEntryContext=CurrentFileDirEntry;
+		ContextLastFileEntry=LastFileEntry;
+		ContextLastDirEntry=LastDirEntry;
+
+		//free CurrContext
+		DeInitGlobalFileList(GlobalFileList);
+		GlobalFileList = InitGlobalFileList();
+		
+		CurrentFileDirEntry=InvalidFileDirEntry;
+		LastFileEntry=InvalidFileDirEntry;
+		LastDirEntry=InvalidFileDirEntry;
+		
+		return true;
+	}
+	
+	return false;
+}
+
+//restores the CurrentDirEntry context that was before saved by saveCurrentFATContext
+bool restoreCurrentFATContext(){
+	
+	if(GlobalFileListStackedContext){
+		//flush the CurDirFile context for restore and build a new one
+		if(GlobalFileList){
+			DeInitGlobalFileList(GlobalFileList);
+		}
+		GlobalFileList = InitGlobalFileList();
+		
+		std::list<FileClass>::iterator it;
+		for (it=GlobalFileListStackedContext->begin(); it!=GlobalFileListStackedContext->end(); ++it){
+			FileClass fileInst = *it;
+			GlobalFileList->push_back(fileInst);
+		}
+		
+		DeInitGlobalFileList(GlobalFileListStackedContext);
+		
+		sprintf(lastCurrentPath,"%s",ContextlastCurrentPath);	//restore lastCurrentPath from context
+		sprintf(ContextlastCurrentPath,"%s","");
+		CurrentFileDirEntry=CurrentFileDirEntryContext;
+		LastFileEntry=ContextLastFileEntry;
+		LastDirEntry=ContextLastDirEntry;
+
+		//free saveCurrentFATContext
+		DeInitGlobalFileList(GlobalFileListStackedContext);
+		GlobalFileListStackedContext = InitGlobalFileList();
+		
+		CurrentFileDirEntryContext=InvalidFileDirEntry;
+		ContextLastFileEntry=InvalidFileDirEntry;
+		ContextLastDirEntry=InvalidFileDirEntry;
+		
+		return true;
+	}
+	return false;
+}
+*/
+
 #endif

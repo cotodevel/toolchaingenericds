@@ -102,6 +102,7 @@ extern u32 FAT_GetFileSize(void);
 extern u32 FAT_GetFileCluster(void);
 extern bool disableWriting;
 extern void FAT_DisableWriting (void);
+extern int FAT_FileExists(char* filename);
 
 //Internal
 extern char lfnName[MAX_TGDSFILENAME_LENGTH+1];
