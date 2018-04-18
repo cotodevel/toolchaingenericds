@@ -625,27 +625,7 @@ FILE_TYPE return: OUT returns FT_NONE if there is now file with
 	that name, FT_FILE if it is a file and FT_DIR if it is a directory
 -----------------------------------------------------------------*/
 int FAT_FileExists(char* filename){
-	int ret = -1;
-	FILE* fil = fopen(filename,"r");
-	if(!fil){
-		DIR * dirOpen = fatfs_opendir((const sint8 *)filename);
-		if(!dirOpen){
-			ret = FT_NONE;
-		}
-		else{
-			ret = FT_DIR;
-		}
-		if(dirOpen){
-			fatfs_closedir(dirOpen);
-		}
-	}
-	else{
-		ret = FT_FILE;
-	}
-	if(fil){
-		fclose(fil);
-	}
-	return ret;
+	return FileExists(filename);
 }
 
 /*

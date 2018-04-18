@@ -162,6 +162,7 @@ extern void fatfs_seekdir(DIR *dirp, long loc);
 
 extern sint8 * getfatfsPath(sint8 * filename);
 extern volatile sint8 charbuf[MAX_TGDSFILENAME_LENGTH+1];
+extern int FileExists(char * filename);
 
 extern DWORD clust2sect (  /* !=0:Sector number, 0:Failed (invalid cluster#) */
     FATFS* fs,      /* File system object */

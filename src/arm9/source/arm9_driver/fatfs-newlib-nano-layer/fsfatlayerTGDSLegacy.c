@@ -1392,3 +1392,27 @@ char * dldi_tryingInterface(){
 	struct DLDI_INTERFACE * DLDI_INTERFACEInst = dldiGet();
 	return DLDI_INTERFACEInst->friendlyName;
 }
+
+int FileExists(char * filename){
+	int ret = -1;
+	FILE* fil = fopen(filename,"r");
+	if(!fil){
+		DIR * dirOpen = fatfs_opendir((const sint8 *)filename);
+		if(!dirOpen){
+			ret = FT_NONE;
+		}
+		else{
+			ret = FT_DIR;
+		}
+		if(dirOpen){
+			fatfs_closedir(dirOpen);
+		}
+	}
+	else{
+		ret = FT_FILE;
+	}
+	if(fil){
+		fclose(fil);
+	}
+	return ret;
+}
