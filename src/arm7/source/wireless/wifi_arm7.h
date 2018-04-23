@@ -134,7 +134,8 @@ extern void arm7_synctoarm9();
 extern void installWifiFIFO();
 extern int crc16_slow(uint8 * data, int length);
 extern void GetWfcSettings();
-
+extern uint16 Wifi_MACRead(uint32 MAC_Base, uint32 MAC_Offset);
+	
 #ifdef __cplusplus
 }
 #endif
