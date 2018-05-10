@@ -91,8 +91,8 @@ volatile 	const uint8 nificonnect[32]	= {0xB2, 0xD1, 'c', 'o', 'n', 'n', 'e', 'c
 
 //Read-Write
 volatile 	uint8 nificrc[32]				= {0xB2, 0xD1, (uint8)CRC_CRC_STAGE, 0, 0, 0};
-volatile 	uint8 data[4096];			//receiver frame, data + frameheader is recv TX'd frame nfdata[128]. Used by NIFI Mode
-volatile 	uint8 nfdata[128]			= {0xB2, 0xD1, (uint8)CRC_OK_SAYS_HOST, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};	//sender frame, recv as data[4096], see above. all valid frames have CRC_OK_SAYS_HOST sent.
+volatile 	uint8 data[512];			//receiver frame, data + frameheader is recv TX'd frame nfdata[128]. Used by NIFI Mode
+volatile 	uint8 nfdata[128]			= {0xB2, 0xD1, (uint8)CRC_OK_SAYS_HOST, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};	//sender frame, recv as data[512], see above. all valid frames have CRC_OK_SAYS_HOST sent.
 
 __attribute__((section(".itcm")))
 void Handler(int packetID, int readlength)

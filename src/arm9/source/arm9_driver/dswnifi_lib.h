@@ -279,8 +279,8 @@ extern void Timer_10ms(void);
 extern bool nifiFrame;
 
 //DSWNIFI: nifi buffer IO
-extern volatile uint8	 data[4096];		//data[32] + is recv TX'd frame nfdata[128]
-extern volatile uint8	 nfdata[128];	//sender frame, recv as data[4096]
+extern volatile uint8	 data[512];		//data[32] + is recv TX'd frame nfdata[128]
+extern volatile uint8	 nfdata[128];	//sender frame, recv as data[512]
 
 //DSWNIFI: message for nifi beacons
 extern volatile const uint8 nifitoken[32];
