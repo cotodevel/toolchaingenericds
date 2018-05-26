@@ -121,4 +121,7 @@ sint8*  g_snemulds_str_pt[] =
 		"BG%d",						/* 106 */
 		"BG%d(low)",				/* 107 */
 		"Sprites %d",				/* 108 */			
+		"Multi: ",				/* 109 */	
+		"Single ",				/* 110 */	
+		"Localplay ",				/* 111 */
 };
