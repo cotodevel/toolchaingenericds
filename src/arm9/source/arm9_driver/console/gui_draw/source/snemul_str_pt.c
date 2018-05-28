@@ -123,5 +123,6 @@ sint8*  g_snemulds_str_pt[] =
 		"Sprites %d",				/* 108 */			
 		"Multi: ",				/* 109 */	
 		"Single ",				/* 110 */	
-		"Localplay ",				/* 111 */
+		"Local: Host ",				/* 111 */	
+		"Local: Guest ",				/* 112 */	
 };
