@@ -2,7 +2,7 @@ This is the Toolchain Generic DS:
 
 For building the toolchain you need three steps:
 
-- Recompile Newlib 2.1 for Nintendo DS (mandatory, not on this guide). See: https://github.com/cotodevel/newlib-nds
+- Recompile Newlib 2.1 for Nintendo DS (mandatory, not on this guide). See: https://bitbucket.org/Coto88/newlib-nds
 
 - Recompile ToolchainGenericDS (this guide)
 
@@ -32,7 +32,7 @@ Then:
 	Note: EVERYTIME you open a new shell/Terminal to compile TGDS homebrew, you must follow the below steps (at least once, per shell/Terminal),
 	If you already recompiled Newlib 2.1 for NDS in the same terminal and you didn't exit, you can skip the below step, and proceed to 1.2
 	[You need to head to newlib-nds/newlib-nds sources (through shell) for these steps to work]
-	https://github.com/cotodevel/newlib-nds/tree/master/newlib-nds
+	https://bitbucket.org/Coto88/newlib-nds/src/dfacc79d6c457ab0e3669569315ba6889e0e337f/newlib-nds/?at=master
 	
 1.2
 Then:
