@@ -29,7 +29,7 @@ Then:
 1.1
 -	Extract to some directory the ToolchainGenericDS sources, open the shell/Terminal, and go to the desired directory (through shell).
 	[Now follow 1a) step in the below link]
-	https://bitbucket.org/Coto88/newlib-nds/src/dfacc79d6c457ab0e3669569315ba6889e0e337f/newlib-nds/?at=master
+	https://bitbucket.org/Coto88/newlib-nds/src/master/newlib-nds/
 	
 1.2
 Then:
