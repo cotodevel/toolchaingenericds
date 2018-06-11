@@ -28,10 +28,7 @@ Then:
 
 1.1
 -	Extract to some directory the ToolchainGenericDS sources, open the shell/Terminal, and go to the desired directory (through shell).
-
-	Note: EVERYTIME you open a new shell/Terminal to compile TGDS homebrew, you must follow the below steps (at least once, per shell/Terminal),
-	If you already recompiled Newlib 2.1 for NDS in the same terminal and you didn't exit, you can skip the below step, and proceed to 1.2
-	[You need to head to newlib-nds/newlib-nds sources (through shell) for these steps to work]
+	[Now follow 1a) step in the below link]
 	https://bitbucket.org/Coto88/newlib-nds/src/dfacc79d6c457ab0e3669569315ba6889e0e337f/newlib-nds/?at=master
 	
 1.2
