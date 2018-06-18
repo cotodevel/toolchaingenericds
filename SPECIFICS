@@ -1,7 +1,7 @@
 I have been working on this for about 8 months, but development started circa 2014. I just needed the "motivation" to gather the pieces together, and I am glad I wrote this.
 You are free to do almost whatever you want with it, just release the source codes so we all can benefit from it.
 
-The idea is to have a toolchain that is GNU v2 (not GNU v3 as it sucks compared to v2).
+The idea is to have a toolchain fully OpenSource that is GNU v2 (not GNU v3 as it sucks compared to v2).
 
 Features:
 

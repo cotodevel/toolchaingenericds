@@ -39,9 +39,9 @@ Then:
 
 
 After building ToolchainGenericDS, then you are ready to recompile the project (not covered here, go to the specific project supporting this toolchain)
-
 For Project specifics check out the specific project. Remember that such project must support this toolchain for it to work. 
-For more technical informacion refer to SPECIFICS
+
+For more technical information refer to SPECIFICS file, should be next to this readme ;)
 
 Thanks to:
 - Martin Korth extensive gba/nds docs (http://problemkaputt.de/gbatek.htm) most of any DS toolchains/emus out there would not exist without such docs.
