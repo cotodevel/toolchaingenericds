@@ -84,7 +84,7 @@ extern "C" {
 
 extern uint16 arm7q[1024];
 extern void Read_Flash(int address, char * destination, int length);
-extern char * FlashData;
+extern char FlashData[512];
 extern void InitFlashData();
 extern void DeInitFlashData();
 extern int ReadFlashByte(int address);

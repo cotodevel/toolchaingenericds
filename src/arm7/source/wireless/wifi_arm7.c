@@ -43,19 +43,14 @@ int chdata_save5 = 0;
 //
 //  Flash support functions
 //
-//char FlashData[512];
-char * FlashData = NULL;		//use new section to prevent using ARM7 upper 32K memory
+char FlashData[512];
 
 void InitFlashData() {
-	FlashData = (char *)malloc(512);
 	readFirmwareSPI(0,FlashData,512);
 }
 
 void DeInitFlashData() {
-	if(FlashData){
-		free(FlashData);
-		FlashData = NULL;
-	}
+	memset(FlashData, 0, sizeof(FlashData));
 }
 
 
@@ -851,6 +846,7 @@ void Wifi_Init(uint32 wifidata) {
 	POWERCNT7 |= 2; // enable power for the wifi
 	*((volatile uint16 *)0x04000206) = 0x30; // ???
 
+	DeInitFlashData();
 	InitFlashData();
 	
 	// reset/shutdown wifi:

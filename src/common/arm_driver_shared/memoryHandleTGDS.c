@@ -250,8 +250,8 @@ uint32 get_lma_libend(){
 //(ewram end - linear memory top ) = malloc free memory (bottom, end)
 uint32 get_lma_wramend(){
 	#ifdef ARM7
-	extern uint32 sp_SYS;	//the farthest stack from the end memory is our free memory (in ARM7, shared stacks)
-	return (uint32)(&sp_SYS);
+	extern uint32 sp_USR;	//the farthest stack from the end memory is our free memory (in ARM7, shared stacks)
+	return (uint32)(&sp_USR);
 	#endif
 	#ifdef ARM9
 	return (uint32)(&_ewram_end);	//EWRAM has no stacks shared so we use the end memory 
