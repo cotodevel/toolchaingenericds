@@ -36,7 +36,7 @@ USA
 #define consolebuf_size (sint32)(100)
 
 //irqs
-#define VCOUNT_LINE_INTERRUPT (sint32)(0)
+#define VCOUNT_LINE_INTERRUPT (sint32)(159)
 
 //void WriteAddrExtArm(WRITE_EXTARM_8,(uint32)0x04000208,(uint32)0x000000ff);
 //void Write8bitAddrExtArm
@@ -75,7 +75,6 @@ USA
 
 //printf7 FIFO
 #define FIFO_PRINTF_7	(uint32)(0xffff101a)
-#define FIFO_IPC_MESSAGE	(uint32)(0xffff1010)
 
 #define SEND_FIFO_IPC_EMPTY	(uint32)(1<<0)	
 #define SEND_FIFO_IPC_FULL	(uint32)(1<<1)	

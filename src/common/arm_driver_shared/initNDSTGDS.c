@@ -46,14 +46,10 @@ void initHardware(void) {
 	
 	#ifdef ARM7
 	//Init Shared Address Region
-	memset((uint32*)getsIPCSharedTGDS(), 0, getToolchainIPCSize());
+	memset((uint32*)0x027FF000, 0, 256);
 	
 	//Read DHCP settings (in order)
 	LoadFirmwareSettingsFromFlash();
-	
-	getsIPCSharedTGDS()->arm7startaddress = get_iwram_start();
-	getsIPCSharedTGDS()->arm7endaddress = (uint32)(get_iwram_start() + get_iwram_size());
-	
 	#endif
 	
 	#ifdef ARM9
@@ -79,10 +75,6 @@ void initHardware(void) {
 	
 	//init file handles
 	file_default_init();
-	
-	getsIPCSharedTGDS()->arm9startaddress = get_ewram_start();
-	getsIPCSharedTGDS()->arm9endaddress = (uint32)(get_ewram_start() + get_ewram_size());
-	
 	#endif
 	
 }
@@ -99,6 +91,10 @@ void resetMemory_ARMCores()
 		TIMERXCNT(i) = 0;
 		TIMERXDATA(i) = 0;
 	}
+	
+	#ifdef ARM7
+	REG_POWERCNT  = 1;
+	#endif
 	
 	#ifdef ARM9
 	VRAM_CR = 0x80808080;
@@ -148,6 +144,8 @@ void resetMemory_ARMCores()
 	VRAM_CR   = 0x03000000;
 	REG_POWERCNT  = 0x820F;
 	#endif
+	
+	
 	
 	//set WORKRAM 32K to ARM9 by default
 	WRAM_CR = WRAM_32KARM9_0KARM7;

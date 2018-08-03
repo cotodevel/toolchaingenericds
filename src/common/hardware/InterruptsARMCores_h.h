@@ -54,7 +54,8 @@ extern __attribute__((weak))	void Timer1handlerUser();
 extern __attribute__((weak))	void Timer2handlerUser();
 extern __attribute__((weak))	void Timer3handlerUser();
 
-extern __attribute__((weak))	int main(int _argc, sint8 **_argv);
+extern void InterruptServiceRoutineARMCores();
+
 //weak symbols end
 
 extern uint32 getIRQs();
@@ -66,7 +67,6 @@ extern void NDS_IRQHandler();
 extern void IRQWait(uint32 reentrant,uint32 irqstowait);
 extern void IRQVBlankWait();
 extern void IRQInit();
-extern void InterruptServiceRoutineARMCores();	//Actual Interrupt Handler
 
 //stubs because we don't disable IME on DSWIFI
 extern void SGIP_INTR_PROTECT();
@@ -74,6 +74,9 @@ extern void SGIP_INTR_REPROTECT();
 extern void SGIP_INTR_UNPROTECT();
 extern void SGIP_WAITEVENT();
 
+extern void IC_InvalidateAll();
+extern void DC_FlushAll();
+extern void pu_Enable();
 
 #ifdef __cplusplus
 }

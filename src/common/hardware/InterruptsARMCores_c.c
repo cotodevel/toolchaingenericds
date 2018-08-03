@@ -50,38 +50,35 @@ void SGIP_WAITEVENT(){}
 
 void IRQInit(){
 	
+	
 	//fifo setups
 	REG_IME = 0;
 	
-	int i = 0;
-	for(i = 0; i <32 ; i++){
-		if((REG_IF & (1 << i)) == (1 << i)){
-			REG_IF = (1 << i);
-		}
-	}
 	
-	REG_IE = 0;
 	REG_IPC_SYNC = 0;
     REG_IPC_FIFO_CR = RECV_FIFO_IPC_IRQ  | FIFO_IPC_ENABLE;
 	
 	//set up ppu: do irq on hblank/vblank/vcount/and vcount line is 159
     REG_DISPSTAT = REG_DISPSTAT | DISP_HBLANK_IRQ | DISP_VBLANK_IRQ | (DISP_YTRIGGER_IRQ | (VCOUNT_LINE_INTERRUPT << 15));
 	
-	uint32 interrupts_to_wait_armX = 0;
-	
 	#ifdef ARM7
-	interrupts_to_wait_armX = interrupts_to_wait_arm7 = IRQ_TIMER1 | IRQ_HBLANK | IRQ_VBLANK | IRQ_VCOUNT | IRQ_RECVFIFO_NOT_EMPTY ;
+	REG_IE = interrupts_to_wait_arm7 = IRQ_TIMER1 | IRQ_HBLANK | IRQ_VBLANK | IRQ_VCOUNT | IRQ_RECVFIFO_NOT_EMPTY ;
 	#endif
 	
 	#ifdef ARM9
-	interrupts_to_wait_armX = interrupts_to_wait_arm9 = IRQ_HBLANK| IRQ_VBLANK | IRQ_VCOUNT | IRQ_RECVFIFO_NOT_EMPTY;
+	REG_IE = interrupts_to_wait_arm9 = IRQ_HBLANK| IRQ_VBLANK | IRQ_VCOUNT | IRQ_RECVFIFO_NOT_EMPTY;
 	#endif
 	
-	REG_IE = interrupts_to_wait_armX; 
-	
 	INTERRUPT_VECTOR = (uint32)&InterruptServiceRoutineARMCores;
-	REG_IME = 1;
 	
+	#ifdef ARM9
+	pu_Enable(); //PU go
+	DC_FlushAll(); //try it	
+	IC_InvalidateAll();
+	#endif
+	
+	REG_IF=REG_IF;	//yeah
+	REG_IME = 1;
 }
 
 
@@ -92,10 +89,11 @@ __attribute__((section(".itcm")))
 #endif
 __attribute__((aligned(4)))
 void NDS_IRQHandler(){
-	uint32 REG_IE_SET = (REG_IE & REG_IF);
+	
+	uint32 REG_IE_SET = (uint32)(REG_IF & REG_IE);
 	if(REG_IE_SET & IRQ_HBLANK){
 		HblankUser();
-		SWI_CHECKBITS = REG_IF = IRQ_HBLANK;
+		REG_IF = IRQ_HBLANK;
 	}
 	if(REG_IE_SET & IRQ_VBLANK){
 		#ifdef ARM7
@@ -111,12 +109,12 @@ void NDS_IRQHandler(){
 		//key event between frames
 		do_keys();
 		VblankUser();
-		SWI_CHECKBITS = REG_IF = IRQ_VBLANK;
+		REG_IF = IRQ_VBLANK;
 	}
 	
 	if(REG_IE_SET & IRQ_VCOUNT){
 		VcounterUser();
-		SWI_CHECKBITS = REG_IF = IRQ_VCOUNT;
+		REG_IF = IRQ_VCOUNT;
 	}
 	
 	////			Common
@@ -168,16 +166,17 @@ void NDS_IRQHandler(){
 		REG_IF = IRQ_RTCLOCK;
 	}
 	#endif
+	
 }
 
 
 void EnableIrq(uint32 IRQ){
 	#ifdef ARM7
-	interrupts_to_wait_arm7	|=	IRQ;
+	//interrupts_to_wait_arm7	|=	IRQ;
 	#endif
 	
 	#ifdef ARM9
-	interrupts_to_wait_arm9	|=	IRQ;
+	//interrupts_to_wait_arm9	|=	IRQ;
 	#endif
 	
 	REG_IE	|=	IRQ;
@@ -186,11 +185,11 @@ void EnableIrq(uint32 IRQ){
 
 void DisableIrq(uint32 IRQ){
 	#ifdef ARM7
-	interrupts_to_wait_arm7	&=	~(IRQ);
+	//interrupts_to_wait_arm7	&=	~(IRQ);
 	#endif
 	
 	#ifdef ARM9
-	interrupts_to_wait_arm9	&=	~(IRQ);
+	//interrupts_to_wait_arm9	&=	~(IRQ);
 	#endif
 	
 	REG_IE	&=	~(IRQ);

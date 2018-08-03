@@ -879,7 +879,7 @@ if(remoteSocket == -1) {
         break;
     }
     if(count == 3) {
-		//printf("Error binding ");
+		printf("Error binding ");
 		while(1==1){}
     }
 
@@ -941,6 +941,7 @@ bool remotePipeInit()
 	read(0, &dummy, 1);
 	if(dummy != '+') {
 		//GDB Server: ACK not received
+		printf("error remotePipeInit");
 		while(1==1);
 	}
 	return true;
