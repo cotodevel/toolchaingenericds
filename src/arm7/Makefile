@@ -39,12 +39,6 @@ CPP_FLAGS		=	$(GLOBAL_SHARED_FLAGS_7)	$(SPECIFIC_CXX_COMPILER_FLAGS_7)	$(GLOBAL_
 BUILD			= 	$(BUILD_ARM7)
 DIR_SRC			= 	$(DIRS_ARM7_SRC)
 
-#--gc-sections: allows relocatable sections linked (already) to be included, otherwise unused sections are discarded.
-#check arm9.map "Discarded input sections" to see --gc-sections in action.
-LDFLAGS	=	-specs=$(LIBPATH)nds_arm7_ld.specs	-Wl,--no-gc-sections,-Map,$(MAPFILE)	-nostartfiles
-LIBRARIES =
-
-
 ################################################################################################
 
 #Dont modify anything else if not necessary ..
