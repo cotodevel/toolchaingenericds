@@ -71,12 +71,6 @@ void IRQInit(){
 	
 	INTERRUPT_VECTOR = (uint32)&InterruptServiceRoutineARMCores;
 	
-	#ifdef ARM9
-	pu_Enable(); //PU go
-	DC_FlushAll(); //try it	
-	IC_InvalidateAll();
-	#endif
-	
 	REG_IF=REG_IF;	//yeah
 	REG_IME = 1;
 }
