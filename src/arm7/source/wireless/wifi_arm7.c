@@ -391,7 +391,7 @@ int Wifi_CmpMacAddr(volatile void * mac1,volatile  void * mac2) {
 //  MAC Copy functions
 //
 
-uint16 inline Wifi_MACRead(uint32 MAC_Base, uint32 MAC_Offset) {
+uint16 Wifi_MACRead(uint32 MAC_Base, uint32 MAC_Offset) {
 	MAC_Base += MAC_Offset;
 	if(MAC_Base>=(WIFI_REG(0x52)&0x1FFE)) MAC_Base -= ((WIFI_REG(0x52)&0x1FFE)-(WIFI_REG(0x50)&0x1FFE));
 	return WIFI_REG(0x4000+MAC_Base);
