@@ -32,15 +32,6 @@ USA
 extern "C"{
 #endif
 
-//project specific here
-
-#ifdef ARM7
-extern uint32 interrupts_to_wait_arm7;
-#endif
-
-#ifdef ARM9
-extern volatile uint32 interrupts_to_wait_arm9;
-#endif
 
 // Common
 
@@ -66,7 +57,6 @@ extern void NDS_IRQHandler();
 extern void IRQWait(uint32 reentrant,uint32 irqstowait);
 extern void IRQVBlankWait();
 extern void IRQInit();
-extern void InterruptServiceRoutineARMCores();	//Actual Interrupt Handler
 
 //stubs because we don't disable IME on DSWIFI
 extern void SGIP_INTR_PROTECT();

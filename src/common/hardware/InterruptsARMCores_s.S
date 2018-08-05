@@ -99,31 +99,5 @@ IRQVBlankWait:
 bx r14
 
 
-.global 	InterruptServiceRoutineARMCores, __cpsr_mask
-InterruptServiceRoutineARMCores:
-
-push {r0-r12,lr}
-
-@only treat interrupts when IME = 1
-mov	r12, #0x4000000		
-ldr	r1, [r12, #0x208]	
-cmp	r1, #0
-popeq {r0-r12,lr} 
-bxeq	lr
-
-mov	r0, #0
-str	r0, [r12, #0x208]	@REG_IME = 0;
-
-push {r0,r1,r12,lr}
-bl NDS_IRQHandler
-pop {r0,r1,r12,lr}
-
-str r1,[r12,#0x208]	@REG_IME = 1;
-
-pop {r0-r12,lr}
-bx lr
-
-
-
 .pool
 .end

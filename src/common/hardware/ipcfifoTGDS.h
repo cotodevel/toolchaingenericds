@@ -36,12 +36,15 @@ USA
 #define consolebuf_size (sint32)(100)
 
 //irqs
-#define VCOUNT_LINE_INTERRUPT (sint32)(0)
+#define VCOUNT_LINE_INTERRUPT (sint32)(159)
 
-//void writemap_ext_armcore(0x04000208,0x000000ff,WRITE_VALUE_8);
-#define WRITE_VALUE_8	(uint32)(0xf0)
-#define WRITE_VALUE_16	(uint32)(0xf1)
-#define WRITE_VALUE_32	(uint32)(0xf2)
+//void WriteAddrExtArm(WRITE_EXTARM_8,(uint32)0x04000208,(uint32)0x000000ff);
+//void Write8bitAddrExtArm
+//void Write16bitAddrExtArm
+//void Write32bitAddrExtArm
+#define WRITE_EXTARM_8	(uint32)(0xffff0201)
+#define WRITE_EXTARM_16	(uint32)(0xffff0202)
+#define WRITE_EXTARM_32	(uint32)(0xffff0203)
 
 //FIFO Hardware -> FIFO Software: GetSoftFIFO / SetSoftFIFO	/ 
 #define FIFO_NDS_HW_SIZE (sint32)(16*4)
@@ -72,7 +75,6 @@ USA
 
 //printf7 FIFO
 #define FIFO_PRINTF_7	(uint32)(0xffff101a)
-#define FIFO_IPC_MESSAGE	(uint32)(0xffff1010)
 
 #define SEND_FIFO_IPC_EMPTY	(uint32)(1<<0)	
 #define SEND_FIFO_IPC_FULL	(uint32)(1<<1)	
