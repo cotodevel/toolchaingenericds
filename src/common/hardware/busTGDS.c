@@ -20,11 +20,35 @@ USA
 
 #include "busTGDS.h"
 
-//Set BUS access rights
-void setCpuNdsBusAccessPrio(uint16 bus_assignment){
-	EXMEMCNT	= (uint16)((EXMEMCNT & ~(NDSSLOTBUS_ACCESS_PRIO)) | bus_assignment);
+void SetBusSLOT1SLOT2ARM9(){
+	uint16 bits = (GBASLOT_SRAMACCESS_TIME_10CYCLE|GBASLOT_ROMACCESS_TIME_10CYCLE_1STAC|GBASLOT_ROMACCESS_TIME_10CYCLE_2NDAC|GBASLOT_PHY_PIN_FREQ_16MHZ|NDSSLOT_ARM9BUS|GBASLOT_ARM9BUS);
+	//allow slot1 & slot2 to be read from ARM9 by default
+	Write16bitAddrExtArm(0x04000204, bits);
+	setCpuBusAccessPrio(bits);
+}	
+
+void SetBusSLOT1SLOT2ARM7(){
+	uint16 bits = (GBASLOT_SRAMACCESS_TIME_10CYCLE|GBASLOT_ROMACCESS_TIME_10CYCLE_1STAC|GBASLOT_ROMACCESS_TIME_10CYCLE_2NDAC|GBASLOT_PHY_PIN_FREQ_16MHZ|NDSSLOT_ARM7BUS|GBASLOT_ARM7BUS);
+	//allow slot1 & slot2 to be read from ARM9 by default
+	Write16bitAddrExtArm(0x04000204, bits);
+	setCpuBusAccessPrio(bits);
+}	
+
+void SetBusSLOT1ARM7SLOT2ARM9(){
+	uint16 bits = (GBASLOT_SRAMACCESS_TIME_10CYCLE|GBASLOT_ROMACCESS_TIME_10CYCLE_1STAC|GBASLOT_ROMACCESS_TIME_10CYCLE_2NDAC|GBASLOT_PHY_PIN_FREQ_16MHZ|NDSSLOT_ARM7BUS|GBASLOT_ARM9BUS);
+	//allow slot1 & slot2 to be read from ARM9 by default
+	Write16bitAddrExtArm(0x04000204, bits);
+	setCpuBusAccessPrio(bits);
 }
 
-void setCpuGbaBusAccessPrio(uint16 bus_assignment){
-	EXMEMCNT	= (uint16)((EXMEMCNT & ~(GBASLOTBUS_ACCESS_PRIO)) | bus_assignment);
+void SetBusSLOT1ARM9SLOT2ARM7(){
+	uint16 bits = (GBASLOT_SRAMACCESS_TIME_10CYCLE|GBASLOT_ROMACCESS_TIME_10CYCLE_1STAC|GBASLOT_ROMACCESS_TIME_10CYCLE_2NDAC|GBASLOT_PHY_PIN_FREQ_16MHZ|NDSSLOT_ARM9BUS|GBASLOT_ARM7BUS);
+	//allow slot1 & slot2 to be read from ARM9 by default
+	Write16bitAddrExtArm(0x04000204, bits);
+	setCpuBusAccessPrio(bits);
+}
+
+//Set BUS access rights
+void setCpuBusAccessPrio(uint16 bus_assignment){
+	EXMEMCNT	= (uint16)(bus_assignment);
 }

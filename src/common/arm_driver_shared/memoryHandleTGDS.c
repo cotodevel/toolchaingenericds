@@ -251,7 +251,7 @@ uint32 get_lma_libend(){
 uint32 get_lma_wramend(){
 	#ifdef ARM7
 	extern uint32 sp_USR;	//the farthest stack from the end memory is our free memory (in ARM7, shared stacks)
-	return (uint32)(&sp_USR);
+	return (uint32)((uint32)&sp_USR - 0x400);
 	#endif
 	#ifdef ARM9
 	return (uint32)(&_ewram_end);	//EWRAM has no stacks shared so we use the end memory 
@@ -374,13 +374,25 @@ bool isValidMap(uint32 addr){
 		#endif
 		||
 		((addr >= (uint32)(0x04000000)) && (addr <= (uint32)(0x04000000 + 4*1024)))	//NDS IO Region protected
-		
+		||
+		((addr >= (uint32)(0x08000000)) && (addr <= (uint32)(0x08000000 + (32*1024*1024))))	//GBA ROM MAP (allows to read GBA carts over GDB)
 	){
 		return true;
 	}
 	return false;
 }
 
+void Write8bitAddrExtArm(uint32 address, uint8 value){
+	SendMultipleWordACK(WRITE_EXTARM_8, (uint32)address, (uint32)value, NULL);
+}
+
+void Write16bitAddrExtArm(uint32 address, uint16 value){
+	SendMultipleWordACK(WRITE_EXTARM_16, (uint32)address, (uint32)value, NULL);
+}
+
+void Write32bitAddrExtArm(uint32 address, uint32 value){
+	SendMultipleWordACK(WRITE_EXTARM_32, (uint32)address, (uint32)value, NULL);
+}
 //IPC 
 
 //Internal

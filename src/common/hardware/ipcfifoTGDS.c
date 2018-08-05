@@ -168,21 +168,9 @@ void HandleFifoNotEmpty(){
 		//Do ToolchainGenericDS IPC handle here
 		switch (data0) {
 			//Shared 
-			case((uint32)WIFI_SYNC):{
-				Wifi_Sync();
-			}
-			break;
-			//Process the packages (signal) that sent earlier FIFO_SEND_EXT
-			case((uint32)FIFO_SOFTFIFO_READ_EXT):{
-			
-			}
-			break;
-			case((uint32)FIFO_SOFTFIFO_WRITE_EXT):{
-				SetSoftFIFO(data1);
-			}
-			break;
 			
 			// ARM7IO from ARM9
+			//	||
 			// ARM9IO from ARM7
 			case((uint32)WRITE_EXTARM_8):{
 				*(uint8*)data1 = (uint8)(data2);
@@ -194,6 +182,20 @@ void HandleFifoNotEmpty(){
 			break;
 			case((uint32)WRITE_EXTARM_32):{
 				*(uint32*)data1 = (uint32)(data2);
+			}
+			break;
+			
+			case((uint32)WIFI_SYNC):{
+				Wifi_Sync();
+			}
+			break;
+			//Process the packages (signal) that sent earlier FIFO_SEND_EXT
+			case((uint32)FIFO_SOFTFIFO_READ_EXT):{
+			
+			}
+			break;
+			case((uint32)FIFO_SOFTFIFO_WRITE_EXT):{
+				SetSoftFIFO(data1);
 			}
 			break;
 			

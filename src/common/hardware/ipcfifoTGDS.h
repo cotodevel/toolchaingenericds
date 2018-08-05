@@ -38,7 +38,6 @@ USA
 //irqs
 #define VCOUNT_LINE_INTERRUPT (sint32)(159)
 
-//void WriteAddrExtArm(WRITE_EXTARM_8,(uint32)0x04000208,(uint32)0x000000ff);
 //void Write8bitAddrExtArm
 //void Write16bitAddrExtArm
 //void Write32bitAddrExtArm
