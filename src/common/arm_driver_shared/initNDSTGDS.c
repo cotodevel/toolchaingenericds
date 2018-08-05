@@ -59,7 +59,7 @@ void initHardware(void) {
 	#ifdef ARM9
 	powerON(POWER_2D_A | POWER_2D_B | POWER_SWAP_LCDS);
 	setBacklight(POWMAN_BACKLIGHT_TOP_BIT|POWMAN_BACKLIGHT_BOTTOM_BIT);
-	setupExceptionHandler();
+	setupDefaultExceptionHandler();
 	
 	//PPU Engines Default
 	SETDISPCNT_MAIN(0); 
