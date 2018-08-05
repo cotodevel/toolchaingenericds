@@ -103,6 +103,13 @@ extern uint32 	_dtcm_end;
 extern uint32 	get_dtcm_start();
 extern sint32 	get_dtcm_size();
 
+extern uint32 	_gba_start;
+extern uint32 	_gba_end;
+//todo: read from gba cart or something
+
+extern uint32	_gbawram_start;
+extern uint32	_gbawram_end;
+
 extern uint32 	_itcm_start;
 extern uint32 	_itcm_end;
 extern uint32 	get_itcm_start();
@@ -145,10 +152,6 @@ extern uint32 getUserIPCAddress();
 
 //Printf7 Buffer
 extern uint32 getPrintfBuffer();
-
-extern void Write32bitAddrExtArm(uint32 address, uint32 value);
-extern void Write16bitAddrExtArm(uint32 address, uint16 value);
-extern void Write8bitAddrExtArm(uint32 address, uint8 value);
 
 #ifdef __cplusplus
 }

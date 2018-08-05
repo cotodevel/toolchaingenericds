@@ -16,10 +16,10 @@ const DLDI_INTERFACE* io_dldi_data = &_io_dldi_stub;
 
 const struct DISC_INTERFACE_STRUCT* dldiGetInternal (void) {
 	if (_io_dldi_stub.ioInterface.features & FEATURE_SLOT_GBA) {
-		SetBusSLOT1ARM7SLOT2ARM9();
+		setCpuGbaBusAccessPrio(GBASLOT_ARM9BUS);
 	}
 	if (_io_dldi_stub.ioInterface.features & FEATURE_SLOT_NDS) {
-		SetBusSLOT1ARM9SLOT2ARM7();
+		setCpuNdsBusAccessPrio(NDSSLOT_ARM9BUS);
 	}
 	
 	return &dldiGet()->ioInterface;

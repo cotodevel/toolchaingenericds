@@ -513,17 +513,11 @@ int fatfs_open_file(const sint8 *pathname, int flags, const FILINFO *fno)
     {
         FILINFO fno_after;
         mode = flags2mode(flags);
-        result = f_open(fdinst->filPtr, pathname, mode);	/* Opens an existing file. If not exist, creates a new file. */
+        result = f_open(fdinst->filPtr, pathname, mode);
 		if (result == FR_OK)
         {
-			//create file successfuly before trying to stat it
-			if(flags & O_CREAT){
-				f_close(fdinst->filPtr);
-				result = f_open(fdinst->filPtr, pathname, mode);
-			}
-			
-			result = f_stat(pathname, &fno_after);
-			fno = &fno_after;			
+            result = f_stat(pathname, &fno_after);
+            fno = &fno_after;			
 			if (result == FR_OK)
 			{
 				fill_fd_fil(fdinst->cur_entry.d_ino, fdinst->filPtr, flags, fno, (char*)pathname);
@@ -534,11 +528,13 @@ int fatfs_open_file(const sint8 *pathname, int flags, const FILINFO *fno)
 				structfdIndex = -1;
 			}
 		}
-        else {	//invalid file or O_CREAT wasn't issued
+        else if(result == FR_NO_FILE){
 			fatfs_free(fdinst);
 			structfdIndex = -1;
 		}
-		
+		else{
+			
+		}
     }
 	
 	return structfdIndex;
@@ -582,22 +578,19 @@ int fatfs_open_file_or_dir(const sint8 *pathname, int flags)
 	
 	result = f_stat(pathname, &fno);
     
-	//dir case
-    if ((result == FR_OK) && ((fno.fattrib & AM_MASK) & AM_DIR))
+	if ((result != FR_OK) && (result != FR_NO_FILE))
+    {
+        // just return if invalid path
+	}
+	
+    else if ((result == FR_OK) && ((fno.fattrib & AM_MASK) & AM_DIR))
     {
         structFD = fatfs_open_dir(pathname, flags, &fno);
 	}
-	
-	else if (
-		(result == FR_OK)	//file exists case
-		||
-		(flags & O_CREAT)	//new file?
-	)
+	//IS FILE or NEW FILE
+    else
     {
-        structFD = fatfs_open_file(pathname, flags, &fno);	//returns / allocates a new struct fd index with either DIR or FIL structure allocated
-	}
-    else {
-		//file/dir does not exist, didn't want to create
+		structFD = fatfs_open_file(pathname, flags, &fno);	//returns / allocates a new struct fd index with either DIR or FIL structure allocated
 	}
 	
     return structFD;
@@ -1398,28 +1391,4 @@ char * dldi_tryingInterface(){
 	//DS DLDI
 	struct DLDI_INTERFACE * DLDI_INTERFACEInst = dldiGet();
 	return DLDI_INTERFACEInst->friendlyName;
-}
-
-int FileExists(char * filename){
-	int ret = -1;
-	FILE* fil = fopen(filename,"r");
-	if(!fil){
-		DIR * dirOpen = fatfs_opendir((const sint8 *)filename);
-		if(!dirOpen){
-			ret = FT_NONE;
-		}
-		else{
-			ret = FT_DIR;
-		}
-		if(dirOpen){
-			fatfs_closedir(dirOpen);
-		}
-	}
-	else{
-		ret = FT_FILE;
-	}
-	if(fil){
-		fclose(fil);
-	}
-	return ret;
 }

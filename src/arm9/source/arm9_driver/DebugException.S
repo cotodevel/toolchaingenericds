@@ -86,69 +86,6 @@ DebugException:
 	pop {r0-r12,lr}
 	
 	bx lr
-
-
-
-
-.global CustomDebugException
-CustomDebugException:
-	
-	@exception stack
-	ldr r12,=exceptionArmRegs
-	stmia r12, {r0-r11}	@r0 -- r11
-	
-	@get R12,SPSR & PC from source abort
-	ldr r0, =(0x02FFFD90)
-	
-	ldr	r2,[r0,#0]	@SPSR
-	str r2, [r12, #(4*17)]
-	
-	ldr	r2,[r0,#4]	@source LR
-	str r2, [r12, #(4*14)]
-	
-	ldr	r2,[r0,#8]	@source PC
-	str r2, [r12, #(4*15)]
-	
-	mrs r3, cpsr	@this CPSR
-	str r3, [r12, #(4*18)]
-	
-	mrs r3, spsr	@source CPSR
-	str r3, [r12, #(4*16)]
-	
-	@new stack Data Abort
-	ldr	r13,=sp_ABT
-	mov r7,r12		@highest register that does not change when changing PSR
-	
-	@grab source r13
-	msr cpsr, r3
-	str r13, [r7, #(4*13)]
-	
-	@go back
-	mrs r0, spsr
-	msr cpsr,r0
-	
-	@this PSR USR? Enter SYS
-	mov r2,r0
-	and r2,r2,#0x10
-	cmp r2,#0x10	
-	biceq r2,r0,#0x1f
-	orreq r2,r2,#0x1f
-	msreq cpsr,r2
-	
-	@disable MPU
-	mrc	p15,0,r0,c1,c0,0
-	bic	r0,r0,#1
-	mcr	p15,0,r0,c1,c0,0
-	
-	push {r0-r12,lr}
-	ldr	r12,=CustomHandler
-	ldr r12,[r12]
-	blx	r12
-	pop {r0-r12,lr}
-	
-	bx lr
-
-
 #endif
 
 #endif

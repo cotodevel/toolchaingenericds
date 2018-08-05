@@ -91,8 +91,8 @@ volatile 	const uint8 nificonnect[32]	= {0xB2, 0xD1, 'c', 'o', 'n', 'n', 'e', 'c
 
 //Read-Write
 volatile 	uint8 nificrc[32]				= {0xB2, 0xD1, (uint8)CRC_CRC_STAGE, 0, 0, 0};
-volatile 	uint8 data[512];			//receiver frame, data + frameheader is recv TX'd frame nfdata[128]. Used by NIFI Mode
-volatile 	uint8 nfdata[128]			= {0xB2, 0xD1, (uint8)CRC_OK_SAYS_HOST, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};	//sender frame, recv as data[512], see above. all valid frames have CRC_OK_SAYS_HOST sent.
+volatile 	uint8 data[4096];			//receiver frame, data + frameheader is recv TX'd frame nfdata[128]. Used by NIFI Mode
+volatile 	uint8 nfdata[128]			= {0xB2, 0xD1, (uint8)CRC_OK_SAYS_HOST, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};	//sender frame, recv as data[4096], see above. all valid frames have CRC_OK_SAYS_HOST sent.
 
 __attribute__((section(".itcm")))
 void Handler(int packetID, int readlength)
@@ -610,20 +610,6 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 					break;
 				}
 				retDaemonCode = dswifi_udpnifimode;
-				
-				
-				
-				///////////////////////////////////////Handle Send UserCode, if the user used the following code:
-				//struct frameBlock * FrameSenderUser = HandleSendUserspace((uint8*)&nfdata[0],sizeof(nfdata));	//use the nfdata as send buffer // struct frameBlock * FrameSenderInst is now used to detect if pending send frame or not
-				//then FrameSenderUser should be not NULL, send the packet here now. Packet must be NOT called from a function.
-				
-				///////////////////////////////////////Handle Send Library
-				// Send Frame UserCore
-				if(FrameSenderUser){
-					sendDSWNIFIFame(FrameSenderUser);
-					FrameSenderUser = NULL;
-				}
-				
 			}
 			
 			//Local Nifi: runs from within the DSWIFI frame handler itself so ignored here.
@@ -631,7 +617,16 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 				retDaemonCode = dswifi_localnifimode;
 			}
 			
+			///////////////////////////////////////Handle Send UserCode, if the user used the following code:
+			//struct frameBlock * FrameSenderUser = HandleSendUserspace((uint8*)&nfdata[0],sizeof(nfdata));	//use the nfdata as send buffer // struct frameBlock * FrameSenderInst is now used to detect if pending send frame or not
+			//then FrameSenderUser should be not NULL, send the packet here now. Packet must be NOT called from a function.
 			
+			///////////////////////////////////////Handle Send Library
+			// Send Frame UserCore
+			if(FrameSenderUser){
+				sendDSWNIFIFame(FrameSenderUser);
+				FrameSenderUser = NULL;
+			}
 		}
 		break;
 		//shutdown
@@ -764,12 +759,6 @@ struct frameBlock * HandleSendUserspace(uint8 * databuf_src, int bufsize){
 	struct frameBlock * frameSenderInst =  (struct frameBlock *)&FrameSenderBlock;
 	frameSenderInst->framebuffer = databuf_src;
 	frameSenderInst->frameSize = bufsize;
-	
-	
-	if(getMULTIMode() == dswifi_localnifimode){	
-		sendDSWNIFIFame(frameSenderInst);
-	}
-	
 	return frameSenderInst;
 }
 
@@ -879,7 +868,7 @@ if(remoteSocket == -1) {
         break;
     }
     if(count == 3) {
-		printf("Error binding ");
+		//printf("Error binding ");
 		while(1==1){}
     }
 
@@ -941,7 +930,6 @@ bool remotePipeInit()
 	read(0, &dummy, 1);
 	if(dummy != '+') {
 		//GDB Server: ACK not received
-		printf("error remotePipeInit");
 		while(1==1);
 	}
 	return true;

@@ -43,14 +43,19 @@ int chdata_save5 = 0;
 //
 //  Flash support functions
 //
-char FlashData[512];
+//char FlashData[512];
+char * FlashData = NULL;		//use new section to prevent using ARM7 upper 32K memory
 
 void InitFlashData() {
+	FlashData = (char *)malloc(512);
 	readFirmwareSPI(0,FlashData,512);
 }
 
 void DeInitFlashData() {
-	memset(FlashData, 0, sizeof(FlashData));
+	if(FlashData){
+		free(FlashData);
+		FlashData = NULL;
+	}
 }
 
 
@@ -391,7 +396,7 @@ int Wifi_CmpMacAddr(volatile void * mac1,volatile  void * mac2) {
 //  MAC Copy functions
 //
 
-uint16 Wifi_MACRead(uint32 MAC_Base, uint32 MAC_Offset) {
+uint16 inline Wifi_MACRead(uint32 MAC_Base, uint32 MAC_Offset) {
 	MAC_Base += MAC_Offset;
 	if(MAC_Base>=(WIFI_REG(0x52)&0x1FFE)) MAC_Base -= ((WIFI_REG(0x52)&0x1FFE)-(WIFI_REG(0x50)&0x1FFE));
 	return WIFI_REG(0x4000+MAC_Base);
@@ -846,7 +851,6 @@ void Wifi_Init(uint32 wifidata) {
 	POWERCNT7 |= 2; // enable power for the wifi
 	*((volatile uint16 *)0x04000206) = 0x30; // ???
 
-	DeInitFlashData();
 	InitFlashData();
 	
 	// reset/shutdown wifi:

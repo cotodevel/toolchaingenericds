@@ -283,22 +283,18 @@ int	GUIStaticEx_handler(t_GUIZone *zone, int message, int param, void *arg)
 {
 	switch (message)
 	{
-		case GUI_DRAW:
-		{
-			int str = (int)zone->data & 0xFFFF;
-			int str_arg = ((int)zone->data >> 16) & 0xFF;
-			int flags = ((int)zone->data >> 24) & 0xFF;
-			
-			sint8 buf[64];
-			snprintf(buf, 64, GUI.string[str], str_arg); // FIXME
-			GUI_drawAlignText(zone, flags, (zone->y2-zone->y1)/2, GUI_WHITE, buf);
-			return 1;
-		}
-		break;
+	case GUI_DRAW:
+	{
+		int str = (int)zone->data & 0xFFFF;
+		int str_arg = ((int)zone->data >> 16) & 0xFF;
+		int flags = ((int)zone->data >> 24) & 0xFF;
+		
+		sint8 buf[64];
+		snprintf(buf, 64, GUI.string[str], str_arg); // FIXME
+		GUI_drawAlignText(zone, flags, (zone->y2-zone->y1)/2, GUI_WHITE, buf);
+		return 1;
 	}
-	
-	
-	
+	}
 	return 0;
 }
 

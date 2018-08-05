@@ -115,9 +115,5 @@ sint8*  g_snemulds_str_ita[] =
 		"Fix graphics",				/* 105 */
 		"BG%d",						/* 106 */
 		"BG%d(low)",				/* 107 */
-		"Sprites %d",				/* 108 */			
-		"Multi: ",				/* 109 */	
-		"Single ",				/* 110 */	
-		"Local: Host ",				/* 111 */	
-		"Local: Guest ",				/* 112 */	
+		"Sprites %d",				/* 108 */	
 };

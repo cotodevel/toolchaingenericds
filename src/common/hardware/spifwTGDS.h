@@ -29,7 +29,7 @@ USA
 #define FWCMD_WRDI 0x04
 #define FWCMD_RDID 0x9F
 #define FWCMD_RDSR 0x05
-#define FWCMD_READ 0x03	//FW_READ
+#define FWCMD_READ 0x03
 #define FWCMD_FAST 0x0B
 #define FWCMD_PW   0x0A
 #define FWCMD_PP   0x02

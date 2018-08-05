@@ -84,7 +84,7 @@ extern "C" {
 
 extern uint16 arm7q[1024];
 extern void Read_Flash(int address, char * destination, int length);
-extern char FlashData[512];
+extern char * FlashData;
 extern void InitFlashData();
 extern void DeInitFlashData();
 extern int ReadFlashByte(int address);
@@ -134,8 +134,7 @@ extern void arm7_synctoarm9();
 extern void installWifiFIFO();
 extern int crc16_slow(uint8 * data, int length);
 extern void GetWfcSettings();
-extern uint16 Wifi_MACRead(uint32 MAC_Base, uint32 MAC_Offset);
-	
+
 #ifdef __cplusplus
 }
 #endif

@@ -142,6 +142,7 @@ void SendMultipleWordByFifo(uint32 data0, uint32 data1, uint32 data2, uint32 * b
 	REG_IPC_FIFO_TX = (uint32)data1;			
 	REG_IPC_FIFO_TX = (uint32)data2;
 	REG_IPC_FIFO_TX = (uint32)(uint32*)buffer_shared;
+	REG_IPC_FIFO_TX =	(uint32)FIFO_IPC_MESSAGE;
 }
 
 //FIFO HANDLER INIT
@@ -157,105 +158,93 @@ void HandleFifoEmpty(){
 __attribute__((section(".itcm")))
 #endif
 void HandleFifoNotEmpty(){
-
-	volatile uint32 data0 = 0,data1 = 0,data2 = 0,data3 = 0;
+	volatile uint32 data0 = 0,data1 = 0,data2 = 0,data3 = 0,data4 = 0;
 	while(!(REG_IPC_FIFO_CR & RECV_FIFO_IPC_EMPTY)){
 		data0 = REG_IPC_FIFO_RX;
 		data1 = REG_IPC_FIFO_RX;
 		data2 = REG_IPC_FIFO_RX;
 		data3 = REG_IPC_FIFO_RX;
-		
-		//Do ToolchainGenericDS IPC handle here
-		switch (data0) {
-			//Shared 
-			case((uint32)WIFI_SYNC):{
-				Wifi_Sync();
-			}
-			break;
-			//Process the packages (signal) that sent earlier FIFO_SEND_EXT
-			case((uint32)FIFO_SOFTFIFO_READ_EXT):{
-			
-			}
-			break;
-			case((uint32)FIFO_SOFTFIFO_WRITE_EXT):{
-				SetSoftFIFO(data1);
-			}
-			break;
-			
-			// ARM7IO from ARM9
-			// ARM9IO from ARM7
-			case((uint32)WRITE_EXTARM_8):{
-				*(uint8*)data1 = (uint8)(data2);
-			}
-			break;
-			case((uint32)WRITE_EXTARM_16):{
-				*(uint16*)data1 = (uint16)(data2);
-			}
-			break;
-			case((uint32)WRITE_EXTARM_32):{
-				*(uint32*)data1 = (uint32)(data2);
-			}
-			break;
-			
-			//ARM7 command handler
-			#ifdef ARM7
-			case((uint32)FIFO_POWERCNT_ON):{
-				powerON((uint16)data1);
-			}
-			break;
-			case((uint32)FIFO_POWERCNT_OFF):{
-				powerOFF((uint16)data1);
-			}
-			break;
-			//Power Management: supported model so far: DS Phat.
-			//Todo add: DSLite/DSi
-			case((uint32)FIFO_POWERMGMT_WRITE):{
-				int PMBits = 0;
-				if(data1 & UPDATE_TOP_SCREEN_PWR){
-					PMBits |= POWMAN_BACKLIGHT_TOP_BIT;
+		data4 = REG_IPC_FIFO_RX;	
+		if((uint32)FIFO_IPC_MESSAGE == (uint32)data4){
+			//Do ToolchainGenericDS IPC handle here
+			switch (data0) {
+				//Shared 
+				case((uint32)WIFI_SYNC):{
+					Wifi_Sync();
 				}
-				if(data1 & UPDATE_BOTTOM_SCREEN_PWR){
-					PMBits |= POWMAN_BACKLIGHT_BOTTOM_BIT;
-				}					
-				int PMBitsRead = PowerManagementDeviceRead((int)PMBits);
-				PMBitsRead &= ~PMBits;
-				PMBitsRead|= (int)(data2 & PMBits);
-				PowerManagementDeviceWrite(POWMAN_WRITE_BIT|PMBits, (int)PMBitsRead);				
-			}
-			break;
-			//arm9 wants to send a WIFI context block address / userdata is always zero here
-			case((uint32)WIFI_INIT):{
-				//	wifiAddressHandler( void * address, void * userdata )
-				wifiAddressHandler((Wifi_MainStruct *)(uint32)data1, 0);
-			}
-			break;
-			// Deinit WIFI
-			case((uint32)WIFI_DEINIT):{
-				DeInitWIFI();
-			}
-			break;
-			#endif
-			
-			//ARM9 command handler
-			#ifdef ARM9
-			//exception handler: arm7
-			case((uint32)EXCEPTION_ARM7):{
-				if((uint32)data1 == (uint32)unexpectedsysexit_7){
-					exception_handler((uint32)unexpectedsysexit_7);	//r0 = EXCEPTION_ARM7 / r1 = unexpectedsysexit_7
+				break;
+				//Process the packages (signal) that sent earlier FIFO_SEND_EXT
+				case((uint32)FIFO_SOFTFIFO_READ_EXT):{
+				
 				}
+				break;
+				case((uint32)FIFO_SOFTFIFO_WRITE_EXT):{
+					SetSoftFIFO(data1);
+				}
+				break;
+				
+				//ARM7 command handler
+				#ifdef ARM7
+				case((uint32)FIFO_POWERCNT_ON):{
+					powerON((uint16)data1);
+				}
+				break;
+				case((uint32)FIFO_POWERCNT_OFF):{
+					powerOFF((uint16)data1);
+				}
+				break;
+				//Power Management: supported model so far: DS Phat.
+				//Todo add: DSLite/DSi
+				case((uint32)FIFO_POWERMGMT_WRITE):{
+					int PMBits = 0;
+					if(data1 & UPDATE_TOP_SCREEN_PWR){
+						PMBits |= POWMAN_BACKLIGHT_TOP_BIT;
+					}
+					if(data1 & UPDATE_BOTTOM_SCREEN_PWR){
+						PMBits |= POWMAN_BACKLIGHT_BOTTOM_BIT;
+					}					
+					int PMBitsRead = PowerManagementDeviceRead((int)PMBits);
+					PMBitsRead &= ~PMBits;
+					PMBitsRead|= (int)(data2 & PMBits);
+					PowerManagementDeviceWrite(POWMAN_WRITE_BIT|PMBits, (int)PMBitsRead);				
+				}
+				break;
+				//arm9 wants to send a WIFI context block address / userdata is always zero here
+				case((uint32)WIFI_INIT):{
+					//	wifiAddressHandler( void * address, void * userdata )
+					wifiAddressHandler((Wifi_MainStruct *)(uint32)data1, 0);
+				}
+				break;
+				// Deinit WIFI
+				case((uint32)WIFI_DEINIT):{
+					DeInitWIFI();
+				}
+				break;
+				#endif
+				
+				//ARM9 command handler
+				#ifdef ARM9
+				//exception handler: arm7
+				case((uint32)EXCEPTION_ARM7):{
+					if((uint32)data1 == (uint32)unexpectedsysexit_7){
+						exception_handler((uint32)unexpectedsysexit_7);	//r0 = EXCEPTION_ARM7 / r1 = unexpectedsysexit_7
+					}
+				}
+				break;
+				//printf ability from ARM7
+				case((uint32)FIFO_PRINTF_7):{
+					clrscr();
+					char * printfBuf7 = (char*)getPrintfBuffer();
+					//Prevent Cache problems.
+					coherent_user_range_by_size((uint32)printfBuf7, (int)sizeof(getsIPCSharedTGDS()->arm7PrintfBuf));
+					printf("ARM7:%s",printfBuf7);
+				}
+				break;
+				#endif
 			}
-			break;
-			//printf ability from ARM7
-			case((uint32)FIFO_PRINTF_7):{
-				clrscr();
-				char * printfBuf7 = (char*)getPrintfBuffer();
-				//Prevent Cache problems.
-				coherent_user_range_by_size((uint32)printfBuf7, (int)sizeof(getsIPCSharedTGDS()->arm7PrintfBuf));
-				printf("ARM7:%s",printfBuf7);
-			}
-			break;
-			#endif
+			HandleFifoNotEmptyWeakRef(data0,data1,data2,data3);
 		}
-		HandleFifoNotEmptyWeakRef(data0,data1,data2,data3);
+		//clear fifo inmediately
+		REG_IPC_FIFO_CR |= (1<<3);
 	}
 }
