@@ -26,10 +26,6 @@ export SOURCE_MAKEFILE9 = custom
 include $(DEFAULT_GCC_PATH)Makefile.basenewlib
 
 #Custom
-#ToolchainGenericDS version
-export TOOLCHAIN_VERSION_HEADER =	1.3
-export TOOLCHAIN_VERSION =	"$(TOOLCHAIN_VERSION_HEADER)"
-
 export BINSTRIP_RULE_7 =	arm7.bin
 export BINSTRIP_RULE_9 =	arm9.bin
 export DIR_ARM7 = arm7
