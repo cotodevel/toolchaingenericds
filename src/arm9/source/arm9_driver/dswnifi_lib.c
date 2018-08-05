@@ -610,6 +610,20 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 					break;
 				}
 				retDaemonCode = dswifi_udpnifimode;
+				
+				
+				
+				///////////////////////////////////////Handle Send UserCode, if the user used the following code:
+				//struct frameBlock * FrameSenderUser = HandleSendUserspace((uint8*)&nfdata[0],sizeof(nfdata));	//use the nfdata as send buffer // struct frameBlock * FrameSenderInst is now used to detect if pending send frame or not
+				//then FrameSenderUser should be not NULL, send the packet here now. Packet must be NOT called from a function.
+				
+				///////////////////////////////////////Handle Send Library
+				// Send Frame UserCore
+				if(FrameSenderUser){
+					sendDSWNIFIFame(FrameSenderUser);
+					FrameSenderUser = NULL;
+				}
+				
 			}
 			
 			//Local Nifi: runs from within the DSWIFI frame handler itself so ignored here.
@@ -617,16 +631,7 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 				retDaemonCode = dswifi_localnifimode;
 			}
 			
-			///////////////////////////////////////Handle Send UserCode, if the user used the following code:
-			//struct frameBlock * FrameSenderUser = HandleSendUserspace((uint8*)&nfdata[0],sizeof(nfdata));	//use the nfdata as send buffer // struct frameBlock * FrameSenderInst is now used to detect if pending send frame or not
-			//then FrameSenderUser should be not NULL, send the packet here now. Packet must be NOT called from a function.
 			
-			///////////////////////////////////////Handle Send Library
-			// Send Frame UserCore
-			if(FrameSenderUser){
-				sendDSWNIFIFame(FrameSenderUser);
-				FrameSenderUser = NULL;
-			}
 		}
 		break;
 		//shutdown
@@ -759,6 +764,12 @@ struct frameBlock * HandleSendUserspace(uint8 * databuf_src, int bufsize){
 	struct frameBlock * frameSenderInst =  (struct frameBlock *)&FrameSenderBlock;
 	frameSenderInst->framebuffer = databuf_src;
 	frameSenderInst->frameSize = bufsize;
+	
+	
+	if(getMULTIMode() == dswifi_localnifimode){	
+		sendDSWNIFIFame(frameSenderInst);
+	}
+	
 	return frameSenderInst;
 }
 
