@@ -348,7 +348,7 @@ namespace ConsoleApplication1
                                     int tcp_port = 7777;    //same as #define TCP_PORT 7777
                                     string tcpmsgds1 = "srvaware" + "-" + ip_dest_ds1 + "-" + ds1_mode + "-";
                                     SendTCPMsg(tcpmsgds1, nds_session_list[nds1_index].ip, tcp_port.ToString());
-                                    Thread.Sleep(2000);  //4s for TCP
+                                    Thread.Sleep(800);  //4s for TCP
                                     //DS2
                                     string tcpmsgds2 = "srvaware" + "-" + ip_dest_ds2 + "-" + ds2_mode + "-";
                                     SendTCPMsg(tcpmsgds2, nds_session_list[nds2_index].ip, tcp_port.ToString());

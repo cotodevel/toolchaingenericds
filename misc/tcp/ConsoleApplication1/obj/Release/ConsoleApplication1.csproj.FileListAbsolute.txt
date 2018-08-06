@@ -28,8 +28,9 @@ C:\github_clone\SnemulDS\misc\tcp\ConsoleApplication1\bin\Release\ConsoleApplica
 C:\github_clone\SnemulDS\misc\tcp\ConsoleApplication1\obj\Release\ConsoleApplication1.csprojResolveAssemblyReference.cache
 C:\github_clone\SnemulDS\misc\tcp\ConsoleApplication1\obj\Release\ConsoleApplication1.exe
 C:\github_clone\SnemulDS\misc\tcp\ConsoleApplication1\obj\Release\ConsoleApplication1.pdb
-C:\github_clone\ToolchainGenericDS\misc\tcp\ConsoleApplication1\bin\Release\ConsoleApplication1.exe.config
-C:\github_clone\ToolchainGenericDS\misc\tcp\ConsoleApplication1\bin\Release\ConsoleApplication1.exe
-C:\github_clone\ToolchainGenericDS\misc\tcp\ConsoleApplication1\bin\Release\ConsoleApplication1.pdb
-C:\github_clone\ToolchainGenericDS\misc\tcp\ConsoleApplication1\obj\Release\ConsoleApplication1.exe
-C:\github_clone\ToolchainGenericDS\misc\tcp\ConsoleApplication1\obj\Release\ConsoleApplication1.pdb
+C:\github_clone\toolchaingenericds\misc\tcp\ConsoleApplication1\bin\Release\ConsoleApplication1.exe.config
+C:\github_clone\toolchaingenericds\misc\tcp\ConsoleApplication1\bin\Release\ConsoleApplication1.exe
+C:\github_clone\toolchaingenericds\misc\tcp\ConsoleApplication1\bin\Release\ConsoleApplication1.pdb
+C:\github_clone\toolchaingenericds\misc\tcp\ConsoleApplication1\obj\Release\ConsoleApplication1.csprojResolveAssemblyReference.cache
+C:\github_clone\toolchaingenericds\misc\tcp\ConsoleApplication1\obj\Release\ConsoleApplication1.exe
+C:\github_clone\toolchaingenericds\misc\tcp\ConsoleApplication1\obj\Release\ConsoleApplication1.pdb

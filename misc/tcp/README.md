@@ -2,7 +2,7 @@ Coto:
 
 This covers the UDP NIFI protocol, to connect DS - DS through internet.
 
-This is a (windows only) UDP Server called Server Companion, 
+This is a (windows only) UDP Server called ToolchainGenericDS Server Companion, 
 
 if you have VS2012+ installed you can edit sources through .sln file.
 
@@ -13,27 +13,39 @@ Steps:
 1) use some router/old phone that supports either OPEN or WEP connections, setup a WIFI hotspot in that device. 
 Use any DS game that supports NIFI to setup the DS to connect to the device you use as WIFI hotspot.
 
-2) The computer that acts as server must use the IP: 192.168.43.220, that IP is hardcoded in the ToolchainGenericDS library (Nintendo DS -> dswnifi_lib.cpp [server_ip]), 
-if you want you can set the IP your server uses (static I would suggest) in there, recompile TGDS + project so changes are made.
-The Server Companion detects the IP used to Network in the current PC, so if you connect your PC to WIFI hotspot, that IP is the one you must reflect back in the file said above.
+2) The computer that acts as server must use the SAME IP as in toolchaingenericds/src/arm9/source/arm9_driver/dswnifi_lib.c , specifically the symbol:
 
-3) On the TGDS project you use this function to enter UDP NIFI mode:
+2a)
+sint8* server_ip = (sint8*)"192.168.43.221";	// <-- here add your desktop IP
 
-//udp nifi:
-switch_dswnifi_mode(dswifi_udpnifimode);
+2b)
 
-Once recompiled, you copy TGDS project to your DS, and run. But do not call the above call yet.
+//add the header
+#include "dswnifi_lib.c"
 
-3) head to /bin folder, run ConsoleApplication1.exe, a console with yellow letters will pop-up saying to connect two (yes 2) DSs in the same network.
+//the callback switch_dswnifi_mode(argument), where argument can be: dswifi_idlemode , dswifi_localnifimode or dswifi_udpnifimode (only these)
+//So in your app you can switch between these functions to enter multiplayer local or multiplayer through internet 
+//from:
+switch_dswnifi_mode(dswifi_idlemode);
 
-Now, while running the TGDS project, call the code shown in //udp nifi:
-By then, the Windows console app running in the server companion should detect 1 DS connected. Repeat the same steps for the second DS. 
-When two DSes are connected, they will connect each other!
+//to:
+switch_dswnifi_mode(dswifi_localnifimode);
 
-Check the project specific folder: common/dswnifi.cpp file explaining how to override userCode sender, userCode ReceiveHandler so you add them to your project.
+//or:
+switch_dswnifi_mode(dswifi_udpnifimode);	//<- this guide uses UDP through internet so this is what you need if you are reading this README
 
-As of now the DSWNIFI library support local nifi and udp nifi.
+When your TGDS project is ready, recompile ToolchainGenericDS AND your ToolchainGenericDS project to make changes effective.
+The Server Companion uses the first network IP it finds (so make sure you reflect back the IP you wrote earlier in the dswnifi library, to the host PC, through static IP)
 
+
+3) head to /Release folder, run TGDS-UDPCompanion.exe, a console with yellow letters will pop-up saying to connect two (yes 2) DSs in the same network.If you have a firewall
+warning, please check public and private networks and click accept.
+
+As soon as the client in the DS connects (by using the above callbacks), the server companion will detect 1 DS connected. Do the same steps for a 2nd DS...
+When two DSes are connected, they will connect each other! Press L to send a UDP nifi message to the other DS!
+
+Check the project https://bitbucket.org/Coto88/toolchaingenericds-multiplayer-example to know how to implement the callbacks:
+override userCode sender and userCode ReceiveHandler required, so your project has nifi through local or UDP internet!
 
 
 Coto.
