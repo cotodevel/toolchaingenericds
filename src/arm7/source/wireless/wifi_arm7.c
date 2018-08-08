@@ -32,6 +32,7 @@ SOFTWARE.
 #include "ipcfifoTGDS.h" 
 #include "InterruptsARMCores_h.h"
 #include "spiTGDS.h"
+#include "spifwTGDS.h"
 #include "biosTGDS.h"
 
 volatile Wifi_MainStruct * WifiData = 0;
@@ -46,7 +47,7 @@ int chdata_save5 = 0;
 char FlashData[512];
 
 void InitFlashData() {
-	readFirmwareSPI(0,FlashData,512);
+	readFirmwareSPI(0,(uint8*)&FlashData[0],512);
 }
 
 void DeInitFlashData() {
@@ -112,7 +113,7 @@ void GetWfcSettings() {
 	uint32 wfcBase = ReadFlashBytes(0x20, 2) * 8 - 0x400;
 	for(i=0;i<3;i++) WifiData->wfc_enable[i]=0;
 	for(i=0;i<3;i++) {
-		readFirmwareSPI( wfcBase +(i<<8),(char *)data,256);
+		readFirmwareSPI( wfcBase +(i<<8),(uint8*)data,256);
 		// check for validity (crc16)
 		if(crc16_slow(data,256)==0x0000 && data[0xE7]==0x00) { // passed the test
 			WifiData->wfc_enable[c] = 0x80 | (data[0xE6]&0x0F);

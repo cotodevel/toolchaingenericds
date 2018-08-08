@@ -282,9 +282,6 @@ USA
 #define VRAM_H_CR		(*(vuint8*)0x04000248)
 #define VRAM_I_CR		(*(vuint8*)0x04000249)
 
-#define VRAM_ENABLE		(1<<7)
-#define VRAM_OFFSET(n)	((n)<<3)
-
 #define REG_BG1VOFS BG1VOFS
 #define REG_BG2VOFS BG2VOFS
 #define REG_BG3VOFS BG3VOFS

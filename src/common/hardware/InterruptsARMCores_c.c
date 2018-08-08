@@ -30,6 +30,7 @@ USA
 #include "InterruptsARMCores_h.h"
 #include "ipcfifoTGDS.h"
 #include "linkerTGDS.h"
+#include "keypadTGDS.h"
 
 
 //stubs because we don't disable IME on DSWIFI

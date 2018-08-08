@@ -31,6 +31,8 @@ USA
 #include "timerTGDS.h"
 #include "memoryHandleTGDS.h"
 #include "spifwTGDS.h"
+#include "powerTGDS.h"
+
 
 #ifdef ARM9
 #include "devoptab_devices.h"

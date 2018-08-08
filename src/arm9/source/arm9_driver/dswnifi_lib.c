@@ -238,17 +238,8 @@ bool switch_dswnifi_mode(sint32 mode){
 		LastDSWnifiMode = mode;
 	}
 	
-	//idle mode minimal setup
-	if (mode == (sint32)dswifi_idlemode){
-		dswifiSrv.dsnwifisrv_stat	= ds_multi_notrunning;
-		setMULTIMode(mode);
-		setWIFISetup(false);
-		setConnectionStatus(proc_shutdown);
-		DeInitWIFI();
-		return true;
-	}
 	//Raw Network Packet Nifi
-	else if (mode == (sint32)dswifi_localnifimode){
+	if (mode == (sint32)dswifi_localnifimode){
 		bool useWIFIAP = false;
 		if(connectDSWIFIAP(false,useWIFIAP) == true){	//setWIFISetup set inside
 			dswifiSrv.dsnwifisrv_stat	= ds_searching_for_multi_servernotaware;
@@ -291,6 +282,17 @@ bool switch_dswnifi_mode(sint32 mode){
 			return false;
 		}
 	}
+	
+	//idle mode minimal setup
+	if (mode == (sint32)dswifi_idlemode){
+		dswifiSrv.dsnwifisrv_stat	= ds_multi_notrunning;
+		setMULTIMode(mode);
+		setWIFISetup(false);
+		setConnectionStatus(proc_shutdown);
+		DeInitWIFI();
+	}
+	
+	return true;
 }
 
 __attribute__((section(".itcm")))
@@ -309,7 +311,7 @@ bool getWIFISetup(){
 }
 
 __attribute__((section(".itcm")))
-bool setWIFISetup(bool flag){
+void setWIFISetup(bool flag){
 	dswifiSrv.dswifi_setup = (bool)flag;
 }
 
@@ -453,7 +455,7 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 							cmd=ioctl(client_http_handler_context.socket_multi_listener,FIONBIO,&cmd); // set non-blocking port
 							
 							client_http_handler_context.socket_multi_sender=socket(AF_INET,SOCK_DGRAM,0);
-							int optval = 1, len;
+							int optval = 1;
 							setsockopt(client_http_handler_context.socket_multi_sender, SOL_SOCKET, SO_BROADCAST, (char *)&optval, sizeof(optval));
 		
 							int LISTENER_PORT 	=	0;
@@ -483,8 +485,8 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 							client_http_handler_context.sain_sender.sin_addr.s_addr = inet_addr((char*)tokens[1]);//INADDR_BROADCAST;//((const char*)"191.161.23.11");// //ip was reversed 
 							client_http_handler_context.sain_sender.sin_port = htons(SENDER_PORT); 
 							
-							struct sockaddr_in *addr_in2= (struct sockaddr_in *)&client_http_handler_context.sain_sender;
-							char *IP_string_sender = inet_ntoa(addr_in2->sin_addr);
+							//struct sockaddr_in *addr_in2= (struct sockaddr_in *)&client_http_handler_context.sain_sender;
+							//char *IP_string_sender = inet_ntoa(addr_in2->sin_addr);
 							
 							//bind ThisIP(each DS network hardware) against the current DS UDP port
 							if(bind(client_http_handler_context.socket_multi_listener,(struct sockaddr *)&client_http_handler_context.sain_listener,sizeof(struct sockaddr_in))) {
@@ -499,11 +501,9 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 								retDaemonCode = dswifi_udpnifimodeFailExecutionStage;
 							}
 							else{
-								char buf[96] = {0};
-								char id[16] = {0};
 								//read IP from sock interface binded
-								struct sockaddr_in *addr_in= (struct sockaddr_in *)&client_http_handler_context.sain_listener;	//0.0.0.0 == (char*)print_ip((uint32)Wifi_GetIP()) 
-								char *IP_string = inet_ntoa(addr_in->sin_addr);
+								//struct sockaddr_in *addr_in= (struct sockaddr_in *)&client_http_handler_context.sain_listener;	//0.0.0.0 == (char*)print_ip((uint32)Wifi_GetIP()) 
+								//char *IP_string = inet_ntoa(addr_in->sin_addr);
 								
 								if(host_mode == 0){
 									//sprintf(buf,"[host]binding OK MULTI: port [%d] IP: [%s]  ",LISTENER_PORT, (const char*)print_ip((uint32)Wifi_GetIP()));//(char*)print_ip((uint32)Wifi_GetIP()));
@@ -532,22 +532,17 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 						if(sentReq == false){
 							//check pending receive
 							int LISTENER_PORT 	=	0;
-							int SENDER_PORT		=	0;
 							char status[10] = {0};
 							if(dswifiSrv.dsnwifisrv_stat == ds_netplay_host_servercheck){
 								LISTENER_PORT 	= 	(int)NDSMULTI_UDP_PORT_HOST;
-								SENDER_PORT		=	(int)NDSMULTI_UDP_PORT_GUEST;
 								sprintf(status,"host");
 							}
 							else if(dswifiSrv.dsnwifisrv_stat == ds_netplay_guest_servercheck){
 								LISTENER_PORT 	= 	(int)NDSMULTI_UDP_PORT_GUEST;
-								SENDER_PORT		=	(int)NDSMULTI_UDP_PORT_HOST;
 								sprintf(status,"guest");
 							}
-							
 							char buf2[frameDSsize] = {0};
 							sprintf(buf2,"dsaware-%s-bindOK-%d-%s-",status,LISTENER_PORT,(char*)print_ip((uint32)Wifi_GetIP()));
-							//consoletext(64*2-32,(char *)&buf2[0],0);
 							sendto(client_http_handler_context.socket_id__multi_notconnected,buf2,sizeof(buf2),0,(struct sockaddr *)&client_http_handler_context.server_addr,sizeof(struct sockaddr_in));
 							sentReq = true;	//acknowledge DS send
 						}
@@ -562,15 +557,15 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 						}
 						
 						if(strncmp((const char *)cmd, (const char *)"dsconnect", 9) == 0){	
-							int LISTENER_PORT 	=	0;
-							int SENDER_PORT		=	0;
+							//int LISTENER_PORT 	=	0;
+							//int SENDER_PORT		=	0;
 							if(dswifiSrv.dsnwifisrv_stat == ds_netplay_host_servercheck){
-								LISTENER_PORT 	= 	(int)NDSMULTI_UDP_PORT_HOST;
-								SENDER_PORT		=	(int)NDSMULTI_UDP_PORT_GUEST;
+								//LISTENER_PORT 	= 	(int)NDSMULTI_UDP_PORT_HOST;
+								//SENDER_PORT		=	(int)NDSMULTI_UDP_PORT_GUEST;
 							}
 							else if(dswifiSrv.dsnwifisrv_stat == ds_netplay_guest_servercheck){
-								LISTENER_PORT 	= 	(int)NDSMULTI_UDP_PORT_GUEST;
-								SENDER_PORT		=	(int)NDSMULTI_UDP_PORT_HOST;
+								//LISTENER_PORT 	= 	(int)NDSMULTI_UDP_PORT_GUEST;
+								//SENDER_PORT		=	(int)NDSMULTI_UDP_PORT_HOST;
 							}
 							if(dswifiSrv.dsnwifisrv_stat == ds_netplay_host_servercheck){	
 								clrscr();
@@ -1253,6 +1248,8 @@ void remoteReadRegisters(char *p)
 
 void remoteWriteRegister(char *p)
 {
+	//todo
+  /*
   int r = 0;
   sscanf(p, "%d=", &r);
   p = strchr(p, '=');
@@ -1276,13 +1273,11 @@ void remoteWriteRegister(char *p)
     data[i++] = b;
     c = *p++;
   }
-
+	
   v = data[0] | (data[1] << 8) | (data[2] << 16) | (data[3] << 24);
 
   //  //printf("Write register %d=%08x\n", r, v);
   
-  //todo
-  /*
   reg[r].I = v;
   if(r == 15) {
     armNextPC = v;
@@ -1292,6 +1287,7 @@ void remoteWriteRegister(char *p)
       reg[15].I = v + 2;
   }
   */
+  
   remotePutPacket("OK");
 }
 
@@ -1326,19 +1322,19 @@ sint32 remoteStubMain()
 				case 'D':
 				  remotePutPacket("OK");
 				  remoteResumed = true;
-				  return;
+				  return dswifi_gdbstubmode;
 				case 'e':
 				  remoteStepOverRange(p);
 				  break;
 				case 'k':
 				  remotePutPacket("OK");
-				  return;
+				  return dswifi_gdbstubmode;
 				case 'C':
 				  remoteResumed = true;
-				  return;
+				  return dswifi_gdbstubmode;
 				case 'c':
 				  remoteResumed = true;
-				  return;
+				  return dswifi_gdbstubmode;
 				case 's':
 				  remoteResumed = true;
 				  remoteSignal = 5;

@@ -94,8 +94,7 @@ int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list list){
 	#endif
 	
 	#ifdef ARM9
-	char * Buf = NULL;
-	Buf = (uint8*)&g_printfbuf[0];
+	char * Buf = (char *)&g_printfbuf[0];
 	
 	//merge any "..." special arguments where sint8 * ftm requires , store into g_printfbuf
 	vsnprintf ((sint8*)Buf, (int)sizeof(g_printfbuf), fmt, list);

@@ -32,16 +32,16 @@ USA
 #include <string.h>
 #include "wifi_arm7.h"
 #include "spifwTGDS.h"
-
+#include "powerTGDS.h"
 #endif
 
 #ifdef ARM9
 #include <stdbool.h>
-
 #include "dsregs.h"
 #include "dsregs_asm.h"
 #include "InterruptsARMCores_h.h"
 #include "wifi_arm9.h"
+#include "nds_cp15_misc.h"
 
 #endif
 

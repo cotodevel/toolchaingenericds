@@ -165,88 +165,6 @@ extern client_http_handler client_http_handler_context;
   
 //GDB Stub part
 
-/*
-#define debuggerReadMemory(addr) \
-if(	\
-		((u32)addr > (u32)0x00000000)	||	\
-		((u32)addr < (u32)(0x00000000+16*1024))	||	\
-		((u32)addr > (u32)0x01000000)	||	\
-		((u32)addr < (u32)(0x01000000+32*1024))	||	\
-		((u32)addr > (u32)0x0b000000)	||	\
-		((u32)addr < (u32)(0x0b000000+16*1024))	||	\
-		((u32)addr > (u32)0x02000000)	||	\
-		((u32)addr < (u32)(0x02000000+4*1024*1024))	||	\
-		((u32)addr > (u32)0x03000000)	||	\
-		((u32)addr < (u32)(0x03000000+32*1024))	||	\
-		((u32)addr > (u32)0x04000000)	||	\
-		((u32)addr < (u32)(0x04000000+32*1024))	||	\
-		((u32)addr > (u32)0x05000000)	||	\
-		((u32)addr < (u32)(0x05000000+64*1024))	||	\
-		((u32)addr > (u32)0x06000000)	||	\
-		((u32)addr < (u32)(0x06000000+512*1024))	||	\
-		((u32)addr > (u32)0x08000000)	||	\
-		((u32)addr < (u32)(0x08000000+32*1024*1024))\
-	){	\
-		(*(u32*)addr)	\
-	}	\
-	else{	\
-		(0xff)	\
-	}
-	
-#define debuggerReadHalfWord(addr) \
-if(	\
-		((u32)addr > (u32)0x00000000)	||	\
-		((u32)addr < (u32)(0x00000000+16*1024))	||	\
-		((u32)addr > (u32)0x01000000)	||	\
-		((u32)addr < (u32)(0x01000000+32*1024))	||	\
-		((u32)addr > (u32)0x0b000000)	||	\
-		((u32)addr < (u32)(0x0b000000+16*1024))	||	\
-		((u32)addr > (u32)0x02000000)	||	\
-		((u32)addr < (u32)(0x02000000+4*1024*1024))	||	\
-		((u32)addr > (u32)0x03000000)	||	\
-		((u32)addr < (u32)(0x03000000+32*1024))	||	\
-		((u32)addr > (u32)0x04000000)	||	\
-		((u32)addr < (u32)(0x04000000+32*1024))	||	\
-		((u32)addr > (u32)0x05000000)	||	\
-		((u32)addr < (u32)(0x05000000+64*1024))	||	\
-		((u32)addr > (u32)0x06000000)	||	\
-		((u32)addr < (u32)(0x06000000+512*1024))	||	\
-		((u32)addr > (u32)0x08000000)	||	\
-		((u32)addr < (u32)(0x08000000+32*1024*1024))\
-	){	\
-		(*(u16*)addr)	\
-	}	\
-	else{	\
-		(0xff)	\
-	}
-	
-#define debuggerReadByte(addr)	\
-	if(	\
-		((u32)addr > (u32)0x00000000)	||	\
-		((u32)addr < (u32)(0x00000000+16*1024))	||	\
-		((u32)addr > (u32)0x01000000)	||	\
-		((u32)addr < (u32)(0x01000000+32*1024))	||	\
-		((u32)addr > (u32)0x0b000000)	||	\
-		((u32)addr < (u32)(0x0b000000+16*1024))	||	\
-		((u32)addr > (u32)0x02000000)	||	\
-		((u32)addr < (u32)(0x02000000+4*1024*1024))	||	\
-		((u32)addr > (u32)0x03000000)	||	\
-		((u32)addr < (u32)(0x03000000+32*1024))	||	\
-		((u32)addr > (u32)0x04000000)	||	\
-		((u32)addr < (u32)(0x04000000+32*1024))	||	\
-		((u32)addr > (u32)0x05000000)	||	\
-		((u32)addr < (u32)(0x05000000+64*1024))	||	\
-		((u32)addr > (u32)0x06000000)	||	\
-		((u32)addr < (u32)(0x06000000+512*1024))	||	\
-		((u32)addr > (u32)0x08000000)	||	\
-		((u32)addr < (u32)(0x08000000+32*1024*1024))\
-	){	\
-		(*(u8*)addr)	\
-	}	\
-	else{	\
-		(0xff)	\
-	}
-*/
 #define debuggerWriteMemory(addr, value) \
   *(u32*)addr = (value)
 
@@ -312,7 +230,7 @@ extern bool switch_dswnifi_mode(sint32 mode);
 extern void setMULTIMode(sint32 flag);	//idle(dswifi_idlemode) / raw packet(dswifi_localnifimode) / UDP nifi(dswifi_udpnifimode) / TCP wifi(dswifi_wifimode)
 extern sint32 getMULTIMode();			//idle(dswifi_idlemode) / raw packet(dswifi_localnifimode) / UDP nifi(dswifi_udpnifimode) / TCP wifi(dswifi_wifimode)
 extern bool getWIFISetup();
-extern bool setWIFISetup(bool flag);
+extern void setWIFISetup(bool flag);
 extern void setConnectionStatus(sint32 flag);
 extern sint32	getConnectionStatus();
 extern struct frameBlock * FrameSenderUser;	//if !NULL, then must sendFrame. HandleSendUserspace(); generates this one

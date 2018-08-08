@@ -30,6 +30,9 @@ USA
 #include <string.h>
 #include "biosTGDS.h"
 
+#ifdef ARM9
+#include "nds_cp15_misc.h"
+#endif
 
 //Clock: 
 

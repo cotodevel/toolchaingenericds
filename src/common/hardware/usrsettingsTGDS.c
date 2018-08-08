@@ -22,6 +22,11 @@ USA
 #include "ipcfifoTGDS.h"
 #include "biosTGDS.h"
 #include "dmaTGDS.h"
+#include "utilsTGDS.h"
+
+#ifdef ARM9
+#include "nds_cp15_misc.h"
+#endif
 
 #ifdef ARM7
 #include "spifwTGDS.h"

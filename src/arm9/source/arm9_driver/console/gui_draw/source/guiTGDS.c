@@ -41,6 +41,8 @@ GNU General Public License for more details.
 #include "keypadTGDS.h"
 #include "utilsTGDS.h"
 #include "spifwTGDS.h"
+#include "powerTGDS.h"
+#include "videoTGDS.h"
 
 t_GUIScreen	*GUI_newScreen(int nb_elems)
 {

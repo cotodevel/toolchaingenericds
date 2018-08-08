@@ -88,26 +88,21 @@ uint32 * vramHeapAlloc(uint32 vramBlock,uint32 StartAddr,int size){
 //if ret ptr == NULL, invalid operation  not enough space
 uint32 * vramHeapFree(uint32 vramBlock,uint32 StartAddr,int size){
 	uint32 * BlockAssign = NULL;
-	bool isVram = false;
 	switch(vramBlock){
 		case(vramBlockA):{
 			BlockAssign = (uint32 *)&vramABlockOfst;
-			isVram = true;
 		}
 		break;
 		case(vramBlockB):{
 			BlockAssign = (uint32 *)&vramBBlockOfst;
-			isVram = true;
 		}
 		break;
 		case(vramBlockC):{
 			BlockAssign = (uint32 *)&vramCBlockOfst;
-			isVram = true;
 		}
 		break;
 		case(vramBlockD):{
 			BlockAssign = (uint32 *)&vramDBlockOfst;
-			isVram = true;
 		}
 		break;
 		case(HeapBlock):{
@@ -297,8 +292,8 @@ sint32 get_dtcm_size(){
 void *
 _sbrk (int  incr)
 {
-	extern char __heap_start;//set by linker
-	extern char __heap_end;//set by linker
+	//extern char __heap_start;//set by linker
+	//extern char __heap_end;//set by linker
 
 	static char *heap_end;		/* Previous end of heap or 0 if none */
 	char        *prev_heap_end;

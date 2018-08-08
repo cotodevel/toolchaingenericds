@@ -21,10 +21,6 @@ USA
 //Coto: this was rewritten by me so it could fit the following setup:
 //The overriden stock POSIX calls are specifically targeted to newlib libc nano ARM Toolchain
 
-#ifdef ARM7
-
-#endif
-
 #ifdef ARM9
 #include "posixHandleTGDS.h"
 #include "memoryHandleTGDS.h"
@@ -36,6 +32,8 @@ USA
 #include "consoleTGDS.h"
 #include "fileHandleTGDS.h"
 #include "fsfatlayerTGDSLegacy.h"
+#include "utilsTGDS.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
@@ -53,7 +51,7 @@ USA
 //required:
 
 void abort(){
-
+	
 }
 
 int fork()
@@ -68,6 +66,7 @@ void _exit (int status)
 	//printf("C++ abort()!");
 	//printf("End.");
 	//for (;;) { }
+	
 }
 
 int _kill (pid_t pid, int sig){
@@ -115,7 +114,7 @@ int _open_r ( struct _reent *ptr, const sint8 *file, int flags, int mode ){
 	volatile sint8 str[256];	//file safe buf
 	memcpy ( (uint8*)str, (uint8*)file, 256);
 
-	count = split ((const sint8*)str, '/', &tokens);	
+	count = split ((const sint8*)str, '/', &tokens);	//this possibly segfaults if file * does not exists!!!!
 	volatile sint8 token_str[64];
 	
 	sint32 countPosixFDescOpen = open_posix_filedescriptor_devices() + 1;
