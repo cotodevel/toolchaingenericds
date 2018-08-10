@@ -97,7 +97,6 @@ extern int		setBacklight(int flags);
 extern int		FS_extram_init();
 extern void		FS_lock();
 extern void		FS_unlock();
-extern char 	* str_replace (char *string, const char *substr, const char *replacement);
 
 
 extern sint8 ip_decimal[0x10];

@@ -213,47 +213,6 @@ sint32 glueARMHandlerConfig(VERSION_DESCRIPTOR * versionInst,METHOD_DESCRIPTOR *
 	return 0;
 }
 
-// fork from https://github.com/irl/la-cucina/blob/master/str_replace.c
-char * str_replace (char *string, const char *substr, const char *replacement)
-{
-	char *tok = NULL;
-	char *newstr = NULL;
-	char *oldstr = NULL;
-
-	/* if either substr or replacement is NULL, duplicate string a let caller handle it */
-
-	if ( substr == NULL || replacement == NULL )
-	{
-		return strdup (string);
-	}
-
-	newstr = strdup (string);
-
-	while ( ( tok = strstr( newstr, substr ) ) )
-	{
-		oldstr = newstr;
-		newstr = (char*)malloc ( strlen ( oldstr ) - strlen ( substr ) + strlen ( replacement ) + 1 );
-
-		/* If failed to alloc mem, free old string and return NULL */
-		if ( newstr == NULL )
-		{
-			free (oldstr);
-			return NULL;
-		}
-
-		memcpy ( newstr, oldstr, tok - oldstr );
-		memcpy ( newstr + (tok - oldstr), replacement, strlen ( replacement ) );
-		memcpy ( newstr + (tok - oldstr) + strlen( replacement ), tok + strlen ( substr ), strlen ( oldstr ) - strlen ( substr ) - ( tok - oldstr ) );
-		memset ( newstr + strlen ( oldstr ) - strlen ( substr ) + strlen ( replacement ) , 0, 1 );
-
-		free (oldstr);
-	}
-
-	free (string);
-
-	return newstr;
-}
-
 int split (const sint8 *txt, sint8 delim, sint8 ***tokens)
 {
     int *tklen, *t, count = 1;
