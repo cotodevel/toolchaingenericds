@@ -189,10 +189,11 @@ void updateGlobalListFromPath(char * path){
 
 std::string buildFullPathFromFileClass(FileClass * FileClassInst){
 	char FullPath[MAX_TGDSFILENAME_LENGTH] = {0};
-	std::string PathFix = std::string(getfatfsPath(""));
+	const char *p = (const char *)"";
+	std::string PathFix = std::string(getfatfsPath((sint8 *)p));
 	PathFix.erase(PathFix.length()-1);
 	
-	std:string fname = string(FileClassInst->getfilename());
+	std::string fname = string(FileClassInst->getfilename());
 	//if getfilename/path has no leading / add one
 	if ( (fname.find("/") == string::npos) && (FileClassInst->getpath().find("/") == string::npos)){
 		char TempName[MAX_TGDSFILENAME_LENGTH] = {0};
@@ -250,7 +251,7 @@ vector<string> splitCustom(string str, string token){
     vector<string>result;
     while(str.size()){
         int index = str.find(token);
-        if(index!=string::npos){
+        if(index != (int)string::npos){
             result.push_back(str.substr(0,index));
             str = str.substr(index+token.size());
             if(str.size()==0)result.push_back(str);
@@ -290,7 +291,7 @@ FileClass getFirstFileEntryFromPath(char * path){
 
 FileClass getEntryFromGlobalListByIndex(int EntryIndex){
 	FileClass FileInst(InvalidFileListIndex, std::string(""), std::string(""), FT_NONE);
-	if(EntryIndex > (GlobalFileList->size() - 1)){
+	if(EntryIndex > (int)((int)GlobalFileList->size() - 1)){
 		return FileInst;
 	}
 	std::list<FileClass>::iterator it = GlobalFileList->begin();
@@ -382,7 +383,7 @@ int getFirstFile(char * path){
 	//increase the file/dir counter after operation only if valid entry, otherwise it doesn't anymore
 	if((fileInst.gettype() == FT_FILE) || (fileInst.gettype() == FT_DIR)){
 		//is this index indexable? otherwise cleanup
-		if(CurrentFileDirEntry < (GlobalFileList->size()-1)){ 
+		if(CurrentFileDirEntry < (int)((int)GlobalFileList->size()-1)){ 
 			CurrentFileDirEntry++;	
 		}
 		else{
@@ -401,8 +402,6 @@ int getFirstFile(char * path){
 int getNextFile(char * path){
 	
 	FileClass fileInst = getEntryFromGlobalListByIndex(CurrentFileDirEntry);	//get next FILE listed
-	FILINFO FILINFOObj = getFileFILINFOfromFileClass(&fileInst);			//actually open the file and check attributes (rather than read dir contents)
-	
 	if(fileInst.gettype() == FT_DIR){
 		LastDirEntry=CurrentFileDirEntry;
 	}
@@ -416,7 +415,7 @@ int getNextFile(char * path){
 	}
 	
 	//increase the file counter after operation
-	if(CurrentFileDirEntry < (GlobalFileList->size()-1)){ 
+	if(CurrentFileDirEntry < (int)( (int)GlobalFileList->size()-1)){ 
 		CurrentFileDirEntry++;	
 	}
 	else{
