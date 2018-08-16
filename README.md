@@ -1,4 +1,4 @@
-This is the Toolchain Generic DS:
+This is the ToolchainGenericDS 1.5 library for NintendoDS:
 
 For building the toolchain you need three steps:
 
