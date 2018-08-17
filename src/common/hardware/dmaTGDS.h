@@ -26,29 +26,43 @@ USA
 #include "dsregs_asm.h"
 
 
-#define		DMAINCR_DEST	(0<<(16+5))
-#define		DMADECR_DEST	(1<<(16+5))
-#define		DMAFIXED_DEST	(2<<(16+5))
+#define		DMAINCR_DEST	(uint32)(0<<(16+5))
+#define		DMADECR_DEST	(uint32)(1<<(16+5))
+#define		DMAFIXED_DEST	(uint32)(2<<(16+5))
 
-#define		DMAINCR_SRC		(0<<(16+7))
-#define		DMADECR_SRC		(1<<(16+7))
-#define		DMAFIXED_SRC	(2<<(16+7))
+#define		DMAINCR_SRC		(uint32)(0<<(16+7))
+#define		DMADECR_SRC		(uint32)(1<<(16+7))
+#define		DMAFIXED_SRC	(uint32)(2<<(16+7))
 
-#define 	DMA16BIT   	(0<<(16+10))
-#define 	DMA32BIT   	(1<<(16+10))
+#define 	DMA16BIT   	(uint32)(0<<(16+10))
+#define 	DMA32BIT   	(uint32)(1<<(16+10))
 
-#define		DMASTART_INMEDIATE	(0<<(16+12))
-#define		DMASTART_VBLANK		(1<<(16+12))
-#define		DMASTART_HBLANK		(2<<(16+12))
-#define		DMASTART_SPECIAL	(3<<(16+12))
+#define		DMASTART_INMEDIATE	(uint32)(0<<(16+12))
+#define		DMASTART_VBLANK		(uint32)(1<<(16+12))
+#define		DMASTART_HBLANK		(uint32)(2<<(16+12))
+#define		DMASTART_SPECIAL	(uint32)(3<<(16+12))
 
-#define		DMAENABLED	(1<<(16+15))	//DMAs disable itself when transfer done
+#define		DMAENABLED	(uint32)(1<<(16+15))	//DMAs disable itself when transfer done
 
-#define 	DMARAISEIRQ     (1<<(16+14))	//DMAs will raise a DMA IRQ when Word Count fed (transfer) is complete
+#define 	DMARAISEIRQ     (uint32)(1<<(16+14))	//DMAs will raise a DMA IRQ when Word Count fed (transfer) is complete
 
-#define DMAXSAD(dmaindx)     (*(vuint32*)(0x040000B0+(dmaindx*0xc)))
-#define DMAXDAD(dmaindx)    (*(vuint32*)(0x040000B4+(dmaindx*0xc)))
-#define DMAXCNT(dmaindx)      (*(vuint32*)(0x040000B8+(dmaindx*0xc)))	//DMAXCNT_L (0xB8 & 0xB9) DMAXCNT_H (0xBA & 0xBB)
+//word count
+#define DMA0CNT_L (vuint16*)(0x040000B8)
+#define DMA1CNT_L (vuint16*)(0x040000C4)
+#define DMA2CNT_L (vuint16*)(0x040000D0)
+#define DMA3CNT_L (vuint16*)(0x040000DC)
+
+//cnt
+#define DMA0CNT_H	(vuint16*)(0x040000BA) 
+#define DMA1CNT_H	(vuint16*)(0x040000C6) 
+#define DMA2CNT_H	(vuint16*)(0x040000D2) 
+#define DMA3CNT_H	(vuint16*)(0x040000DE) 
+
+
+#define DMAXSAD(n)     (*(vuint32*)(0x040000B0+(n*12)))
+#define DMAXDAD(n)    (*(vuint32*)(0x040000B4+(n*12)))
+#define DMAXCNT(n)      (*(vuint32*)(0x040000B8+(n*12)))	//DMAXCNT_L (0xB8 & 0xB9) DMAXCNT_H (0xBA & 0xBB)
+
 
 //40000E(X*4)h - NDS9 only - DMAXFILL - DMA X Filldata (R/W)
 #ifdef ARM9

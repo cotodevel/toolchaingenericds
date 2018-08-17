@@ -49,7 +49,7 @@ void dmaFillHalfWord(sint32 dmachannel,uint32 value, uint32 dest, uint32 word_co
 	dmaFill(dmachannel,value,dest,(DMAFIXED_SRC | DMAINCR_DEST | DMA16BIT | DMASTART_INMEDIATE | DMAENABLED | (word_count>>1)));
 }
 
-void dmaTransfer(sint32 dmachannel, uint32 source, uint32 dest, uint32 mode){
+void dmaTransfer(sint32 dmachannel, uint32 source, uint32 dest, uint32 mode){	
 	DMAXSAD(dmachannel)= source;
 	DMAXDAD(dmachannel)= dest;
 	DMAXCNT(dmachannel)= mode;

@@ -47,19 +47,12 @@ USA
 //problem kaputt docs say DS uses a rounded 4 byte copy, be it a fillvalue to dest or direct copy from src to dest, by size.
 //Dont optimize as vram is 16 or 32bit, optimization can end up in 8bit writes.
 //writes either a COPY_MODE_FILL value = [r0], or plain copy from source to destination
-__attribute__((optimize("O0")))
 void swiFastCopy(uint32 * source, uint32 * dest, int flags){
-	int i = 0;
 	if(flags & COPY_FIXED_SOURCE){
-		uint32 value = *(uint32*)source;
-		for(i = 0; i < (int)((flags<<2)&0x1fffff)/4; i++){
-			dest[i] = value;
-		}
+		dmaFillWord(3, (uint32)(*(uint32*)source),(uint32)dest, (uint32)(((flags<<2)&0x1fffff)));
 	}
 	else{
-		for(i = 0; i < (int)((flags<<2)&0x1fffff)/4; i++){
-			dest[i] = source[i];
-		}
+		dmaTransferWord(3, (uint32)source, (uint32)dest, (uint32) (((flags<<2)&0x1fffff)) );
 	}
 }
 
