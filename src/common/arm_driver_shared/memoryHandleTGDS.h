@@ -31,11 +31,11 @@ USA
 #define vramSize (sint32)(128*1024)
 #define vramBlockA (uint32)(0xa)
 #define vramBlockB (uint32)(0xb)
-#define vramBlockC (uint32)(0xc)
-#define vramBlockD (uint32)(0xd)
+#define vramBlockC (uint32)(0xc)	
+#define vramBlockD (uint32)(0xd)	//ARM7 128K vram
 
-#define HeapSize (uint32)(128*1024)
-#define HeapBlock (uint32)(0xe)
+#define HeapSize (uint32)(notifierHandlerBinarySize)	//notifierProcessor library
+#define HeapBlock (uint32)(0xe)		//notifierProcessor library
 
 //IPC specific: Shared Work     027FF000h 4KB    -     -    -    R/W
 #define IPCRegionSize	(sint32)(4*1024)

@@ -28,6 +28,7 @@ USA
 #include "reent.h"	//sbrk
 #include "sys/types.h"
 #include "ipcfifoTGDS.h"
+#include "notifierProcessor.h"
 
 //vram linear memory allocator 
 sint32 vramABlockOfst	=	0;	//offset pointer to free memory, user alloced memory is (baseAddr + (sizeAlloced - vramBlockPtr))
@@ -391,11 +392,13 @@ void Write32bitAddrExtArm(uint32 address, uint32 value){
 //IPC 
 
 //Internal
+
+
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
 uint32 getToolchainIPCAddress(){
-	return (uint32)(0x027FF000);
+	return (uint32)(0x027FF000 + notifierHandlerBinarySize);
 }
 
 #ifdef ARM9

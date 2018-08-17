@@ -51,7 +51,8 @@ export DIRS_ARM7_SRC = source/	\
 			../common/	\
 			../common/arm_driver_shared/	\
 			../common/dswifi/	\
-			../common/hardware/
+			../common/hardware/	\
+			../common/hardware/NotifierAPI/	
 			
 export DIRS_ARM7_HEADER = source/	\
 			source/wireless/	\
@@ -62,7 +63,8 @@ export DIRS_ARM7_HEADER = source/	\
 			../common/	\
 			../common/arm_driver_shared/	\
 			../common/dswifi/	\
-			../common/hardware/
+			../common/hardware/	\
+			../common/hardware/NotifierAPI/
 			
 #####################################################ARM9#####################################################
 
@@ -84,7 +86,8 @@ export DIRS_ARM9_SRC = source/	\
 			../common/	\
 			../common/arm_driver_shared/	\
 			../common/dswifi/	\
-			../common/hardware/
+			../common/hardware/	\
+			../common/hardware/NotifierAPI/
 			
 export DIRS_ARM9_HEADER = source/	\
 			source/arm9_driver/	\
@@ -104,7 +107,8 @@ export DIRS_ARM9_HEADER = source/	\
 			../common/	\
 			../common/arm_driver_shared/	\
 			../common/dswifi/	\
-			../common/hardware/
+			../common/hardware/	\
+			../common/hardware/NotifierAPI/
 			
 # Build Target(s)	(both processors here)
 all: compilelib

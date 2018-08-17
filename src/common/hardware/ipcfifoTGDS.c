@@ -25,7 +25,7 @@ USA
 #include "ipcfifoTGDS.h"
 #include "InterruptsARMCores_h.h"
 #include "memoryHandleTGDS.h"
-
+#include "notifierProcessor.h"
 #include "timerTGDS.h"
 
 #ifdef ARM7
@@ -168,7 +168,25 @@ void HandleFifoNotEmpty(){
 		//Do ToolchainGenericDS IPC handle here
 		switch (data0) {
 			//Shared 
-			
+			case((uint32)notifierProcessorRunThread):{
+				//0 cmd: 1: index, 2: (u32)struct notifierDescriptor * getNotifierDescriptorByIndex(index)
+				//data0: cmd
+				int index = (int)data1;
+				struct notifierDescriptor * notifierDescriptorInst = (struct notifierDescriptor *)data2;
+				
+				//run the thread here, grab message and acknowledge it
+				struct notifierProcessorHandlerQueued notifierProcessorHandlerQueuedOut = RunNotifierProcessorThread(notifierDescriptorInst);
+				SendMultipleWordACK(notifierProcessorRunAsyncAcknowledge, data1, data2, NULL);	//acknowledge we just ran!: //0 cmd: 1: index, 2: (u32)struct notifierDescriptor * getNotifierDescriptorByIndex(index)
+			}
+			break;
+			case(notifierProcessorRunAsyncAcknowledge):{
+				//a thread async has ran! format: //0 cmd: 1: index, 2: (u32)struct notifierDescriptor * getNotifierDescriptorByIndex(index)
+				//data0: cmd
+				int index = (int)data1;
+				struct notifierDescriptor * notifierDescriptorInst = (struct notifierDescriptor *)data2;
+				//printf("processor ran!");
+			}
+			break;
 			// ARM7IO from ARM9
 			//	||
 			// ARM9IO from ARM7
@@ -259,5 +277,24 @@ void HandleFifoNotEmpty(){
 			#endif
 		}
 		HandleFifoNotEmptyWeakRef(data0,data1,data2,data3);
+	}
+}
+
+
+int getnotifierProcessorNewInstance(){
+	int freeIndex = getsIPCSharedTGDS()->notifierInternalIndex;	//this index == indexNotifierDescriptor;
+	if(freeIndex < notifierProcessorInstancesTop){
+		freeIndex+=1;
+		getsIPCSharedTGDS()->notifierInternalIndex = freeIndex;
+		return freeIndex - 1;
+	}
+	return notifierProcessorInstanceInvalid;
+}
+
+void deletenotifierProcessorInstance(){
+	int curIndex = getsIPCSharedTGDS()->notifierInternalIndex;
+	if( (curIndex - 1) >= 0){
+		curIndex-=1;
+		getsIPCSharedTGDS()->notifierInternalIndex = curIndex;
 	}
 }

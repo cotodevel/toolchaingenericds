@@ -94,10 +94,9 @@ USA
 //ipc fifo sync
 #define REG_IPC_SYNC	(*(vuint16*)0x04000180)
 
-//audio API
-#define FIFO_STOPSAMPLE		(uint32)(0xffff1020)
-#define FIFO_STARTSAMPLE	(uint32)(0xffff1021)
-
+//notifierProcessor FIFO bits
+#define notifierProcessorRunThread	(uint32)(0xffff1020)				//set a thread to Run
+#define notifierProcessorRunAsyncAcknowledge	(uint32)(0xffff1021)	//an async thread that ran has acknowledged
 struct sIPCSharedTGDS {
     uint16 buttons7;  			// X, Y, /PENIRQ buttons
     uint16 KEYINPUT7;			//REG_KEYINPUT ARM7
@@ -107,7 +106,9 @@ struct sIPCSharedTGDS {
 	sint16 touchZ1,  touchZ2;  // TSC x-panel measurements
     uint16 tdiode1,  tdiode2;  // TSC temperature diodes
     uint32 temperature;        // TSC computed temperature
-		
+	
+	int notifierInternalIndex;	//this index == indexNotifierDescriptor;
+	
 	struct tm tmInst;	//DateTime
 	uint8	dayOfWeek;	//Updated when the above inst is updated
 	
@@ -188,6 +189,9 @@ extern void SendMultipleWordByFifo(uint32 data0, uint32 data1, uint32 data2, uin
 extern void SendMultipleWordACK(uint32 data0, uint32 data1, uint32 data2, uint32 * buffer_shared);
 
 extern struct sIPCSharedTGDS* getsIPCSharedTGDS();
+
+extern int getnotifierProcessorNewInstance();
+extern void deletenotifierProcessorInstance();
 
 #ifdef __cplusplus
 }
