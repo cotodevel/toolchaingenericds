@@ -102,7 +102,7 @@ int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list list){
 	// FIXME
 	t_GUIZone zone;
 	zone.x1 = 0; zone.y1 = 0; zone.x2 = 256; zone.y2 = 192;
-	zone.font = &trebuchet_9_font;
+	zone.font = &smallfont_7_font;	//&trebuchet_9_font;
 	GUI_drawText(&zone, 0, GUI.printfy, 255, (sint8*)g_printfbuf);
 	GUI.printfy += GUI_getFontHeight(&zone);
 	return (strlen((char*)Buf));

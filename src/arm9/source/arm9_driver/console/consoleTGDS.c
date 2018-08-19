@@ -73,6 +73,7 @@ void consoleClear(ConsoleInstance * ConsoleInst){
 	GUI_clearScreen(0);
 }
 
+//used by gui_printf
 void		GUI_clearScreen(int color)
 {
 	uint16		*ptr;
@@ -81,6 +82,7 @@ void		GUI_clearScreen(int color)
 	swiFastCopy((uint32*)&c, (uint32*)(uint16*)ptr, ((256*192)/4) | COPY_FIXED_SOURCE);
 }
 
+//used by gui_printf
 void _glyph_loadline_1(uint8 *dst, uint8 *data, int pos, int size, uint8 *pal)
 {
 	int	x, x2;
@@ -93,6 +95,7 @@ void _glyph_loadline_1(uint8 *dst, uint8 *data, int pos, int size, uint8 *pal)
 		
 }
 
+//used by gui_printf
 void _glyph_loadline_2(uint8 *dst, uint8 *data, int pos, int size, uint8 *pal)
 {
 	int	x, x2;	
@@ -104,6 +107,7 @@ void _glyph_loadline_2(uint8 *dst, uint8 *data, int pos, int size, uint8 *pal)
 	}	
 }
 
+//used by gui_printf
 void _glyph_loadline_8(uint8 *dst, uint8 *data, int pos, int size, uint8 *pal)
 {
 	int	x, x2;	
@@ -112,7 +116,7 @@ void _glyph_loadline_8(uint8 *dst, uint8 *data, int pos, int size, uint8 *pal)
 		
 }
 
-//Actual write to framebuffer from Charset
+//used by gui_printf
 int GUI_drawVChar(t_GUIZone *zone, t_GUIFont *font, uint16 x, uint16 y, int col, uint8 text)
 {
 	if ((int)text - font->offset < 0 || font->glyphs[text - font->offset] == NULL)
@@ -204,6 +208,7 @@ int GUI_drawVChar(t_GUIZone *zone, t_GUIFont *font, uint16 x, uint16 y, int col,
 }
 
 // This array convert from jis x201 to the charmap of the katana font
+//used by gui_printf
 uint8 g_katana_jisx0201_conv[] = 
 { 0x6E,0x59,0x4D,0x7C,0x55,0x4E,0x3C,0x2E,
   0x3F,0x2B,0x5F,0x31,0x32,0x33,0x34,0x35,
@@ -214,6 +219,7 @@ uint8 g_katana_jisx0201_conv[] =
   0x2F,0x2D,0x3D,0x5B,0x5D,0x5C,0x27,0x67,
   0x22,0x51 };
 
+//used by gui_printf
 int GUI_drawText(t_GUIZone *zone, uint16 x, uint16 y, int col, sint8 *text)
 {
 	t_GUIFont   *font = zone->font;
@@ -247,135 +253,11 @@ int GUI_drawText(t_GUIZone *zone, uint16 x, uint16 y, int col, sint8 *text)
 }
 
 
-int GUI_getStrWidth(t_GUIZone *zone, sint8 *text)
-{
-	t_GUIFont   *font = zone->font;
-	int			in_katakana = 0;
-    int 		i, w;
-
-    for (i=0, w=0; i < strlen(text); i++)
-    {
-    	if (text[i] == 0x0e)
-    	{
-    		in_katakana = 1;
-    		continue;
-    	}
-    	if (text[i] == 0x0f)
-    	{
-    		in_katakana = 0;
-    		continue;
-    	}
-    	
-    	if (in_katakana)
-    	{
-    		if (text[i] < 0x26 || text[i] > 0x5f)
-    			continue;
-    		sint8 c = g_katana_jisx0201_conv[text[i]-0x26];
-    		w += katakana_12_font.glyphs[c - katakana_12_font.offset]->width + font->space;
-    	}
-    	else
-    	{
-    		if (text[i] - font->offset >= 0 && font->glyphs[text[i] - font->offset] != NULL)
-    		{
-    			w += font->glyphs[text[i] - font->offset]->width + font->space;
-    		}
-    		else
-    			w += font->space;
-    	}
-    }
-
-    return w - font->space;
-}
-
+//used by gui_printf
 int GUI_getFontHeight(t_GUIZone *zone)
 {
 	return zone->font->height+1;
 }
-
-int		GUI_getZoneTextHeight(t_GUIZone *zone)
-{
-	return (zone->y2 - zone->y1) / (GUI_getFontHeight(zone)+1);
-}
-
-int GUI_drawAlignText(t_GUIZone *zone, int flags, int y, int col, sint8 *text)
-{
-	int		width = zone->x2 - zone->x1;
-	sint8	*subtext[8];
-	int		cnt = 0;
-	sint8	*cur_text = text;
-	int		sy = 0;
-	
-	//GUI_printf("-> %s\n", text);
-	subtext[0] = cur_text;
-	while (GUI_getStrWidth(zone, subtext[cnt]) > width - 6)
-	{
-		sint8 *ptr = subtext[cnt]; 
-		sint8 *good_space = NULL; // Position of the space to remove
-		
-		//GUI_printf("%s", ptr);
-		
-		do 
-		{
-			good_space = ptr; // Le bon espace est pour l'instant ici
-			if (ptr > subtext[cnt])
-			{
-				*ptr++ = ' '; // Remet l'espace pour l'instant
-			}
-			ptr = strchr(ptr, ' '); // Prochain espace
-			if (ptr == NULL)
-				break; // plus d'espace
-			*ptr = 0;			
-		}
-		while (GUI_getStrWidth(zone, subtext[cnt]) <= width-6); // Testons la taille
-		
-		if (ptr == NULL) 
-		{
-			// Nous avons touché la fin de la chaine
-			if (good_space == subtext[cnt]) // Pas d'espace positionné, plus rien à faire
-				break;
-			// S'il on est là c'est qui faut couper la chaine avant
-		}
-		
-		if (good_space != subtext[cnt]) // Si l'espace a été positionné
-		{
-			if (ptr)
-				*ptr = ' '; // Le dernier essai doit être effacé
-			*good_space = 0; // Le bon espace est marqué
-		} else
-			good_space = ptr; // Pas de bon espace, alors coupons un mot trop grand
-				
-		cur_text = good_space+1; // Nouveau mot après l'espace
-		//GUI_printf("=> %s", cur_text);		
-		subtext[++cnt] = cur_text; 
-	}
-	
-	int y0 = y - GUI_getFontHeight(zone)*(cnt+1) / 2;
-	
-	//GUI_printf("%d\n", cnt);
-	
-	int i;
-	for (i = 0; i < cnt+1; i++)
-	{
-		int x0 = 0;
-		switch (flags)
-		{
-		case GUI_TEXT_ALIGN_CENTER:
-			x0 = width / 2 - GUI_getStrWidth(zone, subtext[i]) / 2; break;
-		case GUI_TEXT_ALIGN_LEFT:
-			x0 = 0; break;
-		case GUI_TEXT_ALIGN_RIGHT:
-			x0 = width - GUI_getStrWidth(zone, subtext[i]); break;
-		}
-		
-		//GUI_printf("%d %d %s\n", x0, y0 + (GUI_getFontHeight(zone)-1)*i, subtext[i]);
-		GUI_drawText(zone, x0, y0 + (GUI_getFontHeight(zone)-1)*i, col, subtext[i]);
-		if (i < cnt)
-			subtext[i][strlen(subtext[i])] = ' ';
-		sy += GUI_getFontHeight(zone);
-	}
-	return sy;
-}
-
 
 void		GUI_printf(sint8 *fmt, ...)
 {	
@@ -392,37 +274,7 @@ void		GUI_printf(sint8 *fmt, ...)
     GUI.printfy += GUI_getFontHeight(&zone);
 }
 
-void		GUI_printf2(int cx, int cy, sint8 *fmt, ...)
-{
-	va_list ap;
-    va_start(ap, fmt);
-    vsnprintf((sint8*)g_printfbuf, 64, fmt, ap);
-    va_end(ap);
-		
-    // FIXME
-    t_GUIZone zone;
-    zone.x1 = 0; zone.y1 = 0; zone.x2 = 256; zone.y2 = 192;
-    zone.font = &trebuchet_9_font;
-    GUI_drawText(&zone, cx, cy, 255, (sint8*)g_printfbuf);
-}
-
-
-//center screen needs a rewrite
-void		GUI_align_printf(int flags, sint8 *fmt, ...)
-{
-	va_list ap;
-    va_start(ap, fmt);
-    vsnprintf((sint8*)g_printfbuf, 64, fmt, ap);
-    va_end(ap);
-
-    // FIXME
-    t_GUIZone zone;
-    zone.x1 = 0; zone.y1 = 0; zone.x2 = 256; zone.y2 = 192;
-    zone.font = &trebuchet_9_font;
-    // FIXME
-    GUI.printfy += GUI_drawAlignText(&zone, flags, GUI.printfy, 255, (sint8*)g_printfbuf);
-}
-
+//used by gui_printf
 void	GUI_clear()
 {
 	//flush buffers
@@ -433,4 +285,26 @@ void	GUI_clear()
 
 void clrscr(){
 	GUI_clear();
+}
+
+//project_specific_console == true : you must provide an InitProjectSpecificConsole() (like SnemulDS does)
+//project_specific_console == false : default console for printf
+//see gui_console_connector.c (project specific implementation)
+void	GUI_init(bool project_specific_console)
+{
+	if(project_specific_console == true){
+		VRAM_SETUP(getProjectSpecificVRAMSetup());
+		InitProjectSpecificConsole();
+	}
+	else{
+		VRAM_SETUP(DEFAULT_CONSOLE_VRAMSETUP());
+		InitDefaultConsole();
+	}
+	
+	GUI.printfy = 0;
+}
+
+
+void GUI_setLanguage(int lang)
+{
 }

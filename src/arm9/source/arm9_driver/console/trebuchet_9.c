@@ -1,6 +1,6 @@
 #include "consoleTGDS.h"
 
-
+//used by gui_printf
 static t_GUIGlyph16 ft9_A032 =  { 4, 14, 1, 0, {
 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000 } };
 
