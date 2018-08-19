@@ -31,11 +31,14 @@ USA
 
 #ifndef MIN
 #define MIN(a, b) (((a) < (b))?(a):(b))
+#endif
+
+#ifndef MAX
 #define MAX(a, b) (((a) > (b))?(a):(b))
 #endif
 
 
-#define toolchain_generic_version ((char*)"0.1");
+#define toolchain_generic_version ((char*)"1.5");
 
 //Method Export
 #define PLAINTEXT_METHOD_SEPARATOR	(uint32)(0xfedcba98)	//not valid ARM function

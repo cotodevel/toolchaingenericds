@@ -464,7 +464,6 @@ extern int	GUI_getZoneTextHeight(t_GUIZone *zone);
 extern int 	GUI_drawAlignText(t_GUIZone *zone, int flags, int y, int col, sint8 *text);
 extern void clrscr();
 extern void	GUI_init(bool project_specific_console);
-extern void GUI_setLanguage(int lang);
 
 #ifdef __cplusplus
 }

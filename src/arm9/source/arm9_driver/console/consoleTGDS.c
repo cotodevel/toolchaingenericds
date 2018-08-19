@@ -303,8 +303,3 @@ void	GUI_init(bool project_specific_console)
 	
 	GUI.printfy = 0;
 }
-
-
-void GUI_setLanguage(int lang)
-{
-}
