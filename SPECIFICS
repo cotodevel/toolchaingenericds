@@ -9,7 +9,7 @@ linkers
 - Default Makefiles per project, through template Makefiles. Or you add your own Makefile for each ARM7/9 Core.
 
 - Fat16/32/exFat (fatfs layer that extends POSIX file calls), interrupts, exceptions, touchscreen, spi, clock (from inferno DS), etc
-- Console render (from snemulds)
+- Console render
 - Newlib nano (removes by default fat compatibility, so it is restored)
 - Modified dswifi library so it supports valid frames sent/received between DS's:
 	-udp nifi 	(like local but through internet, requires a server that forwards WANIP-> local IP).

@@ -72,7 +72,7 @@ $(OBJDIR)/%.o : %.cpp
 	$(CXX)	$(CPP_FLAGS)	$(DIRLIBS_HDR)	$(DIRLIBS_SRC)	-o $@ -c $<
 	-@echo 'C Compile End: $@'
 
-#Coto: Special "exception" rule. Fixes tricky projects such as SnemulDS's opcodes2.s where GCC AS is used, while compatibility with .S is required for newer projects.
+#Coto: Special "exception" rule. Assembler (.s) support ie: .ifdef/.endif (which differs from CPP-like syntax Assembler: ie: #ifdef/#endif by .S)
 #.S is GCC CC/CPP for compiling assembler with cpp headers
 #.s is GCC AS Assembler for compiling assembler the usual way
 

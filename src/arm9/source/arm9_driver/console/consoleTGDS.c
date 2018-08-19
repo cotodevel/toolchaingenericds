@@ -287,7 +287,7 @@ void clrscr(){
 	GUI_clear();
 }
 
-//project_specific_console == true : you must provide an InitProjectSpecificConsole() (like SnemulDS does)
+//project_specific_console == true : you must provide an InitProjectSpecificConsole()
 //project_specific_console == false : default console for printf
 //see gui_console_connector.c (project specific implementation)
 void	GUI_init(bool project_specific_console)

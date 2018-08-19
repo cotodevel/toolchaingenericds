@@ -46,3 +46,4 @@ For more technical informacion refer to SPECIFICS
 Thanks to:
 - Martin Korth extensive gba/nds docs (http://problemkaputt.de/gbatek.htm) most of any DS toolchains/emus out there would not exist without such docs.
 - Darkfader for ndstool
+- Archeide for NDS printf render code

@@ -115,7 +115,7 @@ typedef enum {
 	subEngine = (0x0<<0)
 } PPUEngine;
 
-//each is a Console Instance. The idea is to re-use SnemulDS console render so we are not limited to a single background - tile format, but takeover an engine as whole for rendering.
+//each is a Console Instance.
 typedef struct ConsoleInstance
 {
 	PPUEngine ppuMainEngine;
