@@ -77,7 +77,7 @@ u8 FAT_GetFileAttributes (void){
 	if(CurrentFileDirEntry > 0){
 		FileClass FileClassInst = getEntryFromGlobalListByIndex((CurrentFileDirEntry - 1)); 
 		FILINFO finfo = getFileFILINFOfromFileClass(&FileClassInst);
-		libfatAttributes = (uint8)gccnewlibnano_to_fsfat2libfatAttrib((int)finfo.fattrib);
+		libfatAttributes = (uint8)fsfat2libfatAttrib((int)finfo.fattrib);
 	}
 	return libfatAttributes;
 }
@@ -87,11 +87,11 @@ u8 FAT_SetFileAttributes (const char* filename, u8 attributes, u8 mask){
 	u8	libfatAttributesOut= 0;	
 	FileClass FileClassInst = getFirstFileEntryFromPath((char *)filename); 	//get entry from path
 	FILINFO finfo = getFileFILINFOfromFileClass(&FileClassInst);
-	libfatAttributesIn = (uint8)gccnewlibnano_to_fsfat2libfatAttrib((int)finfo.fattrib);
+	libfatAttributesIn = (uint8)fsfat2libfatAttrib((int)finfo.fattrib);
 	libfatAttributesOut = (libfatAttributesIn & ~(mask & 0x27)) | (attributes & 0x27);
-	int	NEWgccnewlibnano_to_fsfatAttributes = libfat2gccnewlibnano_to_fsfatAttrib((int)libfatAttributesOut);
-	int NEWmask = libfat2gccnewlibnano_to_fsfatAttrib((int)mask);
-	Setgccnewlibnano_to_fsfatAttributesToPath((char*)filename, NEWgccnewlibnano_to_fsfatAttributes, NEWmask);
+	int	NEWgccnewlibnano_to_fsfatAttributes = libfat2fsfatAttrib((int)libfatAttributesOut);
+	int NEWmask = libfat2fsfatAttrib((int)mask);
+	SetfsfatAttributesToFile((char*)filename, NEWgccnewlibnano_to_fsfatAttributes, NEWmask);
 	return libfatAttributesOut;
 }
 
@@ -220,7 +220,7 @@ FILINFO getFileFILINFOfromFileClass(FileClass * FileClassInst){
 	//it is a valid entry
 	if(FileClassInst->gettype() != FT_NONE){
 		std::string FullPathStr = buildFullPathFromFileClass(FileClassInst);
-		sint32 fd = -1;
+		sint32 fd = structfd_posixInvalidFileDirHandle;
 		struct fd * fdinst = NULL;	
 		FILE * FileInst = fopen(FullPathStr.c_str(),"r");
 		if(FileInst){
@@ -266,7 +266,7 @@ vector<string> splitCustom(string str, string token){
 //Type will tell us if this file exists or not(FT_NONE == no, FT_FILE == yes)
 FileClass getFirstFileEntryFromPath(char * path){
 	FILE * FileHandle = fopen(path,"r");
-	FileClass FileInst(InvalidFileListIndex, std::string(""), std::string(""), FT_NONE);
+	FileClass FileInst(structfd_posixInvalidFileDirHandle, std::string(""), std::string(""), FT_NONE);
 	vector<string> vecOut = splitCustom(std::string(path),std::string("/"));	//path == "0:/folder/file.bin"
     int fileIndex = vecOut.size() - 1;
 	std::string Filename = vecOut.at(fileIndex);
@@ -290,7 +290,7 @@ FileClass getFirstFileEntryFromPath(char * path){
 }
 
 FileClass getEntryFromGlobalListByIndex(int EntryIndex){
-	FileClass FileInst(InvalidFileListIndex, std::string(""), std::string(""), FT_NONE);
+	FileClass FileInst(structfd_posixInvalidFileDirHandle, std::string(""), std::string(""), FT_NONE);
 	if(EntryIndex > (int)((int)GlobalFileList->size() - 1)){
 		return FileInst;
 	}
@@ -303,7 +303,7 @@ FileClass getEntryFromGlobalListByIndex(int EntryIndex){
 //Note: Requires a fresh call to updateGlobalListFromPath prior to calling this
 FileClass getFirstDirEntryFromGlobalList(){
 	int CurFileDirIndex = 0;
-	FileClass FileInst(InvalidFileListIndex, std::string(""), std::string(""), FT_NONE);
+	FileClass FileInst(structfd_posixInvalidFileDirHandle, std::string(""), std::string(""), FT_NONE);
 	std::list<FileClass>::iterator it;
 	for (it=GlobalFileList->begin(); it!=GlobalFileList->end(); ++it){
 		if((*it).gettype() == FT_DIR){
@@ -319,7 +319,7 @@ FileClass getFirstDirEntryFromGlobalList(){
 //Note: Requires a fresh call to updateGlobalListFromPath prior to calling this
 FileClass getFirstFileEntryFromGlobalList(){
 	int CurFileDirIndex = 0;
-	FileClass FileInst(InvalidFileListIndex, std::string(""), std::string(""), FT_NONE);
+	FileClass FileInst(structfd_posixInvalidFileDirHandle, std::string(""), std::string(""), FT_NONE);
 	std::list<FileClass>::iterator it;
 	for (it=GlobalFileList->begin(); it!=GlobalFileList->end(); ++it){
 		if((*it).gettype() == FT_FILE){
@@ -388,8 +388,8 @@ int getFirstFile(char * path){
 		}
 		else{
 			CurrentFileDirEntry = 0;
-			LastDirEntry=InvalidFileDirEntry;
-			LastFileEntry=InvalidFileDirEntry;
+			LastDirEntry=structfd_posixInvalidFileDirHandle;
+			LastFileEntry=structfd_posixInvalidFileDirHandle;
 			return FT_NONE;	//actually end of list
 		}
 	}
@@ -420,8 +420,8 @@ int getNextFile(char * path){
 	}
 	else{
 		CurrentFileDirEntry = 0;
-		LastDirEntry=InvalidFileDirEntry;
-		LastFileEntry=InvalidFileDirEntry;
+		LastDirEntry=structfd_posixInvalidFileDirHandle;
+		LastFileEntry=structfd_posixInvalidFileDirHandle;
 		return FT_NONE;	//actually end of list
 	}
 	return fileInst.gettype();
@@ -439,7 +439,7 @@ bool FAT_GetAlias(char* alias)
 	{
 		return false;
 	}
-	int CurEntry = InvalidFileDirEntry;
+	int CurEntry = structfd_posixInvalidFileDirHandle;
 	if(LastFileEntry > LastDirEntry){
 		CurEntry = LastFileEntry;
 	}
@@ -447,7 +447,7 @@ bool FAT_GetAlias(char* alias)
 		CurEntry = LastDirEntry;
 	}
 	//for some reason the CurEntry is invalid (trying to call and fileList hasn't been rebuilt)
-	if(CurEntry == InvalidFileDirEntry){
+	if(CurEntry == structfd_posixInvalidFileDirHandle){
 		return false;
 	}
 	FileClass fileInst = getEntryFromGlobalListByIndex(CurEntry);	//By current file/directory index
@@ -513,7 +513,7 @@ bool FAT_GetLongFilename(char* Longfilename)
 		return false;
 	}
 	
-	int CurEntry = InvalidFileDirEntry;
+	int CurEntry = structfd_posixInvalidFileDirHandle;
 	if(LastFileEntry > LastDirEntry){
 		CurEntry = LastFileEntry;
 	}
@@ -521,7 +521,7 @@ bool FAT_GetLongFilename(char* Longfilename)
 		CurEntry = LastDirEntry;
 	}
 	//for some reason the CurEntry is invalid (trying to call and fileList hasn't been rebuilt)
-	if(CurEntry == InvalidFileDirEntry){
+	if(CurEntry == structfd_posixInvalidFileDirHandle){
 		return false;
 	}
 	FileClass fileInst = getEntryFromGlobalListByIndex(CurEntry);	//By current file/directory index
@@ -590,11 +590,11 @@ u32 return OUT: the file start cluster
 -----------------------------------------------------------------*/
 u32 FAT_GetFileCluster(void)
 {
-	u32 FirstClusterFromLastFileOpen = -1;
+	u32 FirstClusterFromLastFileOpen = structfd_posixInvalidFileDirHandle;
 	FileClass fileInst = getEntryFromGlobalListByIndex(LastFileEntry);	//get last FILE opened (by firstFile/ nextFile)
 	std::string FullPathStr = buildFullPathFromFileClass(&fileInst);	//must store proper filepath
 	FILE * f = fopen(FullPathStr.c_str(),"r");
-	sint32 fd = -1;
+	sint32 fd = structfd_posixInvalidFileDirHandle;
 	struct fd * fdinst = NULL;
 	if(f){
 		fd = fileno(f);
@@ -655,9 +655,9 @@ bool saveCurrentFATContext(char * path){
 		DeInitGlobalFileList(GlobalFileList);
 		GlobalFileList = InitGlobalFileList();
 		
-		CurrentFileDirEntry=InvalidFileDirEntry;
-		LastFileEntry=InvalidFileDirEntry;
-		LastDirEntry=InvalidFileDirEntry;
+		CurrentFileDirEntry=structfd_posixInvalidFileDirHandle;
+		LastFileEntry=structfd_posixInvalidFileDirHandle;
+		LastDirEntry=structfd_posixInvalidFileDirHandle;
 		
 		return true;
 	}
@@ -693,9 +693,9 @@ bool restoreCurrentFATContext(){
 		DeInitGlobalFileList(GlobalFileListStackedContext);
 		GlobalFileListStackedContext = InitGlobalFileList();
 		
-		CurrentFileDirEntryContext=InvalidFileDirEntry;
-		ContextLastFileEntry=InvalidFileDirEntry;
-		ContextLastDirEntry=InvalidFileDirEntry;
+		CurrentFileDirEntryContext=structfd_posixInvalidFileDirHandle;
+		ContextLastFileEntry=structfd_posixInvalidFileDirHandle;
+		ContextLastDirEntry=structfd_posixInvalidFileDirHandle;
 		
 		return true;
 	}

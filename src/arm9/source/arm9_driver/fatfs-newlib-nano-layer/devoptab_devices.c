@@ -122,7 +122,7 @@ sint32 open_posix_filedescriptor_devices(){
 //get the latest struct fd free index of sint8 * passed (useful for allocating the latest file descriptor of a certain name
 sint32 get_posix_fd_from_devicename(sint8 * deviceName){
 	sint32 i = 0;	//devoptab_list starts from index 0
-	sint32 latest = -1;
+	sint32 latest = structfd_posixInvalidFileDirHandle;
 	for(i = 0; i < OPEN_MAXTGDS; i++){
 		if( strcmp( (sint8*)(&devoptab_list[i]->name), deviceName ) == 0) {
 			latest = i;
@@ -135,54 +135,54 @@ sint32 get_posix_fd_from_devicename(sint8 * deviceName){
 
 //stdin: todo
 int open_r_stdin ( struct _reent *r, const sint8 *path, int flags, int mode ){
-	return -1;
+	return structfd_posixInvalidFileDirHandle;
 }
 
 int close_r_stdin ( struct _reent *r, int fd ){
-	return -1;
+	return structfd_posixInvalidFileDirHandle;
 }
 
 _ssize_t write_r_stdin( struct _reent *r, int fd, const sint8 *ptr, int len ){
-	return -1;
+	return structfd_posixInvalidFileDirHandle;
 }
 
 _ssize_t read_r_stdin ( struct _reent *r, int fd, sint8 *ptr, int len ){
-	return -1;
+	return structfd_posixInvalidFileDirHandle;
 }
 
 int open_r_stdout ( struct _reent *r, const sint8 *path, int flags, int mode ){
-	return -1;
+	return structfd_posixInvalidFileDirHandle;
 }
 
 int close_r_stdout ( struct _reent *r, int fd ){
-	return -1;
+	return structfd_posixInvalidFileDirHandle;
 }
 
 //int _vfiprintf_r/_vfprintf_r is overriden in posix_hook_shared.c due to how newlib parses the printf buffer. So we retarget printf to GUI_Printf which already works.
 _ssize_t write_r_stdout( struct _reent *r, int fd, const sint8 *ptr, int len ){
-	return -1;
+	return structfd_posixInvalidFileDirHandle;
 }
 
 _ssize_t read_r_stdout ( struct _reent *r, int fd, sint8 *ptr, int len ){
-	return -1;
+	return structfd_posixInvalidFileDirHandle;
 }
 
 
 //stderr: todo
 int open_r_stderr ( struct _reent *r, const sint8 *path, int flags, int mode ){
-	return -1;
+	return structfd_posixInvalidFileDirHandle;
 }
 
 int close_r_stderr ( struct _reent *r, int fd ){
-	return -1;
+	return structfd_posixInvalidFileDirHandle;
 }
 
 _ssize_t write_r_stderr( struct _reent *r, int fd, const sint8 *ptr, int len ){
-	return -1;
+	return structfd_posixInvalidFileDirHandle;
 }
 
 _ssize_t read_r_stderr ( struct _reent *r, int fd, sint8 *ptr, int len ){
-	return -1;
+	return structfd_posixInvalidFileDirHandle;
 }
 
 //fatfs: 
@@ -192,19 +192,17 @@ int open_r_fatfs ( struct _reent *r, const sint8 *path, int flags, int mode ){
 }
 
 //write (get struct FD index from FILE * handle)
-_ssize_t read_r_fatfs ( struct _reent *r, int fd, sint8 *ptr, int len ){	 
-	int ret;
+_ssize_t read_r_fatfs( struct _reent *r, int fd, sint8 *ptr, int len ){	 
+	int ret = structfd_posixInvalidFileDirHandle;
 	struct fd *f = fd_struct_get(fd);
     if (f == NULL)
     {
         errno = EBADF;
-        ret = -1;
     }
     else if ((f->isused == structfd_isunused) || (!f->filPtr))
     {
 		//Filehandle not allocated
         errno = EBADF;
-        ret = -1;
     }
     else
     {
@@ -216,21 +214,16 @@ _ssize_t read_r_fatfs ( struct _reent *r, int fd, sint8 *ptr, int len ){
 //close (get struct FD index from FILE * handle)
 _ssize_t write_r_fatfs( struct _reent *r, int fd, const sint8 *ptr, int len ){
 	
-    int ret;
+    int ret = structfd_posixInvalidFileDirHandle;
 	struct fd *f = fd_struct_get(fd);
     
-	if (f == NULL)
-    {
+	if (f == NULL){
 		errno = EBADF;
-        ret = -1;
     }
-    else if ((f->isused == structfd_isunused) || (!f->filPtr) )
-    {
+    else if ((f->isused == structfd_isunused) || (!f->filPtr) ){
 		errno = EBADF;
-        ret = -1;
     }
-    else
-    {
+    else{
 	    ret = fatfs_write(f->cur_entry.d_ino, (sint8*)ptr, len);
     }
     return ret;
@@ -239,23 +232,17 @@ _ssize_t write_r_fatfs( struct _reent *r, int fd, const sint8 *ptr, int len ){
 
 //close (get struct FD index from FILE * handle)
 int close_r_fatfs ( struct _reent *r, int fd ){
-	int ret;
+	int ret = structfd_posixInvalidFileDirHandle;
 	struct fd *f = fd_struct_get(fd);
-    if (f == NULL)
-    {
+    if (f == NULL){
         errno = EBADF;
-        ret = -1;
     }
-    else if ((f->isused == structfd_isunused) || (!f->filPtr))
-    {
+    else if ((f->isused == structfd_isunused) || (!f->filPtr)){
         errno = EBADF;
-        ret = -1;
     }
-    else
-    {
+    else{
 		ret = fatfs_close(f->cur_entry.d_ino);
     }
-	
 	return ret;
 }
 

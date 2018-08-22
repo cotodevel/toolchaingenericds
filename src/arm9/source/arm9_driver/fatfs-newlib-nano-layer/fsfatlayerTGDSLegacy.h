@@ -24,6 +24,7 @@ USA
 #ifndef __fsfatlayerTGDSLegacy_h__
 #define __fsfatlayerTGDSLegacy_h__
 
+////////////////////////////////////////////////////////////////////////////INTERNAL CODE START/////////////////////////////////////////////////////////////////////////////////////
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -58,19 +59,9 @@ USA
 #define structfd_status_flagsdefault	(sint32)0
 #define structfd_fildir_offsetdefault	(sint32)0
 
+//FileList specific (internal retCode)
 //these must be invalid values so false positives do not arise in lookup functions
-#define structfd_posixFileDescrdefault	(sint32)-1
-#define structfd_internalFileDescrdefault	(sint32)-1
-
-//FT_NONE = 0
-//FT_FILE = 1
-//FT_DIR = 2
-#define FT_NONE (int)(0)
-#define FT_FILE (int)(1)
-#define FT_DIR (int)(2)
-
-//FileList specific
-#define InvalidFileListIndex (int)(-1)
+#define structfd_posixInvalidFileDirHandle	(sint32)dirent_default_d_ino	//used by fsfat_xxx layer, FAT_xxx layer (libfat wrapper), cluster functions, and finally an invalid structFD index file descriptor
 
 //libfat attributes so gccnewlibnano_to_fsfat is compatible with libfat homebrew
 #ifndef ATTRIB_ARCH
@@ -82,7 +73,6 @@ USA
 #define ATTRIB_HID	(int)(0x02)			// Hidden
 #define ATTRIB_RO	(int)(0x01)			// Read only
 #endif
-
 
 struct fd {
 	int fd_posix;				//POSIX file descriptor index (so stdin,stdout,stderr are registered here)
@@ -103,7 +93,17 @@ struct fd {
 	FIL  fil;	//if aboveptr is NULL then it is not FIL
 	DIR  dir;	//if aboveptr is NULL then it is not DIR
 };
+////////////////////////////////////////////////////////////////////////////INTERNAL CODE END/////////////////////////////////////////////////////////////////////////////////////
 
+
+////////////////////////////////////////////////////////////////////////////USER CODE START/////////////////////////////////////////////////////////////////////////////////////
+//FT_NONE = 0
+//FT_FILE = 1
+//FT_DIR = 2
+#define FT_NONE (int)(0)
+#define FT_FILE (int)(1)
+#define FT_DIR (int)(2)
+////////////////////////////////////////////////////////////////////////////USER CODE END/////////////////////////////////////////////////////////////////////////////////////
 #endif
 
 
@@ -112,12 +112,61 @@ struct fd {
 extern "C" {
 #endif
 
-extern FATFS dldiFs;
-
 /* Function prototypes */
+extern FATFS dldiFs;
+extern char lfnName[MAX_TGDSFILENAME_LENGTH+1];
+extern char curDirListed[MAX_TGDSFILENAME_LENGTH+1];
+extern struct fd fdCur;
 extern bool FS_InitStatus;
+
+////////////////////////////////////////////////////////////////////////////USER CODE START/////////////////////////////////////////////////////////////////////////////////////
+
 extern int		FS_init();
 extern int		FS_deinit();
+extern volatile sint8 charbuf[MAX_TGDSFILENAME_LENGTH+1];
+extern sint8 * getfatfsPath(sint8 * filename);
+extern int FileExists(char * filename);
+extern int rename(const sint8 *oldpathfile, const sint8 *newpathfile);
+extern int fsync(int fd);
+extern int mkdir(const sint8 *path, mode_t mode);
+extern int rmdir(const sint8 *path);
+extern int chdir(const sint8 *path);
+extern sint8 *getcwd(sint8 *buf, size_t size);
+extern DIR *opendir(const sint8 *path);
+extern int closedir(DIR *dirp);
+extern struct dirent *readdir(DIR *dirp);
+extern void rewinddir(DIR *dirp);
+extern int dirfd(DIR *dirp);
+extern int remove(const char *filename);
+extern int chmod(const char *pathname, mode_t mode);
+extern DIR *fdopendir(int fd);
+extern void seekdir(DIR *dirp, long loc);
+
+
+extern int fsfat2libfatAttrib(int fsfatFlags);
+extern int libfat2fsfatAttrib(int libfatFlags);
+extern void SetfsfatAttributesToFile(char * filename, int Newgccnewlibnano_to_fsfatAttributes, int mask);
+extern char lastCurrentPath[MAX_TGDSFILENAME_LENGTH];
+extern void updateLastGlobalPath(char * path);
+
+
+
+
+extern DWORD clust2sect (  /* !=0:Sector number, 0:Failed (invalid cluster#) */
+    FATFS* fs,      /* File system object */
+    DWORD clst      /* Cluster# to be converted */
+);
+extern sint32	getStructFDFirstCluster(struct fd *fdinst);
+extern sint32 getStructFDSectorOffset(struct fd *fdinst,int ClusterOffset,int SectorOffset);
+extern sint32 getDiskClusterSize();			/* Cluster size [sectors] */
+extern sint32 getDiskClusterSizeBytes();	/* Cluster size [sectors] in bytes */
+extern sint32 getDiskSectorSize();
+extern char * dldi_tryingInterface();
+////////////////////////////////////////////////////////////////////////////USER CODE END/////////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////INTERNAL CODE START/////////////////////////////////////////////////////////////////////////////////////
+
 extern int fatfs_init();
 extern int fatfs_deinit();
 extern int fatfs_write (int fd, sint8 *ptr, int len);
@@ -125,7 +174,9 @@ extern int fatfs_read (int fd, sint8 *ptr, int len);
 extern int fatfs_close (int fd);
 extern void fill_stat(const FILINFO *fno, struct stat *out);
 
-extern BYTE flags2mode(int flags);
+extern BYTE posix2fsfatAttrib(int flags);
+extern int fsfat2posixAttrib(BYTE flags);
+
 extern int fresult2errno(FRESULT result);
 
 extern int fatfs_fildir_alloc(int isfilordir);
@@ -159,46 +210,10 @@ extern int fatfs_readdir_r(DIR *dirp,struct dirent *entry,struct dirent **result
 extern void fatfs_rewinddir(DIR *dirp);
 extern long fatfs_tell(struct fd *f);
 extern void fatfs_seekdir(DIR *dirp, long loc);
-
-extern sint8 * getfatfsPath(sint8 * filename);
-extern volatile sint8 charbuf[MAX_TGDSFILENAME_LENGTH+1];
-extern int FileExists(char * filename);
-
-extern DWORD clust2sect (  /* !=0:Sector number, 0:Failed (invalid cluster#) */
-    FATFS* fs,      /* File system object */
-    DWORD clst      /* Cluster# to be converted */
-);
-
-extern sint32	getStructFDFirstCluster(struct fd *fdinst);
-extern sint32 getStructFDSectorOffset(struct fd *fdinst,int ClusterOffset,int SectorOffset);
-extern sint32 getDiskClusterSize();			/* Cluster size [sectors] */
-extern sint32 getDiskClusterSizeBytes();	/* Cluster size [sectors] in bytes */
-extern sint32 getDiskSectorSize();
-
 extern int _fstat_r ( struct _reent *_r, int fd, struct stat *buf );
-extern int rename(const sint8 *oldpathfile, const sint8 *newpathfile);
-extern int fsync(int fd);
-extern int mkdir(const sint8 *path, mode_t mode);
-extern int rmdir(const sint8 *path);
-extern int chdir(const sint8 *path);
-extern sint8 *getcwd(sint8 *buf, size_t size);
-extern DIR *opendir(const sint8 *path);
-extern int closedir(DIR *dirp);
-extern struct dirent *readdir(DIR *dirp);
 extern int  readdir_r(DIR * dirp,struct dirent * entry,struct dirent ** result);
-extern void rewinddir(DIR *dirp);
-extern int dirfd(DIR *dirp);
-extern int remove(const char *filename);
-//extern int chmod(const char *pathname, int mode);
-extern DIR *fdopendir(int fd);
-extern void seekdir(DIR *dirp, long loc);
-extern char * dldi_tryingInterface();
 
-extern int gccnewlibnano_to_fsfat2libfatAttrib(int fsfatFlags);
-extern int libfat2gccnewlibnano_to_fsfatAttrib(int libfatFlags);
-extern void Setgccnewlibnano_to_fsfatAttributesToPath(char * filename, int Newgccnewlibnano_to_fsfatAttributes, int mask);
-extern char lastCurrentPath[MAX_TGDSFILENAME_LENGTH];
-extern void updateLastGlobalPath(char * path);
+////////////////////////////////////////////////////////////////////////////INTERNAL CODE END/////////////////////////////////////////////////////////////////////////////////////
 
 #ifdef __cplusplus
 }

@@ -39,16 +39,9 @@ USA
 
 volatile struct fd files[OPEN_MAXTGDS] __attribute__ ((aligned (4)));	//has file/dir descriptors and pointers
 
-struct fd *fd_struct_get(int fd)
-{
-    struct fd *f;
-
-    if ((fd >= OPEN_MAXTGDS) || (fd < 0))
-    {
-        f = NULL;
-    }
-    else
-    {
+struct fd *fd_struct_get(int fd){
+    struct fd *f = NULL;
+    if((fd < OPEN_MAXTGDS) && (fd >= 0)){
         f = (struct fd *)&files[fd];
 		if(f->dirPtr){
 			f->dirPtr = (DIR *)&files[fd].dir;
@@ -56,7 +49,6 @@ struct fd *fd_struct_get(int fd)
 		if(f->filPtr){
 			f->filPtr = (FIL *)&files[fd].fil;
 		}
-		
     }
     return f;
 }
@@ -70,10 +62,10 @@ void file_default_init(){
 		
         files[fd].isused = (sint32)structfd_isunused;			
 		//PosixFD default invalid value (overriden later)
-		files[fd].fd_posix = (sint32)structfd_posixFileDescrdefault;
+		files[fd].fd_posix = (sint32)structfd_posixInvalidFileDirHandle;
 		
 		//Internal default invalid value (overriden later)
-		files[fd].cur_entry.d_ino = (sint32)structfd_internalFileDescrdefault;
+		files[fd].cur_entry.d_ino = (sint32)structfd_posixInvalidFileDirHandle;
 		
 		files[fd].isatty = (sint32)structfd_isattydefault;
 		files[fd].descriptor_flags = (sint32)structfd_descriptorflagsdefault;
@@ -86,11 +78,9 @@ void file_default_init(){
 }
 
 //returns / allocates a new struct fd index ,  for a certain devoptab_t so we can allocate different handles for each devoptab
-int FileHandleAlloc(struct devoptab_t * devoptabInst )
-{
-    int fd;
-    int ret = -1;
-
+int FileHandleAlloc(struct devoptab_t * devoptabInst ){
+    int fd = 0;
+    int ret = structfd_posixInvalidFileDirHandle;
     for (fd = 0; fd < OPEN_MAXTGDS; fd++)
     {
         if ((sint32)files[fd].isused == (sint32)structfd_isunused)
@@ -120,14 +110,13 @@ int FileHandleAlloc(struct devoptab_t * devoptabInst )
 }
 
 //deallocates a posix index, returns such index deallocated
-int FileHandleFree(int fd)
-{
-	int ret = -1;
+int FileHandleFree(int fd){
+	int ret = structfd_posixInvalidFileDirHandle;
     if ((fd < OPEN_MAXTGDS) && (fd >= 0) && (files[fd].isused == structfd_isused))
     {
 		
         files[fd].isused = (sint32)structfd_isunused;
-		files[fd].fd_posix = (sint32)structfd_posixFileDescrdefault;
+		files[fd].fd_posix = (sint32)structfd_posixInvalidFileDirHandle;
 		ret = fd;
     }
 	
@@ -157,10 +146,8 @@ sint8 * getDeviceNameByStructFDIndex(int StructFDIndex){
 
 //useful for handling native DIR * to Internal File Descriptors (struct fd index)
 int getInternalFileDescriptorFromDIR(DIR *dirp){
-	
 	int fd = 0;
-    int ret = -1;
-
+    int ret = structfd_posixInvalidFileDirHandle;
     /* search in all struct fd instances*/
     for (fd = 0; fd < OPEN_MAXTGDS; fd++)
     {
@@ -172,6 +159,5 @@ int getInternalFileDescriptorFromDIR(DIR *dirp){
 			}
 		}
     }
-	
 	return ret;
 }

@@ -48,12 +48,6 @@ USA
 #include "typedefsTGDS.h"
 #include "dsregs.h"
 
-//fseek
-
-#define SEEK_SET 0
-#define SEEK_CUR 1
-#define SEEK_END 2
-
 enum _flags {
     _READ = 01,     /* file open for reading */
     _WRITE = 02,    /* file open for writing */

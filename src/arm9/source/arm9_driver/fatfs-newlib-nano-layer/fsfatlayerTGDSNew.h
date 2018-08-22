@@ -84,8 +84,6 @@ class FileClass
 	}
 };
 
-#define InvalidFileDirEntry (sint32)(-1)
-
 //misc directory functions
 
 //User
@@ -105,9 +103,6 @@ extern void FAT_DisableWriting (void);
 extern int FAT_FileExists(char* filename);
 
 //Internal
-extern char lfnName[MAX_TGDSFILENAME_LENGTH+1];
-extern char curDirListed[MAX_TGDSFILENAME_LENGTH+1];
-extern struct fd fdCur;
 extern bool FAT_GetLongFilename(char* filename);
 extern int getFirstFile(char * path);
 extern void updateGlobalListFromPath(char * path);
