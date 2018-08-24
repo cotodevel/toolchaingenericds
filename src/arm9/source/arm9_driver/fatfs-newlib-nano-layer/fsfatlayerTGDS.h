@@ -74,8 +74,20 @@ USA
 #define ATTRIB_RO	(int)(0x01)			// Read only
 #endif
 
+//up to N items to be listed by TGDS High level API functions
+#define FileClassItems (int)(60)
+
+
+//FileClass parts (not used by POSIX at all, but ToolchainGenericDS high level API (for parsing fullpath directories and high level descriptors)
+struct FileClass{
+	int type;	//FT_DIR / FT_FILE / FT_NONE	//  setup on Constructor / updated by getFileFILINFOfromPath(); / must be init from the outside 
+	sint8 fd_namefullPath[256];
+	bool isIterable;	//true = usable for buildfrompath / false = ignore lookup in buildfrompath
+	int d_ino;	//if any, assign it here
+};
+
 struct fd {
-	int fd_posix;				//POSIX file descriptor index (so stdin,stdout,stderr are registered here)
+	int fd_posix;				//POSIX file descriptor index (so stdin,stdout,stderr are registered here)	//todo: nuke
 	struct stat stat;			//File attributes : POSIX Compliant
 	int isatty;
 	int isused;					//1 means in use (structfd_isused) / 0 free (structfd_isunused)
@@ -85,14 +97,19 @@ struct fd {
     struct dirent cur_entry;	//dirent POSIX extension used in fopen / fatfs_readdir_r
 	
 	sint8 fd_name[MAX_TGDSFILENAME_LENGTH+1];	/* d_name dirent but holds full file path. Only when this is a file */
-	sint8 fullPathFName[MAX_TGDSFILENAME_LENGTH+1];	//filled by updateDir, requires previously to opendir / fopen
-	
 	//FILE/DIR Context in here
 	FIL  * filPtr;	//reuse C ability to parse NULL structs later
 	DIR  * dirPtr;
 	FIL  fil;	//if aboveptr is NULL then it is not FIL
 	DIR  dir;	//if aboveptr is NULL then it is not DIR
 };
+
+struct packedFDRet{
+	int type; //FT_DIR / FT_FILE / FT_NONE
+	int StructFD;
+};
+
+
 ////////////////////////////////////////////////////////////////////////////INTERNAL CODE END/////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -125,7 +142,7 @@ extern int		FS_init();
 extern int		FS_deinit();
 extern volatile sint8 charbuf[MAX_TGDSFILENAME_LENGTH+1];
 extern sint8 * getfatfsPath(sint8 * filename);
-extern int FileExists(char * filename);
+extern struct packedFDRet FileExists(char * filename, bool closeFileHandle);
 extern int rename(const sint8 *oldpathfile, const sint8 *newpathfile);
 extern int fsync(int fd);
 extern int mkdir(const sint8 *path, mode_t mode);
@@ -142,21 +159,18 @@ extern int chmod(const char *pathname, mode_t mode);
 extern DIR *fdopendir(int fd);
 extern void seekdir(DIR *dirp, long loc);
 
-
 extern int fsfat2libfatAttrib(int fsfatFlags);
 extern int libfat2fsfatAttrib(int libfatFlags);
 extern void SetfsfatAttributesToFile(char * filename, int Newgccnewlibnano_to_fsfatAttributes, int mask);
 extern char lastCurrentPath[MAX_TGDSFILENAME_LENGTH];
 extern void updateLastGlobalPath(char * path);
 
-
-
-
 extern DWORD clust2sect (  /* !=0:Sector number, 0:Failed (invalid cluster#) */
     FATFS* fs,      /* File system object */
     DWORD clst      /* Cluster# to be converted */
 );
-extern sint32	getStructFDFirstCluster(struct fd *fdinst);
+
+extern sint32 getStructFDFirstCluster(struct fd *fdinst);
 extern sint32 getStructFDSectorOffset(struct fd *fdinst,int ClusterOffset,int SectorOffset);
 extern sint32 getDiskClusterSize();			/* Cluster size [sectors] */
 extern sint32 getDiskClusterSizeBytes();	/* Cluster size [sectors] in bytes */
@@ -166,17 +180,14 @@ extern char * dldi_tryingInterface();
 
 
 ////////////////////////////////////////////////////////////////////////////INTERNAL CODE START/////////////////////////////////////////////////////////////////////////////////////
-
 extern int fatfs_init();
 extern int fatfs_deinit();
 extern int fatfs_write (int fd, sint8 *ptr, int len);
 extern int fatfs_read (int fd, sint8 *ptr, int len);
 extern int fatfs_close (int fd);
 extern void fill_stat(const FILINFO *fno, struct stat *out);
-
 extern BYTE posix2fsfatAttrib(int flags);
 extern int fsfat2posixAttrib(BYTE flags);
-
 extern int fresult2errno(FRESULT result);
 
 extern int fatfs_fildir_alloc(int isfilordir);
@@ -213,7 +224,48 @@ extern void fatfs_seekdir(DIR *dirp, long loc);
 extern int _fstat_r ( struct _reent *_r, int fd, struct stat *buf );
 extern int  readdir_r(DIR * dirp,struct dirent * entry,struct dirent ** result);
 
+extern int OpenFileFromPathGetStructFD(char * fullPath);
+extern bool closeFileFromStructFD(int StructFD);
+
 ////////////////////////////////////////////////////////////////////////////INTERNAL CODE END/////////////////////////////////////////////////////////////////////////////////////
+
+//misc directory functions
+
+//User
+extern int 	FAT_FindFirstFile(char* filename);
+extern int 	FAT_FindNextFile(char* filename);
+extern u8 	FAT_GetFileAttributes(void);
+extern u8 FAT_SetFileAttributes (const char* filename, u8 attributes, u8 mask);
+extern void FAT_preserveVars();
+extern void FAT_restoreVars();
+extern bool FAT_GetAlias(char* alias);
+extern u32	disc_HostType(void);
+extern bool FAT_GetLongFilename(char* Longfilename);
+extern u32 FAT_GetFileSize(void);
+extern u32 FAT_GetFileCluster(void);
+extern bool disableWriting;
+extern void FAT_DisableWriting (void);
+extern int FAT_FileExists(char* filename);
+
+//Internal
+extern bool FAT_GetLongFilename(char* filename);
+extern int getFirstFile(char * path);
+extern void updateGlobalListFromPath(char * path);
+extern int getNextFile(char * path);
+extern bool getLFN(char* filename);
+extern bool setLFN(char* filename);
+extern int CurrentFileDirEntry;
+extern int LastFileEntry;
+extern int LastDirEntry;
+extern FILINFO getFileFILINFOfromFileClass(struct FileClass * fileInst);
+extern void InitGlobalFileClass();
+extern void buildListFromPath(char * path);
+extern struct FileClass * getFirstDirEntryFromGlobalList();
+extern struct FileClass * getFirstFileEntryFromGlobalList();
+
+extern struct FileClass * getFileClass(int FileClassListIndex);
+extern void setFileClass(bool iterable, char * fullPath, int FileClassListIndex, int Typ, int StructFD);
+extern volatile struct FileClass FileClassList[FileClassItems];
 
 #ifdef __cplusplus
 }

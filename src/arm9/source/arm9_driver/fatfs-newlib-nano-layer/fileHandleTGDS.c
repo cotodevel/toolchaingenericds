@@ -34,7 +34,7 @@ USA
 #include "sys/stat.h"
 #include "dirent.h"
 #include "consoleTGDS.h"
-#include "fsfatlayerTGDSLegacy.h"
+#include "fsfatlayerTGDS.h"
 #include "dsregs_asm.h"
 
 volatile struct fd files[OPEN_MAXTGDS] __attribute__ ((aligned (4)));	//has file/dir descriptors and pointers
@@ -56,10 +56,8 @@ struct fd *fd_struct_get(int fd){
 void file_default_init(){
 	int fd = 0;
 	/* search in all struct fd instances*/
-    for (fd = 0; fd < OPEN_MAXTGDS; fd++)
-    {
+    for (fd = 0; fd < OPEN_MAXTGDS; fd++){
 		memset((uint8*)&files[fd], 0, sizeof(struct fd));
-		
         files[fd].isused = (sint32)structfd_isunused;			
 		//PosixFD default invalid value (overriden later)
 		files[fd].fd_posix = (sint32)structfd_posixInvalidFileDirHandle;
@@ -81,12 +79,9 @@ void file_default_init(){
 int FileHandleAlloc(struct devoptab_t * devoptabInst ){
     int fd = 0;
     int ret = structfd_posixInvalidFileDirHandle;
-    for (fd = 0; fd < OPEN_MAXTGDS; fd++)
-    {
-        if ((sint32)files[fd].isused == (sint32)structfd_isunused)
-        {
-			//
-            files[fd].isused = (sint32)structfd_isused;
+    for (fd = 0; fd < OPEN_MAXTGDS; fd++){
+        if ((sint32)files[fd].isused == (sint32)structfd_isunused){
+			files[fd].isused = (sint32)structfd_isused;
 			
 			//PosixFD default valid value (overriden now)
 			files[fd].fd_posix = (get_posix_fd_from_devicename((sint8*)devoptabInst->name));
@@ -112,20 +107,17 @@ int FileHandleAlloc(struct devoptab_t * devoptabInst ){
 //deallocates a posix index, returns such index deallocated
 int FileHandleFree(int fd){
 	int ret = structfd_posixInvalidFileDirHandle;
-    if ((fd < OPEN_MAXTGDS) && (fd >= 0) && (files[fd].isused == structfd_isused))
-    {
-		
+    if ((fd < OPEN_MAXTGDS) && (fd >= 0) && (files[fd].isused == structfd_isused)){
         files[fd].isused = (sint32)structfd_isunused;
 		files[fd].fd_posix = (sint32)structfd_posixInvalidFileDirHandle;
+		files[fd].cur_entry.d_ino = files[fd].fd_posix;
 		ret = fd;
     }
-	
 	return ret;
 }
 
 
 sint8 * getDeviceNameByStructFDIndex(int StructFDIndex){
-	
 	sint8 * out;
 	if((StructFDIndex < 0) || (StructFDIndex > OPEN_MAXTGDS)){
 		out = NULL;

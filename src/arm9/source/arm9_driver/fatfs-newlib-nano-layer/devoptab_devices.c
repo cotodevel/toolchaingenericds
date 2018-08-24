@@ -35,7 +35,7 @@ USA
 #include <stdarg.h>
 #include <time.h>
 
-#include "fsfatlayerTGDSLegacy.h"
+#include "fsfatlayerTGDS.h"
 #include "posixHandleTGDS.h"
 
 #include "fileHandleTGDS.h"
@@ -119,6 +119,7 @@ sint32 open_posix_filedescriptor_devices(){
 	return items;
 }
 
+//todo nuke (fd_posix as well)
 //get the latest struct fd free index of sint8 * passed (useful for allocating the latest file descriptor of a certain name
 sint32 get_posix_fd_from_devicename(sint8 * deviceName){
 	sint32 i = 0;	//devoptab_list starts from index 0

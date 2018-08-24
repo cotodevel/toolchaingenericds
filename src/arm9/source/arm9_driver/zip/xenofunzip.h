@@ -20,7 +20,7 @@
 #include <fcntl.h>
 #include <stdlib.h>
 
-#include "fsfatlayerTGDSLegacy.h"
+#include "fsfatlayerTGDS.h"
 
 #define min(a,b) ((a)<(b)?(a):(b))
 #define err(e) {clrscr();printf("%s",(char*)e);while(1);}
