@@ -102,7 +102,7 @@ size_t ucs2tombs(uint8* dst, const unsigned short* src, size_t len) {
 //(I mean it's awesome to have a GUI to generate your layouts instead hardcoded... but Archeide STILL did a wonderful job by building a widget system in C)
 
 //reserved for project appVersion
-volatile char app_version_static[256];
+volatile char app_version_static[MAX_TGDSFILENAME_LENGTH+1];
 
 METHOD_DESCRIPTOR Methods[8];
 
@@ -205,7 +205,7 @@ sint32 glueARMHandlerConfig(VERSION_DESCRIPTOR * versionInst,METHOD_DESCRIPTOR *
 		return -1;
 	}
 	
-	char methodfilename[256];
+	char methodfilename[MAX_TGDSFILENAME_LENGTH+1];
 	sprintf(methodfilename,"%s.bin",method_inst->methodname);
 	//replace by open source file parser: GUI_setConfigStrUpdateFile((char*)"AssemblyCore", (char*)method_inst->methodname, (char*)methodfilename);
 	callback_export_file(methodfilename,method_inst);

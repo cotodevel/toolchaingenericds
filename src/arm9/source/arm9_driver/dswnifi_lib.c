@@ -856,8 +856,8 @@ if(remoteSocket == -1) {
     int tmp = 1;
     setsockopt (s, SOL_SOCKET, SO_REUSEADDR, (char *) &tmp, sizeof (tmp));
 	
-    //    char hostname[256];
-    //    gethostname(hostname, 256);
+    //    char hostname[MAX_TGDSFILENAME_LENGTH+1];
+    //    gethostname(hostname, MAX_TGDSFILENAME_LENGTH+1);
 
     //    hostent *ent = gethostbyname(hostname);
     //    unsigned long a = *((unsigned long *)ent->h_addr);

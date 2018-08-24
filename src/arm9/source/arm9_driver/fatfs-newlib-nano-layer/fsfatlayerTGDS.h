@@ -81,7 +81,7 @@ USA
 //FileClass parts (not used by POSIX at all, but ToolchainGenericDS high level API (for parsing fullpath directories and high level descriptors)
 struct FileClass{
 	int type;	//FT_DIR / FT_FILE / FT_NONE	//  setup on Constructor / updated by getFileFILINFOfromPath(); / must be init from the outside 
-	sint8 fd_namefullPath[256];
+	sint8 fd_namefullPath[MAX_TGDSFILENAME_LENGTH+1];
 	bool isIterable;	//true = usable for buildfrompath / false = ignore lookup in buildfrompath
 	int d_ino;	//if any, assign it here
 };

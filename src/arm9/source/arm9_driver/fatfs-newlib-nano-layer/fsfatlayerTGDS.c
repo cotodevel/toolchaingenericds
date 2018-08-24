@@ -523,7 +523,7 @@ void buildListFromPath(char * path){
 			else{
 				//open that full path and open a file handle , if it is file(get internal StructFD)
 				if((type == FT_FILE) || (type == FT_DIR)){
-					char builtFilePath[256];
+					char builtFilePath[MAX_TGDSFILENAME_LENGTH+1];
 					sprintf(builtFilePath,"%s%s",path,fno.fname);
 					//populate
 					bool iterable = true;

@@ -315,7 +315,7 @@ int putc(int c, FILE * fileInst){
 int fprintf (FILE *stream, const char *format, ...)
 {
 	va_list arg;
-	volatile sint8 g_printfbuf[512];
+	volatile sint8 g_printfbuf[MAX_TGDSFILENAME_LENGTH+1];
 	va_start (arg, format);
 	vsnprintf((sint8*)g_printfbuf, 100, format, arg);
 	va_end (arg);

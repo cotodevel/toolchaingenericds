@@ -18,16 +18,20 @@ USA
 
 */
 
+
 #ifndef __toolchain_utils_h__
 #define __toolchain_utils_h__
 
 #include "typedefsTGDS.h"
 #include "dsregs.h"
-
 #include <stdio.h>
 #include <unistd.h>
 #include <stdbool.h>
 #include <string.h>
+
+
+#ifdef ARM9
+#include "limitsTGDS.h"
 
 #ifndef MIN
 #define MIN(a, b) (((a) < (b))?(a):(b))
@@ -45,17 +49,21 @@ USA
 typedef	struct {
 	uint32 * cback_address;
 	int cback_size;
-	char methodname[256];
+	char methodname[MAX_TGDSFILENAME_LENGTH+1];
 }METHOD_DESCRIPTOR;
 		
 //Version Struct
 #define PLAINTEXT_VERSION_SEPARATOR	(sint8*)("-")	//sint8 * is char *
 typedef	struct {
-	char app_version[256];	//"0.6a-mm/dd/yyyy" //generated when parsing config file, section [Version]
-	char framework_version[256];	//"0.6a-mm/dd/yyyy" //generated when parsing config file, section [Version]
+	char app_version[MAX_TGDSFILENAME_LENGTH+1];	//"0.6a-mm/dd/yyyy" //generated when parsing config file, section [Version]
+	char framework_version[MAX_TGDSFILENAME_LENGTH+1];	//"0.6a-mm/dd/yyyy" //generated when parsing config file, section [Version]
 }VERSION_DESCRIPTOR;
 
 #endif
+
+#endif
+
+
 
 #ifdef __cplusplus
 extern "C"{
@@ -64,9 +72,8 @@ extern "C"{
 extern size_t ucs2tombs(uint8* dst, const unsigned short* src, size_t len);
 
 #ifdef ARM9
-
 //reserved for project appVersion
-extern volatile char app_version_static[256];
+extern volatile char app_version_static[MAX_TGDSFILENAME_LENGTH+1];
 
 //METHOD_HANDLERS
 extern METHOD_DESCRIPTOR Methods[8];
@@ -84,24 +91,18 @@ extern sint32 addAppVersiontoCompiledCode(VERSION_DESCRIPTOR * versionInst,char 
 
 //Framework sets this by default
 extern sint32 updateVersionfromCompiledCode(VERSION_DESCRIPTOR * versionInst);
-
 extern sint32 updateAssemblyParamsConfig(VERSION_DESCRIPTOR * versionInst);
 extern sint32 glueARMHandlerConfig(VERSION_DESCRIPTOR * versionInst,METHOD_DESCRIPTOR * method_inst);
 
 //misc
 extern int	split (const sint8 *txt, sint8 delim, sint8 ***tokens);
-
-#ifdef ARM9
 extern int	FS_loadFile(sint8 *filename, sint8 *buf, int size);
 extern int	FS_saveFile(sint8 *filename, sint8 *buf, int size,bool force_file_creation);
 extern int	FS_getFileSize(sint8 *filename);
-
 extern int		setBacklight(int flags);
 extern int		FS_extram_init();
 extern void		FS_lock();
 extern void		FS_unlock();
-
-
 extern sint8 ip_decimal[0x10];
 extern sint8 * print_ip(uint32 ip);
 
@@ -110,8 +111,6 @@ extern sint8 	*_FS_getFileExtension(sint8 *filename);
 extern sint8 	*FS_getFileName(sint8 *filename);
 extern int		FS_chdir(const sint8 *path);
 extern sint8	**FS_getDirectoryList(sint8 *path, sint8 *mask, int *cnt);
-
-#endif
 
 #endif
 
