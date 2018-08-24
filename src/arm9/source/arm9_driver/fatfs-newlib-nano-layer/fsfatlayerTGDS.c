@@ -19,8 +19,6 @@ USA
 //Coto: this was rewritten by me so it could fit the following setup:
 //newlib libc nano ARM Toolchain. dirent.h is not supported in this newlib version so we restore it
 
-//This has all the legacy C code (or: fsfatlayerTGDSLegacy.c + fsfatlayerTGDSNew.cpp / or: fsfatlayerTGDSLegacy.c). Projects that support C/C++ code link this by default.
-
 #include "fsfatlayerTGDS.h"
 #include <string.h>
 #include <errno.h>
@@ -573,12 +571,10 @@ FILINFO getFileFILINFOfromFileClass(struct FileClass * fileInst){
 		result = f_stat((const TCHAR*)fileInst->fd_namefullPath, &finfo);					/* Get file status */
 		if (result == FR_OK)
 		{
-			//printf("getFileFILINFOfromFileClass: stat ok");
-			//while(1==1);
+			//stat ok
 		}
 		else{
-			//printf("getFileFILINFOfromFileClass: stat error");
-			//while(1==1);
+			//stat error
 		}
 	}
 	return finfo;

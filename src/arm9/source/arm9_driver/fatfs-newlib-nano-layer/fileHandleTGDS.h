@@ -40,17 +40,14 @@ extern "C" {
 #endif
 
 extern volatile struct fd files[OPEN_MAXTGDS];	//file/dir attrs, pointers for below struct
-
 extern void file_default_init();
 extern struct fd *fd_struct_get(int fd);	//the fd here is the internal FD index
-
 extern int FileHandleAlloc(struct devoptab_t * devoptabInst );
 extern int FileHandleFree(int fd);
+extern sint8 * getDeviceNameByStructFDIndex(int StructFDIndex);
 
 //useful for internal functions on DIR
 extern int getInternalFileDescriptorFromDIR(DIR *dirp);
-
-extern sint8 * getDeviceNameByStructFDIndex(int StructFDIndex);
 
 #ifdef __cplusplus
 }

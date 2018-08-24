@@ -35,7 +35,7 @@ USA
 #include <limits.h>
 #include "limitsTGDS.h"
 #include "typedefsTGDS.h"
-#include "ff.h"	//DIR struct definition. DIR dirent.h is deprecated. (implementation defined)
+#include "ff.h"	//DIR struct definition here. dirent.h´s DIR was removed, and rewritten
 #include "dirent.h"
 
 #include "devoptab_devices.h"
