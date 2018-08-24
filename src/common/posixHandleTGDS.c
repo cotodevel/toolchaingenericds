@@ -89,7 +89,7 @@ _ssize_t _read_r ( struct _reent *ptr, int fd, void *buf, size_t cnt ){
 	struct fd * fdinst = fd_struct_get(fd);
 	
 	if( (fdinst != NULL) && ((sint32)fdinst->fd_posix != (sint32)structfd_posixInvalidFileDirHandle)  ) {
-		return (_ssize_t)devoptab_list[fdinst->fd_posix]->read_r( NULL, fdinst->cur_entry.d_ino, buf, cnt );
+		return (_ssize_t)devoptab_struct[fdinst->fd_posix]->read_r( NULL, fdinst->cur_entry.d_ino, buf, cnt );
 	}
 	
 	return -1;
@@ -102,7 +102,7 @@ _ssize_t _write_r ( struct _reent *ptr, int fd, const void *buf, size_t cnt ){
 	struct fd * fdinst = fd_struct_get(fd);
 	
 	if( (fdinst != NULL) && ((sint32)fdinst->fd_posix != (sint32)structfd_posixInvalidFileDirHandle)  ) {
-		return (_ssize_t)devoptab_list[fdinst->fd_posix]->write_r( NULL, fdinst->cur_entry.d_ino, buf, cnt );
+		return (_ssize_t)devoptab_struct[fdinst->fd_posix]->write_r( NULL, fdinst->cur_entry.d_ino, buf, cnt );
 	}
 	
 	return -1;
@@ -120,9 +120,9 @@ int _open_r ( struct _reent *ptr, const sint8 *file, int flags, int mode ){
 			for (i = 0; i < countPosixFDescOpen ; i++){
 				if(count > 0){
 					sprintf((sint8*)token_str,"%s%s",(char*)tokens[0],"/");	//format properly
-					if (strcmp((sint8*)token_str,devoptab_list[i]->name) == 0)
+					if (strcmp((sint8*)token_str,devoptab_struct[i]->name) == 0)
 					{
-						return devoptab_list[i]->open_r( NULL, file, flags, mode ); //returns / allocates a new struct fd index with either DIR or FIL structure allocated
+						return devoptab_struct[i]->open_r( NULL, file, flags, mode ); //returns / allocates a new struct fd index with either DIR or FIL structure allocated
 					}
 				}
 			}
@@ -150,7 +150,7 @@ int _close_r ( struct _reent *ptr, int fd )
 	struct fd * fdinst = fd_struct_get(fd);
 	
 	if( (fdinst != NULL) && ((sint32)fdinst->fd_posix != (sint32)structfd_posixInvalidFileDirHandle)  ) {
-		return (_ssize_t)devoptab_list[fdinst->fd_posix]->close_r( NULL, fdinst->cur_entry.d_ino );
+		return (_ssize_t)devoptab_struct[fdinst->fd_posix]->close_r( NULL, fdinst->cur_entry.d_ino );
 	}	
 	return -1;
 }

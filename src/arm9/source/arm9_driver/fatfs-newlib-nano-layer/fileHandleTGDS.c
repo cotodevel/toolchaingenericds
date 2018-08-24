@@ -129,7 +129,7 @@ sint8 * getDeviceNameByStructFDIndex(int StructFDIndex){
     {
         if (files[i].cur_entry.d_ino == StructFDIndex)
         {
-			out = (sint8*)(&devoptab_list[i]->name);
+			out = (sint8*)(&devoptab_struct[i]->name);
 		}
     }
 	return out;
