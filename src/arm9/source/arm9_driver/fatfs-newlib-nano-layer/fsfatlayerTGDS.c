@@ -117,7 +117,6 @@ sint8 * getfatfsPath(sint8 * filename){
 }
 
 
-
 //these two work together (usually)
 int OpenFileFromPathGetStructFD(char * fullPath){
 	FILE* fil = fopen(fullPath,"r");
@@ -135,37 +134,23 @@ bool closeFileFromStructFD(int StructFD){
 	return false;
 }
 
-
-
 //retcode: FT_NONE , FT_DIR or FT_FILE
-struct packedFDRet FileExists(char * filename, bool closeFileHandle){
-	struct packedFDRet packedFDRetOut;
-	packedFDRetOut.type = FT_NONE;
-	int StructFD = fatfs_open_file_or_dir((const sint8 *)filename, O_RDONLY);
+int FileExists(char * filename){
+	int Type = FT_NONE;
+	int StructFD = OpenFileFromPathGetStructFD((char *)filename);
 	struct fd *pfd = fd_struct_get(StructFD);
-	//file?
-	if(S_ISREG(pfd->stat.st_mode)){
-		packedFDRetOut.type = FT_FILE;
-	}
-	//dir?
-	else if(S_ISDIR(pfd->stat.st_mode)){
-        packedFDRetOut.type = FT_DIR;
-    }
-	if((pfd!=NULL) && (closeFileHandle == true) ){
-		fatfs_close(StructFD);
-	}
-	//else: FT_NONE
-	
-	if(closeFileHandle == false){
-		packedFDRetOut.StructFD = StructFD;
-	}
-	else{
-		packedFDRetOut.StructFD = structfd_posixInvalidFileDirHandle;
-		if(packedFDRetOut.type == FT_FILE){
-			closeFileFromStructFD(StructFD);
+	if(pfd != NULL){
+		//file?
+		if(S_ISREG(pfd->stat.st_mode)){
+			Type = FT_FILE;
 		}
+		//dir?
+		else if(S_ISDIR(pfd->stat.st_mode)){
+			Type = FT_DIR;
+		}
+		closeFileFromStructFD(StructFD);
 	}
-	return packedFDRetOut;
+	return Type;
 }
 
 int rename(const sint8 *oldfname, const sint8 *newfname){
@@ -287,7 +272,6 @@ void SetfsfatAttributesToFile(char * filename, int Newgccnewlibnano_to_fsfatAttr
 	f_chmod(filename, Newgccnewlibnano_to_fsfatAttributes, mask);
 }
 
-
 //posix -> fsfat
 BYTE posix2fsfatAttrib(int flags){
     BYTE mode = 0;
@@ -346,7 +330,6 @@ int fsfat2posixAttrib(BYTE flags){
     }
     return mode;
 }
-
 
 char lastCurrentPath[MAX_TGDSFILENAME_LENGTH];
 void updateLastGlobalPath(char * path){
@@ -421,7 +404,496 @@ char * dldi_tryingInterface(){
 	return DLDI_INTERFACEInst->friendlyName;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+///////////////////////////////////This is the TGDS FS API extension. It emulates libfat FAT_xxx functions.//////////////////////////////////
+/////////////// For an example, please refer to https://bitbucket.org/Coto88/toolchaingenericds-template/src , main.cpp file/////////////////
+
+
+
+//Filename must be at least MAX_TGDSFILENAME_LENGTH+1 in size
+int FAT_FindFirstFile(char* filename){	
+	return getFirstFile(filename);
+}
+
+//Filename must be at least MAX_TGDSFILENAME_LENGTH+1 in size
+int FAT_FindNextFile(char* filename){
+	return getNextFile(filename);
+}
+
+u8 FAT_GetFileAttributes (void){
+	u8	libfatAttributes = 0;
+	if(CurrentFileDirEntry > 0){
+		struct FileClass * fileInst = getFileClass((CurrentFileDirEntry - 1));
+		FILINFO finfo = getFileFILINFOfromFileClass(fileInst);
+		libfatAttributes = (uint8)fsfat2libfatAttrib((int)finfo.fattrib);
+	}
+	return libfatAttributes;
+}
+
+u8 FAT_SetFileAttributes (const char* filename, u8 attributes, u8 mask){
+	u8	libfatAttributesIn = 0;
+	u8	libfatAttributesOut= 0;
+	struct FileClass fileInst;
+	int sizeToCopy = 0;
+	if(strlen(filename) > sizeof(fileInst.fd_namefullPath)){
+		sizeToCopy = sizeof(fileInst.fd_namefullPath);
+	}
+	else{
+		sizeToCopy = strlen(filename);
+	}
+	snprintf(fileInst.fd_namefullPath, sizeToCopy, "%s", filename);
+	FILINFO finfo = getFileFILINFOfromFileClass(&fileInst);
+	libfatAttributesIn = (uint8)fsfat2libfatAttrib((int)finfo.fattrib);
+	libfatAttributesOut = (libfatAttributesIn & ~(mask & 0x27)) | (attributes & 0x27);
+	int	NEWgccnewlibnano_to_fsfatAttributes = libfat2fsfatAttrib((int)libfatAttributesOut);
+	int NEWmask = libfat2fsfatAttrib((int)mask);
+	SetfsfatAttributesToFile((char*)filename, NEWgccnewlibnano_to_fsfatAttributes, NEWmask);
+	return libfatAttributesOut;
+}
+
+//Internal
+//Filename must be at least MAX_TGDSFILENAME_LENGTH+1
+bool setLFN(char* filename){
+	if (filename == NULL){
+		return false;
+	}
+	strncpy (lfnName, filename, (MAX_TGDSFILENAME_LENGTH+1) - 1);
+	lfnName[(MAX_TGDSFILENAME_LENGTH+1) - 1] = '\0';
+	return true;	
+}
+
+//Filename must be at least MAX_TGDSFILENAME_LENGTH+1
+bool getLFN(char* filename){
+	if (filename == NULL){
+		return false;
+	}
+	strncpy(filename, lfnName, (MAX_TGDSFILENAME_LENGTH+1) - 1);
+	filename[(MAX_TGDSFILENAME_LENGTH+1) - 1] = '\0';
+	return true;
+}
+
+void buildListFromPath(char * path){
+	FRESULT res;
+    DIR dir;
+	int i = 0;
+    FILINFO fno;
+	InitGlobalFileClass();
+    res = f_opendir(&dir, path);                       /* Open the directory */
+    if (res == FR_OK) {
+        for(;;){
+			res = f_readdir(&dir, &fno);                   /* Read a directory item */
+			int type = 0;
+			if (fno.fattrib & AM_DIR) {			           /* It is a directory */
+				type = FT_DIR;	
+            }
+			else if (									   /* It is a file */
+			(fno.fattrib & AM_RDO)
+			||
+			(fno.fattrib & AM_HID)
+			||
+			(fno.fattrib & AM_SYS)
+			||
+			(fno.fattrib & AM_ARC)
+			){
+				type = FT_FILE;			
+			}
+			else{	/* It is Invalid. */
+				type = FT_NONE;
+			}
+			
+			if (res != FR_OK || fno.fname[0] == 0){	//error or end of dir
+				break;
+			}
+			else if(i >= FileClassItems){
+				break;
+			}
+			else{
+				//open that full path and open a file handle , if it is file(get internal StructFD)
+				if((type == FT_FILE) || (type == FT_DIR)){
+					char builtFilePath[256];
+					sprintf(builtFilePath,"%s%s",path,fno.fname);
+					//populate
+					bool iterable = true;
+					setFileClass(iterable, (char*)&builtFilePath[0], i, type, structfd_posixInvalidFileDirHandle);
+					i++;
+				}
+			}
+		}
+        f_closedir(&dir);
+    }
+}
+
+volatile struct FileClass FileClassList[FileClassItems];
+
+void setFileClass(bool iterable, char * fullPath, int FileClassListIndex, int Typ, int structFD){
+	struct FileClass * FileClassInst = (struct FileClass *)&FileClassList[FileClassListIndex];
+	FileClassInst->isIterable = iterable;
+	sprintf(FileClassInst->fd_namefullPath,"%s",fullPath);
+	FileClassInst->type = Typ;
+	FileClassInst->d_ino = structFD;
+}
+
+struct FileClass * getFileClass(int FileClassListIndex){
+	return (struct FileClass *)&FileClassList[FileClassListIndex];
+}
+
+void InitGlobalFileClass(){
+	int i = 0;
+	for(i = 0; i < FileClassItems; i++){
+		bool iterable = false;
+		setFileClass(iterable, dirent_default_d_name, i, FT_NONE, structfd_posixInvalidFileDirHandle);
+	}
+}
+
+//returns the first free StructFD
+void updateGlobalListFromPath(char * path){
+	//Update last path (destroys the last one)
+	updateLastGlobalPath(path);
+	buildListFromPath(path);
+}
+
+//requires a previously generated struct fd *
+FILINFO getFileFILINFOfromFileClass(struct FileClass * fileInst){
+	FILINFO finfo;
+	FRESULT result;
+	if(fileInst){
+		result = f_stat((const TCHAR*)fileInst->fd_namefullPath, &finfo);					/* Get file status */
+		if (result == FR_OK)
+		{
+			//printf("getFileFILINFOfromFileClass: stat ok");
+			//while(1==1);
+		}
+		else{
+			//printf("getFileFILINFOfromFileClass: stat error");
+			//while(1==1);
+		}
+	}
+	return finfo;
+}
+
+//Note: Requires a fresh call to updateGlobalListFromPath prior to calling this
+struct FileClass * getFirstDirEntryFromGlobalList(){
+	int i = 0;
+	struct FileClass * FileClassRet = NULL;
+	for(i = 0; i < FileClassItems; i++){
+		struct FileClass * fileClassInst = getFileClass(i);
+		if(fileClassInst->type == FT_DIR){
+			FileClassRet = fileClassInst;
+			break;
+		}
+	}
+	CurrentFileDirEntry = i;	//CurrentFileDirEntry is relative to getFirstDirEntryFromGlobalList() now
+	return FileClassRet;
+}
+
+//Note: Requires a fresh call to updateGlobalListFromPath prior to calling this
+struct FileClass * getFirstFileEntryFromGlobalList(){
+	int i = 0;
+	struct FileClass * FileClassRet = NULL;
+	for(i = 0; i < FileClassItems; i++){
+		struct FileClass * fileClassInst = getFileClass(i);
+		if(fileClassInst->type == FT_FILE){
+			FileClassRet = fileClassInst;
+			break;
+		}
+	}
+	CurrentFileDirEntry = i;	//CurrentFileDirEntry is relative to getFirstDirEntryFromGlobalList() now
+	return FileClassRet;
+}
+
+//The actual pointer inside the directory listing
+int CurrentFileDirEntry = 0;	
+//These update on getFirstFile/Dir getNextFile/Dir
+int LastFileEntry = 0;
+int LastDirEntry = 0;
+
+//return:  FT_DIR or FT_FILE: use getLFN(char buf[MAX_TGDSFILENAME_LENGTH+1]); to receive full first file
+//			or FT_NONE if invalid file
+int getFirstFile(char * path){
+	
+	//if path is different, rebuild filelist
+	if (!(strcmp(lastCurrentPath, path) == 0)){
+		updateLastGlobalPath(path);
+	}
+	
+	//lastCurrentPath is globally accesible by all code. But updated only in getFirstFile (getNextFile just retrieves the next ptr file info)
+	updateGlobalListFromPath(lastCurrentPath);
+	CurrentFileDirEntry = 0;
+	
+	//struct FileClass * fileInst = getFirstDirEntryFromGlobalList();					//get First directory entry	:	so it generates a valid DIR CurrentFileDirEntry
+	//struct FileClass * fileInst = getFirstFileEntryFromGlobalList();					//get First file entry 		:	so it generates a valid FILE CurrentFileDirEntry
+	struct FileClass * fileInst = getFileClass(CurrentFileDirEntry);
+	if (fileInst->type == FT_DIR) {	//dir
+		LastDirEntry=CurrentFileDirEntry;
+	}
+	else if (fileInst->type == FT_FILE){
+		LastFileEntry=CurrentFileDirEntry;
+	}
+	else{	
+		//invalid. Should not happen 
+		return FT_NONE;
+	}
+	//increase the file/dir counter after operation only if valid entry, otherwise it doesn't anymore
+	if((fileInst->type == FT_FILE) || (fileInst->type == FT_DIR)){
+		char *  FullPathStr = fileInst->fd_namefullPath;
+		setLFN((char*)FullPathStr);		//update last full path access
+		getLFN((char*)path);			//update source path
+	}
+	
+	//is this index indexable? otherwise cleanup
+	if(CurrentFileDirEntry < (int)(FileClassItems)){ 
+		CurrentFileDirEntry++;	
+	}
+	else{
+		CurrentFileDirEntry = 0;
+		LastDirEntry=structfd_posixInvalidFileDirHandle;
+		LastFileEntry=structfd_posixInvalidFileDirHandle;
+		return FT_NONE;	//actually end of list
+	}
+	return fileInst->type;
+}
+
+//requires fullpath of the CURRENT file, it will return the next one
+//return:  FT_DIR or FT_FILE: use getLFN(char buf[MAX_TGDSFILENAME_LENGTH+1]); to receive full first file
+//			or FT_NONE if invalid file
+int getNextFile(char * path){
+	struct FileClass * fileInst = getFileClass(CurrentFileDirEntry);
+	if(fileInst->type == FT_DIR){
+		LastDirEntry=CurrentFileDirEntry;
+	}
+	else if(fileInst->type == FT_FILE){
+		char * FullPathStr = fileInst->fd_namefullPath;	//must return fullPath here (0:/folder0/filename.ext)
+		setLFN((char*)FullPathStr);		//update last full path access
+		getLFN((char*)path);					//update source path
+		LastFileEntry=CurrentFileDirEntry;
+	}
+	else{	
+		//invalid
+		return FT_NONE;
+	}
+	
+	//increase the file counter after operation
+	if(CurrentFileDirEntry < (int)(FileClassItems)){ 
+		CurrentFileDirEntry++;	
+	}
+	else{
+		CurrentFileDirEntry = 0;
+		LastDirEntry=structfd_posixInvalidFileDirHandle;
+		LastFileEntry=structfd_posixInvalidFileDirHandle;
+		return FT_NONE;	//actually end of list
+	}
+	return fileInst->type;
+}
+
+//FAT_GetAlias
+//Get the alias (short name) of the last file or directory entry read
+//char* alias OUT: will be filled with the alias (short filename),
+//	should be at least 13 bytes long
+//bool return OUT: return true if successful
+bool FAT_GetAlias(char* alias){
+	if (alias == NULL){
+		return false;
+	}
+	int CurEntry = structfd_posixInvalidFileDirHandle;
+	if(LastFileEntry > LastDirEntry){
+		CurEntry = LastFileEntry;
+	}
+	else{
+		CurEntry = LastDirEntry;
+	}
+	//for some reason the CurEntry is invalid (trying to call and fileList hasn't been rebuilt)
+	if(CurEntry == structfd_posixInvalidFileDirHandle){
+		return false;
+	}
+	struct FileClass * fileInst = getFileClass(CurrentFileDirEntry);	//assign a FileClass to the StructFD generated before
+	FILINFO FILINFOObj = getFileFILINFOfromFileClass(fileInst);			//actually open the file and check attributes (rather than read dir contents)
+	if (	 
+	(	//file
+	(FILINFOObj.fattrib & AM_RDO)
+	||
+	(FILINFOObj.fattrib & AM_HID)
+	||
+	(FILINFOObj.fattrib & AM_SYS)
+	||
+	(FILINFOObj.fattrib & AM_DIR)
+	||
+	(FILINFOObj.fattrib & AM_ARC)
+	)
+	||	//dir
+	(FILINFOObj.fattrib & AM_DIR)
+	)
+	{
+		sprintf((char*)alias,"%s",fileInst->fd_namefullPath);					//update source path using short file/directory name
+	}
+	//not file or dir
+	else{
+		return false;
+	}
+	
+	return true;
+}
+
+//stubbed because what these do is a workaround, described below:
+//in TGDS: while listing a dir, create/read/update/delete a new file works
+void FAT_preserveVars()
+{
+}
+
+void FAT_restoreVars()
+{
+}
+
+u32	disc_HostType(void)
+{
+	if(FS_InitStatus == true){
+		return dldiGet()->ioInterface.ioType;
+	}
+	return 0;
+}
+
+/*-----------------------------------------------------------------
+FAT_GetLongFilename
+Get the long name of the last file or directory retrived with 
+	GetDirEntry. Also works for FindFirstFile and FindNextFile.
+	If a long name doesn't exist, it returns the short name
+	instead.
+char* filename: OUT will be filled with the filename, should be at
+	least 256 bytes long
+bool return OUT: return true if successful
+-----------------------------------------------------------------*/
+bool FAT_GetLongFilename(char* Longfilename){
+	if (Longfilename == NULL){
+		return false;
+	}
+	int CurEntry = structfd_posixInvalidFileDirHandle;
+	if(LastFileEntry > LastDirEntry){
+		CurEntry = LastFileEntry;
+	}
+	else{
+		CurEntry = LastDirEntry;
+	}
+	//for some reason the CurEntry is invalid (trying to call and fileList hasn't been rebuilt)
+	if(CurEntry == structfd_posixInvalidFileDirHandle){
+		return false;
+	}
+	struct FileClass * fileInst = getFileClass(CurEntry);	//assign a FileClass to the StructFD generated before
+	FILINFO FILINFOObj = getFileFILINFOfromFileClass(fileInst);			//actually open the file and check attributes (rather than read dir contents)
+	
+	if (	 
+	(	//file
+	(FILINFOObj.fattrib & AM_RDO)
+	||
+	(FILINFOObj.fattrib & AM_HID)
+	||
+	(FILINFOObj.fattrib & AM_SYS)
+	||
+	(FILINFOObj.fattrib & AM_DIR)
+	||
+	(FILINFOObj.fattrib & AM_ARC)
+	)
+	||	//dir
+	(FILINFOObj.fattrib & AM_DIR)
+	)
+	{
+		char * FullPathStr = fileInst->fd_namefullPath;	//must store proper filepath	must return fullPath here (0:/folder0/filename.ext)
+		sprintf((char*)Longfilename,"%s",FullPathStr);					//update source path using Long file/directory name
+	}
+	//not file or dir
+	else{
+		return false;
+	}
+	
+	return true;
+}
+
+/*-----------------------------------------------------------------
+FAT_GetFileSize
+Get the file size of the last file found or openned.
+This idea is based on a modification by MoonLight
+u32 return OUT: the file size
+-----------------------------------------------------------------*/
+u32 FAT_GetFileSize(void){
+	u32 fileSize = 0;
+	struct FileClass * fileInst = getFileClass(LastFileEntry);	//assign a FileClass to the StructFD generated before
+	FILINFO FILINFOObj = getFileFILINFOfromFileClass(fileInst);			//actually open the file and check attributes (rather than read dir contents)
+	
+	if (//file
+	(FILINFOObj.fattrib & AM_RDO)
+	||
+	(FILINFOObj.fattrib & AM_HID)
+	||
+	(FILINFOObj.fattrib & AM_SYS)
+	||
+	(FILINFOObj.fattrib & AM_DIR)
+	||
+	(FILINFOObj.fattrib & AM_ARC)
+	)
+	{
+		fileSize = (u32)FILINFOObj.fsize;
+	}
+	return 	fileSize;
+}
+
+/*-----------------------------------------------------------------
+FAT_GetFileCluster
+Get the first cluster of the last file found or openned.
+u32 return OUT: the file start cluster
+-----------------------------------------------------------------*/
+u32 FAT_GetFileCluster(void){
+	u32 FirstClusterFromLastFileOpen = structfd_posixInvalidFileDirHandle;
+	struct FileClass * fileInst = getFileClass(LastFileEntry);	//assign a FileClass to the StructFD generated before
+	char * FullPathStr = fileInst->fd_namefullPath;	//must store proper filepath	must return fullPath here (0:/folder0/filename.ext)
+	FILE * f = fopen(FullPathStr,"r");
+	sint32 fd = structfd_posixInvalidFileDirHandle;
+	struct fd * fdinst = NULL;
+	if(f){
+		fd = fileno(f);
+		fdinst = fd_struct_get(fd);
+		FirstClusterFromLastFileOpen = (u32)getStructFDFirstCluster(fdinst);
+		fclose(f);
+	}
+	return 	FirstClusterFromLastFileOpen;
+}
+
+/*-----------------------------------------------------------------
+FAT_DisableWriting
+Disables writing to the card at the driver level.
+Cannot be re-enabled.
+-----------------------------------------------------------------*/
+bool disableWriting = false;
+void FAT_DisableWriting (void){
+	disableWriting = true;
+}
+
+/*-----------------------------------------------------------------
+FAT_FileExists
+Returns the type of file 
+char* filename: IN filename of the file to look for
+FILE_TYPE return: OUT returns FT_NONE if there is now file with 
+	that name, FT_FILE if it is a file and FT_DIR if it is a directory
+-----------------------------------------------------------------*/
+int FAT_FileExists(char* filename){
+	return FileExists(filename);	//assign a StructFD inside
+}
+///////////////////////////////////////////////////////TGDS FS API extension end. /////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 ////////////////////////////////////////////////////////////////////////////USER CODE END/////////////////////////////////////////////////////////////////////////////////////
+
 
 
 ////////////////////////////////////////////////////////////////////////////INTERNAL CODE START///////////////////////////////////////////////////////////////////////////////
@@ -479,8 +951,6 @@ int fresult2errno(FRESULT result)
 
     return err;
 }
-
-
 
 //returns / allocates a new struct fd index with either DIR or FIL structure allocated
 int fatfs_fildir_alloc(int isfilordir)
@@ -704,7 +1174,6 @@ void fill_stat(const FILINFO *fno, struct stat *out)
 #endif
 }
 
-
 //update struct fd with new FIL
 void fill_fd_fil(int fd, FIL *fp, int flags, const FILINFO *fno, char * fullFilePath)	//(FileDescriptor :struct fd index)
 {
@@ -736,7 +1205,6 @@ void fill_fd_dir(int fd, DIR *fp, int flags, const FILINFO *fno, char * fullFile
 //called from :
 	//fill_fd_dir && fill_fd_fil
 	//stat (newlib implementation)
-	
 void fill_fd(struct fd *pfd, int flags, const FILINFO *fno)
 {
     pfd->isatty = 0;
@@ -788,7 +1256,6 @@ int fatfs_open_file(const sint8 *pathname, int flags, const FILINFO *fno){
 			structfdIndex = structfd_posixInvalidFileDirHandle;	//file handle generated, but file open failed, so, invalid.
 		}
     }
-	
 	return structfdIndex;
 }
 
@@ -845,10 +1312,7 @@ int fatfs_open_file_or_dir(const sint8 *pathname, int flags){
     return structFD;
 }
 
-
-/* exported functions */
-
-/* Use NDS RTC to update timestamps into files when certain operations require it*/
+// Use NDS RTC to update timestamps into files when certain operations require it
 DWORD get_fattime (void){
 	struct tm * tmStruct = getTime();
     return (
@@ -1137,7 +1601,6 @@ int fatfs_dirfd(DIR *dirp){
     return ret;
 }
 
-
 //if iterable DIR * is in the current StructFD index, return iterable DIR *
 //else return NULL (not valid iterable DIR * entry or not directory )
 DIR *fatfs_fdopendir(int fd){	//(FileDescriptor :struct fd index)
@@ -1296,487 +1759,3 @@ int _fstat_r( struct _reent *_r, int fd, struct stat *buf ){	//(FileDescriptor :
 }
 
 ////////////////////////////////////////////////////////////////////////////INTERNAL CODE END///////////////////////////////////////////////////////////////////////////////
-
-//////////////////////////////////////////////////////////////////////////// TGDS High level API START /////////////////////////////////////////////////////////////////////
-
-/////////////////////////////////////////misc directory functions////////////////////////////////////////////////////
-//Filename must be at least MAX_TGDSFILENAME_LENGTH+1 in size
-int FAT_FindFirstFile(char* filename){	
-	return getFirstFile(filename);
-}
-
-//Filename must be at least MAX_TGDSFILENAME_LENGTH+1 in size
-int FAT_FindNextFile(char* filename){
-	return getNextFile(filename);
-}
-
-u8 FAT_GetFileAttributes (void){
-	u8	libfatAttributes = 0;
-	if(CurrentFileDirEntry > 0){
-		struct FileClass * fileInst = getFileClass((CurrentFileDirEntry - 1));
-		FILINFO finfo = getFileFILINFOfromFileClass(fileInst);
-		libfatAttributes = (uint8)fsfat2libfatAttrib((int)finfo.fattrib);
-	}
-	return libfatAttributes;
-}
-
-u8 FAT_SetFileAttributes (const char* filename, u8 attributes, u8 mask){
-	u8	libfatAttributesIn = 0;
-	u8	libfatAttributesOut= 0;
-	struct FileClass fileInst;
-	int sizeToCopy = 0;
-	if(strlen(filename) > sizeof(fileInst.fd_namefullPath)){
-		sizeToCopy = sizeof(fileInst.fd_namefullPath);
-	}
-	else{
-		sizeToCopy = strlen(filename);
-	}
-	snprintf(fileInst.fd_namefullPath, sizeToCopy, "%s", filename);
-	FILINFO finfo = getFileFILINFOfromFileClass(&fileInst);
-	libfatAttributesIn = (uint8)fsfat2libfatAttrib((int)finfo.fattrib);
-	libfatAttributesOut = (libfatAttributesIn & ~(mask & 0x27)) | (attributes & 0x27);
-	int	NEWgccnewlibnano_to_fsfatAttributes = libfat2fsfatAttrib((int)libfatAttributesOut);
-	int NEWmask = libfat2fsfatAttrib((int)mask);
-	SetfsfatAttributesToFile((char*)filename, NEWgccnewlibnano_to_fsfatAttributes, NEWmask);
-	//
-	return libfatAttributesOut;
-}
-
-
-//Internal
-//Filename must be at least MAX_TGDSFILENAME_LENGTH+1
-bool setLFN(char* filename){
-	if (filename == NULL){
-		return false;
-	}
-	strncpy (lfnName, filename, (MAX_TGDSFILENAME_LENGTH+1) - 1);
-	lfnName[(MAX_TGDSFILENAME_LENGTH+1) - 1] = '\0';
-	return true;	
-}
-
-//Filename must be at least MAX_TGDSFILENAME_LENGTH+1
-bool getLFN(char* filename){
-	if (filename == NULL){
-		return false;
-	}
-	strncpy(filename, lfnName, (MAX_TGDSFILENAME_LENGTH+1) - 1);
-	filename[(MAX_TGDSFILENAME_LENGTH+1) - 1] = '\0';
-	return true;
-}
-
-
-void buildListFromPath(char * path){
-	FRESULT res;
-    DIR dir;
-	int i = 0;
-    FILINFO fno;
-	InitGlobalFileClass();
-    res = f_opendir(&dir, path);                       /* Open the directory */
-    if (res == FR_OK) {
-        for(;;){
-			res = f_readdir(&dir, &fno);                   /* Read a directory item */
-			int type = 0;
-			if (fno.fattrib & AM_DIR) {			           /* It is a directory */
-				type = FT_DIR;	
-            }
-			else if (									   /* It is a file */
-			(fno.fattrib & AM_RDO)
-			||
-			(fno.fattrib & AM_HID)
-			||
-			(fno.fattrib & AM_SYS)
-			||
-			(fno.fattrib & AM_ARC)
-			){
-				type = FT_FILE;			
-			}
-			else{	/* It is Invalid. */
-				type = FT_NONE;
-			}
-			
-			if (res != FR_OK || fno.fname[0] == 0){	//error or end of dir
-				break;
-			}
-			else if(i >= FileClassItems){
-				break;
-			}
-			else{
-				//open that full path and open a file handle , if it is file(get internal StructFD)
-				if((type == FT_FILE) || (type == FT_DIR)){
-					char builtFilePath[256];
-					sprintf(builtFilePath,"%s%s",path,fno.fname);
-					//populate
-					bool iterable = true;
-					setFileClass(iterable, (char*)&builtFilePath[0], i, type, structfd_posixInvalidFileDirHandle);
-					i++;
-				}
-			}
-		}
-        f_closedir(&dir);
-    }
-}
-
-
-volatile struct FileClass FileClassList[FileClassItems];
-
-//inits the TGDS FS API extension from the Struct FD file handle list
-//when using it, it will destroy all file handles used earlier.
-
-void setFileClass(bool iterable, char * fullPath, int FileClassListIndex, int Typ, int structFD){
-	struct FileClass * FileClassInst = (struct FileClass *)&FileClassList[FileClassListIndex];
-	FileClassInst->isIterable = iterable;
-	sprintf(FileClassInst->fd_namefullPath,"%s",fullPath);
-	FileClassInst->type = Typ;
-	FileClassInst->d_ino = structFD;
-}
-
-struct FileClass * getFileClass(int FileClassListIndex){
-	return (struct FileClass *)&FileClassList[FileClassListIndex];
-}
-
-//freely available StructFD are clean if any (lower are either used already or non-valid)
-void InitGlobalFileClass(){
-	int i = 0;
-	for(i = 0; i < FileClassItems; i++){
-		bool iterable = false;
-		setFileClass(iterable, dirent_default_d_name, i, FT_NONE, structfd_posixInvalidFileDirHandle);
-	}
-}
-
-//returns the first free StructFD
-void updateGlobalListFromPath(char * path){
-	//Update last path (destroys the last one)
-	updateLastGlobalPath(path);
-	buildListFromPath(path);
-}
-
-//requires a previously generated struct fd *
-FILINFO getFileFILINFOfromFileClass(struct FileClass * fileInst){
-	FILINFO finfo;
-	FRESULT result;
-	if(fileInst){
-		result = f_stat((const TCHAR*)fileInst->fd_namefullPath, &finfo);					/* Get file status */
-		if (result == FR_OK)
-		{
-			//printf("getFileFILINFOfromFileClass: stat ok");
-			//while(1==1);
-		}
-		else{
-			//printf("getFileFILINFOfromFileClass: stat error");
-			//while(1==1);
-		}
-	}
-	return finfo;
-}
-
-
-//Note: Requires a fresh call to updateGlobalListFromPath prior to calling this
-struct FileClass * getFirstDirEntryFromGlobalList(){
-	int i = 0;
-	struct FileClass * FileClassRet = NULL;
-	for(i = 0; i < FileClassItems; i++){
-		struct FileClass * fileClassInst = getFileClass(i);
-		if(fileClassInst->type == FT_DIR){
-			FileClassRet = fileClassInst;
-			break;
-		}
-	}
-	CurrentFileDirEntry = i;	//CurrentFileDirEntry is relative to getFirstDirEntryFromGlobalList() now
-	return FileClassRet;
-}
-
-//Note: Requires a fresh call to updateGlobalListFromPath prior to calling this
-struct FileClass * getFirstFileEntryFromGlobalList(){
-	int i = 0;
-	struct FileClass * FileClassRet = NULL;
-	for(i = 0; i < FileClassItems; i++){
-		struct FileClass * fileClassInst = getFileClass(i);
-		if(fileClassInst->type == FT_FILE){
-			FileClassRet = fileClassInst;
-			break;
-		}
-	}
-	CurrentFileDirEntry = i;	//CurrentFileDirEntry is relative to getFirstDirEntryFromGlobalList() now
-	return FileClassRet;
-}
-
-//The actual pointer inside the directory listing
-int CurrentFileDirEntry = 0;	
-//These update on getFirstFile/Dir getNextFile/Dir
-int LastFileEntry = 0;
-int LastDirEntry = 0;
-
-//return:  FT_DIR or FT_FILE: use getLFN(char buf[MAX_TGDSFILENAME_LENGTH+1]); to receive full first file
-//			or FT_NONE if invalid file
-int getFirstFile(char * path){
-	
-	//if path is different, rebuild filelist
-	if (!(strcmp(lastCurrentPath, path) == 0)){
-		updateLastGlobalPath(path);
-	}
-	
-	//lastCurrentPath is globally accesible by all code. But updated only in getFirstFile (getNextFile just retrieves the next ptr file info)
-	updateGlobalListFromPath(lastCurrentPath);
-	CurrentFileDirEntry = 0;
-	
-	//struct FileClass fileInst = getFirstDirEntryFromGlobalList();					//get First directory entry	:	so it generates a valid DIR CurrentFileDirEntry
-	//struct FileClass fileInst = getFirstFileEntryFromGlobalList();					//get First file entry 		:	so it generates a valid FILE CurrentFileDirEntry
-	struct FileClass * fileInst = getFileClass(CurrentFileDirEntry);
-	if (fileInst->type == FT_DIR) {	//dir
-		LastDirEntry=CurrentFileDirEntry;
-	}
-	else if (fileInst->type == FT_FILE){
-		LastFileEntry=CurrentFileDirEntry;
-	}
-	else{	//invalid
-		printf("getFirstFile: invalid");
-		while(1==1);
-	}
-	//increase the file/dir counter after operation only if valid entry, otherwise it doesn't anymore
-	if((fileInst->type == FT_FILE) || (fileInst->type == FT_DIR)){
-		char *  FullPathStr = fileInst->fd_namefullPath;	//must return fullPath here (0:/folder0/filename.ext)
-		//printf("it is file or dir:%s",FullPathStr);	//ok
-		//while(1==1);
-		setLFN((char*)FullPathStr);		//update last full path access
-		getLFN((char*)path);					//update source path
-	}
-	
-	//is this index indexable? otherwise cleanup
-	if(CurrentFileDirEntry < (int)(FileClassItems)){ 
-		CurrentFileDirEntry++;	
-	}
-	else{
-		CurrentFileDirEntry = 0;
-		LastDirEntry=structfd_posixInvalidFileDirHandle;
-		LastFileEntry=structfd_posixInvalidFileDirHandle;
-		return FT_NONE;	//actually end of list
-	}
-	
-	return fileInst->type;
-}
-
-//requires fullpath of the CURRENT file, it will return the next one
-//return:  FT_DIR or FT_FILE: use getLFN(char buf[MAX_TGDSFILENAME_LENGTH+1]); to receive full first file
-//			or FT_NONE if invalid file
-int getNextFile(char * path){
-	struct FileClass * fileInst = getFileClass(CurrentFileDirEntry);
-	if(fileInst->type == FT_DIR){
-		LastDirEntry=CurrentFileDirEntry;
-	}
-	else if(fileInst->type == FT_FILE){
-		char * FullPathStr = fileInst->fd_namefullPath;	//must return fullPath here (0:/folder0/filename.ext)
-		setLFN((char*)FullPathStr);		//update last full path access
-		getLFN((char*)path);					//update source path
-		LastFileEntry=CurrentFileDirEntry;
-	}
-	else{	//invalid
-	}
-	
-	//increase the file counter after operation
-	if(CurrentFileDirEntry < (int)(FileClassItems)){ 
-		CurrentFileDirEntry++;	
-	}
-	else{
-		CurrentFileDirEntry = 0;
-		LastDirEntry=structfd_posixInvalidFileDirHandle;
-		LastFileEntry=structfd_posixInvalidFileDirHandle;
-		return FT_NONE;	//actually end of list
-	}
-	return fileInst->type;
-}
-
-//FAT_GetAlias
-//Get the alias (short name) of the last file or directory entry read
-//char* alias OUT: will be filled with the alias (short filename),
-//	should be at least 13 bytes long
-//bool return OUT: return true if successful
-
-bool FAT_GetAlias(char* alias){
-	if (alias == NULL){
-		return false;
-	}
-	int CurEntry = structfd_posixInvalidFileDirHandle;
-	if(LastFileEntry > LastDirEntry){
-		CurEntry = LastFileEntry;
-	}
-	else{
-		CurEntry = LastDirEntry;
-	}
-	//for some reason the CurEntry is invalid (trying to call and fileList hasn't been rebuilt)
-	if(CurEntry == structfd_posixInvalidFileDirHandle){
-		return false;
-	}
-	struct FileClass * fileInst = getFileClass(CurrentFileDirEntry);	//assign a FileClass to the StructFD generated before
-	FILINFO FILINFOObj = getFileFILINFOfromFileClass(fileInst);			//actually open the file and check attributes (rather than read dir contents)
-	if (	 
-	(	//file
-	(FILINFOObj.fattrib & AM_RDO)
-	||
-	(FILINFOObj.fattrib & AM_HID)
-	||
-	(FILINFOObj.fattrib & AM_SYS)
-	||
-	(FILINFOObj.fattrib & AM_DIR)
-	||
-	(FILINFOObj.fattrib & AM_ARC)
-	)
-	||	//dir
-	(FILINFOObj.fattrib & AM_DIR)
-	)
-	{
-		sprintf((char*)alias,"%s",fileInst->fd_namefullPath);					//update source path using short file/directory name
-	}
-	//not file or dir
-	else{
-		return false;
-	}
-	
-	return true;
-}
-
-//stubbed because what these do is a workaround, described below:
-//in TGDS: while listing a dir, create/read/update/delete a new file works
-void FAT_preserveVars()
-{
-}
-
-void FAT_restoreVars()
-{
-}
-
-u32	disc_HostType(void)
-{
-	if(FS_InitStatus == true){
-		return dldiGet()->ioInterface.ioType;
-	}
-	return 0;
-}
-
-/*-----------------------------------------------------------------
-FAT_GetLongFilename
-Get the long name of the last file or directory retrived with 
-	GetDirEntry. Also works for FindFirstFile and FindNextFile.
-	If a long name doesn't exist, it returns the short name
-	instead.
-char* filename: OUT will be filled with the filename, should be at
-	least 256 bytes long
-bool return OUT: return true if successful
------------------------------------------------------------------*/
-bool FAT_GetLongFilename(char* Longfilename){
-	if (Longfilename == NULL){
-		return false;
-	}
-	int CurEntry = structfd_posixInvalidFileDirHandle;
-	if(LastFileEntry > LastDirEntry){
-		CurEntry = LastFileEntry;
-	}
-	else{
-		CurEntry = LastDirEntry;
-	}
-	//for some reason the CurEntry is invalid (trying to call and fileList hasn't been rebuilt)
-	if(CurEntry == structfd_posixInvalidFileDirHandle){
-		return false;
-	}
-	struct FileClass * fileInst = getFileClass(CurEntry);	//assign a FileClass to the StructFD generated before
-	FILINFO FILINFOObj = getFileFILINFOfromFileClass(fileInst);			//actually open the file and check attributes (rather than read dir contents)
-	
-	if (	 
-	(	//file
-	(FILINFOObj.fattrib & AM_RDO)
-	||
-	(FILINFOObj.fattrib & AM_HID)
-	||
-	(FILINFOObj.fattrib & AM_SYS)
-	||
-	(FILINFOObj.fattrib & AM_DIR)
-	||
-	(FILINFOObj.fattrib & AM_ARC)
-	)
-	||	//dir
-	(FILINFOObj.fattrib & AM_DIR)
-	)
-	{
-		char * FullPathStr = fileInst->fd_namefullPath;	//must store proper filepath	must return fullPath here (0:/folder0/filename.ext)
-		sprintf((char*)Longfilename,"%s",FullPathStr);					//update source path using Long file/directory name
-	}
-	//not file or dir
-	else{
-		return false;
-	}
-	
-	return true;
-}
-
-/*-----------------------------------------------------------------
-FAT_GetFileSize
-Get the file size of the last file found or openned.
-This idea is based on a modification by MoonLight
-u32 return OUT: the file size
------------------------------------------------------------------*/
-u32 FAT_GetFileSize(void){
-	u32 fileSize = 0;
-	struct FileClass * fileInst = getFileClass(LastFileEntry);	//assign a FileClass to the StructFD generated before
-	FILINFO FILINFOObj = getFileFILINFOfromFileClass(fileInst);			//actually open the file and check attributes (rather than read dir contents)
-	
-	if (//file
-	(FILINFOObj.fattrib & AM_RDO)
-	||
-	(FILINFOObj.fattrib & AM_HID)
-	||
-	(FILINFOObj.fattrib & AM_SYS)
-	||
-	(FILINFOObj.fattrib & AM_DIR)
-	||
-	(FILINFOObj.fattrib & AM_ARC)
-	)
-	{
-		fileSize = (u32)FILINFOObj.fsize;
-	}
-	return 	fileSize;
-}
-
-/*-----------------------------------------------------------------
-FAT_GetFileCluster
-Get the first cluster of the last file found or openned.
-u32 return OUT: the file start cluster
------------------------------------------------------------------*/
-u32 FAT_GetFileCluster(void){
-	u32 FirstClusterFromLastFileOpen = structfd_posixInvalidFileDirHandle;
-	struct FileClass * fileInst = getFileClass(LastFileEntry);	//assign a FileClass to the StructFD generated before
-	char * FullPathStr = fileInst->fd_namefullPath;	//must store proper filepath	must return fullPath here (0:/folder0/filename.ext)
-	FILE * f = fopen(FullPathStr,"r");
-	sint32 fd = structfd_posixInvalidFileDirHandle;
-	struct fd * fdinst = NULL;
-	if(f){
-		fd = fileno(f);
-		fdinst = fd_struct_get(fd);
-		FirstClusterFromLastFileOpen = (u32)getStructFDFirstCluster(fdinst);
-		fclose(f);
-	}
-	return 	FirstClusterFromLastFileOpen;
-}
-
-/*-----------------------------------------------------------------
-FAT_DisableWriting
-Disables writing to the card at the driver level.
-Cannot be re-enabled.
------------------------------------------------------------------*/
-bool disableWriting = false;
-void FAT_DisableWriting (void){
-	disableWriting = true;
-}
-
-/*-----------------------------------------------------------------
-FAT_FileExists
-Returns the type of file 
-char* filename: IN filename of the file to look for
-FILE_TYPE return: OUT returns FT_NONE if there is now file with 
-	that name, FT_FILE if it is a file and FT_DIR if it is a directory
------------------------------------------------------------------*/
-int FAT_FileExists(char* filename){
-	bool closeFileHandle = true;	//discard file handle
-	struct packedFDRet packedFDRetOut = FileExists(filename, closeFileHandle);	//assign a StructFD inside
-	return packedFDRetOut.type;
-}
-
-//////////////////////////////////////////////////////////////////////////// TGDS High level API END /////////////////////////////////////////////////////////////////////
