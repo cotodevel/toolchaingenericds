@@ -111,6 +111,25 @@ extern int _close (int fd);
 extern int close (int fd);
 extern int _close_r ( struct _reent *ptr, int fd );
 
+// High level POSIX functions:
+// Alternate TGDS high level API if current posix implementation is missing or does not work. 
+// Note: uses int filehandles (or StructFD index, being a TGDS internal file handle index)
+
+extern int	open_tgds(const char * filepath, sint8 * args);
+extern size_t	read_tgds(_PTR buf, size_t blocksize, size_t readsize, int fd);
+extern size_t write_tgds(_PTR buf, size_t blocksize, size_t readsize, int fd);
+extern int	close_tgds(int fd);
+extern int	fseek_tgds(int fd, long offset, int whence);
+extern long ftell_tgds(int fd);
+extern int fputs_tgds(const char * s , int fd);
+extern int fputc_tgds(int c, int fd);
+extern int putc_tgds(int c, int fd);
+extern int fprintf_tgds(int fd, const char *format, ...);
+extern int fgetc_tgds(int fd);
+extern char *fgets_tgds(char *s, int n, int fd);
+extern int feof_tgds(int fd);
+extern int ferror_tgds(int fd);
+
 #ifdef __cplusplus
 }
 #endif

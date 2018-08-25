@@ -33,6 +33,7 @@ USA
 #include "fileHandleTGDS.h"
 #include "fsfatlayerTGDS.h"
 #include "utilsTGDS.h"
+#include "limitsTGDS.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -97,14 +98,11 @@ _ssize_t _read_r ( struct _reent *ptr, int fd, void *buf, size_t cnt ){
 //ok _write_r reentrant called
 //write (get struct FD index from FILE * handle)
 _ssize_t _write_r ( struct _reent *ptr, int fd, const void *buf, size_t cnt ){
-	
 	//Conversion here 
 	struct fd * fdinst = fd_struct_get(fd);
-	
 	if( (fdinst != NULL) && ((sint32)fdinst->fd_posix != (sint32)structfd_posixInvalidFileDirHandle)  ) {
 		return (_ssize_t)devoptab_struct[fdinst->fd_posix]->write_r( NULL, fdinst->cur_entry.d_ino, buf, cnt );
 	}
-	
 	return -1;
 }
 
@@ -198,15 +196,11 @@ int _gettimeofday(struct timeval *ptimeval,void *ptimezone){
 }
 
 
-
-//todo: retest all of them in default newlib posix fs.
-/*
-//toolchain newlib nano lib stripped buffered fwrite support.
-//so we restore POSIX file implementation. User code. 
-FILE *	fopen(const char * filepath, sint8 * args){
-
-	sint32 posix_flags = 0;
-	
+// High level POSIX functions:
+// Alternate TGDS high level API if current posix implementation is missing or does not work. 
+// Note: uses int filehandles (or StructFD index, being a TGDS internal file handle index)
+int	open_tgds(const char * filepath, sint8 * args){
+	sint32 posix_flags = 0;	
 	//"r"	read: Open file for input operations. The file must exist.
 	//"w"	write: Create an empty file for output operations. If a file with the same name already exists, its contents are discarded and the file is treated as a new empty file.
 	//"a"	append: Open file for output at the end of a file. Output operations always write data at the end of the file, expanding it. Repositioning operations (fseek, fsetpos, rewind) are ignored. The file is created if it does not exist.
@@ -240,53 +234,36 @@ FILE *	fopen(const char * filepath, sint8 * args){
 	else if ( (strcmp(args,"a+") == 0) || (strcmp(args,"ab+") == 0) || (strcmp(args,"a+b") == 0)){
 		posix_flags |= O_RDWR|O_CREAT|O_APPEND;
 	}
-	
-	//must be struct fd Index returned here
-	sint32 fd = open(filepath, posix_flags,0);	//returns / allocates a new struct fd index with either DIR or FIL structure allocated
-	
-	if (fd < 0)
-	{
-		return NULL;	//return NULL filehandle
-	}
-	
-	FILE * FRET = fdopen(fd,args);	//Use "fdopen()" for struct fd index ->FILE handle conversion
-	return FRET;
+	return _open_r(NULL , filepath, posix_flags,0);	//returns / allocates a new struct fd index with either DIR or FIL structure allocated
 }
 
-size_t	fread(_PTR buf, size_t blocksize, size_t readsize, FILE * fileInst){
-	sint32 fd = fileno(fileInst);
-	return read(fd, buf, readsize);	//returns read size from file to buffer
+size_t	read_tgds(_PTR buf, size_t blocksize, size_t readsize, int fd){
+	return (size_t)_read_r(NULL, fd, buf, readsize);	//returns read size from file to buffer
 }
 
-size_t fwrite (_PTR buf, size_t blocksize, size_t readsize, FILE * fileInst){
-	sint32 fd = fileno(fileInst);
-	return write(fd, buf, (sint32)readsize);	//returns written size from buf to file
+
+size_t write_tgds(_PTR buf, size_t blocksize, size_t readsize, int fd){
+	return (size_t)_write_r(NULL, fd, buf, (sint32)readsize);	//returns written size from buf to file
 }
 
-int	fclose(FILE * fileInst){
-	sint32 fd = fileno(fileInst);
-	return _close_r(NULL,fd);	//no reentrancy so we don't care. Close handle
+int	close_tgds(int fd){
+	return _close(fd);	//no reentrancy so we don't care. Close handle
 }
 
-int	fseek(FILE *f, long offset, int whence){
-	return fseek(f,offset,whence);	//call fseek so _lseek_r (overriden) is called
+int	fseek_tgds(int fd, long offset, int whence){
+	return _lseek_r(NULL,fd,(_off_t)offset,whence);	//call fseek so _lseek_r (overriden) is called
 }
 
-//parse: FILE * -> Struct fd FieldDescriptor -> ... 
-long ftell (FILE * fileInst){
-	sint32 fd = fileno(fileInst);
+long ftell_tgds(int fd){
 	return fatfs_lseek(fd, 0, SEEK_CUR);
 }
 
-int fputs(const char * s , FILE * fileInst ){
+int fputs_tgds(const char * s , int fd){
 	int length = strlen(s);
 	int wlen = 0;
-	int res;
-	
-	sint32 fd = fileno(fileInst);
-	wlen = write(fd, s, (sint32)length);	//returns written size from buf to file
-	wlen += write(fd, "\n", 1);	//returns written size from buf to file 
-
+	int res = 0;
+	wlen = write_tgds(s, 0, (sint32)length, fd);	//returns written size from buf to file
+	wlen += write_tgds("\n", 0, (sint32)1, fd);	//returns written size from buf to file 
 	if (wlen == (length+1))
 	{
 		res = 0;
@@ -295,49 +272,41 @@ int fputs(const char * s , FILE * fileInst ){
 	{
 		res = 0;	// EOF
 	}
-
 	return res;
 }
 
-int fputc(int c, FILE * fileInst){
+int fputc_tgds(int c, int fd){
 	char ch = (char) c;
-	sint32 fd = fileno(fileInst);
-	if (write(fd, &ch, 1) != 1){
+	if (write_tgds(&ch, 0, (sint32)1, fd) != 1){
 		c = 0;	//EOF
 	}
 	return c;
 }
 
-int putc(int c, FILE * fileInst){
-	return fputc(c,fileInst);
+int putc_tgds(int c, int fd){
+	return fputc_tgds(c,fd);
 }
 
-int fprintf (FILE *stream, const char *format, ...)
-{
+int fprintf_tgds(int fd, const char *format, ...){
 	va_list arg;
-	volatile sint8 g_printfbuf[MAX_TGDSFILENAME_LENGTH+1];
+	volatile sint8 printfbuf[MAX_TGDSFILENAME_LENGTH+1];
 	va_start (arg, format);
-	vsnprintf((sint8*)g_printfbuf, 100, format, arg);
+	vsnprintf((sint8*)printfbuf, 100, format, arg);
 	va_end (arg);
-	
-	return fwrite((char*)g_printfbuf, 1, strlen((char*)g_printfbuf), stream);
+	return write_tgds((char*)printfbuf, 1, strlen((char*)printfbuf), fd);
 }
 
 
-int fgetc(FILE *fp)
-{
+int fgetc_tgds(int fd){
 	unsigned char ch;
-    return (fread(&ch, 1, 1, fp) == 1) ? (int)ch : 0; // EOF
+    return (read_tgds(&ch, 1, 1, fd) == 1) ? (int)ch : 0; // EOF
 }
 
-
-char *fgets(char *s, int n, FILE * f)
-{
+char *fgets_tgds(char *s, int n, int fd){
     int ch;
     char *p = s;
-
-    while (n > 1) {
-		ch = fgetc(f);
+    while (n > 1){
+		ch = fgetc_tgds(fd);
 		if (ch == 0) {	// EOF
 			*p = '\0';
 			return (p == s) ? NULL : s;
@@ -354,30 +323,27 @@ char *fgets(char *s, int n, FILE * f)
     return s;
 }
 
-int feof(FILE * stream)
+int feof_tgds(int fd)
 {
 	int offset = -1;
-	sint32 fd = fileno(stream);
 	struct fd * fdinst = fd_struct_get(fd);
-	offset = ftell(stream);
+	offset = ftell_tgds(fd);
 	if(fdinst->stat.st_size <= offset){
-		stream->_flags &= ~_EOF;
+		//stream->_flags &= ~_EOF;
 	}
 	else{
-		stream->_flags |= _EOF;
+		//stream->_flags |= _EOF;
 		offset = 0;
 	}
-	
 	return offset;
 }
 
 //stub
-int ferror(FILE * stream){
-	if(!stream){
+int ferror_tgds(int fd){
+	if(fd == structfd_posixInvalidFileDirHandle){
 		return 1;
 	}
-	
 	return 0;
 }
-*/
+
 #endif
