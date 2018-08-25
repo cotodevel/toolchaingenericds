@@ -64,7 +64,6 @@ USA
 #include "dldi.h"
 #include "clockTGDS.h"
 
-
 //fatfs
 FATFS dldiFs;
 
@@ -967,22 +966,19 @@ int fatfs_fildir_alloc(int isfilordir)
 }
 
 
-void fatfs_free(struct fd *pfd)
-{
+void fatfs_free(struct fd *pfd){
 	int i_fil = FileHandleFree(pfd->cur_entry.d_ino);	//conversion
     if (i_fil != structfd_posixInvalidFileDirHandle){	//FileHandleFree could free struct fd properly? set filesAlloc[index] free
 		if(pfd->filPtr){	//must we clean a FIL?
 			pfd->filPtr = NULL;
-		}
-		
+		}	
 		if(pfd->dirPtr){	//must we clean a DIR?
 			pfd->dirPtr = NULL;
 		}
     }
 	else{
 		//file_free failed
-	}
-	
+	}	
 }
 
 int fatfs_write (int fd, sint8 *ptr, int len){	//(FileDescriptor :struct fd index)
@@ -1101,7 +1097,7 @@ int fatfs_close (int structFDIndex)
 			
 			//update d_ino here (POSIX compliant)
 			pfd->cur_entry.d_ino = (sint32)dirent_default_d_ino;
-			
+			pfd->loc = 0;
         }
         else
         {
@@ -1115,10 +1111,10 @@ int fatfs_close (int structFDIndex)
         FRESULT result;
 		dp = pfd->dirPtr;
         result = f_closedir(dp);
-        if (result == FR_OK)
-        {
+        if (result == FR_OK){
 			FileHandleFree(pfd->cur_entry.d_ino);
             ret = 0;
+			pfd->loc = 0;
         }
         else
         {
@@ -1132,30 +1128,23 @@ int fatfs_close (int structFDIndex)
 	return ret;
 }
 
-void fill_stat(const FILINFO *fno, struct stat *out)
-{
+void fillPosixStatStruct(const FILINFO *fno, struct stat *out){
     mode_t mode;
-
     memset(out, 0, sizeof(struct stat));
-
     out->st_size = fno->fsize;
-    if ((fno->fattrib & AM_MASK) & AM_DIR)
-    {
+    if ((fno->fattrib & AM_MASK) & AM_DIR){
         mode = S_IFDIR;
     }
-    else
-    {
+    else{
         mode = S_IFREG;
     }
     mode |= (S_IRUSR|S_IRGRP|S_IROTH);
     mode |= (S_IXUSR|S_IXGRP|S_IXOTH);
-    if (!((fno->fattrib & AM_MASK) & AM_RDO))
-    {
+    if (!((fno->fattrib & AM_MASK) & AM_RDO)){
         /* rwxrwxrwx */
         mode |= (S_IWUSR|S_IWGRP|S_IWOTH);
     }
-    else
-    {
+    else{
         /* r-xr-xr-x */
     }
     out->st_mode = mode;
@@ -1171,10 +1160,9 @@ void fill_stat(const FILINFO *fno, struct stat *out)
 }
 
 //update struct fd with new FIL
-void fill_fd_fil(int fd, FIL *fp, int flags, const FILINFO *fno, char * fullFilePath)	//(FileDescriptor :struct fd index)
-{
+void fill_fd_fil(int fd, FIL *fp, int flags, const FILINFO *fno, char * fullFilePath){	//(FileDescriptor :struct fd index)
     struct fd * fdinst = fd_struct_get(fd);
-    fill_fd(fdinst, flags, fno);
+    initStructFD(fdinst, flags, fno);
     fdinst->filPtr = fp;
 	//copy full file path (posix <- fsfat)
 	int topsize = strlen(fullFilePath)+1;
@@ -1188,7 +1176,7 @@ void fill_fd_fil(int fd, FIL *fp, int flags, const FILINFO *fno, char * fullFile
 void fill_fd_dir(int fd, DIR *fp, int flags, const FILINFO *fno, char * fullFilePath)	//(FileDescriptor :struct fd index)
 {
     struct fd *fdinst = fd_struct_get(fd);
-	fill_fd(fdinst, flags, fno);
+	initStructFD(fdinst, flags, fno);
     fdinst->dirPtr = fp;
 	//copy full directory path (posix <- fsfat)
 	int topsize = strlen(fullFilePath)+1;
@@ -1201,15 +1189,12 @@ void fill_fd_dir(int fd, DIR *fp, int flags, const FILINFO *fno, char * fullFile
 //called from :
 	//fill_fd_dir && fill_fd_fil
 	//stat (newlib implementation)
-void fill_fd(struct fd *pfd, int flags, const FILINFO *fno)
-{
+void initStructFD(struct fd *pfd, int flags, const FILINFO *fno){
     pfd->isatty = 0;
     pfd->status_flags = flags;
     pfd->descriptor_flags = 0;
-	
-	//loc must NOT be modified here, only through fatfs_seek like functions
-	
-	fill_stat(fno, &pfd->stat);
+	pfd->loc = 0;	//internal file/dir offset zero
+	fillPosixStatStruct(fno, &pfd->stat);
 }
 
 //returns an internal index struct fd allocated
@@ -1227,18 +1212,15 @@ int fatfs_open_file(const sint8 *pathname, int flags, const FILINFO *fno){
         FILINFO fno_after;
         mode = posix2fsfatAttrib(flags);
         result = f_open(fdinst->filPtr, pathname, mode);	/* Opens an existing file. If not exist, creates a new file. */
-		if (result == FR_OK)
-        {
+		if (result == FR_OK){
 			//create file successfuly before trying to stat it
 			if(flags & O_CREAT){
 				f_close(fdinst->filPtr);
 				result = f_open(fdinst->filPtr, pathname, mode);
 			}
-			
 			result = f_stat(pathname, &fno_after);
 			fno = &fno_after;			
-			if (result == FR_OK)
-			{
+			if (result == FR_OK){
 				fill_fd_fil(fdinst->cur_entry.d_ino, fdinst->filPtr, flags, fno, (char*)pathname);
 			}
 			else
@@ -1256,26 +1238,19 @@ int fatfs_open_file(const sint8 *pathname, int flags, const FILINFO *fno){
 }
 
 //returns an internal index struct fd allocated
-int fatfs_open_dir(const sint8 *pathname, int flags, const FILINFO *fno)
-{
+int fatfs_open_dir(const sint8 *pathname, int flags, const FILINFO *fno){
     FRESULT result;
     int fdret = fatfs_fildir_alloc(structfd_isdir);	//allocates an internal struct fd (DIR) descriptor (user) which is then exposed, struct fd index included
 	struct fd * fdinst = fd_struct_get(fdret);
-    
-	if (fdinst == NULL)
-    {
+	if (fdinst == NULL){
         result = FR_TOO_MANY_OPEN_FILES;
     }
-    else
-    {
+    else{
 		result = f_opendir(fdinst->dirPtr, pathname);
-		
-        if (result == FR_OK)
-        {
+        if (result == FR_OK){
 			fill_fd_dir(fdret, fdinst->dirPtr, flags, fno, (char*)pathname);
         }
-        else
-        {
+        else{
             fatfs_free(fdinst);
         }
     }
@@ -1289,7 +1264,8 @@ int fatfs_open_file_or_dir(const sint8 *pathname, int flags){
 	int structFD = structfd_posixInvalidFileDirHandle;
 	fno.fname[0] = '\0'; /* initialize as invalid */
 	FRESULT result = f_stat(pathname, &fno);
-	//dir case
+	
+	//dir case // todo: same logic as below file if dir does not exists and must be created
     if ((result == FR_OK) && ((fno.fattrib & AM_MASK) & AM_DIR)){
         structFD = fatfs_open_dir(pathname, flags, &fno);
 	}
@@ -1369,8 +1345,9 @@ off_t fatfs_lseek(int fd, off_t offset, int whence){	//(FileDescriptor :struct f
 					offset = 0;
 				}
 				if(offset >= topFile){
-					offset = (topFile - 1);
+					offset = (topFile - 1);	//offset starts from 0 so -1 here
 				}
+				pos = offset;
 				validArg = true;
 			}
 			break;
@@ -1378,6 +1355,13 @@ off_t fatfs_lseek(int fd, off_t offset, int whence){	//(FileDescriptor :struct f
 			//<[offset]> can meaningfully be either positive or negative.
 			case(SEEK_CUR):{
 				pos = f_tell(filp);
+				pos += offset;
+				if(pos < 0){
+					pos = 0;
+				}
+				if(pos >= topFile){
+					pos = (topFile - 1);	//offset starts from 0 so -1 here
+				}
 				validArg = true;
 			}
 			break;
@@ -1385,16 +1369,19 @@ off_t fatfs_lseek(int fd, off_t offset, int whence){	//(FileDescriptor :struct f
 			//<[offset]> can meaningfully be either positive (to increase the size
 			//of the file) or negative.
 			case(SEEK_END):{
-				pos = topFile;
+				pos = topFile;				//file end is fileSize
 				validArg = true;
 			}
 			break;	
 		}
 		if(validArg == true){
-			pos += offset;
 			result = f_lseek(filp, pos);
 			if (result == FR_OK){
 				ret = pos;
+				//update stat st here
+				
+				//update current offset
+				pfd->loc = pos;
 			}
 			else{
 				errno = fresult2errno(result);
@@ -1474,7 +1461,7 @@ int fatfs_stat(const sint8 *path, struct stat *buf){
     FILINFO fno;
 	FRESULT result = f_stat(path, &fno);
     if ((result == FR_OK) && (buf != NULL)){
-        fill_stat(&fno, buf);
+        fillPosixStatStruct(&fno, buf);
         ret = 0;
     }
     else{
@@ -1689,13 +1676,11 @@ void fatfs_rewinddir(DIR *dirp){
 long fatfs_tell(struct fd *f){	//NULL check already outside
     long ret = structfd_posixInvalidFileDirHandle;
 	//dir
-	if ((f->dirPtr) && (S_ISDIR(f->stat.st_mode)))
-	{
+	if ((f->dirPtr) && (S_ISDIR(f->stat.st_mode))){
 		ret = f->loc;
     }
 	//file
-	else if ((f->filPtr) && (S_ISREG(f->stat.st_mode)))
-	{
+	else if ((f->filPtr) && (S_ISREG(f->stat.st_mode))){
 		ret = f->loc;
 	}
     return ret;

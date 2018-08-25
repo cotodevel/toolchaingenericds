@@ -36,8 +36,7 @@ USA
 #include "limitsTGDS.h"
 #include "typedefsTGDS.h"
 #include "ff.h"	//DIR struct definition here. dirent.h´s DIR was removed, and rewritten
-#include "dirent.h"
-
+#include <dirent.h>
 #include "devoptab_devices.h"
 #include "posixHandleTGDS.h"
 
@@ -213,16 +212,16 @@ extern int fatfs_deinit();
 extern int fatfs_write (int fd, sint8 *ptr, int len);
 extern int fatfs_read (int fd, sint8 *ptr, int len);
 extern int fatfs_close (int fd);
-extern void fill_stat(const FILINFO *fno, struct stat *out);
+extern void fillPosixStatStruct(const FILINFO *fno, struct stat *out);
 extern BYTE posix2fsfatAttrib(int flags);
 extern int fsfat2posixAttrib(BYTE flags);
 extern int fresult2errno(FRESULT result);
 extern int fatfs_fildir_alloc(int isfilordir);
 extern void fill_fd_fil(int fildes, FIL *fp, int flags, const FILINFO *fno, char * fullFilePath);
 extern void fill_fd_dir(int fildes, DIR *fp, int flags, const FILINFO *fno, char * fullFilePath);
-extern void fill_fd(struct fd *pfd, int flags, const FILINFO *fno);
-extern int fatfs_open_file(const sint8 *pathname, int flags, const FILINFO *fno);	//returns an internal index struct fd allocated
-extern int fatfs_open_dir(const sint8 *pathname, int flags, const FILINFO *fno);	//returns an internal index struct fd allocated
+extern void initStructFD(struct fd *pfd, int flags, const FILINFO *fno);
+extern int fatfs_open_file(const sint8 *pathname, int flags, const FILINFO *fno);	//(FRESULT is the file properties that must be copied to stat st)/ returns an internal index struct fd allocated
+extern int fatfs_open_dir(const sint8 *pathname, int flags, const FILINFO *fno);	//(FRESULT is the file properties that must be copied to stat st)/ returns an internal index struct fd allocated
 extern int fatfs_open_file_or_dir(const sint8 *pathname, int flags);	//returns an internal index struct fd allocated
 extern DWORD get_fattime (void);
 extern int fatfs_open(const sint8 *pathname, int flags);
