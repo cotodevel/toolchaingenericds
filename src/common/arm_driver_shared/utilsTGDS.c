@@ -349,93 +349,80 @@ return ip_decimal;
 //FileSystem utils
 
 
-sint8 *_FS_getFileExtension(sint8 *filename)
-{
+sint8 *_FS_getFileExtension(sint8 *filename){
 	static sint8 ext[4];
-	sint8	*ptr;
+	sint8	*ptr = filename;
 	int		i = 0;
 	
-	ptr = filename;
-	do
-	{
+	do{
 		ptr = strchr(ptr, '.');
 		if (!ptr)
 			return NULL;
 		ptr++;
 	}
 	while (strlen(ptr) > 3);
-		
-	for (i = 0; i < (int)strlen(ptr); i++)
+	
+	for (i = 0; i < (int)strlen(ptr); i++){
 		ext[i] = toupper((int)(ptr[i])); 
+	}
 	ext[i] = 0;
 	return ext;
 }
 
-sint8 *FS_getFileName(sint8 *filename)
-{
+sint8 *FS_getFileName(sint8 *filename){
 	static sint8 name[100];
-	sint8	*ptr;
-	int		i;
-	
-	ptr = filename;
+	sint8	*ptr = filename;
+	int		i = 0;
 	ptr = strrchr(ptr, '.');
-		
-	for (i = 0; i < ptr-filename; i++)
+	
+	for (i = 0; i < ptr-filename; i++){
 		name[i] = filename[i]; 
+	}
 	name[i] = 0;
 	return name;
 }
 
-int		FS_chdir(const sint8 *path)
-{
+int		FS_chdir(const sint8 *path){
 	int ret = fatfs_chdir(path);
 	return ret;
 }
 
-sint8	**FS_getDirectoryList(sint8 *path, sint8 *mask, int *cnt)
-{	
-	int			size;
-		
+
+//This is an example that uses opendir(); and readdir(); to iterate through dir/file contents.
+sint8	**FS_getDirectoryList(sint8 *path, sint8 *mask, int *cnt){
+	int	size = 0;
+	*cnt = size;
 	FS_lock();	
-	DIR *dir = opendir (path); 
-	*cnt = size = 0;
-	if( NULL != dir )
-	{
-		while (1)
-		{
+	DIR *dir = opendir (path);
+	if( NULL != dir ){
+		while (1){
 			struct dirent* pent = readdir(dir);
-			if(pent == NULL){
-				break;
-			}
-			struct fd * fdinst = fd_struct_get(pent->d_ino);
-			if(fdinst){
-				//OK
+			if(pent != NULL){
+				struct fd * fdinst = fd_struct_get(pent->d_ino);	//struct stat st is generated at the moment readdir(); is called, so get access to it through fdinst->stat
+				if(fdinst){
+					if(!S_ISDIR(fdinst->stat.st_mode)){
+						continue;
+					}
+					if(!strcmp(pent->d_name, ".")){
+						continue;
+					}
+					if(mask){
+						sint8 *ext = _FS_getFileExtension(pent->d_name);
+						if (ext && strstr(mask, ext)){
+							//filecount Increase
+							(*cnt)++;
+							size += strlen(pent->d_name)+1;
+						}
+					}
+					else{
+						//filecount Increase
+						(*cnt)++;
+						size += strlen(pent->d_name)+1;
+					}
+				}
 			}
 			else{
-				//NULL!. This should never happen.
-				continue;
-			}
-			if (!S_ISDIR(fdinst->stat.st_mode)) { 
-				continue;
-			}
-			if (!strcmp(pent->d_name, ".")){
-				continue;
-			}
-			if (mask)
-			{
-				sint8 *ext = _FS_getFileExtension(pent->d_name);
-				if (ext && strstr(mask, ext))
-				{
-					//filecount Increase
-					(*cnt)++;
-					size += strlen(pent->d_name)+1;
-				}
-			} 
-			else
-			{
-				//filecount Increase
-				(*cnt)++;
-				size += strlen(pent->d_name)+1;
+				break;
 			}
 		}
 	}
@@ -445,39 +432,38 @@ sint8	**FS_getDirectoryList(sint8 *path, sint8 *mask, int *cnt)
 	sint8	*ptr = ((sint8 *)list) + (*cnt)*sizeof(sint8 *);
 	
 	int i = 0; 
-	if( NULL != dir )
-	{
-		while (1)
-		{
+	if(NULL != dir){
+		while (1){
 			struct dirent* pent = readdir(dir);	//if NULL already not a dir
-			if(pent == NULL){
-				break;
-			}
-			struct fd * fdinst = fd_struct_get(pent->d_ino);
-			if (!S_ISDIR(fdinst->stat.st_mode)) {
-				continue;
-			}
-			if (!strcmp(pent->d_name, ".")){
-				continue;		
-			}
-			if (mask)
-			{
-				sint8 *ext = _FS_getFileExtension(pent->d_name);
-				if (ext && strstr(mask, ext))
-				{
-					strcpy(ptr, pent->d_name);
-					list[i++] = ptr;
-					ptr += strlen(pent->d_name)+1;  
+			if(pent != NULL){
+				struct fd * fdinst = fd_struct_get(pent->d_ino);
+				if(fdinst){
+					if(!S_ISDIR(fdinst->stat.st_mode)){
+						continue;
+					}
+					if(!strcmp(pent->d_name, ".")){
+						continue;
+					}
+					if(mask){
+						sint8 *ext = _FS_getFileExtension(pent->d_name);
+						if (ext && strstr(mask, ext)){
+							strcpy(ptr, pent->d_name);
+							list[i++] = ptr;
+							ptr += strlen(pent->d_name)+1;  
+						}
+					}
+					else{
+						strcpy(ptr, pent->d_name);
+						list[i++] = ptr;
+						ptr += strlen(pent->d_name)+1;
+					}
 				}
-			} else
-			{
-				strcpy(ptr, pent->d_name);
-				list[i++] = ptr;
-				ptr += strlen(pent->d_name)+1;
+			}
+			else{
+				break;
 			}
 		}
 	}
-	
 	closedir(dir);
 	FS_unlock();
 	return list;
