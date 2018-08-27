@@ -40,10 +40,6 @@ USA
 #define		IF			(*((uint32 volatile *) 0x04000214))
 #define		HALTCNT		(*((uint16 volatile *) 0x04000300))
 
-#define	PM_SOUND_AMP		(1<<0)
-#define	PM_SOUND_MUTE		(1<<1)
-
-
 #define DISP_IN_VBLANK (1 << ( 0 ))
 #define DISP_IN_HBLANK (1 << ( 1 ))
 #define DISP_YTRIGGERED (1 << ( 2 ))
@@ -542,13 +538,27 @@ USA
 
 //power controller
 //use POWERMAN_ARM7 | POWER_XXXX to write to ARM7 regs directly.
-#define POWERMAN_ARM7		0
-#define POWER_SOUND (1<<0)					//	Controls the power for the sound controller.
+#define POWERMAN_ARM7		0				//only a mask for writing to ARM7/ARM9 IO
+#define POWER_SOUND (1<<0)					//sound controller power bit (hw)
+
+#define PM_CONTROL_REG		(int)(0)	//PM control register
+#define	PM_BATTERY_REG		(int)(1)	//PM battery register
+#define	PM_AMPLIFIER_REG	(int)(2)	//PM amplifier register
+#define PM_READ_REGISTER	(int)(1<<7)	//PM read register
+#define	PM_AMP_OFFSET		(int)(2)	//PM amp register
+#define PM_GAIN_OFFSET		(int)(3)	//PM gain register
+#define PM_BACKLIGHT_LEVEL	(int)(4)	//DS Lite backlight register
+#define PM_GAIN_20			(int)(0)	//mic gain to 20db
+#define	PM_GAIN_40			(int)(1)	//mic gain to 40db
+#define PM_GAIN_80			(int)(2)	//mic gain to 80db
+#define PM_GAIN_160			(int)(3)	//mic gain to 160db
+#define PM_AMP_ON			(int)(1)	//sound amp on
+#define PM_AMP_OFF			(int)(0)	//Turns the sound amp off
+
 
 //sound
 #define REG_SOUNDCNT		(*(vuint16*)0x4000500)	//#define SOUND_CR          (*(vuint16*)0x04000500)
 #define REG_MASTER_VOLUME	(*(vuint8*)0x4000500)	
-
 #define REG_SOUNDBIAS		(*(vuint32*)0x4000504)
 #define SOUND_BIAS        (*(vuint16*)0x04000504)
 #define SOUND508          (*(vuint16*)0x04000508)
@@ -556,6 +566,8 @@ USA
 #define SOUND514                  (*(vuint16*)0x04000514)
 #define SOUND518          (*(vuint16*)0x04000518)
 #define SOUND51C          (*(vuint16*)0x0400051C)
+#define	PM_SOUND_AMP		(1<<0)
+#define	PM_SOUND_MUTE		(1<<1)
 
 
 #endif

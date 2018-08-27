@@ -138,6 +138,13 @@ swiSetHaltCR:
 	swi	0x1F0000
 	bx	lr
 
+@void swiChangeSoundBias(int enabled, int delay);
+.global 	swiChangeSoundBias
+.type   	swiChangeSoundBias STT_FUNC
+swiChangeSoundBias:
+	swi	0x08
+	bx	lr
+	
 #endif
 
 .pool

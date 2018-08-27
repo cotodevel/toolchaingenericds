@@ -35,6 +35,11 @@ extern "C"{
 extern void powerON(uint32 values);
 extern void powerOFF(uint32 values);
 
+#ifdef ARM7
+extern void SoundPowerON(); //aka : enableSound()
+#endif
+
+
 #ifdef __cplusplus
 }
 #endif

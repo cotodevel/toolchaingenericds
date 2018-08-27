@@ -37,7 +37,8 @@ extern "C"{
 #endif
 
 //NDS7/9 Bios 
-//ARM ASM
+//ARM ASM NDS9 Bios (useful when vectors @ 0xffff0000 and manual processor vectors handling is required)
+
 extern void swiDelay(uint32 delayvalue);
 extern uint16 swiCRC16(uint16 crc, void * data, uint32 size);
 extern void swiSleep(uint32 delayvalue);
@@ -48,12 +49,15 @@ extern void swiDivMod(int numerator, int divisor, int * result, int * remainder)
 extern void swiCopy(const void * source, void * dest, int flags);
 extern int swiSqrt(int value);
 
+
+//NDS7 Bios 
 #ifdef ARM7
 extern void swiHalt(void);
 extern uint16 swiGetSineTable(int index);
 extern uint16 swiGetPitchTable(int index);
 extern uint8 swiGetVolumeTable(int index);
 extern void swiSetHaltCR(uint32 data);
+extern void swiChangeSoundBias(int enabled, int delay);
 #endif
 
 
@@ -62,14 +66,6 @@ extern void swiSetHaltCR(uint32 data);
 //C
 extern void swiFastCopy(uint32 * source, uint32 * dest, int flags);
 
-
-//NDS7 Bios 
-#ifdef ARM7
-
-#endif
-
-
-//NDS9 Bios (useful when vectors @ 0x00000000 and manual processor vectors handling is required)
 
 #ifdef __cplusplus
 }

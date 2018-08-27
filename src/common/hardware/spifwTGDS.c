@@ -128,12 +128,12 @@ int writeFirmwareSPI(uint32 address, void * source, uint32 size){
 }
 */
 
-int PowerManagementDeviceRead(int reg) {
+int PowerManagementDeviceRead(int reg) {	//aka readPowerManagement
 	return PowerManagementDeviceWrite((reg)|POWMAN_READ_BIT, 0);
 }
 
 
-int PowerManagementDeviceWrite(int reg, int command) {
+int PowerManagementDeviceWrite(int reg, int command) {	//aka writePowerManagement
 //---------------------------------------------------------------------------------
 	uint32 OLD_IME = REG_IME;
 	REG_IME = 0;
