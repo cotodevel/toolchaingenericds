@@ -37,13 +37,35 @@ extern "C"{
 #endif
 
 //NDS7/9 Bios 
+//ARM ASM
 extern void swiDelay(uint32 delayvalue);
 extern uint16 swiCRC16(uint16 crc, void * data, uint32 size);
+extern void swiSleep(uint32 delayvalue);
+extern int swiIsDebugger(void);
+extern int swiDivide(int numerator, int divisor);
+extern int swiRemainder(int numerator, int divisor);
+extern void swiDivMod(int numerator, int divisor, int * result, int * remainder);
+extern void swiCopy(const void * source, void * dest, int flags);
+extern int swiSqrt(int value);
+
+#ifdef ARM7
+extern void swiHalt(void);
+extern uint16 swiGetSineTable(int index);
+extern uint16 swiGetPitchTable(int index);
+extern uint8 swiGetVolumeTable(int index);
+extern void swiSetHaltCR(uint32 data);
+#endif
+
+
+
+
+//C
 extern void swiFastCopy(uint32 * source, uint32 * dest, int flags);
+
 
 //NDS7 Bios 
 #ifdef ARM7
-extern void swiChangeSndBias(int enable, int delayvalue);
+
 #endif
 
 

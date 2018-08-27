@@ -16,6 +16,8 @@
 @USA
 @
 
+@NDS BIOS Routines ARM ASM code
+
 #ifdef ARM7
 .text
 #endif
@@ -29,13 +31,12 @@
 
 #include "dsregs_asm.h"
 
-
 @void swiDelay(uint32 delayvalue);
 .global 	swiDelay
-.type   	swiDelay STT_FUNC
+.type   	swiDelay	STT_FUNC
 swiDelay:
-	swi 0x30000
-bx r14
+	swi	0x30000
+	bx	lr
 
 @uint16 swiCRC16(uint16 crc, void * data, uint32 size);
 .global 	swiCRC16
@@ -44,13 +45,99 @@ swiCRC16:
 	swi 0xe0000
 bx r14
 
+@void swiSleep(void);
+.global 	swiSleep
+.type   	swiSleep STT_FUNC
+swiSleep:
+	swi	0x70000
+	bx	lr
+
+@int swiIsDebugger(void);
+.global 	swiIsDebugger
+.type   	swiIsDebugger STT_FUNC
+swiIsDebugger:
+	swi	0xF0000
+	bx	lr
+
+@int swiDivide(int numerator, int divisor);
+.global 	swiDivide
+.type   	swiDivide STT_FUNC
+swiDivide:
+	swi	0x90000
+	bx	lr
+
+@int swiRemainder(int numerator, int divisor);
+.global 	swiRemainder
+.type   	swiRemainder STT_FUNC
+swiRemainder:
+	swi	0x90000
+	mov	r0, r1
+	bx	lr
+
+@void swiDivMod(int numerator, int divisor, int * result, int * remainder);
+.global 	swiDivMod
+.type   	swiDivMod STT_FUNC
+swiDivMod:
+	push	{r2, r3}
+	swi	0x90000
+	pop	{r2, r3}
+	str	r0, [r2]
+	str	r1, [r3]
+	bx	lr
+
+@void swiCopy(const void * source, void * dest, int flags);
+.global 	swiCopy
+.type   	swiCopy STT_FUNC
+swiCopy:
+	swi	0xB0000
+	bx	lr
+
+@int swiSqrt(int value);
+.global 	swiSqrt
+.type   	swiSqrt STT_FUNC
+swiSqrt:
+	swi	0xD0000
+	bx	lr
+
+
 #ifdef ARM7
-@void swiChangeSndBias(int enable, int delayvalue);
-.global 	swiChangeSndBias
-.type   	swiChangeSndBias STT_FUNC
-swiChangeSndBias:
-	swi	0x80000
-bx	r14
+@void swiHalt(void);
+.global 	swiHalt
+.type   	swiHalt STT_FUNC
+swiHalt:
+	swi	0x60000
+	bx	lr
+
+@uint16 swiGetSineTable(int index);
+.global 	swiGetSineTable
+.type   	swiGetSineTable STT_FUNC
+swiGetSineTable:
+	swi	0x1A0000
+	bx	lr
+
+@uint16 swiGetPitchTable(int index);
+.global 	swiGetPitchTable
+.type   	swiGetPitchTable STT_FUNC
+swiGetPitchTable:
+	swi	0x1B0000
+	bx	lr
+
+@uint8 swiGetVolumeTable(int index);
+.global 	swiGetVolumeTable
+.type   	swiGetVolumeTable STT_FUNC
+swiGetVolumeTable:
+	swi	0x1C0000
+	bx	lr
+
+
+@void swiSetHaltCR(uint32 data);
+.global 	swiSetHaltCR
+.type   	swiSetHaltCR STT_FUNC
+swiSetHaltCR:
+	mov	r2, r0
+	swi	0x1F0000
+	bx	lr
+
 #endif
 
 .pool
