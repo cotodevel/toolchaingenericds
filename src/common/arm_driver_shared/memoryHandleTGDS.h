@@ -24,6 +24,7 @@ USA
 #include "typedefsTGDS.h"
 #include "dsregs.h"
 #include "reent.h"
+#include "notifierProcessor.h"
 
 #define nds_ewram_mask (get_ewram_size()-1)
 
