@@ -53,7 +53,21 @@ struct fd *fd_struct_get(int fd){
     return f;
 }
 
-void file_default_init(){
+//must be called before FS_init(); (fsfatlayerTGDS.h)
+// 1) initTGDSFS();
+// 2) FS_init();
+
+void initTGDSFS(){
+	
+	//newlib devoptabs
+	memcpy ( (uint32*)&devoptab_stdin.name[0], (uint32*)stdin_name_desc, strlen(stdin_name_desc));
+	memcpy ( (uint32*)&devoptab_stdout.name[0], (uint32*)stdout_name_desc, strlen(stdout_name_desc));
+	memcpy ( (uint32*)&devoptab_sterr.name[0], (uint32*)stderr_name_desc, strlen(stderr_name_desc));
+	memcpy ( (uint32*)&devoptab_stub.name[0], (uint32*)stdstub_name_desc, strlen(stdstub_name_desc));
+	
+	//for fopen/fread/fwrite/fclose we use the fsfat_internal_name_desc, then internally gets parsed to fsfat_internal_name_desc (fsfat layer)
+	memcpy ( (uint32*)&devoptab_fatfs.name[0], (uint32*)fsfat_internal_name_desc, strlen(fsfat_internal_name_desc));
+	
 	int fd = 0;
 	/* search in all struct fd instances*/
     for (fd = 0; fd < OPEN_MAXTGDS; fd++){

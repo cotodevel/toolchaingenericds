@@ -54,8 +54,6 @@ extern const struct devoptab_t devoptab_fatfs;
 extern const struct devoptab_t devoptab_stub;	//initialize up to OPEN_MAXTGDS POSIX
 extern const struct devoptab_t *devoptab_struct[OPEN_MAXTGDS];
 
-extern void initdevoptab();
-
 extern int open_r_stdin ( struct _reent *r, const sint8 *path, int flags, int mode );
 extern int close_r_stdin ( struct _reent *r, int fd );
 extern _ssize_t write_r_stdin( struct _reent *r, int fd, const sint8 *ptr, int len );

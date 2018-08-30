@@ -92,19 +92,6 @@ const struct devoptab_t *devoptab_struct[OPEN_MAXTGDS] = {
    &devoptab_stub
 };
 
-//call for setting up devoptabs
-void initdevoptab(){
-	
-	//newlib devoptabs
-	memcpy ( (uint32*)&devoptab_stdin.name[0], (uint32*)stdin_name_desc, strlen(stdin_name_desc));
-	memcpy ( (uint32*)&devoptab_stdout.name[0], (uint32*)stdout_name_desc, strlen(stdout_name_desc));
-	memcpy ( (uint32*)&devoptab_sterr.name[0], (uint32*)stderr_name_desc, strlen(stderr_name_desc));
-	memcpy ( (uint32*)&devoptab_stub.name[0], (uint32*)stdstub_name_desc, strlen(stdstub_name_desc));
-	
-	//for fopen/fread/fwrite/fclose we use the fsfat_internal_name_desc, then internally gets parsed to fsfat_internal_name_desc (fsfat layer)
-	memcpy ( (uint32*)&devoptab_fatfs.name[0], (uint32*)fsfat_internal_name_desc, strlen(fsfat_internal_name_desc));	
-}
-
 sint32 open_posix_filedescriptor_devices(){
 	sint32 i = 0;
 	sint32 items = 0;	//POSIX devoptabs start at index 0

@@ -40,7 +40,7 @@ extern "C" {
 #endif
 
 extern volatile struct fd files[OPEN_MAXTGDS];	//file/dir attrs, pointers for below struct
-extern void file_default_init();
+extern void initTGDSFS();
 extern struct fd *fd_struct_get(int fd);	//the fd here is the internal FD index
 extern int FileHandleAlloc(struct devoptab_t * devoptabInst );
 extern int FileHandleFree(int fd);

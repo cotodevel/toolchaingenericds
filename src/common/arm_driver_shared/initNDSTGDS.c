@@ -76,12 +76,6 @@ void initHardware(void) {
 	setbuf(stdout, NULL);	//printf ability to direct DS Framebuffer
 	//setbuf(stderr, NULL);
 	
-	//devoptab structs so Newlib POSIX filesystem can work
-	initdevoptab();
-	
-	//init file handles
-	file_default_init();
-	
 	getsIPCSharedTGDS()->arm9startaddress = get_ewram_start();
 	getsIPCSharedTGDS()->arm9endaddress = (uint32)(get_ewram_start() + get_ewram_size());
 	

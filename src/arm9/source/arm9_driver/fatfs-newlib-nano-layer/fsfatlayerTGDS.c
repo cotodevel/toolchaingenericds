@@ -1712,10 +1712,13 @@ void fatfs_seekdir(DIR *dirp, long loc){
     }
 }
 
+//internal: SD init code: call fatfs_init() to have TGDS Filesystem support (posix file functions fopen/fread/fwrite/fclose/etc working). Always call first.
 int fatfs_init(){
+	initTGDSFS();
     return (f_mount(&dldiFs, "0:", 1));
 }
 
+//internal: SD de-init code: requires to call fatfs_init() at least once before.
 int fatfs_deinit(){
 	return (f_unmount("0:"));
 }
