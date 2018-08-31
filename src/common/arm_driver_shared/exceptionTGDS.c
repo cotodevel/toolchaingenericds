@@ -99,17 +99,31 @@ int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list list){
 	//merge any "..." special arguments where sint8 * ftm requires , store into g_printfbuf
 	vsnprintf ((sint8*)Buf, (int)sizeof(g_printfbuf), fmt, list);
 	
-	// FIXME
-	t_GUIZone zone;
-	zone.x1 = 0; zone.y1 = 0; zone.x2 = 256; zone.y2 = 192;
-	zone.font = &smallfont_7_font;	//&trebuchet_9_font;
-	GUI_drawText(&zone, 0, GUI.printfy, 255, (sint8*)g_printfbuf);
-	GUI.printfy += GUI_getFontHeight(&zone);
+	t_GUIZone * zoneInst = getDefaultZoneConsole();
+	GUI_drawText(zoneInst, 0, GUI.printfy, 255, (sint8*)g_printfbuf);
+	GUI.printfy += getFontHeightFromZone(zoneInst);
 	return (strlen((char*)Buf));
 	#endif
 }
 
 
+#ifdef ARM9
+//this needs a rework
+void printfCoords(int x, int y, const char *format, ...){
+	va_list args;
+    va_start(args, format);
+	char * Buf = (char *)&g_printfbuf[0];
+	//merge any "..." special arguments where sint8 * ftm requires , store into g_printfbuf
+	vsnprintf ((sint8*)Buf, (int)sizeof(g_printfbuf), format, args);
+	va_end(args);
+	t_GUIZone * zoneInst = getDefaultZoneConsole();
+	
+	GUI.printfy = y * getFontHeightFromZone(zoneInst);
+	GUI_drawText(zoneInst, x, GUI.printfy, 255, (sint8*)g_printfbuf);
+	GUI.printfy += getFontHeightFromZone(zoneInst);	//skip to next line
+	return (strlen((char*)Buf));
+}
+#endif
 
 #include "InterruptsARMCores_h.h"
 

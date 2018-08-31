@@ -39,6 +39,20 @@ ConsoleInstance DefaultConsole = {0};		//generic console
 ConsoleInstance CustomConsole = {0};		//project specific console
 ConsoleInstance * DefaultSessionConsole;	//Default Console Instance Chosen
 
+
+t_GUIZone DefaultZone;
+
+t_GUIZone * getDefaultZoneConsole(){
+	DefaultZone.x1 = 0; DefaultZone.y1 = 0; DefaultZone.x2 = 256; DefaultZone.y2 = 192;
+	DefaultZone.font = &smallfont_7_font;	//&trebuchet_9_font;
+	return (t_GUIZone *)&DefaultZone;
+}
+
+int getFontHeightFromZone(t_GUIZone * ZoneInst){
+	return GUI_getFontHeight(ZoneInst);
+}
+
+
 bool InitializeConsole(ConsoleInstance * ConsoleInst){	
 	UpdateConsoleSettings(ConsoleInst);	
 	return true;
@@ -177,7 +191,7 @@ int GUI_drawVChar(t_GUIZone *zone, t_GUIFont *font, uint16 x, uint16 y, int col,
         for (w = 0; w < wn; w++) 
         {
             uint16 cl, cr;        	
-            uint16 v = *ptr;
+            uint16 v = 0;
 
             if (w == 0 && xo != 0) 
             {
@@ -259,6 +273,7 @@ int GUI_getFontHeight(t_GUIZone *zone)
 	return zone->font->height+1;
 }
 
+/*
 void		GUI_printf(sint8 *fmt, ...)
 {	
 	va_list args;
@@ -273,7 +288,7 @@ void		GUI_printf(sint8 *fmt, ...)
     GUI_drawText(&zone, 0, GUI.printfy, 255, (sint8*)g_printfbuf);
     GUI.printfy += GUI_getFontHeight(&zone);
 }
-
+*/
 //used by gui_printf
 void	GUI_clear()
 {

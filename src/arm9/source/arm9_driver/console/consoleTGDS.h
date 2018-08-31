@@ -465,6 +465,10 @@ extern int 	GUI_drawAlignText(t_GUIZone *zone, int flags, int y, int col, sint8 
 extern void clrscr();
 extern void	GUI_init(bool project_specific_console);
 
+extern t_GUIZone DefaultZone;
+extern t_GUIZone * getDefaultZoneConsole();
+extern int getFontHeightFromZone(t_GUIZone * ZoneInst);
+
 #ifdef __cplusplus
 }
 #endif
