@@ -177,6 +177,14 @@ extern client_http_handler client_http_handler_context;
 #define InternalRAM ((u8*)0x03000000)
 #define WorkRAM ((u8*)0x02000000)
 
+#define GDBMapFileAddress (uint32)(0x0f000000)
+
+
+struct gdbStubMapFile {
+	int GDBMapFileSize;
+	FILE * GDBFileHandle;
+};
+
 
 #endif
 
@@ -308,6 +316,15 @@ extern void remoteCleanUp();
 extern u8 debuggerReadByte(u32 addr);
 extern u16 debuggerReadHalfWord(u32 addr);
 extern u32 debuggerReadMemory(u32 addr);
+
+extern struct gdbStubMapFile globalGdbStubMapFile;
+extern bool isValidGDBMapFile;
+extern void setValidGDBMapFile(bool ValidGDBMapFile);
+extern bool getValidGDBMapFile();
+extern struct gdbStubMapFile * getGDBMapFile();
+extern bool initGDBMapFile(char * filename);
+extern void closeGDBMapFile();
+extern uint32 readu32GDBMapFile(uint32 address);
 
 #endif
 

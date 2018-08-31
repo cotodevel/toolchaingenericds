@@ -30,6 +30,10 @@ USA
 #include "ipcfifoTGDS.h"
 #include "notifierProcessor.h"
 
+#ifdef ARM9
+#include "dswnifi_lib.h"
+#endif
+
 //vram linear memory allocator 
 sint32 vramABlockOfst	=	0;	//offset pointer to free memory, user alloced memory is (baseAddr + (sizeAlloced - vramBlockPtr))
 sint32 vramBBlockOfst	=	0;
@@ -372,6 +376,10 @@ bool isValidMap(uint32 addr){
 		((addr >= (uint32)(0x04000000)) && (addr <= (uint32)(0x04000000 + 4*1024)))	//NDS IO Region protected
 		||
 		((addr >= (uint32)(0x08000000)) && (addr <= (uint32)(0x08000000 + (32*1024*1024))))	//GBA ROM MAP (allows to read GBA carts over GDB)
+		#ifdef ARM9
+		||
+		((addr >= (uint32)(GDBMapFileAddress)) && (addr <= (uint32)(GDBMapFileAddress + (GDBMapFileAddress-1))))	//GDB File stream 
+		#endif
 	){
 		return true;
 	}

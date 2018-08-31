@@ -1416,27 +1416,88 @@ void remoteCleanUp()
 
 u32 debuggerReadMemory(u32 addr){
 	if(isValidMap(addr) == true){
-		return (*(u32*)addr);
+		if(getValidGDBMapFile() == true){
+			return (u32)readu32GDBMapFile(addr);
+		}
+		else{
+			return (*(u32*)addr);
+		}
 	}
-	else{
-		return (u32)(0xffffffff);
-	}
+	return (u32)(0xffffffff);
 }
 
 u16 debuggerReadHalfWord(u32 addr){
 	if(isValidMap(addr) == true){
-		return (*(u16*)addr);
+		if(getValidGDBMapFile() == true){
+			return (u16)(readu32GDBMapFile(addr) & 0xffff);
+		}
+		else{
+			return (*(u16*)addr);
+		}
 	}
-	else{
-		return (u16)(0xffff);
-	}
+	return (u16)(0xffff);
 }
 
 u8 debuggerReadByte(u32 addr){
 	if(isValidMap(addr) == true){
-		return (*(u8*)addr);
+		if(getValidGDBMapFile() == true){
+			return (u8)(readu32GDBMapFile(addr)&0xff);
+		}
+		else{
+			return (*(u8*)addr);
+		}
 	}
-	else{
-		return (u8)(0xff);
+	return (u8)(0xff);
+}
+
+struct gdbStubMapFile globalGdbStubMapFile;
+bool isValidGDBMapFile = false;
+void setValidGDBMapFile(bool ValidGDBMapFile){
+	isValidGDBMapFile = ValidGDBMapFile;
+}
+bool getValidGDBMapFile(){
+	return isValidGDBMapFile;
+}
+struct gdbStubMapFile * getGDBMapFile(){
+	return (struct gdbStubMapFile *)&globalGdbStubMapFile;
+}
+
+bool initGDBMapFile(char * filename){
+	struct gdbStubMapFile * gdbStubMapFileInst = getGDBMapFile();
+	memset((uint8*)gdbStubMapFileInst, 0, sizeof(struct gdbStubMapFile));
+	FILE * fh = fopen(filename,"r");
+	if(fh){
+		fseek(fh,0,SEEK_END);
+		int fileSize = ftell(fh);
+		fseek(fh,0,SEEK_SET);
+		gdbStubMapFileInst->GDBFileHandle = fh;
+		gdbStubMapFileInst->GDBMapFileSize = fileSize;
+		setValidGDBMapFile(true);
+		return true;
 	}
+	setValidGDBMapFile(false);
+	return false;
+}
+
+void closeGDBMapFile(){
+	struct gdbStubMapFile * gdbStubMapFileInst = getGDBMapFile();
+	if(gdbStubMapFileInst->GDBFileHandle != NULL){
+		fclose(gdbStubMapFileInst->GDBFileHandle);
+	}
+}
+
+uint32 readu32GDBMapFile(uint32 address){
+	u32 readVal = 0;
+	int offset = 0;
+	struct gdbStubMapFile * gdbStubMapFileInst = getGDBMapFile();
+	if(gdbStubMapFileInst->GDBFileHandle != NULL){
+		struct gdbStubMapFile * gdbStubMapFileInst = getGDBMapFile();
+		offset = (address & 0xffffff);	//32M top
+		
+		iprintf("trying offset:%x",offset);
+		fseek(gdbStubMapFileInst->GDBFileHandle,offset,SEEK_CUR);
+		fread((uint8*)&readVal, 1, 4, gdbStubMapFileInst->GDBFileHandle);
+		return readVal;
+	}
+	return (uint32)0xffffffff;
 }
