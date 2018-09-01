@@ -44,13 +44,10 @@ extern const sint8 * stdout_name_desc;
 extern const sint8 * stderr_name_desc;
 extern const sint8 * stdstub_name_desc;
 
-//internal / external fatfs filename descriptors
-extern const sint8 * fsfat_internal_name_desc;
-
 extern const struct devoptab_t devoptab_stdin;
 extern const struct devoptab_t devoptab_stdout;
 extern const struct devoptab_t devoptab_sterr;
-extern const struct devoptab_t devoptab_fatfs;
+extern const struct devoptab_t devoptab_sdFilesystem;
 extern const struct devoptab_t devoptab_stub;	//initialize up to OPEN_MAXTGDS POSIX
 extern const struct devoptab_t *devoptab_struct[OPEN_MAXTGDS];
 
@@ -78,6 +75,8 @@ extern _ssize_t read_r_fatfs ( struct _reent *r, int fd, sint8 *ptr, int len );
 
 extern sint32 get_posix_fd_from_devicename(sint8 * deviceName);
 extern sint32 open_posix_filedescriptor_devices();
+
+extern void initTGDSDevoptab();
 #endif
 
 #ifdef __cplusplus

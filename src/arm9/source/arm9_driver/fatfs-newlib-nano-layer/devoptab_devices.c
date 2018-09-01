@@ -59,12 +59,8 @@ const struct devoptab_t devoptab_stdout = { "", &open_r_stdout, &close_r_stdout,
 /* dtab for a stream device : stderr->debug error newlib */
 const struct devoptab_t devoptab_sterr = { "", &open_r_stderr, &close_r_stderr, &write_r_stderr, &read_r_stderr };
 
-
-//internal name for fsfat driver filesystem descriptor (max devoptab_fname_size size)
-const sint8 * fsfat_internal_name_desc = (sint8*)("0:/");
-
 /* dtab for a stream device : FATFS */
-const struct devoptab_t devoptab_fatfs = { "", &open_r_fatfs, &close_r_fatfs, &write_r_fatfs, &read_r_fatfs };
+const struct devoptab_t devoptab_sdFilesystem = { "", &open_r_fatfs, &close_r_fatfs, &write_r_fatfs, &read_r_fatfs };
 
 /* dtab for a stream device : STUB */
 const struct devoptab_t devoptab_stub = { "stub:/", 0, 0, 0, 0 };
@@ -73,7 +69,7 @@ const struct devoptab_t *devoptab_struct[OPEN_MAXTGDS] = {
    &devoptab_stdin, /* standard input */
    &devoptab_stdout, /* standard output */
    &devoptab_sterr, /* standard error */
-   &devoptab_fatfs, /* fatfs */
+   &devoptab_sdFilesystem, /* custom filesystem  devoptab */
    &devoptab_stub,	//stub
    &devoptab_stub,
    &devoptab_stub,
@@ -91,6 +87,16 @@ const struct devoptab_t *devoptab_struct[OPEN_MAXTGDS] = {
    &devoptab_stub,
    &devoptab_stub
 };
+
+void initTGDSDevoptab(){	
+	//newlib devoptabs
+	memcpy ( (uint32*)&devoptab_stdin.name[0], (uint32*)stdin_name_desc, strlen(stdin_name_desc));
+	memcpy ( (uint32*)&devoptab_stdout.name[0], (uint32*)stdout_name_desc, strlen(stdout_name_desc));
+	memcpy ( (uint32*)&devoptab_sterr.name[0], (uint32*)stderr_name_desc, strlen(stderr_name_desc));
+	memcpy ( (uint32*)&devoptab_stub.name[0], (uint32*)stdstub_name_desc, strlen(stdstub_name_desc));
+	
+	//devoptab_sdFilesystem is missing on purpose. Must be set manually through void initTGDS(bool defaultDriver, char * devoptabFSName)
+}
 
 sint32 open_posix_filedescriptor_devices(){
 	sint32 i = 0;

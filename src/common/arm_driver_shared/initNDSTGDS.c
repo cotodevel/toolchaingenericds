@@ -76,6 +76,9 @@ void initHardware(void) {
 	setbuf(stdout, NULL);	//printf ability to direct DS Framebuffer
 	//setbuf(stderr, NULL);
 	
+	//set up all devoptabs but filesystem devoptab because we enable it later
+	initTGDSDevoptab();
+
 	getsIPCSharedTGDS()->arm9startaddress = get_ewram_start();
 	getsIPCSharedTGDS()->arm9endaddress = (uint32)(get_ewram_start() + get_ewram_size());
 	

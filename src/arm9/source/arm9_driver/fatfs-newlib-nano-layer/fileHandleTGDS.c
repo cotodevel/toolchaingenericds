@@ -53,26 +53,16 @@ struct fd *fd_struct_get(int fd){
     return f;
 }
 
-//must be called before FS_init(); (fsfatlayerTGDS.h)
-// 1) initTGDSFS();
-// 2) FS_init();
-
-void initTGDSFS(){
-	
-	//newlib devoptabs
-	memcpy ( (uint32*)&devoptab_stdin.name[0], (uint32*)stdin_name_desc, strlen(stdin_name_desc));
-	memcpy ( (uint32*)&devoptab_stdout.name[0], (uint32*)stdout_name_desc, strlen(stdout_name_desc));
-	memcpy ( (uint32*)&devoptab_sterr.name[0], (uint32*)stderr_name_desc, strlen(stderr_name_desc));
-	memcpy ( (uint32*)&devoptab_stub.name[0], (uint32*)stdstub_name_desc, strlen(stdstub_name_desc));
-	
-	//for fopen/fread/fwrite/fclose we use the fsfat_internal_name_desc, then internally gets parsed to fsfat_internal_name_desc (fsfat layer)
-	memcpy ( (uint32*)&devoptab_fatfs.name[0], (uint32*)fsfat_internal_name_desc, strlen(fsfat_internal_name_desc));
-	
+//char * devoptabFSName must be a buffer already allocated if bool defaultDriver == false
+void initTGDS(char * devoptabFSName){
+	if(devoptabFSName == NULL){
+		return;
+	}
 	int fd = 0;
 	/* search in all struct fd instances*/
-    for (fd = 0; fd < OPEN_MAXTGDS; fd++){
+	for (fd = 0; fd < OPEN_MAXTGDS; fd++){
 		memset((uint8*)&files[fd], 0, sizeof(struct fd));
-        files[fd].isused = (sint32)structfd_isunused;			
+		files[fd].isused = (sint32)structfd_isunused;			
 		//PosixFD default invalid value (overriden later)
 		files[fd].fd_posix = (sint32)structfd_posixInvalidFileDirHandle;
 		
@@ -86,8 +76,12 @@ void initTGDSFS(){
 		
 		files[fd].filPtr = NULL;
 		files[fd].dirPtr = NULL;
-    }
+	}
+	
+	//Set up proper devoptab device mount name.
+	memcpy((uint32*)&devoptab_sdFilesystem.name[0], (uint32*)devoptabFSName, strlen(devoptabFSName));
 }
+
 
 //returns / allocates a new struct fd index ,  for a certain devoptab_t so we can allocate different handles for each devoptab
 int FileHandleAlloc(struct devoptab_t * devoptabInst ){

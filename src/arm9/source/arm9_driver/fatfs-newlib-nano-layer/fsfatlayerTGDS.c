@@ -107,9 +107,9 @@ int		FS_deinit(){
 }
 
 //converts a "folder/folder.../file.fil" into a proper filesystem fullpath
-volatile sint8 charbuf[MAX_TGDSFILENAME_LENGTH+1];
+sint8 charbuf[MAX_TGDSFILENAME_LENGTH+1];
 sint8 * getfatfsPath(sint8 * filename){
-	sprintf((sint8*)charbuf,"%s%s",devoptab_fatfs.name,filename);
+	sprintf((sint8*)charbuf,"%s%s",devoptab_sdFilesystem.name,filename);
 	return (sint8*)&charbuf[0];
 }
 
@@ -950,7 +950,7 @@ int fresult2errno(FRESULT result)
 //returns / allocates a new struct fd index with either DIR or FIL structure allocated
 int fatfs_fildir_alloc(int isfilordir)
 {
-    int i_fil = FileHandleAlloc((struct devoptab_t *)&devoptab_fatfs);	//returns / allocates a new struct fd index 
+    int i_fil = FileHandleAlloc((struct devoptab_t *)&devoptab_sdFilesystem);	//returns / allocates a new struct fd index for the devoptab_sdFilesystem object.
     if (i_fil != structfd_posixInvalidFileDirHandle){
 		if(isfilordir == structfd_isfile){
 			files[i_fil].filPtr	=	(FIL *)&files[i_fil].fil;
@@ -1714,7 +1714,8 @@ void fatfs_seekdir(DIR *dirp, long loc){
 
 //internal: SD init code: call fatfs_init() to have TGDS Filesystem support (posix file functions fopen/fread/fwrite/fclose/etc working). Always call first.
 int fatfs_init(){
-	initTGDSFS();
+	char * devoptabFSName = (char*)"0:/";
+	initTGDS(devoptabFSName);
     return (f_mount(&dldiFs, "0:", 1));
 }
 
