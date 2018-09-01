@@ -131,7 +131,7 @@ void _glyph_loadline_8(uint8 *dst, uint8 *data, int pos, int size, uint8 *pal)
 }
 
 //used by gui_printf
-int GUI_drawVChar(t_GUIZone *zone, t_GUIFont *font, uint16 x, uint16 y, int col, uint8 text)
+int GUI_drawVChar(t_GUIZone *zone, t_GUIFont *font, uint16 x, uint16 y, int col, uint8 text,bool readAndBlendFromVRAM)
 {
 	if ((int)text - font->offset < 0 || font->glyphs[text - font->offset] == NULL)
 		return 0;
@@ -190,9 +190,11 @@ int GUI_drawVChar(t_GUIZone *zone, t_GUIFont *font, uint16 x, uint16 y, int col,
     	//  Loop 
         for (w = 0; w < wn; w++) 
         {
-            uint16 cl, cr;        	
+            uint16 cl, cr;
             uint16 v = 0;
-
+			if(readAndBlendFromVRAM == true){
+				v = *ptr;
+			}
             if (w == 0 && xo != 0) 
             {
                 // First word
@@ -234,7 +236,7 @@ uint8 g_katana_jisx0201_conv[] =
   0x22,0x51 };
 
 //used by gui_printf
-int GUI_drawText(t_GUIZone *zone, uint16 x, uint16 y, int col, sint8 *text)
+int GUI_drawText(t_GUIZone *zone, uint16 x, uint16 y, int col, sint8 *text, bool readAndBlendFromVRAM)
 {
 	t_GUIFont   *font = zone->font;
 	int			in_katakana = 0;
@@ -258,10 +260,10 @@ int GUI_drawText(t_GUIZone *zone, uint16 x, uint16 y, int col, sint8 *text)
     		if (text[i] < 0x26 || text[i] > 0x5f)
     			continue;
     		sint8 c = g_katana_jisx0201_conv[text[i]-0x26];
-    		w += GUI_drawVChar(zone, &katakana_12_font, x+w, y, col, c) + font->space;
+    		w += GUI_drawVChar(zone, &katakana_12_font, x+w, y, col, c, readAndBlendFromVRAM) + font->space;
     	}
     	else
-    		w += GUI_drawVChar(zone, font, x+w, y, col, text[i]) + font->space;
+    		w += GUI_drawVChar(zone, font, x+w, y, col, text[i], readAndBlendFromVRAM) + font->space;
     }
     return w - font->space;
 }
@@ -273,22 +275,6 @@ int GUI_getFontHeight(t_GUIZone *zone)
 	return zone->font->height+1;
 }
 
-/*
-void		GUI_printf(sint8 *fmt, ...)
-{	
-	va_list args;
-	va_start (args, fmt);
-	vsnprintf ((sint8*)g_printfbuf, 64, fmt, args);
-	va_end (args);
-	
-    // FIXME
-    t_GUIZone zone;
-    zone.x1 = 0; zone.y1 = 0; zone.x2 = 256; zone.y2 = 192;
-    zone.font = &trebuchet_9_font;
-    GUI_drawText(&zone, 0, GUI.printfy, 255, (sint8*)g_printfbuf);
-    GUI.printfy += GUI_getFontHeight(&zone);
-}
-*/
 //used by gui_printf
 void	GUI_clear()
 {

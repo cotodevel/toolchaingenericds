@@ -455,9 +455,9 @@ extern void _glyph_loadline_8(uint8 *dst, uint8 *data, int pos, int size, uint8 
 extern void _glyph_loadline_2(uint8 *dst, uint8 *data, int pos, int size, uint8 *pal);
 extern void _glyph_loadline_1(uint8 *dst, uint8 *data, int pos, int size, uint8 *pal);
 
-extern int 	GUI_drawVChar(t_GUIZone *zone, t_GUIFont *font, uint16 x, uint16 y, int col, uint8 text);
+extern int 	GUI_drawVChar(t_GUIZone *zone, t_GUIFont *font, uint16 x, uint16 y, int col, uint8 text, bool readAndBlendFromVRAM);
 extern uint8 g_katana_jisx0201_conv[];
-extern int 	GUI_drawText(t_GUIZone *zone, uint16 x, uint16 y, int col, sint8 *text);
+extern int 	GUI_drawText(t_GUIZone *zone, uint16 x, uint16 y, int col, sint8 *text,bool readAndBlendFromVRAM);
 extern int 	GUI_getStrWidth(t_GUIZone *zone, sint8 *text);
 extern int 	GUI_getFontHeight(t_GUIZone *zone);
 extern int	GUI_getZoneTextHeight(t_GUIZone *zone);
