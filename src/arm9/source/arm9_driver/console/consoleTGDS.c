@@ -131,14 +131,14 @@ void _glyph_loadline_8(uint8 *dst, uint8 *data, int pos, int size, uint8 *pal)
 }
 
 //used by gui_printf
-int GUI_drawVChar(t_GUIZone *zone, t_GUIFont *font, uint16 x, uint16 y, int col, uint8 text,bool readAndBlendFromVRAM)
+int GUI_drawVChar(t_GUIZone *zone, t_GUIFont *font, uint16 x, uint16 y, int col, uint8 text, bool readAndBlendFromVRAM)
 {
 	if ((int)text - font->offset < 0 || font->glyphs[text - font->offset] == NULL)
 		return 0;
 	
     t_GUIGlyph	*glyph = font->glyphs[text - font->offset];
 
-    int	gw = glyph->width + 1;
+    int	gw = glyph->width + 1;	//glyph width: x1: char start : x2: char end: x: char offset
     
     x += zone->x1;
     y += zone->y1;

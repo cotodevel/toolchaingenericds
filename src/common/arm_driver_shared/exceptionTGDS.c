@@ -59,15 +59,16 @@ int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list list){
 	#endif
 	
 	#ifdef ARM9
-	char * Buf = (char *)&g_printfbuf[0];
-	
+	char * stringBuf = (char *)&g_printfbuf[0];
 	//merge any "..." special arguments where sint8 * ftm requires , store into g_printfbuf
-	vsnprintf ((sint8*)Buf, (int)sizeof(g_printfbuf), fmt, list);
+	vsnprintf((sint8*)stringBuf, (int)sizeof(g_printfbuf), fmt, list);
+	int stringSize = (int)strlen(stringBuf);
 	t_GUIZone * zoneInst = getDefaultZoneConsole();
 	bool readAndBlendFromVRAM = false;	//we discard current vram characters here so if we step over the same character in VRAM (through printfCoords), it is discarded.
-	GUI_drawText(zoneInst, 0, GUI.printfy, 255, (sint8*)g_printfbuf,readAndBlendFromVRAM);
-	GUI.printfy += getFontHeightFromZone(zoneInst);
-	return (strlen((char*)Buf));
+	int color = 0xff;	//white
+	GUI_drawText(zoneInst, 0, GUI.printfy, color, stringBuf, readAndBlendFromVRAM);
+	GUI.printfy += getFontHeightFromZone(zoneInst);	//skip to next line
+	return stringSize;
 	#endif
 }
 
@@ -77,17 +78,18 @@ int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list list){
 void printfCoords(int x, int y, const char *format, ...){
 	va_list args;
     va_start(args, format);
-	char * Buf = (char *)&g_printfbuf[0];
+	char * stringBuf = (char *)&g_printfbuf[0];
 	//merge any "..." special arguments where sint8 * ftm requires , store into g_printfbuf
-	vsnprintf ((sint8*)Buf, (int)sizeof(g_printfbuf), format, args);
+	vsnprintf ((sint8*)stringBuf, (int)sizeof(g_printfbuf), format, args);
 	va_end(args);
+	int stringSize = (int)strlen(stringBuf);
 	t_GUIZone * zoneInst = getDefaultZoneConsole();
-	
 	GUI.printfy = y * getFontHeightFromZone(zoneInst);
 	bool readAndBlendFromVRAM = false;	//we discard current vram characters here so if we step over the same character in VRAM (through printfCoords), it is discarded.
-	GUI_drawText(zoneInst, x, GUI.printfy, 255, (sint8*)g_printfbuf,readAndBlendFromVRAM);
+	int color = 0xff;	//white
+	GUI_drawText(zoneInst, x, GUI.printfy, color, stringBuf, readAndBlendFromVRAM);
 	GUI.printfy += getFontHeightFromZone(zoneInst);	//skip to next line
-	return (strlen((char*)Buf));
+	return stringSize;
 }
 #endif
 

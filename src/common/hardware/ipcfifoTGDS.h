@@ -33,7 +33,7 @@ USA
 #include "memoryHandleTGDS.h"
 
 //printf size buffer
-#define consolebuf_size (sint32)(100)
+#define consolebuf_size (sint32)(255)	//(MAX_TGDSFILENAME_LENGTH+1)
 
 //irqs
 #define VCOUNT_LINE_INTERRUPT (sint32)(159)
