@@ -49,7 +49,9 @@ USA
 #include "memoryHandleTGDS.h"
 #include "global_settings.h"
 
-
+#ifdef ARM9
+#include "dswnifi_lib.h"
+#endif
 
 //File IO is stubbed even in buffered writes, so as a workaround I redirect the weak-symbol _vfprint_f (and that means good bye file stream operations on fatfs, thus we re-implement those by hand)
 //while allowing to use printf in DS
@@ -163,9 +165,10 @@ void exception_data_abort(){
 	exception_handler((uint32)dataabort_9);
 }
 
+static bool GDBSession;
+
 //__attribute__((section(".itcm"))) //cant be at ITCM
-void exception_handler(uint32 arg)
-{
+void exception_handler(uint32 arg){
 	GUI_clear();
 	
 	if(arg == (uint32)unexpectedsysexit_9){
@@ -176,23 +179,24 @@ void exception_handler(uint32 arg)
 		printf("sysexit segfault! ARM7: out of NDS main scope...");
 	}
 	
-	else if(arg == dataabort_9){	
+	else if(arg == dataabort_9){
+		printf("          ");
 		printf("ARM9: DATA ABORT. ");
-	
 		uint32 * debugVector = (uint32 *)&exceptionArmRegs[0];
 		uint32 pc_abort = (uint32)exceptionArmRegs[0xf];
 		
 		if((debugVector[0xe] & 0x1f) == 0x17){
-			pc_abort = pc_abort - 8;
+			debugVector[0xf] = pc_abort - 8;
 		}
 		
-		printf("R0[%x] R1[%X] R2[%X] \n",debugVector[0],debugVector[1],debugVector[2]);
-		printf("R3[%x] R4[%X] R5[%X] \n",debugVector[3],debugVector[4],debugVector[5]);
-		printf("R6[%x] R7[%X] R8[%X] \n",debugVector[6],debugVector[7],debugVector[8]);
-		printf("R9[%x] R10[%X] R11[%X] \n",debugVector[9],debugVector[0xa],debugVector[0xb]);
-		printf("R12[%x] R13[%X] R14[%X]  \n",debugVector[0xc],debugVector[0xd],debugVector[0xe]);
-		printf("R15[%x] SPSR[%x] CPSR[%X]  \n",pc_abort,debugVector[17],debugVector[16]);
+		//add support for GDB session.
 		
+		printf("R0[%x] R1[%X] R2[%X] ",debugVector[0],debugVector[1],debugVector[2]);
+		printf("R3[%x] R4[%X] R5[%X] ",debugVector[3],debugVector[4],debugVector[5]);
+		printf("R6[%x] R7[%X] R8[%X] ",debugVector[6],debugVector[7],debugVector[8]);
+		printf("R9[%x] R10[%X] R11[%X] ",debugVector[9],debugVector[0xa],debugVector[0xb]);
+		printf("R12[%x] R13[%X] R14[%X]  ",debugVector[0xc],debugVector[0xd],debugVector[0xe]);
+		printf("R15[%x] SPSR[%x] CPSR[%X]  ",debugVector[0xf],debugVector[17],debugVector[16]);
 		
 		//red
 		//BG_PALETTE_SUB[0] = RGB15(31,0,0);
@@ -205,9 +209,60 @@ void exception_handler(uint32 arg)
 		//blue
 		BG_PALETTE_SUB[0] = RGB15(0,0,31);
 		BG_PALETTE_SUB[255] = RGB15(31,31,31);
+		
+		printf("A: Enable GDB Debugging. ");
+		printf("(check: toolchaingenericds-gdbstub-example project)");
+		printf("B: Skip GDB Debugging");
+		
+		while(1){
+			int isdaas = keysPressed();
+			if (isdaas&KEY_A)
+			{
+				GDBSession =  true;
+				break;
+			}
+			if(isdaas&KEY_B)
+			{
+				GDBSession =  false;
+				break;
+			}
+		}
+	
+		if(GDBSession == true){
+			LeaveExceptionMode();	//code works in ITCM now
+		}
+		
 	}
 	
 	while(1){
+		
+		if(GDBSession == true){
+			//GDB Stub Process must run here
+			int retGDBVal = remoteStubMain();
+			if(retGDBVal == remoteStubMainWIFINotConnected){
+				if (switch_dswnifi_mode(dswifi_gdbstubmode) == true){
+					//clrscr();
+					//Show IP and port here
+					printf("[Connect to GDB]:");
+					printf("Port:%d GDB IP:%s",remotePort,(char*)print_ip((uint32)Wifi_GetIP()));
+					remoteInit();
+				}
+				else{
+					//GDB Client Reconnect:ERROR
+				}
+			}
+			else if(retGDBVal == remoteStubMainWIFIConnectedGDBDisconnected){
+				setWIFISetup(false);
+				if (switch_dswnifi_mode(dswifi_gdbstubmode) == true){ // gdbNdsStart() called
+					reconnectCount++;
+					//clrscr();
+					//Show IP and port here
+					printf("[Re-Connect to GDB]:So far:%d time(s)",reconnectCount);
+					printf("Port:%d GDB IP:%s",remotePort,(char*)print_ip((uint32)Wifi_GetIP()));
+					remoteInit();
+				}
+			}
+		}
 		IRQVBlankWait();
 	}
 }

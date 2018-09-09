@@ -149,6 +149,20 @@ CustomDebugException:
 	bx lr
 
 
+@allows the GDB process to run.
+.global LeaveExceptionMode
+LeaveExceptionMode:
+	push {r0-r3, lr}
+	
+	@disable MPU
+	mrc	p15,0,r0,c1,c0,0
+	bic	r0,r0,#1
+	mcr	p15,0,r0,c1,c0,0
+	
+	pop {r0-r3, lr}
+bx lr
+	
+	
 #endif
 
 #endif

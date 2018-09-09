@@ -89,6 +89,9 @@ extern void CustomDebugException();
 extern int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list list);
 extern void printfCoords(int x, int y, const char *format, ...);
 
+
+extern void LeaveExceptionMode();
+
 #ifdef __cplusplus
 }
 #endif
