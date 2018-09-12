@@ -328,10 +328,22 @@ int fsfat2posixAttrib(BYTE flags){
     return mode;
 }
 
+
+char basePath[MAX_TGDSFILENAME_LENGTH];
+void setBasePath(char * path){
+	sprintf(basePath,"%s",path);
+}
+char * getBasePath(){
+	return (char*)&basePath[0];
+}
 char lastCurrentPath[MAX_TGDSFILENAME_LENGTH];
 void updateLastGlobalPath(char * path){
+	//append the basepath to file (requires setBasePath to have a base path already set before calling this method)
+	if(strlen(basePath) == 0){
+		setBasePath("/");	//Real Base Path: 0:/
+	}
 	if(strlen(path) == 0){
-		sprintf(path,"%s",getfatfsPath(path));	//logic here should split the file handle, iterate it through devoptabs and give the devoptab name, but this is faster (and defaults to fsfat)
+		sprintf(path,"%s",getBasePath());	//logic here should split the file handle, iterate it through devoptabs and give the devoptab name, but this is faster (and defaults to fsfat)
 	}
 	sprintf(lastCurrentPath,"%s",path);
 }
@@ -521,7 +533,7 @@ void buildListFromPath(char * path){
 				//open that full path and open a file handle , if it is file(get internal StructFD)
 				if((type == FT_FILE) || (type == FT_DIR)){
 					char builtFilePath[MAX_TGDSFILENAME_LENGTH+1];
-					sprintf(builtFilePath,"%s%s",path,fno.fname);
+					sprintf(builtFilePath,"%s%s",getfatfsPath((sint8*)path),fno.fname);
 					//populate
 					bool iterable = true;
 					setFileClass(iterable, (char*)&builtFilePath[0], i, type, structfd_posixInvalidFileDirHandle);
@@ -557,8 +569,10 @@ void InitGlobalFileClass(){
 
 //returns the first free StructFD
 void updateGlobalListFromPath(char * path){
-	//Update last path (destroys the last one)
-	updateLastGlobalPath(path);
+	//if path is different, rebuild filelist
+	if (!(strcmp(lastCurrentPath, path) == 0)){
+		updateLastGlobalPath(path);
+	}
 	buildListFromPath(path);
 }
 
@@ -618,12 +632,6 @@ int LastDirEntry = 0;
 //return:  FT_DIR or FT_FILE: use getLFN(char buf[MAX_TGDSFILENAME_LENGTH+1]); to receive full first file
 //			or FT_NONE if invalid file
 int getFirstFile(char * path){
-	
-	//if path is different, rebuild filelist
-	if (!(strcmp(lastCurrentPath, path) == 0)){
-		updateLastGlobalPath(path);
-	}
-	
 	//lastCurrentPath is globally accesible by all code. But updated only in getFirstFile (getNextFile just retrieves the next ptr file info)
 	updateGlobalListFromPath(lastCurrentPath);
 	CurrentFileDirEntry = 0;

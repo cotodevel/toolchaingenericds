@@ -248,6 +248,11 @@ extern int _fstat_r ( struct _reent *_r, int fd, struct stat *buf );
 extern int  readdir_r(DIR * dirp,struct dirent * entry,struct dirent ** result);
 extern int OpenFileFromPathGetStructFD(char * fullPath);
 extern bool closeFileFromStructFD(int StructFD);
+
+extern char basePath[MAX_TGDSFILENAME_LENGTH];
+extern void setBasePath(char * path);
+extern char * getBasePath();
+
 ////////////////////////////////////////////////////////////////////////////INTERNAL CODE END/////////////////////////////////////////////////////////////////////////////////////
 
 
