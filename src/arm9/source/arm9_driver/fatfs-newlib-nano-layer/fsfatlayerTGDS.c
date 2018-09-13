@@ -70,9 +70,6 @@ FATFS dldiFs;
 //LongFilename scratchpad: has the latest fullfilepath accessed
 char lfnName[MAX_TGDSFILENAME_LENGTH+1];
 
-//current dir emulation (for start);
-char curDirListed[MAX_TGDSFILENAME_LENGTH+1];
-
 //scratchpad struct fd
 struct fd fdCur;
 
@@ -346,6 +343,7 @@ void updateLastGlobalPath(char * path){
 		sprintf(path,"%s",getBasePath());	//logic here should split the file handle, iterate it through devoptabs and give the devoptab name, but this is faster (and defaults to fsfat)
 	}
 	sprintf(lastCurrentPath,"%s",path);
+	chdir(path);
 }
 
 //Get sector from cluster                                             

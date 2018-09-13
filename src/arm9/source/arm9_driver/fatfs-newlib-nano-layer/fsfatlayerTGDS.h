@@ -131,7 +131,6 @@ extern "C" {
 // Function prototypes 
 extern FATFS dldiFs;
 extern char lfnName[MAX_TGDSFILENAME_LENGTH+1];
-extern char curDirListed[MAX_TGDSFILENAME_LENGTH+1];
 extern struct fd fdCur;
 extern bool FS_InitStatus;
 
