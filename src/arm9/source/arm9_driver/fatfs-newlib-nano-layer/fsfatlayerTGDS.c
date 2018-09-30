@@ -325,7 +325,11 @@ int fsfat2posixAttrib(BYTE flags){
     return mode;
 }
 
+//internal: used by the current working directory iterator in TGDS Filesystem
+char TGDSCurrentWorkingDirectory[MAX_TGDSFILENAME_LENGTH+1];
 
+
+//todo: rewrite logic to remove redundancy here
 char basePath[MAX_TGDSFILENAME_LENGTH];
 void setBasePath(char * path){
 	sprintf(basePath,"%s",path);
