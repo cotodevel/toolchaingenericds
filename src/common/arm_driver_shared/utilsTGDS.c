@@ -214,30 +214,6 @@ sint32 glueARMHandlerConfig(VERSION_DESCRIPTOR * versionInst,METHOD_DESCRIPTOR *
 	return 0;
 }
 
-int split (const sint8 *txt, sint8 delim, sint8 ***tokens)
-{
-    int *tklen, *t, count = 1;
-    sint8 **arr, *p = (sint8 *) txt;
-
-    while (*p != '\0') if (*p++ == delim) count += 1;
-    t = tklen = (int*)calloc (count, sizeof (int));
-    for (p = (sint8 *) txt; *p != '\0'; p++) *p == delim ? *t++ : (*t)++;
-    *tokens = arr = (sint8**)malloc (count * sizeof (sint8 *));
-    t = tklen;
-    p = *arr++ = (sint8*)calloc (*(t++) + 1, sizeof (sint8 *));
-    while (*txt != '\0')
-    {
-        if (*txt == delim)
-        {
-            p = *arr++ = (sint8*)calloc (*(t++) + 1, sizeof (sint8 *));
-            txt++;
-        }
-        else *p++ = *txt++;
-    }
-    free (tklen);
-    return count;
-}
-
 int	FS_loadFile(sint8 *filename, sint8 *buf, int size)
 {
 	FILE *f;

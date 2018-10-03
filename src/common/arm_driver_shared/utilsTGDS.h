@@ -100,7 +100,6 @@ extern sint32 updateAssemblyParamsConfig(VERSION_DESCRIPTOR * versionInst);
 extern sint32 glueARMHandlerConfig(VERSION_DESCRIPTOR * versionInst,METHOD_DESCRIPTOR * method_inst);
 
 //misc
-extern int	split (const sint8 *txt, sint8 delim, sint8 ***tokens);
 extern int	FS_loadFile(sint8 *filename, sint8 *buf, int size);
 extern int	FS_saveFile(sint8 *filename, sint8 *buf, int size,bool force_file_creation);
 extern int	FS_getFileSize(sint8 *filename);

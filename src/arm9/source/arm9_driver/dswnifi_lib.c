@@ -147,7 +147,7 @@ void initNiFi()
 
 /////////////////////////////////TCP UDP DSWNIFI Part////////////////////////////////////
 client_http_handler client_http_handler_context;
-sint8* server_ip = (sint8*)"192.168.43.221";
+sint8* server_ip = (sint8*)"192.168.43.220";
 int port = 8888; 	//gdb stub port
 //SOCK_STREAM = TCP / SOCK_DGRAM = UDP
 
@@ -427,28 +427,16 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 						
 						//Server aware
 						if(strncmp((const char *)cmd, (const char *)"srvaware", 8) == 0){
-							
-							//server send other NDS ip format: cmd-ip-multi_mode- (last "-" goes as well!)
-							char **tokens;
-							int count, i;
-							//const char *str = "JAN,FEB,MAR,APR,MAY,JUN,JUL,AUG,SEP,OCT,NOV,DEC";
-							char str[frameDSsize] = {0};
-							memcpy ( (uint8*)str, (uint8*)incomingbuf, sizeof(str));
-
-							count = split ((const char*)str, '-', &tokens);
-							for (i = 0; i < count; i++) {
-								//then send back "dsaware"
-								//char outgoingbuf[64];
-								//sprintf(outgoingbuf,"%s",tokens[i]);
-								//sendto(client_http_handler_context.socket_id__multi_notconnected,outgoingbuf,strlen(outgoingbuf),0,(struct sockaddr *)&client_http_handler_context.server_addr,sizeof(client_http_handler_context.server_addr));
-							}
+							char * token_hostguest = (char*)&outSplitBuf[2][0];
+							char * token_extip = (char*)&outSplitBuf[1][0];
+							str_split(incomingbuf, "-", NULL);
 							
 							//tokens[0];	//cmd
 							//tokens[1];	//external NDS ip to connect
 							//tokens[2];	//host or guest
 							
-							int host_mode = strncmp((const char*)tokens[2], (const char *)"host", 4); //host == 0
-							int guest_mode = strncmp((const char*)tokens[2], (const char *)"guest", 5); //guest == 0
+							int host_mode = strncmp((const char*)token_hostguest, (const char *)"host", 4); //host == 0
+							int guest_mode = strncmp((const char*)token_hostguest, (const char *)"guest", 5); //guest == 0
 							
 							client_http_handler_context.socket_multi_listener=socket(AF_INET,SOCK_DGRAM,0);
 							int cmd=1;
@@ -474,15 +462,15 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 							client_http_handler_context.sain_listener.sin_family = AF_INET;
 							client_http_handler_context.sain_listener.sin_addr.s_addr = htonl(INADDR_ANY);	//local/any ip listen to desired port
 							//int atoi ( const char * str );
-							//int nds_multi_port = atoi((const char*)tokens[2]);
+							//int nds_multi_port = atoi((const char*)token_hostguest);
 							client_http_handler_context.sain_listener.sin_port = htons(LISTENER_PORT); //nds_multi_port
 							
 							
-							////printf("IPToConnect:%s",tokens[1]);	//ok EXT DS
+							////printf("IPToConnect:%s",token_extip);	//ok EXT DS
 							//NDS MULTI IP: No need to bind / connect / sendto use
 							memset((char *) &client_http_handler_context.sain_sender, 0, sizeof(struct sockaddr_in));
 							client_http_handler_context.sain_sender.sin_family = AF_INET;
-							client_http_handler_context.sain_sender.sin_addr.s_addr = inet_addr((char*)tokens[1]);//INADDR_BROADCAST;//((const char*)"191.161.23.11");// //ip was reversed 
+							client_http_handler_context.sain_sender.sin_addr.s_addr = inet_addr((char*)token_extip);//INADDR_BROADCAST;//((const char*)"191.161.23.11");// //ip was reversed 
 							client_http_handler_context.sain_sender.sin_port = htons(SENDER_PORT); 
 							
 							//struct sockaddr_in *addr_in2= (struct sockaddr_in *)&client_http_handler_context.sain_sender;
