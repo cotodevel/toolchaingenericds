@@ -526,13 +526,28 @@ void buildPath(const char *str, size_t len, char * outBuf, int indexToLeftOut, c
 }
 
 
-int str_split(char * stream, char * haystack, char * outBuf){
+//this callback splits the haystack found in a stream, in the outBuf
+char * outSplitBuf[TOP_ITEMS_SPLIT][256];
+void splitCallback(const char *str, size_t len, char * outBuf, int indexToLeftOut, char * delim){
+    snprintf((char*)&outSplitBuf[indexParse][0],len+1,"%s",str);
+    indexParse++;
+} 
+
+int getLastDirFromPath(char * stream, char * haystack, char * outBuf){
+	indexParse= 0;
     int indexToLeftOut = count_substr(stream, haystack, false);
     int indexToLeftOutCopy = indexToLeftOut;
     if(indexToLeftOutCopy > 1){ //allow index 0 to exist, so it's always left the minimum directory
         indexToLeftOutCopy--;
     }
     splitCustom(stream, (char)*haystack, buildPath, outBuf, indexToLeftOutCopy);
+    return indexToLeftOut;
+}
+
+int str_split(char * stream, char * haystack, char * outBuf){
+	indexParse = 0;
+    int indexToLeftOut = count_substr(stream, haystack, false);
+    splitCustom(stream, (char)*haystack, splitCallback, outBuf, indexToLeftOut);
     return indexToLeftOut;
 }
 
