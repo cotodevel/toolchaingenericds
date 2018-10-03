@@ -41,7 +41,7 @@ USA
 #include "posixHandleTGDS.h"
 #include "dldi.h"
 #include "clockTGDS.h"
- 
+#include "utilsTGDS.h" 
 #include "fsfatlayerTGDS.h"
 #include <string.h>
 #include <errno.h>
@@ -357,8 +357,21 @@ bool enterDir(char* newDir){
 	return false;
 }
 
+//passes the full working directory, removes the last directory and reloads the current directory context
 bool leaveDir(char* newDir){
-	
+	char tempnewDir[MAX_TGDSFILENAME_LENGTH];
+	sprintf(tempnewDir,"%s",newDir);
+    char * delimiter = "/";
+	getLastDirFromPath(tempnewDir, delimiter, outPath);
+	sprintf(TGDSCurrentWorkingDirectory,"%s",outPath);
+	//make sure the dir does NOT end with a trailing slash
+	int top = strlen(TGDSCurrentWorkingDirectory);
+	if(TGDSCurrentWorkingDirectory[top] == (char)'/'){
+		TGDSCurrentWorkingDirectory[top] = (char)'\0';
+		TGDSCurrentWorkingDirectory[top+1] = '\0';
+	}
+	setBasePath((char *)TGDSCurrentWorkingDirectory);
+	chdir((char *)TGDSCurrentWorkingDirectory);
 	return true;
 }
 
