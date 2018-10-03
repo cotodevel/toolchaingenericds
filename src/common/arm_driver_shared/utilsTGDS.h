@@ -61,6 +61,10 @@ typedef	struct {
 
 #endif
 
+
+//splitCustom logic
+typedef void(*splitCustom_fn)(const char *, size_t, char * ,int indexToLeftOut, char * delim);
+
 #endif
 
 
@@ -111,6 +115,14 @@ extern sint8 	*_FS_getFileExtension(sint8 *filename);
 extern sint8 	*FS_getFileName(sint8 *filename);
 extern int		FS_chdir(const sint8 *path);
 extern sint8	**FS_getDirectoryList(sint8 *path, sint8 *mask, int *cnt);
+
+//splitCustom string by delimiter implementation in C, that does not use malloc/calloc and re-uses callbacks
+extern int count_substr(const char *str, const char* substr, bool overlap);
+extern char outPath[MAX_TGDSFILENAME_LENGTH+1];
+extern void splitCustom(const char *str, char sep, splitCustom_fn fun, char * outBuf, int indexToLeftOut);
+extern int indexParse;
+extern void buildPath(const char *str, size_t len, char * outBuf, int indexToLeftOut, char * delim);
+extern int str_split(char * stream, char * haystack, char * outBuf);
 
 #endif
 

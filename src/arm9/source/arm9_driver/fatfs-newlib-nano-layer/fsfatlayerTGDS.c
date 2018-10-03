@@ -337,12 +337,40 @@ void setBasePath(char * path){
 char * getBasePath(){
 	return (char*)&basePath[0];
 }
+
+
+//Directory Functions
+bool enterDir(char* newDir){
+	char localPathCopy[MAX_TGDSFILENAME_LENGTH];
+	if(strlen(TGDSCurrentWorkingDirectory) == 0){
+		sprintf(TGDSCurrentWorkingDirectory,"%s",newDir);
+	}
+	else{
+		sprintf(localPathCopy,"%s%s",TGDSCurrentWorkingDirectory,newDir);
+		sprintf(TGDSCurrentWorkingDirectory,"%s",localPathCopy);
+	}
+	//reload
+	setBasePath((char *)TGDSCurrentWorkingDirectory);
+	if(chdir((char *)TGDSCurrentWorkingDirectory) == 0){
+		return true;
+	}
+	return false;
+}
+
+bool leaveDir(char* newDir){
+	
+	return true;
+}
+
+
+
+//Current iterator (FileClass from a directory)	//todo: loaded by enterDir()
 char lastCurrentPath[MAX_TGDSFILENAME_LENGTH];
 void updateLastGlobalPath(char * path){
 	//append the basepath to file (requires setBasePath to have a base path already set before calling this method)
 	if(strlen(basePath) == 0){
 		setBasePath("/");	//Real Base Path: 0:/
-	}
+	}	
 	if(strlen(path) == 0){
 		sprintf(path,"%s",getBasePath());	//logic here should split the file handle, iterate it through devoptabs and give the devoptab name, but this is faster (and defaults to fsfat)
 	}

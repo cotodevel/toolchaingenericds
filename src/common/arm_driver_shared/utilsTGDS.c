@@ -76,6 +76,7 @@ size_t ucs2tombs(uint8* dst, const unsigned short* src, size_t len) {
 #include "posixHandleTGDS.h"
 #include "fileHandleTGDS.h"
 
+
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
@@ -467,6 +468,72 @@ sint8	**FS_getDirectoryList(sint8 *path, sint8 *mask, int *cnt){
 	closedir(dir);
 	FS_unlock();
 	return list;
+}
+
+
+//taken from https://stackoverflow.com/questions/9052490/find-the-count-of-substring-in-string
+//modified by Coto
+int count_substr(const char *str, const char* substr, bool overlap) {
+  if (strlen(substr) == 0) return -1; // forbid empty substr
+
+  int count = 0;
+  int increment = overlap ? 1 : strlen(substr);
+  for (char* s = (char*)str; (s = strstr(s, substr)); s += increment)
+    ++count;
+  return count;
+}
+
+char outPath[MAX_TGDSFILENAME_LENGTH+1];    //used by splitCustom function as output path buffer
+
+void splitCustom(const char *str, char sep, splitCustom_fn fun, char * outBuf, int indexToLeftOut)
+{
+    unsigned int start = 0, stop = 0;
+    for (stop = 0; str[stop]; stop++) {
+        if (str[stop] == sep) {
+            fun(str + start, stop - start, outBuf, indexToLeftOut, &sep);
+            start = stop + 1;
+        }
+    }
+    fun(str + start, stop - start, outBuf, indexToLeftOut, &sep);
+}
+
+int indexParse = 0;
+//this callback debugs every character separated from splitCustom()
+/*
+void print(const char *str, size_t len, char * outBuf, int indexToLeftOut, char * delim){
+    if(indexParse != indexToLeftOut){
+        char localBuf[MAX_TGDSFILENAME_LENGTH+1];
+        snprintf(localBuf,len+1,"%s",str);
+        printf(" %d:%s%s:%d\n", (int)len, localBuf, delim, indexParse);
+        indexParse++;
+    }
+}
+*/
+
+//this callback builds an output path (outBuf) and filters out the desired index. (used as a trim last directory callback)
+void buildPath(const char *str, size_t len, char * outBuf, int indexToLeftOut, char * delim){
+    if(indexParse != indexToLeftOut){
+        if(strlen(outBuf) == 0){
+            snprintf(outBuf,len+2,"%s%s",str, delim);
+        }
+        else{
+            char localBuf[MAX_TGDSFILENAME_LENGTH+1];
+            sprintf(localBuf,"%s",outBuf);
+            snprintf(outBuf,strlen(outBuf)+len+2,"%s%s%s",localBuf,str,delim);
+        }
+        indexParse++;
+    }
+}
+
+
+int str_split(char * stream, char * haystack, char * outBuf){
+    int indexToLeftOut = count_substr(stream, haystack, false);
+    int indexToLeftOutCopy = indexToLeftOut;
+    if(indexToLeftOutCopy > 1){ //allow index 0 to exist, so it's always left the minimum directory
+        indexToLeftOutCopy--;
+    }
+    splitCustom(stream, (char)*haystack, buildPath, outBuf, indexToLeftOutCopy);
+    return indexToLeftOut;
 }
 
 #endif
