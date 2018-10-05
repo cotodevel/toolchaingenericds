@@ -349,6 +349,7 @@ bool enterDir(char* newDir){
 		sprintf(localPathCopy,"%s%s",TGDSCurrentWorkingDirectory,newDir);
 		sprintf(TGDSCurrentWorkingDirectory,"%s",localPathCopy);
 	}
+	clrscr();
 	//reload
 	setBasePath((char *)TGDSCurrentWorkingDirectory);
 	if(chdir((char *)TGDSCurrentWorkingDirectory) == 0){
@@ -358,7 +359,7 @@ bool enterDir(char* newDir){
 }
 
 //passes the full working directory, removes the last directory and reloads the current directory context
-bool leaveDir(char* newDir){
+bool leaveDir(char* newDir ,u32 keyToWaitFor){
 	char tempnewDir[MAX_TGDSFILENAME_LENGTH];
 	sprintf(tempnewDir,"%s",newDir);
     char * delimiter = "/";
@@ -369,7 +370,7 @@ bool leaveDir(char* newDir){
 	//printf("     ");
 	//printf("realpath:%s",newDir);
 	//printf("newpath:%s",outPath);
-	while(keysPressed()&KEY_B){}
+	while(keysPressed()&keyToWaitFor){}
 	
 	sprintf(TGDSCurrentWorkingDirectory,"%s",outPath);
 	setBasePath((char *)TGDSCurrentWorkingDirectory);

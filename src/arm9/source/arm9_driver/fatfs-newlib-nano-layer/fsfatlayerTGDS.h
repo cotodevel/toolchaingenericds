@@ -257,7 +257,7 @@ extern char TGDSCurrentWorkingDirectory[MAX_TGDSFILENAME_LENGTH+1];
 
 
 extern bool enterDir(char* newDir);
-extern bool leaveDir(char* newDir);
+extern bool leaveDir(char* newDir ,u32 keyToWaitFor);
 
 ////////////////////////////////////////////////////////////////////////////INTERNAL CODE END/////////////////////////////////////////////////////////////////////////////////////
 
