@@ -362,14 +362,16 @@ bool leaveDir(char* newDir){
 	char tempnewDir[MAX_TGDSFILENAME_LENGTH];
 	sprintf(tempnewDir,"%s",newDir);
     char * delimiter = "/";
+	
+	memset(outPath,0,sizeof(outPath));
 	getLastDirFromPath(tempnewDir, delimiter, outPath);
+	clrscr();
+	//printf("     ");
+	//printf("realpath:%s",newDir);
+	//printf("newpath:%s",outPath);
+	while(keysPressed()&KEY_B){}
+	
 	sprintf(TGDSCurrentWorkingDirectory,"%s",outPath);
-	//make sure the dir does NOT end with a trailing slash
-	int top = strlen(TGDSCurrentWorkingDirectory);
-	if(TGDSCurrentWorkingDirectory[top] == (char)'/'){
-		TGDSCurrentWorkingDirectory[top] = (char)'\0';
-		TGDSCurrentWorkingDirectory[top+1] = '\0';
-	}
 	setBasePath((char *)TGDSCurrentWorkingDirectory);
 	chdir((char *)TGDSCurrentWorkingDirectory);
 	return true;

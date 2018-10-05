@@ -503,20 +503,47 @@ void buildPath(const char *str, size_t len, char * outBuf, int indexToLeftOut, c
 
 
 //this callback splits the haystack found in a stream, in the outBuf
-char * outSplitBuf[TOP_ITEMS_SPLIT][256];
+char * outSplitBuf[TOP_ITEMS_SPLIT][MAX_TGDSFILENAME_LENGTH+1];
 void splitCallback(const char *str, size_t len, char * outBuf, int indexToLeftOut, char * delim){
     snprintf((char*)&outSplitBuf[indexParse][0],len+1,"%s",str);
     indexParse++;
 } 
 
 int getLastDirFromPath(char * stream, char * haystack, char * outBuf){
-	indexParse= 0;
+    indexParse = 0;
+    //leading / always src stream
+    int topval = strlen(stream); 
+    if(stream[topval-1] != '/'){
+        stream[topval-1] = '/';
+    }
     int indexToLeftOut = count_substr(stream, haystack, false);
     int indexToLeftOutCopy = indexToLeftOut;
     if(indexToLeftOutCopy > 1){ //allow index 0 to exist, so it's always left the minimum directory
         indexToLeftOutCopy--;
     }
     splitCustom(stream, (char)*haystack, buildPath, outBuf, indexToLeftOutCopy);
+    //remove 0: out stream
+    topval = strlen(outBuf) + 1;
+    if((outBuf[0] == '0') && (outBuf[1] == ':')){
+        char temp[MAX_TGDSFILENAME_LENGTH+1];
+        snprintf(temp,topval-2,"%s",(char*)&outBuf[2]);
+        sprintf(outBuf,"%s",temp);
+    }
+	//remove leading / in out stream 
+    topval = strlen(outBuf); 
+    if(outBuf[topval-1] == '/'){
+        outBuf[topval-1] = '\0';
+    }
+	//edge case: the only directory was the leading / and was just removed, if so restore item
+    if(topval == 1){
+        outBuf[topval-1] = '/';
+    }
+	//edge case: remove double leading / 
+	if((outBuf[0] == '/') && (outBuf[1] == '/')){
+		char temp[MAX_TGDSFILENAME_LENGTH+1];
+		snprintf(temp,strlen(outBuf)+1-1,"%s",(char*)&outBuf[1]);	//strlen(charBuf) +1 ending char - current offset we start to copy from
+		sprintf(outBuf,"%s",temp);
+	}
     return indexToLeftOut;
 }
 
