@@ -261,8 +261,8 @@ extern char TGDSCurrentWorkingDirectory[MAX_TGDSFILENAME_LENGTH+1];
 extern char TGDSLastWorkingDirectory[MAX_TGDSFILENAME_LENGTH];
 
 extern char basePath[MAX_TGDSFILENAME_LENGTH];
-extern void setBasePath(char * path);
-extern char * getBasePath();
+extern void setTGDSCurrentWorkingDirectory(char * path);
+extern char * getTGDSCurrentWorkingDirectory();
 extern bool enterDir(char* newDir);
 extern bool leaveDir(char* newDir ,u32 keyToWaitFor);
 extern void updateLastGlobalPath(char * path);

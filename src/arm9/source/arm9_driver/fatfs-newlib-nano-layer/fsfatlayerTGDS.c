@@ -1740,10 +1740,10 @@ char TGDSLastWorkingDirectory[MAX_TGDSFILENAME_LENGTH];
 
 //todo: rewrite logic to remove redundancy here
 char basePath[MAX_TGDSFILENAME_LENGTH];
-void setBasePath(char * path){
+void setTGDSCurrentWorkingDirectory(char * path){
 	sprintf(basePath,"%s",path);
 }
-char * getBasePath(){
+char * getTGDSCurrentWorkingDirectory(){
 	return (char*)&basePath[0];
 }
 
@@ -1759,7 +1759,7 @@ bool enterDir(char* newDir){
 	}
 	clrscr();
 	//reload
-	setBasePath((char *)TGDSCurrentWorkingDirectory);
+	setTGDSCurrentWorkingDirectory((char *)TGDSCurrentWorkingDirectory);
 	if(chdir((char *)TGDSCurrentWorkingDirectory) == 0){
 		return true;
 	}
@@ -1781,19 +1781,19 @@ bool leaveDir(char* newDir ,u32 keyToWaitFor){
 	while(keysPressed()&keyToWaitFor){}
 	
 	sprintf(TGDSCurrentWorkingDirectory,"%s",outPath);
-	setBasePath((char *)TGDSCurrentWorkingDirectory);
+	setTGDSCurrentWorkingDirectory((char *)TGDSCurrentWorkingDirectory);
 	chdir((char *)TGDSCurrentWorkingDirectory);
 	return true;
 }
 
 //Current iterator (FileClass from a directory)	//todo: loaded by enterDir()
 void updateLastGlobalPath(char * path){
-	//append the basepath to file (requires setBasePath to have a base path already set before calling this method)
+	//append the basepath to file (requires setTGDSCurrentWorkingDirectory to have a base path already set before calling this method)
 	if(strlen(basePath) == 0){
-		setBasePath("/");	//Real Base Path: 0:/
+		setTGDSCurrentWorkingDirectory("/");	//Real Base Path: 0:/
 	}	
 	if(strlen(path) == 0){
-		sprintf(path,"%s",getBasePath());	//logic here should split the file handle, iterate it through devoptabs and give the devoptab name, but this is faster (and defaults to fsfat)
+		sprintf(path,"%s",getTGDSCurrentWorkingDirectory());	//logic here should split the file handle, iterate it through devoptabs and give the devoptab name, but this is faster (and defaults to fsfat)
 	}
 	sprintf(TGDSLastWorkingDirectory,"%s",path);
 	chdir(path);
