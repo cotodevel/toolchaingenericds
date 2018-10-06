@@ -325,75 +325,6 @@ int fsfat2posixAttrib(BYTE flags){
     return mode;
 }
 
-//internal: used by the current working directory iterator in TGDS Filesystem
-char TGDSCurrentWorkingDirectory[MAX_TGDSFILENAME_LENGTH+1];
-
-
-//todo: rewrite logic to remove redundancy here
-char basePath[MAX_TGDSFILENAME_LENGTH];
-void setBasePath(char * path){
-	sprintf(basePath,"%s",path);
-}
-char * getBasePath(){
-	return (char*)&basePath[0];
-}
-
-
-//Directory Functions
-bool enterDir(char* newDir){
-	char localPathCopy[MAX_TGDSFILENAME_LENGTH];
-	if(strlen(TGDSCurrentWorkingDirectory) == 0){
-		sprintf(TGDSCurrentWorkingDirectory,"%s",newDir);
-	}
-	else{
-		sprintf(localPathCopy,"%s%s",TGDSCurrentWorkingDirectory,newDir);
-		sprintf(TGDSCurrentWorkingDirectory,"%s",localPathCopy);
-	}
-	clrscr();
-	//reload
-	setBasePath((char *)TGDSCurrentWorkingDirectory);
-	if(chdir((char *)TGDSCurrentWorkingDirectory) == 0){
-		return true;
-	}
-	return false;
-}
-
-//passes the full working directory, removes the last directory and reloads the current directory context
-bool leaveDir(char* newDir ,u32 keyToWaitFor){
-	char tempnewDir[MAX_TGDSFILENAME_LENGTH];
-	sprintf(tempnewDir,"%s",newDir);
-    char * delimiter = "/";
-	
-	memset(outPath,0,sizeof(outPath));
-	getLastDirFromPath(tempnewDir, delimiter, outPath);
-	clrscr();
-	//printf("     ");
-	//printf("realpath:%s",newDir);
-	//printf("newpath:%s",outPath);
-	while(keysPressed()&keyToWaitFor){}
-	
-	sprintf(TGDSCurrentWorkingDirectory,"%s",outPath);
-	setBasePath((char *)TGDSCurrentWorkingDirectory);
-	chdir((char *)TGDSCurrentWorkingDirectory);
-	return true;
-}
-
-
-
-//Current iterator (FileClass from a directory)	//todo: loaded by enterDir()
-char lastCurrentPath[MAX_TGDSFILENAME_LENGTH];
-void updateLastGlobalPath(char * path){
-	//append the basepath to file (requires setBasePath to have a base path already set before calling this method)
-	if(strlen(basePath) == 0){
-		setBasePath("/");	//Real Base Path: 0:/
-	}	
-	if(strlen(path) == 0){
-		sprintf(path,"%s",getBasePath());	//logic here should split the file handle, iterate it through devoptabs and give the devoptab name, but this is faster (and defaults to fsfat)
-	}
-	sprintf(lastCurrentPath,"%s",path);
-	chdir(path);
-}
-
 //Get sector from cluster                                             
 DWORD clust2sect (  /* !=0:Sector number, 0:Failed (invalid cluster#) */
     FATFS* fs,      /* File system object */
@@ -613,15 +544,6 @@ void InitGlobalFileClass(){
 	}
 }
 
-//returns the first free StructFD
-void updateGlobalListFromPath(char * path){
-	//if path is different, rebuild filelist
-	if (!(strcmp(lastCurrentPath, path) == 0)){
-		updateLastGlobalPath(path);
-	}
-	buildListFromPath(path);
-}
-
 //requires a previously generated struct fd *
 FILINFO getFileFILINFOfromFileClass(struct FileClass * fileInst){
 	FILINFO finfo;
@@ -678,8 +600,8 @@ int LastDirEntry = 0;
 //return:  FT_DIR or FT_FILE: use getLFN(char buf[MAX_TGDSFILENAME_LENGTH+1]); to receive full first file
 //			or FT_NONE if invalid file
 int getFirstFile(char * path){
-	//lastCurrentPath is globally accesible by all code. But updated only in getFirstFile (getNextFile just retrieves the next ptr file info)
-	updateGlobalListFromPath(lastCurrentPath);
+	//TGDSLastWorkingDirectory is globally accesible by all code. But updated only in getFirstFile (getNextFile just retrieves the next ptr file info)
+	updateGlobalListFromPath(TGDSLastWorkingDirectory);
 	CurrentFileDirEntry = 0;
 	
 	//struct FileClass * fileInst = getFirstDirEntryFromGlobalList();					//get First directory entry	:	so it generates a valid DIR CurrentFileDirEntry
@@ -1798,3 +1720,83 @@ int _fstat_r( struct _reent *_r, int fd, struct stat *buf ){	//(FileDescriptor :
 }
 
 ////////////////////////////////////////////////////////////////////////////INTERNAL CODE END///////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////// INTERNAL DIRECTORY FUNCTIONS /////////////////////////////////////////////////////////////////////
+
+//returns the first free StructFD
+void updateGlobalListFromPath(char * path){
+	//if path is different, rebuild filelist
+	if (!(strcmp(TGDSLastWorkingDirectory, path) == 0)){
+		updateLastGlobalPath(path);
+	}
+	buildListFromPath(path);
+}
+
+//internal: used by the current working directory iterator in TGDS Filesystem. Also used by directory functions
+char TGDSCurrentWorkingDirectory[MAX_TGDSFILENAME_LENGTH+1];
+
+//internal: used by the last accessed current working directory iterator in TGDS Filesystem. Also used by directory functions
+char TGDSLastWorkingDirectory[MAX_TGDSFILENAME_LENGTH];
+
+//todo: rewrite logic to remove redundancy here
+char basePath[MAX_TGDSFILENAME_LENGTH];
+void setBasePath(char * path){
+	sprintf(basePath,"%s",path);
+}
+char * getBasePath(){
+	return (char*)&basePath[0];
+}
+
+//Directory Functions
+bool enterDir(char* newDir){
+	char localPathCopy[MAX_TGDSFILENAME_LENGTH];
+	if(strlen(TGDSCurrentWorkingDirectory) == 0){
+		sprintf(TGDSCurrentWorkingDirectory,"%s",newDir);
+	}
+	else{
+		sprintf(localPathCopy,"%s%s",TGDSCurrentWorkingDirectory,newDir);
+		sprintf(TGDSCurrentWorkingDirectory,"%s",localPathCopy);
+	}
+	clrscr();
+	//reload
+	setBasePath((char *)TGDSCurrentWorkingDirectory);
+	if(chdir((char *)TGDSCurrentWorkingDirectory) == 0){
+		return true;
+	}
+	return false;
+}
+
+//passes the full working directory, removes the last directory and reloads the current directory context
+bool leaveDir(char* newDir ,u32 keyToWaitFor){
+	char tempnewDir[MAX_TGDSFILENAME_LENGTH];
+	sprintf(tempnewDir,"%s",newDir);
+    char * delimiter = "/";
+	
+	memset(outPath,0,sizeof(outPath));
+	getLastDirFromPath(tempnewDir, delimiter, outPath);
+	clrscr();
+	//printf("     ");
+	//printf("realpath:%s",newDir);
+	//printf("newpath:%s",outPath);
+	while(keysPressed()&keyToWaitFor){}
+	
+	sprintf(TGDSCurrentWorkingDirectory,"%s",outPath);
+	setBasePath((char *)TGDSCurrentWorkingDirectory);
+	chdir((char *)TGDSCurrentWorkingDirectory);
+	return true;
+}
+
+//Current iterator (FileClass from a directory)	//todo: loaded by enterDir()
+void updateLastGlobalPath(char * path){
+	//append the basepath to file (requires setBasePath to have a base path already set before calling this method)
+	if(strlen(basePath) == 0){
+		setBasePath("/");	//Real Base Path: 0:/
+	}	
+	if(strlen(path) == 0){
+		sprintf(path,"%s",getBasePath());	//logic here should split the file handle, iterate it through devoptabs and give the devoptab name, but this is faster (and defaults to fsfat)
+	}
+	sprintf(TGDSLastWorkingDirectory,"%s",path);
+	chdir(path);
+}
+
+/////////////////////////////////////////////////////////////////////// INTERNAL DIRECTORY FUNCTIONS END //////////////////////////////////////////////////////////////////

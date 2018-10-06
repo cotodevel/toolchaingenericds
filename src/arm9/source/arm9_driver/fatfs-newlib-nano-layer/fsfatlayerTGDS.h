@@ -158,8 +158,6 @@ extern void seekdir(DIR *dirp, long loc);
 extern int fsfat2libfatAttrib(int fsfatFlags);
 extern int libfat2fsfatAttrib(int libfatFlags);
 extern void SetfsfatAttributesToFile(char * filename, int Newgccnewlibnano_to_fsfatAttributes, int mask);
-extern char lastCurrentPath[MAX_TGDSFILENAME_LENGTH];
-extern void updateLastGlobalPath(char * path);
 
 extern DWORD clust2sect (  /* !=0:Sector number, 0:Failed (invalid cluster#) */
     FATFS* fs,      /* File system object */
@@ -187,7 +185,6 @@ extern bool disableWriting;
 extern void FAT_DisableWriting (void);
 extern int FAT_FileExists(char* filename);
 extern int getFirstFile(char * path);
-extern void updateGlobalListFromPath(char * path);
 extern int getNextFile(char * path);
 extern bool getLFN(char* filename);
 extern bool setLFN(char* filename);
@@ -248,19 +245,29 @@ extern int  readdir_r(DIR * dirp,struct dirent * entry,struct dirent ** result);
 extern int OpenFileFromPathGetStructFD(char * fullPath);
 extern bool closeFileFromStructFD(int StructFD);
 
-extern char basePath[MAX_TGDSFILENAME_LENGTH];
-extern void setBasePath(char * path);
-extern char * getBasePath();
-
-extern char TGDSCurrentWorkingDirectory[MAX_TGDSFILENAME_LENGTH+1];
 
 
 
-extern bool enterDir(char* newDir);
-extern bool leaveDir(char* newDir ,u32 keyToWaitFor);
+
+
+
 
 ////////////////////////////////////////////////////////////////////////////INTERNAL CODE END/////////////////////////////////////////////////////////////////////////////////////
 
+///////////////////////////////////////////////////////////////////////// INTERNAL DIRECTORY FUNCTIONS /////////////////////////////////////////////////////////////////////
+
+extern void updateGlobalListFromPath(char * path);
+extern char TGDSCurrentWorkingDirectory[MAX_TGDSFILENAME_LENGTH+1];
+extern char TGDSLastWorkingDirectory[MAX_TGDSFILENAME_LENGTH];
+
+extern char basePath[MAX_TGDSFILENAME_LENGTH];
+extern void setBasePath(char * path);
+extern char * getBasePath();
+extern bool enterDir(char* newDir);
+extern bool leaveDir(char* newDir ,u32 keyToWaitFor);
+extern void updateLastGlobalPath(char * path);
+
+/////////////////////////////////////////////////////////////////////// INTERNAL DIRECTORY FUNCTIONS END //////////////////////////////////////////////////////////////////
 
 #ifdef __cplusplus
 }
