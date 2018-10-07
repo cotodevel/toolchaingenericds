@@ -193,7 +193,6 @@ extern int LastFileEntry;
 extern int LastDirEntry;
 extern FILINFO getFileFILINFOfromFileClass(struct FileClass * fileInst);
 extern void InitGlobalFileClass();
-extern void buildListFromPath(char * path);
 extern struct FileClass * getFirstDirEntryFromGlobalList();
 extern struct FileClass * getFirstFileEntryFromGlobalList();
 extern struct FileClass * getFileClass(int FileClassListIndex);
@@ -256,11 +255,8 @@ extern bool closeFileFromStructFD(int StructFD);
 
 ///////////////////////////////////////////////////////////////////////// INTERNAL DIRECTORY FUNCTIONS /////////////////////////////////////////////////////////////////////
 
-extern void updateGlobalListFromPath(char * path);
+extern void buildFileClassListFromPath(char * path);
 extern char TGDSCurrentWorkingDirectory[MAX_TGDSFILENAME_LENGTH+1];
-extern char TGDSLastWorkingDirectory[MAX_TGDSFILENAME_LENGTH];
-
-extern char basePath[MAX_TGDSFILENAME_LENGTH];
 extern void setTGDSCurrentWorkingDirectory(char * path);
 extern char * getTGDSCurrentWorkingDirectory();
 extern bool enterDir(char* newDir);

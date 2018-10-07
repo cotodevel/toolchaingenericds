@@ -471,57 +471,6 @@ bool getLFN(char* filename){
 	return true;
 }
 
-void buildListFromPath(char * path){
-	FRESULT res;
-    DIR dir;
-	int i = 0;
-    FILINFO fno;
-	InitGlobalFileClass();
-    res = f_opendir(&dir, path);                       /* Open the directory */
-    if (res == FR_OK) {
-        for(;;){
-			res = f_readdir(&dir, &fno);                   /* Read a directory item */
-			int type = 0;
-			if (fno.fattrib & AM_DIR) {			           /* It is a directory */
-				type = FT_DIR;	
-            }
-			else if (									   /* It is a file */
-			(fno.fattrib & AM_RDO)
-			||
-			(fno.fattrib & AM_HID)
-			||
-			(fno.fattrib & AM_SYS)
-			||
-			(fno.fattrib & AM_ARC)
-			){
-				type = FT_FILE;			
-			}
-			else{	/* It is Invalid. */
-				type = FT_NONE;
-			}
-			
-			if (res != FR_OK || fno.fname[0] == 0){	//error or end of dir
-				break;
-			}
-			else if(i >= FileClassItems){
-				break;
-			}
-			else{
-				//open that full path and open a file handle , if it is file(get internal StructFD)
-				if((type == FT_FILE) || (type == FT_DIR)){
-					char builtFilePath[MAX_TGDSFILENAME_LENGTH+1];
-					sprintf(builtFilePath,"%s%s",getfatfsPath((sint8*)path),fno.fname);
-					//populate
-					bool iterable = true;
-					setFileClass(iterable, (char*)&builtFilePath[0], i, type, structfd_posixInvalidFileDirHandle);
-					i++;
-				}
-			}
-		}
-        f_closedir(&dir);
-    }
-}
-
 volatile struct FileClass FileClassList[FileClassItems];
 
 void setFileClass(bool iterable, char * fullPath, int FileClassListIndex, int Typ, int structFD){
@@ -561,7 +510,7 @@ FILINFO getFileFILINFOfromFileClass(struct FileClass * fileInst){
 	return finfo;
 }
 
-//Note: Requires a fresh call to updateGlobalListFromPath prior to calling this
+//Note: Requires a fresh call to buildFileClassListFromPath prior to calling this
 struct FileClass * getFirstDirEntryFromGlobalList(){
 	int i = 0;
 	struct FileClass * FileClassRet = NULL;
@@ -576,7 +525,7 @@ struct FileClass * getFirstDirEntryFromGlobalList(){
 	return FileClassRet;
 }
 
-//Note: Requires a fresh call to updateGlobalListFromPath prior to calling this
+//Note: Requires a fresh call to buildFileClassListFromPath prior to calling this
 struct FileClass * getFirstFileEntryFromGlobalList(){
 	int i = 0;
 	struct FileClass * FileClassRet = NULL;
@@ -600,8 +549,8 @@ int LastDirEntry = 0;
 //return:  FT_DIR or FT_FILE: use getLFN(char buf[MAX_TGDSFILENAME_LENGTH+1]); to receive full first file
 //			or FT_NONE if invalid file
 int getFirstFile(char * path){
-	//TGDSLastWorkingDirectory is globally accesible by all code. But updated only in getFirstFile (getNextFile just retrieves the next ptr file info)
-	updateGlobalListFromPath(TGDSLastWorkingDirectory);
+	//path will have the current working directory the FileClass was built around. getFirstFile builds everything, and getNextFile iterates over each file until there are no more.
+	buildFileClassListFromPath(path);
 	CurrentFileDirEntry = 0;
 	
 	//struct FileClass * fileInst = getFirstDirEntryFromGlobalList();					//get First directory entry	:	so it generates a valid DIR CurrentFileDirEntry
@@ -1724,43 +1673,79 @@ int _fstat_r( struct _reent *_r, int fd, struct stat *buf ){	//(FileDescriptor :
 ///////////////////////////////////////////////////////////////////////// INTERNAL DIRECTORY FUNCTIONS /////////////////////////////////////////////////////////////////////
 
 //returns the first free StructFD
-void updateGlobalListFromPath(char * path){
-	//if path is different, rebuild filelist
-	if (!(strcmp(TGDSLastWorkingDirectory, path) == 0)){
-		updateLastGlobalPath(path);
-	}
-	buildListFromPath(path);
+void buildFileClassListFromPath(char * path){
+	
+	//save last TGDS Current Working Directory
+	updateLastGlobalPath(path);
+	
+	//rebuild filelist
+	FRESULT res;
+    DIR dir;
+	int i = 0;
+    FILINFO fno;
+	InitGlobalFileClass();
+    res = f_opendir(&dir, path);                       /* Open the directory */
+    if (res == FR_OK) {
+        for(;;){
+			res = f_readdir(&dir, &fno);                   /* Read a directory item */
+			int type = 0;
+			if (fno.fattrib & AM_DIR) {			           /* It is a directory */
+				type = FT_DIR;	
+            }
+			else if (									   /* It is a file */
+			(fno.fattrib & AM_RDO)
+			||
+			(fno.fattrib & AM_HID)
+			||
+			(fno.fattrib & AM_SYS)
+			||
+			(fno.fattrib & AM_ARC)
+			){
+				type = FT_FILE;			
+			}
+			else{	/* It is Invalid. */
+				type = FT_NONE;
+			}
+			
+			if (res != FR_OK || fno.fname[0] == 0){	//error or end of dir
+				break;
+			}
+			else if(i >= FileClassItems){
+				break;
+			}
+			else if((type == FT_FILE) || (type == FT_DIR)){
+				char builtFilePath[MAX_TGDSFILENAME_LENGTH+1];
+				if(type == FT_DIR){
+					sprintf(builtFilePath,"%s%s%s",path,"/",fno.fname);
+				}
+				else if(type == FT_FILE){
+					sprintf(builtFilePath,"%s%s%s",getfatfsPath((sint8*)path),"/",fno.fname);
+				}		
+				//populate
+				bool iterable = true;
+				setFileClass(iterable, (char*)&builtFilePath[0], i, type, structfd_posixInvalidFileDirHandle);
+				i++;
+			}			
+		}
+        f_closedir(&dir);
+    }
 }
 
 //internal: used by the current working directory iterator in TGDS Filesystem. Also used by directory functions
 char TGDSCurrentWorkingDirectory[MAX_TGDSFILENAME_LENGTH+1];
 
-//internal: used by the last accessed current working directory iterator in TGDS Filesystem. Also used by directory functions
-char TGDSLastWorkingDirectory[MAX_TGDSFILENAME_LENGTH];
-
-//todo: rewrite logic to remove redundancy here
-char basePath[MAX_TGDSFILENAME_LENGTH];
 void setTGDSCurrentWorkingDirectory(char * path){
-	sprintf(basePath,"%s",path);
+	sprintf(TGDSCurrentWorkingDirectory,"%s",path);
 }
 char * getTGDSCurrentWorkingDirectory(){
-	return (char*)&basePath[0];
+	return (char*)&TGDSCurrentWorkingDirectory[0];
 }
 
 //Directory Functions
 bool enterDir(char* newDir){
-	char localPathCopy[MAX_TGDSFILENAME_LENGTH];
-	if(strlen(TGDSCurrentWorkingDirectory) == 0){
-		sprintf(TGDSCurrentWorkingDirectory,"%s",newDir);
-	}
-	else{
-		sprintf(localPathCopy,"%s%s",TGDSCurrentWorkingDirectory,newDir);
-		sprintf(TGDSCurrentWorkingDirectory,"%s",localPathCopy);
-	}
+	setTGDSCurrentWorkingDirectory(newDir);
 	clrscr();
-	//reload
-	setTGDSCurrentWorkingDirectory((char *)TGDSCurrentWorkingDirectory);
-	if(chdir((char *)TGDSCurrentWorkingDirectory) == 0){
+	if(chdir((char *)getTGDSCurrentWorkingDirectory()) == 0){
 		return true;
 	}
 	return false;
@@ -1781,21 +1766,17 @@ bool leaveDir(char* newDir ,u32 keyToWaitFor){
 	while(keysPressed()&keyToWaitFor){}
 	
 	sprintf(TGDSCurrentWorkingDirectory,"%s",outPath);
-	setTGDSCurrentWorkingDirectory((char *)TGDSCurrentWorkingDirectory);
 	chdir((char *)TGDSCurrentWorkingDirectory);
 	return true;
 }
 
-//Current iterator (FileClass from a directory)	//todo: loaded by enterDir()
+//Current iterator (FileClass from a directory)
 void updateLastGlobalPath(char * path){
 	//append the basepath to file (requires setTGDSCurrentWorkingDirectory to have a base path already set before calling this method)
-	if(strlen(basePath) == 0){
+	if(strlen(getTGDSCurrentWorkingDirectory()) == 0){
 		setTGDSCurrentWorkingDirectory("/");	//Real Base Path: 0:/
-	}	
-	if(strlen(path) == 0){
-		sprintf(path,"%s",getTGDSCurrentWorkingDirectory());	//logic here should split the file handle, iterate it through devoptabs and give the devoptab name, but this is faster (and defaults to fsfat)
 	}
-	sprintf(TGDSLastWorkingDirectory,"%s",path);
+	sprintf(path,"%s",getTGDSCurrentWorkingDirectory());
 	chdir(path);
 }
 
