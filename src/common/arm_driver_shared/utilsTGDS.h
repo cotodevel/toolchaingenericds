@@ -119,7 +119,6 @@ extern sint8	**FS_getDirectoryList(sint8 *path, sint8 *mask, int *cnt);
 //splitCustom string by delimiter implementation in C, that does not use malloc/calloc and re-uses callbacks
 extern char * outSplitBuf[TOP_ITEMS_SPLIT][MAX_TGDSFILENAME_LENGTH+1];
 extern int count_substr(const char *str, const char* substr, bool overlap);
-extern char outPath[MAX_TGDSFILENAME_LENGTH+1];
 extern void splitCustom(const char *str, char sep, splitCustom_fn fun, char * outBuf, int indexToLeftOut);
 extern int indexParse;
 extern void buildPath(const char *str, size_t len, char * outBuf, int indexToLeftOut, char * delim);

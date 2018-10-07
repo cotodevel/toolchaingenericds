@@ -459,8 +459,6 @@ int count_substr(const char *str, const char* substr, bool overlap) {
   return count;
 }
 
-char outPath[MAX_TGDSFILENAME_LENGTH+1];    //used by splitCustom function as output path buffer
-
 void splitCustom(const char *str, char sep, splitCustom_fn fun, char * outBuf, int indexToLeftOut)
 {
     unsigned int start = 0, stop = 0;

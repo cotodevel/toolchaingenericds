@@ -1745,7 +1745,7 @@ char * getTGDSCurrentWorkingDirectory(){
 bool enterDir(char* newDir){
 	setTGDSCurrentWorkingDirectory(newDir);
 	clrscr();
-	if(chdir((char *)getTGDSCurrentWorkingDirectory()) == 0){
+	if(chdir((char *)TGDSCurrentWorkingDirectory) == 0){
 		return true;
 	}
 	return false;
@@ -1753,19 +1753,18 @@ bool enterDir(char* newDir){
 
 //passes the full working directory, removes the last directory and reloads the current directory context
 bool leaveDir(char* newDir ,u32 keyToWaitFor){
-	char tempnewDir[MAX_TGDSFILENAME_LENGTH];
+	char tempnewDir[MAX_TGDSFILENAME_LENGTH+1] = {0};
+	char tempnewDiroutPath[MAX_TGDSFILENAME_LENGTH+1] = {0};    //used by splitCustom function as output path buffer
 	sprintf(tempnewDir,"%s",newDir);
     char * delimiter = "/";
-	
-	memset(outPath,0,sizeof(outPath));
-	getLastDirFromPath(tempnewDir, delimiter, outPath);
+	getLastDirFromPath(tempnewDir, delimiter, tempnewDiroutPath);
 	clrscr();
 	//printf("     ");
 	//printf("realpath:%s",newDir);
-	//printf("newpath:%s",outPath);
+	//printf("newpath:%s",tempnewDiroutPath);
 	while(keysPressed()&keyToWaitFor){}
 	
-	sprintf(TGDSCurrentWorkingDirectory,"%s",outPath);
+	setTGDSCurrentWorkingDirectory(tempnewDiroutPath);
 	chdir((char *)TGDSCurrentWorkingDirectory);
 	return true;
 }
