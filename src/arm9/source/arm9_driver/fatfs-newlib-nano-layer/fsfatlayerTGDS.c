@@ -1676,7 +1676,7 @@ int _fstat_r( struct _reent *_r, int fd, struct stat *buf ){	//(FileDescriptor :
 void buildFileClassListFromPath(char * path){
 	
 	//save last TGDS Current Working Directory
-	updateLastGlobalPath(path);
+	updateFileClassList(path);
 	
 	//rebuild filelist
 	FRESULT res;
@@ -1770,7 +1770,7 @@ bool leaveDir(char* newDir ,u32 keyToWaitFor){
 }
 
 //Current iterator (FileClass from a directory)
-void updateLastGlobalPath(char * path){
+void updateFileClassList(char * path){
 	//append the basepath to file (requires setTGDSCurrentWorkingDirectory to have a base path already set before calling this method)
 	if(strlen(getTGDSCurrentWorkingDirectory()) == 0){
 		setTGDSCurrentWorkingDirectory("/");	//Real Base Path: 0:/

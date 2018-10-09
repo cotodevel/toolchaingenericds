@@ -261,7 +261,7 @@ extern void setTGDSCurrentWorkingDirectory(char * path);
 extern char * getTGDSCurrentWorkingDirectory();
 extern bool enterDir(char* newDir);
 extern bool leaveDir(char* newDir ,u32 keyToWaitFor);
-extern void updateLastGlobalPath(char * path);
+extern void updateFileClassList(char * path);
 
 /////////////////////////////////////////////////////////////////////// INTERNAL DIRECTORY FUNCTIONS END //////////////////////////////////////////////////////////////////
 
