@@ -76,6 +76,11 @@ USA
 //up to N items to be listed by TGDS High level API functions
 #define FileClassItems (int)(60)
 
+//Directory Separator used by TGDS FS
+#define TGDSDirectorySeparator ((char*)("/"))
+
+//FileClass Start directory if there is none
+#define FileClassStartDirectory TGDSDirectorySeparator
 
 //FileClass parts (not used by POSIX at all, but ToolchainGenericDS high level API (for parsing fullpath directories and high level descriptors)
 struct FileClass{
@@ -255,13 +260,13 @@ extern bool closeFileFromStructFD(int StructFD);
 
 ///////////////////////////////////////////////////////////////////////// INTERNAL DIRECTORY FUNCTIONS /////////////////////////////////////////////////////////////////////
 
-extern void buildFileClassListFromPath(char * path);
+extern bool buildFileClassListFromPath(char * path);
 extern char TGDSCurrentWorkingDirectory[MAX_TGDSFILENAME_LENGTH+1];
 extern void setTGDSCurrentWorkingDirectory(char * path);
 extern char * getTGDSCurrentWorkingDirectory();
 extern bool enterDir(char* newDir);
 extern bool leaveDir(char* newDir ,u32 keyToWaitFor);
-extern void updateFileClassList(char * path);
+extern bool updateFileClassList(char * path);
 
 /////////////////////////////////////////////////////////////////////// INTERNAL DIRECTORY FUNCTIONS END //////////////////////////////////////////////////////////////////
 

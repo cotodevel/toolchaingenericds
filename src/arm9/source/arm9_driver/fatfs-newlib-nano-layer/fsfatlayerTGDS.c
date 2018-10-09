@@ -476,7 +476,7 @@ volatile struct FileClass FileClassList[FileClassItems];
 void setFileClass(bool iterable, char * fullPath, int FileClassListIndex, int Typ, int structFD){
 	struct FileClass * FileClassInst = (struct FileClass *)&FileClassList[FileClassListIndex];
 	FileClassInst->isIterable = iterable;
-	sprintf(FileClassInst->fd_namefullPath,"%s",fullPath);
+	strcpy(FileClassInst->fd_namefullPath, (const char *)fullPath);
 	FileClassInst->type = Typ;
 	FileClassInst->d_ino = structFD;
 }
@@ -549,41 +549,45 @@ int LastDirEntry = 0;
 //return:  FT_DIR or FT_FILE: use getLFN(char buf[MAX_TGDSFILENAME_LENGTH+1]); to receive full first file
 //			or FT_NONE if invalid file
 int getFirstFile(char * path){
+
 	//path will have the current working directory the FileClass was built around. getFirstFile builds everything, and getNextFile iterates over each file until there are no more.
-	buildFileClassListFromPath(path);
-	CurrentFileDirEntry = 0;
-	
-	//struct FileClass * fileInst = getFirstDirEntryFromGlobalList();					//get First directory entry	:	so it generates a valid DIR CurrentFileDirEntry
-	//struct FileClass * fileInst = getFirstFileEntryFromGlobalList();					//get First file entry 		:	so it generates a valid FILE CurrentFileDirEntry
-	struct FileClass * fileInst = getFileClass(CurrentFileDirEntry);
-	if (fileInst->type == FT_DIR) {	//dir
-		LastDirEntry=CurrentFileDirEntry;
-	}
-	else if (fileInst->type == FT_FILE){
-		LastFileEntry=CurrentFileDirEntry;
-	}
-	else{	
-		//invalid. Should not happen 
-		return FT_NONE;
-	}
-	//increase the file/dir counter after operation only if valid entry, otherwise it doesn't anymore
-	if((fileInst->type == FT_FILE) || (fileInst->type == FT_DIR)){
-		char *  FullPathStr = fileInst->fd_namefullPath;
-		setLFN((char*)FullPathStr);		//update last full path access
-		getLFN((char*)path);			//update source path
-	}
-	
-	//is this index indexable? otherwise cleanup
-	if(CurrentFileDirEntry < (int)(FileClassItems)){ 
-		CurrentFileDirEntry++;	
-	}
-	else{
+	if(buildFileClassListFromPath(path) == true){
 		CurrentFileDirEntry = 0;
-		LastDirEntry=structfd_posixInvalidFileDirHandle;
-		LastFileEntry=structfd_posixInvalidFileDirHandle;
-		return FT_NONE;	//actually end of list
+		
+		//struct FileClass * fileInst = getFirstDirEntryFromGlobalList();					//get First directory entry	:	so it generates a valid DIR CurrentFileDirEntry
+		//struct FileClass * fileInst = getFirstFileEntryFromGlobalList();					//get First file entry 		:	so it generates a valid FILE CurrentFileDirEntry
+		struct FileClass * fileInst = getFileClass(CurrentFileDirEntry);
+		if (fileInst->type == FT_DIR) {	//dir
+			LastDirEntry=CurrentFileDirEntry;
+		}
+		else if (fileInst->type == FT_FILE){
+			LastFileEntry=CurrentFileDirEntry;
+		}
+		else{	
+			//invalid. Should not happen 
+			return FT_NONE;
+		}
+		//increase the file/dir counter after operation only if valid entry, otherwise it doesn't anymore
+		if((fileInst->type == FT_FILE) || (fileInst->type == FT_DIR)){
+			char *  FullPathStr = fileInst->fd_namefullPath;
+			setLFN((char*)FullPathStr);		//update last full path access
+			getLFN((char*)path);			//update source path
+		}
+		
+		//is this index indexable? otherwise cleanup
+		if(CurrentFileDirEntry < (int)(FileClassItems)){ 
+			CurrentFileDirEntry++;	
+		}
+		else{
+			CurrentFileDirEntry = 0;
+			LastDirEntry=structfd_posixInvalidFileDirHandle;
+			LastFileEntry=structfd_posixInvalidFileDirHandle;
+			return FT_NONE;	//actually end of list
+		}
+		return fileInst->type;
 	}
-	return fileInst->type;
+	
+	return FT_NONE;
 }
 
 //requires fullpath of the CURRENT file, it will return the next one
@@ -656,7 +660,7 @@ bool FAT_GetAlias(char* alias){
 	(FILINFOObj.fattrib & AM_DIR)
 	)
 	{
-		sprintf((char*)alias,"%s",fileInst->fd_namefullPath);					//update source path using short file/directory name
+		strcpy((char*)alias,(const char *)fileInst->fd_namefullPath);	//update source path using short file/directory name				
 	}
 	//not file or dir
 	else{
@@ -728,8 +732,7 @@ bool FAT_GetLongFilename(char* Longfilename){
 	(FILINFOObj.fattrib & AM_DIR)
 	)
 	{
-		char * FullPathStr = fileInst->fd_namefullPath;	//must store proper filepath	must return fullPath here (0:/folder0/filename.ext)
-		sprintf((char*)Longfilename,"%s",FullPathStr);					//update source path using Long file/directory name
+		strcpy ((char*)Longfilename, (const char *)fileInst->fd_namefullPath);	//update source path using Long file/directory name
 	}
 	//not file or dir
 	else{
@@ -1673,69 +1676,72 @@ int _fstat_r( struct _reent *_r, int fd, struct stat *buf ){	//(FileDescriptor :
 ///////////////////////////////////////////////////////////////////////// INTERNAL DIRECTORY FUNCTIONS /////////////////////////////////////////////////////////////////////
 
 //returns the first free StructFD
-void buildFileClassListFromPath(char * path){
-	
-	//save last TGDS Current Working Directory
-	updateFileClassList(path);
-	
-	//rebuild filelist
-	FRESULT res;
-    DIR dir;
-	int i = 0;
-    FILINFO fno;
-	InitGlobalFileClass();
-    res = f_opendir(&dir, path);                       /* Open the directory */
-    if (res == FR_OK) {
-        for(;;){
-			res = f_readdir(&dir, &fno);                   /* Read a directory item */
-			int type = 0;
-			if (fno.fattrib & AM_DIR) {			           /* It is a directory */
-				type = FT_DIR;	
-            }
-			else if (									   /* It is a file */
-			(fno.fattrib & AM_RDO)
-			||
-			(fno.fattrib & AM_HID)
-			||
-			(fno.fattrib & AM_SYS)
-			||
-			(fno.fattrib & AM_ARC)
-			){
-				type = FT_FILE;			
-			}
-			else{	/* It is Invalid. */
-				type = FT_NONE;
-			}
-			
-			if (res != FR_OK || fno.fname[0] == 0){	//error or end of dir
-				break;
-			}
-			else if(i >= FileClassItems){
-				break;
-			}
-			else if((type == FT_FILE) || (type == FT_DIR)){
-				char builtFilePath[MAX_TGDSFILENAME_LENGTH+1];
-				if(type == FT_DIR){
-					sprintf(builtFilePath,"%s%s%s",path,"/",fno.fname);
+bool buildFileClassListFromPath(char * path){
+
+	//decide wether we have a Working directory or not, if valid dir, enter that dir. If not, use the default dir and point to it.
+	if(updateFileClassList(path) == true){
+		//rebuild filelist
+		FRESULT res;
+		DIR dir;
+		int i = 0;
+		FILINFO fno;
+		InitGlobalFileClass();
+		res = f_opendir(&dir, path);                       /* Open the directory */
+		if (res == FR_OK) {
+			for(;;){
+				res = f_readdir(&dir, &fno);                   /* Read a directory item */
+				int type = 0;
+				if (fno.fattrib & AM_DIR) {			           /* It is a directory */
+					type = FT_DIR;	
 				}
-				else if(type == FT_FILE){
-					sprintf(builtFilePath,"%s%s%s",getfatfsPath((sint8*)path),"/",fno.fname);
-				}		
-				//populate
-				bool iterable = true;
-				setFileClass(iterable, (char*)&builtFilePath[0], i, type, structfd_posixInvalidFileDirHandle);
-				i++;
-			}			
+				else if (									   /* It is a file */
+				(fno.fattrib & AM_RDO)
+				||
+				(fno.fattrib & AM_HID)
+				||
+				(fno.fattrib & AM_SYS)
+				||
+				(fno.fattrib & AM_ARC)
+				){
+					type = FT_FILE;			
+				}
+				else{	/* It is Invalid. */
+					type = FT_NONE;
+				}
+				
+				if (res != FR_OK || fno.fname[0] == 0){	//error or end of dir
+					break;
+				}
+				else if(i >= FileClassItems){
+					break;
+				}
+				else if((type == FT_FILE) || (type == FT_DIR)){
+					char builtFilePath[MAX_TGDSFILENAME_LENGTH+1];
+					if(type == FT_DIR){
+						sprintf(builtFilePath,"%s%s%s",path,"/",fno.fname);
+					}
+					else if(type == FT_FILE){
+						sprintf(builtFilePath,"%s%s%s",getfatfsPath((sint8*)path),"/",fno.fname);
+					}		
+					//populate
+					bool iterable = true;
+					setFileClass(iterable, (char*)&builtFilePath[0], i, type, structfd_posixInvalidFileDirHandle);
+					i++;
+				}			
+			}
+			f_closedir(&dir);
 		}
-        f_closedir(&dir);
-    }
+		return true;
+	}
+	
+	return false;
 }
 
 //internal: used by the current working directory iterator in TGDS Filesystem. Also used by directory functions
 char TGDSCurrentWorkingDirectory[MAX_TGDSFILENAME_LENGTH+1];
 
 void setTGDSCurrentWorkingDirectory(char * path){
-	sprintf(TGDSCurrentWorkingDirectory,"%s",path);
+	strcpy(TGDSCurrentWorkingDirectory, (const char *)path);
 }
 char * getTGDSCurrentWorkingDirectory(){
 	return (char*)&TGDSCurrentWorkingDirectory[0];
@@ -1743,9 +1749,10 @@ char * getTGDSCurrentWorkingDirectory(){
 
 //Directory Functions
 bool enterDir(char* newDir){
-	setTGDSCurrentWorkingDirectory(newDir);
+	char * CurrentWorkingDirectory = (char*)&TGDSCurrentWorkingDirectory[0];
+	strcpy(CurrentWorkingDirectory, (const char *)newDir);
 	clrscr();
-	if(chdir((char *)TGDSCurrentWorkingDirectory) == 0){
+	if(chdir((char *)CurrentWorkingDirectory) == 0){
 		return true;
 	}
 	return false;
@@ -1755,28 +1762,33 @@ bool enterDir(char* newDir){
 bool leaveDir(char* newDir ,u32 keyToWaitFor){
 	char tempnewDir[MAX_TGDSFILENAME_LENGTH+1] = {0};
 	char tempnewDiroutPath[MAX_TGDSFILENAME_LENGTH+1] = {0};    //used by splitCustom function as output path buffer
-	sprintf(tempnewDir,"%s",newDir);
-    char * delimiter = "/";
-	getLastDirFromPath(tempnewDir, delimiter, tempnewDiroutPath);
+	strcpy(tempnewDir, (const char *)newDir);
+    getLastDirFromPath(tempnewDir, TGDSDirectorySeparator, tempnewDiroutPath);
 	clrscr();
 	//printf("     ");
 	//printf("realpath:%s",newDir);
 	//printf("newpath:%s",tempnewDiroutPath);
 	while(keysPressed()&keyToWaitFor){}
 	
-	setTGDSCurrentWorkingDirectory(tempnewDiroutPath);
-	chdir((char *)TGDSCurrentWorkingDirectory);
+	char * CurrentWorkingDirectory = (char*)&TGDSCurrentWorkingDirectory[0];
+	strcpy(CurrentWorkingDirectory, (const char *)tempnewDiroutPath);
+	chdir(CurrentWorkingDirectory);
 	return true;
 }
 
-//Current iterator (FileClass from a directory)
-void updateFileClassList(char * path){
-	//append the basepath to file (requires setTGDSCurrentWorkingDirectory to have a base path already set before calling this method)
-	if(strlen(getTGDSCurrentWorkingDirectory()) == 0){
-		setTGDSCurrentWorkingDirectory("/");	//Real Base Path: 0:/
+//Current iterator (FileClass from a directory). char * path : If a valid directory is passed, it will be used to populate the FileClassList. Otherwise the default Start Directory is used.
+//Note: If any File or Directory is found then char * path will be destroyed by the current iterated File / Directory item.
+bool updateFileClassList(char * path){
+	char * CurrentWorkingDirectory = (char*)&TGDSCurrentWorkingDirectory[0];
+	//Set the base directory if the TGDS Current Working Directory is missing.
+	if(strlen(CurrentWorkingDirectory) == 0){
+		strcpy(CurrentWorkingDirectory, (const char*)FileClassStartDirectory);
 	}
-	sprintf(path,"%s",getTGDSCurrentWorkingDirectory());
-	chdir(path);
+	//Set the Current Working Directory as base directory to the destroyable filename source if the directory is empty.
+	if(strlen(path) == 0){
+		strcpy(path, (const char*)CurrentWorkingDirectory);
+	}
+	return enterDir(path);
 }
 
 /////////////////////////////////////////////////////////////////////// INTERNAL DIRECTORY FUNCTIONS END //////////////////////////////////////////////////////////////////
