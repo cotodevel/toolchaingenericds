@@ -1750,8 +1750,11 @@ char * getTGDSCurrentWorkingDirectory(){
 //Directory Functions
 bool enterDir(char* newDir){
 	char * CurrentWorkingDirectory = (char*)&TGDSCurrentWorkingDirectory[0];
-	strcpy(CurrentWorkingDirectory, (const char *)newDir);
-	clrscr();
+	//Update dir only when source dir is different
+	if(strcmp(CurrentWorkingDirectory, newDir) != 0){
+		strcpy(CurrentWorkingDirectory, (const char *)newDir);
+		//clrscr();
+	}	
 	if(chdir((char *)CurrentWorkingDirectory) == 0){
 		return true;
 	}
@@ -1764,7 +1767,7 @@ bool leaveDir(char* newDir ,u32 keyToWaitFor){
 	char tempnewDiroutPath[MAX_TGDSFILENAME_LENGTH+1] = {0};    //used by splitCustom function as output path buffer
 	strcpy(tempnewDir, (const char *)newDir);
     getLastDirFromPath(tempnewDir, TGDSDirectorySeparator, tempnewDiroutPath);
-	clrscr();
+	//clrscr();
 	//printf("     ");
 	//printf("realpath:%s",newDir);
 	//printf("newpath:%s",tempnewDiroutPath);
@@ -1784,10 +1787,9 @@ bool updateFileClassList(char * path){
 	if(strlen(CurrentWorkingDirectory) == 0){
 		strcpy(CurrentWorkingDirectory, (const char*)FileClassStartDirectory);
 	}
-	//Set the Current Working Directory as base directory to the destroyable filename source if the directory is empty.
-	if(strlen(path) == 0){
-		strcpy(path, (const char*)CurrentWorkingDirectory);
-	}
+	//Set the Current Working Directory as base directory to the destroyable filename source always.
+	strcpy(path, (const char*)CurrentWorkingDirectory);
+	
 	return enterDir(path);
 }
 
