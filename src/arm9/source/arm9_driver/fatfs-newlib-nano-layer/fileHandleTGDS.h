@@ -51,6 +51,8 @@ extern sint8 * getDeviceNameByStructFDIndex(int StructFDIndex);
 //useful for internal functions on DIR
 extern int getInternalFileDescriptorFromDIR(DIR *dirp);
 
+extern int getStructFDByFileName(char * filename);
+
 #ifdef __cplusplus
 }
 #endif

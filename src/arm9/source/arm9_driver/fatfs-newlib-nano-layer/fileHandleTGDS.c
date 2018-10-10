@@ -53,6 +53,22 @@ struct fd *fd_struct_get(int fd){
     return f;
 }
 
+int getStructFDByFileName(char * filename){
+	int ret = structfd_posixInvalidFileDirHandle;
+    
+	int fd = 0;
+	/* search in all struct fd instances*/
+	for (fd = 0; fd < OPEN_MAXTGDS; fd++){
+		if(files[fd].isused == (sint32)structfd_isused){
+			if(strcmp((char*)&files[fd].fd_name, filename) == 0){
+				//printfDebugger("getStructFDByFileName(): idx:%d - f:%s",fd, files[fd].fd_name);
+				return fd;
+			}
+		}
+	}
+	return ret;
+}
+
 //char * devoptabFSName must be a buffer already allocated if bool defaultDriver == false
 void initTGDS(char * devoptabFSName){
 	if(devoptabFSName == NULL){

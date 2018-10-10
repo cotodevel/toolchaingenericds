@@ -132,6 +132,15 @@ bool closeFileFromStructFD(int StructFD){
 int FileExists(char * filename){
 	int Type = FT_NONE;
 	int StructFD = OpenFileFromPathGetStructFD((char *)filename);
+	
+	//there might be the possibility that the file is already open, if so, look the filename in the structFD so we read that one to detect if such file is open
+	if(StructFD == structfd_posixInvalidFileDirHandle){
+		StructFD = getStructFDByFileName((char*)filename);
+		if(StructFD != structfd_posixInvalidFileDirHandle){
+			//Already open filehandle (from filename). It means file exists.
+		}
+	}
+	
 	struct fd *pfd = fd_struct_get(StructFD);
 	if(pfd != NULL){
 		//file?
@@ -903,6 +912,9 @@ void fatfs_free(struct fd *pfd){
 		if(pfd->dirPtr){	//must we clean a DIR?
 			pfd->dirPtr = NULL;
 		}
+		
+		//clean filename
+		sprintf((char*)&pfd->fd_name[0],"%s","");
     }
 	else{
 		//file_free failed
