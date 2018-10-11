@@ -112,21 +112,6 @@ sint32 open_posix_filedescriptor_devices(){
 	return items;
 }
 
-//todo nuke (fd_posix as well)
-//get the latest struct fd free index of sint8 * passed (useful for allocating the latest file descriptor of a certain name
-sint32 get_posix_fd_from_devicename(sint8 * deviceName){
-	sint32 i = 0;	//devoptab_struct starts from index 0
-	sint32 latest = structfd_posixInvalidFileDirHandle;
-	for(i = 0; i < OPEN_MAXTGDS; i++){
-		if( strcmp( (sint8*)(&devoptab_struct[i]->name), deviceName ) == 0) {
-			latest = i;
-			break;
-		}
-	}
-	
-	return latest;
-}
-
 //stdin: todo
 int open_r_stdin ( struct _reent *r, const sint8 *path, int flags, int mode ){
 	return structfd_posixInvalidFileDirHandle;

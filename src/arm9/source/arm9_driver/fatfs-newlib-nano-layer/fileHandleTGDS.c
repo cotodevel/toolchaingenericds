@@ -78,13 +78,9 @@ void initTGDS(char * devoptabFSName){
 	/* search in all struct fd instances*/
 	for (fd = 0; fd < OPEN_MAXTGDS; fd++){
 		memset((uint8*)&files[fd], 0, sizeof(struct fd));
-		files[fd].isused = (sint32)structfd_isunused;			
-		//PosixFD default invalid value (overriden later)
-		files[fd].fd_posix = (sint32)structfd_posixInvalidFileDirHandle;
-		
+		files[fd].isused = (sint32)structfd_isunused;
 		//Internal default invalid value (overriden later)
 		files[fd].cur_entry.d_ino = (sint32)structfd_posixInvalidFileDirHandle;
-		
 		files[fd].isatty = (sint32)structfd_isattydefault;
 		files[fd].descriptor_flags = (sint32)structfd_descriptorflagsdefault;
 		files[fd].status_flags = (sint32)structfd_status_flagsdefault;
@@ -108,7 +104,7 @@ int FileHandleAlloc(struct devoptab_t * devoptabInst ){
 			files[fd].isused = (sint32)structfd_isused;
 			
 			//PosixFD default valid value (overriden now)
-			files[fd].fd_posix = (get_posix_fd_from_devicename((sint8*)devoptabInst->name));
+			files[fd].devoptabFileDescriptor = devoptabInst;
 			
 			//Internal default value (overriden now)
 			files[fd].cur_entry.d_ino = (sint32)fd;
@@ -133,8 +129,7 @@ int FileHandleFree(int fd){
 	int ret = structfd_posixInvalidFileDirHandle;
     if ((fd < OPEN_MAXTGDS) && (fd >= 0) && (files[fd].isused == structfd_isused)){
         files[fd].isused = (sint32)structfd_isunused;
-		files[fd].fd_posix = (sint32)structfd_posixInvalidFileDirHandle;
-		files[fd].cur_entry.d_ino = files[fd].fd_posix;
+		files[fd].cur_entry.d_ino = (sint32)structfd_posixInvalidFileDirHandle;
 		ret = fd;
     }
 	return ret;

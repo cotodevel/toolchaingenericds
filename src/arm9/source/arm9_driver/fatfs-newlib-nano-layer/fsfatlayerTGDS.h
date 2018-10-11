@@ -91,7 +91,7 @@ struct FileClass{
 };
 
 struct fd {
-	int fd_posix;				//POSIX file descriptor index (so stdin,stdout,stderr are registered here)	//todo: nuke
+	struct devoptab_t * devoptabFileDescriptor;
 	struct stat stat;			//File attributes : POSIX Compliant
 	int isatty;
 	int isused;					//1 means in use (structfd_isused) / 0 free (structfd_isunused)

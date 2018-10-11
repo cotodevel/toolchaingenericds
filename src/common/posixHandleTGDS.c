@@ -88,9 +88,8 @@ _ssize_t _read_r ( struct _reent *ptr, int fd, void *buf, size_t cnt ){
 	
 	//Conversion here 
 	struct fd * fdinst = fd_struct_get(fd);
-	
-	if( (fdinst != NULL) && ((sint32)fdinst->fd_posix != (sint32)structfd_posixInvalidFileDirHandle)  ) {
-		return (_ssize_t)devoptab_struct[fdinst->fd_posix]->read_r( NULL, fdinst->cur_entry.d_ino, buf, cnt );
+	if((fdinst != NULL) && (fdinst->devoptabFileDescriptor != NULL) && (fdinst->devoptabFileDescriptor != (struct devoptab_t *)&devoptab_stub)){
+		return (_ssize_t)fdinst->devoptabFileDescriptor->read_r( NULL, fdinst->cur_entry.d_ino, buf, cnt );
 	}
 	
 	return -1;
@@ -100,8 +99,8 @@ _ssize_t _read_r ( struct _reent *ptr, int fd, void *buf, size_t cnt ){
 _ssize_t _write_r ( struct _reent *ptr, int fd, const void *buf, size_t cnt ){
 	//Conversion here 
 	struct fd * fdinst = fd_struct_get(fd);
-	if( (fdinst != NULL) && ((sint32)fdinst->fd_posix != (sint32)structfd_posixInvalidFileDirHandle)  ) {
-		return (_ssize_t)devoptab_struct[fdinst->fd_posix]->write_r( NULL, fdinst->cur_entry.d_ino, buf, cnt );
+	if((fdinst != NULL) && (fdinst->devoptabFileDescriptor != NULL) && (fdinst->devoptabFileDescriptor != (struct devoptab_t *)&devoptab_stub)){
+		return (_ssize_t)fdinst->devoptabFileDescriptor->write_r( NULL, fdinst->cur_entry.d_ino, buf, cnt );
 	}
 	return -1;
 }
@@ -144,8 +143,8 @@ int _close_r ( struct _reent *ptr, int fd )
 	//Conversion here 
 	struct fd * fdinst = fd_struct_get(fd);
 	
-	if( (fdinst != NULL) && ((sint32)fdinst->fd_posix != (sint32)structfd_posixInvalidFileDirHandle)  ) {
-		return (_ssize_t)devoptab_struct[fdinst->fd_posix]->close_r( NULL, fdinst->cur_entry.d_ino );
+	if((fdinst != NULL) && (fdinst->devoptabFileDescriptor != NULL) && (fdinst->devoptabFileDescriptor != (struct devoptab_t *)&devoptab_stub)){
+		return (_ssize_t)fdinst->devoptabFileDescriptor->close_r( NULL, fdinst->cur_entry.d_ino );
 	}	
 	return -1;
 }

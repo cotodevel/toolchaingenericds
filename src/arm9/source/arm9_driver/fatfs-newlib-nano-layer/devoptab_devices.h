@@ -73,7 +73,6 @@ extern _ssize_t read_r_fatfs ( struct _reent *r, int fd, sint8 *ptr, int len );
 
 #ifdef ARM9
 
-extern sint32 get_posix_fd_from_devicename(sint8 * deviceName);
 extern sint32 open_posix_filedescriptor_devices();
 
 extern void initTGDSDevoptab();
