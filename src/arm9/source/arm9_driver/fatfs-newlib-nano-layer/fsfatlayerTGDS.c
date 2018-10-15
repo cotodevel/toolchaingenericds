@@ -133,14 +133,6 @@ int FileExists(char * filename){
 	int Type = FT_NONE;
 	int StructFD = OpenFileFromPathGetStructFD((char *)filename);
 	
-	//there might be the possibility that the file is already open, if so, look the filename in the structFD so we read that one to detect if such file is open
-	if(StructFD == structfd_posixInvalidFileDirHandle){
-		StructFD = getStructFDByFileName((char*)filename);
-		if(StructFD != structfd_posixInvalidFileDirHandle){
-			//Already open filehandle (from filename). It means file exists.
-		}
-	}
-	
 	struct fd *pfd = fd_struct_get(StructFD);
 	if(pfd != NULL){
 		//file?
@@ -1146,7 +1138,8 @@ int fatfs_open_file(const sint8 *pathname, int flags, const FILINFO *fno){
 	int structfdIndex = fatfs_fildir_alloc(structfd_isfile);	//returns / allocates a new struct fd index with either DIR or FIL structure allocated
 	struct fd * fdinst = fd_struct_get(structfdIndex);	//fd_struct_get requires struct fd index
 	if ((structfdIndex == structfd_posixInvalidFileDirHandle) || (fdinst == NULL)){
-		// file handle invalid
+		//file handle invalid. There might be the possibility that the file is already open, if so, look the filename in the structFD so we read that one to detect if such file is open
+		structfdIndex = getStructFDByFileName((char*)pathname);
     }
 	else{
         FILINFO fno_after;
