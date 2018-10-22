@@ -230,6 +230,7 @@ extern int fatfs_unlink(const sint8 *path);
 extern int fatfs_link(const sint8 *path1, const sint8 *path2);
 extern int fatfs_rename(const sint8 *oldpathfile, const sint8 *newpathfile);
 extern int fatfs_fsync(int fd);
+extern struct packedFDRet fatfs_free(struct fd *pfd);	//returns the file handle that was discarded: and if the file handle was DIR / FILE
 extern int fatfs_stat(const sint8 *path, struct stat *buf);
 extern int fatfs_mkdir(const sint8 *path, mode_t mode);
 extern int fatfs_rmdir(const sint8 *path);

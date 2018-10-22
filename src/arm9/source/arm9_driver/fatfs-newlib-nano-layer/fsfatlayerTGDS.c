@@ -894,23 +894,29 @@ int fatfs_fildir_alloc(int isfilordir)
     return i_fil;
 }
 
-
-void fatfs_free(struct fd *pfd){
-	int i_fil = FileHandleFree(pfd->cur_entry.d_ino);	//conversion
-    if (i_fil != structfd_posixInvalidFileDirHandle){	//FileHandleFree could free struct fd properly? set filesAlloc[index] free
+//returns the file handle that was discarded: and if the file handle was DIR / FILE
+struct packedFDRet fatfs_free(struct fd *pfd){
+	struct packedFDRet retStatus;
+	int i_fil = FileHandleFree(pfd->cur_entry.d_ino);	//returns structfd index that was deallocated
+    retStatus.StructFD = i_fil;
+	retStatus.type = FT_NONE;
+	if (i_fil != structfd_posixInvalidFileDirHandle){	//FileHandleFree could free struct fd properly? set filesAlloc[index] free
 		if(pfd->filPtr){	//must we clean a FIL?
 			pfd->filPtr = NULL;
-		}	
+			retStatus.type = FT_FILE;
+		}
 		if(pfd->dirPtr){	//must we clean a DIR?
 			pfd->dirPtr = NULL;
+			retStatus.type = FT_DIR;
 		}
 		
 		//clean filename
-		sprintf((char*)&pfd->fd_name[0],"%s","");
+		sprintf((char*)&pfd->fd_name[0],"%s",(uint32*)&devoptab_stub.name[0]);
     }
 	else{
 		//file_free failed
-	}	
+	}
+	return retStatus;
 }
 
 int fatfs_write (int fd, sint8 *ptr, int len){	//(FileDescriptor :struct fd index)
@@ -1024,7 +1030,6 @@ int fatfs_close (int structFDIndex)
 			memset (&pfd->stat, 0, sizeof(pfd->stat));
 			
 			fatfs_free(pfd);
-			FileHandleFree(pfd->cur_entry.d_ino);	//deallocates a file descriptor index that is struct fd
             ret = 0;
 			
 			//update d_ino here (POSIX compliant)
