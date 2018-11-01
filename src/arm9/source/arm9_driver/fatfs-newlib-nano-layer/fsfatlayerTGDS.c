@@ -1011,9 +1011,10 @@ int fatfs_close (int structFDIndex)
 {
     int ret = structfd_posixInvalidFileDirHandle;
     struct fd * pfd = fd_struct_get(structFDIndex);
-    if ( (pfd == NULL) || ((pfd->filPtr == NULL) && (pfd->dirPtr == NULL)) ){	//not file/dir? not alloced struct fd?
+    if ( (pfd == NULL) || ((pfd->filPtr == NULL) && (pfd->dirPtr == NULL)) || (pfd->isused != (sint32)structfd_isused) || (structFDIndex == structfd_posixInvalidFileDirHandle) ){	//not file/dir? not alloced struct fd? or not valid file handle(two cases)?
 		errno = EBADF;
     }
+	
 	//File?
     else if (S_ISREG(pfd->stat.st_mode)){
         FIL *filp;
