@@ -197,10 +197,11 @@ extern int CurrentFileDirEntry;
 extern int LastFileEntry;
 extern int LastDirEntry;
 extern FILINFO getFileFILINFOfromFileClass(struct FileClass * fileInst);
+extern struct FileClass getFileClassFromPath(char * path);
 extern void InitGlobalFileClass();
-extern struct FileClass * getFirstDirEntryFromGlobalList();
-extern struct FileClass * getFirstFileEntryFromGlobalList();
-extern struct FileClass * getFileClass(int FileClassListIndex);
+extern struct FileClass * getFirstDirEntryFromList();
+extern struct FileClass * getFirstFileEntryFromList();
+extern struct FileClass * getFileClassFromList(int FileClassListIndex);
 extern void setFileClass(bool iterable, char * fullPath, int FileClassListIndex, int Typ, int StructFD);
 extern volatile struct FileClass FileClassList[FileClassItems];
 ////////////////////////////////////////////////////////////////////////////USER CODE END/////////////////////////////////////////////////////////////////////////////////////
