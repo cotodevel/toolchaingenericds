@@ -517,6 +517,9 @@ struct FileClass getFileClassFromPath(char * path){
 
 
 void InitGlobalFileClass(){
+	CurrentFileDirEntry = 0;
+	LastDirEntry=structfd_posixInvalidFileDirHandle;
+	LastFileEntry=structfd_posixInvalidFileDirHandle;
 	int i = 0;
 	for(i = 0; i < FileClassItems; i++){
 		bool iterable = false;
