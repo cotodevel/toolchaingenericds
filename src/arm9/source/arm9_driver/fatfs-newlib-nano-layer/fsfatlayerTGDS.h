@@ -106,6 +106,8 @@ struct fd {
 	DIR  * dirPtr;
 	FIL  fil;	//if aboveptr is NULL then it is not FIL
 	DIR  dir;	//if aboveptr is NULL then it is not DIR
+	
+	bool UnicodeFileDetected;	//true: file is Unicode, false file is not (regular unsigned char)
 };
 
 struct packedFDRet{
@@ -204,6 +206,9 @@ extern struct FileClass * getFirstFileEntryFromList();
 extern struct FileClass * getFileClassFromList(int FileClassListIndex);
 extern void setFileClass(bool iterable, char * fullPath, int FileClassListIndex, int Typ, int StructFD);
 extern volatile struct FileClass FileClassList[FileClassItems];
+extern bool TGDSFS_detectUnicode(struct fd *pfd);
+extern bool TGDSFS_GetStructFDUnicode(struct fd *pfd);
+extern void TGDSFS_SetStructFDUnicode(struct fd *pfd, bool unicode);
 ////////////////////////////////////////////////////////////////////////////USER CODE END/////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -250,7 +255,6 @@ extern int _fstat_r ( struct _reent *_r, int fd, struct stat *buf );
 extern int  readdir_r(DIR * dirp,struct dirent * entry,struct dirent ** result);
 extern int OpenFileFromPathGetStructFD(char * fullPath);
 extern bool closeFileFromStructFD(int StructFD);
-
 
 
 

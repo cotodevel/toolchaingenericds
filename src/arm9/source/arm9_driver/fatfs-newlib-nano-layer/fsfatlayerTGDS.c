@@ -1715,6 +1715,43 @@ int _fstat_r( struct _reent *_r, int fd, struct stat *buf ){	//(FileDescriptor :
     return ret;
 }
 
+
+//true: able to detect if file was unicode or not
+//false: couldn't tell if file was unicode or not
+bool TGDSFS_detectUnicode(struct fd *pfd){
+	if(pfd != NULL){
+		FILE * fil = fdopen(pfd->cur_entry.d_ino, "r");
+		if(fil != NULL){
+			char tStr[4];
+			u32 cPos = ftell(fil);
+			fseek(fil, 0, SEEK_SET);
+			fread((uint8*)&tStr[0], 1, 4, fil);
+			if(tStr[0] == 0 && tStr[2] == 0 && tStr[1] != 0 && tStr[3] != 0){	// fairly good chance it's unicode
+				pfd->UnicodeFileDetected = true;
+			}
+			else{
+				pfd->UnicodeFileDetected = false;
+			}
+			fseek(fil, cPos, SEEK_SET);
+			return true;
+		}
+	}
+	return false;
+}
+//these two require a prior call to TGDSFS_detectUnicode()
+bool TGDSFS_GetStructFDUnicode(struct fd *pfd){
+	if(pfd != NULL){
+		return pfd->UnicodeFileDetected;
+	}
+	return false;
+}
+
+void TGDSFS_SetStructFDUnicode(struct fd *pfd, bool unicode){
+	if(pfd != NULL){
+		pfd->UnicodeFileDetected = unicode;
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////INTERNAL CODE END///////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////// INTERNAL DIRECTORY FUNCTIONS /////////////////////////////////////////////////////////////////////
