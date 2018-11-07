@@ -47,11 +47,10 @@ extern struct fd *fd_struct_get(int fd);	//the fd here is the internal FD index
 extern int FileHandleAlloc(struct devoptab_t * devoptabInst );
 extern int FileHandleFree(int fd);
 extern sint8 * getDeviceNameByStructFDIndex(int StructFDIndex);
-
-//useful for internal functions on DIR
 extern int getInternalFileDescriptorFromDIR(DIR *dirp);
-
 extern int getStructFDByFileName(char * filename);
+extern FILE * getPosixFileHandleFromStructFD(struct fd * fdinst, const char * mode);
+extern struct fd * getStructFDFromFileHandle(FILE * fh);
 
 #ifdef __cplusplus
 }

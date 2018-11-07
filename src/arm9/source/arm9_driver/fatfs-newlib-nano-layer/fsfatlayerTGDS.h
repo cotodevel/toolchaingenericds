@@ -108,6 +108,7 @@ struct fd {
 	DIR  dir;	//if aboveptr is NULL then it is not DIR
 	
 	bool UnicodeFileDetected;	//true: file is Unicode, false file is not (regular unsigned char)
+	int firstCluster;	//Should be generated when opening file handles if required through getStructFDFirstCluster(fdinst);
 };
 
 struct packedFDRet{

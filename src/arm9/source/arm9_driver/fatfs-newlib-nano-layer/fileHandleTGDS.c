@@ -53,6 +53,21 @@ struct fd *fd_struct_get(int fd){
     return f;
 }
 
+FILE * getPosixFileHandleFromStructFD(struct fd * fdinst, const char * mode){
+	if(fdinst != NULL){
+		return fdopen(fdinst->cur_entry.d_ino, mode);
+	}
+	return NULL;
+}
+
+struct fd * getStructFDFromFileHandle(FILE * fh){
+	if(fh != NULL){
+		int StructFD = fileno(fh);
+		return fd_struct_get(StructFD);
+	}
+	return NULL;
+}
+
 int getStructFDByFileName(char * filename){
 	int ret = structfd_posixInvalidFileDirHandle;
     
