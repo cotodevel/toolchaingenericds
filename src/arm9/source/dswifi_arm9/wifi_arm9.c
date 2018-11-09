@@ -1090,13 +1090,10 @@ void wifiValue32Handler(uint32 value, void* data) {
 
 bool Wifi_InitDefault(bool useFirmwareSettings) {
 	
-	//fifoSetValue32Handler(FIFO_DSWIFI,  wifiValue32Handler, 0);
 	uint32 wifi_pass = Wifi_Init(WIFIINIT_OPTION_USELED|WIFIINIT_OPTION_USEHEAP_64);	//use 64K DSWIFI stack
 	
 	if(!wifi_pass) return false;
 
-	//irqSet(IRQ_TIMER3, Timer_50ms); // setup timer IRQ
-	//irqEnable(IRQ_TIMER3);
 	EnableIrq(IRQ_TIMER3);
 
 	Wifi_SetSyncHandler(arm9_synctoarm7); // tell wifi lib to use our handler to notify arm7
@@ -1105,8 +1102,6 @@ bool Wifi_InitDefault(bool useFirmwareSettings) {
 	TIMERXDATA(3) = -6553; // 6553.1 * 256 cycles = ~50ms;
 	TIMERXCNT(3) = 0x00C2; // enable, irq, 1/256 clock
 
-	//fifoSendAddress(FIFO_DSWIFI, (void *)wifi_pass);
-	//SendArm7Command(WIFI_STARTUP,(uint32)wifi_pass,0x0,0x0);
 	SendMultipleWordACK(WIFI_INIT, (uint32)wifi_pass, 0, NULL);
 	
 	while(Wifi_CheckInit()==0) {
@@ -1133,27 +1128,29 @@ bool Wifi_InitDefault(bool useFirmwareSettings) {
 //or go between offline mode -> localhost, or even localhost -> wifi directly.
 //can be called recursively
 
-//useFirmwareSettings == true: use DS AP settings to connect to AP
-//useWIFI == true: use WIFI connection. useWIFI == false: use NIFI connection.
-bool WNifi_InitSafeDefault(bool useFirmwareSettings,bool useWIFI){
+//use DSWNIFI_MODE flags
+bool WNifi_InitSafeDefault(int DSWNIFI_MODE){
 	DeInitWIFI();	//disable wifi card always
-	if(useWIFI == true){
-		//WIFI: now connect
-		if(getWIFISetup() == false){
-			if(Wifi_InitDefault(useFirmwareSettings) == true)
-			{
-				//printf("Connected: IP: %s",(char*)print_ip((uint32)Wifi_GetIP()));
-				return true;
-			}
-			else{
-				//printf("Wifi connection error. Retry later.");
-				return false;
-			}
+	
+	if(DSWNIFI_MODE == DSWNIFI_ENTER_IDLEMODE){
+		bool useWIFI = false;		//bare minimum start: idle
+		Wifi_InitDefault(useWIFI);
+		return false;
+	}
+	else if(DSWNIFI_MODE == DSWNIFI_ENTER_WIFIMODE){
+		bool useWIFI = true;		//enter dswifi wifi mode
+		if(Wifi_InitDefault(useWIFI) == true){
+			//Connected!
+			return true;
+		}
+		else{
+			return false;
 		}
 	}
-	else if(useWIFI == false){
+	else if(DSWNIFI_MODE == DSWNIFI_ENTER_NIFIMODE){
 		initNiFi();
 		return true;
 	}
+	
 	return false;
 }

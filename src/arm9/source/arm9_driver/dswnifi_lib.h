@@ -56,6 +56,13 @@ USA
 #include <assert.h>
 
 #endif
+
+//DSWNIFI_MODE flags: switch between nifi/wifi/idle mode
+#define DSWNIFI_ENTER_IDLEMODE (int)(1)
+#define DSWNIFI_ENTER_NIFIMODE (int)(2)
+#define DSWNIFI_ENTER_WIFIMODE (int)(3)
+
+
 //NIFI defs
 #define arm7_header_framesize 	(12 + 2)									//arm7 
 #define arm9_header_framesize	(12 + 6)
@@ -275,7 +282,7 @@ extern __attribute__((weak))	bool do_multi(struct frameBlock * frameBlockRecv);
 extern bool sentReq;
 extern sint32 LastDSWnifiMode;
 extern struct dsnwifisrvStr * getDSWNIFIStr();
-extern bool connectDSWIFIAP(bool WFC_CONNECTION,bool usewifiAP);
+extern bool connectDSWIFIAP(int DSWNIFI_MODE);
 
 //GDB stub
 extern bool gdbNdsStart();

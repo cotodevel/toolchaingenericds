@@ -46,7 +46,6 @@ SOFTWARE.
 
 #ifdef WIFI_USE_TCP_SGIP
 
-
 // Wifi Packet Handler function: (int packetID, int packetlength) - packetID is only valid while the called function is executing.
 // call Wifi_RxRawReadPacket while in the packet handler function, to retreive the data to a local buffer.
 typedef void (*WifiPacketHandler)(int, int);
@@ -110,10 +109,7 @@ extern void Wifi_TxBufferWrite(sint32 start, sint32 len, uint16 * data);
 
 extern void Timer_50ms(void);
 extern sgIP_Hub_HWInterface * wifi_hw;
-
-//useFirmwareSettings == true: use DS AP settings to connect to AP
-//useWIFI == true: use WIFI connection. useWIFI == false: use NIFI connection.
-extern bool WNifi_InitSafeDefault(bool useFirmwareSettings, bool useWIFI);
+extern bool WNifi_InitSafeDefault(int DSWNIFI_MODE);
 #ifdef __cplusplus
 }
 #endif

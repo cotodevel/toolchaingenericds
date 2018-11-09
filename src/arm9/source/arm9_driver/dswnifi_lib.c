@@ -240,8 +240,7 @@ bool switch_dswnifi_mode(sint32 mode){
 	
 	//Raw Network Packet Nifi
 	if (mode == (sint32)dswifi_localnifimode){
-		bool useWIFIAP = false;
-		if(connectDSWIFIAP(false,useWIFIAP) == true){	//setWIFISetup set inside
+		if(connectDSWIFIAP(DSWNIFI_ENTER_NIFIMODE) == true){	//setWIFISetup set inside
 			dswifiSrv.dsnwifisrv_stat	= ds_searching_for_multi_servernotaware;
 			setMULTIMode(mode);
 			setConnectionStatus(proc_connect);
@@ -257,7 +256,7 @@ bool switch_dswnifi_mode(sint32 mode){
 	else if (mode == (sint32)dswifi_udpnifimode){
 		dswifiSrv.dsnwifisrv_stat = ds_searching_for_multi_servernotaware;
 		bool useWIFIAP = true;
-		if(connectDSWIFIAP(WFC_CONNECT,useWIFIAP) == true){	//setWIFISetup set inside
+		if(connectDSWIFIAP(DSWNIFI_ENTER_WIFIMODE) == true){	//setWIFISetup set inside
 			setConnectionStatus(proc_connect);
 			setMULTIMode(mode);
 			return true;
@@ -284,12 +283,12 @@ bool switch_dswnifi_mode(sint32 mode){
 	}
 	
 	//idle mode minimal setup
-	if (mode == (sint32)dswifi_idlemode){
+	else if (mode == (sint32)dswifi_idlemode){
 		dswifiSrv.dsnwifisrv_stat	= ds_multi_notrunning;
 		setMULTIMode(mode);
 		setWIFISetup(false);
 		setConnectionStatus(proc_shutdown);
-		DeInitWIFI();
+		connectDSWIFIAP(DSWNIFI_ENTER_IDLEMODE);
 	}
 	
 	return true;
@@ -797,24 +796,18 @@ bool remoteResumed = false;
 int reconnectCount = 0;
 
 //this one performs the actual connection and toggles the connected status.
-bool connectDSWIFIAP(bool WFC_CONNECTION,bool usewifiAP){
-	if(getWIFISetup() == false){
-		if(WNifi_InitSafeDefault(WFC_CONNECTION,usewifiAP) == true){
-			setWIFISetup(true);
-			return true;
-		}
-		else{
-			setWIFISetup(false);
-			return false;
-		}
+bool connectDSWIFIAP(int DSWNIFI_MODE){
+	if(WNifi_InitSafeDefault(DSWNIFI_MODE) == true){
+		setWIFISetup(true);
+		return true;
 	}
-	return getWIFISetup();
+	setWIFISetup(false);
+	return false;
 }
 
 bool gdbNdsStart(){
 	dswifiSrv.GDBStubEnable = false;
-	bool useWIFIAP = true;
-	if(connectDSWIFIAP(WFC_CONNECT,useWIFIAP) == true){
+	if(connectDSWIFIAP(DSWNIFI_ENTER_WIFIMODE) == true){	//GDB Requires the DS Wifi to enter wifi mode
 		dswifiSrv.GDBStubEnable = true;
 		return true;
 	}
