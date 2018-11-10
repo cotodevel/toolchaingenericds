@@ -72,10 +72,10 @@ void powerOFF(uint32 values){
 }
 
 #ifdef ARM7
-void SoundPowerON(){
+void SoundPowerON(u8 volume){
 	powerON(POWER_SOUND);
 	PowerManagementDeviceWrite(PM_CONTROL_REG, ( PowerManagementDeviceRead(PM_CONTROL_REG) & ~PM_SOUND_MUTE ) | PM_SOUND_AMP );
 	REG_SOUNDCNT = SOUND_ENABLE;
-	REG_MASTER_VOLUME = 127;
+	REG_MASTER_VOLUME = volume;
 }
 #endif
