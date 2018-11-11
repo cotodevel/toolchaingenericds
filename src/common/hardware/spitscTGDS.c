@@ -28,39 +28,43 @@ USA
 
 //Source http://problemkaputt.de/gbatek.htm
 void doSPIARM7IO(){
-	getsIPCSharedTGDS()->EXTKEYINInst.PenDown = penIRQread();
+	struct sIPCSharedTGDS * sIPCSharedTGDSInst = getsIPCSharedTGDS();
+	struct sEXTKEYIN * sEXTKEYINInst = (struct sEXTKEYIN *)&sIPCSharedTGDSInst->EXTKEYINInst;
 	
-	//external X Y Struct
+	//Read is pen down
+	sEXTKEYINInst->PenDown = penIRQread();
+	
+	//External X Y Struct
 	uint8 readEXTKEYIN = (uint8)REG_KEYXY;
 	if(!(readEXTKEYIN & KEY_XARM7)){
-		getsIPCSharedTGDS()->EXTKEYINInst.butX = true;
+		sEXTKEYINInst->butX = true;
 	}
 	else{
-		getsIPCSharedTGDS()->EXTKEYINInst.butX = false;
+		sEXTKEYINInst->butX = false;
 	}
 	
 	if(!(readEXTKEYIN & KEY_YARM7)){
-		getsIPCSharedTGDS()->EXTKEYINInst.butY = true;
+		sEXTKEYINInst->butY = true;
 	}
 	else{
-		getsIPCSharedTGDS()->EXTKEYINInst.butY = false;
+		sEXTKEYINInst->butY = false;
 	}
 	
 	//Folding
 	if(!(readEXTKEYIN & KEY_HINGE)){
-		getsIPCSharedTGDS()->EXTKEYINInst.hinge_folded = true;
+		sEXTKEYINInst->hinge_folded = true;
 	}
 	else{
-		getsIPCSharedTGDS()->EXTKEYINInst.hinge_folded = false;
+		sEXTKEYINInst->hinge_folded = false;
 	}
 	
 	//NDS Format ARM7 XY/PENIRQ/HINGE buttons
-	getsIPCSharedTGDS()->buttons7 = REG_KEYXY;
+	sIPCSharedTGDSInst->buttons7 = REG_KEYXY;
 	
 	//REG_KEYINPUT ARM7 
-	getsIPCSharedTGDS()->KEYINPUT7	=	(uint16)REG_KEYINPUT; 
+	sIPCSharedTGDSInst->KEYINPUT7	=	(uint16)REG_KEYINPUT; 
 	
-	//do touchscreen process
+	//Do touchscreen process
 	XYReadPos();
 	
 	//read clock
