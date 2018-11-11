@@ -31,16 +31,25 @@ USA
 #include "consoleTGDS.h"
 #endif
 
-uint32 KEYCNT_READ(){
-	return (uint32)(( ((~KEYINPUT)&0x3ff) | (((~getsIPCSharedTGDS()->buttons7)&3)<<10) | (((~getsIPCSharedTGDS()->buttons7)<<6) & (KEY_TOUCH|KEY_LID) ))^KEY_LID);
-}
-
+#ifdef ARM9
+__attribute__((section(".dtcm")))
+#endif
 uint32 global_keys_arm9;
+
+#ifdef ARM9
+__attribute__((section(".dtcm")))
+#endif
 uint32 last_frame_keys_arm9;
+
 //called on vblank
+#ifdef ARM9
+__attribute__((section(".itcm")))
+#endif
 void do_keys(){
+	uint16 buttonsARM7 = getsIPCSharedTGDS()->buttons7;
+	uint32 readKeys = (uint32)(( ((~KEYINPUT)&0x3ff) | (((~buttonsARM7)&3)<<10) | (((~buttonsARM7)<<6) & (KEY_TOUCH|KEY_LID) ))^KEY_LID);
 	last_frame_keys_arm9 = global_keys_arm9;
-	global_keys_arm9 = KEYCNT_READ();
+	global_keys_arm9 = readKeys;
 }
 
 uint32 keysPressed(){

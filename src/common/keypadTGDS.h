@@ -42,7 +42,6 @@ struct touchScr {
 extern "C"{
 #endif
 
-extern uint32 KEYCNT_READ();
 extern uint32 global_keys_arm9;
 extern uint32 last_frame_keys_arm9;	//last frame keys before new frame keys
 extern void do_keys();
