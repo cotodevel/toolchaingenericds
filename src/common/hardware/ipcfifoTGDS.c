@@ -230,17 +230,16 @@ void HandleFifoNotEmpty(){
 			//Power Management: supported model so far: DS Phat.
 			//Todo add: DSLite/DSi
 			case((uint32)FIFO_POWERMGMT_WRITE):{
-				int PMBits = 0;
-				if(data1 & UPDATE_TOP_SCREEN_PWR){
-					PMBits |= POWMAN_BACKLIGHT_TOP_BIT;
+				switch(data1){
+					//screen power write
+					case(FIFO_SCREENPOWER_WRITE):{
+						int PMBitsRead = PowerManagementDeviceRead((int)POWMAN_READ_BIT);
+						PMBitsRead &= ~(POWMAN_BACKLIGHT_BOTTOM_BIT|POWMAN_BACKLIGHT_TOP_BIT);
+						PMBitsRead |= (int)(data2 & (POWMAN_BACKLIGHT_BOTTOM_BIT|POWMAN_BACKLIGHT_TOP_BIT));	//
+						PowerManagementDeviceWrite(POWMAN_WRITE_BIT, (int)PMBitsRead);				
+					}
+					break;
 				}
-				if(data1 & UPDATE_BOTTOM_SCREEN_PWR){
-					PMBits |= POWMAN_BACKLIGHT_BOTTOM_BIT;
-				}					
-				int PMBitsRead = PowerManagementDeviceRead((int)PMBits);
-				PMBitsRead &= ~PMBits;
-				PMBitsRead|= (int)(data2 & PMBits);
-				PowerManagementDeviceWrite(POWMAN_WRITE_BIT|PMBits, (int)PMBitsRead);				
 			}
 			break;
 			//arm9 wants to send a WIFI context block address / userdata is always zero here

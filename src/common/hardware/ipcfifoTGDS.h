@@ -65,12 +65,10 @@ USA
 
 //PowerManagementWrite
 #define FIFO_POWERMGMT_WRITE	(uint32)(0xffff1019)
+	//power management commands:
+	//screen power write
+	#define FIFO_SCREENPOWER_WRITE	(uint32)(0xffff101a)
 
-	//sub PM Bits
-	#define UPDATE_TOP_SCREEN_PWR (uint32)(0xffff1100)
-	#define UPDATE_BOTTOM_SCREEN_PWR (uint32)(0xffff1101)
-	
-	
 
 //printf7 FIFO
 #define FIFO_PRINTF_7	(uint32)(0xffff101a)

@@ -102,9 +102,6 @@ void NDS_IRQHandler(){
 			REG_IF = IRQ_TIMER0;
 		}
 		if(REG_IE_SET & IRQ_TIMER1){
-			#ifdef ARM7
-			//arm7 sound here...
-			#endif
 			Timer1handlerUser();
 			REG_IF = IRQ_TIMER1;
 		}
