@@ -1843,7 +1843,7 @@ bool enterDir(char* newDir){
 }
 
 //passes the full working directory, removes the last directory and reloads the current directory context
-bool leaveDir(char* newDir ,u32 keyToWaitFor){
+bool leaveDir(char* newDir){
 	char tempnewDir[MAX_TGDSFILENAME_LENGTH+1] = {0};
 	char tempnewDiroutPath[MAX_TGDSFILENAME_LENGTH+1] = {0};    //used by splitCustom function as output path buffer
 	strcpy(tempnewDir, (const char *)newDir);
@@ -1852,7 +1852,6 @@ bool leaveDir(char* newDir ,u32 keyToWaitFor){
 	//printf("     ");
 	//printf("realpath:%s",newDir);
 	//printf("newpath:%s",tempnewDiroutPath);
-	while(keysPressed()&keyToWaitFor){}
 	
 	char * CurrentWorkingDirectory = (char*)&TGDSCurrentWorkingDirectory[0];
 	strcpy(CurrentWorkingDirectory, (const char *)tempnewDiroutPath);
