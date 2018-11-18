@@ -87,8 +87,6 @@ void NDS_IRQHandler(){
 			sint32 currentDSWNIFIMode = doMULTIDaemonStage1();
 			#endif
 			
-			//key event between frames
-			do_keys();
 			VblankUser();
 			REG_IF = IRQ_VBLANK;
 		}
