@@ -44,7 +44,7 @@ extern "C"{
 
 extern uint32 global_keys_arm9;
 extern uint32 last_frame_keys_arm9;	//last frame keys before new frame keys
-extern void do_keys();
+extern void scanKeys();
 extern uint32 keysPressed();
 extern uint32 keysReleased();
 extern uint32 keysHeld();

@@ -45,7 +45,7 @@ uint32 last_frame_keys_arm9;
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
-void do_keys(){
+void scanKeys(){
 	uint16 buttonsARM7 = getsIPCSharedTGDS()->buttons7;
 	uint32 readKeys = (uint32)(( ((~KEYINPUT)&0x3ff) | (((~buttonsARM7)&3)<<10) | (((~buttonsARM7)<<6) & (KEY_TOUCH|KEY_LID) ))^KEY_LID);
 	last_frame_keys_arm9 = global_keys_arm9;
