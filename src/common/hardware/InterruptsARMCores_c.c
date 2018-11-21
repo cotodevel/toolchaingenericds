@@ -49,7 +49,7 @@ void IRQInit(){
     REG_DISPSTAT = REG_DISPSTAT | DISP_HBLANK_IRQ | DISP_VBLANK_IRQ | (DISP_YTRIGGER_IRQ | (VCOUNT_LINE_INTERRUPT << 15));
 	
 	#ifdef ARM7
-	REG_IE = IRQ_TIMER1 | IRQ_HBLANK | IRQ_VBLANK | IRQ_VCOUNT | IRQ_RECVFIFO_NOT_EMPTY ;
+	REG_IE = IRQ_TIMER1 | IRQ_HBLANK | IRQ_VBLANK | IRQ_VCOUNT | IRQ_RECVFIFO_NOT_EMPTY | IRQ_SCREENLID;
 	#endif
 	
 	#ifdef ARM9
@@ -133,6 +133,14 @@ void NDS_IRQHandler(){
 		if(REG_IE_SET & IRQ_RTCLOCK){
 			REG_IF = IRQ_RTCLOCK;
 		}
+		//screen open lid interrupt (close event must be handled through software)
+		if(REG_IE_SET & IRQ_SCREENLID){
+			SendMultipleWordACK(FIFO_IRQ_SCREENLID_SIGNAL, 0, 0, NULL);
+			ScreenlidhandlerUser();
+			REG_IF = IRQ_SCREENLID;
+		}
+		
+		
 		#endif
 		SWI_CHECKBITS = (REG_IF & (IRQ_HBLANK|IRQ_VBLANK|IRQ_VCOUNT));
 		REG_IME = REG_IMECtx;

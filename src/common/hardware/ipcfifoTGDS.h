@@ -95,6 +95,10 @@ USA
 //notifierProcessor FIFO bits
 #define notifierProcessorRunThread	(uint32)(0xffff1020)				//set a thread to Run
 #define notifierProcessorRunAsyncAcknowledge	(uint32)(0xffff1021)	//an async thread that ran has acknowledged
+
+//IRQ_SCREENLID signal to ARM9
+#define FIFO_IRQ_SCREENLID_SIGNAL	(uint32)(0xffff1022)
+
 struct sIPCSharedTGDS {
     uint16 buttons7;  			// X, Y, /PENIRQ buttons
     uint16 KEYINPUT7;			//REG_KEYINPUT ARM7

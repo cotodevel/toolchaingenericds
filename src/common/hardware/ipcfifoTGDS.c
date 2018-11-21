@@ -257,7 +257,7 @@ void HandleFifoNotEmpty(){
 			
 			//ARM9 command handler
 			#ifdef ARM9
-			//exception handler: arm7
+			//exception handler from arm7
 			case((uint32)EXCEPTION_ARM7):{
 				if((uint32)data1 == (uint32)unexpectedsysexit_7){
 					exception_handler((uint32)unexpectedsysexit_7);	//r0 = EXCEPTION_ARM7 / r1 = unexpectedsysexit_7
@@ -271,6 +271,11 @@ void HandleFifoNotEmpty(){
 				//Prevent Cache problems.
 				coherent_user_range_by_size((uint32)printfBuf7, (int)sizeof(getsIPCSharedTGDS()->arm7PrintfBuf));
 				printf("ARM7:%s",printfBuf7);
+			}
+			break;
+			//IRQ_SCREENLID signal from ARM7
+			case((uint32)FIFO_IRQ_SCREENLID_SIGNAL):{
+				ScreenlidhandlerUser();
 			}
 			break;
 			#endif
