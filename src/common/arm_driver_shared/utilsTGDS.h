@@ -125,6 +125,8 @@ extern void buildPath(const char *str, size_t len, char * outBuf, int indexToLef
 extern int getLastDirFromPath(char * stream, char * haystack, char * outBuf);
 extern int str_split(char * stream, char * haystack, char * outBuf);
 
+extern int inet_pton(int af, const char *src, void *dst);
+
 #endif
 
 #ifdef __cplusplus
