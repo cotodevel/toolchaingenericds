@@ -29,21 +29,11 @@ SOFTWARE.
 #include <sys/time.h>
 #include "socket_dswifi.h"
 
-#define INADDR_ANY			0x00000000
-#define INADDR_BROADCAST	0xFFFFFFFF
-#define INADDR_NONE			0xFFFFFFFF
 
 
-struct in_addr {
-	unsigned long s_addr;
-};
 
-struct sockaddr_in {
-	unsigned short		sin_family;
-	unsigned short		sin_port;
-	struct in_addr		sin_addr;
-	unsigned char		sin_zero[8];
-};
+
+
 
 #ifdef __cplusplus
 extern "C" {

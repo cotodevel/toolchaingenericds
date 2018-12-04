@@ -29,6 +29,7 @@ SOFTWARE.
 #define SYS_SOCKET_H
 
 #include "time.h"
+#include "socket.h"
 
 /*
  * Level number for (get/set)sockopt() to apply to socket itself.
@@ -63,10 +64,6 @@ SOFTWARE.
 #define MSG_DONTROUTE	0x02000000
 #define MSG_CTRUNC		0x01000000
 
-// shutdown() flags:
-#define SHUT_RD			1
-#define SHUT_WR			2
-#define SHUT_RDWR		3
 
 /*
  * Option flags per-socket.
@@ -95,11 +92,6 @@ SOFTWARE.
 #define SO_RCVTIMEO  0x1006    /* receive timeout */
 #define  SO_ERROR  0x1007    /* get error status and clear */
 #define  SO_TYPE    0x1008    /* get socket type */
-
-struct sockaddr {
-	unsigned short		sa_family;
-	char				sa_data[14];
-};
 
 #ifndef ntohs
 #define ntohs(num) htons(num)
