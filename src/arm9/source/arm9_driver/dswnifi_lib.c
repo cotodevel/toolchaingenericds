@@ -36,7 +36,7 @@ USA
 
 #include <string.h>
 #include <unistd.h>
-#include <socket.h>
+#include <socket_dswifi.h>
 
 #ifdef ARM9
 
@@ -47,7 +47,7 @@ USA
 #include "utilsTGDS.h"
 #include "memoryHandleTGDS.h"
 
-#include <netdb.h>
+#include "netdb_dswifi.h"
 #include <ctype.h>
 #include <string.h>
 #include <unistd.h>
@@ -57,7 +57,7 @@ USA
 #include <stdlib.h>
 #include <dirent.h>
 #include <stdbool.h>
-#include <socket.h>
+#include <socket_dswifi.h>
 #include <in.h>
 #include <assert.h>
 
@@ -1472,10 +1472,8 @@ uint32 readu32GDBMapFile(uint32 address){
 	int offset = 0;
 	struct gdbStubMapFile * gdbStubMapFileInst = getGDBMapFile();
 	if(gdbStubMapFileInst->GDBFileHandle != NULL){
-		struct gdbStubMapFile * gdbStubMapFileInst = getGDBMapFile();
 		offset = (address & 0xffffff);	//32M top
-		
-		iprintf("trying offset:%x",offset);
+		//iprintf("trying offset:%x",offset);
 		fseek(gdbStubMapFileInst->GDBFileHandle,offset,SEEK_CUR);
 		fread((uint8*)&readVal, 1, 4, gdbStubMapFileInst->GDBFileHandle);
 		return readVal;
