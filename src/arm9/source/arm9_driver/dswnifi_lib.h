@@ -34,7 +34,6 @@ USA
 #include "biosTGDS.h"
 #include "InterruptsARMCores_h.h"
 #include "dswnifi_lib.h"
-#include "netdb.h"
 
 #ifdef ARM9
 
@@ -42,7 +41,8 @@ USA
 #include "dswifi9.h"
 #include "wifi_shared.h"
 #include "utilsTGDS.h"
-#include <netdb.h>
+#include "netdb.h"
+#include "netdb_dswifi.h"
 #include <ctype.h>
 #include <string.h>
 #include <unistd.h>
@@ -51,8 +51,8 @@ USA
 #include <stdlib.h>
 #include <dirent.h>
 #include <stdbool.h>
-#include <socket.h>
-#include <in.h>
+#include <socket_dswifi.h>
+#include "in_dswifi.h"
 #include <assert.h>
 
 #endif

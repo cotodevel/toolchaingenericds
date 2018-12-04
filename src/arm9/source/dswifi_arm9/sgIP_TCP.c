@@ -26,7 +26,7 @@ SOFTWARE.
 #include "sgIP_TCP.h"
 #include "sgIP_IP.h"
 #include "sgIP_Hub.h"
-#include "socket.h"
+#include "socket_dswifi.h"
 
 sgIP_Record_TCP * tcprecords;
 int port_counter;

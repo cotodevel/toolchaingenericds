@@ -27,9 +27,9 @@ SOFTWARE.
 #define SGIP_SOCKETS_H
 
 #include "sgIP_Config.h"
-#include "socket.h"
+#include "socket_dswifi.h"
 #include "in.h"
-#include "netdb.h"
+#include "netdb_dswifi.h"
 
 #define SGIP_SOCKET_FLAG_ALLOCATED			0x8000
 #define SGIP_SOCKET_FLAG_NONBLOCKING		0x4000
@@ -58,7 +58,7 @@ extern "C" {
 	extern void sgIP_sockets_Init();
 	extern void sgIP_sockets_Timer1000ms();
 
-	// sys/socket.h
+	// sys/socket_dswifi.h
 	extern int socket(int domain, int type, int protocol);
 	extern int bind(int socket, const struct sockaddr * addr, int addr_len);
 	extern int connect(int socket, const struct sockaddr * addr, int addr_len);

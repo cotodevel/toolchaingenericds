@@ -26,7 +26,7 @@ SOFTWARE.
 #include "sgIP_DNS.h"
 #include "sgIP_Hub.h"
 #include "in.h"
-#include "socket.h"
+#include "socket_dswifi.h"
 
 int   dns_sock;
 int   time_count;
