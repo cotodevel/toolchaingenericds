@@ -48,6 +48,7 @@ USA
 #include "InterruptsARMCores_h.h"
 #include "memoryHandleTGDS.h"
 #include "global_settings.h"
+#include "keypadTGDS.h"
 
 #ifdef ARM9
 #include "dswnifi_lib.h"
@@ -215,6 +216,7 @@ void exception_handler(uint32 arg){
 		printf("B: Skip GDB Debugging");
 		
 		while(1){
+			scanKeys();
 			int isdaas = keysPressed();
 			if (isdaas&KEY_A)
 			{
