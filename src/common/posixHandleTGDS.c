@@ -47,26 +47,19 @@ USA
 //	- 	Before you get confused, the layer order is: POSIX file operations-> newlib POSIX fd assign-> devoptab filesystem -> fsfat_layer (n file descriptors for each file op) -> fsfat driver -> dldi.
 //		So we can have a portable/compatible filesystem with multiple file operations.
 //
-//	-	Newlib nano dictates to override reentrant weak functions, overriding non reentrant is undefined behaviour.
+//	-	Newlib dictates to override reentrant weak functions, overriding non reentrant is undefined behaviour.
 
 //required:
-
 void abort(){
 	
 }
 
-int fork()
-{
+int fork(){
 	return -1;
 }
 
 //C++ requires this
-void _exit (int status)
-{
-	//clrscr();
-	//printf("C++ abort()!");
-	//printf("End.");
-	//for (;;) { }
+void _exit (int status){
 	
 }
 
@@ -74,9 +67,9 @@ int _kill (pid_t pid, int sig){
 }
 
 pid_t _getpid (void){
+
 }
 //C++ requires this end
-
 
 
 
@@ -85,15 +78,14 @@ pid_t _getpid (void){
 
 //ok _read_r reentrant called
 _ssize_t _read_r ( struct _reent *ptr, int fd, void *buf, size_t cnt ){
-	
 	//Conversion here 
 	struct fd * fdinst = fd_struct_get(fd);
 	if((fdinst != NULL) && (fdinst->devoptabFileDescriptor != NULL) && (fdinst->devoptabFileDescriptor != (struct devoptab_t *)&devoptab_stub)){
 		return (_ssize_t)fdinst->devoptabFileDescriptor->read_r( NULL, fdinst->cur_entry.d_ino, buf, cnt );
 	}
-	
 	return -1;
 }
+
 //ok _write_r reentrant called
 //write (get struct FD index from FILE * handle)
 _ssize_t _write_r ( struct _reent *ptr, int fd, const void *buf, size_t cnt ){
@@ -129,61 +121,51 @@ int _open_r ( struct _reent *ptr, const sint8 *file, int flags, int mode ){
 
 //POSIX Logic: hook devoptab descriptor into devoptab functions
 int _close (int fd){
-	
 	return _close_r(NULL, fd);
 }
+
 int close (int fd){
-	
 	return _close(fd);
 }
 //allocates a new struct fd index with either DIR or FIL structure allocated
 //not overriden, we force the call from fd_close
-int _close_r ( struct _reent *ptr, int fd )
-{
+int _close_r ( struct _reent *ptr, int fd ){
 	//Conversion here 
-	struct fd * fdinst = fd_struct_get(fd);
-	
+	struct fd * fdinst = fd_struct_get(fd);	
 	if((fdinst != NULL) && (fdinst->devoptabFileDescriptor != NULL) && (fdinst->devoptabFileDescriptor != (struct devoptab_t *)&devoptab_stub)){
 		return (_ssize_t)fdinst->devoptabFileDescriptor->close_r( NULL, fdinst->cur_entry.d_ino );
 	}	
 	return -1;
 }
 
-/*
- isatty
- Query whether output stream is a terminal.
- */
-int _isatty(int file)
-{
+
+//isatty: Query whether output stream is a terminal.
+int _isatty(int file){
 	return  1;
-}	// _isatty()
+}
 
 int _end(int file)
 {
 	return  1;
-}	// _isatty()
+}
 
 
 
 //	-	All below high level posix calls for FSFAT access must use the function getfatfsPath("file_or_dir_path") for file (dldi sd) handling
-
 _off_t _lseek_r(struct _reent *ptr,int fd, _off_t offset, int whence ){	//(FileDescriptor :struct fd index)
 	return fatfs_lseek(fd, offset, whence);	
 }
 
 
-int _link(const sint8 *path1, const sint8 *path2)
-{
+int _link(const sint8 *path1, const sint8 *path2){
     return fatfs_link(path1, path2);
 }
 
-int _unlink(const sint8 *path)
-{
+int _unlink(const sint8 *path){
     return f_unlink(path);
 }
 
-int	_stat_r ( struct _reent *_r, const char *file, struct stat *pstat )
-{
+int	_stat_r ( struct _reent *_r, const char *file, struct stat *pstat ){
 	return fatfs_stat(file, pstat);
 }
 
@@ -191,6 +173,101 @@ int _gettimeofday(struct timeval *ptimeval,void *ptimezone){
 	return 0;
 }
 
+
+//TGDS Filesystem <- unix <- posix <- linux implementation
+
+
+mode_t umask(mode_t mask)
+{
+  __set_errno (ENOSYS);
+  return -1;
+}
+
+int readlink(const char *path, char *buf, size_t bufsize){
+	
+	/*
+	//save TGDS FS context
+	char TGDSCurrentWorkingDirectorySaved[MAX_TGDSFILENAME_LENGTH+1];
+	strcpy (TGDSCurrentWorkingDirectorySaved, getTGDSCurrentWorkingDirectory());
+	int ctxCurrentFileDirEntry = CurrentFileDirEntry;	
+	int ctxLastFileEntry = LastFileEntry;
+	int ctxLastDirEntry = LastDirEntry;
+
+	char fname[MAX_TGDSFILENAME_LENGTH+1] = {0};
+	strcpy(fname, path);
+	int retf = FAT_FindFirstFile(fname);
+	while(retf != FT_NONE){
+		char * FilenameOut = NULL;
+		//directory?
+		if(retf == FT_DIR){
+			struct FileClass * fileClassInst = getFileClassFromList(LastDirEntry);
+			FilenameOut = (char*)&fileClassInst->fd_namefullPath[0];
+		}
+		//file?
+		else if(retf == FT_FILE){
+			FilenameOut = (char*)&fname[0];
+		}
+		
+		//do logic here
+		
+		
+		//more file/dir objects?
+		retf = FAT_FindNextFile(fname);
+	}
+	
+	//restore TGDS FS context
+	strcpy (getTGDSCurrentWorkingDirectory(),TGDSCurrentWorkingDirectorySaved);
+	buildFileClassListFromPath(getTGDSCurrentWorkingDirectory());
+	CurrentFileDirEntry = ctxCurrentFileDirEntry;	
+	LastFileEntry = ctxLastFileEntry;
+	LastDirEntry = ctxLastDirEntry;
+	
+	*/
+	
+	__set_errno(ENOSYS);
+	return -1;
+}
+
+
+int getrlimit(int resource, struct rlimit *rlim){
+	__set_errno(ENOSYS);
+	return -1;
+}
+
+int setrlimit(int resource, const struct rlimit *rlim){
+	__set_errno(ENOSYS);
+	return -1;
+}
+
+int getrusage(int who, struct rusage *usage){
+	__set_errno(ENOSYS);
+	return -1;
+}
+
+pid_t setsid(void){
+	__set_errno(ENOSYS);
+	return -1;
+}
+
+void sigaction(int sig){
+	__set_errno(ENOSYS);
+	return -1;
+}
+
+int getgrgid(gid_t gid, struct group *grp, char *buffer,size_t bufsize, struct group **result){
+	__set_errno(ENOSYS);
+	return -1;
+}
+
+struct group *getgrnam(const char *name){
+	__set_errno(ENOSYS);
+	return NULL;
+}
+
+
+int lstat(const char * path, struct stat *buf){
+	return fatfs_stat((const sint8 *)path,buf);
+}
 
 // High level POSIX functions:
 // Alternate TGDS high level API if current posix implementation is missing or does not work. 
@@ -319,8 +396,7 @@ char *fgets_tgds(char *s, int n, int fd){
     return s;
 }
 
-int feof_tgds(int fd)
-{
+int feof_tgds(int fd){
 	int offset = -1;
 	struct fd * fdinst = fd_struct_get(fd);
 	offset = ftell_tgds(fd);
