@@ -209,33 +209,9 @@ extern void Handler(int packetID, int readlength);
 extern void initNiFi();
 extern void Timer_10ms(void);
 
-extern bool nifiFrame;
-
 //DSWNIFI: nifi buffer IO
 extern volatile uint8	 data[4096];		//data[32] + is recv TX'd frame nfdata[128]
 extern volatile uint8	 nfdata[128];	//sender frame, recv as data[4096]
-
-//DSWNIFI: message for nifi beacons
-extern volatile const uint8 nifitoken[32];
-extern volatile const uint8 nificonnect[32];
-extern volatile uint8 nificrc[32];
-
-//DSWNIFI: WIFI specific
-extern int nifi_stat;
-extern int nifi_cmd;
-extern int nifi_keys;		//holds the keys for players.
-extern int nifi_keys_sync;	//(guestnifikeys & hostnifikeys)
-
-extern int plykeys1;		//player1
-extern int plykeys2;		//player2
-extern int guest_framecount;	//used by the guest for syncing.
-extern int host_framecount;		//emulator framecount:host
-extern int guest_framecount;	//emulator framecount:guest
-extern int host_vcount;		//host generated REG_VCOUNT
-extern int guest_vcount;		//guest generated REG_VCOUNT
-extern int topvalue(int a,int b);
-extern int bottomvalue(int a,int b);
-extern int getintdiff(int a,int b);
 
 //TCP UDP DSWNIFI Part
 extern int Wifi_RawTxFrame_WIFI(sint32 datalen, uint8 * data);
@@ -256,7 +232,6 @@ extern sint32 doMULTIDaemonStage1();
 //code can't run from ITCM
 extern sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus);
 
-extern int port;
 extern struct frameBlock FrameSenderBlock;	//used by the user sender process, must be valid so the ToolchainGenericDS library sends proper frame data.
 extern struct frameBlock FrameRecvBlock;	//used by the user receiver process, can be NULL if no data frame was received.
 
