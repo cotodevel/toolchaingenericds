@@ -245,19 +245,6 @@ USA
 #define SPRITE_GFX			((uint16*)0x6400000)	
 #define SPRITE_GFX_SUB		((uint16*)0x6600000)
 
-#define VRAM_0        ((uint16*)0x6000000)
-//#define VRAM          ((uint16*)0x6800000)
-
-#define VRAM_A        ((uint16*)0x6800000)
-#define VRAM_B        ((uint16*)0x6820000)
-#define VRAM_C        ((uint16*)0x6840000)
-#define VRAM_D        ((uint16*)0x6860000)
-#define VRAM_E        ((uint16*)0x6880000)
-#define VRAM_F        ((uint16*)0x6890000)
-#define VRAM_G        ((uint16*)0x6894000)
-#define VRAM_H        ((uint16*)0x6898000)
-#define VRAM_I        ((uint16*)0x68A0000)
-
 #define OAM           ((uint16*)0x07000000)
 #define OAM_SUB       ((uint16*)0x07000400)
 
@@ -553,6 +540,10 @@ USA
 #define PM_AMP_ON			(int)(1)	//sound amp on
 #define PM_AMP_OFF			(int)(0)	//Turns the sound amp off
 
+#define GAIN_20           0
+#define GAIN_40           1
+#define GAIN_80           2
+#define GAIN_160          3
 
 //sound
 #define REG_SOUNDCNT		(*(vuint16*)0x4000500)	//#define SOUND_CR          (*(vuint16*)0x04000500)
