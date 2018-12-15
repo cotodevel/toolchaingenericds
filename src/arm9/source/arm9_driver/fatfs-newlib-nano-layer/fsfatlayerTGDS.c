@@ -1170,18 +1170,19 @@ void initStructFD(struct fd *pfd, int flags, const FILINFO *fno){
 
 //returns an internal index struct fd allocated
 int fatfs_open_file(const sint8 *pathname, int flags, const FILINFO *fno){
-    BYTE mode;
-	FRESULT result;
+	//Lookup if file is already open.
+	int structfdIndex = getStructFDByFileName((char*)pathname);
+	if(structfdIndex != structfd_posixInvalidFileDirHandle){
+		return structfdIndex;
+	}
 	
-	//not allocating properly, instead return the fildes allocated and access from there
-	int structfdIndex = fatfs_fildir_alloc(structfd_isfile);	//returns / allocates a new struct fd index with either DIR or FIL structure allocated
+	//If not, then allocate a new file handle (struct FD)
+	BYTE mode;
+	FRESULT result;
+	structfdIndex = fatfs_fildir_alloc(structfd_isfile);	//returns / allocates a new struct fd index with FIL structure allocated
 	struct fd * fdinst = fd_struct_get(structfdIndex);	//fd_struct_get requires struct fd index
-	if ((structfdIndex == structfd_posixInvalidFileDirHandle) || (fdinst == NULL)){
-		//file handle invalid. There might be the possibility that the file is already open, if so, look the filename in the structFD so we read that one to detect if such file is open
-		structfdIndex = getStructFDByFileName((char*)pathname);
-    }
-	else{
-        FILINFO fno_after;
+	if (structfdIndex != structfd_posixInvalidFileDirHandle){
+		FILINFO fno_after;
         mode = posix2fsfatAttrib(flags);
         result = f_open(fdinst->filPtr, pathname, mode);	/* Opens an existing file. If not exist, creates a new file. */
 		if (result == FR_OK){
@@ -1205,14 +1206,15 @@ int fatfs_open_file(const sint8 *pathname, int flags, const FILINFO *fno){
 			fatfs_free(fdinst);
 			structfdIndex = structfd_posixInvalidFileDirHandle;	//file handle generated, but file open failed, so, invalid.
 		}
-    }
+    }// failed to allocate a file handle / allocated file handle OK end.
+	
 	return structfdIndex;
 }
 
 //returns an internal index struct fd allocated
 int fatfs_open_dir(const sint8 *pathname, int flags, const FILINFO *fno){
     FRESULT result;
-    int fdret = fatfs_fildir_alloc(structfd_isdir);	//allocates an internal struct fd (DIR) descriptor (user) which is then exposed, struct fd index included
+    int fdret = fatfs_fildir_alloc(structfd_isdir);	//returns / allocates a new struct fd index with DIR structure allocated
 	struct fd * fdinst = fd_struct_get(fdret);
 	if (fdinst == NULL){
         result = FR_TOO_MANY_OPEN_FILES;
@@ -1245,14 +1247,12 @@ int fatfs_open_file_or_dir(const sint8 *pathname, int flags){
 		(result == FR_OK)	//file exists case
 		||
 		(flags & O_CREAT)	//new file?
-	)
-    {
+	){
         structFD = fatfs_open_file(pathname, flags, &fno);	//returns / allocates a new struct fd index with either DIR or FIL structure allocated
 	}
     else {
-		//file/dir does not exist, didn't want to create
+		//file/dir does not exist, couldn't create
 	}
-	
     return structFD;
 }
 
@@ -1278,10 +1278,7 @@ DWORD get_fattime (void){
 //if error, returns structfd_posixInvalidFileDirHandle (invalid structFD file handle index)
 int fatfs_open(const sint8 *pathname, int flags){
 	int structFDIndex = fatfs_open_file_or_dir(pathname, flags);	
-	if (structFDIndex == structfd_posixInvalidFileDirHandle){
-		//there is error, no struct fd handle (index) was allocated
-	}
-	else{
+	if (structFDIndex != structfd_posixInvalidFileDirHandle){
 		//update d_ino here (POSIX compliant) - through correct (internal struct fd) file handle
 		struct fd *pfd = fd_struct_get(structFDIndex);
 		pfd->cur_entry.d_ino = structFDIndex;
@@ -1848,11 +1845,6 @@ bool leaveDir(char* newDir){
 	char tempnewDiroutPath[MAX_TGDSFILENAME_LENGTH+1] = {0};    //used by splitCustom function as output path buffer
 	strcpy(tempnewDir, (const char *)newDir);
     getLastDirFromPath(tempnewDir, TGDSDirectorySeparator, tempnewDiroutPath);
-	//clrscr();
-	//printf("     ");
-	//printf("realpath:%s",newDir);
-	//printf("newpath:%s",tempnewDiroutPath);
-	
 	char * CurrentWorkingDirectory = (char*)&TGDSCurrentWorkingDirectory[0];
 	strcpy(CurrentWorkingDirectory, (const char *)tempnewDiroutPath);
 	chdir(CurrentWorkingDirectory);
@@ -1869,7 +1861,6 @@ bool updateFileClassList(char * path){
 	}
 	//Set the Current Working Directory as base directory to the destroyable filename source always.
 	strcpy(path, (const char*)CurrentWorkingDirectory);
-	
 	return enterDir(path);
 }
 

@@ -137,20 +137,19 @@ int FileHandleAlloc(struct devoptab_t * devoptabInst ){
         }
     }
 	
-	//if for some reason all the file handles are exhausted, discard half the file handles. (fixes homebrew that opens a lot of file handles and doesn't close them up accordingly)
+	//if for some reason all the file handles are exhausted, discard the last one and assign that one. (fixes homebrew that opens a lot of file handles and doesn't close them up accordingly)
 	if(ret == structfd_posixInvalidFileDirHandle){
-		int toDiscard = (OPEN_MAXTGDS/2);
-		int curFD = 0;
-		for(curFD = 0; curFD < toDiscard; curFD++){
-			int retClose = fatfs_close((toDiscard+curFD)); //requires a struct fd(file descriptor), returns 0 if success, structfd_posixInvalidFileDirHandle if error
-			if(retClose == structfd_posixInvalidFileDirHandle){
-				//couldnt really close file handle
-			}
+		int retClose = fatfs_close(OPEN_MAXTGDS - 1);	//requires a struct fd(file descriptor), returns 0 if success, structfd_posixInvalidFileDirHandle if error
+		if(retClose == structfd_posixInvalidFileDirHandle){
+			//couldnt really close file handle
+			ret = retClose;
 		}
-		
-		//file handle close success!
-		return FileHandleAlloc(devoptabInst);	//ret == return value here
+		else{
+			//file handle close success!
+			return FileHandleAlloc(devoptabInst);	//ret == return value here
+		}
 	}
+
     return ret;
 }
 
