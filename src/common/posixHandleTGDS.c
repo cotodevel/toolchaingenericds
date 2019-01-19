@@ -106,14 +106,13 @@ int _open_r ( struct _reent *ptr, const sint8 *file, int flags, int mode ){
 		sint32 countPosixFDescOpen = open_posix_filedescriptor_devices() + 1;
 		/* search for "file:/" in "file:/folder1/folder.../file.test" in dotab_list[].name */
 		for (i = 0; i < countPosixFDescOpen ; i++){
-			sprintf((sint8*)token_str,"%s%s",(char*)token_rootpath,"/");	//format properly
-			if (strcmp((sint8*)token_str,devoptab_struct[i]->name) == 0)
-			{
-				return devoptab_struct[i]->open_r( NULL, file, flags, mode ); //returns / allocates a new struct fd index with either DIR or FIL structure allocated
+			if(strlen(token_rootpath) > 0){
+				sprintf((sint8*)token_str,"%s%s",(char*)token_rootpath,"/");	//format properly
+				if (strcmp((sint8*)token_str,devoptab_struct[i]->name) == 0){
+					return devoptab_struct[i]->open_r( NULL, file, flags, mode ); //returns / allocates a new struct fd index with either DIR or FIL structure allocated
+				}
 			}
 		}
-			
-		return -1;
 	}
 	return -1;
 }
