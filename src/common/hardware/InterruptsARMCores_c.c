@@ -135,7 +135,7 @@ void NDS_IRQHandler(){
 		}
 		//screen open lid interrupt (close event must be handled through software)
 		if(REG_IE_SET & IRQ_SCREENLID){
-			SendMultipleWordACK(FIFO_IRQ_SCREENLID_SIGNAL, 0, 0, NULL);
+			SendFIFOWords(FIFO_IRQ_SCREENLID_SIGNAL, 0, 0, NULL);
 			ScreenlidhandlerUser();
 			REG_IF = IRQ_SCREENLID;
 		}

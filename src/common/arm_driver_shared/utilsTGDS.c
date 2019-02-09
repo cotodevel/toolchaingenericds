@@ -285,7 +285,7 @@ int	FS_getFileSize(sint8 *filename)
 //setBacklight(0);														//non-lit both LCD screens (poweroff)
 	
 int	setBacklight(int flags){
-	SendMultipleWordACK(FIFO_POWERMGMT_WRITE, (uint32)FIFO_SCREENPOWER_WRITE, (uint32)(flags), NULL);
+	SendFIFOWords(FIFO_POWERMGMT_WRITE, (uint32)FIFO_SCREENPOWER_WRITE, (uint32)(flags), NULL);
 	return 0;
 }
 

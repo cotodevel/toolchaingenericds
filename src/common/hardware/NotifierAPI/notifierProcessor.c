@@ -100,7 +100,7 @@ struct notifierProcessorHandlerQueued processRunSync(struct notifierDescriptorFu
 		// ]
 		
 		//0 cmd: 1: index, 2: (u32)struct notifierDescriptor * getNotifierDescriptorByIndex(index)
-		SendMultipleWordACK(notifierProcessorRunThread, (uint32)notifierDescriptorInst.indexNotifierDescriptor, (uint32)getNotifierDescriptorByIndex(notifierDescriptorInst.indexNotifierDescriptor), NULL);
+		SendFIFOWords(notifierProcessorRunThread, (uint32)notifierDescriptorInst.indexNotifierDescriptor, (uint32)getNotifierDescriptorByIndex(notifierDescriptorInst.indexNotifierDescriptor), NULL);
 		
 		//printf("notifierProcessorRunThread");
 		//printf("sent: %x index: %d", (uint32)FnHeap,notifierDescriptorInst.indexNotifierDescriptor);

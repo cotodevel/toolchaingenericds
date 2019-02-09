@@ -124,20 +124,12 @@ void SoftFIFOSEND(uint32 value0,uint32 value1,uint32 value2,uint32 value3){
 	//todo: needs hardware IPC FIFO implementation.
 }
 
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
-void SendMultipleWordACK(uint32 data0, uint32 data1, uint32 data2, uint32 * buffer_shared){
-	SendMultipleWordByFifo(data0, data1, data2, buffer_shared);
-}
 
-//command0, command1, command2, buffer to pass to other core.
-//IPC FIFO non blocking
+//non blocking IPC FIFO
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
-void SendMultipleWordByFifo(uint32 data0, uint32 data1, uint32 data2, uint32 * buffer_shared)
-{
+void SendFIFOWords(uint32 data0, uint32 data1, uint32 data2, uint32 * buffer_shared){
 	REG_IPC_FIFO_TX = (uint32)data0;
 	REG_IPC_FIFO_TX = (uint32)data1;			
 	REG_IPC_FIFO_TX = (uint32)data2;
@@ -176,7 +168,7 @@ void HandleFifoNotEmpty(){
 				
 				//run the thread here, grab message and acknowledge it
 				struct notifierProcessorHandlerQueued notifierProcessorHandlerQueuedOut = RunNotifierProcessorThread(notifierDescriptorInst);
-				SendMultipleWordACK(notifierProcessorRunAsyncAcknowledge, data1, data2, NULL);	//acknowledge we just ran!: //0 cmd: 1: index, 2: (u32)struct notifierDescriptor * getNotifierDescriptorByIndex(index)
+				SendFIFOWords(notifierProcessorRunAsyncAcknowledge, data1, data2, NULL);	//acknowledge we just ran!: //0 cmd: 1: index, 2: (u32)struct notifierDescriptor * getNotifierDescriptorByIndex(index)
 			}
 			break;
 			case(notifierProcessorRunAsyncAcknowledge):{

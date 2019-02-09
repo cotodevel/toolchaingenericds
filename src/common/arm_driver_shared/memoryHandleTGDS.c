@@ -387,15 +387,15 @@ bool isValidMap(uint32 addr){
 }
 
 void Write8bitAddrExtArm(uint32 address, uint8 value){
-	SendMultipleWordACK(WRITE_EXTARM_8, (uint32)address, (uint32)value, NULL);
+	SendFIFOWords(WRITE_EXTARM_8, (uint32)address, (uint32)value, NULL);
 }
 
 void Write16bitAddrExtArm(uint32 address, uint16 value){
-	SendMultipleWordACK(WRITE_EXTARM_16, (uint32)address, (uint32)value, NULL);
+	SendFIFOWords(WRITE_EXTARM_16, (uint32)address, (uint32)value, NULL);
 }
 
 void Write32bitAddrExtArm(uint32 address, uint32 value){
-	SendMultipleWordACK(WRITE_EXTARM_32, (uint32)address, (uint32)value, NULL);
+	SendFIFOWords(WRITE_EXTARM_32, (uint32)address, (uint32)value, NULL);
 }
 //IPC 
 

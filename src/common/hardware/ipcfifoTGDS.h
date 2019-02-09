@@ -182,14 +182,11 @@ extern void HandleFifoEmpty();
 extern void Handle_SoftFIFORECV();
 extern void SoftFIFOSEND(uint32 value0,uint32 value1,uint32 value2,uint32 value3);
 
+extern void SendFIFOWords(uint32 data0, uint32 data1, uint32 data2, uint32 * buffer_shared);
 extern void writeuint32extARM(uint32 address,uint32 value);
 
 extern int SendFIFOCommand(uint32 * buf,int size);
 extern int RecvFIFOCommand(uint32 * buf);
-
-extern void SendMultipleWordByFifo(uint32 data0, uint32 data1, uint32 data2, uint32 * buffer_shared);
-extern void SendMultipleWordACK(uint32 data0, uint32 data1, uint32 data2, uint32 * buffer_shared);
-
 extern struct sIPCSharedTGDS* getsIPCSharedTGDS();
 
 extern int getnotifierProcessorNewInstance();
