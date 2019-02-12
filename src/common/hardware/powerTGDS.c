@@ -46,7 +46,7 @@ void powerON(uint32 values){
 	
 	#ifdef ARM9
 	if(!(values & POWERMAN_ARM9)){
-		SendFIFOWords(FIFO_POWERCNT_ON, (uint32)values, 0, 0);
+		SendFIFOWords(FIFO_POWERCNT_ON, (uint32)values);
 	}
 	else{
 		REG_POWERCNT |= values;
@@ -63,7 +63,7 @@ void powerOFF(uint32 values){
 	
 	#ifdef ARM9
 	if(!(values & POWERMAN_ARM9)){
-		SendFIFOWords(FIFO_POWERCNT_OFF, (uint32)values, 0, 0);
+		SendFIFOWords(FIFO_POWERCNT_OFF, (uint32)values);
 	}
 	else{
 		REG_POWERCNT &= ~values;

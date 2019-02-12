@@ -285,7 +285,10 @@ int	FS_getFileSize(sint8 *filename)
 //setBacklight(0);														//non-lit both LCD screens (poweroff)
 	
 int	setBacklight(int flags){
-	SendFIFOWords(FIFO_POWERMGMT_WRITE, (uint32)FIFO_SCREENPOWER_WRITE, (uint32)(flags), NULL);
+	uint32 * fifomsg = (uint32 *)&getsIPCSharedTGDS()->ipcmsg[0];
+	fifomsg[0] = (uint32)FIFO_SCREENPOWER_WRITE;
+	fifomsg[1] = (uint32)(flags);
+	SendFIFOWords(FIFO_POWERMGMT_WRITE, (uint32)fifomsg);
 	return 0;
 }
 

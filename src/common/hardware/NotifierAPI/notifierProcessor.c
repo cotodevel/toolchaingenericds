@@ -100,7 +100,11 @@ struct notifierProcessorHandlerQueued processRunSync(struct notifierDescriptorFu
 		// ]
 		
 		//0 cmd: 1: index, 2: (u32)struct notifierDescriptor * getNotifierDescriptorByIndex(index)
-		SendFIFOWords(notifierProcessorRunThread, (uint32)notifierDescriptorInst.indexNotifierDescriptor, (uint32)getNotifierDescriptorByIndex(notifierDescriptorInst.indexNotifierDescriptor), NULL);
+		
+		uint32 * fifomsg = (uint32 *)&getsIPCSharedTGDS()->ipcmsg[0];
+		fifomsg[0] = (uint32)notifierDescriptorInst.indexNotifierDescriptor;
+		fifomsg[1] = (uint32)getNotifierDescriptorByIndex(notifierDescriptorInst.indexNotifierDescriptor);
+		SendFIFOWords(notifierProcessorRunThread, (uint32)fifomsg);
 		
 		//printf("notifierProcessorRunThread");
 		//printf("sent: %x index: %d", (uint32)FnHeap,notifierDescriptorInst.indexNotifierDescriptor);

@@ -146,7 +146,7 @@ uint32 exceptionArmRegs[0x20];
 //__attribute__((section(".itcm"))) //cant be at ITCM
 void exception_sysexit(){
 	#ifdef ARM7
-	SendFIFOWords(EXCEPTION_ARM7, unexpectedsysexit_7, 0, NULL);
+	SendFIFOWords(EXCEPTION_ARM7, unexpectedsysexit_7);
 	while(1){
 		IRQWait(1,IRQ_VBLANK);
 	}

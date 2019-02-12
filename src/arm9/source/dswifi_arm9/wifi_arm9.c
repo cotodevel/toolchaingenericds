@@ -1069,7 +1069,7 @@ void arm9_synctoarm7() {
 	//fifoSendValue32(FIFO_DSWIFI, WIFI_SYNC);
 	//SendArm7Command(WIFI_SYNC,0x0,0x0,0x0);
 	
-	SendFIFOWords(WIFI_SYNC, 0, 0, NULL);
+	SendFIFOWords(WIFI_SYNC, 0);
 }
 
 /*
@@ -1102,7 +1102,7 @@ bool Wifi_InitDefault(bool useFirmwareSettings) {
 	TIMERXDATA(3) = -6553; // 6553.1 * 256 cycles = ~50ms;
 	TIMERXCNT(3) = 0x00C2; // enable, irq, 1/256 clock
 
-	SendFIFOWords(WIFI_INIT, (uint32)wifi_pass, 0, NULL);
+	SendFIFOWords(WIFI_INIT, (uint32)wifi_pass);
 	
 	while(Wifi_CheckInit()==0) {
 		IRQWait(1,IRQ_VBLANK);

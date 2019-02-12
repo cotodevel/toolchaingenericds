@@ -152,6 +152,9 @@ struct sIPCSharedTGDS {
 	struct sDSFWSETTINGS DSFWSETTINGSInst;
 	struct sEXTKEYIN	EXTKEYINInst;
 	
+	//used when 3+ args sent between ARM cores
+	uint32 ipcmsg[0x10];
+	
 	uint8 arm7PrintfBuf[consolebuf_size];
 	
 } __attribute__((aligned (4)));
@@ -165,8 +168,8 @@ extern "C"{
 #endif
 
 //weak symbols : the implementation of these is project-defined, also abstracted from the hardware IPC FIFO Implementation for easier programming.
-extern __attribute__((weak))	void HandleFifoNotEmptyWeakRef(uint32 cmd1,uint32 cmd2,uint32 cmd3,uint32 cmd4);
-extern __attribute__((weak))	void HandleFifoEmptyWeakRef(uint32 cmd1,uint32 cmd2,uint32 cmd3,uint32 cmd4);
+extern __attribute__((weak))	void HandleFifoNotEmptyWeakRef(uint32 cmd1,uint32 cmd2);
+extern __attribute__((weak))	void HandleFifoEmptyWeakRef(uint32 cmd1,uint32 cmd2);
 
 //FIFO
 extern int GetSoftFIFOCount();
@@ -182,7 +185,7 @@ extern void HandleFifoEmpty();
 extern void Handle_SoftFIFORECV();
 extern void SoftFIFOSEND(uint32 value0,uint32 value1,uint32 value2,uint32 value3);
 
-extern void SendFIFOWords(uint32 data0, uint32 data1, uint32 data2, uint32 * buffer_shared);
+extern void SendFIFOWords(uint32 data0, uint32 data1);
 extern void writeuint32extARM(uint32 address,uint32 value);
 
 extern int SendFIFOCommand(uint32 * buf,int size);

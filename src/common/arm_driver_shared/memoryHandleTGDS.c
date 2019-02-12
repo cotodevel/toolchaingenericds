@@ -387,15 +387,24 @@ bool isValidMap(uint32 addr){
 }
 
 void Write8bitAddrExtArm(uint32 address, uint8 value){
-	SendFIFOWords(WRITE_EXTARM_8, (uint32)address, (uint32)value, NULL);
+	uint32 * fifomsg = (uint32 *)&getsIPCSharedTGDS()->ipcmsg[0];
+	fifomsg[0] = address;
+	fifomsg[1] = (uint32)value;
+	SendFIFOWords(WRITE_EXTARM_8, (uint32)fifomsg);
 }
 
 void Write16bitAddrExtArm(uint32 address, uint16 value){
-	SendFIFOWords(WRITE_EXTARM_16, (uint32)address, (uint32)value, NULL);
+	uint32 * fifomsg = (uint32 *)&getsIPCSharedTGDS()->ipcmsg[0];
+	fifomsg[0] = address;
+	fifomsg[1] = (uint32)value;
+	SendFIFOWords(WRITE_EXTARM_16, (uint32)fifomsg);
 }
 
 void Write32bitAddrExtArm(uint32 address, uint32 value){
-	SendFIFOWords(WRITE_EXTARM_32, (uint32)address, (uint32)value, NULL);
+	uint32 * fifomsg = (uint32 *)&getsIPCSharedTGDS()->ipcmsg[0];
+	fifomsg[0] = address;
+	fifomsg[1] = (uint32)value;
+	SendFIFOWords(WRITE_EXTARM_32, (uint32)fifomsg);
 }
 //IPC 
 

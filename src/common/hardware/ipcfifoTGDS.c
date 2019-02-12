@@ -129,11 +129,9 @@ void SoftFIFOSEND(uint32 value0,uint32 value1,uint32 value2,uint32 value3){
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
-void SendFIFOWords(uint32 data0, uint32 data1, uint32 data2, uint32 * buffer_shared){
+void SendFIFOWords(uint32 data0, uint32 data1){
 	REG_IPC_FIFO_TX = (uint32)data0;
-	REG_IPC_FIFO_TX = (uint32)data1;			
-	REG_IPC_FIFO_TX = (uint32)data2;
-	REG_IPC_FIFO_TX = (uint32)(uint32*)buffer_shared;
+	REG_IPC_FIFO_TX = (uint32)data1;
 }
 
 //FIFO HANDLER INIT
@@ -141,7 +139,7 @@ void SendFIFOWords(uint32 data0, uint32 data1, uint32 data2, uint32 * buffer_sha
 __attribute__((section(".itcm")))
 #endif
 void HandleFifoEmpty(){
-	HandleFifoEmptyWeakRef((uint32)0,(uint32)0,(uint32)0,(uint32)0);
+	HandleFifoEmptyWeakRef((uint32)0,(uint32)0);
 }
 
 //FIFO HANDLER INIT
@@ -150,32 +148,34 @@ __attribute__((section(".itcm")))
 #endif
 void HandleFifoNotEmpty(){
 
-	volatile uint32 data0 = 0,data1 = 0,data2 = 0,data3 = 0;
+	volatile uint32 data0 = 0,data1 = 0;
 	while(!(REG_IPC_FIFO_CR & RECV_FIFO_IPC_EMPTY)){
 		data0 = REG_IPC_FIFO_RX;
 		data1 = REG_IPC_FIFO_RX;
-		data2 = REG_IPC_FIFO_RX;
-		data3 = REG_IPC_FIFO_RX;
 		
 		//Do ToolchainGenericDS IPC handle here
 		switch (data0) {
 			//Shared 
 			case((uint32)notifierProcessorRunThread):{
 				//0 cmd: 1: index, 2: (u32)struct notifierDescriptor * getNotifierDescriptorByIndex(index)
-				//data0: cmd
-				int index = (int)data1;
-				struct notifierDescriptor * notifierDescriptorInst = (struct notifierDescriptor *)data2;
+				
+				uint32 * fifomsg = (uint32 *)&getsIPCSharedTGDS()->ipcmsg[0];
+				int index = (int)fifomsg[0];
+				struct notifierDescriptor * notifierDescriptorInst = (struct notifierDescriptor *)fifomsg[1];
 				
 				//run the thread here, grab message and acknowledge it
 				struct notifierProcessorHandlerQueued notifierProcessorHandlerQueuedOut = RunNotifierProcessorThread(notifierDescriptorInst);
-				SendFIFOWords(notifierProcessorRunAsyncAcknowledge, data1, data2, NULL);	//acknowledge we just ran!: //0 cmd: 1: index, 2: (u32)struct notifierDescriptor * getNotifierDescriptorByIndex(index)
+				SendFIFOWords(notifierProcessorRunAsyncAcknowledge, (uint32)fifomsg);	//acknowledge we just ran!: //0 cmd: 1: index, 2: (u32)struct notifierDescriptor * getNotifierDescriptorByIndex(index)
 			}
 			break;
 			case(notifierProcessorRunAsyncAcknowledge):{
 				//a thread async has ran! format: //0 cmd: 1: index, 2: (u32)struct notifierDescriptor * getNotifierDescriptorByIndex(index)
 				//data0: cmd
-				int index = (int)data1;
-				struct notifierDescriptor * notifierDescriptorInst = (struct notifierDescriptor *)data2;
+				uint32 * fifomsg = (uint32 *)&getsIPCSharedTGDS()->ipcmsg[0];
+				int index = (int)fifomsg[0];
+				struct notifierDescriptor * notifierDescriptorInst = (struct notifierDescriptor *)fifomsg[1];
+				fifomsg[0] = fifomsg[1] = 0;
+				
 				//printf("processor ran!");
 			}
 			break;
@@ -183,15 +183,27 @@ void HandleFifoNotEmpty(){
 			//	||
 			// ARM9IO from ARM7
 			case((uint32)WRITE_EXTARM_8):{
-				*(uint8*)data1 = (uint8)(data2);
+				uint32* fifomsg = (uint32*)data1;		//data1 == uint32 * fifomsg
+				uint32* address = (uint32*)fifomsg[0];
+				uint8 value = (uint8)((uint32)(fifomsg[1]&0xff));
+				*(uint8*)address = (uint8)(value);
+				fifomsg[1] = fifomsg[0] = 0;
 			}
 			break;
 			case((uint32)WRITE_EXTARM_16):{
-				*(uint16*)data1 = (uint16)(data2);
+				uint32* fifomsg = (uint32*)data1;		//data1 == uint32 * fifomsg
+				uint32* address = (uint32*)fifomsg[0];
+				uint16 value = (uint16)((uint32)(fifomsg[1]&0xffff));
+				*(uint16*)address = (uint16)(value);
+				fifomsg[1] = fifomsg[0] = 0;
 			}
 			break;
 			case((uint32)WRITE_EXTARM_32):{
-				*(uint32*)data1 = (uint32)(data2);
+				uint32* fifomsg = (uint32*)data1;		//data1 == uint32 * fifomsg
+				uint32* address = (uint32*)fifomsg[0];
+				uint32 value = (uint32)fifomsg[1];
+				*(uint32*)address = (uint32)(value);
+				fifomsg[1] = fifomsg[0] = 0;
 			}
 			break;
 			
@@ -222,16 +234,22 @@ void HandleFifoNotEmpty(){
 			//Power Management: supported model so far: DS Phat.
 			//Todo add: DSLite/DSi
 			case((uint32)FIFO_POWERMGMT_WRITE):{
-				switch(data1){
+				
+				uint32* fifomsg = (uint32*)data1;		//data1 == uint32 * fifomsg
+				uint32 cmd = (uint32)fifomsg[0];
+				uint32 flags = (uint32)fifomsg[1];
+				fifomsg[1] = fifomsg[0] = 0;
+				switch(cmd){
 					//screen power write
 					case(FIFO_SCREENPOWER_WRITE):{
 						int PMBitsRead = PowerManagementDeviceRead((int)POWMAN_READ_BIT);
 						PMBitsRead &= ~(POWMAN_BACKLIGHT_BOTTOM_BIT|POWMAN_BACKLIGHT_TOP_BIT);
-						PMBitsRead |= (int)(data2 & (POWMAN_BACKLIGHT_BOTTOM_BIT|POWMAN_BACKLIGHT_TOP_BIT));	//
+						PMBitsRead |= (int)(flags & (POWMAN_BACKLIGHT_BOTTOM_BIT|POWMAN_BACKLIGHT_TOP_BIT));
 						PowerManagementDeviceWrite(POWMAN_WRITE_BIT, (int)PMBitsRead);				
 					}
 					break;
 				}
+				
 			}
 			break;
 			//arm9 wants to send a WIFI context block address / userdata is always zero here
@@ -272,7 +290,7 @@ void HandleFifoNotEmpty(){
 			break;
 			#endif
 		}
-		HandleFifoNotEmptyWeakRef(data0,data1,data2,data3);
+		HandleFifoNotEmptyWeakRef(data0,data1);
 	}
 }
 
