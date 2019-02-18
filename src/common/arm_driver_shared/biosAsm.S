@@ -142,7 +142,7 @@ swiSetHaltCR:
 .global 	swiChangeSoundBias
 .type   	swiChangeSoundBias STT_FUNC
 swiChangeSoundBias:
-	swi	0x08
+	swi	0x80000
 	bx	lr
 	
 #endif
