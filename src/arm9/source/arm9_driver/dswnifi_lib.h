@@ -254,6 +254,20 @@ extern __attribute__((weak))	void HandleRecvUserspace(struct frameBlock * frameB
 //implementation defined. can map a buffer/shared object between DS or keymaps
 extern __attribute__((weak))	bool do_multi(struct frameBlock * frameBlockRecv);
 
+//Callback that runs upon setting DSWNIFI mode to dswifi_localnifimode
+extern __attribute__((weak))	void OnDSWIFIlocalnifiEnable();
+
+//Callback that runs upon setting DSWNIFI mode to dswifi_idlemode
+extern __attribute__((weak))	void OnDSWIFIidlemodeEnable();
+
+//Callback that runs upon setting DSWNIFI mode to dswifi_udpnifimode
+extern __attribute__((weak))	void OnDSWIFIudpnifiEnable();
+
+//Callback that runs upon setting DSWNIFI mode to dswifi_gdbstubmode
+extern __attribute__((weak))	void OnDSWIFIGDBStubEnable();
+
+
+
 extern bool sentReq;
 extern sint32 LastDSWnifiMode;
 extern struct dsnwifisrvStr * getDSWNIFIStr();

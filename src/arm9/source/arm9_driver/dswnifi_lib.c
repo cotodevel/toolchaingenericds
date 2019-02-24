@@ -185,6 +185,7 @@ bool switch_dswnifi_mode(sint32 mode){
 			dswifiSrv.dsnwifisrv_stat	= ds_searching_for_multi_servernotaware;
 			setMULTIMode(mode);
 			setConnectionStatus(proc_connect);
+			OnDSWIFIlocalnifiEnable();
 			return true;
 		}
 		else{
@@ -200,6 +201,7 @@ bool switch_dswnifi_mode(sint32 mode){
 		if(connectDSWIFIAP(DSWNIFI_ENTER_WIFIMODE) == true){	//setWIFISetup set inside
 			setConnectionStatus(proc_connect);
 			setMULTIMode(mode);
+			OnDSWIFIudpnifiEnable();
 			return true;
 		}
 		else{
@@ -213,6 +215,7 @@ bool switch_dswnifi_mode(sint32 mode){
 		dswifiSrv.dsnwifisrv_stat	= ds_multi_notrunning;
 		if (gdbNdsStart() == true){	//setWIFISetup set inside
 			setMULTIMode(mode);
+			OnDSWIFIGDBStubEnable();
 			return true;
 		}
 		else{
@@ -228,6 +231,7 @@ bool switch_dswnifi_mode(sint32 mode){
 		setWIFISetup(false);
 		setConnectionStatus(proc_shutdown);
 		connectDSWIFIAP(DSWNIFI_ENTER_IDLEMODE);
+		OnDSWIFIidlemodeEnable();
 	}
 	return true;
 }
