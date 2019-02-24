@@ -32,11 +32,11 @@ USA
 #include "memoryHandleTGDS.h"
 #include "spifwTGDS.h"
 #include "powerTGDS.h"
+#include "ipcfifoTGDS.h"
 
 
 #ifdef ARM9
 #include "devoptab_devices.h"
-#include "ipcfifoTGDS.h"
 #include "fileHandleTGDS.h"
 #include "videoTGDS.h"
 #endif
@@ -45,16 +45,16 @@ void initHardware(void) {
 //---------------------------------------------------------------------------------
 	//Reset Both Cores
 	resetMemory_ARMCores();
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	
 	#ifdef ARM7
 	//Init Shared Address Region
-	memset((uint32*)getsIPCSharedTGDS(), 0, getToolchainIPCSize());
+	memset((uint32*)TGDSIPC, 0, TGDSIPCSize);
 	
 	//Read DHCP settings (in order)
 	LoadFirmwareSettingsFromFlash();
-	
-	getsIPCSharedTGDS()->arm7startaddress = get_iwram_start();
-	getsIPCSharedTGDS()->arm7endaddress = (uint32)(get_iwram_start() + get_iwram_size());
+	TGDSIPC->arm7startaddress = get_iwram_start();
+	TGDSIPC->arm7endaddress = (uint32)(get_iwram_start() + get_iwram_size());
 	
 	#endif
 	
@@ -79,8 +79,8 @@ void initHardware(void) {
 	//set up all devoptabs but filesystem devoptab because we enable it later
 	initTGDSDevoptab();
 
-	getsIPCSharedTGDS()->arm9startaddress = get_ewram_start();
-	getsIPCSharedTGDS()->arm9endaddress = (uint32)(get_ewram_start() + get_ewram_size());
+	TGDSIPC->arm9startaddress = get_ewram_start();
+	TGDSIPC->arm9endaddress = (uint32)(get_ewram_start() + get_ewram_size());
 	
 	#endif
 	

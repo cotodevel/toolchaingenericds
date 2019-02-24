@@ -45,15 +45,6 @@ USA
 
 #endif
 
-//Coto: Hardware IPC struct packed 
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
-struct sIPCSharedTGDS* getsIPCSharedTGDS(){
-	struct sIPCSharedTGDS* getsIPCSharedTGDSInst = (__attribute__((aligned (4))) struct sIPCSharedTGDS*)(getToolchainIPCAddress());
-	return getsIPCSharedTGDSInst;
-}
-
 //Software FIFO calls, Rely on Hardware FIFO calls so it doesnt matter if they are in different maps 
 volatile int FIFO_SOFT_PTR = 0;
 
@@ -71,12 +62,12 @@ int GetSoftFIFOCount(){
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
-bool GetSoftFIFO(uint32 * var)
-{
+bool GetSoftFIFO(uint32 * var){
 	if(FIFO_SOFT_PTR >= 1){
 		FIFO_SOFT_PTR--;
-		*var = (uint32)getsIPCSharedTGDS()->FIFO_BUF_SOFT[FIFO_SOFT_PTR];
-		getsIPCSharedTGDS()->FIFO_BUF_SOFT[FIFO_SOFT_PTR] = (uint32)0;
+		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+		*var = (uint32)TGDSIPC->FIFO_BUF_SOFT[FIFO_SOFT_PTR];
+		TGDSIPC->FIFO_BUF_SOFT[FIFO_SOFT_PTR] = (uint32)0;
 		return true;
 	}
 	else
@@ -91,7 +82,8 @@ __attribute__((section(".itcm")))
 bool SetSoftFIFO(uint32 value)
 {
 	if(FIFO_SOFT_PTR < (int)(FIFO_NDS_HW_SIZE/4)){
-		getsIPCSharedTGDS()->FIFO_BUF_SOFT[FIFO_SOFT_PTR] = value;
+		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+		TGDSIPC->FIFO_BUF_SOFT[FIFO_SOFT_PTR] = value;
 		FIFO_SOFT_PTR++;
 		return true;
 	}
@@ -158,8 +150,9 @@ void HandleFifoNotEmpty(){
 			//Shared 
 			case((uint32)notifierProcessorRunThread):{
 				//0 cmd: 1: index, 2: (u32)struct notifierDescriptor * getNotifierDescriptorByIndex(index)
+				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 				
-				uint32 * fifomsg = (uint32 *)&getsIPCSharedTGDS()->ipcmsg[0];
+				uint32 * fifomsg = (uint32 *)&TGDSIPC->ipcmsg[0];
 				int index = (int)fifomsg[0];
 				struct notifierDescriptor * notifierDescriptorInst = (struct notifierDescriptor *)fifomsg[1];
 				
@@ -171,7 +164,8 @@ void HandleFifoNotEmpty(){
 			case(notifierProcessorRunAsyncAcknowledge):{
 				//a thread async has ran! format: //0 cmd: 1: index, 2: (u32)struct notifierDescriptor * getNotifierDescriptorByIndex(index)
 				//data0: cmd
-				uint32 * fifomsg = (uint32 *)&getsIPCSharedTGDS()->ipcmsg[0];
+				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+				uint32 * fifomsg = (uint32 *)&TGDSIPC->ipcmsg[0];
 				int index = (int)fifomsg[0];
 				struct notifierDescriptor * notifierDescriptorInst = (struct notifierDescriptor *)fifomsg[1];
 				fifomsg[0] = fifomsg[1] = 0;
@@ -279,7 +273,8 @@ void HandleFifoNotEmpty(){
 				clrscr();
 				char * printfBuf7 = (char*)getPrintfBuffer();
 				//Prevent Cache problems.
-				coherent_user_range_by_size((uint32)printfBuf7, (int)sizeof(getsIPCSharedTGDS()->arm7PrintfBuf));
+				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+				coherent_user_range_by_size((uint32)printfBuf7, (int)sizeof(TGDSIPC->arm7PrintfBuf));
 				printf("ARM7:%s",printfBuf7);
 			}
 			break;
@@ -296,19 +291,21 @@ void HandleFifoNotEmpty(){
 
 
 int getnotifierProcessorNewInstance(){
-	int freeIndex = getsIPCSharedTGDS()->notifierInternalIndex;	//this index == indexNotifierDescriptor;
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	int freeIndex = TGDSIPC->notifierInternalIndex;	//this index == indexNotifierDescriptor;
 	if(freeIndex < notifierProcessorInstancesTop){
 		freeIndex+=1;
-		getsIPCSharedTGDS()->notifierInternalIndex = freeIndex;
+		TGDSIPC->notifierInternalIndex = freeIndex;
 		return freeIndex - 1;
 	}
 	return notifierProcessorInstanceInvalid;
 }
 
 void deletenotifierProcessorInstance(){
-	int curIndex = getsIPCSharedTGDS()->notifierInternalIndex;
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	int curIndex = TGDSIPC->notifierInternalIndex;
 	if( (curIndex - 1) >= 0){
 		curIndex-=1;
-		getsIPCSharedTGDS()->notifierInternalIndex = curIndex;
+		TGDSIPC->notifierInternalIndex = curIndex;
 	}
 }

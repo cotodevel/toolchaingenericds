@@ -40,6 +40,7 @@ USA
 
 //IPC specific: Shared Work     027FF000h 4KB    -     -    -    R/W
 #define IPCRegionSize	(sint32)(4*1024)
+
  
 #endif
 
@@ -143,13 +144,6 @@ extern void * _sbrk_r (struct _reent * reent, int size);
 //NDS Memory Map
 extern bool isValidMap(uint32 addr);
 
-
-//TGDS IPC
-extern uint32 getToolchainIPCAddress();		
-extern sint32 getToolchainIPCSize();
-
-//Project Specific IPC
-extern uint32 getUserIPCAddress();
 
 //Printf7 Buffer
 extern uint32 getPrintfBuffer();

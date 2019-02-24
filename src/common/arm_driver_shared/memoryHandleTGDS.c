@@ -175,11 +175,13 @@ int _tmain(int argc, _TCHAR* argv[])
 //these toggle the WRAM_CR register depending on linker settings
 
 uint32 get_arm7_start_address(){
-	return (uint32)getsIPCSharedTGDS()->arm7startaddress;
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	return (uint32)TGDSIPC->arm7startaddress;
 }
 
 uint32 get_arm7_end_address(){
-	return (uint32)getsIPCSharedTGDS()->arm7endaddress;
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	return (uint32)TGDSIPC->arm7endaddress;
 }
 
 sint32 get_arm7_ext_size(){
@@ -188,11 +190,13 @@ sint32 get_arm7_ext_size(){
 
 
 uint32 get_arm9_start_address(){
-	return (uint32)getsIPCSharedTGDS()->arm9startaddress;
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	return (uint32)TGDSIPC->arm9startaddress;
 }
 
 uint32 get_arm9_end_address(){
-	return (uint32)getsIPCSharedTGDS()->arm9endaddress;
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	return (uint32)TGDSIPC->arm9endaddress;
 }
 
 sint32 get_arm9_ext_size(){
@@ -387,21 +391,24 @@ bool isValidMap(uint32 addr){
 }
 
 void Write8bitAddrExtArm(uint32 address, uint8 value){
-	uint32 * fifomsg = (uint32 *)&getsIPCSharedTGDS()->ipcmsg[0];
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->ipcmsg[0];
 	fifomsg[0] = address;
 	fifomsg[1] = (uint32)value;
 	SendFIFOWords(WRITE_EXTARM_8, (uint32)fifomsg);
 }
 
 void Write16bitAddrExtArm(uint32 address, uint16 value){
-	uint32 * fifomsg = (uint32 *)&getsIPCSharedTGDS()->ipcmsg[0];
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->ipcmsg[0];
 	fifomsg[0] = address;
 	fifomsg[1] = (uint32)value;
 	SendFIFOWords(WRITE_EXTARM_16, (uint32)fifomsg);
 }
 
 void Write32bitAddrExtArm(uint32 address, uint32 value){
-	uint32 * fifomsg = (uint32 *)&getsIPCSharedTGDS()->ipcmsg[0];
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->ipcmsg[0];
 	fifomsg[0] = address;
 	fifomsg[1] = (uint32)value;
 	SendFIFOWords(WRITE_EXTARM_32, (uint32)fifomsg);
@@ -411,28 +418,8 @@ void Write32bitAddrExtArm(uint32 address, uint32 value){
 //Internal
 
 
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
-uint32 getToolchainIPCAddress(){
-	return (uint32)(0x027FF000 + notifierHandlerBinarySize);
-}
-
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
-sint32 getToolchainIPCSize(){
-	return (sint32)(sizeof(struct sIPCSharedTGDS));
-}
-
 //Printf7 Buffer
 uint32 getPrintfBuffer(){
-	return (uint32)(&getsIPCSharedTGDS()->arm7PrintfBuf[0]);
-}
-
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
-uint32 getUserIPCAddress(){
-	return (uint32)(getToolchainIPCAddress()+getToolchainIPCSize());
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	return (uint32)(&TGDSIPC->arm7PrintfBuf[0]);
 }

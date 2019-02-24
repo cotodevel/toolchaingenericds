@@ -100,8 +100,8 @@ struct notifierProcessorHandlerQueued processRunSync(struct notifierDescriptorFu
 		// ]
 		
 		//0 cmd: 1: index, 2: (u32)struct notifierDescriptor * getNotifierDescriptorByIndex(index)
-		
-		uint32 * fifomsg = (uint32 *)&getsIPCSharedTGDS()->ipcmsg[0];
+		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+		uint32 * fifomsg = (uint32 *)&TGDSIPC->ipcmsg[0];
 		fifomsg[0] = (uint32)notifierDescriptorInst.indexNotifierDescriptor;
 		fifomsg[1] = (uint32)getNotifierDescriptorByIndex(notifierDescriptorInst.indexNotifierDescriptor);
 		SendFIFOWords(notifierProcessorRunThread, (uint32)fifomsg);

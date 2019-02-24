@@ -73,32 +73,36 @@ void LoadFirmwareSettingsFromFlash(){
 }
 
 void ParseFWSettings(uint32 usersetting_offset){
-	readFirmwareSPI((uint32)usersetting_offset, (uint8*)&getsIPCSharedTGDS()->DSFWSETTINGSInst, sizeof(struct sDSFWSETTINGS));
-	readFirmwareSPI((uint32)usersetting_offset+0x01D, (uint8*)&getsIPCSharedTGDS()->consoletype, sizeof(getsIPCSharedTGDS()->consoletype));
-	ucs2tombs((uint8*)&getsIPCSharedTGDS()->nickname_schar8[0],(unsigned short*)&getsIPCSharedTGDS()->DSFWSETTINGSInst.nickname_utf16[0],32);
-	readFirmwareSPI((uint32)usersetting_offset+0x64, (uint8*)&getsIPCSharedTGDS()->lang_flags[0], 0x2);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	readFirmwareSPI((uint32)usersetting_offset, (uint8*)&TGDSIPC->DSFWSETTINGSInst, sizeof(struct sDSFWSETTINGS));
+	readFirmwareSPI((uint32)usersetting_offset+0x01D, (uint8*)&TGDSIPC->consoletype, sizeof(TGDSIPC->consoletype));
+	ucs2tombs((uint8*)&TGDSIPC->nickname_schar8[0],(unsigned short*)&TGDSIPC->DSFWSETTINGSInst.nickname_utf16[0],32);
+	readFirmwareSPI((uint32)usersetting_offset+0x64, (uint8*)&TGDSIPC->lang_flags[0], 0x2);
 }
 
 #endif
 
 //DS when accessing shared region through Indirect function methods works fine. Where as direct access is undefined reads
 uint8 getLanguage(){
-	while(getFWSettingsstatus() == false){}	//could cause issues
-	return (uint8)(((getsIPCSharedTGDS()->lang_flags[1]<<8)|getsIPCSharedTGDS()->lang_flags[0])&language_mask);
+	while(getFWSettingsstatus() == false){}
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	return (uint8)(((TGDSIPC->lang_flags[1]<<8)|TGDSIPC->lang_flags[0])&language_mask);
 }
 
 bool getFWSettingsstatus(){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	#ifdef ARM9
 	//Prevent Cache problems.
-	coherent_user_range_by_size((uint32)getsIPCSharedTGDS(), sizeof(struct sIPCSharedTGDS));
+	coherent_user_range_by_size((uint32)TGDSIPC, sizeof(struct sIPCSharedTGDS));
 	#endif
-	return (bool)getsIPCSharedTGDS()->valid_dsfwsettings;
+	return (bool)TGDSIPC->valid_dsfwsettings;
 }
 
 void setFWSettingsstatus(bool status){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	#ifdef ARM9
 	//Prevent Cache problems.
-	coherent_user_range_by_size((uint32)getsIPCSharedTGDS(), sizeof(struct sIPCSharedTGDS));
+	coherent_user_range_by_size((uint32)TGDSIPC, sizeof(struct sIPCSharedTGDS));
 	#endif
-	getsIPCSharedTGDS()->valid_dsfwsettings = status;
+	TGDSIPC->valid_dsfwsettings = status;
 }

@@ -20,6 +20,10 @@ USA
 
 //TGDS IPC Version: 1.3
 
+//IPC FIFO Description: 
+//		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 														// Access to TGDS internal IPC FIFO structure. 		(ipcfifoTGDS.h)
+//		struct sIPCSharedTGDSSpecific * TGDSUSERIPC = (struct sIPCSharedTGDSSpecific *)TGDSIPCUserStartAddress;		// Access to TGDS Project (User) IPC FIFO structure	(ipcfifoTGDSUser.h)
+
 #ifndef __nds_ipc_h__
 #define __nds_ipc_h__
 
@@ -31,6 +35,7 @@ USA
 #include "usrsettingsTGDS.h"
 #include <time.h>
 #include "memoryHandleTGDS.h"
+
 
 //printf size buffer
 #define consolebuf_size (sint32)(255)	//(MAX_TGDSFILENAME_LENGTH+1)
@@ -160,6 +165,9 @@ struct sIPCSharedTGDS {
 } __attribute__((aligned (4)));
 
 //Shared Work     027FF000h 4KB    -     -    -    R/W
+#define TGDSIPCStartAddress (__attribute__((aligned (4))) struct sIPCSharedTGDS*)(0x027FF000 + notifierHandlerBinarySize)
+#define TGDSIPCSize (int)(sizeof(struct sIPCSharedTGDS))
+#define TGDSIPCUserStartAddress (u32)(0x027FF000 + notifierHandlerBinarySize + TGDSIPCSize)	//u32 because it`s unknown at this point. TGDS project will override it to specific USER IPC struct
 
 #endif
 
@@ -190,7 +198,6 @@ extern void writeuint32extARM(uint32 address,uint32 value);
 
 extern int SendFIFOCommand(uint32 * buf,int size);
 extern int RecvFIFOCommand(uint32 * buf);
-extern struct sIPCSharedTGDS* getsIPCSharedTGDS();
 
 extern int getnotifierProcessorNewInstance();
 extern void deletenotifierProcessorInstance();
