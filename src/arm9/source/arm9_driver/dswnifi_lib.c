@@ -60,7 +60,9 @@ USA
 #include <in.h>
 #include <assert.h>
 
+__attribute__((section(".dtcm")))
 struct dsnwifisrvStr dswifiSrv;
+
 volatile 	uint8 data[4096];			//receiver frame, data + frameheader is recv TX'd frame nfdata[128]. Used by NIFI Mode
 volatile 	uint8 nfdata[128]			= {0xB2, 0xD1, (uint8)CRC_OK_SAYS_HOST, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};	//sender frame, recv as data[4096], see above. all valid frames have CRC_OK_SAYS_HOST sent.
 
@@ -99,7 +101,6 @@ void initNiFi(){
 }
 
 /////////////////////////////////UDP DSWNIFI Part////////////////////////////////////
-client_http_handler client_http_handler_context;
 sint8* server_ip = (sint8*)"192.168.43.220";
 //SOCK_STREAM = TCP / SOCK_DGRAM = UDP
 
@@ -294,26 +295,26 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 			//UDP NIFI
 			if(getMULTIMode() == dswifi_udpnifimode){
 				//UDP: DSClient - Server IP / Desktop Server UDP companion Listener.
-				client_http_handler_context.socket_id__multi_notconnected=socket(AF_INET,SOCK_DGRAM,0);	
+				dswifiSrv.client_http_handler_context.socket_id__multi_notconnected=socket(AF_INET,SOCK_DGRAM,0);	
 				int i=1;
-				i=ioctl(client_http_handler_context.socket_id__multi_notconnected,FIONBIO,&i); // set non-blocking port
-				memset((uint8*)&client_http_handler_context.sain_UDP_PORT, 0, sizeof(client_http_handler_context.sain_UDP_PORT));
-				client_http_handler_context.sain_UDP_PORT.sin_family=AF_INET;
-				client_http_handler_context.sain_UDP_PORT.sin_addr.s_addr=0;
-				client_http_handler_context.sain_UDP_PORT.sin_port=htons((int)UDP_PORT);
-				if(bind(client_http_handler_context.socket_id__multi_notconnected,(struct sockaddr *)&client_http_handler_context.sain_UDP_PORT,sizeof(client_http_handler_context.sain_UDP_PORT))) {
+				i=ioctl(dswifiSrv.client_http_handler_context.socket_id__multi_notconnected,FIONBIO,&i); // set non-blocking port
+				memset((uint8*)&dswifiSrv.client_http_handler_context.sain_UDP_PORT, 0, sizeof(dswifiSrv.client_http_handler_context.sain_UDP_PORT));
+				dswifiSrv.client_http_handler_context.sain_UDP_PORT.sin_family=AF_INET;
+				dswifiSrv.client_http_handler_context.sain_UDP_PORT.sin_addr.s_addr=0;
+				dswifiSrv.client_http_handler_context.sain_UDP_PORT.sin_port=htons((int)UDP_PORT);
+				if(bind(dswifiSrv.client_http_handler_context.socket_id__multi_notconnected,(struct sockaddr *)&dswifiSrv.client_http_handler_context.sain_UDP_PORT,sizeof(dswifiSrv.client_http_handler_context.sain_UDP_PORT))) {
 					//binding ERROR
-					close(client_http_handler_context.socket_id__multi_notconnected);
+					close(dswifiSrv.client_http_handler_context.socket_id__multi_notconnected);
 					retDaemonCode = dswifi_udpnifimodeFailConnectStage;
 				}
 				else{
 					//binding OK
 				}
 				//UDP: DSClient - Server IP / Desktop Server UDP companion Sender
-				memset((uint8*)&client_http_handler_context.server_addr, 0, sizeof(struct sockaddr_in));
-				client_http_handler_context.server_addr.sin_family = AF_INET;
-				client_http_handler_context.server_addr.sin_addr.s_addr = inet_addr(server_ip);
-				client_http_handler_context.server_addr.sin_port = htons((int)UDP_PORT);
+				memset((uint8*)&dswifiSrv.client_http_handler_context.server_addr, 0, sizeof(struct sockaddr_in));
+				dswifiSrv.client_http_handler_context.server_addr.sin_family = AF_INET;
+				dswifiSrv.client_http_handler_context.server_addr.sin_addr.s_addr = inet_addr(server_ip);
+				dswifiSrv.client_http_handler_context.server_addr.sin_port = htons((int)UDP_PORT);
 				//no binding since we have no control of server port and we should not know it anyway, DGRAM specific.
 				
 				setConnectionStatus(proc_execution);
@@ -348,12 +349,12 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 							for(k = 0; k < 4; k++){
 								char outgoingbuf[frameDSsize] = {0};
 								sprintf(outgoingbuf,"dsnotaware-NIFINintendoDS-%s-",(char*)print_ip((uint32)Wifi_GetIP()));
-								sendto(client_http_handler_context.socket_id__multi_notconnected,outgoingbuf,strlen(outgoingbuf),0,(struct sockaddr *)&client_http_handler_context.server_addr,sizeof(struct sockaddr_in));
+								sendto(dswifiSrv.client_http_handler_context.socket_id__multi_notconnected,outgoingbuf,strlen(outgoingbuf),0,(struct sockaddr *)&dswifiSrv.client_http_handler_context.server_addr,sizeof(struct sockaddr_in));
 								swiDelay(8888);
 							}
 							sentReq = true;	//acknowledge DS send
 						}
-						if( (datalen = recvfrom(client_http_handler_context.socket_id__multi_notconnected, (uint8*)incomingbuf, sizeof(incomingbuf), 0, (struct sockaddr *)&sender_server,(int*)&sain_len)) > 0 ){
+						if( (datalen = recvfrom(dswifiSrv.client_http_handler_context.socket_id__multi_notconnected, (uint8*)incomingbuf, sizeof(incomingbuf), 0, (struct sockaddr *)&sender_server,(int*)&sain_len)) > 0 ){
 							if(datalen>0) {
 								memcpy((uint8*)cmd,(uint8*)incomingbuf,sizeof(cmd));	//cmd recv
 								cmd[sizeof(cmd)-1] = '\0';
@@ -369,13 +370,13 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 							int host_mode = strncmp((const char*)token_hostguest, (const char *)"host", 4); 	//host == 0
 							int guest_mode = strncmp((const char*)token_hostguest, (const char *)"guest", 5); 	//guest == 0
 							
-							client_http_handler_context.socket_multi_listener=socket(AF_INET,SOCK_DGRAM,0);
+							dswifiSrv.client_http_handler_context.socket_multi_listener=socket(AF_INET,SOCK_DGRAM,0);
 							int cmd=1;
-							cmd=ioctl(client_http_handler_context.socket_multi_listener,FIONBIO,&cmd); // set non-blocking port
+							cmd=ioctl(dswifiSrv.client_http_handler_context.socket_multi_listener,FIONBIO,&cmd); // set non-blocking port
 							
-							client_http_handler_context.socket_multi_sender=socket(AF_INET,SOCK_DGRAM,0);
+							dswifiSrv.client_http_handler_context.socket_multi_sender=socket(AF_INET,SOCK_DGRAM,0);
 							int optval = 1;
-							setsockopt(client_http_handler_context.socket_multi_sender, SOL_SOCKET, SO_BROADCAST, (char *)&optval, sizeof(optval));
+							setsockopt(dswifiSrv.client_http_handler_context.socket_multi_sender, SOL_SOCKET, SO_BROADCAST, (char *)&optval, sizeof(optval));
 		
 							int LISTENER_PORT 	=	0;
 							int SENDER_PORT		=	0;
@@ -389,26 +390,26 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 							}
 							
 							//bind conn to LOCAL ip-port listener
-							memset((char *)&client_http_handler_context.sain_listener, 0, sizeof(struct sockaddr_in));
-							client_http_handler_context.sain_listener.sin_family = AF_INET;
-							client_http_handler_context.sain_listener.sin_addr.s_addr = htonl(INADDR_ANY);	//local/any ip listen to desired port
-							client_http_handler_context.sain_listener.sin_port = htons(LISTENER_PORT); //nds_multi_port
+							memset((char *)&dswifiSrv.client_http_handler_context.sain_listener, 0, sizeof(struct sockaddr_in));
+							dswifiSrv.client_http_handler_context.sain_listener.sin_family = AF_INET;
+							dswifiSrv.client_http_handler_context.sain_listener.sin_addr.s_addr = htonl(INADDR_ANY);	//local/any ip listen to desired port
+							dswifiSrv.client_http_handler_context.sain_listener.sin_port = htons(LISTENER_PORT); //nds_multi_port
 							
 							//NDS MULTI IP: No need to bind / connect since it's datagram (UDP)
-							memset((char *) &client_http_handler_context.sain_sender, 0, sizeof(struct sockaddr_in));
-							client_http_handler_context.sain_sender.sin_family = AF_INET;
-							client_http_handler_context.sain_sender.sin_addr.s_addr = inet_addr((char*)token_extip);
-							client_http_handler_context.sain_sender.sin_port = htons(SENDER_PORT); 
+							memset((char *) &dswifiSrv.client_http_handler_context.sain_sender, 0, sizeof(struct sockaddr_in));
+							dswifiSrv.client_http_handler_context.sain_sender.sin_family = AF_INET;
+							dswifiSrv.client_http_handler_context.sain_sender.sin_addr.s_addr = inet_addr((char*)token_extip);
+							dswifiSrv.client_http_handler_context.sain_sender.sin_port = htons(SENDER_PORT); 
 							
 							//bind ThisIP(each DS network hardware) against the current DS UDP port
-							if(bind(client_http_handler_context.socket_multi_listener,(struct sockaddr *)&client_http_handler_context.sain_listener,sizeof(struct sockaddr_in))) {
+							if(bind(dswifiSrv.client_http_handler_context.socket_multi_listener,(struct sockaddr *)&dswifiSrv.client_http_handler_context.sain_listener,sizeof(struct sockaddr_in))) {
 								if(host_mode == 0){
 									//[host]binding error
 								}
 								else if(guest_mode == 0){
 									//[guest]binding error
 								}
-								close(client_http_handler_context.socket_multi_listener);
+								close(dswifiSrv.client_http_handler_context.socket_multi_listener);
 								retDaemonCode = dswifi_udpnifimodeFailExecutionStage;
 							}
 							else{
@@ -443,13 +444,13 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 							}
 							char buf2[frameDSsize] = {0};
 							sprintf(buf2,"dsaware-%s-bindOK-%d-%s-",status,LISTENER_PORT,(char*)print_ip((uint32)Wifi_GetIP()));
-							sendto(client_http_handler_context.socket_id__multi_notconnected,buf2,sizeof(buf2),0,(struct sockaddr *)&client_http_handler_context.server_addr,sizeof(struct sockaddr_in));
+							sendto(dswifiSrv.client_http_handler_context.socket_id__multi_notconnected,buf2,sizeof(buf2),0,(struct sockaddr *)&dswifiSrv.client_http_handler_context.server_addr,sizeof(struct sockaddr_in));
 							sentReq = true;	//acknowledge DS send
 						}
 						uint8 cmd[12] = {0};	//srv->ds command handler
 						sain_len = sizeof(struct sockaddr_in);
 						memset((uint8*)&sender_server, 0, sizeof(struct sockaddr_in));
-						datalen=recvfrom(client_http_handler_context.socket_id__multi_notconnected,(uint8*)incomingbuf,sizeof(incomingbuf),0,(struct sockaddr *)&sender_server,(int*)&sain_len);
+						datalen=recvfrom(dswifiSrv.client_http_handler_context.socket_id__multi_notconnected,(uint8*)incomingbuf,sizeof(incomingbuf),0,(struct sockaddr *)&sender_server,(int*)&sain_len);
 						if(datalen>0) {
 							memcpy((uint8*)cmd,(uint8*)incomingbuf,sizeof(cmd));	//cmd recv
 							cmd[sizeof(cmd)-1] = '\0';
@@ -461,7 +462,7 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 							else if(dswifiSrv.dsnwifisrv_stat == ds_netplay_guest_servercheck){
 								dswifiSrv.dsnwifisrv_stat = ds_netplay_guest;
 							}
-							close(client_http_handler_context.socket_id__multi_notconnected); //closer server socket to prevent problems when udp multiplayer
+							close(dswifiSrv.client_http_handler_context.socket_id__multi_notconnected); //closer server socket to prevent problems when udp multiplayer
 						}
 					}
 					break;
@@ -471,7 +472,7 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 					case(ds_netplay_host):case(ds_netplay_guest):{						
 						sain_len = sizeof(struct sockaddr_in);
 						memset((uint8*)&sender_server, 0, sizeof(struct sockaddr_in));
-						int datalen2=recvfrom(client_http_handler_context.socket_multi_listener,(uint8*)incomingbuf,sizeof(incomingbuf),0,(struct sockaddr *)&sender_server,(int*)&sain_len);
+						int datalen2=recvfrom(dswifiSrv.client_http_handler_context.socket_multi_listener,(uint8*)incomingbuf,sizeof(incomingbuf),0,(struct sockaddr *)&sender_server,(int*)&sain_len);
 						if(datalen2>0) {
 							//decide whether to put data in userbuffer and if frame is valid here
 							struct frameBlock * frameHandled = receiveDSWNIFIFrame((uint8*)incomingbuf,datalen2);
@@ -507,7 +508,7 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 		//shutdown
 		case (proc_shutdown):{
 			if(LastDSWnifiMode == dswifi_udpnifimode){
-				close(client_http_handler_context.socket_id__multi_notconnected);
+				close(dswifiSrv.client_http_handler_context.socket_id__multi_notconnected);
 			}
 			sentReq = false;
 			setConnectionStatus(proc_idle);
@@ -608,7 +609,7 @@ int Wifi_RawTxFrame_WIFI(sint32 datalen, uint8 * data) {
 	switch(dswifiSrv.dsnwifisrv_stat){	//sender phase: only send packets if we are in UDP DSWNifi mode
 		case(ds_netplay_host):case(ds_netplay_guest):{
 			if(getMULTIMode() == dswifi_udpnifimode){
-				sendto(client_http_handler_context.socket_multi_sender,data,datalen,0,(struct sockaddr *)&client_http_handler_context.sain_sender,sizeof(client_http_handler_context.sain_sender));
+				sendto(dswifiSrv.client_http_handler_context.socket_multi_sender,data,datalen,0,(struct sockaddr *)&dswifiSrv.client_http_handler_context.sain_sender,sizeof(dswifiSrv.client_http_handler_context.sain_sender));
 			}
 		}
 		break;

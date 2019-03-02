@@ -1,0 +1,11 @@
+March/02/2019:
+
+DSWNIFI was reworked a bit. Now everything is wrapped properly and the DSWNIFI context runs from DTCM.
+
+
+Upon testing:
+
+DS Phat, DS Lite and (normal) DSi = dswnifi works both UDP and LOCAL.
+
+DSi XL, 3DS, N3DS = dswnifi freezes upon some activity. This bug has happened since 2018 or so. Todo: check why and fix that.
+

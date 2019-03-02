@@ -122,8 +122,10 @@ USA
 #define remoteStubMainWIFIConnectedGDBRunning (sint32)(17)	//Wifi & GDB running
 #define remoteStubMainWIFIConnectedGDBDisconnected (sint32)(18)	//Wifi running, GDB disconnected
 
+//DSWNIFI layer:
 
-typedef struct {
+//UDP Descriptor
+struct client_http_handler{
 	//dswifi socket @ PORT 8888
     struct sockaddr_in sain_UDP_PORT;	//UDP: Listener sockaddr_in
 	struct sockaddr_in server_addr;		//UDP Sender sockaddr_in: Desktop Server UDP companion Sender
@@ -142,23 +144,13 @@ typedef struct {
 	int socket_multi_listenerNetplay;			//UDP: Unused, TCP: (this)DS Server Multi SocketDescriptor TCP NDSMULTI_TCP_PORT_HOST || NDSMULTI_TCP_PORT_GUEST
 	
 	//host socket entry
-    struct hostent myhost;
-    
+    struct hostent myhost;    
     bool wifi_enabled;
-
-} client_http_handler;
-
-
-//returned by HandleSendUserspace. Converts the user buffer and size into a struct the ToolchainGenericDS library understands.
-struct frameBlock{
-    uint8 * framebuffer;
-	sint32	frameSize;
 };
 
-//shared memory cant use #ifdef ARMX since corrupts both definition sides for each ARM Core
-//---------------------------------------------------------------------------------
+//LOCAL/IDLE/GDB/UDP
 struct dsnwifisrvStr {
-//---------------------------------------------------------------------------------
+	struct client_http_handler client_http_handler_context;	//Handles UDP DSWNIFI
 	sint32 dsnwifisrv_mode;	//dswifi_idlemode / dswifi_localnifimode / dswifi_udpnifimode / dswifi_gdbstubmode		//used by setMULTIMode() getMULTIMode()
 	sint32	connectionStatus;	//proc_idle / proc_connect / proc_execution / proc_shutdown	//used by getConnectionStatus() setConnectionStatus()
 	sint32 	dsnwifisrv_stat;	//MULTI: inter DS Connect status: ds_multi_notrunning / ds_searching_for_multi / (ds_multiplay): ds_netplay_host ds_netplay_guest
@@ -167,11 +159,16 @@ struct dsnwifisrvStr {
 	bool GDBStubEnable;	
 };
 
+//returned by HandleSendUserspace. Converts the user buffer and size into a struct the ToolchainGenericDS library understands.
+struct frameBlock{
+    uint8 * framebuffer;
+	sint32	frameSize;
+};
+
+//Handles DSWNIFI service
 extern struct dsnwifisrvStr dswifiSrv;
-extern client_http_handler client_http_handler_context;
   
 //GDB Stub part
-
 #define debuggerWriteMemory(addr, value) \
   *(u32*)addr = (value)
 
@@ -186,12 +183,10 @@ extern client_http_handler client_http_handler_context;
 
 #define GDBMapFileAddress (uint32)(0x0f000000)
 
-
 struct gdbStubMapFile {
 	int GDBMapFileSize;
 	FILE * GDBFileHandle;
 };
-
 
 #endif
 
