@@ -109,6 +109,9 @@ void NDS_IRQHandler(){
 		Timer3handlerUser();
 		REG_IF = IRQ_TIMER3;
 	}
+	if(REG_IE_SET & IRQ_IPCSYNC){
+		REG_IF = IRQ_IPCSYNC;
+	}
 	if(REG_IE_SET & IRQ_SENDFIFO_EMPTY){
 		HandleFifoEmpty();
 		REG_IF = IRQ_SENDFIFO_EMPTY;

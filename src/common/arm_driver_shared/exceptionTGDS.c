@@ -148,7 +148,7 @@ void exception_sysexit(){
 	#ifdef ARM7
 	SendFIFOWords(EXCEPTION_ARM7, unexpectedsysexit_7);
 	while(1){
-		IRQWait(1,IRQ_VBLANK);
+		IRQWait(IRQ_VBLANK);
 	}
 	#endif
 	

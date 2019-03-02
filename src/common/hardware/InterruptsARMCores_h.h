@@ -56,7 +56,7 @@ extern void DisableIrq(uint32 IRQ);
 extern void RemoveQueuedIrq(uint32 IRQ);
 extern void QueueIrq(uint32 IRQ); 
 extern void NDS_IRQHandler();
-extern void IRQWait(uint32 reentrant,uint32 irqstowait);
+extern void IRQWait(uint32 irqstowait);
 extern void IRQVBlankWait();
 extern void IRQInit();
 

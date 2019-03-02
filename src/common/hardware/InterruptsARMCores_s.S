@@ -16,15 +16,12 @@
 @USA
 @
 
-
 #ifdef ARM7
 .text
 #endif
-
 #ifdef ARM9
 .section .itcm,"ax",%progbits
 #endif
-
 .arm
 .code 32
 
@@ -33,71 +30,57 @@
 .global 	IRQWait
 .type   	IRQWait STT_FUNC
 IRQWait:
+	stmdb sp!, {r0-r4,lr}
 
-	stmdb sp!, {r0-r7, lr}
-	mov r3,r0
-
-	@r0 = IE/dummy / r1 = IRQtowaitfor / r2 = IF /r3 = reentrant / r4 = dummy/BIOSflags / r5 = IME saved / r6 = 0x04000000 /r7 = BIOSflags addr
-	mov r6,#0x04000000
-	ldr r5,[r6,#0x208]	@IME saved
-	mov r0,#1
-	str r0,[r6,#0x208]	@force IME = 1
+	@r0 = IRQtowaitfor / r1,r2 = IF/IE/temp / r3 = io / r4 = temp
+	mov r3,#0x04000000
 	
 waitirq:
-	add	r7, r6, #0x210
-	ldmia r7, {r0,r2}	@r0 = IE / r2 = IF
-	
+	add	r4, r3, #0x210
+	ldmia r4, {r1,r2}		@r1 = IE / r2 = IF
+	and r2,r2,r1			@ IF = IF & IE
+
 	@BIOS Flag
 	#ifdef ARM7
-	ldr	r7, =_arm7_irqcheckbits
+	ldr	r4, =_arm7_irqcheckbits
 	#endif
 	#ifdef ARM9
-	ldr	r7, =_arm9_irqcheckbits
+	ldr	r4, =_arm9_irqcheckbits
 	#endif
-	ldr r4,[r7]
-	
-	and r2,r2,r0			@IF & IE
+	ldr r4,[r4]
 	orr r2,r2,r4			@orr swi flags
 	
 	@sleep if interrupt to wait for (r1) hasnt happened.
-	tst r2,r1
+	tst r2,r0
 	
 	#ifdef ARM7
 	@4000301h - NDS7 - Halt function (HALTCNT) - Low Power Mode Control (R/W)
-	ldrne	r2, =0x04000301
-	movne 	r3,#(2<<6)			@2=Halt
-	strne 	r3,[r2]
+	ldrne	r1, =0x04000301
+	movne 	r2,#(2<<6)			@2=Halt
+	strne 	r2,[r1]
 	#endif
 	
 	#ifdef ARM9
 	@NDS9	-	Halt function	CP15
-	movne 	r0,#0
-	mcrne 	p15,0,r0,c7,c0,4				@low power mode: waitforIrq CP15
+	movne 	r1,#0
+	mcrne 	p15,0,r1,c7,c0,4				@low power mode: waitforIrq CP15
 	#endif
 	
 	bne waitirq		@retry until r1 happens
 	
-	orr r4,r4,r1	@add in bios flags
-	str r4,[r7]
-	
-	str r5,[r6,#0x208]	@restore IME
 exitirq:
-	ldmia sp!, {r0-r7, lr}
-	
-bx r14
+	ldmia sp!, {r0-r4,lr}
+bx lr
 
 @----------
-
 .global 	IRQVBlankWait
 .type   	IRQVBlankWait STT_FUNC
 IRQVBlankWait:
-	push {r0-r3,lr}
-	mov r0,#1
-	mov r1,#(1<<0)
+	push {r0,lr}
+	mov r0,#IRQ_VBLANK
 	bl IRQWait
-	pop {r0-r3,lr}
-bx r14
-
+	pop {r0,lr}
+bx lr
 
 .pool
 .end
