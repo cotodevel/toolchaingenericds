@@ -140,33 +140,35 @@ struct frameBlock FrameRecvBlock;	//used by the user receiver process, can be NU
 __attribute__((section(".itcm")))
 struct frameBlock * receiveDSWNIFIFrame(uint8 * databuf_src, int frameSizeRecv){
 	struct frameBlock * frameRecvInst =  NULL;
-	volatile uint16 crc16_recv_frame = 0;
-	int frame_hdr_size = 0;	//nifi raw only frame has this header
-	switch(getMULTIMode()){
-		case(dswifi_localnifimode):
-		{
-			frame_hdr_size = frame_header_size;	//localframe has this header
-			frameSizeRecv-=frame_hdr_size;
+	if(databuf_src != NULL){
+		volatile uint16 crc16_recv_frame = 0;
+		int frame_hdr_size = 0;	//nifi raw only frame has this header
+		switch(getMULTIMode()){
+			case(dswifi_localnifimode):
+			{
+				frame_hdr_size = frame_header_size;	//localframe has this header
+				frameSizeRecv-=frame_hdr_size;
+			}
+			break;
+			case(dswifi_udpnifimode):
+			{
+				frame_hdr_size = 0;					//udp nifi frame has not this header
+				frameSizeRecv-=frame_hdr_size;
+			}
 		}
-		break;
-		case(dswifi_udpnifimode):
-		{
-			frame_hdr_size = 0;					//udp nifi frame has not this header
-			frameSizeRecv-=frame_hdr_size;
+		crc16_recv_frame = *(uint16*)(databuf_src + frameSizeRecv - (int)sizeof(volatile uint16));
+		volatile uint16 crc16_frame_gen = swiCRC16	(	
+			0xffff, //uint16 	crc,
+			(databuf_src),
+			(frameSizeRecv - (int)sizeof(volatile uint16))
+		);
+		
+		//crc-valid dswnifi_frame?
+		if(crc16_frame_gen == crc16_recv_frame){
+			frameRecvInst = (struct frameBlock *)&FrameRecvBlock;
+			frameRecvInst->framebuffer = databuf_src;
+			frameRecvInst->frameSize = frameSizeRecv;
 		}
-	}
-	crc16_recv_frame = *(uint16*)(databuf_src + frameSizeRecv - (int)sizeof(volatile uint16));
-	volatile uint16 crc16_frame_gen = swiCRC16	(	
-		0xffff, //uint16 	crc,
-		(databuf_src),
-		(frameSizeRecv - (int)sizeof(volatile uint16))
-	);
-	
-	//crc-valid dswnifi_frame?
-	if(crc16_frame_gen == crc16_recv_frame){
-		frameRecvInst = (struct frameBlock *)&FrameRecvBlock;
-		frameRecvInst->framebuffer = databuf_src;
-		frameRecvInst->frameSize = frameSizeRecv;
 	}
 	return frameRecvInst;
 }
