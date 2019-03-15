@@ -199,7 +199,7 @@ extern bool setLFN(char* filename);
 extern int CurrentFileDirEntry;
 extern int LastFileEntry;
 extern int LastDirEntry;
-extern FILINFO getFileFILINFOfromFileClass(struct FileClass * fileInst);
+extern bool getFileFILINFOfromFileClass(struct FileClass * fileInst, FILINFO * finfo);
 extern struct FileClass getFileClassFromPath(char * path);
 extern void InitGlobalFileClass();
 extern struct FileClass * getFirstDirEntryFromList();

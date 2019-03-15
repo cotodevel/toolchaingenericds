@@ -624,7 +624,7 @@ struct frameBlock * HandleSendUserspace(uint8 * databuf_src, int bufsize){
 	if(!databuf_src){
 		return NULL;
 	}
-	if((bufsize - sizeof(volatile uint16)) <= 0){
+	if( (bufsize - (int)sizeof(volatile uint16)) <= 0){
 		return NULL;
 	}
 	bufsize -= sizeof(volatile uint16);
@@ -707,63 +707,55 @@ int remoteTcpRecv(char *data, int len)
 
 bool remoteTcpInit()
 {
+	if(remoteSocket == -1) {
+		int s = socket(PF_INET, SOCK_STREAM, 0);
+		remoteListenSocket = s;
+		if(s < 0) {
+			printf("Error opening socket ");
+			while(1==1){}
+		}
+		int tmp = 1;
+		setsockopt (s, SOL_SOCKET, SO_REUSEADDR, (char *) &tmp, sizeof (tmp));
+	
+		//    char hostname[MAX_TGDSFILENAME_LENGTH+1];
+		//    gethostname(hostname, MAX_TGDSFILENAME_LENGTH+1);
 
-if(remoteSocket == -1) {
-    int s = socket(PF_INET, SOCK_STREAM, 0);
-    remoteListenSocket = s;
-	if(s < 0) {
-		printf("Error opening socket ");
-		while(1==1){}
+		//    hostent *ent = gethostbyname(hostname);
+		//    unsigned long a = *((unsigned long *)ent->h_addr);
+
+		struct sockaddr_in addr;
+		addr.sin_family = AF_INET;
+		addr.sin_port = htons(remotePort);
+		addr.sin_addr.s_addr = htonl(0);
+		
+		if(bind(s, (struct sockaddr *)&addr, sizeof(addr))) {
+			addr.sin_port = htons(ntohs(addr.sin_port)+1);
+		}
+		
+		//printf("Listening for a connection at port %d ",ntohs(addr.sin_port));
+		if(listen(s, 1)) {
+			printf("Error listening ");
+			while(1==1){}
+		}
+		int len = sizeof(addr);	//socklen_t
+
+		int s2 = accept(s, (struct sockaddr *)&addr, &len);
+		if(s2 > 0) {
+			//printf("Got a connection from %s %d ",inet_ntoa((in_addr)addr.sin_addr),ntohs(addr.sin_port));
+		}
+		
+		char dummy;
+		recv(s2, &dummy, 1, 0);
+		if(dummy != '+') {
+			//GDB Server: ACK NOT received
+		}else{
+			//GDB Server: ACK RECEIVED
+		}
+		
+		remoteSocket = s2;
+		//    close(s);
 	}
-    int tmp = 1;
-    setsockopt (s, SOL_SOCKET, SO_REUSEADDR, (char *) &tmp, sizeof (tmp));
-	
-    //    char hostname[MAX_TGDSFILENAME_LENGTH+1];
-    //    gethostname(hostname, MAX_TGDSFILENAME_LENGTH+1);
-
-    //    hostent *ent = gethostbyname(hostname);
-    //    unsigned long a = *((unsigned long *)ent->h_addr);
-
-    struct sockaddr_in addr;
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(remotePort);
-    addr.sin_addr.s_addr = htonl(0);
-    int count = 0;
-    while(count < 3) {
-      if(bind(s, (struct sockaddr *)&addr, sizeof(addr))) {
-        addr.sin_port = htons(ntohs(addr.sin_port)+1);
-      } else
-        break;
-    }
-    if(count == 3) {
-		//printf("Error binding ");
-		while(1==1){}
-    }
-
-    //printf("Listening for a connection at port %d ",ntohs(addr.sin_port));
-    if(listen(s, 1)) {
-		printf("Error listening ");
-		while(1==1){}
-    }
-    int len = sizeof(addr);	//socklen_t
-
-    int s2 = accept(s, (struct sockaddr *)&addr, &len);
-    if(s2 > 0) {
-		//printf("Got a connection from %s %d ",inet_ntoa((in_addr)addr.sin_addr),ntohs(addr.sin_port));
-    }
-	
-    char dummy;
-    recv(s2, &dummy, 1, 0);
-    if(dummy != '+') {
-		//GDB Server: ACK NOT received
-	}else{
-		//GDB Server: ACK RECEIVED
-	}
-	
-    remoteSocket = s2;
-    //    close(s);
-  }
-  return true;
+	return true;
 }
 
 void remoteTcpCleanUp()

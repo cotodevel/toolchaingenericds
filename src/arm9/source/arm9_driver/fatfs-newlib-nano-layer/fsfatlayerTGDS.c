@@ -285,7 +285,7 @@ BYTE posix2fsfatAttrib(int flags){
         {
             mode |= FA_CREATE_NEW;
         }
-        else if (flags & O_TRUNC)
+        else if ((flags & O_TRUNC) || (flags & O_CREAT))
         {
             mode |= FA_CREATE_ALWAYS;
         }
@@ -424,8 +424,10 @@ u8 FAT_GetFileAttributes (void){
 	u8	libfatAttributes = 0;
 	if(CurrentFileDirEntry > 0){
 		struct FileClass * fileInst = getFileClassFromList((CurrentFileDirEntry - 1));
-		FILINFO finfo = getFileFILINFOfromFileClass(fileInst);
-		libfatAttributes = (uint8)fsfat2libfatAttrib((int)finfo.fattrib);
+		FILINFO finfo; 
+		if(getFileFILINFOfromFileClass(fileInst, &finfo) == true){
+			libfatAttributes = (uint8)fsfat2libfatAttrib((int)finfo.fattrib);
+		}
 	}
 	return libfatAttributes;
 }
@@ -442,12 +444,14 @@ u8 FAT_SetFileAttributes (const char* filename, u8 attributes, u8 mask){
 		sizeToCopy = strlen(filename);
 	}
 	snprintf(fileInst.fd_namefullPath, sizeToCopy, "%s", filename);
-	FILINFO finfo = getFileFILINFOfromFileClass(&fileInst);
-	libfatAttributesIn = (uint8)fsfat2libfatAttrib((int)finfo.fattrib);
-	libfatAttributesOut = (libfatAttributesIn & ~(mask & 0x27)) | (attributes & 0x27);
-	int	NEWgccnewlibnano_to_fsfatAttributes = libfat2fsfatAttrib((int)libfatAttributesOut);
-	int NEWmask = libfat2fsfatAttrib((int)mask);
-	SetfsfatAttributesToFile((char*)filename, NEWgccnewlibnano_to_fsfatAttributes, NEWmask);
+	FILINFO finfo; 
+	if(getFileFILINFOfromFileClass(&fileInst, &finfo) == true){	
+		libfatAttributesIn = (uint8)fsfat2libfatAttrib((int)finfo.fattrib);
+		libfatAttributesOut = (libfatAttributesIn & ~(mask & 0x27)) | (attributes & 0x27);
+		int	NEWgccnewlibnano_to_fsfatAttributes = libfat2fsfatAttrib((int)libfatAttributesOut);
+		int NEWmask = libfat2fsfatAttrib((int)mask);
+		SetfsfatAttributesToFile((char*)filename, NEWgccnewlibnano_to_fsfatAttributes, NEWmask);
+	}
 	return libfatAttributesOut;
 }
 
@@ -528,20 +532,19 @@ void InitGlobalFileClass(){
 }
 
 //requires a previously generated struct fd *
-FILINFO getFileFILINFOfromFileClass(struct FileClass * fileInst){
-	FILINFO finfo;
-	FRESULT result;
+bool getFileFILINFOfromFileClass(struct FileClass * fileInst, FILINFO * finfo){
 	if(fileInst){
-		result = f_stat((const TCHAR*)fileInst->fd_namefullPath, &finfo);					/* Get file status */
+		FRESULT result = f_stat((const TCHAR*)fileInst->fd_namefullPath, finfo);					/* Get file status */
 		if (result == FR_OK)
 		{
 			//stat ok
+			return true;
 		}
 		else{
 			//stat error
 		}
 	}
-	return finfo;
+	return false;
 }
 
 //Note: Requires a fresh call to buildFileClassListFromPath prior to calling this
@@ -676,31 +679,33 @@ bool FAT_GetAlias(char* alias){
 	if(CurEntry == structfd_posixInvalidFileDirHandle){
 		return false;
 	}
-	struct FileClass * fileInst = getFileClassFromList(CurrentFileDirEntry);	//assign a FileClass to the StructFD generated before
-	FILINFO FILINFOObj = getFileFILINFOfromFileClass(fileInst);			//actually open the file and check attributes (rather than read dir contents)
-	if (	 
-	(	//file
-	(FILINFOObj.fattrib & AM_RDO)
-	||
-	(FILINFOObj.fattrib & AM_HID)
-	||
-	(FILINFOObj.fattrib & AM_SYS)
-	||
-	(FILINFOObj.fattrib & AM_DIR)
-	||
-	(FILINFOObj.fattrib & AM_ARC)
-	)
-	||	//dir
-	(FILINFOObj.fattrib & AM_DIR)
-	)
-	{
-		strcpy((char*)alias,(const char *)fileInst->fd_namefullPath);	//update source path using short file/directory name				
-	}
-	//not file or dir
-	else{
-		return false;
-	}
 	
+	struct FileClass * fileInst = getFileClassFromList(CurrentFileDirEntry);	//assign a FileClass to the StructFD generated before
+	FILINFO finfo;
+	if(getFileFILINFOfromFileClass(fileInst, &finfo) == true){			//actually open the file and check attributes (rather than read dir contents)
+		if (	 
+		(	//file
+		(finfo.fattrib & AM_RDO)
+		||
+		(finfo.fattrib & AM_HID)
+		||
+		(finfo.fattrib & AM_SYS)
+		||
+		(finfo.fattrib & AM_DIR)
+		||
+		(finfo.fattrib & AM_ARC)
+		)
+		||	//dir
+		(finfo.fattrib & AM_DIR)
+		)
+		{
+			strcpy((char*)alias,(const char *)fileInst->fd_namefullPath);	//update source path using short file/directory name				
+		}
+		//not file or dir
+		else{
+			return false;
+		}
+	}
 	return true;
 }
 
@@ -748,31 +753,31 @@ bool FAT_GetLongFilename(char* Longfilename){
 		return false;
 	}
 	struct FileClass * fileInst = getFileClassFromList(CurEntry);	//assign a FileClass to the StructFD generated before
-	FILINFO FILINFOObj = getFileFILINFOfromFileClass(fileInst);			//actually open the file and check attributes (rather than read dir contents)
-	
-	if (	 
-	(	//file
-	(FILINFOObj.fattrib & AM_RDO)
-	||
-	(FILINFOObj.fattrib & AM_HID)
-	||
-	(FILINFOObj.fattrib & AM_SYS)
-	||
-	(FILINFOObj.fattrib & AM_DIR)
-	||
-	(FILINFOObj.fattrib & AM_ARC)
-	)
-	||	//dir
-	(FILINFOObj.fattrib & AM_DIR)
-	)
-	{
-		strcpy ((char*)Longfilename, (const char *)fileInst->fd_namefullPath);	//update source path using Long file/directory name
+	FILINFO finfo;
+	if(getFileFILINFOfromFileClass(fileInst, &finfo) == true){			//actually open the file and check attributes (rather than read dir contents)
+		if (	 
+		(	//file
+		(finfo.fattrib & AM_RDO)
+		||
+		(finfo.fattrib & AM_HID)
+		||
+		(finfo.fattrib & AM_SYS)
+		||
+		(finfo.fattrib & AM_DIR)
+		||
+		(finfo.fattrib & AM_ARC)
+		)
+		||	//dir
+		(finfo.fattrib & AM_DIR)
+		)
+		{
+			strcpy ((char*)Longfilename, (const char *)fileInst->fd_namefullPath);	//update source path using Long file/directory name
+		}
+		//not file or dir
+		else{
+			return false;
+		}
 	}
-	//not file or dir
-	else{
-		return false;
-	}
-	
 	return true;
 }
 
@@ -785,21 +790,22 @@ u32 return OUT: the file size
 u32 FAT_GetFileSize(void){
 	u32 fileSize = 0;
 	struct FileClass * fileInst = getFileClassFromList(LastFileEntry);	//assign a FileClass to the StructFD generated before
-	FILINFO FILINFOObj = getFileFILINFOfromFileClass(fileInst);			//actually open the file and check attributes (rather than read dir contents)
-	
-	if (//file
-	(FILINFOObj.fattrib & AM_RDO)
-	||
-	(FILINFOObj.fattrib & AM_HID)
-	||
-	(FILINFOObj.fattrib & AM_SYS)
-	||
-	(FILINFOObj.fattrib & AM_DIR)
-	||
-	(FILINFOObj.fattrib & AM_ARC)
-	)
-	{
-		fileSize = (u32)FILINFOObj.fsize;
+	FILINFO finfo; 
+	if(getFileFILINFOfromFileClass(fileInst, &finfo) == true){			//actually open the file and check attributes (rather than read dir contents)	
+		if (//file
+		(finfo.fattrib & AM_RDO)
+		||
+		(finfo.fattrib & AM_HID)
+		||
+		(finfo.fattrib & AM_SYS)
+		||
+		(finfo.fattrib & AM_DIR)
+		||
+		(finfo.fattrib & AM_ARC)
+		)
+		{
+			fileSize = (u32)finfo.fsize;
+		}
 	}
 	return 	fileSize;
 }
@@ -944,7 +950,7 @@ struct packedFDRet fatfs_free(struct fd *pfd){
 		}
 		
 		//clean filename
-		sprintf((char*)&pfd->fd_name[0],"%s",(uint32*)&devoptab_stub.name[0]);
+		sprintf((char*)&pfd->fd_name[0],"%s",(char*)&devoptab_stub.name[0]);
     }
 	else{
 		//file_free failed
@@ -1183,14 +1189,18 @@ int fatfs_open_file(const sint8 *pathname, int flags, const FILINFO *fno){
 	struct fd * fdinst = fd_struct_get(structfdIndex);	//fd_struct_get requires struct fd index
 	if (structfdIndex != structfd_posixInvalidFileDirHandle){
 		FILINFO fno_after;
-        mode = posix2fsfatAttrib(flags);
-        result = f_open(fdinst->filPtr, pathname, mode);	/* Opens an existing file. If not exist, creates a new file. */
-		if (result == FR_OK){
-			//create file successfuly before trying to stat it
-			if(flags & O_CREAT){
-				f_close(fdinst->filPtr);
-				result = f_open(fdinst->filPtr, pathname, mode);
+        if(flags & O_CREAT){
+			result = f_unlink(pathname);
+			if (result == FR_OK){
+				//file was deleted
 			}
+			else{
+				//file doesn´t exist
+			}
+		}
+		mode = posix2fsfatAttrib(flags);
+		result = f_open(fdinst->filPtr, pathname, mode);	/* Opens an existing file. If not exist, creates a new file. */
+		if (result == FR_OK){		
 			result = f_stat(pathname, &fno_after);
 			fno = &fno_after;			
 			if (result == FR_OK){
@@ -1325,7 +1335,7 @@ off_t fatfs_lseek(int fd, off_t offset, int whence){	//(FileDescriptor :struct f
 			case(SEEK_CUR):{
 				pos = f_tell(filp);
 				pos += offset;
-				if(pos < 0){
+				if((int)pos < 0){
 					pos = 0;
 				}
 				if(pos >= topFile){
