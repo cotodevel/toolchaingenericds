@@ -26,23 +26,23 @@ USA
 #include "dsregs_asm.h"
 
 
-#define		DMAINCR_DEST	(uint32)(0<<(16+5))
+#define		DMAINCR_DEST	(uint32)(0<<(16+5))	//aka DMA_DST_INC
 #define		DMADECR_DEST	(uint32)(1<<(16+5))
 #define		DMAFIXED_DEST	(uint32)(2<<(16+5))
 
-#define		DMAINCR_SRC		(uint32)(0<<(16+7))
+#define		DMAINCR_SRC		(uint32)(0<<(16+7))	//aka DMA_SRC_INC
 #define		DMADECR_SRC		(uint32)(1<<(16+7))
-#define		DMAFIXED_SRC	(uint32)(2<<(16+7))
+#define		DMAFIXED_SRC	(uint32)(2<<(16+7))	//aka DMA_SRC_FIX
 
-#define 	DMA16BIT   	(uint32)(0<<(16+10))
-#define 	DMA32BIT   	(uint32)(1<<(16+10))
+#define 	DMA16BIT   	(uint32)(0<<(16+10))	//aka DMA_16_BIT
+#define 	DMA32BIT   	(uint32)(1<<(16+10))	//aka DMA_32_BIT
 
-#define		DMASTART_INMEDIATE	(uint32)(0<<(16+12))
+#define		DMASTART_INMEDIATE	(uint32)(0<<(16+12))	//aka DMA_START_NOW
 #define		DMASTART_VBLANK		(uint32)(1<<(16+12))
 #define		DMASTART_HBLANK		(uint32)(2<<(16+12))
 #define		DMASTART_SPECIAL	(uint32)(3<<(16+12))
 
-#define		DMAENABLED	(uint32)(1<<(16+15))	//DMAs disable itself when transfer done
+#define		DMAENABLED	(uint32)(1<<(16+15))	//DMAs disable itself when transfer done	//aka DMA_BUSY	//aka DMA_ENABLE
 
 #define 	DMARAISEIRQ     (uint32)(1<<(16+14))	//DMAs will raise a DMA IRQ when Word Count fed (transfer) is complete
 

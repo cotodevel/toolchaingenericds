@@ -83,9 +83,19 @@ USA
 #define REG_DISPSTAT	DISPSTAT
 #define REG_DISPCNT		DISPCNT
 #define REG_DISPCNT_SUB		DISPCNT2
+
+//NDS ARM7 Power Controller management differs from NDS ARM9 Power Controller management 
 #define REG_POWERCNT 	(*(vuint16*)0x4000304)
 #define REG_POWERCNT_ADDR	(uint32)(0x04000304)
 #define POWER_CR REG_POWERCNT
+
+#define POWERCNT_WIFI 		(uint16)(1<<1)
+
+//misc bits
+#define IPC_LID_CLOSED 	(1<<7)
+#define IPC_PEN_DOWN 	(1<<6)
+////////////
+
 
 #define REG_VCOUNT	VCOUNT
 #define		CART		((uint16 *) 0x08000000)

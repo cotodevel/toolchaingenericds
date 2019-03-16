@@ -27,7 +27,10 @@ USA
 #include <string.h>
 #include <stdint.h>
 
-#define COPY_FIXED_SOURCE (uint32)(1<<24)
+#define COPY_FIXED_SOURCE (uint32)(1<<24)	//aka COPY_MODE_FILL
+#define COPY_SRCDEST_DMA (uint32)(0)	//aka COPY_MODE_COPY
+
+
 #define swiDelay1ms (sint32)(8388)
 
 #endif

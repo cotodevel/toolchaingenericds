@@ -89,13 +89,25 @@ USA
 #define FIFO_IPC_ERROR	(uint32)(1<<14)	
 #define FIFO_IPC_ENABLE	(uint32)(1<<15)
 
-//fifo 
+//IPC fifo bits
 #define REG_IPC_FIFO_TX		(*(vuint32*)0x4000188)
 #define REG_IPC_FIFO_RX		(*(vuint32*)0x4100000)
 #define REG_IPC_FIFO_CR		(*(vuint16*)0x4000184)
 
-//ipc fifo sync
 #define REG_IPC_SYNC	(*(vuint16*)0x04000180)
+
+#define IPC_SYNC_IRQ_ENABLE		(uint16)(1<<14)
+#define IPC_SYNC_IRQ_REQUEST	(uint16)(1<<13)
+#define IPC_FIFO_SEND_EMPTY		(uint16)(1<<0)
+#define IPC_FIFO_SEND_FULL		(uint16)(1<<1)
+#define IPC_FIFO_SEND_IRQ		(uint16)(1<<2)
+#define IPC_FIFO_SEND_CLEAR		(uint16)(1<<3)
+#define IPC_FIFO_RECV_EMPTY		(uint16)(1<<8)
+#define IPC_FIFO_RECV_FULL		(uint16)(1<<9)
+#define IPC_FIFO_RECV_IRQ		(uint16)(1<<10)
+#define IPC_FIFO_ERROR			(uint16)(1<<14)
+#define IPC_FIFO_ENABLE			(uint16)(1<<15)
+
 
 //notifierProcessor FIFO bits
 #define notifierProcessorRunThread	(uint32)(0xffff1020)				//set a thread to Run
