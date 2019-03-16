@@ -51,7 +51,7 @@ extern int swiRemainder(int numerator, int divisor);
 extern void swiDivMod(int numerator, int divisor, int * result, int * remainder);
 extern void swiCopy(const void * source, void * dest, int flags);
 extern int swiSqrt(int value);
-
+extern void swiSoftReset(void);
 
 //NDS7 Bios 
 #ifdef ARM7
@@ -62,9 +62,6 @@ extern uint8 swiGetVolumeTable(int index);
 extern void swiSetHaltCR(uint32 data);
 extern void swiChangeSoundBias(int enabled, int delay);
 #endif
-
-
-
 
 //C
 extern void swiFastCopy(uint32 * source, uint32 * dest, int flags);
