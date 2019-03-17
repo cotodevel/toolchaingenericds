@@ -74,7 +74,7 @@ USA
 #endif
 
 //up to N items to be listed by TGDS High level API functions
-#define FileClassItems (int)(60)
+#define FileClassItems (int)(300)
 
 //Directory Separator used by TGDS FS
 #define TGDSDirectorySeparator ((char*)("/"))
@@ -206,7 +206,7 @@ extern struct FileClass * getFirstDirEntryFromList();
 extern struct FileClass * getFirstFileEntryFromList();
 extern struct FileClass * getFileClassFromList(int FileClassListIndex);
 extern void setFileClass(bool iterable, char * fullPath, int FileClassListIndex, int Typ, int StructFD);
-extern volatile struct FileClass FileClassList[FileClassItems];
+extern uint8* FileClassListPtr;
 extern bool TGDSFS_detectUnicode(struct fd *pfd);
 extern bool TGDSFS_GetStructFDUnicode(struct fd *pfd);
 extern void TGDSFS_SetStructFDUnicode(struct fd *pfd, bool unicode);

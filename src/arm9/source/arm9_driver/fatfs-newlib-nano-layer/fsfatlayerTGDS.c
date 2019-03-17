@@ -476,10 +476,10 @@ bool getLFN(char* filename){
 	return true;
 }
 
-volatile struct FileClass FileClassList[FileClassItems];
+uint8* FileClassListPtr = NULL;
 
 void setFileClass(bool iterable, char * fullPath, int FileClassListIndex, int Typ, int structFD){
-	struct FileClass * FileClassInst = (struct FileClass *)&FileClassList[FileClassListIndex];
+	struct FileClass * FileClassInst = (struct FileClass *)&FileClassListPtr[FileClassListIndex*sizeof(struct FileClass)];
 	FileClassInst->isIterable = iterable;
 	strcpy(FileClassInst->fd_namefullPath, (const char *)fullPath);
 	FileClassInst->type = Typ;
@@ -487,7 +487,7 @@ void setFileClass(bool iterable, char * fullPath, int FileClassListIndex, int Ty
 }
 
 struct FileClass * getFileClassFromList(int FileClassListIndex){
-	return (struct FileClass *)&FileClassList[FileClassListIndex];
+	return (struct FileClass *)&FileClassListPtr[FileClassListIndex*sizeof(struct FileClass)];
 }
 
 //path can be either Directory or File, a proper FileClass will be returned.
@@ -582,11 +582,18 @@ int CurrentFileDirEntry = 0;
 //These update on getFirstFile/Dir getNextFile/Dir
 int LastFileEntry = 0;
 int LastDirEntry = 0;
+static bool fsfatFileClassInited = false;
 
 //return:  FT_DIR or FT_FILE: use getLFN(char buf[MAX_TGDSFILENAME_LENGTH+1]); to receive full first file
 //			or FT_NONE if invalid file
 int getFirstFile(char * path){
-
+	
+	//Just run once... and run only when using specific fsfatlayerTGDS fileClass functionality
+	if(fsfatFileClassInited == false){
+		FileClassListPtr = malloc(sizeof(struct FileClass)*FileClassItems);
+		fsfatFileClassInited = true;
+	}
+	
 	//path will have the current working directory the FileClass was built around. getFirstFile builds everything, and getNextFile iterates over each file until there are no more.
 	if(buildFileClassListFromPath(path) == true){
 		CurrentFileDirEntry = 0;
