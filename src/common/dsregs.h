@@ -92,8 +92,11 @@ USA
 #define POWERCNT_WIFI 		(uint16)(1<<1)
 
 //misc bits
-#define IPC_LID_CLOSED 	(1<<7)
-#define IPC_PEN_DOWN 	(1<<6)
+#define IPC_PEN_DOWN 	(1 << 6)
+#define IPC_X 			(1 << 0)
+#define IPC_Y 			(1 << 1)
+#define IPC_LID_CLOSED 	(1 << 7)
+
 ////////////
 
 
@@ -305,7 +308,9 @@ USA
 #define BG_BMP16_256x256  ((1 << 14) | (1 << 7) | (1 << 2))
 #define BG_BMP16_512x256  ((2 << 14) | (1 << 7) | (1 << 2))
 #define BG_BMP16_512x512  ((3 << 14) | (1 << 7) | (1 << 2))
-#define BG_MOSAIC_ON   ((1 << 6))
+#define BG_256_COLOR   	(1 << 7)
+#define BG_16_COLOR   	(0)
+#define BG_MOSAIC_ON   (1 << 6)
 #define BG_MOSAIC_OFF  (0)
 #define BG_PRIORITY_0  (0)
 #define BG_PRIORITY_1  (1)
