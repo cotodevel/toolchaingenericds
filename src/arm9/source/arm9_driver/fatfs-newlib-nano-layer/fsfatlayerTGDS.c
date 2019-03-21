@@ -378,8 +378,8 @@ bool isStructFDOutOfBoundsCluster(struct fd *fdinst, int curCluster){
 	FILE * fh = fdopen(fdinst->cur_entry.d_ino, "r");
 	int filePos = ftell(fh);
 	fseek(fh, 0, SEEK_END);
-	int size = ftell(f);
-	fseek(fh, filePos, SEEK_SET );
+	int size = ftell(fh);
+	fseek(fh, filePos, SEEK_SET);
 	int clustCnt = (int)size/getDiskClusterSizeBytes();
 	if(getStructFDNextCluster(fdinst, curCluster) > clustCnt){
 		return true;
