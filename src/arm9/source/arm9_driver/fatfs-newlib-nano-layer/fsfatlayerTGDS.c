@@ -910,6 +910,18 @@ bool FAT_FreeFiles (void)
 	return (bool)dldiGetInternal()->isInserted;
 }
 
+
+/*-----------------------------------------------------------------
+FAT_InitFiles
+Reads the FAT information from the CF card.
+You need to call this before reading any files.
+bool return OUT: true if successful.
+-----------------------------------------------------------------*/
+bool FAT_InitFiles (void)
+{
+	return true;	//TGDS assumes the card was already inited if you followed the TGDS Standard ARM9 Init code start
+}
+
 ///////////////////////////////////////////////////////TGDS FS API extension end. /////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
