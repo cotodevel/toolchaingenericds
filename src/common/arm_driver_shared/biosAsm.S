@@ -198,6 +198,19 @@ REG_IME = 0;
 	bx	r0
 
 
+@void swiDecompressLZSSWram(void * source, void * destination);
+.global 	swiDecompressLZSSWram
+.type   	swiDecompressLZSSWram STT_FUNC
+swiDecompressLZSSWram:
+	swi	0x110000
+	bx	lr
+
+@int swiDecompressLZSSVram(void * source, void * destination, uint32 toGetSize, TDecompressionStream * stream);
+.global 	swiDecompressLZSSVram
+.type   	swiDecompressLZSSVram STT_FUNC
+swiDecompressLZSSVram:
+	swi	0x120000
+	bx	lr
 
 .pool
 .end

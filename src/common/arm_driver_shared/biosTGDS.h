@@ -33,6 +33,13 @@ USA
 
 #define swiDelay1ms (sint32)(8388)
 
+
+struct DecompressionStream {
+	int (*getSize)(uint8 * source, uint16 * dest, uint32 r2);
+	int (*getResult)(uint8 * source); // can be NULL
+	uint8 (*readByte)(uint8 * source);
+};
+
 #endif
 
 #ifdef __cplusplus
@@ -62,6 +69,9 @@ extern uint8 swiGetVolumeTable(int index);
 extern void swiSetHaltCR(uint32 data);
 extern void swiChangeSoundBias(int enabled, int delay);
 #endif
+
+extern void swiDecompressLZSSWram(void * source, void * destination);
+extern int swiDecompressLZSSVram(void * source, void * destination, uint32 toGetSize, struct DecompressionStream * stream);
 
 //C
 extern void swiFastCopy(uint32 * source, uint32 * dest, int flags);
