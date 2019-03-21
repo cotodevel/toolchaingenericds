@@ -355,6 +355,24 @@ sint32	getStructFDFirstCluster(struct fd *fdinst){
 	return structfd_posixInvalidFileDirHandle;
 }
 
+
+sint32	getStructFDNextCluster(struct fd *fdinst, int startCluster){
+	if(fdinst){
+		if( (int)fdinst->filPtr->fptr == (int)0 ){
+			return (int)(fdinst->filPtr->obj.sclust + startCluster + 1);
+		}
+		else{
+			if(fdinst->filPtr){
+				return (int)getStructFDFirstCluster(fdinst) + startCluster + 1;
+			}
+			else{
+				return structfd_posixInvalidFileDirHandle;
+			}
+		}
+	}
+	return structfd_posixInvalidFileDirHandle;
+}
+
 //args: int ClusterOffset (1) : int SectorOffset (N). = 1 physical sector in disk. Each sector is getDiskSectorSize() bytes. Cluster 0 + Sector 0 == Begin of FileHandle
 //returns structfd_posixInvalidFileDirHandle if : file not open, directory or fsfat error
 sint32 getStructFDSectorOffset(struct fd *fdinst,int ClusterOffset,int SectorOffset){	//	struct File Descriptor (FILE * open through fopen() -> then converted to int32 from fileno())
