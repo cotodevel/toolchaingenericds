@@ -373,14 +373,14 @@ sint32	getStructFDNextCluster(struct fd *fdinst, int startCluster){
 	return structfd_posixInvalidFileDirHandle;
 }
 
-//required so cluster iteration gives real file range
+//Cluster count is generated from a file range
 bool isStructFDOutOfBoundsCluster(struct fd *fdinst, int curCluster){
 	FILE * fh = fdopen(fdinst->cur_entry.d_ino, "r");
-	int filePos = ftell(fh);
+	int filePos = ftell(fh);	//save cur FilePos
 	fseek(fh, 0, SEEK_END);
-	int size = ftell(fh);
+	int FileSize = ftell(fh);
 	fseek(fh, filePos, SEEK_SET);
-	int clustCnt = (int)size/getDiskClusterSizeBytes();
+	int clustCnt = (int)FileSize/getDiskClusterSizeBytes();
 	if(getStructFDNextCluster(fdinst, curCluster) > clustCnt){
 		return true;
 	}
