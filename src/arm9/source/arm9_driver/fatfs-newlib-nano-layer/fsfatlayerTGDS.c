@@ -858,6 +858,26 @@ FILE_TYPE return: OUT returns FT_NONE if there is now file with
 int FAT_FileExists(char* filename){
 	return FileExists(filename);	//assign a StructFD inside
 }
+
+
+
+/*-----------------------------------------------------------------
+FAT_FreeFiles
+Closes all open files then resets the CF card.
+Call this before exiting back to the GBAMP
+bool return OUT: true if successful.
+-----------------------------------------------------------------*/
+bool FAT_FreeFiles (void)
+{
+	char * devoptabFSName = (char*)"0:/";
+	initTGDS(devoptabFSName);
+	if(FileClassListPtr != NULL){
+		free(FileClassListPtr);
+	}
+	// Return status of card
+	return (bool)dldiGetInternal()->isInserted;
+}
+
 ///////////////////////////////////////////////////////TGDS FS API extension end. /////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

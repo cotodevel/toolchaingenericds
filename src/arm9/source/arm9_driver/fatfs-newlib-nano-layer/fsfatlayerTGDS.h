@@ -192,6 +192,7 @@ extern u32 FAT_GetFileCluster(void);
 extern bool disableWriting;
 extern void FAT_DisableWriting (void);
 extern int FAT_FileExists(char* filename);
+extern bool FAT_FreeFiles (void);
 extern int getFirstFile(char * path);
 extern int getNextFile(char * path);
 extern bool getLFN(char* filename);
