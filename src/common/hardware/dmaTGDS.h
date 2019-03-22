@@ -34,8 +34,11 @@ USA
 #define		DMADECR_SRC		(uint32)(1<<(16+7))
 #define		DMAFIXED_SRC	(uint32)(2<<(16+7))	//aka DMA_SRC_FIX
 
-#define 	DMA16BIT   	(uint32)(0<<(16+10))	//aka DMA_16_BIT
-#define 	DMA32BIT   	(uint32)(1<<(16+10))	//aka DMA_32_BIT
+#define 	DMA16BIT   	(uint32)(0 << 26)	//aka DMA_16_BIT or COPY_MODE_HWORD
+#define 	DMA32BIT   	(uint32)(1 << 26)	//aka DMA_32_BIT or COPY_MODE_WORD 
+
+#define 	COPY_FIXED_SOURCE (uint32)(1<<24)	//aka COPY_MODE_FILL
+#define 	COPY_SRCDEST_DMA (uint32)(0)		//aka COPY_MODE_COPY
 
 #define		DMASTART_INMEDIATE	(uint32)(0<<(16+12))	//aka DMA_START_NOW
 #define		DMASTART_VBLANK		(uint32)(1<<(16+12))
