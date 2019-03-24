@@ -29,7 +29,6 @@ USA
 
 
 #define VRAM_ENABLE		(uint8)(1<<7)
-#define VRAM_OFFSET(n)	(uint8)((n)<<3)
 
 #define VRAM_MAX_LETTER_INDEX	(sint32)(9)
 
@@ -80,31 +79,32 @@ typedef struct vramSetup
 #define VRAM_H_LCDC_MODE 	(uint8)(0)
 #define VRAM_I_LCDC_MODE 	(uint8)(0)
 
+//note: ENGINE_A == "MAIN BG ENGINE" , ENGINE_B "SUB BG ENGINE"
 //VRAM Setup 1: //MST 1
 //ARM9, 2D Graphics Engine A, BG-VRAM (max 512K)
 //Vram A (128K)
-#define VRAM_A_0x06000000_ENGINE_A_BG 	(uint8)(1 | VRAM_OFFSET(0))	//OFS 0..3
-#define VRAM_A_0x06020000_ENGINE_A_BG 	(uint8)(1 | VRAM_OFFSET(1))
-#define VRAM_A_0x06040000_ENGINE_A_BG 	(uint8)(1 | VRAM_OFFSET(2))
-#define VRAM_A_0x06060000_ENGINE_A_BG 	(uint8)(1 | VRAM_OFFSET(3))
+#define VRAM_A_0x06000000_ENGINE_A_BG 	(uint8)(1 | (0 << 3))	//OFS 0..3
+#define VRAM_A_0x06020000_ENGINE_A_BG 	(uint8)(1 | (1 << 3))
+#define VRAM_A_0x06040000_ENGINE_A_BG 	(uint8)(1 | (2 << 3))
+#define VRAM_A_0x06060000_ENGINE_A_BG 	(uint8)(1 | (3 << 3))
 
 //Vram B (128K)
-#define VRAM_B_0x06000000_ENGINE_A_BG 	(uint8)(1 | VRAM_OFFSET(0))	//OFS 0..3
-#define VRAM_B_0x06020000_ENGINE_A_BG 	(uint8)(1 | VRAM_OFFSET(1))
-#define VRAM_B_0x06040000_ENGINE_A_BG 	(uint8)(1 | VRAM_OFFSET(2))
-#define VRAM_B_0x06060000_ENGINE_A_BG 	(uint8)(1 | VRAM_OFFSET(3))
+#define VRAM_B_0x06000000_ENGINE_A_BG 	(uint8)(1 | (0 << 3))	//OFS 0..3
+#define VRAM_B_0x06020000_ENGINE_A_BG 	(uint8)(1 | (1 << 3))
+#define VRAM_B_0x06040000_ENGINE_A_BG 	(uint8)(1 | (2 << 3))
+#define VRAM_B_0x06060000_ENGINE_A_BG 	(uint8)(1 | (3 << 3))
 
 //Vram C (128K)
-#define VRAM_C_0x06000000_ENGINE_A_BG 	(uint8)(1 | VRAM_OFFSET(0))	//OFS 0..3
-#define VRAM_C_0x06020000_ENGINE_A_BG 	(uint8)(1 | VRAM_OFFSET(1))
-#define VRAM_C_0x06040000_ENGINE_A_BG 	(uint8)(1 | VRAM_OFFSET(2))
-#define VRAM_C_0x06060000_ENGINE_A_BG 	(uint8)(1 | VRAM_OFFSET(3))
+#define VRAM_C_0x06000000_ENGINE_A_BG 	(uint8)(1 | (0 << 3))	//OFS 0..3
+#define VRAM_C_0x06020000_ENGINE_A_BG 	(uint8)(1 | (1 << 3))
+#define VRAM_C_0x06040000_ENGINE_A_BG 	(uint8)(1 | (2 << 3))
+#define VRAM_C_0x06060000_ENGINE_A_BG 	(uint8)(1 | (3 << 3))
 
 //Vram D (128K)
-#define VRAM_D_0x06000000_ENGINE_A_BG 	(uint8)(1 | VRAM_OFFSET(0))	//OFS 0..3
-#define VRAM_D_0x06020000_ENGINE_A_BG 	(uint8)(1 | VRAM_OFFSET(1))
-#define VRAM_D_0x06040000_ENGINE_A_BG 	(uint8)(1 | VRAM_OFFSET(2))
-#define VRAM_D_0x06060000_ENGINE_A_BG 	(uint8)(1 | VRAM_OFFSET(3))
+#define VRAM_D_0x06000000_ENGINE_A_BG 	(uint8)(1 | (0 << 3))	//OFS 0..3
+#define VRAM_D_0x06020000_ENGINE_A_BG 	(uint8)(1 | (1 << 3))
+#define VRAM_D_0x06040000_ENGINE_A_BG 	(uint8)(1 | (2 << 3))
+#define VRAM_D_0x06060000_ENGINE_A_BG 	(uint8)(1 | (3 << 3))
 
 //Vram E  64K   1    -     6000000h
 #define VRAM_E_0x06000000_ENGINE_A_BG 	(uint8)(1)		//static @ 0x06000000
@@ -121,11 +121,11 @@ typedef struct vramSetup
 
 //VRAM Setup 2: //MST 2
 //ARM9, 2D Graphics Engine A, OBJ-VRAM (max 256K) (OFS 0..1)
-#define VRAM_A_0x06400000_ENGINE_A_BG 	(uint8)(2 | VRAM_OFFSET(0))	//0x064(20000*OFS.0) (OFS.1 always zero)
-#define VRAM_A_0x06420000_ENGINE_A_BG 	(uint8)(2 | VRAM_OFFSET(1))	
+#define VRAM_A_0x06400000_ENGINE_A_BG 	(uint8)(2 | (0 << 3))	//0x064(20000*OFS.0) (OFS.1 always zero)
+#define VRAM_A_0x06420000_ENGINE_A_BG 	(uint8)(2 | (1 << 3))	
 
-#define VRAM_B_0x06400000_ENGINE_A_BG 	(uint8)(2 | VRAM_OFFSET(0))	//0x064(20000*OFS.0) (OFS.1 always zero)
-#define VRAM_B_0x06420000_ENGINE_A_BG 	(uint8)(2 | VRAM_OFFSET(1))	
+#define VRAM_B_0x06400000_ENGINE_A_BG 	(uint8)(2 | (0 << 3))	//0x064(20000*OFS.0) (OFS.1 always zero)
+#define VRAM_B_0x06420000_ENGINE_A_BG 	(uint8)(2 | (1 << 3))	
 
 //both can coexist through OFS 
 #define VRAM_E_0x06400000_ENGINE_A_BG 	(uint8)(2)	//static	: VRAM_E: Main Engine 0x06400000 64K MST 2
@@ -160,25 +160,30 @@ typedef struct vramSetup
 
 //VRAM Setup 7
 //Vram C (128K)
-#define VRAM_C_0x06200000_ENGINE_B_BG 	(uint8)(4 | VRAM_OFFSET(0))	//static
+#define VRAM_C_0x06200000_ENGINE_B_BG 	(uint8)(4 | (0 << 3))	//static
 
 //Vram H (32K)
-#define VRAM_H_0x06200000_ENGINE_B_BG 	(uint8)(1)	//6200000
+#define VRAM_H_0x06200000_ENGINE_B_BG 	(uint8)(1)	// //VRAM H: 32K 06200000h:  map ENGINE_B BG-VRAM, static.
 
 //Vram I (16K)
 #define VRAM_I_0x06208000_ENGINE_B_BG 	(uint8)(1)	//static. 
 
 
+//VRAM Setup 8
+#define VRAM_D_0x06600000_ENGINE_B_OBJVRAM 	(uint8)(4)	//VRAM D: 128K 06600000h: map ENGINE_B, OBJ-VRAM. static, no OFFSet.
+ 
+
 //VRAM Setup 11
 
 //Vram C,D     128K  2    0..1  6000000h+(20000h*OFS.0)  ;OFS.1 must be zero
-#define VRAM_C_0x06000000_ARM7 	(uint8)(2 | VRAM_OFFSET(0))	//static
-#define VRAM_C_0x06020000_ARM7 	(uint8)(2 | VRAM_OFFSET(1))	//static
+#define VRAM_C_0x06000000_ARM7 	(uint8)(2 | (0 << 3))	//static
+#define VRAM_C_0x06020000_ARM7 	(uint8)(2 | (1 << 3))	//static
 
-#define VRAM_D_0x06000000_ARM7 	(uint8)(2 | VRAM_OFFSET(0))	//static
-#define VRAM_D_0x06020000_ARM7 	(uint8)(2 | VRAM_OFFSET(1))	//static
+#define VRAM_D_0x06000000_ARM7 	(uint8)(2 | (0 << 3))	//static
+#define VRAM_D_0x06020000_ARM7 	(uint8)(2 | (1 << 3))	//static
 
-//todo VRAM setups 3-10, minus 7, minus 11, minus 3
+//todo other VRAM setups
+
 
 
 #endif
