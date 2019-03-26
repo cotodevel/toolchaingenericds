@@ -1928,8 +1928,10 @@ bool leaveDir(char* newDir){
     getLastDirFromPath(tempnewDir, TGDSDirectorySeparator, tempnewDiroutPath);
 	char * CurrentWorkingDirectory = (char*)&TGDSCurrentWorkingDirectory[0];
 	strcpy(CurrentWorkingDirectory, (const char *)tempnewDiroutPath);
-	chdir(CurrentWorkingDirectory);
-	return true;
+	if(chdir((char *)CurrentWorkingDirectory) == 0){
+		return true;
+	}
+	return false;
 }
 
 //Current iterator (FileClass from a directory). char * path : If a valid directory is passed, it will be used to populate the FileClassList. Otherwise the default Start Directory is used.
