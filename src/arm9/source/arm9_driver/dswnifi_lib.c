@@ -711,7 +711,7 @@ bool remoteTcpInit()
 		int s = socket(PF_INET, SOCK_STREAM, 0);
 		remoteListenSocket = s;
 		if(s < 0) {
-			printf("Error opening socket ");
+			//printf("Error opening socket ");
 			while(1==1){}
 		}
 		int tmp = 1;
@@ -734,7 +734,7 @@ bool remoteTcpInit()
 		
 		//printf("Listening for a connection at port %d ",ntohs(addr.sin_port));
 		if(listen(s, 1)) {
-			printf("Error listening ");
+			//printf("Error listening ");
 			while(1==1){}
 		}
 		int len = sizeof(addr);	//socklen_t

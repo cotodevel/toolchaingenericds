@@ -275,7 +275,7 @@ void HandleFifoNotEmpty(){
 				//Prevent Cache problems.
 				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 				coherent_user_range_by_size((uint32)printfBuf7, (int)sizeof(TGDSIPC->arm7PrintfBuf));
-				printf("ARM7:%s",printfBuf7);
+				//printf("ARM7:%s",printfBuf7);
 			}
 			break;
 			//IRQ_SCREENLID signal from ARM7
