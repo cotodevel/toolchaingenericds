@@ -112,35 +112,35 @@ void DISABLE_BG_SUB(int bg) {
 
 bool VRAM_SETUP(vramSetup * vramSetupInst){
 		
-		if(vramSetupInst->vramBankSetupInst[VRAM_A_INDEX].enabled == true){
-			VRAMBLOCK_SETBANK_A(vramSetupInst->vramBankSetupInst[VRAM_A_INDEX].vrambankCR);
-		}
-		if(vramSetupInst->vramBankSetupInst[VRAM_B_INDEX].enabled == true){
-			VRAMBLOCK_SETBANK_B(vramSetupInst->vramBankSetupInst[VRAM_B_INDEX].vrambankCR);
-		}
-		if(vramSetupInst->vramBankSetupInst[VRAM_C_INDEX].enabled == true){
-			VRAMBLOCK_SETBANK_C(vramSetupInst->vramBankSetupInst[VRAM_C_INDEX].vrambankCR);
-		}
-		if(vramSetupInst->vramBankSetupInst[VRAM_D_INDEX].enabled == true){
-			VRAMBLOCK_SETBANK_D(vramSetupInst->vramBankSetupInst[VRAM_D_INDEX].vrambankCR);
-		}
-		if(vramSetupInst->vramBankSetupInst[VRAM_E_INDEX].enabled == true){
-			VRAMBLOCK_SETBANK_E(vramSetupInst->vramBankSetupInst[VRAM_E_INDEX].vrambankCR);
-		}
-		if(vramSetupInst->vramBankSetupInst[VRAM_F_INDEX].enabled == true){
-			VRAMBLOCK_SETBANK_F(vramSetupInst->vramBankSetupInst[VRAM_F_INDEX].vrambankCR);
-		}
-		if(vramSetupInst->vramBankSetupInst[VRAM_G_INDEX].enabled == true){
-			VRAMBLOCK_SETBANK_G(vramSetupInst->vramBankSetupInst[VRAM_G_INDEX].vrambankCR);
-		}
-		if(vramSetupInst->vramBankSetupInst[VRAM_H_INDEX].enabled == true){
-			VRAMBLOCK_SETBANK_H(vramSetupInst->vramBankSetupInst[VRAM_H_INDEX].vrambankCR);
-		}
-		if(vramSetupInst->vramBankSetupInst[VRAM_I_INDEX].enabled == true){
-			VRAMBLOCK_SETBANK_I(vramSetupInst->vramBankSetupInst[VRAM_I_INDEX].vrambankCR);
-		}
-		
-		return true; 
+	if(vramSetupInst->vramBankSetupInst[VRAM_A_INDEX].enabled == true){
+		VRAMBLOCK_SETBANK_A(vramSetupInst->vramBankSetupInst[VRAM_A_INDEX].vrambankCR);
+	}
+	if(vramSetupInst->vramBankSetupInst[VRAM_B_INDEX].enabled == true){
+		VRAMBLOCK_SETBANK_B(vramSetupInst->vramBankSetupInst[VRAM_B_INDEX].vrambankCR);
+	}
+	if(vramSetupInst->vramBankSetupInst[VRAM_C_INDEX].enabled == true){
+		VRAMBLOCK_SETBANK_C(vramSetupInst->vramBankSetupInst[VRAM_C_INDEX].vrambankCR);
+	}
+	if(vramSetupInst->vramBankSetupInst[VRAM_D_INDEX].enabled == true){
+		VRAMBLOCK_SETBANK_D(vramSetupInst->vramBankSetupInst[VRAM_D_INDEX].vrambankCR);
+	}
+	if(vramSetupInst->vramBankSetupInst[VRAM_E_INDEX].enabled == true){
+		VRAMBLOCK_SETBANK_E(vramSetupInst->vramBankSetupInst[VRAM_E_INDEX].vrambankCR);
+	}
+	if(vramSetupInst->vramBankSetupInst[VRAM_F_INDEX].enabled == true){
+		VRAMBLOCK_SETBANK_F(vramSetupInst->vramBankSetupInst[VRAM_F_INDEX].vrambankCR);
+	}
+	if(vramSetupInst->vramBankSetupInst[VRAM_G_INDEX].enabled == true){
+		VRAMBLOCK_SETBANK_G(vramSetupInst->vramBankSetupInst[VRAM_G_INDEX].vrambankCR);
+	}
+	if(vramSetupInst->vramBankSetupInst[VRAM_H_INDEX].enabled == true){
+		VRAMBLOCK_SETBANK_H(vramSetupInst->vramBankSetupInst[VRAM_H_INDEX].vrambankCR);
+	}
+	if(vramSetupInst->vramBankSetupInst[VRAM_I_INDEX].enabled == true){
+		VRAMBLOCK_SETBANK_I(vramSetupInst->vramBankSetupInst[VRAM_I_INDEX].vrambankCR);
+	}
+	
+	return true; 
 }
 
 //Generic console (uses VRAM block C,VRAM block D for ARM7)
