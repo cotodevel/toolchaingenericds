@@ -424,8 +424,8 @@ typedef struct
 extern "C" {
 #endif
 
+extern bool global_project_specific_console;
 extern	t_GUI	GUI;
-
 extern ConsoleInstance DefaultConsole;	//default console
 extern ConsoleInstance CustomConsole;	//project specific
 extern ConsoleInstance * DefaultSessionConsole;

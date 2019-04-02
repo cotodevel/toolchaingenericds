@@ -33,12 +33,13 @@ USA
 #include "videoTGDS.h"
 #include "ipcfifoTGDS.h"
 
+bool global_project_specific_console = false;
+
 t_GUI GUI;
 volatile sint8	g_printfbuf[consolebuf_size];
 ConsoleInstance DefaultConsole = {0};		//generic console
 ConsoleInstance CustomConsole = {0};		//project specific console
 ConsoleInstance * DefaultSessionConsole;	//Default Console Instance Chosen
-
 
 t_GUIZone DefaultZone;
 
@@ -51,7 +52,6 @@ t_GUIZone * getDefaultZoneConsole(){
 int getFontHeightFromZone(t_GUIZone * ZoneInst){
 	return GUI_getFontHeight(ZoneInst);
 }
-
 
 bool InitializeConsole(ConsoleInstance * ConsoleInst){	
 	UpdateConsoleSettings(ConsoleInst);	
@@ -301,6 +301,6 @@ void	GUI_init(bool project_specific_console)
 		VRAM_SETUP(DEFAULT_CONSOLE_VRAMSETUP());
 		InitDefaultConsole();
 	}
-	
+	global_project_specific_console = project_specific_console;
 	GUI.printfy = 0;
 }
