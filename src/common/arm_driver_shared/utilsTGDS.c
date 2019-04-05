@@ -309,18 +309,16 @@ void	FS_unlock()
 }
 
 
-sint8 ip_decimal[0x10] = {0};
+sint8 ip_decimal[0x10];
 
-sint8 * print_ip(uint32 ip)
-{
+sint8 * print_ip(uint32 ip){
     uint8 bytes[4];
     bytes[0] = ip & 0xFF;
     bytes[1] = (ip >> 8) & 0xFF;
     bytes[2] = (ip >> 16) & 0xFF;
     bytes[3] = (ip >> 24) & 0xFF;	
-    sprintf(ip_decimal,"%d.%d.%d.%d\n", bytes[0], bytes[1], bytes[2], bytes[3]);        
-
-return ip_decimal;
+    sprintf(ip_decimal,"%d.%d.%d.%d", bytes[0], bytes[1], bytes[2], bytes[3]);
+	return ip_decimal;
 }
 
 

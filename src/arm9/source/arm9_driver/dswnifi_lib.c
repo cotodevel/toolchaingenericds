@@ -1145,9 +1145,10 @@ void remoteWriteRegister(char *p)
   remotePutPacket("OK");
 }
 
-sint32 remoteStubMain()
-{
+sint32 remoteStubMain(){
+
 	if( (getMULTIMode() == dswifi_gdbstubmode) && (getWIFISetup() == true) && (dswifiSrv.GDBStubEnable == true) ){
+		sint32 remoteStubMainStatus = 0;
 		if(remoteResumed) {
 			remoteSendStatus();
 			remoteResumed = false;
@@ -1155,11 +1156,7 @@ sint32 remoteStubMain()
 		char * buffer = (char *)malloc(1024);
 		int res = remoteRecvFnc(buffer, 1024);
 		//if DSWIFI connection is lost, re-connect and init GDB Server if external logic says so.
-		if(res == -1) {
-			remoteCleanUp();
-			return remoteStubMainWIFIConnectedGDBDisconnected;
-		}
-		else{
+		if(res > 0){
 			char *p = buffer;
 			char c = *p++;
 			char pp = '+';
@@ -1239,18 +1236,24 @@ sint32 remoteStubMain()
 				  }
 				  break;
 				}
-			}
+			}	
+			remoteStubMainStatus = remoteStubMainWIFIConnectedGDBRunning;	//WIFI connected and GDB running
+		}
+		else if(res = 0){
+			remoteStubMainStatus = remoteStubMainWIFIConnectedGDBRunning;	//WIFI connected and GDB running but no data was recv
+		}
+		else{
+			remoteCleanUp();
+			remoteStubMainStatus = remoteStubMainWIFIConnectedGDBDisconnected;	//Socket closed
 		}
 		free(buffer);
-		return remoteStubMainWIFIConnectedGDBRunning;	//WIFI connected and GDB running
+		return remoteStubMainStatus;
 	}
-	
 	else{
 		if(getWIFISetup() == true){
 			return remoteStubMainWIFIConnectedNoGDB;	//gdb not running, WIFI connected	(retry connection here)
 		}
 	}
-	
 	return remoteStubMainWIFINotConnected;				//gdb not running, WIFI not connected (first time connection)
 }
 
