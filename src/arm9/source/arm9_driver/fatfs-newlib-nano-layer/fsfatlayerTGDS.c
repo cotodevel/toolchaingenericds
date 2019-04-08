@@ -619,38 +619,39 @@ static bool fsfatFileClassInited = false;
 //return:  FT_DIR or FT_FILE: use getLFN(char buf[MAX_TGDSFILENAME_LENGTH+1]); to receive full first file
 //			or FT_NONE if invalid file
 int getFirstFile(char * path){
-	
+	int fType = FT_NONE;	//invalid. Should not happen 
 	//Just run once... and run only when using specific fsfatlayerTGDS fileClass functionality
 	if(fsfatFileClassInited == false){
 		FileClassListPtr = malloc(sizeof(struct FileClass)*FileClassItems);
 		fsfatFileClassInited = true;
 	}
-	
 	//path will have the current working directory the FileClass was built around. getFirstFile builds everything, and getNextFile iterates over each file until there are no more.
 	if(buildFileClassListFromPath(path) == true){
 		CurrentFileDirEntry = 0;
 		
 		//struct FileClass * fileInst = getFirstDirEntryFromList();					//get First directory entry	:	so it generates a valid DIR CurrentFileDirEntry
-		//struct FileClass * fileInst = getFirstFileEntryFromList();					//get First file entry 		:	so it generates a valid FILE CurrentFileDirEntry
+		//struct FileClass * fileInst = getFirstFileEntryFromList();				//get First file entry 		:	so it generates a valid FILE CurrentFileDirEntry
 		struct FileClass * fileInst = getFileClassFromList(CurrentFileDirEntry);
-		if (fileInst->type == FT_DIR) {	//dir
-			LastDirEntry=CurrentFileDirEntry;
-		}
-		else if (fileInst->type == FT_FILE){
-			LastFileEntry=CurrentFileDirEntry;
-		}
-		else{	
-			//invalid. Should not happen 
-			return FT_NONE;
+		fType = fileInst->type;
+		switch(fType){
+			//dir
+			case(FT_DIR):{
+				LastDirEntry=CurrentFileDirEntry;
+				char *  FullPathStr = fileInst->fd_namefullPath;
+				setLFN((char*)FullPathStr);		//update last full path access
+				getLFN((char*)path);			//update source path				
+			}
+			break;
+			//file
+			case(FT_FILE):{
+				LastFileEntry=CurrentFileDirEntry;
+				char *  FullPathStr = fileInst->fd_namefullPath;
+				setLFN((char*)FullPathStr);		//update last full path access
+				getLFN((char*)path);			//update source path
+			}
+			break;
 		}
 		//increase the file/dir counter after operation only if valid entry, otherwise it doesn't anymore
-		if((fileInst->type == FT_FILE) || (fileInst->type == FT_DIR)){
-			char *  FullPathStr = fileInst->fd_namefullPath;
-			setLFN((char*)FullPathStr);		//update last full path access
-			getLFN((char*)path);			//update source path
-		}
-		
-		//is this index indexable? otherwise cleanup
 		if(CurrentFileDirEntry < (int)(FileClassItems)){ 
 			CurrentFileDirEntry++;	
 		}
@@ -658,44 +659,50 @@ int getFirstFile(char * path){
 			CurrentFileDirEntry = 0;
 			LastDirEntry=structfd_posixInvalidFileDirHandle;
 			LastFileEntry=structfd_posixInvalidFileDirHandle;
-			return FT_NONE;	//actually end of list
+			return FT_NONE;	//End the list regardless, no more room available!
 		}
-		return fileInst->type;
 	}
-	
-	return FT_NONE;
+	return fType;
 }
 
 //requires fullpath of the CURRENT file, it will return the next one
 //return:  FT_DIR or FT_FILE: use getLFN(char buf[MAX_TGDSFILENAME_LENGTH+1]); to receive full first file
 //			or FT_NONE if invalid file
 int getNextFile(char * path){
+	int fType = FT_NONE;	//invalid. Should not happen 
 	struct FileClass * fileInst = getFileClassFromList(CurrentFileDirEntry);
-	if(fileInst->type == FT_DIR){
-		LastDirEntry=CurrentFileDirEntry;
+	if(fileInst != NULL){
+		fType = fileInst->type;
+		switch(fType){
+			//dir
+			case(FT_DIR):{
+				LastDirEntry=CurrentFileDirEntry;
+				char *  FullPathStr = fileInst->fd_namefullPath;
+				setLFN((char*)FullPathStr);		//update last full path access
+				getLFN((char*)path);			//update source path				
+			}
+			break;
+			//file
+			case(FT_FILE):{
+				LastFileEntry=CurrentFileDirEntry;
+				char *  FullPathStr = fileInst->fd_namefullPath;
+				setLFN((char*)FullPathStr);		//update last full path access
+				getLFN((char*)path);			//update source path
+			}
+			break;
+		}	
+		//increase the file counter after operation
+		if(CurrentFileDirEntry < (int)(FileClassItems)){ 
+			CurrentFileDirEntry++;	
+		}
+		else{
+			CurrentFileDirEntry = 0;
+			LastDirEntry=structfd_posixInvalidFileDirHandle;
+			LastFileEntry=structfd_posixInvalidFileDirHandle;
+			return FT_NONE;	//End the list regardless, no more room available!
+		}
 	}
-	else if(fileInst->type == FT_FILE){
-		char * FullPathStr = fileInst->fd_namefullPath;	//must return fullPath here (0:/folder0/filename.ext)
-		setLFN((char*)FullPathStr);		//update last full path access
-		getLFN((char*)path);					//update source path
-		LastFileEntry=CurrentFileDirEntry;
-	}
-	else{	
-		//invalid
-		return FT_NONE;
-	}
-	
-	//increase the file counter after operation
-	if(CurrentFileDirEntry < (int)(FileClassItems)){ 
-		CurrentFileDirEntry++;	
-	}
-	else{
-		CurrentFileDirEntry = 0;
-		LastDirEntry=structfd_posixInvalidFileDirHandle;
-		LastFileEntry=structfd_posixInvalidFileDirHandle;
-		return FT_NONE;	//actually end of list
-	}
-	return fileInst->type;
+	return fType;
 }
 
 //FAT_GetAlias
