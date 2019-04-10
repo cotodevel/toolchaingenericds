@@ -361,6 +361,12 @@ int ff_del_syncobj (FF_SYNC_t sobj);	/* Delete a sync object */
 #define AM_LFN		0x0F	// LFN entry 
 #define AM_MASK		0x3F	// Mask of defined bits 
 
+
+extern DWORD  get_fat (		/* 0xFFFFFFFF:Disk error, 1:Internal error, 2..0x7FFFFFFF:Cluster status */
+	FFOBJID* obj,	/* Corresponding object */
+	DWORD clst		/* Cluster number to get the value */
+);
+
 #ifdef __cplusplus
 }
 #endif
