@@ -359,7 +359,8 @@ sint32	getStructFDFirstCluster(struct fd *fdinst){
 sint32	getStructFDNextCluster(struct fd *fdinst){
 	if((fdinst) && (fdinst->filPtr)){
 		DWORD clst;
-		FIL * fil = fdinst->filPtr; 
+		FIL * fil = fdinst->filPtr;
+		FATFS *fs = fil->obj.fs;
 		if( (int)fil->fptr == (int)0 ){
 			clst = fil->obj.sclust;
 		}
@@ -367,7 +368,12 @@ sint32	getStructFDNextCluster(struct fd *fdinst){
 			clst = fil->clust;
 		}
 		clst = get_fat(&fil->obj, clst);		/* Get next cluster */
-		return (sint32)clst;
+		if ( (clst == 0xFFFFFFFF) || (clst < 2) || (clst >= fs->n_fatent) ){ 	/* Disk error , or  Reached to end of table or internal error */
+			return -1;	
+		}
+		else{
+			return (sint32)clst;
+		}
 	}
 	return structfd_posixInvalidFileDirHandle;
 }
@@ -380,7 +386,13 @@ bool isStructFDOutOfBoundsCluster(struct fd *fdinst, int curCluster){
 	int FileSize = ftell(fh);
 	fseek(fh, filePos, SEEK_SET);
 	int clustCnt = (int)FileSize/getDiskClusterSizeBytes();
-	if(getStructFDNextCluster(fdinst) > clustCnt){
+	int firstPhCluster = getStructFDFirstCluster(fdinst);
+	int curPhCluster = getStructFDNextCluster(fdinst);
+	if(
+		(curPhCluster < 0)
+		||
+		((curPhCluster + curCluster) > (firstPhCluster + clustCnt - 1))
+	){
 		return true;
 	}
 	return false;
