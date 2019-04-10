@@ -338,7 +338,7 @@ DWORD clust2sect (  /* !=0:Sector number, 0:Failed (invalid cluster#) */
 }
 
 //FATFS: The file handle start cluster is in fp->obj.sclust as long as you haven't read from that file (otherwise its in fp->clust)
-sint32	getStructFDFirstCluster(struct fd *fdinst){
+uint32	getStructFDFirstCluster(struct fd *fdinst){
 	if(fdinst){
 		if( (int)fdinst->filPtr->fptr == (int)0 ){
 			return (int)(fdinst->filPtr->obj.sclust);
@@ -348,15 +348,15 @@ sint32	getStructFDFirstCluster(struct fd *fdinst){
 				return (int)(fdinst->filPtr->clust);
 			}
 			else{
-				return structfd_posixInvalidFileDirHandle;
+				return (uint32)structfd_posixInvalidFileDirHandle;
 			}
 		}
 	}
-	return structfd_posixInvalidFileDirHandle;
+	return (uint32)structfd_posixInvalidFileDirHandle;
 }
 
 
-sint32	getStructFDNextCluster(struct fd *fdinst){
+uint32	getStructFDNextCluster(struct fd *fdinst, int currCluster){
 	if((fdinst) && (fdinst->filPtr)){
 		DWORD clst;
 		FIL * fil = fdinst->filPtr;
@@ -367,40 +367,20 @@ sint32	getStructFDNextCluster(struct fd *fdinst){
 		else{
 			clst = fil->clust;
 		}
-		clst = get_fat(&fil->obj, clst);		/* Get next cluster */
+		clst = get_fat(&fil->obj, (DWORD)((int)clst + (int)currCluster) );		/* Get next cluster */
 		if ( (clst == 0xFFFFFFFF) || (clst < 2) || (clst >= fs->n_fatent) ){ 	/* Disk error , or  Reached to end of table or internal error */
-			return -1;	
+			return (uint32)structfd_posixInvalidFileDirHandle;	
 		}
 		else{
 			return (sint32)clst;
 		}
 	}
-	return structfd_posixInvalidFileDirHandle;
-}
-
-//Cluster count is generated from a file range
-bool isStructFDOutOfBoundsCluster(struct fd *fdinst, int curCluster){
-	FILE * fh = fdopen(fdinst->cur_entry.d_ino, "r");
-	int filePos = ftell(fh);	//save cur FilePos
-	fseek(fh, 0, SEEK_END);
-	int FileSize = ftell(fh);
-	fseek(fh, filePos, SEEK_SET);
-	int clustCnt = (int)FileSize/getDiskClusterSizeBytes();
-	int firstPhCluster = getStructFDFirstCluster(fdinst);
-	int curPhCluster = getStructFDNextCluster(fdinst);
-	if(
-		(curPhCluster < 0)
-		||
-		((curPhCluster + curCluster) > (firstPhCluster + clustCnt - 1))
-	){
-		return true;
-	}
-	return false;
+	return (uint32)structfd_posixInvalidFileDirHandle;
 }
 
 //args: int ClusterOffset (1) : int SectorOffset (N). = 1 physical sector in disk. Each sector is getDiskSectorSize() bytes. Cluster 0 + Sector 0 == Begin of FileHandle
 //returns structfd_posixInvalidFileDirHandle if : file not open, directory or fsfat error
-sint32 getStructFDSectorOffset(struct fd *fdinst,int ClusterOffset,int SectorOffset){	//	struct File Descriptor (FILE * open through fopen() -> then converted to int32 from fileno())
+uint32 getStructFDSectorOffset(struct fd *fdinst,int ClusterOffset,int SectorOffset){	//	struct File Descriptor (FILE * open through fopen() -> then converted to int32 from fileno())
 	if(fdinst->filPtr){
 		return clust2sect(fdinst->filPtr->obj.fs, fdinst->filPtr->obj.sclust + ClusterOffset) + SectorOffset; 
 	}
@@ -882,7 +862,7 @@ u32 FAT_GetFileCluster(void){
 	if(f){
 		fd = fileno(f);
 		fdinst = fd_struct_get(fd);
-		FirstClusterFromLastFileOpen = (u32)getStructFDFirstCluster(fdinst);
+		FirstClusterFromLastFileOpen = getStructFDFirstCluster(fdinst);
 		fclose(f);
 	}
 	return 	FirstClusterFromLastFileOpen;
