@@ -255,10 +255,12 @@ uint32 get_lma_libend(){
 uint32 get_lma_wramend(){
 	#ifdef ARM7
 	extern uint32 sp_USR;	//the farthest stack from the end memory is our free memory (in ARM7, shared stacks)
-	return (uint32)((uint32)&sp_USR - 0x400);
+	u32 wram_end = ((uint32)&sp_USR - 0x400);
+	return (uint32)((wram_end + (4 - 1)) & -4);
 	#endif
 	#ifdef ARM9
-	return (uint32)(&_ewram_end);	//EWRAM has no stacks shared so we use the end memory 
+	u32 wram_end = (u32)&_ewram_end;
+	return (uint32)((wram_end + (4 - 1)) & -4);  // Round up to 4-byte boundary // EWRAM has no stacks shared so we use the end memory
 	#endif
 }
 
@@ -268,7 +270,7 @@ uint32 get_ewram_start(){
 }
 
 sint32 get_ewram_size(){
-	return (sint32)((uint8*)(uint32*)&_ewram_end - (sint32)(&_ewram_start));
+	return (sint32)((uint8*)(uint32*)get_lma_wramend() - (sint32)(&_ewram_start));
 }
 
 uint32 get_itcm_start(){
@@ -276,7 +278,7 @@ uint32 get_itcm_start(){
 }
 
 sint32 get_itcm_size(){
-	return (sint32)((uint8*)(uint32*)&_itcm_end - (sint32)(&_itcm_start));
+	return (sint32)((uint8*)(uint32*)get_lma_wramend() - (sint32)(&_itcm_start));
 }
 
 uint32 get_dtcm_start(){
