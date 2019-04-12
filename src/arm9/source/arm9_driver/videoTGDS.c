@@ -143,7 +143,7 @@ bool VRAM_SETUP(vramSetup * vramSetupInst){
 	return true; 
 }
 
-//Generic console (uses VRAM block C,VRAM block D for ARM7)
+//Generic console (uses VRAM block C,VRAM block D for ARM7), SUB Engine.
 
 //1) VRAM Layout
 vramSetup * DEFAULT_CONSOLE_VRAMSETUP(){

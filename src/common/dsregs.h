@@ -325,16 +325,6 @@ USA
 #define BG_COLOR_256		(0x80)
 #define BG_COLOR_16			(0x00)
 
-
-#define BACKGROUND           (*((bg_attribute *)0x04000008))
-#define BG_OFFSET ((bg_scroll *)(0x04000010))
-
-#define BG_MAP_RAM(base)		((uint16*)(((base)*0x800) + 0x06000000))
-#define BG_TILE_RAM(base)		((uint16*)(((base)*0x4000) + 0x06000000))
-#define BG_BMP_RAM(base)		((uint16*)(((base)*0x4000) + 0x06000000))
-
-#define CHAR_BASE_BLOCK(n)			(((n)*0x4000)+ 0x06000000)
-#define SCREEN_BASE_BLOCK(n)		(((n)*0x800) + 0x06000000)
 #define	BGCTRL			( (vuint16*)0x4000008)
 #define	REG_BGOFFSETS	( (vuint16*)0x4000010)
 #define	REG_BG0VOFS		(*(vuint16*)0x4000012)

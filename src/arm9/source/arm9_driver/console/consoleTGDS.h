@@ -39,13 +39,26 @@ USA
 #define DISPLAY_WIN1_ON       (1 << 14)
 #define DISPLAY_SPR_WIN_ON    (1 << 15)
 
+#define BACKGROUND           (*((bg_attribute *)0x04000008))
+#define BG_OFFSET ((bg_scroll *)(0x04000010))
+
 #define BACKGROUND_SUB       (*((bg_attribute *)0x04001008))
 #define BG_OFFSET_SUB ((bg_scroll *)(0x04001010))
+
+//main
+#define BG_MAP_RAM(base)		((uint16*)(((base)*0x800) + 0x06000000))
+#define BG_TILE_RAM(base)		((uint16*)(((base)*0x4000) + 0x06000000))
+#define BG_BMP_RAM(base)		((uint16*)(((base)*0x4000) + 0x06000000))
+#define CHAR_BASE_BLOCK(n)			(((n)*0x4000)+ 0x06000000)
+#define SCREEN_BASE_BLOCK(n)		(((n)*0x800) + 0x06000000)
+
+//sub
 #define BG_MAP_RAM_SUB(base)	((uint16*)(((base)*0x800) + 0x06200000))
 #define BG_TILE_RAM_SUB(base)	((uint16*)(((base)*0x4000) + 0x06200000))
 #define BG_BMP_RAM_SUB(base)	((uint16*)(((base)*0x4000) + 0x06200000))
 #define SCREEN_BASE_BLOCK_SUB(n)	(((n)*0x800) + 0x06200000)
 #define CHAR_BASE_BLOCK_SUB(n)		(((n)*0x4000)+ 0x06200000)
+
 #define	BGCTRL_SUB				( (vuint16*)0x4001008)
 #define	REG_BG0CNT_SUB		(*(vuint16*)0x4001008)
 #define	REG_BG1CNT_SUB		(*(vuint16*)0x400100A)
