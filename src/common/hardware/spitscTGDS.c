@@ -101,73 +101,74 @@ bool penIRQread(){
 }
 
 #ifdef ARM7
+
+static int LastTSCPosX = 0;
+static int LastTSCPosY = 0;
+
 //Internal
 void XYReadPos(){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;	
+	uint32 OLD_IME = REG_IME;
+	REG_IME = 0;
 	
-	//Update touchscreen only when tsc is being pressed
-	if(penIRQread() == true){
-		
-		uint32 OLD_IME = REG_IME;
-		REG_IME = 0;
-		
-		//Set Chip Select LOW to invoke the command & Transmit the instruction byte: TSC CNT Differential Mode: X Raw TSC 
-		REG_SPI_CR = BIT_SPICNT_ENABLE | BIT_SPICNT_BYTETRANSFER | BIT_SPICNT_CSHOLDENABLE | BIT_SPICNT_TSCCNT | BIT_SPICLK_2MHZ;
-		RWSPICNT(BIT_TSCCNT_START_CTRL|BIT_TSCCNT_POWDOWN_MODE_SEL_DIFFERENTIAL| BIT_TSCCNT_REFSEL_DIFFERENTIAL | BIT_TSCCNT_CONVMODE_12bit | BIT_TSCCNT_TOUCHXPOS);
-		uint8 resultx1 =RWSPICNT(0);
-		uint8 resultx2 = RWSPICNT(0) >>3;
-		uint16 read_raw_x = ((resultx1 & 0x7F) << 5) | resultx2;
-		
-		//required
-		SPICSHIGH();
-		SPIWAITCNT();
-		
-		//Set Chip Select LOW to invoke the command & Transmit the instruction byte: TSC CNT Differential Mode: Y Raw TSC 
-		REG_SPI_CR = BIT_SPICNT_ENABLE | BIT_SPICNT_BYTETRANSFER | BIT_SPICNT_CSHOLDENABLE | BIT_SPICNT_TSCCNT | BIT_SPICLK_2MHZ;
-		RWSPICNT(BIT_TSCCNT_START_CTRL|BIT_TSCCNT_POWDOWN_MODE_SEL_DIFFERENTIAL| BIT_TSCCNT_REFSEL_DIFFERENTIAL | BIT_TSCCNT_CONVMODE_12bit | BIT_TSCCNT_TOUCHYPOS);
-		uint8 resulty1 =RWSPICNT(0);
-		uint8 resulty2 = RWSPICNT(0) >>3;
-		uint16 read_raw_y = ((resulty1 & 0x7F) << 5) | resulty2;
-		
-		//raw x/y
-		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	//Set Chip Select LOW to invoke the command & Transmit the instruction byte: TSC CNT Differential Mode: X Raw TSC 
+	REG_SPI_CR = BIT_SPICNT_ENABLE | BIT_SPICNT_BYTETRANSFER | BIT_SPICNT_CSHOLDENABLE | BIT_SPICNT_TSCCNT | BIT_SPICLK_2MHZ;
+	RWSPICNT(BIT_TSCCNT_START_CTRL|BIT_TSCCNT_POWDOWN_MODE_SEL_DIFFERENTIAL| BIT_TSCCNT_REFSEL_DIFFERENTIAL | BIT_TSCCNT_CONVMODE_12bit | BIT_TSCCNT_TOUCHXPOS);
+	uint8 resultx11to5 =RWSPICNT(0);	//0-11-10-9-8-7-6-5
+	uint8 resultx4to0 = RWSPICNT(0);	//4-3-2-1-0-0-0-0
+	uint16 read_raw_x = ((resultx11to5 & 0x7F) << 5) | ((resultx4to0 & 0xF8)>>3);
+	
+	//required
+	SPICSHIGH();
+	SPIWAITCNT();
+	
+	//Set Chip Select LOW to invoke the command & Transmit the instruction byte: TSC CNT Differential Mode: Y Raw TSC 
+	REG_SPI_CR = BIT_SPICNT_ENABLE | BIT_SPICNT_BYTETRANSFER | BIT_SPICNT_CSHOLDENABLE | BIT_SPICNT_TSCCNT | BIT_SPICLK_2MHZ;
+	RWSPICNT(BIT_TSCCNT_START_CTRL|BIT_TSCCNT_POWDOWN_MODE_SEL_DIFFERENTIAL| BIT_TSCCNT_REFSEL_DIFFERENTIAL | BIT_TSCCNT_CONVMODE_12bit | BIT_TSCCNT_TOUCHYPOS);
+	uint8 resulty11to5 =RWSPICNT(0);	//0-11-10-9-8-7-6-5
+	uint8 resulty4to0 = RWSPICNT(0);	//4-3-2-1-0-0-0-0
+	uint16 read_raw_y = ((resulty11to5 & 0x7F) << 5) | ((resulty4to0 & 0xF8)>>3);
+	
+	//required
+	SPICSHIGH();
+	SPIWAITCNT();
+	
+	REG_IME = OLD_IME;
+	
+	//Touchscreen Position (pixel TFT X Y Coordinates conversion)
+	//Read the X and Y positions in 12bit differential mode, then convert the touchscreen values (adc) to screen/pixel positions (scr), as such:
+	//scr.x = (adc.x-adc.x1) * (scr.x2-scr.x1) / (adc.x2-adc.x1) + (scr.x1-1)
+	//scr.y = (adc.y-adc.y1) * (scr.y2-scr.y1) / (adc.y2-adc.y1) + (scr.y1-1)
+	
+	struct sDSFWSETTINGS * DSFWSettingsInst = (struct sDSFWSETTINGS *)&TGDSIPC->DSFWSETTINGSInst;
+	
+	uint16 adc_x1 = (((DSFWSettingsInst->tsc_adcposx1y112bit[1] << 8) & 0x0f00)) | DSFWSettingsInst->tsc_adcposx1y112bit[0];
+	uint16 adc_y1 = (((DSFWSettingsInst->tsc_adcposx1y112bit[3] << 8) & 0x0f00)) | DSFWSettingsInst->tsc_adcposx1y112bit[2];
+	
+	uint8 scr_x1  = (DSFWSettingsInst->tsc_tsccalx1y18bit[0]);
+	uint8 scr_y1  = (DSFWSettingsInst->tsc_tsccalx1y18bit[1]);
+	
+	uint16 adc_x2 = (((DSFWSettingsInst->tsc_adcposx2y212bit[1]<<8) & 0x0f00)) | DSFWSettingsInst->tsc_adcposx2y212bit[0];
+	uint16 adc_y2 = (((DSFWSettingsInst->tsc_adcposx2y212bit[3]<<8) & 0x0f00)) | DSFWSettingsInst->tsc_adcposx2y212bit[2];
+	
+	uint8 scr_x2  = (DSFWSettingsInst->tsc_tsccalx2y28bit[0]);
+	uint8 scr_y2  = (DSFWSettingsInst->tsc_tsccalx2y28bit[1]);
+	
+	sint32 scrx = (read_raw_x-adc_x1) * (scr_x2-scr_x1) / (adc_x2-adc_x1) + (scr_x1-1);
+	sint32 scry = (read_raw_y-adc_y1) * (scr_y2-scr_y1) / (adc_y2-adc_y1) + (scr_y1-1);
+	
+	if(scrx == LastTSCPosX){
 		TGDSIPC->touchX    = read_raw_x;
-		TGDSIPC->touchY    = read_raw_y;
-		
-		//required
-		SPICSHIGH();
-		SPIWAITCNT();
-		
-		REG_IME = OLD_IME;
-		
-		//Touchscreen Position (pixel TFT X Y Coordinates conversion)
-		//Read the X and Y positions in 12bit differential mode, then convert the touchscreen values (adc) to screen/pixel positions (scr), as such:
-		//scr.x = (adc.x-adc.x1) * (scr.x2-scr.x1) / (adc.x2-adc.x1) + (scr.x1-1)
-		//scr.y = (adc.y-adc.y1) * (scr.y2-scr.y1) / (adc.y2-adc.y1) + (scr.y1-1)
-		
-		uint16 adc_x1 = (TGDSIPC->DSFWSETTINGSInst.tsc_adcposx1y112bit[1]<<8) | TGDSIPC->DSFWSETTINGSInst.tsc_adcposx1y112bit[0];
-		uint16 adc_y1 = (TGDSIPC->DSFWSETTINGSInst.tsc_adcposx1y112bit[3]<<8) | TGDSIPC->DSFWSETTINGSInst.tsc_adcposx1y112bit[2];
-		
-		uint8 scr_x1  = (TGDSIPC->DSFWSETTINGSInst.tsc_tsccalx1y18bit[0]);
-		uint8 scr_y1  = (TGDSIPC->DSFWSETTINGSInst.tsc_tsccalx1y18bit[1]);
-		
-		uint16 adc_x2 = (TGDSIPC->DSFWSETTINGSInst.tsc_adcposx2y212bit[1]<<8) | TGDSIPC->DSFWSETTINGSInst.tsc_adcposx2y212bit[0];
-		uint16 adc_y2 = (TGDSIPC->DSFWSETTINGSInst.tsc_adcposx2y212bit[3]<<8) | TGDSIPC->DSFWSETTINGSInst.tsc_adcposx2y212bit[2];
-		
-		uint8 scr_x2  = (TGDSIPC->DSFWSETTINGSInst.tsc_tsccalx2y28bit[0]);
-		uint8 scr_y2  = (TGDSIPC->DSFWSETTINGSInst.tsc_tsccalx2y28bit[1]);
-		
-		sint32 scrx = (read_raw_x-adc_x1) * (scr_x2-scr_x1) / (adc_x2-adc_x1) + (scr_x1-1);
-		sint32 scry = (read_raw_y-adc_y1) * (scr_y2-scr_y1) / (adc_y2-adc_y1) + (scr_y1-1);
-		
-		//TGDSIPC->DSFWSETTINGSInst.tsc_adcposx1y112bit	//4 bytes, 2 adc.x1, 2 adc.y1 //12 bit
-		//TGDSIPC->DSFWSETTINGSInst.tsc_tsccalx1y18bit	//2 bytes, 1 scr.x1, 1 scr.y1 //8 bit
-		//TGDSIPC->DSFWSETTINGSInst.tsc_adcposx2y212bit	//4 bytes, 2 adc.x2, 2 adc.y2 //12bit
-		//TGDSIPC->DSFWSETTINGSInst.tsc_tsccalx2y28bit	//2 bytes, 1 scr.x2, 1 scr.y2	//8bit
-		
 		TGDSIPC->touchXpx = scrx;
-		TGDSIPC->touchYpx = scry;
-		
 	}
+	
+	if(scry == LastTSCPosY){
+		TGDSIPC->touchY    = read_raw_y;
+		TGDSIPC->touchYpx = scry;
+	}
+	
+	LastTSCPosX = scrx;
+	LastTSCPosY = scry;
 	
 }
 
