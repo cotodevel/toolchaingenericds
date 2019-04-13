@@ -52,7 +52,9 @@ export DIRS_ARM7_SRC = source/	\
 			../common/arm_driver_shared/	\
 			../common/dswifi/	\
 			../common/hardware/	\
-			../common/hardware/NotifierAPI/	
+			../common/hardware/NotifierAPI/	\
+			data/	\
+			build/
 			
 export DIRS_ARM7_HEADER = source/	\
 			source/wireless/	\
@@ -64,7 +66,9 @@ export DIRS_ARM7_HEADER = source/	\
 			../common/arm_driver_shared/	\
 			../common/dswifi/	\
 			../common/hardware/	\
-			../common/hardware/NotifierAPI/
+			../common/hardware/NotifierAPI/	\
+			data/	\
+			build/
 			
 #####################################################ARM9#####################################################
 
@@ -77,7 +81,7 @@ export DIRS_ARM9_SRC = source/	\
 			source/arm9_driver/fatfs-newlib-nano-layer/fatfs/source/	\
 			source/arm9_driver/zlib/	\
 			source/arm9_driver/zip/	\
-			source/arm9_driver/	\
+			source/arm9_driver/keyboard/	\
 			source/dswifi_arm9/	\
 			source/wnifilib/	\
 			../include/	\
@@ -87,7 +91,9 @@ export DIRS_ARM9_SRC = source/	\
 			../common/arm_driver_shared/	\
 			../common/dswifi/	\
 			../common/hardware/	\
-			../common/hardware/NotifierAPI/
+			../common/hardware/NotifierAPI/	\
+			data/	\
+			build/
 			
 export DIRS_ARM9_HEADER = source/	\
 			source/arm9_driver/	\
@@ -98,7 +104,7 @@ export DIRS_ARM9_HEADER = source/	\
 			source/arm9_driver/fatfs-newlib-nano-layer/fatfs/source/	\
 			source/arm9_driver/zlib/	\
 			source/arm9_driver/zip/	\
-			source/arm9_driver/	\
+			source/arm9_driver/keyboard/	\
 			source/dswifi_arm9/	\
 			source/wnifilib/	\
 			../include/	\
@@ -108,7 +114,9 @@ export DIRS_ARM9_HEADER = source/	\
 			../common/arm_driver_shared/	\
 			../common/dswifi/	\
 			../common/hardware/	\
-			../common/hardware/NotifierAPI/
+			../common/hardware/NotifierAPI/	\
+			data/	\
+			build/
 			
 # Build Target(s)	(both processors here)
 all: compilelib
