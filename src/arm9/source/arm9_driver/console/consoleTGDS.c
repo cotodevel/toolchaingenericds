@@ -39,7 +39,6 @@ t_GUI GUI;
 volatile sint8	g_printfbuf[consolebuf_size];
 ConsoleInstance DefaultConsole = {0};		//generic console
 ConsoleInstance CustomConsole = {0};		//project specific console
-ConsoleInstance * DefaultSessionConsole;	//Default Console Instance Chosen
 
 t_GUIZone DefaultZone;
 
@@ -71,10 +70,10 @@ void UpdateConsoleSettings(ConsoleInstance * ConsoleInst){
 	for(i = 0; i < (int)backgroundsPerEngine; i++){
 	
 		if(ConsoleInst->ppuMainEngine == mainEngine){	
-			REG_BGXCNT(i) = DefaultSessionConsole->ConsoleEngineStatus.EngineBGS[i].REGBGCNT;
+			REG_BGXCNT(i) = ConsoleInst->ConsoleEngineStatus.EngineBGS[i].REGBGCNT;
 		}
 		else if(ConsoleInst->ppuMainEngine == subEngine){
-			REG_BGXCNT_SUB(i) = DefaultSessionConsole->ConsoleEngineStatus.EngineBGS[i].REGBGCNT;
+			REG_BGXCNT_SUB(i) = ConsoleInst->ConsoleEngineStatus.EngineBGS[i].REGBGCNT;
 		}
 	}
 }
@@ -84,7 +83,7 @@ void SetEngineConsole(PPUEngine engine,ConsoleInstance * ConsoleInst){
 }
 
 void consoleClear(ConsoleInstance * ConsoleInst){
-	GUI_clearScreen(0);
+	//todo
 }
 
 //used by gui_printf
@@ -280,7 +279,7 @@ void	GUI_clear()
 {
 	//flush buffers
 	memset ((uint32 *)&g_printfbuf[0], 0, sizeof(g_printfbuf));
-	consoleClear(DefaultSessionConsole);
+	GUI_clearScreen(0);	//consoleClear(DefaultSessionConsole);	//todo
 	GUI.printfy = 0;
 }
 
@@ -294,13 +293,177 @@ void clrscr(){
 void	GUI_init(bool project_specific_console)
 {
 	if(project_specific_console == true){
-		VRAM_SETUP(getProjectSpecificVRAMSetup());
-		InitProjectSpecificConsole();
+		ConsoleInstance * ConsoleInstanceInst = getProjectSpecificVRAMSetup();
+		VRAM_SETUP(ConsoleInstanceInst);
+		InitProjectSpecificConsole(ConsoleInstanceInst);
 	}
 	else{
-		VRAM_SETUP(DEFAULT_CONSOLE_VRAMSETUP());
-		InitDefaultConsole();
+		ConsoleInstance * ConsoleInstanceInst = DEFAULT_CONSOLE_VRAMSETUP();
+		VRAM_SETUP(ConsoleInstanceInst);
+		InitDefaultConsole(ConsoleInstanceInst);
 	}
 	global_project_specific_console = project_specific_console;
 	GUI.printfy = 0;
+}
+
+//based from video console settings at toolchaingenericds-keyboard-example
+void move_console_to_top_screen(){
+	
+	//use CustomConsole as a current console render
+	if(global_project_specific_console == false){
+		ConsoleInstance * DefaultSessionConsoleInst = (ConsoleInstance *)(&DefaultConsole);
+		ConsoleInstance * CustomSessionConsoleInst = (ConsoleInstance *)(&CustomConsole);
+		memcpy ((uint8*)CustomSessionConsoleInst, (uint8*)DefaultSessionConsoleInst, sizeof(vramSetup));
+		
+		vramSetup * vramSetupInst = (vramSetup *)&CustomSessionConsoleInst->thisVRAMSetupConsole;
+		
+		uint16 * DSFramebufferOri = GUI.DSFrameBuffer;
+		GUI.DSFrameBuffer = (uint16 *)BG_BMP_RAM(4);	//0x06000000
+		
+		vramSetupInst->vramBankSetupInst[VRAM_A_INDEX].vrambankCR = VRAM_A_0x06000000_ENGINE_A_BG;	//console here
+		vramSetupInst->vramBankSetupInst[VRAM_A_INDEX].enabled = true;
+		
+		vramSetupInst->vramBankSetupInst[VRAM_C_INDEX].vrambankCR = VRAM_C_0x06200000_ENGINE_B_BG;	//keyboard
+		vramSetupInst->vramBankSetupInst[VRAM_C_INDEX].enabled = true;
+		
+		//Set mainEngine
+		SetEngineConsole(mainEngine,CustomSessionConsoleInst);
+		
+		//Set mainEngine properties
+		CustomSessionConsoleInst->ConsoleEngineStatus.ENGINE_DISPCNT	=	(uint32)(MODE_5_2D | DISPLAY_BG3_ACTIVE );
+		
+		// BG3: FrameBuffer : 64(TILE:4) - 128 Kb
+		CustomSessionConsoleInst->ConsoleEngineStatus.EngineBGS[3].BGNUM = 3;
+		CustomSessionConsoleInst->ConsoleEngineStatus.EngineBGS[3].REGBGCNT = BG_BMP_BASE(4) | BG_BMP8_256x256 | BG_PRIORITY_1;
+		
+		REG_BG3X = 0;
+		REG_BG3Y = 0;
+		REG_BG3PA = 1 << 8;
+		REG_BG3PB = 0;
+		REG_BG3PC = 0;
+		REG_BG3PD = 1 << 8;
+		
+		BG_PALETTE[0] = RGB15(0,0,0);			//back-ground tile color
+		BG_PALETTE[255] = RGB15(31,31,31);		//tile color
+		
+		dmaTransferWord(3, (uint32)DSFramebufferOri, (uint32)GUI.DSFrameBuffer,(uint32)(128*1024));
+		DefaultSessionConsoleInst->VideoBuffer = DSFramebufferOri;
+		InitializeConsole(CustomSessionConsoleInst);	//Console Top
+	}
+	else{	//todo: same swap video logic, but using ConsoleInstance CustomConsole
+		
+	}
+	
+	
+}
+
+void move_console_to_bottom_screen(){
+
+	//use CustomConsole as a current console render
+	if(global_project_specific_console == false){
+		ConsoleInstance * DefaultSessionConsoleInst = (ConsoleInstance *)(&DefaultConsole);
+		
+		//Set current Engine
+		SetEngineConsole(DefaultSessionConsoleInst->ppuMainEngine, DefaultSessionConsoleInst);
+		VRAM_SETUP(DefaultSessionConsoleInst);
+		
+		REG_BG3X = 0;
+		REG_BG3Y = 0;
+		REG_BG3PA = 1 << 8;
+		REG_BG3PB = 0;
+		REG_BG3PC = 0;
+		REG_BG3PD = 1 << 8;
+		
+		BG_PALETTE[0] = RGB15(0,0,0);			//back-ground tile color
+		BG_PALETTE[255] = RGB15(31,31,31);		//tile color
+		
+		dmaTransferWord(3, (uint32)GUI.DSFrameBuffer, (uint32)DefaultSessionConsoleInst->VideoBuffer,(uint32)(128*1024)); //copy
+		dmaFillHalfWord(3,(uint32)0, (uint32)GUI.DSFrameBuffer, (uint32)128*1024);	//clean
+		GUI.DSFrameBuffer = DefaultSessionConsoleInst->VideoBuffer;
+		
+		InitializeConsole(DefaultSessionConsoleInst);	//Console Top
+	}
+	else{	//todo: same swap video logic, but using ConsoleInstance CustomConsole
+		
+	}
+}
+
+
+
+bool VRAM_SETUP(ConsoleInstance * currentConsoleInstance){
+	vramSetup * vramSetupInst = (vramSetup *)&currentConsoleInstance->thisVRAMSetupConsole;
+	if(vramSetupInst->vramBankSetupInst[VRAM_A_INDEX].enabled == true){
+		VRAMBLOCK_SETBANK_A(vramSetupInst->vramBankSetupInst[VRAM_A_INDEX].vrambankCR);
+	}
+	if(vramSetupInst->vramBankSetupInst[VRAM_B_INDEX].enabled == true){
+		VRAMBLOCK_SETBANK_B(vramSetupInst->vramBankSetupInst[VRAM_B_INDEX].vrambankCR);
+	}
+	if(vramSetupInst->vramBankSetupInst[VRAM_C_INDEX].enabled == true){
+		VRAMBLOCK_SETBANK_C(vramSetupInst->vramBankSetupInst[VRAM_C_INDEX].vrambankCR);
+	}
+	if(vramSetupInst->vramBankSetupInst[VRAM_D_INDEX].enabled == true){
+		VRAMBLOCK_SETBANK_D(vramSetupInst->vramBankSetupInst[VRAM_D_INDEX].vrambankCR);
+	}
+	if(vramSetupInst->vramBankSetupInst[VRAM_E_INDEX].enabled == true){
+		VRAMBLOCK_SETBANK_E(vramSetupInst->vramBankSetupInst[VRAM_E_INDEX].vrambankCR);
+	}
+	if(vramSetupInst->vramBankSetupInst[VRAM_F_INDEX].enabled == true){
+		VRAMBLOCK_SETBANK_F(vramSetupInst->vramBankSetupInst[VRAM_F_INDEX].vrambankCR);
+	}
+	if(vramSetupInst->vramBankSetupInst[VRAM_G_INDEX].enabled == true){
+		VRAMBLOCK_SETBANK_G(vramSetupInst->vramBankSetupInst[VRAM_G_INDEX].vrambankCR);
+	}
+	if(vramSetupInst->vramBankSetupInst[VRAM_H_INDEX].enabled == true){
+		VRAMBLOCK_SETBANK_H(vramSetupInst->vramBankSetupInst[VRAM_H_INDEX].vrambankCR);
+	}
+	if(vramSetupInst->vramBankSetupInst[VRAM_I_INDEX].enabled == true){
+		VRAMBLOCK_SETBANK_I(vramSetupInst->vramBankSetupInst[VRAM_I_INDEX].vrambankCR);
+	}
+	return true; 
+}
+
+
+//1) VRAM Layout
+ConsoleInstance * DEFAULT_CONSOLE_VRAMSETUP(){
+	ConsoleInstance * DefaultSessionConsoleInst = (ConsoleInstance *)(&DefaultConsole);
+	memset (DefaultSessionConsoleInst, 0, sizeof(ConsoleInstance));
+	vramSetup * vramSetupDefault = (vramSetup *)&DefaultSessionConsoleInst->thisVRAMSetupConsole;
+	
+	vramSetupDefault->vramBankSetupInst[VRAM_C_INDEX].vrambankCR = VRAM_C_0x06200000_ENGINE_B_BG;
+	vramSetupDefault->vramBankSetupInst[VRAM_C_INDEX].enabled = true;
+	
+	// Some memory for ARM7
+	vramSetupDefault->vramBankSetupInst[VRAM_D_INDEX].vrambankCR = VRAM_D_0x06000000_ARM7;
+	vramSetupDefault->vramBankSetupInst[VRAM_D_INDEX].enabled = true;
+	
+	return DefaultSessionConsoleInst;
+}
+
+//2) Uses subEngine: VRAM Layout -> Console Setup
+bool InitDefaultConsole(ConsoleInstance * DefaultSessionConsoleInst){
+	
+	//Set subEngine
+	SetEngineConsole(subEngine,DefaultSessionConsoleInst);
+	
+	//Set subEngine properties
+	DefaultSessionConsoleInst->ConsoleEngineStatus.ENGINE_DISPCNT	=	(uint32)(MODE_5_2D | DISPLAY_BG3_ACTIVE );
+	
+	// BG3: FrameBuffer : 64(TILE:4) - 128 Kb
+	DefaultSessionConsoleInst->ConsoleEngineStatus.EngineBGS[3].BGNUM = 3;
+	DefaultSessionConsoleInst->ConsoleEngineStatus.EngineBGS[3].REGBGCNT = BG_BMP_BASE(4) | BG_BMP8_256x256 | BG_PRIORITY_1;
+	
+	DefaultSessionConsoleInst->VideoBuffer = GUI.DSFrameBuffer = (uint16 *)BG_BMP_RAM_SUB(4);
+	
+	REG_BG3X_SUB = 0;
+	REG_BG3Y_SUB = 0;
+	REG_BG3PA_SUB = 1 << 8;
+	REG_BG3PB_SUB = 0;
+	REG_BG3PC_SUB = 0;
+	REG_BG3PD_SUB = 1 << 8;
+	
+	BG_PALETTE_SUB[0] = RGB15(0,0,0);			//back-ground tile color
+	BG_PALETTE_SUB[255] = RGB15(31,31,31);		//tile color
+	
+	InitializeConsole(DefaultSessionConsoleInst);
+	return true;
 }

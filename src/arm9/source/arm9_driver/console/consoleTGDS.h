@@ -26,7 +26,7 @@ USA
 #include "typedefsTGDS.h"
 #include "dsregs.h"
 #include "ipcfifoTGDS.h"
-
+#include "videoTGDS.h"
 
 #define ENABLE_3D    (1<<3)
 #define DISPLAY_ENABLE_SHIFT 8
@@ -132,8 +132,9 @@ typedef enum {
 typedef struct ConsoleInstance
 {
 	PPUEngine ppuMainEngine;
-	uint16* gfx;
+	uint16* VideoBuffer;
 	EngineStatus ConsoleEngineStatus;
+	vramSetup thisVRAMSetupConsole;
 }ConsoleInstance;
 
 //font
@@ -441,10 +442,9 @@ extern bool global_project_specific_console;
 extern	t_GUI	GUI;
 extern ConsoleInstance DefaultConsole;	//default console
 extern ConsoleInstance CustomConsole;	//project specific
-extern ConsoleInstance * DefaultSessionConsole;
 
 //weak symbols : the implementation of this is project-defined
-extern __attribute__((weak))	bool InitProjectSpecificConsole();
+extern __attribute__((weak))	bool InitProjectSpecificConsole(ConsoleInstance * ConsoleInstanceInst);
 
 extern bool InitializeConsole(ConsoleInstance * ConsoleInst);
 extern void UpdateConsoleSettings(ConsoleInstance * ConsoleInst);
@@ -481,6 +481,19 @@ extern void	GUI_init(bool project_specific_console);
 extern t_GUIZone DefaultZone;
 extern t_GUIZone * getDefaultZoneConsole();
 extern int getFontHeightFromZone(t_GUIZone * ZoneInst);
+extern bool VRAM_SETUP(ConsoleInstance * currentConsoleInstance);
+
+//weak symbols : the implementation of this is project-defined
+extern  __attribute__((weak))	ConsoleInstance * getProjectSpecificVRAMSetup();
+
+//Default console VRAM layout setup
+//1) VRAM Layout
+extern ConsoleInstance * DEFAULT_CONSOLE_VRAMSETUP();
+//2) Uses subEngine: VRAM Layout -> Console Setup
+extern bool InitDefaultConsole(ConsoleInstance * DefaultSessionConsoleInst);
+
+extern void move_console_to_top_screen();
+extern void move_console_to_bottom_screen();
 
 #ifdef __cplusplus
 }

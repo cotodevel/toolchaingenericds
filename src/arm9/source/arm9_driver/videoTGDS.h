@@ -215,19 +215,6 @@ extern void ENABLE_BG_MAIN(int bg);
 extern void ENABLE_BG_SUB(int bg);
 extern void DISABLE_BG_MAIN(int number);
 extern void DISABLE_BG_SUB(int number);
-extern vramSetup vramSetupGlobal[1];
-extern bool VRAM_SETUP(vramSetup * vramSetupInst);
-
-//weak symbols : the implementation of this is project-defined
-extern  __attribute__((weak))	vramSetup * getProjectSpecificVRAMSetup();
-
-
-//Default console VRAM layout setup
-//1) VRAM Layout
-extern vramSetup * DEFAULT_CONSOLE_VRAMSETUP();
-//2) Uses subEngine: VRAM Layout -> Console Setup
-extern bool InitDefaultConsole();
-
 
 #ifdef __cplusplus
 }
