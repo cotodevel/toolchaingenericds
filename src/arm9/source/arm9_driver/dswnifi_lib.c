@@ -33,6 +33,7 @@ USA
 #include "dswnifi_lib.h"
 
 #include "timerTGDS.h"
+#include "keyboard.h"
 
 #include <string.h>
 #include <unistd.h>
@@ -101,7 +102,7 @@ void initNiFi(){
 }
 
 /////////////////////////////////UDP DSWNIFI Part////////////////////////////////////
-sint8* server_ip = (sint8*)"192.168.43.220";
+sint8 server_ip[MAX_TGDSFILENAME_LENGTH+1]; //(sint8*)"192.168.43.220";
 //SOCK_STREAM = TCP / SOCK_DGRAM = UDP
 
 //true == sends and frees the queued frame / false == didn't send, no frame
@@ -290,12 +291,67 @@ sint32 doMULTIDaemonStage1(){
 	}
 }
 
+bool isValidIpAddress(char *ipAddress)
+{
+    struct sockaddr_in sa;
+    int result = inet_pton(AF_INET, ipAddress, &(sa.sin_addr));
+    return result != 0;
+}
+
+//
 sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 	sint32 retDaemonCode = 0;
 	switch(ThisConnectionStatus){
 		case (proc_connect):{
 			//UDP NIFI
 			if(getMULTIMode() == dswifi_udpnifimode){
+				
+				//Ask for Server Input IP here:
+				if(global_project_specific_console == false){
+					move_console_to_top_screen();
+					
+					printf("Connecting to UDP TGDS Server Companion: ");
+					printf("Write down the IP then <Enter>, or tap <ESC> to quit. ");
+					
+					//Start keyboard
+					initKeyboard();	
+					SETDISPCNT_SUB(MODE_0_2D | DISPLAY_BG0_ACTIVE);	//Keyboard show
+					char str[MAX_TGDSFILENAME_LENGTH+1] = "";
+					bool validIPv4 = false;
+					while(1==1){
+						char keyPress = processKeyboard(&str[0], MAX_TGDSFILENAME_LENGTH+1, ECHO_ON, (int)strlen(str) );
+						if(keyPress == (char)RET)
+						{
+							// process input
+							validIPv4 = isValidIpAddress(str);
+							if(validIPv4 == true){
+								break;
+							}
+							printf("Invalid IP: %s",str);
+							strcpy(str, "");	//clean string if invalid
+						}
+						else if (keyPress == (char)ESC){
+							break;
+						}
+					}
+					move_console_to_bottom_screen();
+					if(validIPv4 == false){					
+						printf("Invalid IP address");
+						return dswifi_udpnifimodeFailConnectStage;
+					}
+					strcpy(server_ip,str);
+				}
+				else{
+					//special console code: todo
+					bool project_specific_console = false;	//set default console or custom console: default console
+					GUI_init(project_specific_console);
+					GUI_clear();
+					
+					printf("UDP Nifi mode keyboard support is not yet ");
+					printf("available for a custom TGDS video setting. ");
+					return dswifi_udpnifimodeFailConnectStage;
+				}
+				
 				//UDP: DSClient - Server IP / Desktop Server UDP companion Listener.
 				dswifiSrv.client_http_handler_context.socket_id__multi_notconnected=socket(AF_INET,SOCK_DGRAM,0);	
 				int i=1;
@@ -1239,7 +1295,7 @@ sint32 remoteStubMain(){
 			}	
 			remoteStubMainStatus = remoteStubMainWIFIConnectedGDBRunning;	//WIFI connected and GDB running
 		}
-		else if(res = 0){
+		else if(res == 0){
 			remoteStubMainStatus = remoteStubMainWIFIConnectedGDBRunning;	//WIFI connected and GDB running but no data was recv
 		}
 		else{

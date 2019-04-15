@@ -88,10 +88,11 @@ void printfCoords(int x, int y, const char *format, ...){
 	int stringSize = (int)strlen(stringBuf);
 	t_GUIZone * zoneInst = getDefaultZoneConsole();
 	GUI.printfy = y * getFontHeightFromZone(zoneInst);
+	x = x * zoneInst->font->height;
 	bool readAndBlendFromVRAM = false;	//we discard current vram characters here so if we step over the same character in VRAM (through printfCoords), it is discarded.
 	int color = 0xff;	//white
 	GUI_drawText(zoneInst, x, GUI.printfy, color, stringBuf, readAndBlendFromVRAM);
-	GUI.printfy += getFontHeightFromZone(zoneInst);	//skip to next line
+	GUI.printfy += getFontHeightFromZone(zoneInst);
 	return stringSize;
 }
 #endif

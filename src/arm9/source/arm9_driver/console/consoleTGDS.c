@@ -318,6 +318,7 @@ void move_console_to_top_screen(){
 		vramSetup * vramSetupInst = (vramSetup *)&CustomSessionConsoleInst->thisVRAMSetupConsole;
 		
 		uint16 * DSFramebufferOri = GUI.DSFrameBuffer;
+		DefaultSessionConsoleInst->VideoBuffer = DSFramebufferOri;
 		GUI.DSFrameBuffer = (uint16 *)BG_BMP_RAM(4);	//0x06000000
 		
 		vramSetupInst->vramBankSetupInst[VRAM_A_INDEX].vrambankCR = VRAM_A_0x06000000_ENGINE_A_BG;	//console here
@@ -336,6 +337,8 @@ void move_console_to_top_screen(){
 		CustomSessionConsoleInst->ConsoleEngineStatus.EngineBGS[3].BGNUM = 3;
 		CustomSessionConsoleInst->ConsoleEngineStatus.EngineBGS[3].REGBGCNT = BG_BMP_BASE(4) | BG_BMP8_256x256 | BG_PRIORITY_1;
 		
+		VRAM_SETUP(CustomSessionConsoleInst);
+		
 		REG_BG3X = 0;
 		REG_BG3Y = 0;
 		REG_BG3PA = 1 << 8;
@@ -346,8 +349,9 @@ void move_console_to_top_screen(){
 		BG_PALETTE[0] = RGB15(0,0,0);			//back-ground tile color
 		BG_PALETTE[255] = RGB15(31,31,31);		//tile color
 		
-		dmaTransferWord(3, (uint32)DSFramebufferOri, (uint32)GUI.DSFrameBuffer,(uint32)(128*1024));
-		DefaultSessionConsoleInst->VideoBuffer = DSFramebufferOri;
+		dmaTransferHalfWord(3, (uint32)0x06200000, (uint32)0x06000000,(uint32)(128*1024));
+		dmaFillHalfWord(3, 0, (uint32)0x06200000, (uint32)(128*1024));
+		CustomSessionConsoleInst->VideoBuffer = GUI.DSFrameBuffer;
 		InitializeConsole(CustomSessionConsoleInst);	//Console Top
 	}
 	else{	//todo: same swap video logic, but using ConsoleInstance CustomConsole
@@ -365,23 +369,23 @@ void move_console_to_bottom_screen(){
 		
 		//Set current Engine
 		SetEngineConsole(DefaultSessionConsoleInst->ppuMainEngine, DefaultSessionConsoleInst);
+		
+		REG_BG3X_SUB = 0;
+		REG_BG3Y_SUB = 0;
+		REG_BG3PA_SUB = 1 << 8;
+		REG_BG3PB_SUB = 0;
+		REG_BG3PC_SUB = 0;
+		REG_BG3PD_SUB = 1 << 8;
+		
+		BG_PALETTE_SUB[0] = RGB15(0,0,0);			//back-ground tile color
+		BG_PALETTE_SUB[255] = RGB15(31,31,31);		//tile color
+		
+		dmaTransferHalfWord(3, (uint32)0x06000000, (uint32)0x06200000,(uint32)(128*1024));
+		dmaFillHalfWord(3, 0, (uint32)0x06000000, (uint32)(128*1024));
+		
 		VRAM_SETUP(DefaultSessionConsoleInst);
-		
-		REG_BG3X = 0;
-		REG_BG3Y = 0;
-		REG_BG3PA = 1 << 8;
-		REG_BG3PB = 0;
-		REG_BG3PC = 0;
-		REG_BG3PD = 1 << 8;
-		
-		BG_PALETTE[0] = RGB15(0,0,0);			//back-ground tile color
-		BG_PALETTE[255] = RGB15(31,31,31);		//tile color
-		
-		dmaTransferWord(3, (uint32)GUI.DSFrameBuffer, (uint32)DefaultSessionConsoleInst->VideoBuffer,(uint32)(128*1024)); //copy
-		dmaFillHalfWord(3,(uint32)0, (uint32)GUI.DSFrameBuffer, (uint32)128*1024);	//clean
 		GUI.DSFrameBuffer = DefaultSessionConsoleInst->VideoBuffer;
-		
-		InitializeConsole(DefaultSessionConsoleInst);	//Console Top
+		InitializeConsole(DefaultSessionConsoleInst);	//Restore console context
 	}
 	else{	//todo: same swap video logic, but using ConsoleInstance CustomConsole
 		

@@ -33,7 +33,7 @@ USA
 
 #include "biosTGDS.h"
 #include "InterruptsARMCores_h.h"
-#include "dswnifi_lib.h"
+#include "limitsTGDS.h"
 
 #ifdef ARM9
 
@@ -54,7 +54,6 @@ USA
 #include <socket_dswifi.h>
 #include "in_dswifi.h"
 #include <assert.h>
-
 #endif
 
 //DSWNIFI_MODE flags: switch between nifi/wifi/idle mode
@@ -233,7 +232,8 @@ extern struct frameBlock FrameRecvBlock;	//used by the user receiver process, ca
 //frame receiver implementation, has all receiver-like modes here. Returns true if correct frame received from TCP/UDP
 extern struct frameBlock * 	receiveDSWNIFIFrame(uint8 * databuf_src,int frameSizeRecv);	//framesize is calculated inside (crc over udp requires framesize previously to here calculated anyway)
 extern bool sendDSWNIFIFame(struct frameBlock * frameInst);
-extern sint8* server_ip;
+extern sint8 server_ip[MAX_TGDSFILENAME_LENGTH+1];
+extern bool isValidIpAddress(char *ipAddress);
 
 //Send a frame to the other connected DS
 //example: 
