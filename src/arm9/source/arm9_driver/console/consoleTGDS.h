@@ -440,16 +440,16 @@ extern "C" {
 
 extern bool global_project_specific_console;
 extern	t_GUI	GUI;
-extern ConsoleInstance DefaultConsole;	//default console
-extern ConsoleInstance CustomConsole;	//project specific
+extern ConsoleInstance DefaultConsole;	
+extern ConsoleInstance CustomConsole;
+extern ConsoleInstance * CurrentConsole;
 
 //weak symbols : the implementation of this is project-defined
 extern __attribute__((weak))	bool InitProjectSpecificConsole(ConsoleInstance * ConsoleInstanceInst);
 
-extern bool InitializeConsole(ConsoleInstance * ConsoleInst);
 extern void UpdateConsoleSettings(ConsoleInstance * ConsoleInst);
 extern void SetEngineConsole(PPUEngine engine,ConsoleInstance * ConsoleInst);
-extern void consoleClear(ConsoleInstance * ConsoleInst);
+extern void consoleClr(ConsoleInstance * ConsoleInst);
 extern t_GUIFont katakana_12_font;
 
 extern void	GUI_console_printf(int cx, int cy, sint8 *fmt, ...);

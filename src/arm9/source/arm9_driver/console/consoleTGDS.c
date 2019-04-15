@@ -37,8 +37,12 @@ bool global_project_specific_console = false;
 
 t_GUI GUI;
 volatile sint8	g_printfbuf[consolebuf_size];
-ConsoleInstance DefaultConsole = {0};		//generic console
-ConsoleInstance CustomConsole = {0};		//project specific console
+ConsoleInstance DefaultConsole = {0};		//Default Console used when ---->	bool project_specific_console = true;
+																				//GUI_init(project_specific_console);
+	
+ConsoleInstance CustomConsole = {0};		//Custom Console used when ---->	bool 	project_specific_console = false;
+																				//GUI_init(project_specific_console);
+ConsoleInstance * CurrentConsole = NULL;	//Current Console running globally.
 
 t_GUIZone DefaultZone;
 
@@ -52,10 +56,6 @@ int getFontHeightFromZone(t_GUIZone * ZoneInst){
 	return GUI_getFontHeight(ZoneInst);
 }
 
-bool InitializeConsole(ConsoleInstance * ConsoleInst){	
-	UpdateConsoleSettings(ConsoleInst);	
-	return true;
-}
 
 void UpdateConsoleSettings(ConsoleInstance * ConsoleInst){
 	//setup DISPCNT
@@ -82,8 +82,8 @@ void SetEngineConsole(PPUEngine engine,ConsoleInstance * ConsoleInst){
 	ConsoleInst->ppuMainEngine = engine;
 }
 
-void consoleClear(ConsoleInstance * ConsoleInst){
-	//todo
+void consoleClr(ConsoleInstance * ConsoleInst){
+	GUI_clear();
 }
 
 //used by gui_printf
@@ -279,7 +279,7 @@ void	GUI_clear()
 {
 	//flush buffers
 	memset ((uint32 *)&g_printfbuf[0], 0, sizeof(g_printfbuf));
-	GUI_clearScreen(0);	//consoleClear(DefaultSessionConsole);	//todo
+	GUI_clearScreen(0);
 	GUI.printfy = 0;
 }
 
@@ -290,26 +290,27 @@ void clrscr(){
 //project_specific_console == true : you must provide an InitProjectSpecificConsole()
 //project_specific_console == false : default console for printf
 //see gui_console_connector.c (project specific implementation)
-void	GUI_init(bool project_specific_console)
-{
+void	GUI_init(bool project_specific_console){
+	ConsoleInstance * CurConsole = NULL;
 	if(project_specific_console == true){
-		ConsoleInstance * ConsoleInstanceInst = getProjectSpecificVRAMSetup();
-		VRAM_SETUP(ConsoleInstanceInst);
-		InitProjectSpecificConsole(ConsoleInstanceInst);
+		CurConsole = getProjectSpecificVRAMSetup();
+		VRAM_SETUP(CurConsole);
+		InitProjectSpecificConsole(CurConsole);
 	}
 	else{
-		ConsoleInstance * ConsoleInstanceInst = DEFAULT_CONSOLE_VRAMSETUP();
-		VRAM_SETUP(ConsoleInstanceInst);
-		InitDefaultConsole(ConsoleInstanceInst);
+		CurConsole = DEFAULT_CONSOLE_VRAMSETUP();
+		VRAM_SETUP(CurConsole);
+		InitDefaultConsole(CurConsole);
 	}
 	global_project_specific_console = project_specific_console;
+	CurrentConsole = CurConsole;
 	GUI.printfy = 0;
 }
 
 //based from video console settings at toolchaingenericds-keyboard-example
 void move_console_to_top_screen(){
 	
-	//use CustomConsole as a current console render
+	//Only when default console is in use, then use CustomConsole as a current console render
 	if(global_project_specific_console == false){
 		ConsoleInstance * DefaultSessionConsoleInst = (ConsoleInstance *)(&DefaultConsole);
 		ConsoleInstance * CustomSessionConsoleInst = (ConsoleInstance *)(&CustomConsole);
@@ -352,7 +353,7 @@ void move_console_to_top_screen(){
 		dmaTransferHalfWord(3, (uint32)0x06200000, (uint32)0x06000000,(uint32)(128*1024));
 		dmaFillHalfWord(3, 0, (uint32)0x06200000, (uint32)(128*1024));
 		CustomSessionConsoleInst->VideoBuffer = GUI.DSFrameBuffer;
-		InitializeConsole(CustomSessionConsoleInst);	//Console Top
+		UpdateConsoleSettings(CustomSessionConsoleInst);	//Console Top
 	}
 	else{	//todo: same swap video logic, but using ConsoleInstance CustomConsole
 		
@@ -363,7 +364,7 @@ void move_console_to_top_screen(){
 
 void move_console_to_bottom_screen(){
 
-	//use CustomConsole as a current console render
+	//Only when default console is in use, restore DefaultConsole context
 	if(global_project_specific_console == false){
 		ConsoleInstance * DefaultSessionConsoleInst = (ConsoleInstance *)(&DefaultConsole);
 		
@@ -385,7 +386,7 @@ void move_console_to_bottom_screen(){
 		
 		VRAM_SETUP(DefaultSessionConsoleInst);
 		GUI.DSFrameBuffer = DefaultSessionConsoleInst->VideoBuffer;
-		InitializeConsole(DefaultSessionConsoleInst);	//Restore console context
+		UpdateConsoleSettings(DefaultSessionConsoleInst);	//Restore console context
 	}
 	else{	//todo: same swap video logic, but using ConsoleInstance CustomConsole
 		
@@ -468,6 +469,6 @@ bool InitDefaultConsole(ConsoleInstance * DefaultSessionConsoleInst){
 	BG_PALETTE_SUB[0] = RGB15(0,0,0);			//back-ground tile color
 	BG_PALETTE_SUB[255] = RGB15(31,31,31);		//tile color
 	
-	InitializeConsole(DefaultSessionConsoleInst);
+	UpdateConsoleSettings(DefaultSessionConsoleInst);
 	return true;
 }
