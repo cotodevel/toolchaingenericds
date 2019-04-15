@@ -162,7 +162,7 @@ namespace ConsoleApplication1
             var server = new UdpListener();
 
             Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine(" Inter-DS UDP Companion Program. \n Usage: Connect this computer to the same network a DS is setup. \n Any connected DS through the DSWNIFI library should connect automatically.\n Developed by coto. Press ESC to quit");
+            Console.WriteLine(" UDP TGDS Server Companion Program. \n Usage: Connect this computer to the same network a DS is setup. \n Any connected DS through the DSWNIFI library should connect automatically.\n Developed by coto. Press ESC to quit");
 
             //test UDP RECV on DS: SendUDPMsg("hi", "192.168.43.128", "8890");
 
@@ -338,21 +338,18 @@ namespace ConsoleApplication1
                                     string udpmsgds2 = "srvaware" + "-" + ip_dest_ds2 + "-" + ds2_mode + "-";
 
                                     SendUDPMsg(udpmsgds1, nds_session_list[nds1_index].ip, udp_port.ToString());
-                                    Thread.Sleep(1200);
+                                    Thread.Sleep(4000);
                                     SendUDPMsg(udpmsgds2, nds_session_list[nds2_index].ip, udp_port.ToString());
-
                                     Console.WriteLine("UDP: DS's are binded correctly :)");
                                 }
                                 else if ((nds_session_list[nds1_index].connection_method == "TCP") && (nds_session_list[nds2_index].connection_method == "TCP")) {
-
                                     int tcp_port = 7777;    //same as #define TCP_PORT 7777
                                     string tcpmsgds1 = "srvaware" + "-" + ip_dest_ds1 + "-" + ds1_mode + "-";
                                     SendTCPMsg(tcpmsgds1, nds_session_list[nds1_index].ip, tcp_port.ToString());
-                                    Thread.Sleep(800);  //4s for TCP
+                                    Thread.Sleep(488);  //4s for TCP
                                     //DS2
                                     string tcpmsgds2 = "srvaware" + "-" + ip_dest_ds2 + "-" + ds2_mode + "-";
                                     SendTCPMsg(tcpmsgds2, nds_session_list[nds2_index].ip, tcp_port.ToString());
-
                                     Console.WriteLine("TCP: DS's are binded correctly :)");
                                 }
                                 

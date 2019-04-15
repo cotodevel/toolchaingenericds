@@ -2,7 +2,7 @@ Coto:
 
 This covers the UDP NIFI protocol, to connect DS - DS through internet.
 
-This is a (windows only) UDP Server called ToolchainGenericDS Server Companion, 
+This is a (windows only) UDP Server called "UDP TGDS Server Companion Program", 
 
 if you have VS2012+ installed you can edit sources through .sln file.
 
