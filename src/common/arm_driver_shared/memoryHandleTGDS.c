@@ -246,12 +246,13 @@ void initvramLMALibend(){
 	#endif
 }
 
-
+//Physical Memory Start: [ARM7/9 bin start ~ ARM7/9 bin end, 4 bytes alignment, get_lma_libend() <---- ] ------------------------------------------------------------ get_lma_wramend()
 uint32 get_lma_libend(){
-	return (uint32)(&__vma_stub_end__);	//linear memory top (start)
+	u32 wram_start = (u32)&__vma_stub_end__;
+	return (uint32)((wram_start + (4 - 1)) & -4);  // Round up to 4-byte boundary // linear memory top (start)
 }
 
-//(ewram end - linear memory top ) = malloc free memory (bottom, end)
+//Physical Memory Start: [ARM7/9 bin start ~ ARM7/9 bin end, 4 bytes alignment, get_lma_libend()] ------------------------------------------------------------ get_lma_wramend() <----
 uint32 get_lma_wramend(){
 	#ifdef ARM7
 	extern uint32 sp_USR;	//the farthest stack from the end memory is our free memory (in ARM7, shared stacks)
@@ -300,16 +301,13 @@ sint32 get_dtcm_size(){
    @param[in] incr  The number of bytes to increment the stack by.
    @return  A pointer to the start of the new block of memory                */
 /* ------------------------------------------------------------------------- */
-void *
-_sbrk (int  incr)
+
+volatile char 		*heap_end = NULL;		/* Previous end of heap or 0 if none */
+volatile char        *prev_heap_end = NULL;
+
+void * _sbrk (int  incr)
 {
-	//extern char __heap_start;//set by linker
-	//extern char __heap_end;//set by linker
-
-	static char *heap_end;		/* Previous end of heap or 0 if none */
-	char        *prev_heap_end;
-
-	if (0 == heap_end) {
+	if (heap_end == NULL) {
 		heap_end = (sint8*)get_lma_libend();			/* Initialize first time round */
 	}
 

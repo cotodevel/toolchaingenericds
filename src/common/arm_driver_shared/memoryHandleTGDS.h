@@ -152,6 +152,9 @@ extern void Write32bitAddrExtArm(uint32 address, uint32 value);
 extern void Write16bitAddrExtArm(uint32 address, uint16 value);
 extern void Write8bitAddrExtArm(uint32 address, uint8 value);
 
+extern volatile char 		*heap_end;
+extern volatile char        *prev_heap_end;
+
 #ifdef __cplusplus
 }
 #endif
