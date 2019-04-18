@@ -105,16 +105,16 @@ size_t ucs2tombs(uint8* dst, const unsigned short* src, size_t len) {
 //reserved for project appVersion
 volatile char app_version_static[MAX_TGDSFILENAME_LENGTH+1];
 
-METHOD_DESCRIPTOR Methods[8];
+struct METHOD_DESCRIPTOR Methods[8];
 
 //returns a signature that holds the function + size
-METHOD_DESCRIPTOR * callback_append_signature(uint32 * func_addr, uint32 * func_addr_end, char * methodname,METHOD_DESCRIPTOR * method_inst){
+struct METHOD_DESCRIPTOR * callback_append_signature(uint32 * func_addr, uint32 * func_addr_end, char * methodname,struct METHOD_DESCRIPTOR * method_inst){
 	
 	method_inst->cback_address 	= 	func_addr;
 	method_inst->cback_size		=	(sint32)((uint8*)(uint32*)func_addr_end - (sint32)(func_addr));
 	memcpy ((uint8*)method_inst->methodname, (uint8*)methodname, strlen(methodname));
 	
-	return (METHOD_DESCRIPTOR *)method_inst;
+	return (struct METHOD_DESCRIPTOR *)method_inst;
 }
 
 //all handlers will have __attribute__((optimize("O0"))) specified.
@@ -134,7 +134,7 @@ void cback_build_end(){
 }
 
 //export an ARMv5 function to buffer
-inline sint32 callback_export_buffer(METHOD_DESCRIPTOR * method_inst, uint8 * buf_out){
+inline sint32 callback_export_buffer(struct METHOD_DESCRIPTOR * method_inst, uint8 * buf_out){
 	
 	if(method_inst->cback_size > 0){
 		//void * memcpy ( void * destination, const void * source, size_t num );
@@ -146,15 +146,15 @@ inline sint32 callback_export_buffer(METHOD_DESCRIPTOR * method_inst, uint8 * bu
 }
 
 //export an ARMv5 function to text file
-sint32 callback_export_file(char * filename,METHOD_DESCRIPTOR * method_inst){
+sint32 callback_export_file(char * filename,struct METHOD_DESCRIPTOR * method_inst){
 	return FS_saveFile(filename, (char *)method_inst->cback_address, method_inst->cback_size,true);
 }
 
 //Version Handler: Required for config (plaintext) ARM code. We save the timestamp of the emuname.nds and we check it against a text file.
-volatile VERSION_DESCRIPTOR Version[1];	//global
+struct VERSION_DESCRIPTOR Version[1];	//global
 
 //Apps should update this at bootup
-sint32 addAppVersiontoCompiledCode(VERSION_DESCRIPTOR * versionInst,char * appVersion,int appVersionCharsize){
+sint32 addAppVersiontoCompiledCode(struct VERSION_DESCRIPTOR * versionInst,char * appVersion,int appVersionCharsize){
 	if ((strlen(appVersion) > sizeof(app_version_static)) || (appVersionCharsize > sizeof(app_version_static))){
 		return -1;	//error, prevent buffer overflow
 	}
@@ -164,7 +164,7 @@ sint32 addAppVersiontoCompiledCode(VERSION_DESCRIPTOR * versionInst,char * appVe
 }
 
 //Framework sets this by default. should be re-called right after APP set version
-sint32 updateVersionfromCompiledCode(VERSION_DESCRIPTOR * versionInst){
+sint32 updateVersionfromCompiledCode(struct VERSION_DESCRIPTOR * versionInst){
 	#ifndef readvertoolchain
 	return -1;
 	#endif
@@ -191,7 +191,7 @@ sint32 updateVersionfromCompiledCode(VERSION_DESCRIPTOR * versionInst){
 //Writes to versionInst the current version read from emuCore, plus timestamp from file
 //returns -1 if readvertoolchain could not be read (compile time) or timestamp is invalid
 //returns -2 if config is not set
-sint32 updateAssemblyParamsConfig(VERSION_DESCRIPTOR * versionInst){
+sint32 updateAssemblyParamsConfig(struct VERSION_DESCRIPTOR * versionInst){
 	if(updateVersionfromCompiledCode(versionInst) == -1){
 		return -2;
 	}
@@ -201,7 +201,7 @@ sint32 updateAssemblyParamsConfig(VERSION_DESCRIPTOR * versionInst){
 	return 0;
 }
 
-sint32 glueARMHandlerConfig(VERSION_DESCRIPTOR * versionInst,METHOD_DESCRIPTOR * method_inst){
+sint32 glueARMHandlerConfig(struct VERSION_DESCRIPTOR * versionInst,struct METHOD_DESCRIPTOR * method_inst){
 	if(updateAssemblyParamsConfig(versionInst) < 0){
 		return -1;
 	}

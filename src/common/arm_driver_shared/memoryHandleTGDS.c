@@ -317,7 +317,9 @@ void * _sbrk (int  incr)
 	if( heap_end < (char*)get_lma_wramend()) {
 
 	} else {
+		#ifdef ARM9
 		errno = ENOMEM;
+		#endif
 		return (char*)-1;
 	}
 	return (void *) prev_heap_end;

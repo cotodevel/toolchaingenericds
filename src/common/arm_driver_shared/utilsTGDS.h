@@ -19,8 +19,8 @@ USA
 */
 
 
-#ifndef __toolchain_utils_h__
-#define __toolchain_utils_h__
+#ifndef __utilstgds_h__
+#define __utilstgds_h__
 
 #include "typedefsTGDS.h"
 #include "dsregs.h"
@@ -46,18 +46,18 @@ USA
 
 //Method Export
 #define PLAINTEXT_METHOD_SEPARATOR	(uint32)(0xfedcba98)	//not valid ARM function
-typedef	struct {
+struct METHOD_DESCRIPTOR{
 	uint32 * cback_address;
 	int cback_size;
 	char methodname[MAX_TGDSFILENAME_LENGTH+1];
-}METHOD_DESCRIPTOR;
+};
 		
 //Version Struct
 #define PLAINTEXT_VERSION_SEPARATOR	(sint8*)("-")	//sint8 * is char *
-typedef	struct {
+struct VERSION_DESCRIPTOR {
 	char app_version[MAX_TGDSFILENAME_LENGTH+1];	//"0.6a-mm/dd/yyyy" //generated when parsing config file, section [Version]
 	char framework_version[MAX_TGDSFILENAME_LENGTH+1];	//"0.6a-mm/dd/yyyy" //generated when parsing config file, section [Version]
-}VERSION_DESCRIPTOR;
+};
 
 #endif
 
@@ -81,23 +81,23 @@ extern size_t ucs2tombs(uint8* dst, const unsigned short* src, size_t len);
 extern volatile char app_version_static[MAX_TGDSFILENAME_LENGTH+1];
 
 //METHOD_HANDLERS
-extern METHOD_DESCRIPTOR Methods[8];
-extern METHOD_DESCRIPTOR * callback_append_signature(uint32 * func_addr, uint32 * func_addr_end, char * methodname,METHOD_DESCRIPTOR * method_inst);
+extern struct METHOD_DESCRIPTOR Methods[8];
+extern struct METHOD_DESCRIPTOR * callback_append_signature(uint32 * func_addr, uint32 * func_addr_end, char * methodname,struct METHOD_DESCRIPTOR * method_inst);
 extern sint32 cback_build();
 extern void cback_build_end();
-extern sint32 callback_export_buffer(METHOD_DESCRIPTOR * method_inst, uint8 * buf_out);
-extern sint32 callback_export_file(char * filename,METHOD_DESCRIPTOR * method_inst);
+extern sint32 callback_export_buffer(struct METHOD_DESCRIPTOR * method_inst, uint8 * buf_out);
+extern sint32 callback_export_file(char * filename,struct METHOD_DESCRIPTOR * method_inst);
 
 //VERSION_HANDLERS
-extern volatile VERSION_DESCRIPTOR Version[1];
+extern struct VERSION_DESCRIPTOR Version[1];
 
 //Apps should update this at bootup
-extern sint32 addAppVersiontoCompiledCode(VERSION_DESCRIPTOR * versionInst,char * appVersion,int appVersionCharsize);
+extern sint32 addAppVersiontoCompiledCode(struct VERSION_DESCRIPTOR * versionInst,char * appVersion,int appVersionCharsize);
 
 //Framework sets this by default
-extern sint32 updateVersionfromCompiledCode(VERSION_DESCRIPTOR * versionInst);
-extern sint32 updateAssemblyParamsConfig(VERSION_DESCRIPTOR * versionInst);
-extern sint32 glueARMHandlerConfig(VERSION_DESCRIPTOR * versionInst,METHOD_DESCRIPTOR * method_inst);
+extern sint32 updateVersionfromCompiledCode(struct VERSION_DESCRIPTOR * versionInst);
+extern sint32 updateAssemblyParamsConfig(struct VERSION_DESCRIPTOR * versionInst);
+extern sint32 glueARMHandlerConfig(struct VERSION_DESCRIPTOR * versionInst,struct METHOD_DESCRIPTOR * method_inst);
 
 //misc
 extern int	FS_loadFile(sint8 *filename, sint8 *buf, int size);

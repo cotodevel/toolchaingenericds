@@ -21,6 +21,11 @@ USA
 //Coto: this was rewritten by me so it could fit the following setup:
 //The overriden stock POSIX calls are specifically targeted to newlib libc nano ARM Toolchain
 
+//required:
+void abort(){
+	
+}
+
 #ifdef ARM9
 #include "posixHandleTGDS.h"
 #include "memoryHandleTGDS.h"
@@ -49,10 +54,6 @@ USA
 //
 //	-	Newlib dictates to override reentrant weak functions, overriding non reentrant is undefined behaviour.
 
-//required:
-void abort(){
-	
-}
 
 int fork(){
 	return -1;
