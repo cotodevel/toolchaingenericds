@@ -892,8 +892,9 @@ void remotePutPacket(char *packet)
   unsigned char csum = 0;
   char *p = buffer;
   *p++ = '$';
-
-  for(int i = 0 ;i < count; i++) {
+	
+	int i = 0;
+  for(i = 0 ;i < count; i++) {
     csum += packet[i];
     *p++ = packet[i];
   }
@@ -958,7 +959,8 @@ void remoteSendStatus()
   sprintf(buffer, "T%02x", remoteSignal);
   char *s = buffer;
   s += 3;
-  for(int i = 0; i < 15; i++) {
+  int i = 0;
+  for( i = 0; i < 15; i++) {
     u32 v = i+(0x08000000);	//mockup ARM Core Registers
     sprintf(s, "%02x:%02x%02x%02x%02x;",i,
             (v & 255),
@@ -995,7 +997,8 @@ void remoteBinaryWrite(char *p)
 
   p = strchr(p, ':');
   p++;
-  for(int i = 0; i < count; i++) {
+  int i = 0 ;
+  for( i = 0; i < count; i++) {
     u8 b = *p++;
     switch(b) {
     case 0x7d:
@@ -1022,7 +1025,8 @@ void remoteMemoryWrite(char *p)
 
   p = strchr(p, ':');
   p++;
-  for(int i = 0; i < count; i++) {
+  int i = 0;
+  for( i = 0; i < count; i++) {
     u8 v = 0;
     char c = *p++;
     if(c <= '9')
@@ -1049,7 +1053,8 @@ void remoteMemoryRead(char *p)
   
   char * buffer = (char *)malloc(1024);
   char *s = buffer;
-  for(int i = 0; i < count; i++) {
+  int i = 0;
+  for( i = 0; i < count; i++) {
     u8 b = debuggerReadByte(address);
     sprintf(s, "%02x", b);
     address++;
@@ -1106,8 +1111,8 @@ void remoteWriteWatch(char *p, bool active)
     remotePutPacket("E01");
     return;
   }
-
-  for(int i = 0; i < count; i++) {
+	int i = 0;
+  for( i = 0; i < count; i++) {
     if((address >> 24) == 2)
       WorkRAM[address & 0x3ffff] = active;
     else

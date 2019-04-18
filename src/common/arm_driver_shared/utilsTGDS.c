@@ -455,7 +455,8 @@ int count_substr(const char *str, const char* substr, bool overlap) {
 
   int count = 0;
   int increment = overlap ? 1 : strlen(substr);
-  for (char* s = (char*)str; (s = strstr(s, substr)); s += increment)
+  char* s = NULL;
+  for ( s =(char*)str; (s = strstr(s, substr)); s += increment)
     ++count;
   return count;
 }
