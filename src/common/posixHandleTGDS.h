@@ -83,8 +83,6 @@ struct devoptab_t{
 extern "C"{
 #endif
 
-extern void abort();
-
 
 #ifdef ARM7
 #endif
