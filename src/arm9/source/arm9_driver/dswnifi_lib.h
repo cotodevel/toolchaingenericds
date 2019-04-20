@@ -56,11 +56,14 @@ USA
 #include <assert.h>
 #endif
 
+//GDB Server
+#define minGDBMapFileAddress	(uint32)(0x00000000)
+#define maxGDBMapFileAddress	(uint32)(0xF0000000)
+
 //DSWNIFI_MODE flags: switch between nifi/wifi/idle mode
 #define DSWNIFI_ENTER_IDLEMODE (int)(1)
 #define DSWNIFI_ENTER_NIFIMODE (int)(2)
 #define DSWNIFI_ENTER_WIFIMODE (int)(3)
-
 
 //NIFI defs
 #define arm7_header_framesize 	(12 + 2)									//arm7 
@@ -100,7 +103,6 @@ USA
 //execution stage
 #define dswifi_udpnifimodeFailExecutionStage (sint32)(20)
 #define dswifi_localnifimodeFailExecutionStage (sint32)(21)
-
 
 //special udp nifi/wifi mode
 #define ds_multi_notrunning (sint32)(8)
@@ -179,8 +181,6 @@ extern struct dsnwifisrvStr dswifiSrv;
 
 #define InternalRAM ((u8*)0x03000000)
 #define WorkRAM ((u8*)0x02000000)
-
-#define GDBMapFileAddress (uint32)(0x0f000000)
 
 struct gdbStubMapFile {
 	int GDBMapFileSize;
@@ -308,12 +308,15 @@ extern u8 debuggerReadByte(u32 addr);
 extern u16 debuggerReadHalfWord(u32 addr);
 extern u32 debuggerReadMemory(u32 addr);
 
+extern uint32 GDBMapFileAddress;
+extern void setCurrentRelocatableGDBFileAddress(uint32 addrInput);
+extern uint32 getCurrentRelocatableGDBFileAddress();
 extern struct gdbStubMapFile globalGdbStubMapFile;
 extern bool isValidGDBMapFile;
 extern void setValidGDBMapFile(bool ValidGDBMapFile);
 extern bool getValidGDBMapFile();
 extern struct gdbStubMapFile * getGDBMapFile();
-extern bool initGDBMapFile(char * filename);
+extern bool initGDBMapFile(char * filename, uint32 newRelocatableAddr);
 extern void closeGDBMapFile();
 extern uint32 readu32GDBMapFile(uint32 address);
 

@@ -1318,6 +1318,14 @@ sint32 remoteStubMain(){
 	return remoteStubMainWIFINotConnected;				//gdb not running, WIFI not connected (first time connection)
 }
 
+uint32 GDBMapFileAddress = (uint32)0x00000000;
+void setCurrentRelocatableGDBFileAddress(uint32 addrInput){
+	GDBMapFileAddress = addrInput;
+}
+uint32 getCurrentRelocatableGDBFileAddress(){
+	return GDBMapFileAddress;
+}
+
 void remoteStubSignal(int sig, int number)
 {
   remoteSignal = sig;
@@ -1359,7 +1367,7 @@ u16 debuggerReadHalfWord(u32 addr){
 u8 debuggerReadByte(u32 addr){
 	if(isValidMap(addr) == true){
 		if(getValidGDBMapFile() == true){
-			return (u8)(readu32GDBMapFile(addr)&0xff);
+			return (u8)(readu32GDBMapFile(addr)&0xff);	//correct format: (value 32bit) & 0xff
 		}
 		else{
 			return (*(u8*)addr);
@@ -1380,7 +1388,7 @@ struct gdbStubMapFile * getGDBMapFile(){
 	return (struct gdbStubMapFile *)&globalGdbStubMapFile;
 }
 
-bool initGDBMapFile(char * filename){
+bool initGDBMapFile(char * filename, uint32 newRelocatableAddr){
 	struct gdbStubMapFile * gdbStubMapFileInst = getGDBMapFile();
 	memset((uint8*)gdbStubMapFileInst, 0, sizeof(struct gdbStubMapFile));
 	FILE * fh = fopen(filename,"r");
@@ -1388,10 +1396,20 @@ bool initGDBMapFile(char * filename){
 		fseek(fh,0,SEEK_END);
 		int fileSize = ftell(fh);
 		fseek(fh,0,SEEK_SET);
-		gdbStubMapFileInst->GDBFileHandle = fh;
-		gdbStubMapFileInst->GDBMapFileSize = fileSize;
-		setValidGDBMapFile(true);
-		return true;
+		if(
+			((uint32)newRelocatableAddr >= (uint32)minGDBMapFileAddress)
+			&&
+			((uint32)newRelocatableAddr < (uint32)maxGDBMapFileAddress)
+		){
+			gdbStubMapFileInst->GDBFileHandle = fh;
+			gdbStubMapFileInst->GDBMapFileSize = fileSize;
+			setCurrentRelocatableGDBFileAddress(newRelocatableAddr);
+			setValidGDBMapFile(true);
+			return true;
+		}
+		else{
+			fclose(fh);
+		}
 	}
 	setValidGDBMapFile(false);
 	return false;
@@ -1406,14 +1424,25 @@ void closeGDBMapFile(){
 
 uint32 readu32GDBMapFile(uint32 address){
 	u32 readVal = 0;
-	int offset = 0;
 	struct gdbStubMapFile * gdbStubMapFileInst = getGDBMapFile();
 	if(gdbStubMapFileInst->GDBFileHandle != NULL){
-		offset = (address & 0xffffff);	//32M top
-		//iprintf("trying offset:%x",offset);
-		fseek(gdbStubMapFileInst->GDBFileHandle,offset,SEEK_CUR);
-		fread((uint8*)&readVal, 1, 4, gdbStubMapFileInst->GDBFileHandle);
-		return readVal;
+		int FSize = gdbStubMapFileInst->GDBMapFileSize;
+		if(
+			(FSize > 0)
+			&&
+			(address >= minGDBMapFileAddress)
+			&&
+			(address < maxGDBMapFileAddress)
+			&&
+			(address >= GDBMapFileAddress)
+			&&
+			(address < (GDBMapFileAddress + FSize))
+		){
+			int offst = (address & ((uint32)(FSize -1)));
+			fseek(gdbStubMapFileInst->GDBFileHandle, offst, SEEK_SET);
+			fread((uint32*)&readVal, 1, 4, gdbStubMapFileInst->GDBFileHandle);
+			return readVal;
+		}
 	}
 	return (uint32)0xffffffff;
 }
