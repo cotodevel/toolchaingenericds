@@ -46,7 +46,7 @@ OBJDIR 	=	./$(BUILD)
 VPATH 	=	$(DIR_SRC)
 OBJPROG =	$(addprefix $(OBJDIR)/, $(TARGET_LIBRARY_FILE_7))
 
-all: $(OBJDIR)|$(TARGET_LIBRARY_FILE_7)
+all: $(OBJDIR)|$(OBJPROG)
 #all: debug
 
 #Check $(OBJDIR) if not exists: create it
