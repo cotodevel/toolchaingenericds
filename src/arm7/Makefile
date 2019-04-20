@@ -90,22 +90,17 @@ $(OBJDIR)/%.o : %.S
 
 #Builder.
 $(OBJPROG): $(addprefix $(OBJDIR)/, $(OBJECTS))
-	-@echo 'Entering Build phase'
+	-@echo 'Entering Linking phase'
 	$(AR) rvs	$@	$^
-	-@echo 'Leaving Build phase. Output: $@'
-
-#build *.o into $(TARGET_LIBRARY_FILE_7)
-$(TARGET_LIBRARY_FILE_7): $(OBJPROG)
 ifeq ($(TGDS_ENV),windows)
 	-mkdir -p $(TARGET_LIBRARY_PATH) && cp	$(OBJPROG)	$(TARGET_LIBRARY_PATH)
-	-mkdir -p $(TARGET_LIBRARY_HEADERS_7) && cp	$(dir_arm7_src_h)	$(TARGET_LIBRARY_HEADERS_7)
+	-mkdir -p $(TARGET_LIBRARY_HEADERS_7) && cp $(dir_arm7_src_h) $(TARGET_LIBRARY_HEADERS_7)
 endif
 ifeq ($(TGDS_ENV),linux)
 	-sudo mkdir -p $(TARGET_LIBRARY_PATH) && sudo cp	$(OBJPROG)	$(TARGET_LIBRARY_PATH)
-	-sudo mkdir -p $(TARGET_LIBRARY_HEADERS_7) && sudo cp	$(dir_arm7_src_h)	$(TARGET_LIBRARY_HEADERS_7)
+	-sudo mkdir -p $(TARGET_LIBRARY_HEADERS_7) && sudo cp $(dir_arm7_src_h) $(TARGET_LIBRARY_HEADERS_7)
 endif
-
-	-@echo 'build done: $(TARGET_LIBRARY_FILE_7)'
+	-@echo 'Leaving Linking phase. $(OBJPROG)'
 	
 ################################################################################################
 clean:
