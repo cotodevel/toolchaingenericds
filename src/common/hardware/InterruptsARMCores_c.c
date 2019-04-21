@@ -33,12 +33,6 @@ USA
 #include "keypadTGDS.h"
 
 
-//stubs because we don't disable IME on DSWIFI
-void SGIP_INTR_PROTECT(){}
-void SGIP_INTR_REPROTECT(){}
-void SGIP_INTR_UNPROTECT(){}
-void SGIP_WAITEVENT(){}
-
 void IRQInit(){
 	//fifo setups
 	REG_IME = 0;

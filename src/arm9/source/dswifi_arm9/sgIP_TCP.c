@@ -625,14 +625,13 @@ void sgIP_TCP_FixChecksum(unsigned long srcip, unsigned long destip, sgIP_memblo
 int sgIP_TCP_SendPacket(sgIP_Record_TCP * rec, int flags, int datalength) { // data sent is taken directly from the TX fifo.
    int i,j,k;
 	if(!rec) return 0;
-	SGIP_INTR_PROTECT();
-
+	
    j=rec->buf_tx_out-rec->buf_tx_in;
    if(j<0) j+=SGIP_TCP_TRANSMITBUFFERLENGTH;
    if(datalength>j) datalength=j;
    sgIP_memblock * mb =sgIP_TCP_GenHeader(rec,flags,datalength);
 	if(!mb) {
-		SGIP_INTR_UNPROTECT();
+		
 		return 0;
 	}
    j=20; // destination offset in memblock for data
@@ -653,16 +652,15 @@ int sgIP_TCP_SendPacket(sgIP_Record_TCP * rec, int flags, int datalength) { // d
 
    rec->time_last_action=sgIP_timems; // semi-generic timer.
    rec->time_backoff=SGIP_TCP_GENRETRYMS; // backoff timer
-	SGIP_INTR_UNPROTECT();
+	
    return 0;
 }
 
 int sgIP_TCP_SendSynReply(int flags,unsigned long seq, unsigned long ack, unsigned long srcip, unsigned long destip, int srcport, int destport, int windowlen) {
-   SGIP_INTR_PROTECT();
-
+   
    sgIP_memblock * mb = sgIP_memblock_alloc(20+sgIP_IP_RequiredHeaderSize());
    if(!mb) {
-      SGIP_INTR_UNPROTECT();
+      
       return 0;
    }
    sgIP_memblock_exposeheader(mb,-sgIP_IP_RequiredHeaderSize()); // hide IP header space for later
@@ -682,12 +680,11 @@ int sgIP_TCP_SendSynReply(int flags,unsigned long seq, unsigned long ack, unsign
    sgIP_TCP_FixChecksum(srcip,destip,mb);
    sgIP_IP_SendViaIP(mb,6,srcip,destip);
 
-   SGIP_INTR_UNPROTECT();
+   
    return 0;
 }
 
 sgIP_Record_TCP * sgIP_TCP_AllocRecord() {
-	SGIP_INTR_PROTECT();
 	sgIP_Record_TCP * rec;
 	rec = sgIP_malloc(sizeof(sgIP_Record_TCP));
 	if(rec) {
@@ -708,12 +705,11 @@ sgIP_Record_TCP * sgIP_TCP_AllocRecord() {
 	  rec->want_shutdown=0;
       rec->want_reack=0;
 	}
-	SGIP_INTR_UNPROTECT();
+	
 	return rec;
 }
 void sgIP_TCP_FreeRecord(sgIP_Record_TCP * rec) {
 	if(!rec) return;
-	SGIP_INTR_PROTECT();
 	sgIP_Record_TCP * t;
    int i,j;
 	rec->tcpstate=0;
@@ -748,25 +744,23 @@ void sgIP_TCP_FreeRecord(sgIP_Record_TCP * rec) {
    }
 	sgIP_free(rec);
 
-	SGIP_INTR_UNPROTECT();
+	
 }
 
 int sgIP_TCP_Bind(sgIP_Record_TCP * rec, int srcport, unsigned long srcip) {
 	if(!rec) return 0;
-	SGIP_INTR_PROTECT();
 	if(rec->tcpstate==SGIP_TCP_STATE_NODATA) {
 		rec->srcip=srcip;
 		rec->srcport=srcport;
 		rec->tcpstate=SGIP_TCP_STATE_UNUSED;
 	}
-	SGIP_INTR_UNPROTECT();
+	
 	return 0;
 }
 int sgIP_TCP_Listen(sgIP_Record_TCP * rec, int maxlisten) {
 	if(!rec) return SGIP_ERROR(EINVAL);
    if(rec->tcpstate!=SGIP_TCP_STATE_UNUSED) return SGIP_ERROR(EINVAL);
 	int err;
-	SGIP_INTR_PROTECT();
 	if(rec->maxlisten!=0) { // we're *already* listening.
 		err=0;
 	} else {
@@ -776,7 +770,7 @@ int sgIP_TCP_Listen(sgIP_Record_TCP * rec, int maxlisten) {
 		rec->listendata = (sgIP_Record_TCP **) sgIP_malloc(maxlisten*4); // pointers to TCP records, 0-terminated list.
 		if(!rec->listendata) { rec->maxlisten=0; err=0; } else {rec->tcpstate=SGIP_TCP_STATE_LISTEN; rec->listendata[0]=0;}
 	}
-	SGIP_INTR_UNPROTECT();
+	
 	return err;
 }
 
@@ -785,7 +779,6 @@ sgIP_Record_TCP * sgIP_TCP_Accept(sgIP_Record_TCP * rec) {
    if(rec->tcpstate!=SGIP_TCP_STATE_LISTEN) return (sgIP_Record_TCP *)SGIP_ERROR0(EINVAL);
    int err,i;
    sgIP_Record_TCP * t;
-   SGIP_INTR_PROTECT();
    if(!rec->listendata) err=SGIP_ERROR0(EINVAL);
    else {
       if(!rec->listendata[0]) {
@@ -796,25 +789,23 @@ sgIP_Record_TCP * sgIP_TCP_Accept(sgIP_Record_TCP * rec) {
             rec->listendata[i-1]=rec->listendata[i];
          }
          rec->listendata[i-1]=0;
-         SGIP_INTR_UNPROTECT();
+         
          return t;
       }
    }
 
-   SGIP_INTR_UNPROTECT();
+   
    return 0;
 }
 
 int sgIP_TCP_Close(sgIP_Record_TCP * rec) {
 	if(!rec) return SGIP_ERROR(EINVAL);
-	SGIP_INTR_PROTECT();
 	if(rec->want_shutdown==0) rec->want_shutdown=1;
-	SGIP_INTR_UNPROTECT();
+	
 	return 0;
 }
 int sgIP_TCP_Connect(sgIP_Record_TCP * rec, unsigned long destip, int destport) {
 	if(!rec) return SGIP_ERROR(EINVAL);
-	SGIP_INTR_PROTECT();
 	if(rec->tcpstate==SGIP_TCP_STATE_NODATA) { // need to bind a local address
 		rec->srcip=sgIP_IP_GetLocalBindAddr(0,destip);
 		rec->srcport=htons(sgIP_TCP_GetUnusedOutgoingPort());
@@ -825,7 +816,7 @@ int sgIP_TCP_Connect(sgIP_Record_TCP * rec, unsigned long destip, int destport) 
 		rec->destip=destip;
 		rec->destport=destport;
 	} else {
-		SGIP_INTR_UNPROTECT();
+		
 		return SGIP_ERROR(EINVAL);
 	}
 
@@ -835,13 +826,12 @@ int sgIP_TCP_Connect(sgIP_Record_TCP * rec, unsigned long destip, int destport) 
    rec->retrycount=0;
 	rec->tcpstate=SGIP_TCP_STATE_SYN_SENT;
 
-	SGIP_INTR_UNPROTECT();
+	
 	return 0;
 }
 int sgIP_TCP_Send(sgIP_Record_TCP * rec, const sint8 * datatosend, int datalength, int flags) {
 	if(!rec || !datatosend) return SGIP_ERROR(EINVAL);
 	if(rec->want_shutdown) return SGIP_ERROR(ESHUTDOWN);
-	SGIP_INTR_PROTECT();
 	int bufsize;
 	bufsize=rec->buf_tx_out-rec->buf_tx_in;
 	if(bufsize<0) bufsize+=SGIP_TCP_TRANSMITBUFFERLENGTH;
@@ -872,7 +862,7 @@ int sgIP_TCP_Send(sgIP_Record_TCP * rec, const sint8 * datatosend, int datalengt
          rec->retrycount=0;
       }
    }
-	SGIP_INTR_UNPROTECT();
+	
    if(datalength==0) return SGIP_ERROR(EWOULDBLOCK);
 	return datalength;	
 }
@@ -885,7 +875,6 @@ int sgIP_TCP_Recv(sgIP_Record_TCP * rec, sint8 * databuf, int buflength, int fla
       }
       return SGIP_ERROR(EWOULDBLOCK); //error no data
    }
-	SGIP_INTR_PROTECT();
 	int rxlen = rec->buf_rx_out - rec->buf_rx_in;
 	if(rxlen<0) rxlen+=SGIP_TCP_RECEIVEBUFFERLENGTH;
 	if(buflength>rxlen) buflength=rxlen;
@@ -910,6 +899,6 @@ int sgIP_TCP_Recv(sgIP_Record_TCP * rec, sint8 * databuf, int buflength, int fla
             }
         }
     }
-	SGIP_INTR_UNPROTECT();
+	
 	return buflength;
 }

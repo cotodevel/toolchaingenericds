@@ -61,13 +61,6 @@ extern void IRQWait(uint32 irqstowait);
 extern void IRQVBlankWait();
 extern void IRQInit();
 
-//stubs because we don't disable IME on DSWIFI
-extern void SGIP_INTR_PROTECT();
-extern void SGIP_INTR_REPROTECT();
-extern void SGIP_INTR_UNPROTECT();
-extern void SGIP_WAITEVENT();
-
-
 #ifdef __cplusplus
 }
 #endif

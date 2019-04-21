@@ -44,7 +44,6 @@ void * pool_link;
 sgIP_memblock * sgIP_memblock_getunused() {
 	int i;
 	sgIP_memblock * mb;
-	SGIP_INTR_PROTECT();
 	if(memblock_poolfree) { // we still have free memblocks!
 		mb=memblock_poolfree;
 		memblock_poolfree=mb->next;
@@ -54,7 +53,6 @@ sgIP_memblock * sgIP_memblock_getunused() {
 		mb = 0; // eventually alloc new blocks, but for now just stop.
 	}
 
-	SGIP_INTR_UNPROTECT();
 	return mb;
 }
 #endif  //SGIP_MEMBLOCK_DYNAMIC_MALLOC_ALL
@@ -144,7 +142,6 @@ sgIP_memblock * sgIP_memblock_alloc(int packetsize) {
 void sgIP_memblock_free(sgIP_memblock * mb) {
    sgIP_memblock * f;
 
-   SGIP_INTR_PROTECT();
    while(mb) {
       mb->totallength=0;
       mb->thislength=0;
@@ -153,8 +150,6 @@ void sgIP_memblock_free(sgIP_memblock * mb) {
 
       sgIP_free(f);
    }
-
-   SGIP_INTR_UNPROTECT();
 }
 
 #else //SGIP_MEMBLOCK_DYNAMIC_MALLOC_ALL
@@ -162,7 +157,6 @@ void sgIP_memblock_free(sgIP_memblock * mb) {
 void sgIP_memblock_free(sgIP_memblock * mb) {
 	sgIP_memblock * f;
 
-	SGIP_INTR_PROTECT();
 	while(mb) {
 		mb->totallength=0;
 		mb->thislength=0;
@@ -175,8 +169,6 @@ void sgIP_memblock_free(sgIP_memblock * mb) {
 		memblock_poolfree=f;
 	}
 //	SGIP_DEBUG_MESSAGE(("memblock_free: %i free, %i used",numfree,numused));
-
-	SGIP_INTR_UNPROTECT();
 
 }
 
