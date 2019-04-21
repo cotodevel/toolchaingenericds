@@ -217,6 +217,7 @@ bool switch_dswnifi_mode(sint32 mode){
 	//GDBStub mode
 	else if (mode == (sint32)dswifi_gdbstubmode){
 		dswifiSrv.dsnwifisrv_stat	= ds_multi_notrunning;
+		resetGDBSession();
 		if (gdbNdsStart() == true){	//setWIFISetup set inside
 			setMULTIMode(mode);
 			OnDSWIFIGDBStubEnable();
@@ -1390,6 +1391,10 @@ struct gdbStubMapFile * getGDBMapFile(){
 
 bool initGDBMapFile(char * filename, uint32 newRelocatableAddr){
 	struct gdbStubMapFile * gdbStubMapFileInst = getGDBMapFile();
+	if(gdbStubMapFileInst->GDBFileHandle != NULL){ 
+		fclose(gdbStubMapFileInst->GDBFileHandle);
+		gdbStubMapFileInst->GDBFileHandle = NULL;
+	}
 	memset((uint8*)gdbStubMapFileInst, 0, sizeof(struct gdbStubMapFile));
 	FILE * fh = fopen(filename,"r");
 	if(fh){
@@ -1445,4 +1450,11 @@ uint32 readu32GDBMapFile(uint32 address){
 		}
 	}
 	return (uint32)0xffffffff;
+}
+
+void resetGDBSession(){
+	if(isValidGDBMapFile == false){
+		setCurrentRelocatableGDBFileAddress(-1);
+	}
+	setWIFISetup(false);
 }

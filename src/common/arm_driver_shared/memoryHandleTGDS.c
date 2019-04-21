@@ -384,7 +384,7 @@ bool isValidMap(uint32 addr){
 		((addr >= (uint32)(0x08000000)) && (addr <= (uint32)(0x08000000 + (32*1024*1024))))	//GBA ROM MAP (allows to read GBA carts over GDB)
 		#ifdef ARM9
 		||
-		((addr >= (uint32)(minGDBMapFileAddress)) && (addr < (uint32)(maxGDBMapFileAddress)))	//GDB File stream 
+		((addr >= (uint32)(GDBMapFileAddress)) &&  (addr >= (uint32)(minGDBMapFileAddress)) && (addr < (uint32)(maxGDBMapFileAddress)))	//GDB File stream 
 		#endif
 	){
 		return true;

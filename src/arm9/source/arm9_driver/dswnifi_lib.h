@@ -319,6 +319,7 @@ extern struct gdbStubMapFile * getGDBMapFile();
 extern bool initGDBMapFile(char * filename, uint32 newRelocatableAddr);
 extern void closeGDBMapFile();
 extern uint32 readu32GDBMapFile(uint32 address);
+extern void resetGDBSession();
 
 #endif
 
