@@ -572,8 +572,7 @@ int str_split(char * stream, char * haystack, char * outBuf){
 * WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#include "rsync.h"
-#include "socket_dswifi.h"
+#include "socket.h"
 
 
 #define NS_INT16SZ       2

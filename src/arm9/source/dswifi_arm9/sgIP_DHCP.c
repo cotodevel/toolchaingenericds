@@ -26,7 +26,7 @@ SOFTWARE.
 #include "sgIP_DHCP.h"
 #include "sgIP_DNS.h"
 #include <string.h>
-#include "socket_dswifi.h"
+#include "socket.h"
 #include "in.h"
 
 extern unsigned long volatile sgIP_timems;

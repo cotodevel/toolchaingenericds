@@ -27,9 +27,9 @@ SOFTWARE.
 #define SGIP_SOCKETS_H
 
 #include "sgIP_Config.h"
-#include "socket_dswifi.h"
+#include "socket.h"
 #include "in.h"
-#include "netdb_dswifi.h"
+#include "netdb.h"
 
 #define SGIP_SOCKET_FLAG_ALLOCATED			0x8000
 #define SGIP_SOCKET_FLAG_NONBLOCKING		0x4000

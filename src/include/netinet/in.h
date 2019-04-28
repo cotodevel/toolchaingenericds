@@ -1,4 +1,4 @@
-// DSWifi Project - socket emulation layer defines/prototypes (netdb_dswifi.h)
+// DSWifi Project - socket emulation layer defines/prototypes (netinet/in.h)
 // Copyright (C) 2005-2006 Stephen Stair - sgstair@akkit.org - http://www.akkit.org
 /****************************************************************************** 
 DSWifi Lib and test materials are licenced under the MIT open source licence:
@@ -23,21 +23,38 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#ifndef NETDB_H
-#define NETDB_H
+#ifndef NETINET_IN_H
+#define NETINET_IN_H
 
+#include <sys/time.h>
+#include "socket.h"
 
+#define INADDR_ANY			0x00000000
+#define INADDR_BROADCAST	0xFFFFFFFF
+#define INADDR_NONE			0xFFFFFFFF
+  
+struct in_addr {
+	unsigned long s_addr;
+};
+ 
+struct sockaddr_in {
+	unsigned short		sin_family;
+	unsigned short		sin_port;
+	struct in_addr		sin_addr;
+	unsigned char		sin_zero[8];
+};
+#endif
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-   extern struct hostent * gethostbyname(const char * name);
+	// actually from arpa/inet.h - but is included through netinet/in.h
+	unsigned long inet_addr(const char *cp);
+	int inet_aton(const char *cp, struct in_addr *inp);
+	char *inet_ntoa(struct in_addr in);
 
 #ifdef __cplusplus
 };
-#endif
-
-
 #endif

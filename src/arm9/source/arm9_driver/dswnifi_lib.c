@@ -47,7 +47,7 @@ USA
 #include "utilsTGDS.h"
 #include "memoryHandleTGDS.h"
 
-#include "netdb_dswifi.h"
+#include "netdb.h"
 #include <ctype.h>
 #include <string.h>
 #include <unistd.h>
@@ -57,7 +57,7 @@ USA
 #include <stdlib.h>
 #include <dirent.h>
 #include <stdbool.h>
-#include <socket_dswifi.h>
+#include <socket.h>
 #include <in.h>
 #include <assert.h>
 

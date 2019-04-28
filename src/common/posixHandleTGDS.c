@@ -172,7 +172,6 @@ int _gettimeofday(struct timeval *ptimeval,void *ptimezone){
 
 //TGDS Filesystem <- unix <- posix <- linux implementation
 
-
 mode_t umask(mode_t mask)
 {
   __set_errno (ENOSYS);

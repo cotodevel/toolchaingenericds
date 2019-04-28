@@ -38,7 +38,7 @@ SOFTWARE.
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
-#include "socket_dswifi.h"
+#include "socket.h"
 #include "in.h"
 
 #include "InterruptsARMCores_h.h"

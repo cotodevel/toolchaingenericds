@@ -1,35 +1,7 @@
-// DSWifi Project - socket emulation layer defines/prototypes (sys/socket.h)
-// Copyright (C) 2005-2006 Stephen Stair - sgstair@akkit.org - http://www.akkit.org
-/****************************************************************************** 
-DSWifi Lib and test materials are licenced under the MIT open source licence:
-Copyright (c) 2005-2006 Stephen Stair
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
-of the Software, and to permit persons to whom the Software is furnished to do
-so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-******************************************************************************/
-
-
-
 #ifndef SYS_SOCKET_H
 #define SYS_SOCKET_H
 
 #include "time.h"
-#include "socket.h"
 
 /*
  * Level number for (get/set)sockopt() to apply to socket itself.
@@ -64,6 +36,10 @@ SOFTWARE.
 #define MSG_DONTROUTE	0x02000000
 #define MSG_CTRUNC		0x01000000
 
+// shutdown() flags:
+#define SHUT_RD			1
+#define SHUT_WR			2
+#define SHUT_RDWR		3
 
 /*
  * Option flags per-socket.
@@ -92,6 +68,13 @@ SOFTWARE.
 #define SO_RCVTIMEO  0x1006    /* receive timeout */
 #define  SO_ERROR  0x1007    /* get error status and clear */
 #define  SO_TYPE    0x1008    /* get socket type */
+
+struct sockaddr {
+	unsigned short		sa_family;
+	char				sa_data[14];
+};
+
+typedef unsigned int socklen_t;
 
 #ifndef ntohs
 #define ntohs(num) htons(num)
