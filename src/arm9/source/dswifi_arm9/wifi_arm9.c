@@ -852,6 +852,9 @@ unsigned long Wifi_Init(int initflags) {
     case WIFIINIT_OPTION_USEHEAP_64:
         wHeapAllocInit(64*1024);
         break;
+	case WIFIINIT_OPTION_USEHEAP_96:
+		wHeapAllocInit(96*1024);
+		break;
 	case WIFIINIT_OPTION_USEHEAP_128:
         wHeapAllocInit(128*1024);
         break;
@@ -1092,7 +1095,7 @@ void wifiValue32Handler(uint32 value, void* data) {
 
 bool Wifi_InitDefault(bool useFirmwareSettings) {
 	
-	uint32 wifi_pass = Wifi_Init(WIFIINIT_OPTION_USELED|WIFIINIT_OPTION_USEHEAP_64);	//use 64K DSWIFI stack
+	uint32 wifi_pass = Wifi_Init(WIFIINIT_OPTION_USELED|WIFIINIT_OPTION_USEHEAP_96);	//use 96K DSWIFI stack
 	
 	if(!wifi_pass) return false;
 
