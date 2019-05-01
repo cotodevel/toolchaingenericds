@@ -609,7 +609,7 @@ void Wifi_Intr_DoNothing() {
 }
 
 
-
+inline __attribute__((always_inline))
 void Wifi_Interrupt() {
 	int wIF;
 	if(!WifiData) return;
@@ -642,7 +642,7 @@ void Wifi_Interrupt() {
 
 
 
-
+inline __attribute__((always_inline)) 
 void Wifi_Update() {
 	int i;
 	if(!WifiData) return;

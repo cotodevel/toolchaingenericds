@@ -1043,6 +1043,7 @@ uint32 Wifi_GetStats(int statnum) {
 // sync functions
 
 //---------------------------------------------------------------------------------
+inline __attribute__((always_inline))
 void Wifi_Sync() {
 //---------------------------------------------------------------------------------
 	int oldIE = REG_IE;
@@ -1057,6 +1058,7 @@ void Wifi_Sync() {
 
 // wifi timer function, to update internals of sgIP
 //---------------------------------------------------------------------------------
+inline __attribute__((always_inline))
 void Timer_50ms(void) {
 //---------------------------------------------------------------------------------
 	Wifi_Timer(50);

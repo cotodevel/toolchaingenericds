@@ -27,6 +27,7 @@ USA
 #include "clockTGDS.h"
 
 //Source http://problemkaputt.de/gbatek.htm
+inline __attribute__((always_inline)) 
 void doSPIARM7IO(){
 	struct sIPCSharedTGDS * sIPCSharedTGDSInst = TGDSIPCStartAddress;
 	struct sEXTKEYIN * sEXTKEYINInst = (struct sEXTKEYIN *)&sIPCSharedTGDSInst->EXTKEYINInst;

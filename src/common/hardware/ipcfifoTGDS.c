@@ -49,6 +49,7 @@ USA
 volatile int FIFO_SOFT_PTR = 0;
 
 //useful for checking if something is pending
+inline __attribute__((always_inline)) 
 int GetSoftFIFOCount(){
 	return FIFO_SOFT_PTR;
 }
@@ -62,6 +63,7 @@ int GetSoftFIFOCount(){
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
+inline __attribute__((always_inline)) 
 bool GetSoftFIFO(uint32 * var){
 	if(FIFO_SOFT_PTR >= 1){
 		FIFO_SOFT_PTR--;
@@ -79,6 +81,7 @@ bool GetSoftFIFO(uint32 * var){
 __attribute__((section(".itcm")))
 #endif    
 //returns ammount of inserted uint32 blocks into FIFO hardware regs
+inline __attribute__((always_inline)) 
 bool SetSoftFIFO(uint32 value)
 {
 	if(FIFO_SOFT_PTR < (int)(FIFO_NDS_HW_SIZE/4)){
@@ -96,6 +99,7 @@ bool SetSoftFIFO(uint32 value)
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
+inline __attribute__((always_inline)) 
 void Handle_SoftFIFORECV()
 {
 	uint32 msg = 0;
@@ -112,6 +116,7 @@ void Handle_SoftFIFORECV()
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
+inline __attribute__((always_inline)) 
 void SoftFIFOSEND(uint32 value0,uint32 value1,uint32 value2,uint32 value3){
 	//todo: needs hardware IPC FIFO implementation.
 }
@@ -121,6 +126,7 @@ void SoftFIFOSEND(uint32 value0,uint32 value1,uint32 value2,uint32 value3){
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
+inline __attribute__((always_inline)) 
 void SendFIFOWords(uint32 data0, uint32 data1){
 	REG_IPC_FIFO_TX = (uint32)data0;
 	REG_IPC_FIFO_TX = (uint32)data1;
@@ -130,6 +136,7 @@ void SendFIFOWords(uint32 data0, uint32 data1){
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
+inline __attribute__((always_inline)) 
 void HandleFifoEmpty(){
 	HandleFifoEmptyWeakRef((uint32)0,(uint32)0);
 }
@@ -138,6 +145,7 @@ void HandleFifoEmpty(){
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
+inline __attribute__((always_inline)) 
 void HandleFifoNotEmpty(){
 
 	volatile uint32 data0 = 0,data1 = 0;
