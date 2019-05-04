@@ -194,7 +194,6 @@ extern "C"{
 #endif
 
 //These calls are implemented in TGDS layer
-#ifdef ARM9
 
 //NIFI Part
 //DSWNIFI: NIFI
@@ -320,7 +319,55 @@ extern void closeGDBMapFile();
 extern uint32 readu32GDBMapFile(uint32 address);
 extern void resetGDBSession();
 
-#endif
+
+//Example:
+/*
+// Let's send a simple HTTP request to a server and print the results!
+void getHttp(char* url) {
+//---------------------------------------------------------------------------------
+    // store the HTTP request for later
+    const char * request_text = 
+        "GET /dswifi/example1.php HTTP/1.1\r\n"
+        "Host: www.akkit.org\r\n"
+        "User-Agent: Nintendo DS\r\n\r\n";
+	
+	struct sockaddr_in sain;	//structure holding the server IP/Port DS connects to.
+	int serverSocket = openAsyncConn(url, 80, &sain);
+	bool connStatus = connectAsync(serverSocket, &sain);
+	
+    if((serverSocket >= 0) && (connStatus ==true)){
+		printf("Connected to server! ");
+	}
+	else{
+		printf("Could not connect. ");
+		return;
+	}
+	
+    // send our request
+    send( serverSocket, request_text, strlen(request_text), 0 );
+    printf("Sent our request! ");
+
+    // Print incoming data
+    printf("Printing incoming data: ");
+
+    int recvd_len;
+    char incoming_buffer[256];
+
+    while( ( recvd_len = recv(serverSocket, incoming_buffer, 255, 0 ) ) != 0 ) { // if recv returns 0, the socket has been closed.
+        if(recvd_len>0) { // data was received!
+            incoming_buffer[recvd_len] = 0; // null-terminate
+            printf(incoming_buffer);
+		}
+	}
+
+	printf("Server closed connection! Please power Off NDS. ");
+	disconnectAsync(serverSocket);
+}
+*/
+
+extern int openAsyncConn(char * dnsOrIpAddr, int asyncPort, struct sockaddr_in * sain);
+extern bool connectAsync(int sock, struct sockaddr_in * sain);
+extern bool disconnectAsync(int sock);
 
 #ifdef __cplusplus
 }

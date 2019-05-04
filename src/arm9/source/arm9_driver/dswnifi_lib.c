@@ -1458,3 +1458,51 @@ void resetGDBSession(){
 	}
 	setWIFISetup(false);
 }
+
+
+//misc socket related
+
+//returns socket >= 0 or -1 if an error happened, writes to sockaddr_in
+int openAsyncConn(char * dnsOrIpAddr, int asyncPort, struct sockaddr_in * sain){
+	// Find the IP address of the server, with gethostbyname
+    struct hostent * myhost = gethostbyname( dnsOrIpAddr );
+	struct in_addr **address_list = (struct in_addr **)myhost->h_addr_list;
+    if(address_list[0] != NULL){
+		printf("Server WAN IP Address! %s", inet_ntoa(*address_list[0]));
+	}
+	else{
+		return -1;
+	}
+	
+    // Create a TCP socket
+    int my_socket = socket( AF_INET, SOCK_STREAM, 0 );
+    if(my_socket < 0){
+		return -1;
+	}
+	
+	memset(sain, 0, sizeof(struct sockaddr_in)); 
+	int i=1;
+	i=ioctl(my_socket, FIONBIO,&i);	//set non-blocking
+    sain->sin_family = AF_INET;
+    sain->sin_port = htons(asyncPort);
+    sain->sin_addr.s_addr= *( (unsigned long *)(myhost->h_addr_list[0]) );
+    
+	return my_socket;
+}
+
+bool connectAsync(int sock, struct sockaddr_in * sain){
+	//Connect
+	int retVal = 0;
+	if ((retVal = connect(sock,(struct sockaddr *)sain, sizeof(struct sockaddr_in))) < 0){
+		if (errno != EINPROGRESS){
+			return false;
+		}
+	}
+	return true;
+}
+
+bool disconnectAsync(int sock){
+	shutdown(sock,0); // good practice to shutdown the socket.
+	closesocket(sock); // remove the socket.
+	return true;
+}
