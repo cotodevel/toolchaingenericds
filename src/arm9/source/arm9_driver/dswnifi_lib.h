@@ -367,9 +367,16 @@ void getHttp(char* url) {
 }
 */
 
+//Client:
 extern int openAsyncConn(char * dnsOrIpAddr, int asyncPort, struct sockaddr_in * sain);
 extern bool connectAsync(int sock, struct sockaddr_in * sain);
 extern bool disconnectAsync(int sock);
+
+
+//Server:
+
+//opens a port,and begins to listen through it. Then an accept() call (blocking), through the earlier port, will give client connection context.
+extern int openServerSyncConn(char * dnsOrIpAddr, int SyncPort, struct sockaddr_in * sain);
 
 #ifdef __cplusplus
 }

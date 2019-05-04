@@ -1462,7 +1462,8 @@ void resetGDBSession(){
 
 //misc socket related
 
-//returns socket >= 0 or -1 if an error happened, writes to sockaddr_in
+//Client:
+//returns socket >= 0 or -1 if an error happened, writes to sockaddr_in.
 int openAsyncConn(char * dnsOrIpAddr, int asyncPort, struct sockaddr_in * sain){
 	// Find the IP address of the server, with gethostbyname
     struct hostent * myhost = gethostbyname( dnsOrIpAddr );
@@ -1500,6 +1501,37 @@ bool connectAsync(int sock, struct sockaddr_in * sain){
 	}
 	return true;
 }
+
+//Server:
+//Open a port and listen through it. Synchronous/blocking.
+int openServerSyncConn(char * dnsOrIpAddr, int SyncPort, struct sockaddr_in * sain){
+	int srv_len = sizeof(struct sockaddr_in);
+	memset(sain, 0, srv_len);
+	sain->sin_port = htons(SyncPort);//default listening port
+	sain->sin_addr.s_addr = INADDR_ANY;	//the socket will be bound to all local interfaces (and we just have one up to this point, being the DS Client IP acquired from the DHCP server).
+	
+	int my_socket = socket(AF_INET, SOCK_STREAM, 0);
+	int enable = 1;
+	if (setsockopt(my_socket, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0){	//socket can be respawned ASAP if it's dropped
+		return -1;
+	}
+	if(my_socket == -1){
+		return -1;
+	}
+	int retVal = bind(my_socket,(struct sockaddr*)sain, srv_len);
+	if(retVal == -1){
+		disconnectAsync(my_socket);
+		return -1;
+	}
+	int MAXCONN = 20;
+	retVal = listen(my_socket, MAXCONN);
+	if(retVal == -1){
+		disconnectAsync(my_socket);
+		return -1;
+	}
+	return my_socket;
+}
+
 
 bool disconnectAsync(int sock){
 	shutdown(sock,0); // good practice to shutdown the socket.
