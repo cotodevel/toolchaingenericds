@@ -320,7 +320,9 @@ extern uint32 readu32GDBMapFile(uint32 address);
 extern void resetGDBSession();
 
 
-//Example:
+
+
+//These methods are used to Connect asynchronously to a server.
 /*
 // Let's send a simple HTTP request to a server and print the results!
 void getHttp(char* url) {
