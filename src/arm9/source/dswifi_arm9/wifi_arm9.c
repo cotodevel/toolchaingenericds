@@ -49,9 +49,9 @@ SOFTWARE.
 #include "sgIP.h"
 #include "wifi_shared.h"
 
-sgIP_Hub_HWInterface * wifi_hw = NULL;
+sgIP_Hub_HWInterface * wifi_hw;
 
-const sint8 * ASSOCSTATUS_STRINGS[] = {
+const char * ASSOCSTATUS_STRINGS[] = {
 	"ASSOCSTATUS_DISCONNECTED",		// not *trying* to connect
 	"ASSOCSTATUS_SEARCHING",		// data given does not completely specify an AP, looking for AP that matches the data.
 	"ASSOCSTATUS_AUTHENTICATING",	// connecting...
@@ -70,6 +70,10 @@ void sgIP_IntrWaitEvent() {
 		j+=i;
 	}
 }
+
+void * sgIP_malloc(int size) __attribute__((weak));
+void sgIP_free(void * ptr) __attribute__((weak));
+
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -141,12 +145,12 @@ void * wHeapAlloc(int size) {
     }
     rec->flags=WHEAP_RECORD_FLAG_INUSE;
     n=rec->size-size;
-    voidptr = ((sint8 *)rec)+WHEAP_RECORD_SIZE+WHEAP_PAD_START;
+    voidptr = ((char *)rec)+WHEAP_RECORD_SIZE+WHEAP_PAD_START;
     if(n<WHEAP_SIZE_CUTOFF) { // pad to include unused portion
         rec->unused=n;
     } else { // chop block into 2
         wHeapRecord * rec2;
-        rec2=(wHeapRecord *)(((sint8 *)rec)+WHEAP_RECORD_SIZE+size);
+        rec2=(wHeapRecord *)(((char *)rec)+WHEAP_RECORD_SIZE+size);
         rec2->flags=WHEAP_RECORD_FLAG_UNUSED;
         rec2->size=rec->size-size-WHEAP_RECORD_SIZE;
         rec->size=size;
@@ -162,10 +166,10 @@ void * wHeapAlloc(int size) {
     {
         int i;
         for(i=0;i<WHEAP_PAD_START;i++) {
-            (((uint8 *)rec)+WHEAP_RECORD_SIZE)[i]=WHEAP_FILL_START;
+            (((unsigned char *)rec)+WHEAP_RECORD_SIZE)[i]=WHEAP_FILL_START;
         }
         for(i=0;i<WHEAP_PAD_END;i++) {
-            (((uint8 *)rec)+WHEAP_RECORD_SIZE+size-WHEAP_PAD_END)[i]=WHEAP_FILL_END;
+            (((unsigned char *)rec)+WHEAP_RECORD_SIZE+size-WHEAP_PAD_END)[i]=WHEAP_FILL_END;
         }
     }
 #endif
@@ -173,19 +177,19 @@ void * wHeapAlloc(int size) {
 }
 
 void wHeapFree(void * data) {
-    wHeapRecord * rec = (wHeapRecord *)(((sint8 *)data)-WHEAP_RECORD_SIZE-WHEAP_PAD_START);
+    wHeapRecord * rec = (wHeapRecord *)(((char *)data)-WHEAP_RECORD_SIZE-WHEAP_PAD_START);
 #ifdef WHEAP_DO_PAD
     {
         int size=rec->size-rec->unused;
         int i;
         for(i=0;i<WHEAP_PAD_START;i++) {
-            if((((uint8 *)rec)+WHEAP_RECORD_SIZE)[i]!=WHEAP_FILL_START) break;
+            if((((unsigned char *)rec)+WHEAP_RECORD_SIZE)[i]!=WHEAP_FILL_START) break;
         }
         if(i!=WHEAP_PAD_START) { // note heap error
             SGIP_DEBUG_MESSAGE(("wHeapFree: Corruption found before allocated data! 0x%X",data));
         }
         for(i=0;i<WHEAP_PAD_END;i++) {
-            if((((uint8 *)rec)+WHEAP_RECORD_SIZE+size-WHEAP_PAD_END)[i]!=WHEAP_FILL_END) break;
+            if((((unsigned char *)rec)+WHEAP_RECORD_SIZE+size-WHEAP_PAD_END)[i]!=WHEAP_FILL_END) break;
         }
         if(i!=WHEAP_PAD_END) { // note heap error
             SGIP_DEBUG_MESSAGE(("wHeapFree: Corruption found after allocated data! 0x%x",data));
@@ -216,8 +220,8 @@ void sgIP_free(void * ptr) { wHeapFree(ptr); }
 
 
 
-void ethhdr_print(sint8 f, void * d) {
-	sint8 buffer[33];
+void ethhdr_print(char f, void * d) {
+	char buffer[33];
 	int i;
 	int t,c;
 	buffer[0]=f;
@@ -226,7 +230,7 @@ void ethhdr_print(sint8 f, void * d) {
 	buffer[27]=' ';
 	buffer[32]=0;
 	for(i=0;i<6;i++) {
-		t=((uint8 *)d)[i];
+		t=((u8 *)d)[i];
 		c=t&15;
 		if(c>9) c+='A'-10; else c+='0';
 		buffer[3+i*2]=c;
@@ -234,7 +238,7 @@ void ethhdr_print(sint8 f, void * d) {
 		if(c>9) c+='A'-10; else c+='0';
 		buffer[2+i*2]=c;
 
-		t=((uint8 *)d)[i+6];
+		t=((u8 *)d)[i+6];
 		c=t&15;
 		if(c>9) c+='A'-10; else c+='0';
 		buffer[16+i*2]=c;
@@ -243,7 +247,7 @@ void ethhdr_print(sint8 f, void * d) {
 		buffer[15+i*2]=c;
 	}
 	for(i=0;i<2;i++) {
-		t=((uint8 *)d)[i+12];
+		t=((u8 *)d)[i+12];
 		c=t&15;
 		if(c>9) c+='A'-10; else c+='0';
 		buffer[29+i*2]=c;
@@ -251,7 +255,6 @@ void ethhdr_print(sint8 f, void * d) {
 		if(c>9) c+='A'-10; else c+='0';
 		buffer[28+i*2]=c;
 	}
-	(void)buffer[0];
 	SGIP_DEBUG_MESSAGE((buffer));
 }
 
@@ -262,29 +265,29 @@ Wifi_MainStruct Wifi_Data_Struct;
 
 volatile Wifi_MainStruct * WifiData = 0;
 
-WifiPacketHandler packethandler;
-WifiSyncHandler synchandler;
+WifiPacketHandler packethandler = 0;
+WifiSyncHandler synchandler = 0;
 
 void erasemem(void * mem, int length) {
 	int i;
-	sint8 * m = (sint8 *)mem;
+	char * m = (char *)mem;
 	for(i=0;i<length;i++)
 		m[i]=0;
 }
 
 void Wifi_CopyMacAddr(volatile void * dest, volatile void * src) {
-	((uint16 *)dest)[0]=((uint16 *)src)[0];
-	((uint16 *)dest)[1]=((uint16 *)src)[1];
-	((uint16 *)dest)[2]=((uint16 *)src)[2];
+	((u16 *)dest)[0]=((u16 *)src)[0];
+	((u16 *)dest)[1]=((u16 *)src)[1];
+	((u16 *)dest)[2]=((u16 *)src)[2];
 }
 
 int Wifi_CmpMacAddr(volatile void * mac1,volatile  void * mac2) {
-	return (((uint16 *)mac1)[0]==((uint16 *)mac2)[0]) && (((uint16 *)mac1)[1]==((uint16 *)mac2)[1]) && (((uint16 *)mac1)[2]==((uint16 *)mac2)[2]);
+	return (((u16 *)mac1)[0]==((u16 *)mac2)[0]) && (((u16 *)mac1)[1]==((u16 *)mac2)[1]) && (((u16 *)mac1)[2]==((u16 *)mac2)[2]);
 }
 
 
 
-uint32 Wifi_TxBufferWordsAvailable() {
+u32 Wifi_TxBufferWordsAvailable() {
 	if(WifiData){
 		sint32 size=WifiData->txbufIn-WifiData->txbufOut-1;
 		if(size<0) size += WIFI_TXBUFFER_SIZE/2;
@@ -292,7 +295,7 @@ uint32 Wifi_TxBufferWordsAvailable() {
 	}
 	return 0;
 }
-void Wifi_TxBufferWrite(sint32 start, sint32 len, uint16 * data) {
+void Wifi_TxBufferWrite(s32 start, s32 len, u16 * data) {
 	if(WifiData){
 		int writelen = 0;
 		while(len>0) {
@@ -308,7 +311,7 @@ void Wifi_TxBufferWrite(sint32 start, sint32 len, uint16 * data) {
 	}
 }
 
-int Wifi_RxRawReadPacket(sint32 packetID, sint32 readlength, uint16 * data) {
+int Wifi_RxRawReadPacket(s32 packetID, s32 readlength, u16 * data) {
 	if(WifiData){
 		int readlen = 0,read_data = 0;
 		readlength= (readlength+1)/2;
@@ -329,7 +332,7 @@ int Wifi_RxRawReadPacket(sint32 packetID, sint32 readlength, uint16 * data) {
 	return 0;
 }
 
-uint16 Wifi_RxReadOffset(sint32 base, sint32 offset) {
+u16 Wifi_RxReadOffset(s32 base, s32 offset) {
 	if(WifiData){
 		base+=offset;
 		if(base>=(WIFI_RXBUFFER_SIZE/2)) base -= (WIFI_RXBUFFER_SIZE/2);
@@ -339,7 +342,7 @@ uint16 Wifi_RxReadOffset(sint32 base, sint32 offset) {
 }
 
 // datalen = size of packet from beginning of 802.11 header to end, but not including CRC.
-int Wifi_RawTxFrame(uint16 datalen, uint16 rate, uint16 * data) {
+int Wifi_RawTxFrame(u16 datalen, u16 rate, u16 * data) {
 	if(WifiData){
 		Wifi_TxHeader txh;
 		int sizeneeded;
@@ -420,8 +423,10 @@ int Wifi_GetNumAP() {
 }
 
 int Wifi_GetAPData(int apnum, Wifi_AccessPoint * apdata) {
-	int j=0;
+        int j=0;
+    
 	if(!apdata) return WIFI_RETURN_PARAMERROR;
+
 	
 	if(WifiData){
 		if(WifiData->aplist[apnum].flags&WFLAG_APDATA_ACTIVE) {
@@ -445,12 +450,12 @@ int Wifi_GetAPData(int apnum, Wifi_AccessPoint * apdata) {
 int Wifi_FindMatchingAP(int numaps, Wifi_AccessPoint * apdata, Wifi_AccessPoint * match_dest) {
 	int ap_match=0,i=0,j=0,n=0;
 	Wifi_AccessPoint ap;
-	uint16 macaddrzero[3] = {0,0,0}; // check for empty mac addr
+	u16 macaddrzero[3] = {0,0,0}; // check for empty mac addr
 	ap_match=-1;
 	for(i=0;i<Wifi_GetNumAP();i++){
 		Wifi_GetAPData(i,&ap);
 		for(j=0;j<numaps;j++) {
-			if(apdata[j].ssid_len>32 || ((sint8)apdata[j].ssid_len)<0) continue;
+			if(apdata[j].ssid_len>32 || ((signed char)apdata[j].ssid_len)<0) continue;
 			if(apdata[j].ssid_len>0) { // compare SSIDs
 				if(apdata[j].ssid_len!=ap.ssid_len) continue;
 				for(n=0;n<apdata[j].ssid_len;n++) {
@@ -477,13 +482,13 @@ int Wifi_FindMatchingAP(int numaps, Wifi_AccessPoint * apdata, Wifi_AccessPoint 
 int wifi_connect_state = 0; // -1==error, 0==searching, 1==associating, 2==dhcp'ing, 3==done, 4=searching wfc data
 Wifi_AccessPoint wifi_connect_point;
 
-int Wifi_ConnectAP(Wifi_AccessPoint * apdata, int wepmode, int wepkeyid, uint8 * wepkey) {
+int Wifi_ConnectAP(Wifi_AccessPoint * apdata, int wepmode, int wepkeyid, u8 * wepkey) {
 	if(WifiData){
 		int i=0;
 		Wifi_AccessPoint ap;
 		wifi_connect_state=-1;
 		if(!apdata) return -1;
-		if(((sint8)apdata->ssid_len)<0 || apdata->ssid_len>32) return -1;
+		if(((signed char)apdata->ssid_len)<0 || apdata->ssid_len>32) return -1;
 
 		Wifi_DisconnectAP();
 
@@ -535,24 +540,24 @@ static
 void sgIP_DNS_Record_Localhost()
 {
 	if(wifi_hw){
-		sgIP_DNS_Record *rec;
-		const uint8 * resdata_c = (uint8 *)&(wifi_hw->ipaddr);
-		rec = sgIP_DNS_GetUnusedRecord();
-		rec->flags=SGIP_DNS_FLAG_ACTIVE | SGIP_DNS_FLAG_BUSY;
-		
-		rec->addrlen    = 4;
-		rec->numalias   = 1;
-		gethostname(rec->aliases[0], 256);
-		gethostname(rec->name, 256);
-		rec->numaddr    = 1;
-		rec->addrdata[0] = resdata_c[0];
-		rec->addrdata[1] = resdata_c[1];
-		rec->addrdata[2] = resdata_c[2];
-		rec->addrdata[3] = resdata_c[3];
-		rec->addrclass = AF_INET;
-		rec->TTL = 0;
+	    sgIP_DNS_Record *rec;
+	    const unsigned char * resdata_c = (unsigned char *)&(wifi_hw->ipaddr);
+	    rec = sgIP_DNS_GetUnusedRecord();
+	    rec->flags=SGIP_DNS_FLAG_ACTIVE | SGIP_DNS_FLAG_BUSY;
+	    
+	    rec->addrlen    = 4;
+	    rec->numalias   = 1;
+	    gethostname(rec->aliases[0], 256);
+	    gethostname(rec->name, 256);
+	    rec->numaddr    = 1;
+	    rec->addrdata[0] = resdata_c[0];
+	    rec->addrdata[1] = resdata_c[1];
+	    rec->addrdata[2] = resdata_c[2];
+	    rec->addrdata[3] = resdata_c[3];
+	    rec->addrclass = AF_INET;
+	    rec->TTL = 0;
 
-		rec->flags=SGIP_DNS_FLAG_ACTIVE | SGIP_DNS_FLAG_BUSY|SGIP_DNS_FLAG_RESOLVED;
+	    rec->flags=SGIP_DNS_FLAG_ACTIVE | SGIP_DNS_FLAG_BUSY|SGIP_DNS_FLAG_RESOLVED;
 	}
 }
 
@@ -724,9 +729,9 @@ int Wifi_TransmitFunction(sgIP_Hub_HWInterface * hw, sgIP_memblock * mb) {
 		// assumes individual pbuf len is >=14 bytes, it's pretty likely ;) - also hopes pbuf len is a multiple of 2 :|
 		int base=0,framelen=0, hdrlen=0, writelen=0;
 		int copytotal=0, copyexpect=0;
-		uint16 framehdr[6+12+2] = {0};
+		u16 framehdr[6+12+2];
 		sgIP_memblock * t;
-		framelen=mb->totallength-14+8 + (WifiData->wepmode7?4:0);
+	   framelen=mb->totallength-14+8 + (WifiData->wepmode7?4:0);
 
 	   if(!(WifiData->flags9&WFLAG_ARM9_NETUP)) {
 		   SGIP_DEBUG_MESSAGE(("Transmit:err_netdown"));
@@ -735,7 +740,7 @@ int Wifi_TransmitFunction(sgIP_Hub_HWInterface * hw, sgIP_memblock * mb) {
 	   }
 		if(framelen+40>Wifi_TxBufferWordsAvailable()*2) { // error, can't send this much!
 			SGIP_DEBUG_MESSAGE(("Transmit:err_space"));
-		  sgIP_memblock_free(mb);
+	      sgIP_memblock_free(mb);
 			return 0; //?
 		}
 		
@@ -752,12 +757,12 @@ int Wifi_TransmitFunction(sgIP_Hub_HWInterface * hw, sgIP_memblock * mb) {
 			framehdr[6]=0x0008;
 			Wifi_CopyMacAddr(framehdr+14,WifiData->bssid7);
 			Wifi_CopyMacAddr(framehdr+11,WifiData->MacAddr);
-			Wifi_CopyMacAddr(framehdr+8,((uint8 *)mb->datastart));
+			Wifi_CopyMacAddr(framehdr+8,((u8 *)mb->datastart));
 		} else {
 			framehdr[6]=0x0108;
 			Wifi_CopyMacAddr(framehdr+8,WifiData->bssid7);
 			Wifi_CopyMacAddr(framehdr+11,WifiData->MacAddr);
-			Wifi_CopyMacAddr(framehdr+14,((uint8 *)mb->datastart));
+			Wifi_CopyMacAddr(framehdr+14,((u8 *)mb->datastart));
 		}
 		if(WifiData->wepmode7)  { framehdr[6] |=0x4000; hdrlen=20; }
 		framehdr[17] = 0;
@@ -781,7 +786,7 @@ int Wifi_TransmitFunction(sgIP_Hub_HWInterface * hw, sgIP_memblock * mb) {
 		framehdr[0]=0xAAAA;
 		framehdr[1]=0x0003;
 		framehdr[2]=0x0000;
-		framehdr[3]=((uint16 *)mb->datastart)[6]; // frame type
+		framehdr[3]=((u16 *)mb->datastart)[6]; // frame type
 
 		Wifi_TxBufferWrite(base,4,framehdr);
 		base += 4;
@@ -791,30 +796,30 @@ int Wifi_TransmitFunction(sgIP_Hub_HWInterface * hw, sgIP_memblock * mb) {
 		t=mb;
 		writelen=(mb->thislength-14);
 		if(writelen) {
-			Wifi_TxBufferWrite(base,(writelen+1)/2,((uint16 *)mb->datastart)+7);
+			Wifi_TxBufferWrite(base,(writelen+1)/2,((u16 *)mb->datastart)+7);
 			base+=(writelen+1)/2;
-		  copytotal+=(writelen+1)/2;
+	      copytotal+=(writelen+1)/2;
 			if(base>=(WIFI_TXBUFFER_SIZE/2)) base -= WIFI_TXBUFFER_SIZE/2;
 		}
 		while(mb->next) {
 			mb=mb->next;
 			writelen=mb->thislength;
-			Wifi_TxBufferWrite(base,(writelen+1)/2,((uint16 *)mb->datastart));
+			Wifi_TxBufferWrite(base,(writelen+1)/2,((u16 *)mb->datastart));
 			base+=(writelen+1)/2;
-		  copytotal+=(writelen+1)/2;
+	      copytotal+=(writelen+1)/2;
 			if(base>=(WIFI_TXBUFFER_SIZE/2)) base -= WIFI_TXBUFFER_SIZE/2;
 		}
 	   if(WifiData->wepmode7) { // add required extra bytes
-		  base+=2;
-		  copytotal+=2;
-		  if(base>=(WIFI_TXBUFFER_SIZE/2)) base -= WIFI_TXBUFFER_SIZE/2;
+	      base+=2;
+	      copytotal+=2;
+	      if(base>=(WIFI_TXBUFFER_SIZE/2)) base -= WIFI_TXBUFFER_SIZE/2;
 	   }
 		WifiData->txbufOut=base; // update fifo out pos, done sending packet.
 
 		sgIP_memblock_free(t); // free packet, as we're the last stop on this chain.
 
 	   if(copytotal!=copyexpect) {
-		  SGIP_DEBUG_MESSAGE(("Tx exp:%i que:%i",copyexpect,copytotal));
+	      SGIP_DEBUG_MESSAGE(("Tx exp:%i que:%i",copyexpect,copytotal));
 	   }
 	   if(synchandler) synchandler();
 	}
@@ -846,17 +851,17 @@ unsigned long Wifi_Init(int initflags) {
 	erasemem(&Wifi_Data_Struct,sizeof(Wifi_Data_Struct));	//safe
 	coherent_user_range_by_size((uint32)&Wifi_Data_Struct,sizeof(Wifi_Data_Struct));
 	WifiData = (Wifi_MainStruct *) EWRAMUncached((uint32)&Wifi_Data_Struct); // should prevent the cache from eating us alive.	//safe
-	
+
 #ifdef WIFI_USE_TCP_SGIP
     switch(initflags & WIFIINIT_OPTION_HEAPMASK) {
-    case WIFIINIT_OPTION_USEHEAP_64:
-        wHeapAllocInit(64*1024);
+    case WIFIINIT_OPTION_USEHEAP_128:
+        wHeapAllocInit(128*1024);
         break;
-	case WIFIINIT_OPTION_USEHEAP_96:
+    case WIFIINIT_OPTION_USEHEAP_96:
 		wHeapAllocInit(96*1024);
 		break;
-	case WIFIINIT_OPTION_USEHEAP_128:
-        wHeapAllocInit(128*1024);
+    case WIFIINIT_OPTION_USEHEAP_64:     
+        wHeapAllocInit(64*1024);
         break;
     case WIFIINIT_OPTION_USEHEAP_256:    
         wHeapAllocInit(256*1024);
@@ -867,13 +872,12 @@ unsigned long Wifi_Init(int initflags) {
     case WIFIINIT_OPTION_USECUSTOMALLOC:
         break;
     }
-	sgIP_Init();	//safe
+    sgIP_Init();
     
 #endif
     
 	WifiData->flags9 = WFLAG_ARM9_ACTIVE | (initflags & WFLAG_ARM9_INITFLAGMASK) ;
-	
-	return (uint32) &Wifi_Data_Struct;	//SAFE
+	return (u32) &Wifi_Data_Struct;
 }
 
 int Wifi_CheckInit() {
@@ -915,14 +919,14 @@ void Wifi_Update() {
 		// Do lwIP interfacing for rx here
 		if((Wifi_RxReadOffset(base,6)&0x01CF)==0x0008) // if it is a non-null data packet coming from the AP (toDS==0)
 		{
-			uint16 framehdr[6+12+2+4];
+			u16 framehdr[6+12+2+4];
 			sgIP_memblock * mb;
 			int hdrlen;
 			base2=base;
 			Wifi_RxRawReadPacket(base,22*2,framehdr);
 
         // ethhdr_print('!',framehdr+8);
-			if((framehdr[8]==((uint16 *)WifiData->MacAddr)[0] && framehdr[9]==((uint16 *)WifiData->MacAddr)[1] && framehdr[10]==((uint16 *)WifiData->MacAddr)[2]) ||
+			if((framehdr[8]==((u16 *)WifiData->MacAddr)[0] && framehdr[9]==((u16 *)WifiData->MacAddr)[1] && framehdr[10]==((u16 *)WifiData->MacAddr)[2]) ||
 				(framehdr[8]==0xFFFF && framehdr[9]==0xFFFF && framehdr[10]==0xFFFF)) {
 				// destination matches our mac address, or the broadcast address.
 				//if(framehdr[6]&0x4000) { // wep enabled (when receiving WEP packets, the IV is stripped for us! how nice :|
@@ -936,15 +940,15 @@ void Wifi_Update() {
 					mb = sgIP_memblock_allocHW(14,len-8-hdrlen);
 					if(mb) {
 						if(base2>=(WIFI_RXBUFFER_SIZE/2)) base2-=(WIFI_RXBUFFER_SIZE/2);
-						Wifi_RxRawReadPacket(base2,(len-8-hdrlen)&(~1),((uint16 *)mb->datastart)+7);
-						if(len&1) ((uint8 *)mb->datastart)[len+14-1-8-hdrlen]=Wifi_RxReadOffset(base2,((len-8-hdrlen)/2))&255;
+						Wifi_RxRawReadPacket(base2,(len-8-hdrlen)&(~1),((u16 *)mb->datastart)+7);
+						if(len&1) ((u8 *)mb->datastart)[len+14-1-8-hdrlen]=Wifi_RxReadOffset(base2,((len-8-hdrlen)/2))&255;
 						Wifi_CopyMacAddr(mb->datastart,framehdr+8); // copy dest
 						if(Wifi_RxReadOffset(base,6)&0x0200) { // from DS set?
-							Wifi_CopyMacAddr(((uint8 *)mb->datastart)+6,framehdr+14); // copy src from adrs3
+							Wifi_CopyMacAddr(((u8 *)mb->datastart)+6,framehdr+14); // copy src from adrs3
 						} else {
-							Wifi_CopyMacAddr(((uint8 *)mb->datastart)+6,framehdr+11); // copy src from adrs2
+							Wifi_CopyMacAddr(((u8 *)mb->datastart)+6,framehdr+11); // copy src from adrs2
 						}
-						((uint16 *)mb->datastart)[6]=framehdr[(hdrlen/2)+6+3]; // assume LLC exists and is 8 bytes.
+						((u16 *)mb->datastart)[6]=framehdr[(hdrlen/2)+6+3]; // assume LLC exists and is 8 bytes.
 
 						ethhdr_print('R',mb->datastart);
 
@@ -978,7 +982,7 @@ void Wifi_Update() {
 // Ip addr get/set functions
 #ifdef WIFI_USE_TCP_SGIP
 
-uint32 Wifi_GetIP() {
+u32 Wifi_GetIP() {
 	if(wifi_hw) return wifi_hw->ipaddr;
 	return 0;
 }
@@ -998,7 +1002,7 @@ struct in_addr Wifi_GetIPInfo(struct in_addr * pGateway,struct in_addr * pSnmask
 }
 
 
-void Wifi_SetIP(uint32 IPaddr, uint32 gateway, uint32 subnetmask, uint32 dns1, uint32 dns2) {
+void Wifi_SetIP(u32 IPaddr, u32 gateway, u32 subnetmask, u32 dns1, u32 dns2) {
 	if(wifi_hw) {
 		SGIP_DEBUG_MESSAGE(("SetIP%08X %08X %08X",IPaddr,gateway,subnetmask));
 		wifi_hw->ipaddr=IPaddr;
@@ -1019,7 +1023,7 @@ void Wifi_SetDHCP() {
 #endif
 
 
-int Wifi_GetData(int datatype, int bufferlen, uint8 * buffer) {
+int Wifi_GetData(int datatype, int bufferlen, unsigned char * buffer) {
 	if(WifiData){
 		int i=0;
 		if(datatype<0 || datatype>=MAX_WIFIGETDATA) return -1;
@@ -1036,8 +1040,8 @@ int Wifi_GetData(int datatype, int bufferlen, uint8 * buffer) {
 	return -1;
 }
 
-uint32 Wifi_GetStats(int statnum) {
-	if((statnum<0 || statnum>=NUM_WIFI_STATS) || !(WifiData)) return 0;
+u32 Wifi_GetStats(int statnum) {
+	if( (statnum<0) || (statnum>=NUM_WIFI_STATS) || !(WifiData)) return 0;
 	return WifiData->stats[statnum];
 }
 
@@ -1071,15 +1075,11 @@ void Timer_50ms(void) {
 //---------------------------------------------------------------------------------
 void arm9_synctoarm7() { 
 //---------------------------------------------------------------------------------
-	//fifoSendValue32(FIFO_DSWIFI, WIFI_SYNC);
-	//SendArm7Command(WIFI_SYNC,0x0,0x0,0x0);
-	
 	SendFIFOWords(WIFI_SYNC, 0);
 }
-
 /*
 //---------------------------------------------------------------------------------
-void wifiValue32Handler(uint32 value, void* data) {
+void wifiValue32Handler(u32 value, void* data) {
 //---------------------------------------------------------------------------------
 
 	switch (value) {
@@ -1159,3 +1159,4 @@ bool WNifi_InitSafeDefault(int DSWNIFI_MODE){
 	
 	return false;
 }
+

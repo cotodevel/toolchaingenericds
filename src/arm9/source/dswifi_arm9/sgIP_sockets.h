@@ -58,7 +58,7 @@ extern "C" {
 	extern void sgIP_sockets_Init();
 	extern void sgIP_sockets_Timer1000ms();
 
-	// sys/socket_dswifi.h
+	// sys/socket.h
 	extern int socket(int domain, int type, int protocol);
 	extern int bind(int socket, const struct sockaddr * addr, int addr_len);
 	extern int connect(int socket, const struct sockaddr * addr, int addr_len);
@@ -84,7 +84,7 @@ extern "C" {
 	extern int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct timeval *timeout);
 
 	// arpa/inet.h
-	extern unsigned long inet_addr(const sint8 *cp);
+	extern unsigned long inet_addr(const char *cp);
 
 #ifdef __cplusplus
 };

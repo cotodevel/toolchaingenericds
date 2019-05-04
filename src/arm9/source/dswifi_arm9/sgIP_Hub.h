@@ -63,12 +63,12 @@ typedef struct SGIP_HUB_HWINTERFACE {
 	int (*TransmitFunction)(struct SGIP_HUB_HWINTERFACE *, sgIP_memblock *);
 	void * userdata;
 	unsigned long ipaddr, gateway, snmask, dns[3];
-	uint8 hwaddr[SGIP_MAXHWADDRLEN];
+	unsigned char hwaddr[SGIP_MAXHWADDRLEN];
 } sgIP_Hub_HWInterface;
 
 typedef struct SGIP_HEADER_ETHERNET {
-	uint8 dest_mac[6];
-	uint8 src_mac[6];
+	unsigned char dest_mac[6];
+	unsigned char src_mac[6];
 	unsigned short protocol; 
 } sgIP_Header_Ethernet;
 

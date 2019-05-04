@@ -52,16 +52,6 @@ SOFTWARE.
 #define WFLAG_APDATA_ACTIVE			0x8000
 
 
-// user code uses members of the WIFIGETDATA structure in calling Wifi_GetData to retreive miscellaneous odd information
-enum WIFIGETDATA {
-	WIFIGETDATA_MACADDRESS,			// MACADDRESS: returns data in the buffer, requires at least 6 bytes
-	WIFIGETDATA_NUMWFCAPS,			// NUM WFC APS: returns number between 0 and 3, doesn't use buffer.
-
-	MAX_WIFIGETDATA
-};
-
-
-
 extern const char * ASSOCSTATUS_STRINGS[];
 
 

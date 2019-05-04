@@ -32,9 +32,9 @@ SOFTWARE.
 #define SGIP_DNS_FLAG_BUSY       4
 
 typedef struct SGIP_DNS_RECORD {
-   sint8              name [256];
-   sint8              aliases[SGIP_DNS_MAXALIASES][256];
-   uint8     addrdata[SGIP_DNS_MAXRECORDADDRS*4];
+   char              name [256];
+   char              aliases[SGIP_DNS_MAXALIASES][256];
+   unsigned char     addrdata[SGIP_DNS_MAXRECORDADDRS*4];
    short             addrlen;
    short             addrclass;
    int               numaddr,numalias;
@@ -43,11 +43,11 @@ typedef struct SGIP_DNS_RECORD {
 } sgIP_DNS_Record;
 
 typedef struct SGIP_DNS_HOSTENT {
-   sint8 *           h_name;
-   sint8 **          h_aliases;
+   char *           h_name;
+   char **          h_aliases;
    int              h_addrtype; // class - 1=IN (internet)
    int              h_length;
-   sint8 **          h_addr_list;
+   char **          h_addr_list;
 } sgIP_DNS_Hostent;
 
 #ifdef __cplusplus
@@ -57,9 +57,9 @@ extern "C" {
 extern void sgIP_DNS_Init();
 extern void sgIP_DNS_Timer1000ms();
 
-extern sgIP_DNS_Hostent * sgIP_DNS_gethostbyname(const sint8 * name);
+extern sgIP_DNS_Hostent * sgIP_DNS_gethostbyname(const char * name);
 extern sgIP_DNS_Record  * sgIP_DNS_GetUnusedRecord();
-extern sgIP_DNS_Record  * sgIP_DNS_FindDNSRecord(const sint8 * name);
+extern sgIP_DNS_Record  * sgIP_DNS_FindDNSRecord(const char * name);
 
 #ifdef __cplusplus
 };

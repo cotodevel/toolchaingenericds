@@ -39,17 +39,17 @@ typedef struct SGIP_ARP_RECORD {
 	sgIP_memblock * queued_packet;
 	int linked_protocol;
 	unsigned long protocol_address;
-	sint8 hw_address[SGIP_MAXHWADDRLEN];
+	char hw_address[SGIP_MAXHWADDRLEN];
 } sgIP_ARP_Record;
 
 
 typedef struct SGIP_HEADER_ARP {
 	unsigned short hwspace;		// ethernet=1;
 	unsigned short protocol;
-	uint8 hw_addr_len;
-	uint8 protocol_addr_len;
+	unsigned char hw_addr_len;
+	unsigned char protocol_addr_len;
 	unsigned short opcode;		// request=1, reply=2
-	uint8 addresses[8+12]; // sender HW, sender Protocol, dest HW, dest Protocol
+	unsigned char addresses[8+12]; // sender HW, sender Protocol, dest HW, dest Protocol
 } sgIP_Header_ARP;
 
 #define SGIP_HEADER_ARP_BASESIZE	8

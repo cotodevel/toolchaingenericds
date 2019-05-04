@@ -63,7 +63,7 @@ void sgIP_memblock_Init() {
 #ifdef SGIP_USEDYNAMICMEMORY
 	pool_link = sgIP_malloc(sizeof(sgIP_memblock)*SGIP_MEMBLOCK_BASENUM+4);
 	((long *)pool_link)[0]=0;
-	memblock_pool = (sgIP_memblock *) (((sint8 *)pool_link)+4);
+	memblock_pool = (sgIP_memblock *) (((char *)pool_link)+4);
 #endif
 	numused=numfree=0;
 	memblock_poolfree=0;
@@ -150,6 +150,7 @@ void sgIP_memblock_free(sgIP_memblock * mb) {
 
       sgIP_free(f);
    }
+
 }
 
 #else //SGIP_MEMBLOCK_DYNAMIC_MALLOC_ALL
@@ -169,6 +170,7 @@ void sgIP_memblock_free(sgIP_memblock * mb) {
 		memblock_poolfree=f;
 	}
 //	SGIP_DEBUG_MESSAGE(("memblock_free: %i free, %i used",numfree,numused));
+
 
 }
 
@@ -215,13 +217,13 @@ int sgIP_memblock_IPChecksum(sgIP_memblock * mb, int startbyte, int chksum_lengt
 	if(!mb) return 0;
 	while(chksum_length) {
 		while(startbyte+offset+1<mb->thislength && chksum_length>1) {
-			chksum_temp+= ((uint8 *)mb->datastart)[startbyte+offset] + (((uint8 *)mb->datastart)[startbyte+offset+1]<<8);
+			chksum_temp+= ((unsigned char *)mb->datastart)[startbyte+offset] + (((unsigned char *)mb->datastart)[startbyte+offset+1]<<8);
 			offset+=2;
 			chksum_length-=2;
 		}
       chksum_temp= (chksum_temp&0xFFFF) +(chksum_temp>>16);
 		if(startbyte+offset<mb->thislength && chksum_length>0) {
-			chksum_temp+= ((uint8 *)mb->datastart)[startbyte+offset];
+			chksum_temp+= ((unsigned char *)mb->datastart)[startbyte+offset];
 			if(chksum_length==1) break;
 			chksum_length--;
 			offset=0;
@@ -229,7 +231,7 @@ int sgIP_memblock_IPChecksum(sgIP_memblock * mb, int startbyte, int chksum_lengt
 			mb=mb->next;
 			if(!mb) break;
 			if(mb->thislength==0) break;
-			chksum_temp+= ((uint8 *)mb->datastart)[startbyte+offset]<<8;
+			chksum_temp+= ((unsigned char *)mb->datastart)[startbyte+offset]<<8;
 			if(chksum_length==1) break;
 			offset++;
 			chksum_length--;
@@ -250,7 +252,7 @@ int sgIP_memblock_CopyToLinear(sgIP_memblock * mb, void * dest_buf, int startbyt
 	while(copy_length>0) {
 		copylen=copy_length;
 		if(copylen>mb->thislength-ofs_src) copylen=mb->thislength-ofs_src;
-		memcpy(((sint8 *)dest_buf)+tot_copy,mb->datastart+ofs_src,copylen);
+		memcpy(((char *)dest_buf)+tot_copy,mb->datastart+ofs_src,copylen);
 		copy_length-=copylen;
 		tot_copy+=copylen;
 		ofs_src=0;
@@ -270,7 +272,7 @@ int sgIP_memblock_CopyFromLinear(sgIP_memblock * mb, void * src_buf, int startby
 	while(copy_length>0) {
 		copylen=copy_length;
 		if(copylen>mb->thislength-ofs_src) copylen=mb->thislength-ofs_src;
-		memcpy(mb->datastart+ofs_src,((sint8 *)src_buf)+tot_copy,copylen);
+		memcpy(mb->datastart+ofs_src,((char *)src_buf)+tot_copy,copylen);
 		copy_length-=copylen;
 		tot_copy+=copylen;
 		ofs_src=0;

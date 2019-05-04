@@ -35,6 +35,8 @@ SOFTWARE.
 #include "wifi_shared.h"
 #include "sgIP_Hub.h"
 
+
+
 #define WIFIINIT_OPTION_USEHEAP_64     (int)(0x00000000)
 #define WIFIINIT_OPTION_USEHEAP_96     (int)(0x10000000)
 #define WIFIINIT_OPTION_USEHEAP_128    (int)(0x20000000)
@@ -43,8 +45,26 @@ SOFTWARE.
 #define WIFIINIT_OPTION_USECUSTOMALLOC (int)(0x50000000)
 #define WIFIINIT_OPTION_HEAPMASK       (int)(0xF0000000)
 
-
 #ifdef WIFI_USE_TCP_SGIP
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+#ifdef __cplusplus
+};
+#endif
+
+
+#endif
+
+enum WIFIGETDATA {
+	WIFIGETDATA_MACADDRESS,			// MACADDRESS: returns data in the buffer, requires at least 6 bytes
+	WIFIGETDATA_NUMWFCAPS,			// NUM WFC APS: returns number between 0 and 3, doesn't use buffer.
+
+	MAX_WIFIGETDATA
+};
 
 // Wifi Packet Handler function: (int packetID, int packetlength) - packetID is only valid while the called function is executing.
 // call Wifi_RxRawReadPacket while in the packet handler function, to retreive the data to a local buffer.
@@ -53,7 +73,6 @@ typedef void (*WifiPacketHandler)(int, int);
 // Wifi Sync Handler function: Callback function that is called when the arm7 needs to be told to synchronize with new fifo data.
 // If this callback is used (see Wifi_SetSyncHandler()), it should send a message via the fifo to the arm7, which will call Wifi_Sync() on arm7.
 typedef void (*WifiSyncHandler)();
-#endif
 
 
 #ifdef __cplusplus
@@ -72,10 +91,10 @@ extern unsigned long Wifi_Init(int initflags);
 extern bool Wifi_InitDefault(bool useFirmwareSettings);
 extern int Wifi_CheckInit();
 
-extern int Wifi_RawTxFrame(uint16 datalen, uint16 rate, uint16 * data);
+extern int Wifi_RawTxFrame(u16 datalen, u16 rate, u16 * data);
 extern void Wifi_SetSyncHandler(WifiSyncHandler wshfunc);
 extern void Wifi_RawSetPacketHandler(WifiPacketHandler wphfunc);
-extern int Wifi_RxRawReadPacket(sint32 packetID, sint32 readlength, uint16 * data);
+extern int Wifi_RxRawReadPacket(s32 packetID, s32 readlength, u16 * data);
 
 extern void Wifi_DisableWifi();
 extern void Wifi_EnableWifi();
@@ -86,12 +105,12 @@ extern void Wifi_SetChannel(int channel);
 extern int Wifi_GetNumAP();
 extern int Wifi_GetAPData(int apnum, Wifi_AccessPoint * apdata);
 extern int Wifi_FindMatchingAP(int numaps, Wifi_AccessPoint * apdata, Wifi_AccessPoint * match_dest);
-extern int Wifi_ConnectAP(Wifi_AccessPoint * apdata, int wepmode, int wepkeyid, uint8 * wepkey);
+extern int Wifi_ConnectAP(Wifi_AccessPoint * apdata, int wepmode, int wepkeyid, u8 * wepkey);
 extern void Wifi_AutoConnect();
 
 extern int Wifi_AssocStatus();
 extern int Wifi_DisconnectAP();
-extern int Wifi_GetData(int datatype, int bufferlen, uint8 * buffer);
+extern int Wifi_GetData(int datatype, int bufferlen, unsigned char * buffer);
 
 
 extern void Wifi_Update();
@@ -100,8 +119,9 @@ extern void Wifi_Sync();
 
 #ifdef WIFI_USE_TCP_SGIP
 extern void Wifi_Timer(int num_ms);
-extern void Wifi_SetIP(uint32 IPaddr, uint32 gateway, uint32 subnetmask, uint32 dns1, uint32 dns2);
-extern uint32 Wifi_GetIP();
+extern void Wifi_SetIP(u32 IPaddr, u32 gateway, u32 subnetmask, u32 dns1, u32 dns2);
+extern u32 Wifi_GetIP();
+
 #endif
 
 extern uint32 Wifi_TxBufferWordsAvailable();
@@ -113,5 +133,6 @@ extern bool WNifi_InitSafeDefault(int DSWNIFI_MODE);
 #ifdef __cplusplus
 }
 #endif
+
 
 #endif

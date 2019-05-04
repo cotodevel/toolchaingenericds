@@ -34,10 +34,10 @@ SOFTWARE.
 
 
 typedef struct SGIP_DHCP_PACKET { // yes, freaking big endian prevails here too.
-   uint8 op;       // opcode/message type (1=BOOTREQUEST, 2=BOOTREPLY)
-   uint8 htype;    // hardware address type
-   uint8 hlen;     // Hardware address length (should be 6, for ethernet/wifi)
-   uint8 hops;     // set to 0
+   unsigned char op;       // opcode/message type (1=BOOTREQUEST, 2=BOOTREPLY)
+   unsigned char htype;    // hardware address type
+   unsigned char hlen;     // Hardware address length (should be 6, for ethernet/wifi)
+   unsigned char hops;     // set to 0
    unsigned long xid;      // 4-byte client specified transaction ID
    unsigned short secs;    // seconds elapsed since client started trying to boot
    unsigned short flags;   // flags
@@ -45,10 +45,10 @@ typedef struct SGIP_DHCP_PACKET { // yes, freaking big endian prevails here too.
    unsigned long yiaddr;   // "your" (client) IP address
    unsigned long siaddr;   // IP addr of next server to use in bootstrap.
    unsigned long giaddr;   // Relay agent IP address
-   uint8 chaddr[16];  // client hardware address
-   sint8 sname[64];         // optional server hostname (null terminated string)
-   sint8 file[128];         // boot file name, null terminated string
-   sint8 options[312];      // optional parameters
+   unsigned char chaddr[16];  // client hardware address
+   char sname[64];         // optional server hostname (null terminated string)
+   char file[128];         // boot file name, null terminated string
+   char options[312];      // optional parameters
 } sgIP_DHCP_Packet;
 
 enum SGIP_DHCP_STATUS {
@@ -71,7 +71,7 @@ extern "C" {
 
    void sgIP_DHCP_Init();
 
-   void sgIP_DHCP_SetHostName(sint8 * s); // just for the fun of it.
+   void sgIP_DHCP_SetHostName(char * s); // just for the fun of it.
    int sgIP_DHCP_IsDhcpIp(unsigned long ip); // check if the IP address was assigned via dhcp.
    void sgIP_DHCP_Start(sgIP_Hub_HWInterface * interface, int getDNS); // begin dhcp transaction to get IP and maybe DNS data.
    void sgIP_DHCP_Release(); // call to dump our DHCP address and leave.

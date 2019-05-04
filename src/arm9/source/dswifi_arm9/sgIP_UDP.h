@@ -64,14 +64,14 @@ extern "C" {
 
 	int sgIP_UDP_CalcChecksum(sgIP_memblock * mb, unsigned long srcip, unsigned long destip, int totallength);
 	int sgIP_UDP_ReceivePacket(sgIP_memblock * mb, unsigned long srcip, unsigned long destip);
-	int sgIP_UDP_SendPacket(sgIP_Record_UDP * rec, const sint8 * data, int datalen, unsigned long destip, int destport);
+	int sgIP_UDP_SendPacket(sgIP_Record_UDP * rec, const char * data, int datalen, unsigned long destip, int destport);
 
 	sgIP_Record_UDP * sgIP_UDP_AllocRecord();
 	void sgIP_UDP_FreeRecord(sgIP_Record_UDP * rec);
 
 	int sgIP_UDP_Bind(sgIP_Record_UDP * rec, int srcport, unsigned long srcip);
-	int sgIP_UDP_RecvFrom(sgIP_Record_UDP * rec, sint8 * destbuf, int buflength, int flags, unsigned long * sender_ip, unsigned short * sender_port);
-	int sgIP_UDP_SendTo(sgIP_Record_UDP * rec, const sint8 * buf, int buflength, int flags, unsigned long dest_ip, int dest_port);
+	int sgIP_UDP_RecvFrom(sgIP_Record_UDP * rec, char * destbuf, int buflength, int flags, unsigned long * sender_ip, unsigned short * sender_port);
+	int sgIP_UDP_SendTo(sgIP_Record_UDP * rec, const char * buf, int buflength, int flags, unsigned long dest_ip, int dest_port);
 
 #ifdef __cplusplus
 };

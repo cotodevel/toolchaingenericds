@@ -56,12 +56,12 @@ typedef struct SGIP_HEADER_TCP {
 	unsigned short srcport,destport;
 	unsigned long seqnum;
 	unsigned long acknum;
-	uint8 dataofs_;
-	uint8 tcpflags;
+	unsigned char dataofs_;
+	unsigned char tcpflags;
 	unsigned short window;
 	unsigned short checksum;
 	unsigned short urg_ptr;
-	uint8 options[4];
+	unsigned char options[4];
 } sgIP_Header_TCP;
 
 
@@ -90,9 +90,9 @@ typedef struct SGIP_RECORD_TCP {
 	int buf_rx_in, buf_rx_out;
 	int buf_tx_in, buf_tx_out;
 	int buf_oob_in, buf_oob_out;
-	uint8 buf_rx[SGIP_TCP_RECEIVEBUFFERLENGTH];
-	uint8 buf_tx[SGIP_TCP_TRANSMITBUFFERLENGTH];
-	uint8 buf_oob[SGIP_TCP_OOBBUFFERLENGTH];
+	unsigned char buf_rx[SGIP_TCP_RECEIVEBUFFERLENGTH];
+	unsigned char buf_tx[SGIP_TCP_TRANSMITBUFFERLENGTH];
+	unsigned char buf_oob[SGIP_TCP_OOBBUFFERLENGTH];
 } sgIP_Record_TCP;
 
 typedef struct SGIP_TCP_SYNCOOKIE {
@@ -123,8 +123,8 @@ extern "C" {
    extern sgIP_Record_TCP * sgIP_TCP_Accept(sgIP_Record_TCP * rec);
 	extern int sgIP_TCP_Close(sgIP_Record_TCP * rec);
 	extern int sgIP_TCP_Connect(sgIP_Record_TCP * rec, unsigned long destip, int destport);
-	extern int sgIP_TCP_Send(sgIP_Record_TCP * rec, const sint8 * datatosend, int datalength, int flags);
-	extern int sgIP_TCP_Recv(sgIP_Record_TCP * rec, sint8 * databuf, int buflength, int flags);
+	extern int sgIP_TCP_Send(sgIP_Record_TCP * rec, const char * datatosend, int datalength, int flags);
+	extern int sgIP_TCP_Recv(sgIP_Record_TCP * rec, char * databuf, int buflength, int flags);
 
 #ifdef __cplusplus
 };

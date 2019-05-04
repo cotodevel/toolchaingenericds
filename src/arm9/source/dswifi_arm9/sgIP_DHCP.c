@@ -31,7 +31,7 @@ SOFTWARE.
 
 extern unsigned long volatile sgIP_timems;
 int dhcp_socket;
-sint8 dhcp_hostname[64];
+char dhcp_hostname[64];
 int dhcp_tid;
 unsigned long dhcp_timestart, dhcp_timelastaction;
 sgIP_DHCP_Packet * dhcp_p;
@@ -51,7 +51,7 @@ void sgIP_DHCP_Init() {
    strcpy(dhcp_hostname,SGIP_DHCP_DEFAULTHOSTNAME);
    dhcp_status=SGIP_DHCP_STATUS_IDLE;
 }
-void sgIP_DHCP_SetHostName(sint8 * s) {
+void sgIP_DHCP_SetHostName(char * s) {
    strncpy(dhcp_hostname,s,63);
    dhcp_hostname[63]=0;
 }
@@ -331,7 +331,7 @@ void sgIP_DHCP_Terminate() { // kill the process where it stands; deallocate all
    dhcp_status=SGIP_DHCP_STATUS_IDLE;
 }
 
-int gethostname(sint8 *name, size_t len)
+int gethostname(char *name, size_t len)
 {
     int size = sizeof(dhcp_hostname);
     if (name == NULL)
@@ -345,7 +345,7 @@ int gethostname(sint8 *name, size_t len)
     return 0;
 }
 
-int sethostname(const sint8 *name, size_t len)
+int sethostname(const char *name, size_t len)
 {
     sgIP_DNS_Record *rec;
 

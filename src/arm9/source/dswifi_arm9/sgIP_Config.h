@@ -195,7 +195,7 @@ SOFTWARE.
 
 
 // SGIP_DEBUG: Enable debug logging.
-//  requires external function "void sgIP_dbgprint(sint8 *, ...);"
+//  requires external function "void sgIP_dbgprint(char *, ...);"
 //#define SGIP_DEBUG
 
 #ifdef SGIP_DEBUG
@@ -260,7 +260,7 @@ extern "C" {
 #ifdef __cplusplus
 extern "C" {
 #endif
-	extern void sgIP_dbgprint(sint8 *, ...);
+	extern void sgIP_dbgprint(char *, ...);
 #ifdef __cplusplus
 };
 #endif

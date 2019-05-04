@@ -34,8 +34,6 @@ struct hostent {
    char ** h_addr_list;
 };
 
-#endif
-
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,4 +43,7 @@ extern "C" {
 
 #ifdef __cplusplus
 };
+#endif
+
+
 #endif

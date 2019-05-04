@@ -39,14 +39,14 @@ sgIP_DNS_Record dnsrecords[SGIP_DNS_MAXRECORDSCACHE];
 
 // data to return via hostent
 volatile sgIP_DNS_Record  dnsrecord_return;
-volatile sint8 *           alias_list[SGIP_DNS_MAXALIASES+1];
-volatile sint8 *           addr_list[SGIP_DNS_MAXRECORDADDRS+1];
-sint8             ipaddr_alias[256];
+volatile char *           alias_list[SGIP_DNS_MAXALIASES+1];
+volatile char *           addr_list[SGIP_DNS_MAXRECORDADDRS+1];
+char             ipaddr_alias[256];
 unsigned long    ipaddr_ip;
 volatile sgIP_DNS_Hostent dnsrecord_hostent;
 
-uint8 querydata[512];
-uint8 responsedata[512];
+unsigned char querydata[512];
+unsigned char responsedata[512];
 
 void sgIP_DNS_Init() {
    int i;
@@ -68,10 +68,10 @@ void sgIP_DNS_Timer1000ms() {
    }
 }
 
-int sgIP_DNS_isipaddress(const sint8 * name, unsigned long * ipdest) {
+int sgIP_DNS_isipaddress(const char * name, unsigned long * ipdest) {
 	int i,j,t,ndot;
 	unsigned long out_addr, g[4];
-	const sint8 * c;
+	const char * c;
 
 	ndot=0;
 	c=name;
@@ -135,7 +135,7 @@ int sgIP_DNS_isipaddress(const sint8 * name, unsigned long * ipdest) {
 	return 1;
 }
 
-sgIP_DNS_Record * sgIP_DNS_FindDNSRecord(const sint8 * name) {
+sgIP_DNS_Record * sgIP_DNS_FindDNSRecord(const char * name) {
    int i,j,k,n,c,c2;
    for(i=0;i<SGIP_DNS_MAXRECORDSCACHE;i++) {
       if((dnsrecords[i].flags&(SGIP_DNS_FLAG_ACTIVE|SGIP_DNS_FLAG_RESOLVED)) == (SGIP_DNS_FLAG_ACTIVE|SGIP_DNS_FLAG_RESOLVED)) {
@@ -204,12 +204,12 @@ sgIP_DNS_Hostent * sgIP_DNS_GenerateHostentIP(unsigned long ipaddr) {
    alias_list[0]=ipaddr_alias;
    alias_list[1]=0;
    ipaddr_ip=ipaddr;
-   addr_list[0]=(sint8 *)&ipaddr_ip;
+   addr_list[0]=(char *)&ipaddr_ip;
    addr_list[1]=0;
 
-   dnsrecord_hostent.h_addr_list=(sint8 **)addr_list;
+   dnsrecord_hostent.h_addr_list=(char **)addr_list;
    dnsrecord_hostent.h_addrtype=AF_INET;
-   dnsrecord_hostent.h_aliases=(sint8 **)alias_list;
+   dnsrecord_hostent.h_aliases=(char **)alias_list;
    dnsrecord_hostent.h_length=4;
    dnsrecord_hostent.h_name=ipaddr_alias;
    return (sgIP_DNS_Hostent *)&dnsrecord_hostent;
@@ -223,22 +223,22 @@ sgIP_DNS_Hostent * sgIP_DNS_GenerateHostent(sgIP_DNS_Record * dnsrec) {
    }
    alias_list[i]=0;
    for(i=0;i<dnsrecord_return.numaddr;i++) {
-      addr_list[i]=(sint8 *)&(dnsrecord_return.addrdata[i*dnsrecord_return.addrlen]);
+      addr_list[i]=(char *)&(dnsrecord_return.addrdata[i*dnsrecord_return.addrlen]);
    }
    addr_list[i]=0;
-   dnsrecord_hostent.h_addr_list=(sint8 **)addr_list;
+   dnsrecord_hostent.h_addr_list=(char **)addr_list;
    dnsrecord_hostent.h_addrtype=AF_INET; //dnsrecord_return.addrclass; // record class is probably AF_IN, not IN_ADDR
-   dnsrecord_hostent.h_aliases=(sint8 **)alias_list;
+   dnsrecord_hostent.h_aliases=(char **)alias_list;
    dnsrecord_hostent.h_length=dnsrecord_return.addrlen;
-   dnsrecord_hostent.h_name=(sint8 *)dnsrecord_return.name;
+   dnsrecord_hostent.h_name=(char *)dnsrecord_return.name;
    return (sgIP_DNS_Hostent *)&dnsrecord_hostent;
 }
 
 static
-int sgIP_DNS_genquery(const sint8 * name) {
+int sgIP_DNS_genquery(const char * name) {
    int i,j,c,l;
    unsigned short * querydata_s = (unsigned short *) querydata;
-   uint8 * querydata_c = querydata;
+   unsigned char * querydata_c = querydata;
    // header section
    querydata_s[0]=htons(time_count&0xFFFF);
    last_id=querydata_s[0];
@@ -276,16 +276,16 @@ int sgIP_DNS_genquery(const sint8 * name) {
    return j+12; // length
 }
 
-void sgIP_DNS_CopyAliasAt(sint8 * deststr,int offset) {
-   sint8 * c;
+void sgIP_DNS_CopyAliasAt(char * deststr,int offset) {
+   char * c;
    int i,j;
    i=0;
-   c=(sint8 *)responsedata+offset;
+   c=(char *)responsedata+offset;
    do {
       j=c[0];
       if(j>63) {
          j=((j&63)<<8) | c[1];
-         c=(sint8 *)responsedata+j;
+         c=(char *)responsedata+j;
          continue;
       }
       if(!j) break;
@@ -300,7 +300,7 @@ void sgIP_DNS_CopyAliasAt(sint8 * deststr,int offset) {
 }
 
 
-sgIP_DNS_Hostent * sgIP_DNS_gethostbyname(const sint8 * name) {
+sgIP_DNS_Hostent * sgIP_DNS_gethostbyname(const char * name) {
    sgIP_DNS_Record * rec;
    sgIP_DNS_Hostent * he;
    sgIP_Hub_HWInterface * hw;
@@ -309,7 +309,7 @@ sgIP_DNS_Hostent * sgIP_DNS_gethostbyname(const sint8 * name) {
    unsigned long serverip;
    struct sockaddr_in sain;
    unsigned long IP;
-   
+
    // is name an IP address?
    if(sgIP_DNS_isipaddress(name,&IP)) {
       return sgIP_DNS_GenerateHostentIP(IP);
@@ -347,7 +347,6 @@ dns_listenonly:
             if(i!=-1) break;
             dtime=sgIP_timems-query_time_start;
             if(dtime>SGIP_DNS_TIMEOUTMS) break;
-            
          } while(1);
 
          if(i==-1) { // no reply, retry
@@ -368,8 +367,8 @@ dns_listenonly:
          // parse response.
          {
             const unsigned short * resdata_s = (unsigned short *) responsedata;
-            const uint8 * resdata_c = responsedata;
-            const sint8 * c;
+            const unsigned char * resdata_c = responsedata;
+            const char * c;
             int j,q,a, nalias,naddr;
             if(last_id!=resdata_s[0]) { // bad.
                goto dns_listenonly;
@@ -446,7 +445,7 @@ dns_listenonly:
    return he;
 }
 
-unsigned long inet_addr(const sint8 *cp) {
+unsigned long inet_addr(const char *cp) {
 	unsigned long IP;
 	if(sgIP_DNS_isipaddress(cp,&IP)) {
 		return IP;
@@ -454,7 +453,7 @@ unsigned long inet_addr(const sint8 *cp) {
 	return 0xFFFFFFFF;
 }
 
-int inet_aton(const sint8 *cp, struct in_addr *inp) {
+int inet_aton(const char *cp, struct in_addr *inp) {
 	unsigned long IP;
 	
 	if(sgIP_DNS_isipaddress(cp,&IP)) {
@@ -466,9 +465,9 @@ int inet_aton(const sint8 *cp, struct in_addr *inp) {
 }
 
 
-sint8 *inet_ntoa(struct in_addr in) {
+char *inet_ntoa(struct in_addr in) {
 	sgIP_ntoa(in.s_addr);
-	return (sint8 *)ipaddr_alias;
+	return (char *)ipaddr_alias;
 }
 
 

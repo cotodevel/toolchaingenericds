@@ -29,7 +29,7 @@ SOFTWARE.
 #include "sgIP_memblock.h"
 
 typedef struct SGIP_HEADER_ICMP {
-	uint8 type,code;
+	unsigned char type,code;
 	unsigned short checksum;
 	unsigned long xtra;
 } sgIP_Header_ICMP;

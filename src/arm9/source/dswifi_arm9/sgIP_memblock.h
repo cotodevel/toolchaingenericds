@@ -34,8 +34,8 @@ typedef struct SGIP_MEMBLOCK {
 	int totallength;
 	int thislength;
 	struct SGIP_MEMBLOCK * next;
-	sint8 * datastart;
-	sint8 reserved[SGIP_MEMBLOCK_DATASIZE-16]; // assume the other 4 values are 16 bytes total in length.
+	char * datastart;
+	char reserved[SGIP_MEMBLOCK_DATASIZE-16]; // assume the other 4 values are 16 bytes total in length.
 } sgIP_memblock;
 
 #define SGIP_MEMBLOCK_HEADERSIZE 16
