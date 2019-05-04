@@ -109,10 +109,10 @@ int wHeapsize = 0;
 wHeapRecord * wHeapStart = NULL; // start of heap
 wHeapRecord * wHeapFirst = NULL; // first free block
 void wHeapAllocInit(int size) {
-    if(wHeapStart){
+	 if(wHeapStart){
 		free(wHeapStart);
 	}
-	wHeapStart=(wHeapRecord *)malloc(size);
+    wHeapStart=(wHeapRecord *)malloc(size);
     if (!wHeapStart) return;
     wHeapFirst=wHeapStart;
     wHeapStart->flags=WHEAP_RECORD_FLAG_UNUSED;
@@ -289,15 +289,14 @@ int Wifi_CmpMacAddr(volatile void * mac1,volatile  void * mac2) {
 
 u32 Wifi_TxBufferWordsAvailable() {
 	if(WifiData){
-		sint32 size=WifiData->txbufIn-WifiData->txbufOut-1;
+		s32 size=WifiData->txbufIn-WifiData->txbufOut-1;
 		if(size<0) size += WIFI_TXBUFFER_SIZE/2;
 		return size;
 	}
-	return 0;
 }
 void Wifi_TxBufferWrite(s32 start, s32 len, u16 * data) {
 	if(WifiData){
-		int writelen = 0;
+		int writelen;
 		while(len>0) {
 			writelen=len;
 			if(writelen>(WIFI_TXBUFFER_SIZE/2)-start) writelen=(WIFI_TXBUFFER_SIZE/2)-start;
@@ -356,7 +355,7 @@ int Wifi_RawTxFrame(u16 datalen, u16 rate, u16 * data) {
 		txh.tx_rate=rate;
 		txh.tx_length=datalen+4;
 		base = WifiData->txbufOut;
-		Wifi_TxBufferWrite(base,6,(uint16 *)&txh);
+		Wifi_TxBufferWrite(base,6,(u16 *)&txh);
 		base += 6;
 		if(base>=(WIFI_TXBUFFER_SIZE/2)) base -= WIFI_TXBUFFER_SIZE/2;
 		Wifi_TxBufferWrite(base,(datalen+1)/2,data);
@@ -367,7 +366,7 @@ int Wifi_RawTxFrame(u16 datalen, u16 rate, u16 * data) {
 		WifiData->stats[WSTAT_TXQUEUEDBYTES]+=sizeneeded;
 	   if(synchandler) synchandler();
 	}
-	return 0;
+   return 0;
 }
 
 
@@ -423,25 +422,24 @@ int Wifi_GetNumAP() {
 }
 
 int Wifi_GetAPData(int apnum, Wifi_AccessPoint * apdata) {
-        int j=0;
+        int j;
     
 	if(!apdata) return WIFI_RETURN_PARAMERROR;
 
-	
 	if(WifiData){
 		if(WifiData->aplist[apnum].flags&WFLAG_APDATA_ACTIVE) {
-			while(Spinlock_Acquire(WifiData->aplist[apnum])!=SPINLOCK_OK)
-			{
-				// additionally calculate average RSSI here
-				WifiData->aplist[apnum].rssi=0;
-				for(j=0;j<8;j++) {
-					WifiData->aplist[apnum].rssi+=WifiData->aplist[apnum].rssi_past[j];
-				}
-				WifiData->aplist[apnum].rssi = WifiData->aplist[apnum].rssi >> 3;
-				*apdata = WifiData->aplist[apnum]; // yay for struct copy!
-				Spinlock_Release(WifiData->aplist[apnum]);
-				return WIFI_RETURN_OK;
+		    while(Spinlock_Acquire(WifiData->aplist[apnum])!=SPINLOCK_OK);
+		    {
+			// additionally calculate average RSSI here
+			WifiData->aplist[apnum].rssi=0;
+			for(j=0;j<8;j++) {
+			    WifiData->aplist[apnum].rssi+=WifiData->aplist[apnum].rssi_past[j];
 			}
+			WifiData->aplist[apnum].rssi = WifiData->aplist[apnum].rssi >> 3;
+			*apdata = WifiData->aplist[apnum]; // yay for struct copy!
+			Spinlock_Release(WifiData->aplist[apnum]);
+			return WIFI_RETURN_OK;
+		    }
 		}
 	}
 	return WIFI_RETURN_ERROR;
@@ -822,8 +820,8 @@ int Wifi_TransmitFunction(sgIP_Hub_HWInterface * hw, sgIP_memblock * mb) {
 	      SGIP_DEBUG_MESSAGE(("Tx exp:%i que:%i",copyexpect,copytotal));
 	   }
 	   if(synchandler) synchandler();
+		return 0;
 	}
-	return 0;
 }
 
 int Wifi_Interface_Init(sgIP_Hub_HWInterface * hw) {
@@ -1077,6 +1075,7 @@ void arm9_synctoarm7() {
 //---------------------------------------------------------------------------------
 	SendFIFOWords(WIFI_SYNC, 0);
 }
+
 /*
 //---------------------------------------------------------------------------------
 void wifiValue32Handler(u32 value, void* data) {

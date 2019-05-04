@@ -192,6 +192,7 @@ int sgIP_UDP_Bind(sgIP_Record_UDP * rec, int srcport, unsigned long srcip) {
 
 int sgIP_UDP_RecvFrom(sgIP_Record_UDP * rec, char * destbuf, int buflength, int flags, unsigned long * sender_ip, unsigned short * sender_port) {
 	if(!rec || !destbuf || !sender_ip || !sender_port || buflength==0) return SGIP_ERROR(EINVAL);
+	
 	if(rec->incoming_queue==0) { 
 		return SGIP_ERROR(EWOULDBLOCK);
 	}

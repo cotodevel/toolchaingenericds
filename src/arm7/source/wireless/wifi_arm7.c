@@ -24,6 +24,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
+
 #include "dsregs.h"
 #include "wifi_arm7.h"
 
@@ -33,7 +34,6 @@ SOFTWARE.
 #include "spiTGDS.h"
 #include "spifwTGDS.h"
 #include "biosTGDS.h"
-
 volatile Wifi_MainStruct * WifiData = 0;
 WifiSyncHandler synchandler = 0;
 int keepalive_time = 0;
@@ -499,7 +499,9 @@ void Wifi_TxRaw(u16 * data, int datalen) {
 	datalen = (datalen+3)&(~3);
 	Wifi_MACWrite(data, 0, 0, datalen);
 	//	WIFI_REG(0xB8)=0x0001;
+	WIFI_REG(0x2C)=0x0707;
 	WIFI_REG(0xA8)=0x8000;
+	WIFI_REG(0xAE)=0x000D;
 	WifiData->stats[WSTAT_TXPACKETS]++;
 	WifiData->stats[WSTAT_TXBYTES]+=datalen;
 	WifiData->stats[WSTAT_TXDATABYTES]+=datalen-12;
@@ -509,6 +511,7 @@ int Wifi_TxCheck() {
 	if(WIFI_REG(0xB6)&0x0008) return 0;
 	return 1;
 }
+
 
 u16 beacon_channel;
 
@@ -556,6 +559,7 @@ void Wifi_SetBeaconChannel(int channel) {
 		}
 	}
 }
+
 
 //////////////////////////////////////////////////////////////////////////
 //

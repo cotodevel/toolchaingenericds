@@ -118,7 +118,7 @@ int socket(int domain, int type, int protocol) {
 int forceclosesocket(int socket) {
 	if(socket<1 || socket>SGIP_SOCKET_MAXSOCKETS) return SGIP_ERROR(EINVAL);
 	socket--;
-	if(!(socketlist[socket].flags&SGIP_SOCKET_FLAG_ALLOCATED)) {  return 0; }
+	if(!(socketlist[socket].flags&SGIP_SOCKET_FLAG_ALLOCATED)) { return 0; }
 	if((socketlist[socket].flags&SGIP_SOCKET_FLAG_TYPEMASK)==SGIP_SOCKET_FLAG_TYPE_TCP) {
 		sgIP_TCP_FreeRecord((sgIP_Record_TCP *)socketlist[socket].conn_ptr);
 	} else if((socketlist[socket].flags&SGIP_SOCKET_FLAG_TYPEMASK)==SGIP_SOCKET_FLAG_TYPE_UDP) {
@@ -131,7 +131,6 @@ int forceclosesocket(int socket) {
 
 int closesocket(int socket) {
 	if(socket<1 || socket>SGIP_SOCKET_MAXSOCKETS) return SGIP_ERROR(EINVAL);
-	
 	socket--;
 	if(!(socketlist[socket].flags&SGIP_SOCKET_FLAG_VALID)) { return 0; }
 	if((socketlist[socket].flags&SGIP_SOCKET_FLAG_TYPEMASK)==SGIP_SOCKET_FLAG_TYPE_TCP) {
@@ -145,7 +144,6 @@ int closesocket(int socket) {
 			shutdown(socket+1,0);
 			socketlist[socket].flags &= ~(SGIP_SOCKET_FLAG_VALID | SGIP_SOCKET_MASK_CLOSE_COUNT);
 			socketlist[socket].flags |= SGIP_SOCKET_FLAG_CLOSING | SGIP_SOCKET_VALUE_CLOSE_COUNT;
-			
 			return 0;
 		}
 	} else if((socketlist[socket].flags&SGIP_SOCKET_FLAG_TYPEMASK)==SGIP_SOCKET_FLAG_TYPE_UDP) {
@@ -159,7 +157,6 @@ int closesocket(int socket) {
 int bind(int socket, const struct sockaddr * addr, int addr_len) {
 	if(socket<1 || socket>SGIP_SOCKET_MAXSOCKETS) return SGIP_ERROR(EINVAL);
 	if(addr_len!=sizeof(struct sockaddr_in)) return SGIP_ERROR(EINVAL);
-	
 	int retval=SGIP_ERROR(EINVAL);
 	socket--;
 	if(!(socketlist[socket].flags&SGIP_SOCKET_FLAG_VALID)) { return SGIP_ERROR(EINVAL); }
@@ -173,7 +170,6 @@ int bind(int socket, const struct sockaddr * addr, int addr_len) {
 int connect(int socket, const struct sockaddr * addr, int addr_len) {
    if(socket<1 || socket>SGIP_SOCKET_MAXSOCKETS) return SGIP_ERROR(EINVAL);
    if(addr_len!=sizeof(struct sockaddr_in)) return SGIP_ERROR(EINVAL);
-   
    int i;
    int retval=SGIP_ERROR(EINVAL);
    socket--;
@@ -201,7 +197,7 @@ int send(int socket, const void * data, int sendlength, int flags) {
    int retval=SGIP_ERROR(EINVAL);
    socket--;
 
-   if(!(socketlist[socket].flags&SGIP_SOCKET_FLAG_VALID)) {  return SGIP_ERROR(EINVAL); }
+   if(!(socketlist[socket].flags&SGIP_SOCKET_FLAG_VALID)) { return SGIP_ERROR(EINVAL); }
 
    if((socketlist[socket].flags&SGIP_SOCKET_FLAG_TYPEMASK)==SGIP_SOCKET_FLAG_TYPE_TCP) {
        do {
@@ -209,7 +205,6 @@ int send(int socket, const void * data, int sendlength, int flags) {
            if(retval!=-1) break;
            if(errno!=EWOULDBLOCK) break;
            if(socketlist[socket].flags&SGIP_SOCKET_FLAG_NONBLOCKING) break;
-
        } while(1);
    }
    return retval;
@@ -452,7 +447,7 @@ int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct
 						rec = (sgIP_Record_TCP *)socketlist[i].conn_ptr;
 						if(rec->tcpstate==SGIP_TCP_STATE_LISTEN && rec->listendata && rec->listendata[0]){ timeout_ms=0; break; }
 						if(rec->tcpstate==SGIP_TCP_STATE_CLOSED || 
-								(rec->tcpstate == SGIP_TCP_STATE_CLOSE_WAIT)) { timeout_ms=0; break; }
+								(rec->tcpstate == SGIP_TCP_STATE_CLOSE_WAIT && rec->want_shutdown==0)) { timeout_ms=0; break; }
 						if(rec->buf_rx_in!=rec->buf_rx_out) { timeout_ms=0; break; }
 					} else if((socketlist[i].flags&SGIP_SOCKET_FLAG_TYPEMASK)==SGIP_SOCKET_FLAG_TYPE_UDP) {
 						urec = (sgIP_Record_UDP *)socketlist[i].conn_ptr;
@@ -493,7 +488,7 @@ int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct
 					rec = (sgIP_Record_TCP *)socketlist[i].conn_ptr;
 					if(rec->tcpstate==SGIP_TCP_STATE_LISTEN && rec->listendata && rec->listendata[0]){ retval++; }
 					else if(rec->tcpstate==SGIP_TCP_STATE_CLOSED || 
-							(rec->tcpstate==SGIP_TCP_STATE_CLOSE_WAIT)) { retval++; }
+							(rec->tcpstate==SGIP_TCP_STATE_CLOSE_WAIT && rec->want_shutdown==0)) { retval++; }
 					else if(rec->buf_rx_in==rec->buf_rx_out) { FD_CLR(i+1,readfds);} 
 					else retval++;
 				} else if((socketlist[i].flags&SGIP_SOCKET_FLAG_TYPEMASK)==SGIP_SOCKET_FLAG_TYPE_UDP) {
