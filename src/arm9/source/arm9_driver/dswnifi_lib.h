@@ -376,7 +376,7 @@ extern bool disconnectAsync(int sock);
 //Server:
 
 //opens a port,and begins to listen through it. Then an accept() call (blocking), through the earlier port, will give client connection context.
-extern int openServerSyncConn(char * dnsOrIpAddr, int SyncPort, struct sockaddr_in * sain);
+extern int openServerSyncConn(int SyncPort, struct sockaddr_in * sain);
 
 #ifdef __cplusplus
 }

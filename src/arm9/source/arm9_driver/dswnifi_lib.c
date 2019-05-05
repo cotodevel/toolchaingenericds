@@ -1504,7 +1504,7 @@ bool connectAsync(int sock, struct sockaddr_in * sain){
 
 //Server:
 //Open a port and listen through it. Synchronous/blocking.
-int openServerSyncConn(char * dnsOrIpAddr, int SyncPort, struct sockaddr_in * sain){
+int openServerSyncConn(int SyncPort, struct sockaddr_in * sain){
 	int srv_len = sizeof(struct sockaddr_in);
 	memset(sain, 0, srv_len);
 	sain->sin_port = htons(SyncPort);//default listening port
