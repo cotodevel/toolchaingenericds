@@ -1537,6 +1537,6 @@ int openServerSyncConn(int SyncPort, struct sockaddr_in * sain){
 
 bool disconnectAsync(int sock){
 	shutdown(sock,0); // good practice to shutdown the socket.
-	closesocket(sock); // remove the socket.
+	forceclosesocket(sock); // remove the socket.
 	return true;
 }
