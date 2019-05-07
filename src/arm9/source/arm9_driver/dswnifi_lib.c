@@ -1474,13 +1474,15 @@ int openAsyncConn(char * dnsOrIpAddr, int asyncPort, struct sockaddr_in * sain){
 	else{
 		return -1;
 	}
-	
     // Create a TCP socket
     int my_socket = socket( AF_INET, SOCK_STREAM, 0 );
     if(my_socket < 0){
 		return -1;
 	}
-	
+	int enable = 1;
+	if (setsockopt(my_socket, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0){	//socket can be respawned ASAP if it's dropped
+		return -1;
+	}
 	memset(sain, 0, sizeof(struct sockaddr_in)); 
 	int i=1;
 	i=ioctl(my_socket, FIONBIO,&i);	//set non-blocking
