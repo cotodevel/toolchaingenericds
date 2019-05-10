@@ -82,9 +82,6 @@ void Handler(int packetID, int readlength){
 	}
 }
 
-void Timer_10ms(void) {
-	Wifi_Timer(10);
-}
 
 void initNiFi(){
 	Wifi_InitDefault(false);
@@ -94,7 +91,7 @@ void initNiFi(){
 	
 	if(1){
 		DisableIrq(IRQ_TIMER3);
-		TIMERXDATA(3) = -6553; // 6553.1 * 256 cycles = ~50ms;
+		TIMERXDATA(3) = -1310; // 1310 * 256 cycles = ~10ms;
 		TIMERXCNT(3) = 0x00C2; // enable, irq, 1/256 clock
 		EnableIrq(IRQ_TIMER3);
 	}

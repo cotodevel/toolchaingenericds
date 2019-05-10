@@ -699,6 +699,7 @@ static u8 scanlist[] = {
 static int scanlist_size = sizeof(scanlist)/sizeof(scanlist[0]);
 static int scanIndex = 0;
 
+inline __attribute__((always_inline))
 void Wifi_Update() {
 	int i;
 	if(!WifiData) return;

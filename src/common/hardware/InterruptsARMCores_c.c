@@ -98,7 +98,7 @@ void NDS_IRQHandler(){
 	if(REG_IE_SET & IRQ_TIMER3){
 		#ifdef ARM9
 		//wifi arm9 irq
-		Timer_50ms();
+		Timer_10ms();
 		#endif
 		Timer3handlerUser();
 		REG_IF = IRQ_TIMER3;

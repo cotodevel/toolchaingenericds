@@ -124,7 +124,7 @@ SOFTWARE.
 #define SGIP_TCP_TRANSMITBUFFERLENGTH			8192
 
 // SGIP_TCPOOBBUFFERLENGTH: The size (in bytes) of the receive OOB data FIFO in a TCP connection
-#define SGIP_TCP_OOBBUFFERLENGTH				256
+#define SGIP_TCP_OOBBUFFERLENGTH				2048
 
 // SGIP_ARP_MAXENTRIES: The maximum number of cached ARP entries - this is defined staticly
 //  because it's somewhat impractical to dynamicly allocate memory for such a small structure

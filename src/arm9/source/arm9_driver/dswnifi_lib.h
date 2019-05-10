@@ -199,7 +199,6 @@ extern "C"{
 //DSWNIFI: NIFI
 extern void Handler(int packetID, int readlength);
 extern void initNiFi();
-extern void Timer_10ms(void);
 
 //DSWNIFI: nifi buffer IO
 extern volatile uint8	 data[4096];		//data[32] + is recv TX'd frame nfdata[128]

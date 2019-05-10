@@ -63,12 +63,7 @@ const char * ASSOCSTATUS_STRINGS[] = {
 
 
 void sgIP_IntrWaitEvent() {
- //  __asm( ".ARM\n swi 0x060000\n" );
-	int i,j;
-	j=0;
-	for(i=0;i<20000;i++) {
-		j+=i;
-	}
+	swiDelay( 839 ); // 100 us delay
 }
 
 void * sgIP_malloc(int size) __attribute__((weak));
@@ -838,6 +833,7 @@ int Wifi_Interface_Init(sgIP_Hub_HWInterface * hw) {
 	return 0;
 }
 
+inline __attribute__((always_inline))
 void Wifi_Timer(int num_ms) {
 	Wifi_Update();
 	sgIP_Timer(num_ms);
@@ -883,7 +879,7 @@ int Wifi_CheckInit() {
 	return ((WifiData->flags7 & WFLAG_ARM7_ACTIVE) && (WifiData->flags9 & WFLAG_ARM9_ARM7READY));
 }
 
-
+inline __attribute__((always_inline))
 void Wifi_Update() {
 	int cnt;
 	int base, base2, len, fulllen;
@@ -1064,9 +1060,9 @@ void Wifi_Sync() {
 // wifi timer function, to update internals of sgIP
 //---------------------------------------------------------------------------------
 inline __attribute__((always_inline))
-void Timer_50ms(void) {
+void Timer_10ms(void) {
 //---------------------------------------------------------------------------------
-	Wifi_Timer(50);
+	Wifi_Timer(10);
 }
 
 // notification function to send fifo message to arm7
@@ -1103,7 +1099,7 @@ bool Wifi_InitDefault(bool useFirmwareSettings) {
 	Wifi_SetSyncHandler(arm9_synctoarm7); // tell wifi lib to use our handler to notify arm7
 
 	// set timer3
-	TIMERXDATA(3) = -6553; // 6553.1 * 256 cycles = ~50ms;
+	TIMERXDATA(3) = -1310; // 1310 * 256 cycles = ~10ms;
 	TIMERXCNT(3) = 0x00C2; // enable, irq, 1/256 clock
 
 	SendFIFOWords(WIFI_INIT, (uint32)wifi_pass);
