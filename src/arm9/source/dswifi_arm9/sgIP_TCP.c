@@ -91,7 +91,7 @@ void sgIP_TCP_Timer() { // scan through tcp records and resend anything necessar
 		 if(rec->want_shutdown==1 && rec->buf_tx_out==rec->buf_tx_in) { // oblige & shutdown
 			 sgIP_TCP_SendPacket(rec,SGIP_TCP_FLAG_FIN | SGIP_TCP_FLAG_ACK,0);
 			 if(rec->tcpstate==SGIP_TCP_STATE_CLOSE_WAIT) {
-				 rec->tcpstate=SGIP_TCP_STATE_LAST_ACK;
+				 rec->tcpstate=SGIP_TCP_STATE_CLOSING;
 			 } else {
 				 rec->tcpstate=SGIP_TCP_STATE_FIN_WAIT_1;
 			 }
@@ -145,7 +145,6 @@ void sgIP_TCP_Timer() { // scan through tcp records and resend anything necessar
          }
          break;
       case SGIP_TCP_STATE_CLOSING: // got FIN, waiting for ACK of our FIN [resend FINACK]
-      case SGIP_TCP_STATE_LAST_ACK: // wait for ACK of our last FIN [resend FINACK]
          if(time>rec->time_backoff) {
             rec->retrycount++;
             if(rec->retrycount>=SGIP_TCP_MAXRETRY) {
@@ -158,6 +157,22 @@ void sgIP_TCP_Timer() { // scan through tcp records and resend anything necessar
 			j*=2;
 			if(j>SGIP_TCP_BACKOFFMAX) j=SGIP_TCP_BACKOFFMAX;
             sgIP_TCP_SendPacket(rec,SGIP_TCP_FLAG_FIN | SGIP_TCP_FLAG_ACK,0);
+			rec->time_backoff=j; // preserve backoff
+         }
+         break;
+      case SGIP_TCP_STATE_LAST_ACK: // wait for ACK of our last FIN [resend FIN]
+         if(time>rec->time_backoff) {
+            rec->retrycount++;
+            if(rec->retrycount>=SGIP_TCP_MAXRETRY) {
+               //error
+               rec->errorcode=ETIMEDOUT;
+               rec->tcpstate=SGIP_TCP_STATE_CLOSED;
+               break;
+            }
+			j=rec->time_backoff;
+			j*=2;
+			if(j>SGIP_TCP_BACKOFFMAX) j=SGIP_TCP_BACKOFFMAX;
+            sgIP_TCP_SendPacket(rec,SGIP_TCP_FLAG_FIN,0);
 			rec->time_backoff=j; // preserve backoff
          }
          break;
@@ -433,7 +448,6 @@ int sgIP_TCP_ReceivePacket(sgIP_memblock * mb, unsigned long srcip, unsigned lon
 	case SGIP_TCP_STATE_SYN_SENT: // connect initiated
       switch(tcp->tcpflags&(SGIP_TCP_FLAG_SYN|SGIP_TCP_FLAG_ACK)) {
       case SGIP_TCP_FLAG_SYN | SGIP_TCP_FLAG_ACK: // both flags set
-         // FIXME: shall check ack againts our seq instead.
          rec->ack=tcpseq+1;
          rec->sequence=tcpack;
          sgIP_TCP_SendPacket(rec,SGIP_TCP_FLAG_ACK,0);
@@ -541,28 +555,10 @@ int sgIP_TCP_ReceivePacket(sgIP_memblock * mb, unsigned long srcip, unsigned lon
       break;
 
 	case SGIP_TCP_STATE_LAST_ACK: // wait for ACK of our last FIN
-      switch(tcp->tcpflags&(SGIP_TCP_FLAG_FIN|SGIP_TCP_FLAG_ACK)) {
-      case SGIP_TCP_FLAG_FIN:
-         // check sequence against receive window
-         delta1=(int)(tcpseq-rec->ack);
-         delta2=(int)(rec->rxwindow-tcpseq);
-         if(delta1<1 || delta2<0) break; // out of range, they should know better.
-
-         sgIP_TCP_SendPacket(rec,SGIP_TCP_FLAG_ACK,0); // resend their ack.
-         break;
-      case SGIP_TCP_FLAG_ACK: // already checked ack against appropriate window
-         rec->tcpstate=SGIP_TCP_STATE_CLOSED;
-         break;
-      case (SGIP_TCP_FLAG_FIN | SGIP_TCP_FLAG_ACK): // already checked ack, check sequence though
-         // check sequence against receive window
-         delta1=(int)(tcpseq-rec->ack);
-         delta2=(int)(rec->rxwindow-tcpseq);
-         if(delta1<1 || delta2<0) break; // out of range, they should know better.
-         rec->tcpstate=SGIP_TCP_STATE_CLOSED;
-         sgIP_TCP_SendPacket(rec,SGIP_TCP_FLAG_ACK,0);
-         break;
+      if(tcp->tcpflags&SGIP_TCP_FLAG_ACK) {
+         rec->tcpstate=SGIP_TCP_STATE_TIME_WAIT;
       }
-	  break;
+		break;
 	case SGIP_TCP_STATE_TIME_WAIT: // wait to ensure remote tcp knows it's been terminated.
       if(tcp->tcpflags&SGIP_TCP_FLAG_FIN) {
          // check sequence against receive window
@@ -629,12 +625,13 @@ void sgIP_TCP_FixChecksum(unsigned long srcip, unsigned long destip, sgIP_memblo
 int sgIP_TCP_SendPacket(sgIP_Record_TCP * rec, int flags, int datalength) { // data sent is taken directly from the TX fifo.
    int i,j,k;
 	if(!rec) return 0;
-
+	
    j=rec->buf_tx_out-rec->buf_tx_in;
    if(j<0) j+=SGIP_TCP_TRANSMITBUFFERLENGTH;
    if(datalength>j) datalength=j;
    sgIP_memblock * mb =sgIP_TCP_GenHeader(rec,flags,datalength);
 	if(!mb) {
+		
 		return 0;
 	}
    j=20; // destination offset in memblock for data
@@ -655,13 +652,15 @@ int sgIP_TCP_SendPacket(sgIP_Record_TCP * rec, int flags, int datalength) { // d
 
    rec->time_last_action=sgIP_timems; // semi-generic timer.
    rec->time_backoff=SGIP_TCP_GENRETRYMS; // backoff timer
+	
    return 0;
 }
 
 int sgIP_TCP_SendSynReply(int flags,unsigned long seq, unsigned long ack, unsigned long srcip, unsigned long destip, int srcport, int destport, int windowlen) {
-
+   
    sgIP_memblock * mb = sgIP_memblock_alloc(20+sgIP_IP_RequiredHeaderSize());
    if(!mb) {
+      
       return 0;
    }
    sgIP_memblock_exposeheader(mb,-sgIP_IP_RequiredHeaderSize()); // hide IP header space for later
@@ -680,6 +679,8 @@ int sgIP_TCP_SendSynReply(int flags,unsigned long seq, unsigned long ack, unsign
 
    sgIP_TCP_FixChecksum(srcip,destip,mb);
    sgIP_IP_SendViaIP(mb,6,srcip,destip);
+
+   
    return 0;
 }
 
@@ -704,6 +705,7 @@ sgIP_Record_TCP * sgIP_TCP_AllocRecord() {
 	  rec->want_shutdown=0;
       rec->want_reack=0;
 	}
+	
 	return rec;
 }
 void sgIP_TCP_FreeRecord(sgIP_Record_TCP * rec) {
@@ -741,6 +743,8 @@ void sgIP_TCP_FreeRecord(sgIP_Record_TCP * rec) {
       sgIP_free(rec->listendata);
    }
 	sgIP_free(rec);
+
+	
 }
 
 int sgIP_TCP_Bind(sgIP_Record_TCP * rec, int srcport, unsigned long srcip) {
@@ -750,6 +754,7 @@ int sgIP_TCP_Bind(sgIP_Record_TCP * rec, int srcport, unsigned long srcip) {
 		rec->srcport=srcport;
 		rec->tcpstate=SGIP_TCP_STATE_UNUSED;
 	}
+	
 	return 0;
 }
 int sgIP_TCP_Listen(sgIP_Record_TCP * rec, int maxlisten) {
@@ -765,6 +770,7 @@ int sgIP_TCP_Listen(sgIP_Record_TCP * rec, int maxlisten) {
 		rec->listendata = (sgIP_Record_TCP **) sgIP_malloc(maxlisten*4); // pointers to TCP records, 0-terminated list.
 		if(!rec->listendata) { rec->maxlisten=0; err=0; } else {rec->tcpstate=SGIP_TCP_STATE_LISTEN; rec->listendata[0]=0;}
 	}
+	
 	return err;
 }
 
@@ -783,15 +789,19 @@ sgIP_Record_TCP * sgIP_TCP_Accept(sgIP_Record_TCP * rec) {
             rec->listendata[i-1]=rec->listendata[i];
          }
          rec->listendata[i-1]=0;
+         
          return t;
       }
    }
+
+   
    return 0;
 }
 
 int sgIP_TCP_Close(sgIP_Record_TCP * rec) {
 	if(!rec) return SGIP_ERROR(EINVAL);
 	if(rec->want_shutdown==0) rec->want_shutdown=1;
+	
 	return 0;
 }
 int sgIP_TCP_Connect(sgIP_Record_TCP * rec, unsigned long destip, int destport) {
@@ -806,6 +816,7 @@ int sgIP_TCP_Connect(sgIP_Record_TCP * rec, unsigned long destip, int destport) 
 		rec->destip=destip;
 		rec->destport=destport;
 	} else {
+		
 		return SGIP_ERROR(EINVAL);
 	}
 
@@ -814,6 +825,8 @@ int sgIP_TCP_Connect(sgIP_Record_TCP * rec, unsigned long destip, int destport) 
 	sgIP_TCP_SendPacket(rec,SGIP_TCP_FLAG_SYN,0);
    rec->retrycount=0;
 	rec->tcpstate=SGIP_TCP_STATE_SYN_SENT;
+
+	
 	return 0;
 }
 int sgIP_TCP_Send(sgIP_Record_TCP * rec, const char * datatosend, int datalength, int flags) {
@@ -849,14 +862,14 @@ int sgIP_TCP_Send(sgIP_Record_TCP * rec, const char * datatosend, int datalength
          rec->retrycount=0;
       }
    }
+	
    if(datalength==0) return SGIP_ERROR(EWOULDBLOCK);
 	return datalength;	
 }
 int sgIP_TCP_Recv(sgIP_Record_TCP * rec, char * databuf, int buflength, int flags) {
 	if(!rec || !databuf) return SGIP_ERROR(EINVAL); //error
    if(rec->buf_rx_in==rec->buf_rx_out) {
-      if((rec->want_shutdown == 0 && rec->tcpstate>=SGIP_TCP_STATE_CLOSE_WAIT) ||
-         (rec->want_shutdown == 2 && rec->tcpstate>=SGIP_TCP_STATE_TIME_WAIT)) {
+      if(rec->tcpstate==SGIP_TCP_STATE_CLOSED || rec->tcpstate==SGIP_TCP_STATE_CLOSE_WAIT) {
          if(rec->errorcode) return SGIP_ERROR(rec->errorcode);
          return SGIP_ERROR0(ESHUTDOWN); 
       }
@@ -886,5 +899,6 @@ int sgIP_TCP_Recv(sgIP_Record_TCP * rec, char * databuf, int buflength, int flag
             }
         }
     }
+	
 	return buflength;
 }

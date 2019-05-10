@@ -141,7 +141,7 @@ extern void Wifi_LoadBeacon(int from, int to);
 extern void Wifi_SetBeaconChannel(int channel);
 
 #ifdef __cplusplus
-};
+}
 #endif
 
 

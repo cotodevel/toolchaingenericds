@@ -49,7 +49,7 @@ SOFTWARE.
 #include "sgIP.h"
 #include "wifi_shared.h"
 
-sgIP_Hub_HWInterface * wifi_hw;
+sgIP_Hub_HWInterface * wifi_hw = NULL;
 
 const char * ASSOCSTATUS_STRINGS[] = {
 	"ASSOCSTATUS_DISCONNECTED",		// not *trying* to connect
@@ -63,12 +63,14 @@ const char * ASSOCSTATUS_STRINGS[] = {
 
 
 void sgIP_IntrWaitEvent() {
+	/*
+	int i,j;
+	j=0;
+	for(i=0;i<20000;i++) {
+		j+=i;
+	}*/
 	swiDelay( 839 ); // 100 us delay
 }
-
-void * sgIP_malloc(int size) __attribute__((weak));
-void sgIP_free(void * ptr) __attribute__((weak));
-
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -104,10 +106,10 @@ int wHeapsize = 0;
 wHeapRecord * wHeapStart = NULL; // start of heap
 wHeapRecord * wHeapFirst = NULL; // first free block
 void wHeapAllocInit(int size) {
-	 if(wHeapStart){
+    if(wHeapStart){
 		free(wHeapStart);
 	}
-    wHeapStart=(wHeapRecord *)malloc(size);
+	wHeapStart=(wHeapRecord *)malloc(size);
     if (!wHeapStart) return;
     wHeapFirst=wHeapStart;
     wHeapStart->flags=WHEAP_RECORD_FLAG_UNUSED;
@@ -288,10 +290,11 @@ u32 Wifi_TxBufferWordsAvailable() {
 		if(size<0) size += WIFI_TXBUFFER_SIZE/2;
 		return size;
 	}
+	return 0;
 }
 void Wifi_TxBufferWrite(s32 start, s32 len, u16 * data) {
 	if(WifiData){
-		int writelen;
+		int writelen = 0;
 		while(len>0) {
 			writelen=len;
 			if(writelen>(WIFI_TXBUFFER_SIZE/2)-start) writelen=(WIFI_TXBUFFER_SIZE/2)-start;
@@ -361,7 +364,7 @@ int Wifi_RawTxFrame(u16 datalen, u16 rate, u16 * data) {
 		WifiData->stats[WSTAT_TXQUEUEDBYTES]+=sizeneeded;
 	   if(synchandler) synchandler();
 	}
-   return 0;
+	return 0;
 }
 
 
@@ -417,24 +420,23 @@ int Wifi_GetNumAP() {
 }
 
 int Wifi_GetAPData(int apnum, Wifi_AccessPoint * apdata) {
-        int j;
-    
+	int j=0;
 	if(!apdata) return WIFI_RETURN_PARAMERROR;
-
+	
 	if(WifiData){
 		if(WifiData->aplist[apnum].flags&WFLAG_APDATA_ACTIVE) {
-		    while(Spinlock_Acquire(WifiData->aplist[apnum])!=SPINLOCK_OK);
-		    {
-			// additionally calculate average RSSI here
-			WifiData->aplist[apnum].rssi=0;
-			for(j=0;j<8;j++) {
-			    WifiData->aplist[apnum].rssi+=WifiData->aplist[apnum].rssi_past[j];
+			while(Spinlock_Acquire(WifiData->aplist[apnum])!=SPINLOCK_OK)
+			{
+				// additionally calculate average RSSI here
+				WifiData->aplist[apnum].rssi=0;
+				for(j=0;j<8;j++) {
+					WifiData->aplist[apnum].rssi+=WifiData->aplist[apnum].rssi_past[j];
+				}
+				WifiData->aplist[apnum].rssi = WifiData->aplist[apnum].rssi >> 3;
+				*apdata = WifiData->aplist[apnum]; // yay for struct copy!
+				Spinlock_Release(WifiData->aplist[apnum]);
+				return WIFI_RETURN_OK;
 			}
-			WifiData->aplist[apnum].rssi = WifiData->aplist[apnum].rssi >> 3;
-			*apdata = WifiData->aplist[apnum]; // yay for struct copy!
-			Spinlock_Release(WifiData->aplist[apnum]);
-			return WIFI_RETURN_OK;
-		    }
 		}
 	}
 	return WIFI_RETURN_ERROR;
@@ -533,24 +535,24 @@ static
 void sgIP_DNS_Record_Localhost()
 {
 	if(wifi_hw){
-	    sgIP_DNS_Record *rec;
-	    const unsigned char * resdata_c = (unsigned char *)&(wifi_hw->ipaddr);
-	    rec = sgIP_DNS_GetUnusedRecord();
-	    rec->flags=SGIP_DNS_FLAG_ACTIVE | SGIP_DNS_FLAG_BUSY;
-	    
-	    rec->addrlen    = 4;
-	    rec->numalias   = 1;
-	    gethostname(rec->aliases[0], 256);
-	    gethostname(rec->name, 256);
-	    rec->numaddr    = 1;
-	    rec->addrdata[0] = resdata_c[0];
-	    rec->addrdata[1] = resdata_c[1];
-	    rec->addrdata[2] = resdata_c[2];
-	    rec->addrdata[3] = resdata_c[3];
-	    rec->addrclass = AF_INET;
-	    rec->TTL = 0;
+		sgIP_DNS_Record *rec;
+		const unsigned char * resdata_c = (unsigned char *)&(wifi_hw->ipaddr);
+		rec = sgIP_DNS_GetUnusedRecord();
+		rec->flags=SGIP_DNS_FLAG_ACTIVE | SGIP_DNS_FLAG_BUSY;
+		
+		rec->addrlen    = 4;
+		rec->numalias   = 1;
+		gethostname(rec->aliases[0], 256);
+		gethostname(rec->name, 256);
+		rec->numaddr    = 1;
+		rec->addrdata[0] = resdata_c[0];
+		rec->addrdata[1] = resdata_c[1];
+		rec->addrdata[2] = resdata_c[2];
+		rec->addrdata[3] = resdata_c[3];
+		rec->addrclass = AF_INET;
+		rec->TTL = 0;
 
-	    rec->flags=SGIP_DNS_FLAG_ACTIVE | SGIP_DNS_FLAG_BUSY|SGIP_DNS_FLAG_RESOLVED;
+		rec->flags=SGIP_DNS_FLAG_ACTIVE | SGIP_DNS_FLAG_BUSY|SGIP_DNS_FLAG_RESOLVED;
 	}
 }
 
@@ -722,9 +724,9 @@ int Wifi_TransmitFunction(sgIP_Hub_HWInterface * hw, sgIP_memblock * mb) {
 		// assumes individual pbuf len is >=14 bytes, it's pretty likely ;) - also hopes pbuf len is a multiple of 2 :|
 		int base=0,framelen=0, hdrlen=0, writelen=0;
 		int copytotal=0, copyexpect=0;
-		u16 framehdr[6+12+2];
+		u16 framehdr[6+12+2] = {0};
 		sgIP_memblock * t;
-	   framelen=mb->totallength-14+8 + (WifiData->wepmode7?4:0);
+		framelen=mb->totallength-14+8 + (WifiData->wepmode7?4:0);
 
 	   if(!(WifiData->flags9&WFLAG_ARM9_NETUP)) {
 		   SGIP_DEBUG_MESSAGE(("Transmit:err_netdown"));
@@ -733,7 +735,7 @@ int Wifi_TransmitFunction(sgIP_Hub_HWInterface * hw, sgIP_memblock * mb) {
 	   }
 		if(framelen+40>Wifi_TxBufferWordsAvailable()*2) { // error, can't send this much!
 			SGIP_DEBUG_MESSAGE(("Transmit:err_space"));
-	      sgIP_memblock_free(mb);
+		  sgIP_memblock_free(mb);
 			return 0; //?
 		}
 		
@@ -791,7 +793,7 @@ int Wifi_TransmitFunction(sgIP_Hub_HWInterface * hw, sgIP_memblock * mb) {
 		if(writelen) {
 			Wifi_TxBufferWrite(base,(writelen+1)/2,((u16 *)mb->datastart)+7);
 			base+=(writelen+1)/2;
-	      copytotal+=(writelen+1)/2;
+		  copytotal+=(writelen+1)/2;
 			if(base>=(WIFI_TXBUFFER_SIZE/2)) base -= WIFI_TXBUFFER_SIZE/2;
 		}
 		while(mb->next) {
@@ -799,24 +801,24 @@ int Wifi_TransmitFunction(sgIP_Hub_HWInterface * hw, sgIP_memblock * mb) {
 			writelen=mb->thislength;
 			Wifi_TxBufferWrite(base,(writelen+1)/2,((u16 *)mb->datastart));
 			base+=(writelen+1)/2;
-	      copytotal+=(writelen+1)/2;
+		  copytotal+=(writelen+1)/2;
 			if(base>=(WIFI_TXBUFFER_SIZE/2)) base -= WIFI_TXBUFFER_SIZE/2;
 		}
 	   if(WifiData->wepmode7) { // add required extra bytes
-	      base+=2;
-	      copytotal+=2;
-	      if(base>=(WIFI_TXBUFFER_SIZE/2)) base -= WIFI_TXBUFFER_SIZE/2;
+		  base+=2;
+		  copytotal+=2;
+		  if(base>=(WIFI_TXBUFFER_SIZE/2)) base -= WIFI_TXBUFFER_SIZE/2;
 	   }
 		WifiData->txbufOut=base; // update fifo out pos, done sending packet.
 
 		sgIP_memblock_free(t); // free packet, as we're the last stop on this chain.
 
 	   if(copytotal!=copyexpect) {
-	      SGIP_DEBUG_MESSAGE(("Tx exp:%i que:%i",copyexpect,copytotal));
+		  SGIP_DEBUG_MESSAGE(("Tx exp:%i que:%i",copyexpect,copytotal));
 	   }
 	   if(synchandler) synchandler();
-		return 0;
 	}
+	return 0;
 }
 
 int Wifi_Interface_Init(sgIP_Hub_HWInterface * hw) {
@@ -842,20 +844,20 @@ void Wifi_Timer(int num_ms) {
 #endif
 
 unsigned long Wifi_Init(int initflags) {
-	erasemem(&Wifi_Data_Struct,sizeof(Wifi_Data_Struct));	//safe
+	erasemem(&Wifi_Data_Struct,sizeof(Wifi_Data_Struct));
 	coherent_user_range_by_size((uint32)&Wifi_Data_Struct,sizeof(Wifi_Data_Struct));
 	WifiData = (Wifi_MainStruct *) EWRAMUncached((uint32)&Wifi_Data_Struct); // should prevent the cache from eating us alive.	//safe
-
+	
 #ifdef WIFI_USE_TCP_SGIP
     switch(initflags & WIFIINIT_OPTION_HEAPMASK) {
-    case WIFIINIT_OPTION_USEHEAP_128:
-        wHeapAllocInit(128*1024);
+    case WIFIINIT_OPTION_USEHEAP_64:
+        wHeapAllocInit(64*1024);
         break;
-    case WIFIINIT_OPTION_USEHEAP_96:
+	case WIFIINIT_OPTION_USEHEAP_96:
 		wHeapAllocInit(96*1024);
 		break;
-    case WIFIINIT_OPTION_USEHEAP_64:     
-        wHeapAllocInit(64*1024);
+	case WIFIINIT_OPTION_USEHEAP_128:
+        wHeapAllocInit(128*1024);
         break;
     case WIFIINIT_OPTION_USEHEAP_256:    
         wHeapAllocInit(256*1024);
@@ -866,7 +868,7 @@ unsigned long Wifi_Init(int initflags) {
     case WIFIINIT_OPTION_USECUSTOMALLOC:
         break;
     }
-    sgIP_Init();
+	sgIP_Init();
     
 #endif
     

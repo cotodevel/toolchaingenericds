@@ -28,8 +28,8 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 // Global vars
 
-int NumHWInterfaces;
-int NumProtocolInterfaces;
+int NumHWInterfaces = 0;
+int NumProtocolInterfaces = 0;
 sgIP_Hub_Protocol ProtocolInterfaces[SGIP_HUB_MAXPROTOCOLINTERFACES];
 sgIP_Hub_HWInterface HWInterfaces[SGIP_HUB_MAXHWINTERFACES];
 
