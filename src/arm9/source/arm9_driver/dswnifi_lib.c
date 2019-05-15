@@ -1460,13 +1460,20 @@ void resetGDBSession(){
 //misc socket related
 
 //Client:
-//returns socket >= 0 or -1 if an error happened, writes to sockaddr_in.
+//opens and returns a new socket >= 0 ready to be used with connectAsync(); method, writes to sockaddr_in the current client (NDS) settings so it needs a valid sockaddr_in structure.
+//Otherwise -1 if an error happened, such as server could not be resolved (ie: using custom DNS server), or if the AP isn't set in the firmware.
+
 int openAsyncConn(char * dnsOrIpAddr, int asyncPort, struct sockaddr_in * sain){
 	// Find the IP address of the server, with gethostbyname
     struct hostent * myhost = gethostbyname( dnsOrIpAddr );
-	struct in_addr **address_list = (struct in_addr **)myhost->h_addr_list;
-    if(address_list[0] != NULL){
-		printf("Server WAN IP Address! %s", inet_ntoa(*address_list[0]));
+	if(myhost != NULL){
+		struct in_addr **address_list = (struct in_addr **)myhost->h_addr_list;
+		if((address_list != NULL) && (address_list[0] != NULL)){
+			printf("Server WAN IP Address! %s", inet_ntoa(*address_list[0]));
+		}
+		else{
+			return -1;
+		}
 	}
 	else{
 		return -1;
