@@ -25,6 +25,7 @@ USA
 #ifdef ARM7
 #include <string.h>
 #include "wifi_arm7.h"
+#include "spifwTGDS.h"
 #endif
 
 #ifdef ARM9

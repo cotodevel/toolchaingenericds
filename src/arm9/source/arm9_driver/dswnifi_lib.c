@@ -422,7 +422,7 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 							char * token_hostguest = (char*)&outSplitBuf[2][0];	//host or guest
 							char * token_extip = (char*)&outSplitBuf[1][0];	//external NDS ip to connect
 							char * cmdRecv = (char*)&outSplitBuf[0][0];	//cmd
-							str_split(incomingbuf, "-", NULL);
+							str_split((char*)incomingbuf, "-", NULL);
 							int host_mode = strncmp((const char*)token_hostguest, (const char *)"host", 4); 	//host == 0
 							int guest_mode = strncmp((const char*)token_hostguest, (const char *)"guest", 5); 	//guest == 0
 							

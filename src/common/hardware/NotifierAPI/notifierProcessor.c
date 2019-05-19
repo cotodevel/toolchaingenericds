@@ -86,7 +86,7 @@ struct notifierProcessorHandlerQueued processRunSync(struct notifierDescriptorFu
 		
 		//allocate function in SharedWram linear memory
 		uint32 * FnHeap = (uint32*)(uint16*)vramHeapAlloc(HeapBlock, 0x027FF000, notifierDescriptorCluster);
-		notifierDescriptorInst.HandlerPtrInSharedMem = (uint8*)(FnHeap) + (sizeof(struct notifierDescriptor));
+		notifierDescriptorInst.HandlerPtrInSharedMem = (u32*)((uint8*)(FnHeap) + (sizeof(struct notifierDescriptor)));
 		
 		//clean struct notifierProcessorHandlerQueued
 		memset((uint8*)&notifierDescriptorInst.notifierProcessorHandlerQueuedOut, 0, sizeof(struct notifierProcessorHandlerQueued));
@@ -127,7 +127,7 @@ struct notifierProcessorHandlerQueued processRunSync(struct notifierDescriptorFu
 void InitializeThreads(){
 	int i = 0;
 	struct notifierDescriptor notifierDescriptorInitialized;
-	notifierDescriptorInitialized.HandlerPtrInSharedMem = notifierDescriptorHandlerPtrInSharedMemDefault;
+	notifierDescriptorInitialized.HandlerPtrInSharedMem = (u32*)notifierDescriptorHandlerPtrInSharedMemDefault;
 	notifierDescriptorInitialized.HandlerSize = notifierDescriptorHandlerSizeDefault;
 	notifierDescriptorInitialized.argsSize = notifierDescriptorargsSizeDefault;
 	for(i = 0; i < notifierArgsTopSize; i++){

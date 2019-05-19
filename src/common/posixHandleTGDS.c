@@ -58,13 +58,17 @@ int fork(){
 //C++ requires this
 void _exit (int status){
 	
+	//todo: add some exception handlers to notify ARM cores program has ran
+	
+	while(1);
 }
 
 int _kill (pid_t pid, int sig){
+	return -1;
 }
 
 pid_t _getpid (void){
-
+	return 0;	//shall always return valid (0)
 }
 //C++ requires this end
 
@@ -98,7 +102,7 @@ int _open_r ( struct _reent *ptr, const sint8 *file, int flags, int mode ){
 	if(file != NULL){	
 		int i = 0;
 		char * token_rootpath = (char*)&outSplitBuf[0][0];
-		str_split(file, "/", NULL);
+		str_split((char*)file, "/", NULL);
 		sint8 token_str[MAX_TGDSFILENAME_LENGTH+1] = {0};
 		sint32 countPosixFDescOpen = open_posix_filedescriptor_devices() + 1;
 		/* search for "file:/" in "file:/folder1/folder.../file.test" in dotab_list[].name */
@@ -224,42 +228,6 @@ int readlink(const char *path, char *buf, size_t bufsize){
 }
 
 
-int getrlimit(int resource, struct rlimit *rlim){
-	__set_errno(ENOSYS);
-	return -1;
-}
-
-int setrlimit(int resource, const struct rlimit *rlim){
-	__set_errno(ENOSYS);
-	return -1;
-}
-
-int getrusage(int who, struct rusage *usage){
-	__set_errno(ENOSYS);
-	return -1;
-}
-
-pid_t setsid(void){
-	__set_errno(ENOSYS);
-	return -1;
-}
-
-void sigaction(int sig){
-	__set_errno(ENOSYS);
-	return -1;
-}
-
-int getgrgid(gid_t gid, struct group *grp, char *buffer,size_t bufsize, struct group **result){
-	__set_errno(ENOSYS);
-	return -1;
-}
-
-struct group *getgrnam(const char *name){
-	__set_errno(ENOSYS);
-	return NULL;
-}
-
-
 int lstat(const char * path, struct stat *buf){
 	return fatfs_stat((const sint8 *)path,buf);
 }
@@ -330,7 +298,7 @@ int fputs_tgds(const char * s , int fd){
 	int length = strlen(s);
 	int wlen = 0;
 	int res = 0;
-	wlen = write_tgds(s, 0, (sint32)length, fd);	//returns written size from buf to file
+	wlen = write_tgds((void*)s, 0, (sint32)length, fd);	//returns written size from buf to file
 	wlen += write_tgds("\n", 0, (sint32)1, fd);	//returns written size from buf to file 
 	if (wlen == (length+1))
 	{
