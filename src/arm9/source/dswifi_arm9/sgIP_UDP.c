@@ -26,6 +26,7 @@ SOFTWARE.
 #include "sgIP_Hub.h"
 #include "sgIP_UDP.h"
 #include "sgIP_IP.h"
+#include "wifi_arm9.h"
 
 sgIP_Record_UDP * udprecords;
 int udpport_counter;
@@ -116,7 +117,7 @@ int sgIP_UDP_ReceivePacket(sgIP_memblock * mb, unsigned long srcip, unsigned lon
 }
 
 int sgIP_UDP_SendPacket(sgIP_Record_UDP * rec, const char * data, int datalen, unsigned long destip, int destport) {
-	if(!rec || !data) return SGIP_ERROR(EINVAL);
+	if( (wifi_hw == NULL) || !rec || !data) return SGIP_ERROR(EINVAL);
    if(rec->state!=SGIP_UDP_STATE_BOUND) {
       rec->srcip=0;
       rec->srcport=sgIP_UDP_GetUnusedOutgoingPort();
@@ -191,15 +192,19 @@ int sgIP_UDP_Bind(sgIP_Record_UDP * rec, int srcport, unsigned long srcip) {
 }
 
 int sgIP_UDP_RecvFrom(sgIP_Record_UDP * rec, char * destbuf, int buflength, int flags, unsigned long * sender_ip, unsigned short * sender_port) {
-	if(!rec || !destbuf || !sender_ip || !sender_port || buflength==0) return SGIP_ERROR(EINVAL);
+	if( (wifi_hw == NULL) || !rec || !destbuf || !sender_ip || !sender_port || buflength==0) return SGIP_ERROR(EINVAL);
 	
-	if(rec->incoming_queue==0) { 
+	if(rec->incoming_queue==NULL) { 
 		return SGIP_ERROR(EWOULDBLOCK);
 	}
 	int packetlen=rec->incoming_queue->totallength-12;
 	if(packetlen>buflength) {
 		return SGIP_ERROR(EMSGSIZE);
 	}
+	if(rec->incoming_queue->datastart == NULL){
+		return SGIP_ERROR(EINVAL);
+	}
+	
 	sgIP_memblock * mb;
 	*sender_ip=*((unsigned long *)rec->incoming_queue->datastart);
 	*sender_port=((unsigned short *)rec->incoming_queue->datastart)[2];
@@ -211,7 +216,9 @@ int sgIP_UDP_RecvFrom(sgIP_Record_UDP * rec, char * destbuf, int buflength, int 
 	while(totlen>0 && rec->incoming_queue) {
 		totlen-=rec->incoming_queue->thislength;
 		for(i=first;i<rec->incoming_queue->thislength;i++) {
-			destbuf[buf_start+i-first]=rec->incoming_queue->datastart[i];
+			if(rec->incoming_queue->thislength < buflength){
+				destbuf[buf_start+i-first]=rec->incoming_queue->datastart[i];
+			}
 		}
 		buf_start+=rec->incoming_queue->thislength-first;
 		first=0;
