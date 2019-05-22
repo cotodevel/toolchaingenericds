@@ -129,6 +129,7 @@ struct sIPCSharedTGDS {
 	int notifierInternalIndex;	//this index == indexNotifierDescriptor;
 	
 	struct tm tmInst;	//DateTime
+	ulong ndsRTCSeconds; //DateTime in epoch time (seconds) starting from January 1, 1970 (midnight UTC/GMT)
 	uint8	dayOfWeek;	//Updated when the above inst is updated
 	
 	uint8 consoletype;

@@ -270,6 +270,11 @@ struct tm * getTime(){
 	return(struct tm *)(&TGDSIPC->tmInst);
 }
 
+ulong getNDSRTCInSeconds(){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	return(ulong)(TGDSIPC->ndsRTCSeconds);
+}
+
 uint8 TGDSgetDayOfWeek(){
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	#ifdef ARM9

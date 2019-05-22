@@ -76,6 +76,7 @@ extern void sec2tm(ulong secs, struct tm *tmInst);
 #endif
 
 extern struct tm * getTime();
+extern ulong getNDSRTCInSeconds();
 extern uint8 TGDSgetDayOfWeek();
 extern void TGDSsetDayOfWeek(uint8 DayOfWeek);
 

@@ -28,7 +28,7 @@ SOFTWARE.
 #ifndef SYS_SOCKET_H
 #define SYS_SOCKET_H
 
-#include "time.h"
+#include <sys/time.h>
 
 /*
  * Level number for (get/set)sockopt() to apply to socket itself.

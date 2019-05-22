@@ -95,7 +95,7 @@ extern int fork();
 extern int isatty(int file);
 extern int vfiprintf(FILE *fp,const sint8 *fmt, va_list list);
 extern _off_t _lseek_r(struct _reent *ptr,int fd, _off_t offset, int whence );
-extern int _gettimeofday(struct timeval *ptimeval,void *ptimezone);
+extern int _gettimeofday(struct timeval *tv, struct timezone *tz);
 extern int _end(int file);
 extern _ssize_t _read_r ( struct _reent *ptr, int fd, void *buf, size_t cnt );
 extern _ssize_t _write_r ( struct _reent *ptr, int fd, const void *buf, size_t cnt );

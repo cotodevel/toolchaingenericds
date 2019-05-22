@@ -69,7 +69,7 @@ void doSPIARM7IO(){
 	XYReadPos();
 	
 	//read clock
-	nds_get_time7();
+	sIPCSharedTGDSInst->ndsRTCSeconds = nds_get_time7();
 }
 #endif
 

@@ -31,6 +31,7 @@ USA
 #include "sys/stat.h"
 #include "dirent.h"
 #include "consoleTGDS.h"
+#include "clockTGDS.h"
 #include "fileHandleTGDS.h"
 #include "fsfatlayerTGDS.h"
 #include "utilsTGDS.h"
@@ -50,6 +51,7 @@ USA
 //
 //	-	Newlib dictates to override reentrant weak functions, overriding non reentrant is undefined behaviour.
 
+//TGDS Filesystem <- unix <- posix and/or linux implementation
 
 int fork(){
 	return -1;
@@ -169,12 +171,38 @@ int	_stat_r ( struct _reent *_r, const char *file, struct stat *pstat ){
 	return fatfs_stat(file, pstat);
 }
 
-int _gettimeofday(struct timeval *ptimeval,void *ptimezone){
+int _gettimeofday(struct timeval *tv, struct timezone *tz){
+	if (tv == NULL)
+    {
+		__set_errno (EINVAL);
+		return -1;
+    }
+    const struct tm *tmp = getTime();
+    if(tmp == NULL){
+		return -1;
+    }
+	tv->tv_sec = (long int)getNDSRTCInSeconds();
+	tv->tv_usec = 0L;
+	if (tz != NULL)
+    {
+		const time_t timer = tv->tv_sec;
+		struct tm tm;
+		const long int save_timezone = 0; //__timezone;
+		const long int save_daylight = 0; //__daylight;
+		char *save_tzname[2];
+		save_tzname[0] = ""; //__tzname[0];
+		save_tzname[1] = "";//__tzname[1];
+		//tmp = localtime_r (&timer, &tm);
+		//tz->tz_minuteswest = 0; //__timezone / 60;
+		//tz->tz_dsttime = 0; //__daylight;
+		//__timezone = save_timezone;
+		//__daylight = save_daylight;
+		//__tzname[0] = save_tzname[0];
+		//__tzname[1] = save_tzname[1];
+    }
 	return 0;
 }
 
-
-//TGDS Filesystem <- unix <- posix <- linux implementation
 
 mode_t umask(mode_t mask)
 {
