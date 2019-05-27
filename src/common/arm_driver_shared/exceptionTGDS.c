@@ -62,9 +62,9 @@ int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list list){
 	#endif
 	
 	#ifdef ARM9
-	char * stringBuf = (char *)&g_printfbuf[0];
-	//merge any "..." special arguments where sint8 * ftm requires , store into g_printfbuf
-	vsnprintf((sint8*)stringBuf, (int)sizeof(g_printfbuf), fmt, list);
+	char * stringBuf = (char*)&ConsolePrintfBuf[0];
+	//merge any "..." special arguments where sint8 * ftm requires then store in output printf buffer
+	vsnprintf((sint8*)stringBuf, (int)sizeof(ConsolePrintfBuf), fmt, list);
 	int stringSize = (int)strlen(stringBuf);
 	t_GUIZone * zoneInst = getDefaultZoneConsole();
 	bool readAndBlendFromVRAM = false;	//we discard current vram characters here so if we step over the same character in VRAM (through printfCoords), it is discarded.
@@ -79,11 +79,11 @@ int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list list){
 #ifdef ARM9
 //this needs a rework
 void printfCoords(int x, int y, const char *format, ...){
+	char * stringBuf = (char*)&ConsolePrintfBuf[0];
 	va_list args;
     va_start(args, format);
-	char * stringBuf = (char *)&g_printfbuf[0];
-	//merge any "..." special arguments where sint8 * ftm requires , store into g_printfbuf
-	vsnprintf ((sint8*)stringBuf, (int)sizeof(g_printfbuf), format, args);
+	//merge any "..." special arguments where sint8 * ftm requires then store in output printf buffer
+	vsnprintf ((sint8*)stringBuf, (int)sizeof(ConsolePrintfBuf), format, args);
 	va_end(args);
 	int stringSize = (int)strlen(stringBuf);
 	t_GUIZone * zoneInst = getDefaultZoneConsole();

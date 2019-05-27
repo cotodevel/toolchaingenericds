@@ -35,8 +35,9 @@ USA
 
 bool global_project_specific_console = false;
 
+char ConsolePrintfBuf[MAX_TGDSFILENAME_LENGTH+1];
+
 t_GUI GUI;
-volatile sint8	g_printfbuf[consolebuf_size];
 ConsoleInstance DefaultConsole = {0};		//Default Console used when ---->	bool project_specific_console = true;
 																				//GUI_init(project_specific_console);
 	
@@ -278,7 +279,8 @@ int GUI_getFontHeight(t_GUIZone *zone)
 void	GUI_clear()
 {
 	//flush buffers
-	memset ((uint32 *)&g_printfbuf[0], 0, sizeof(g_printfbuf));
+	char * printfBuf = (char*)&ConsolePrintfBuf[0];
+	memset ((uint8*)printfBuf, 0, sizeof(ConsolePrintfBuf));
 	GUI_clearScreen(0);
 	GUI.printfy = 0;
 }

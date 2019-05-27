@@ -25,7 +25,6 @@ USA
 #include "ipcfifoTGDS.h"
 #include "InterruptsARMCores_h.h"
 #include "memoryHandleTGDS.h"
-#include "notifierProcessor.h"
 #include "timerTGDS.h"
 
 #ifdef ARM7
@@ -155,32 +154,6 @@ void HandleFifoNotEmpty(){
 		
 		//Do ToolchainGenericDS IPC handle here
 		switch (data0) {
-			//Shared 
-			case((uint32)notifierProcessorRunThread):{
-				//0 cmd: 1: index, 2: (u32)struct notifierDescriptor * getNotifierDescriptorByIndex(index)
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->ipcmsg[0];
-				int index = (int)fifomsg[0];
-				struct notifierDescriptor * notifierDescriptorInst = (struct notifierDescriptor *)fifomsg[1];
-				
-				//run the thread here, grab message and acknowledge it
-				struct notifierProcessorHandlerQueued notifierProcessorHandlerQueuedOut = RunNotifierProcessorThread(notifierDescriptorInst);
-				SendFIFOWords(notifierProcessorRunAsyncAcknowledge, (uint32)fifomsg);	//acknowledge we just ran!: //0 cmd: 1: index, 2: (u32)struct notifierDescriptor * getNotifierDescriptorByIndex(index)
-			}
-			break;
-			case(notifierProcessorRunAsyncAcknowledge):{
-				//a thread async has ran! format: //0 cmd: 1: index, 2: (u32)struct notifierDescriptor * getNotifierDescriptorByIndex(index)
-				//data0: cmd
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->ipcmsg[0];
-				int index = (int)fifomsg[0];
-				struct notifierDescriptor * notifierDescriptorInst = (struct notifierDescriptor *)fifomsg[1];
-				fifomsg[0] = fifomsg[1] = 0;
-				
-				//printf("processor ran!");
-			}
-			break;
 			// ARM7IO from ARM9
 			//	||
 			// ARM9IO from ARM7
@@ -276,16 +249,6 @@ void HandleFifoNotEmpty(){
 				}
 			}
 			break;
-			//printf ability from ARM7
-			case((uint32)FIFO_PRINTF_7):{
-				clrscr();
-				char * printfBuf7 = (char*)getPrintfBuffer();
-				//Prevent Cache problems.
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				coherent_user_range_by_size((uint32)printfBuf7, (int)sizeof(TGDSIPC->arm7PrintfBuf));
-				//printf("ARM7:%s",printfBuf7);
-			}
-			break;
 			//IRQ_SCREENLID signal from ARM7
 			case((uint32)FIFO_IRQ_SCREENLID_SIGNAL):{
 				ScreenlidhandlerUser();
@@ -294,26 +257,5 @@ void HandleFifoNotEmpty(){
 			#endif
 		}
 		HandleFifoNotEmptyWeakRef(data0,data1);
-	}
-}
-
-
-int getnotifierProcessorNewInstance(){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	int freeIndex = TGDSIPC->notifierInternalIndex;	//this index == indexNotifierDescriptor;
-	if(freeIndex < notifierProcessorInstancesTop){
-		freeIndex+=1;
-		TGDSIPC->notifierInternalIndex = freeIndex;
-		return freeIndex - 1;
-	}
-	return notifierProcessorInstanceInvalid;
-}
-
-void deletenotifierProcessorInstance(){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	int curIndex = TGDSIPC->notifierInternalIndex;
-	if( (curIndex - 1) >= 0){
-		curIndex-=1;
-		TGDSIPC->notifierInternalIndex = curIndex;
 	}
 }

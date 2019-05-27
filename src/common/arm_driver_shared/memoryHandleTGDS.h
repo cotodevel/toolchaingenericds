@@ -24,19 +24,10 @@ USA
 #include "typedefsTGDS.h"
 #include "dsregs.h"
 #include "reent.h"
-#include "notifierProcessor.h"
 
+#ifdef ARM9
 #define nds_ewram_mask (get_ewram_size()-1)
-
-//add vram alloc
-#define vramSize (sint32)(128*1024)
-#define vramBlockA (uint32)(0xa)
-#define vramBlockB (uint32)(0xb)
-#define vramBlockC (uint32)(0xc)	
-#define vramBlockD (uint32)(0xd)	//ARM7 128K vram
-
-#define HeapSize (uint32)(notifierHandlerBinarySize)	//notifierProcessor library
-#define HeapBlock (uint32)(0xe)		//notifierProcessor library
+#endif
 
 //IPC specific: Shared Work     027FF000h 4KB    -     -    -    R/W
 #define IPCRegionSize	(sint32)(4*1024)
@@ -48,35 +39,14 @@ USA
 extern "C"{
 #endif
 
-extern sint32 vramABlockOfst;	//offset pointer to free memory, user alloced memory is (baseAddr + (sizeAlloced - vramBlockPtr))
-extern sint32 vramBBlockOfst;
-extern sint32 vramCBlockOfst;
-extern sint32 vramDBlockOfst;
-extern sint32 HeapBlockOfst;
-
-extern uint32 * vramHeapAlloc(uint32 vramBlock,uint32 StartAddr,int size);
-extern uint32 * vramHeapFree(uint32 vramBlock,uint32 StartAddr,int size);
-
-extern void initvramLMALibend();
 
 #ifdef ARM7
-extern uint32 * vramLMALibendARM7;
 extern uint32 _iwram_start;
 extern uint32 _iwram_end;
 extern uint32 get_iwram_start();
 extern sint32 get_iwram_size();
 extern uint32 get_iwram_end();
 #endif
-
-#ifdef ARM9
-//ARM9:
-//heap alloced from malloc
-//this heap is used as:
-//alloc: ptr to start allocated = (start linear ptr *)vramHeapAlloc(HeapBlock,vramLMAstartARM9,int size);
-//free: ptr to freed start unallocated = (start linear ptr *)vramHeapFree(HeapBlock,vramLMAstartARM9,int size);
-extern uint32 * vramLMAstartARM9;
-#endif
-
 
 //newlib
 extern uint32 get_lma_libend();		//linear memory top
@@ -96,9 +66,8 @@ extern sint32 get_arm7_printfBufSize();
 //linker script hardware address setup (get map addresses from linker file)
 extern uint32 	_ewram_start;
 extern uint32	_ewram_end;
-extern uint32 get_ewram_start();
-extern sint32 get_ewram_size();
-
+extern uint32 	get_ewram_start();
+extern sint32 	get_ewram_size();
 
 extern uint32 	_dtcm_start;
 extern uint32 	_dtcm_end;
@@ -107,7 +76,6 @@ extern sint32 	get_dtcm_size();
 
 extern uint32 	_gba_start;
 extern uint32 	_gba_end;
-//todo: read from gba cart or something
 
 extern uint32	_gbawram_start;
 extern uint32	_gbawram_end;
@@ -123,30 +91,14 @@ extern uint32 	_vector_end;
 #endif
 
 //top NDS EWRAM allocated by toolchain for libraries.
-extern uint32 	__lib__end__;		//vma_idtcm_start
-extern uint32 	__vma_stub_end__;	//vma_idtcm_end
+extern uint32 	__lib__end__;		//start free linear memory (malloc starts here)
+extern uint32 	__vma_stub_end__;	//__lib__end__ + itcm + dtcm + any other sections
 
 //CP15 MPU 
 extern void MPUSet();
 
-
-#ifdef own_allocator
-extern void sbrk_init();
-extern sint32 calc_heap(sint32 size);
-extern uint32 * this_heap_ptr;
-//must be signed
-extern sint32 get_available_mem();
-#endif
-
 extern void * _sbrk (int size);
 extern void * _sbrk_r (struct _reent * reent, int size);
-
-//NDS Memory Map
-extern bool isValidMap(uint32 addr);
-
-
-//Printf7 Buffer
-extern uint32 getPrintfBuffer();
 
 extern void Write32bitAddrExtArm(uint32 address, uint32 value);
 extern void Write16bitAddrExtArm(uint32 address, uint16 value);
@@ -154,6 +106,11 @@ extern void Write8bitAddrExtArm(uint32 address, uint8 value);
 
 extern volatile char 		*heap_end;
 extern volatile char        *prev_heap_end;
+
+#ifdef ARM9
+//NDS Memory Map
+extern bool isValidMap(uint32 addr);
+#endif
 
 #ifdef __cplusplus
 }

@@ -36,10 +36,6 @@ USA
 #include <time.h>
 #include "memoryHandleTGDS.h"
 
-
-//printf size buffer
-#define consolebuf_size (sint32)(255)	//(MAX_TGDSFILENAME_LENGTH+1)
-
 //irqs
 #define VCOUNT_LINE_INTERRUPT (sint32)(159)
 
@@ -73,10 +69,6 @@ USA
 	//power management commands:
 	//screen power write
 	#define FIFO_SCREENPOWER_WRITE	(uint32)(0xffff101a)
-
-
-//printf7 FIFO
-#define FIFO_PRINTF_7	(uint32)(0xffff101a)
 
 #define SEND_FIFO_IPC_EMPTY	(uint32)(1<<0)	
 #define SEND_FIFO_IPC_FULL	(uint32)(1<<1)	
@@ -173,14 +165,12 @@ struct sIPCSharedTGDS {
 	//used when 3+ args sent between ARM cores
 	uint32 ipcmsg[0x10];
 	
-	uint8 arm7PrintfBuf[consolebuf_size];
-	
 } __attribute__((aligned (4)));
 
 //Shared Work     027FF000h 4KB    -     -    -    R/W
-#define TGDSIPCStartAddress (__attribute__((aligned (4))) struct sIPCSharedTGDS*)(0x027FF000 + notifierHandlerBinarySize)
+#define TGDSIPCStartAddress (__attribute__((aligned (4))) struct sIPCSharedTGDS*)(0x027FF000)
 #define TGDSIPCSize (int)(sizeof(struct sIPCSharedTGDS))
-#define TGDSIPCUserStartAddress (u32)(0x027FF000 + notifierHandlerBinarySize + TGDSIPCSize)	//u32 because it`s unknown at this point. TGDS project will override it to specific USER IPC struct
+#define TGDSIPCUserStartAddress (u32)(0x027FF000 + TGDSIPCSize)	//u32 because it`s unknown at this point. TGDS project will override it to specific USER IPC struct
 
 #endif
 
@@ -193,27 +183,18 @@ extern __attribute__((weak))	void HandleFifoNotEmptyWeakRef(uint32 cmd1,uint32 c
 extern __attribute__((weak))	void HandleFifoEmptyWeakRef(uint32 cmd1,uint32 cmd2);
 
 //FIFO
-extern int GetSoftFIFOCount();
-extern bool SetSoftFIFO(uint32 value);
-extern bool GetSoftFIFO(uint32 * var);
+	//software
+	extern int GetSoftFIFOCount();
+	extern bool SetSoftFIFO(uint32 value);
+	extern bool GetSoftFIFO(uint32 * var);
+	extern volatile int FIFO_SOFT_PTR;
+	extern void Handle_SoftFIFORECV();
+	extern void SoftFIFOSEND(uint32 value0,uint32 value1,uint32 value2,uint32 value3);
 
-extern volatile int FIFO_SOFT_PTR;
-extern volatile uint32 FIFO_IN_BUF[FIFO_NDS_HW_SIZE/4];
-
-extern void HandleFifoNotEmpty();
-extern void HandleFifoEmpty();
-
-extern void Handle_SoftFIFORECV();
-extern void SoftFIFOSEND(uint32 value0,uint32 value1,uint32 value2,uint32 value3);
-
-extern void SendFIFOWords(uint32 data0, uint32 data1);
-extern void writeuint32extARM(uint32 address,uint32 value);
-
-extern int SendFIFOCommand(uint32 * buf,int size);
-extern int RecvFIFOCommand(uint32 * buf);
-
-extern int getnotifierProcessorNewInstance();
-extern void deletenotifierProcessorInstance();
+	//hardware
+	extern void HandleFifoNotEmpty();
+	extern void HandleFifoEmpty();
+	extern void SendFIFOWords(uint32 data0, uint32 data1);
 
 #ifdef __cplusplus
 }

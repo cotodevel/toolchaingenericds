@@ -21,10 +21,11 @@ USA
 #ifndef __console_toolchain_h__
 #define __console_toolchain_h__
 
-#include <stdbool.h>
-#include "memoryHandleTGDS.h"
 #include "typedefsTGDS.h"
 #include "dsregs.h"
+#include <stdbool.h>
+#include "memoryHandleTGDS.h"
+#include "fsfatlayerTGDS.h"
 #include "ipcfifoTGDS.h"
 #include "videoTGDS.h"
 
@@ -439,6 +440,7 @@ extern "C" {
 #endif
 
 extern bool global_project_specific_console;
+extern char ConsolePrintfBuf[MAX_TGDSFILENAME_LENGTH+1];
 extern	t_GUI	GUI;
 extern ConsoleInstance DefaultConsole;	
 extern ConsoleInstance CustomConsole;
@@ -458,7 +460,6 @@ extern void GUI_printf(sint8 *fmt, ...);
 extern void GUI_printf2(int cx, int cy, sint8 *fmt, ...);
 extern void	GUI_clearScreen(int color);
 extern void	GUI_clear();
-extern volatile sint8 g_printfbuf[consolebuf_size];
 
 //font 
 extern t_GUIFont trebuchet_9_font;

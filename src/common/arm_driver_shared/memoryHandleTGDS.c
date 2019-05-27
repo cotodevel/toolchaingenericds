@@ -28,143 +28,10 @@ USA
 #include "reent.h"	//sbrk
 #include "sys/types.h"
 #include "ipcfifoTGDS.h"
-#include "notifierProcessor.h"
 
 #ifdef ARM9
 #include "dswnifi_lib.h"
 #endif
-
-//vram linear memory allocator 
-sint32 vramABlockOfst	=	0;	//offset pointer to free memory, user alloced memory is (baseAddr + (sizeAlloced - vramBlockPtr))
-sint32 vramBBlockOfst	=	0;
-sint32 vramCBlockOfst	=	0;
-sint32 vramDBlockOfst	=	0;
-
-sint32 HeapBlockOfst	=	0;
-
-//if ret ptr == NULL, invalid operation  not enough space
-uint32 * vramHeapAlloc(uint32 vramBlock,uint32 StartAddr,int size){
-	uint32 * BlockAssign = NULL;
-	bool isVram = false;
-	switch(vramBlock){
-		case(vramBlockA):{
-			BlockAssign = (uint32 *)&vramABlockOfst;
-			isVram = true;
-		}
-		break;
-		case(vramBlockB):{
-			BlockAssign = (uint32 *)&vramBBlockOfst;
-			isVram = true;
-		}
-		break;
-		case(vramBlockC):{
-			BlockAssign = (uint32 *)&vramCBlockOfst;
-			isVram = true;
-		}
-		break;
-		case(vramBlockD):{
-			BlockAssign = (uint32 *)&vramDBlockOfst;
-			isVram = true;
-		}
-		break;
-		case(HeapBlock):{
-			BlockAssign = (uint32 *)&HeapBlockOfst;
-		}
-		break;
-	}
-	if(BlockAssign == NULL){
-		return NULL;
-	}
-	sint32 heapDetected = (isVram == true) ? vramSize : HeapSize;
-	if((StartAddr + (int)*BlockAssign + size) <= (StartAddr+heapDetected)){
-		//memset((uint8*)(StartAddr + (int)*BlockAssign) , 0, size);
-		*BlockAssign = (uint32)((int)*BlockAssign + size);
-	}
-	else{
-		return NULL;
-	}
-	uint32 AllocBuf = (StartAddr + ((int)*BlockAssign - size));
-	if(AllocBuf < StartAddr){
-		AllocBuf = StartAddr;
-	}
-	return (uint32*)AllocBuf;
-}
-
-//if ret ptr == NULL, invalid operation  not enough space
-uint32 * vramHeapFree(uint32 vramBlock,uint32 StartAddr,int size){
-	uint32 * BlockAssign = NULL;
-	switch(vramBlock){
-		case(vramBlockA):{
-			BlockAssign = (uint32 *)&vramABlockOfst;
-		}
-		break;
-		case(vramBlockB):{
-			BlockAssign = (uint32 *)&vramBBlockOfst;
-		}
-		break;
-		case(vramBlockC):{
-			BlockAssign = (uint32 *)&vramCBlockOfst;
-		}
-		break;
-		case(vramBlockD):{
-			BlockAssign = (uint32 *)&vramDBlockOfst;
-		}
-		break;
-		case(HeapBlock):{
-			BlockAssign = (uint32 *)&HeapBlockOfst;
-		}
-		break;
-	}
-	if(BlockAssign == NULL){
-		return NULL;
-	}
-	if(((StartAddr + (int)*BlockAssign) - size) >= (StartAddr)){
-		*BlockAssign = (uint32)((int)*BlockAssign - size);
-	}
-	else{
-		return NULL;
-	}
-	return (uint32*)(StartAddr + ((int)*BlockAssign));
-}
-
-/*
-int _tmain(int argc, _TCHAR* argv[])
-{
-	uint32 startLinearVramAddr = 0x06000000;
-	uint32 startLinearHeapAddr = 0x02040100;	//fake ewram address
-
-	sint32 size = 1024 * 32;
-	printf("vram-alloc%x:%x \n",startLinearVramAddr,(uint16 *)vramHeapAlloc(vramBlockD,startLinearVramAddr,size));	//0x06000000
-	printf("vram-alloc%x:%x \n",startLinearVramAddr,(uint16 *)vramHeapAlloc(vramBlockD,startLinearVramAddr,size));	//0x06008000
-	printf("vram-alloc%x:%x \n",startLinearVramAddr,(uint16 *)vramHeapAlloc(vramBlockD,startLinearVramAddr,size));	//0x06010000
-	printf("vram-alloc%x:%x \n",startLinearVramAddr,(uint16 *)vramHeapAlloc(vramBlockD,startLinearVramAddr,size));	//0x06018000
-
-	printf("heap-alloc%x:%x \n",startLinearHeapAddr,(uint16 *)vramHeapAlloc(HeapBlock,startLinearHeapAddr,size));	//0x02040100
-	printf("heap-alloc%x:%x \n",startLinearHeapAddr,(uint16 *)vramHeapAlloc(HeapBlock,startLinearHeapAddr,size));	//0x02048100
-	printf("heap-alloc%x:%x \n",startLinearHeapAddr,(uint16 *)vramHeapAlloc(HeapBlock,startLinearHeapAddr,size));	//0x02050100
-	printf("heap-alloc%x:%x \n",startLinearHeapAddr,(uint16 *)vramHeapAlloc(HeapBlock,startLinearHeapAddr,size));	//0x02058100
-	
-	printf("heap-alloc%x:%x \n",startLinearHeapAddr,(uint16 *)vramHeapAlloc(HeapBlock,startLinearHeapAddr,size));	//0 (invalid)
-	
-	printf("vram-free%x:%x \n",startLinearVramAddr,(uint16 *)vramHeapFree(vramBlockD,startLinearVramAddr,size));	//0x06018000
-	printf("heap-free%x:%x \n",startLinearHeapAddr,(uint16 *)vramHeapFree(HeapBlock,startLinearHeapAddr,size));		//0x02058100
-	
-	printf("vram-free%x:%x \n",startLinearVramAddr,(uint16 *)vramHeapFree(vramBlockD,startLinearVramAddr,size));	//0x06010000
-	printf("heap-free%x:%x \n",startLinearHeapAddr,(uint16 *)vramHeapFree(HeapBlock,startLinearHeapAddr,size));		//0x02050100
-	
-	printf("vram-free%x:%x \n",startLinearVramAddr,(uint16 *)vramHeapFree(vramBlockD,startLinearVramAddr,size));	//0x06008000
-	printf("heap-free%x:%x \n",startLinearHeapAddr,(uint16 *)vramHeapFree(HeapBlock,startLinearHeapAddr,size));		//0x02048100
-	
-	printf("vram-free%x:%x \n",startLinearVramAddr,(uint16 *)vramHeapFree(vramBlockD,startLinearVramAddr,size));	//0x06000000
-	printf("heap-free%x:%x \n",startLinearHeapAddr,(uint16 *)vramHeapFree(HeapBlock,startLinearHeapAddr,size));		//0x02040100
-	
-	printf("vram-free%x:%x \n",startLinearVramAddr,(uint16 *)vramHeapFree(vramBlockD,startLinearVramAddr,size));	//0 (invalid)
-	printf("heap-free%x:%x \n",startLinearHeapAddr,(uint16 *)vramHeapFree(HeapBlock,startLinearHeapAddr,size));		//0 (invalid)
-	
-	while(1==1){}
-	return 0;
-}
-*/
 
 //
 
@@ -218,37 +85,9 @@ uint32 get_iwram_end(){
 }
 #endif
 
-#ifdef ARM7
-//ARM7:
-//use 0x06000000 ~ 32K for playBuffer
-//use 0x06008000 ~ 32K for malloc / stacks
-uint32 * vramLMALibendARM7 = NULL;	//relocated end section, alloced by vram alloc, used as sbrk
-#endif
-
-#ifdef ARM9
-//ARM9:
-//heap alloced from malloc
-//this heap is used as:
-//alloc: ptr to start allocated = (start linear ptr *)vramHeapAlloc(HeapBlock,vramLMAstartARM9,int size);
-//free: ptr to freed start unallocated = (start linear ptr *)vramHeapFree(HeapBlock,vramLMAstartARM9,int size);
-uint32 * vramLMAstartARM9 = NULL;
-#endif
-void initvramLMALibend(){
-	#ifdef ARM9
-	if(vramLMAstartARM9 == NULL){
-		vramLMAstartARM9 = malloc((int)HeapSize);
-	}
-	#endif
-	#ifdef ARM7
-	if(vramLMALibendARM7 == NULL){
-		//vramLMALibendARM7 = vramHeapAlloc(vramBlockC,(0x06008100),((32*1024)-256));	//it is VRAMBLOCK D currently mapped to ARM7 VRAM, use vramBlockC to keep different maps
-	}
-	#endif
-}
-
 //Physical Memory Start: [ARM7/9 bin start ~ ARM7/9 bin end, 4 bytes alignment, get_lma_libend() <---- ] ------------------------------------------------------------ get_lma_wramend()
 uint32 get_lma_libend(){
-	u32 wram_start = (u32)&__vma_stub_end__;
+	u32 wram_start = (u32)&__lib__end__;
 	return (uint32)((wram_start + (4 - 1)) & -4);  // Round up to 4-byte boundary // linear memory top (start)
 }
 
@@ -330,8 +169,33 @@ void * _sbrk_r (struct _reent * reent, int size){
 	return _sbrk (size);
 }
 
+void Write8bitAddrExtArm(uint32 address, uint8 value){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->ipcmsg[0];
+	fifomsg[0] = address;
+	fifomsg[1] = (uint32)value;
+	SendFIFOWords(WRITE_EXTARM_8, (uint32)fifomsg);
+}
+
+void Write16bitAddrExtArm(uint32 address, uint16 value){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->ipcmsg[0];
+	fifomsg[0] = address;
+	fifomsg[1] = (uint32)value;
+	SendFIFOWords(WRITE_EXTARM_16, (uint32)fifomsg);
+}
+
+void Write32bitAddrExtArm(uint32 address, uint32 value){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->ipcmsg[0];
+	fifomsg[0] = address;
+	fifomsg[1] = (uint32)value;
+	SendFIFOWords(WRITE_EXTARM_32, (uint32)fifomsg);
+}
+
 //NDS Memory Map (valid):
 //todo: detect valid maps according to MPU settings
+#ifdef ARM9
 __attribute__ ((hot))
 __attribute__((section(".itcm")))
 bool isValidMap(uint32 addr){
@@ -391,37 +255,4 @@ bool isValidMap(uint32 addr){
 	}
 	return false;
 }
-
-void Write8bitAddrExtArm(uint32 address, uint8 value){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->ipcmsg[0];
-	fifomsg[0] = address;
-	fifomsg[1] = (uint32)value;
-	SendFIFOWords(WRITE_EXTARM_8, (uint32)fifomsg);
-}
-
-void Write16bitAddrExtArm(uint32 address, uint16 value){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->ipcmsg[0];
-	fifomsg[0] = address;
-	fifomsg[1] = (uint32)value;
-	SendFIFOWords(WRITE_EXTARM_16, (uint32)fifomsg);
-}
-
-void Write32bitAddrExtArm(uint32 address, uint32 value){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->ipcmsg[0];
-	fifomsg[0] = address;
-	fifomsg[1] = (uint32)value;
-	SendFIFOWords(WRITE_EXTARM_32, (uint32)fifomsg);
-}
-//IPC 
-
-//Internal
-
-
-//Printf7 Buffer
-uint32 getPrintfBuffer(){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	return (uint32)(&TGDSIPC->arm7PrintfBuf[0]);
-}
+#endif
