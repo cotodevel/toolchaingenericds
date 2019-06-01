@@ -522,9 +522,6 @@ void Wifi_Intr_RxEnd() {
 	int packetlen;
 	int full_packetlen;
 	int cut, temp;
-	int tIME;
-	tIME=REG_IME;
-	REG_IME=0;
 	cut=0;
 
 	while(WIFI_REG(0x54)!=WIFI_REG(0x5A)) {
@@ -551,7 +548,6 @@ void Wifi_Intr_RxEnd() {
 
 		if(cut++>5) break;
 	}
-	REG_IME=tIME;
 }
 
 #define CNT_STAT_START WSTAT_HW_1B0
@@ -909,9 +905,8 @@ void Wifi_Deinit() {
 }
 
 void Wifi_Start() {
-	int i, tIME;
-	tIME=REG_IME;
-	REG_IME=0;
+	int i = 0;
+	
 	Wifi_Stop();
 
 	//	Wifi_WakeUp();
@@ -993,13 +988,9 @@ void Wifi_Start() {
 	i=0xFA0;
 	while(i!=0 && !(WIFI_REG(0x819C)&0x80)) i--;
 	WifiData->flags7 |=WFLAG_ARM7_RUNNING;
-	REG_IME=tIME;
 }
 
 void Wifi_Stop() {
-	int tIME;
-	tIME=REG_IME;
-	REG_IME=0;
 	WifiData->flags7 &= ~WFLAG_ARM7_RUNNING;
 	W_IE=0;
 	WIFI_REG(0x8004) = 0;
@@ -1011,7 +1002,6 @@ void Wifi_Stop() {
 	WIFI_REG(0x80AC) = 0xFFFF;
 	WIFI_REG(0x80B4) = 0xFFFF;
 	//	Wifi_Shutdown();
-	REG_IME=tIME;
 }
 
 void Wifi_SetChannel(int channel) {
