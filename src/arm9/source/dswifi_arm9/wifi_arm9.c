@@ -296,6 +296,8 @@ u32 Wifi_TxBufferWordsAvailable() {
 	}
 	return 0;
 }
+
+__attribute__((section(".itcm")))
 void Wifi_TxBufferWrite(s32 start, s32 len, u16 * data) {
 	if(WifiData){
 		int writelen = 0;
@@ -312,6 +314,7 @@ void Wifi_TxBufferWrite(s32 start, s32 len, u16 * data) {
 	}
 }
 
+__attribute__((section(".itcm")))
 int Wifi_RxRawReadPacket(s32 packetID, s32 readlength, u16 * data) {
 	if(WifiData){
 		int readlen = 0,read_data = 0;
