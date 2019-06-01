@@ -38,6 +38,8 @@ SOFTWARE.
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
+
 #include "socket.h"
 #include "in.h"
 
@@ -49,7 +51,13 @@ SOFTWARE.
 #include "sgIP.h"
 #include "wifi_shared.h"
 
+__attribute__((section(".dtcm")))
 sgIP_Hub_HWInterface * wifi_hw = NULL;
+
+__attribute__((section(".dtcm")))
+volatile Wifi_MainStruct * WifiData = NULL;
+
+volatile Wifi_MainStruct Wifi_Data_Struct;
 
 const char * ASSOCSTATUS_STRINGS[] = {
 	"ASSOCSTATUS_DISCONNECTED",		// not *trying* to connect
@@ -257,10 +265,6 @@ void ethhdr_print(char f, void * d) {
 
 
 
-
-Wifi_MainStruct Wifi_Data_Struct;
-
-volatile Wifi_MainStruct * WifiData = 0;
 
 WifiPacketHandler packethandler = 0;
 WifiSyncHandler synchandler = 0;
@@ -844,8 +848,8 @@ void Wifi_Timer(int num_ms) {
 #endif
 
 unsigned long Wifi_Init(int initflags) {
-	erasemem(&Wifi_Data_Struct,sizeof(Wifi_Data_Struct));
 	coherent_user_range_by_size((uint32)&Wifi_Data_Struct,sizeof(Wifi_Data_Struct));
+	erasemem(&Wifi_Data_Struct,sizeof(Wifi_Data_Struct));
 	WifiData = (Wifi_MainStruct *) EWRAMUncached((uint32)&Wifi_Data_Struct); // should prevent the cache from eating us alive.	//safe
 	
 #ifdef WIFI_USE_TCP_SGIP
@@ -871,9 +875,8 @@ unsigned long Wifi_Init(int initflags) {
 	sgIP_Init();
     
 #endif
-    
-	WifiData->flags9 = WFLAG_ARM9_ACTIVE | (initflags & WFLAG_ARM9_INITFLAGMASK) ;
-	return (u32) &Wifi_Data_Struct;
+    WifiData->flags9 = WFLAG_ARM9_ACTIVE | (initflags & WFLAG_ARM9_INITFLAGMASK) ;
+	return (u32)WifiData;
 }
 
 int Wifi_CheckInit() {

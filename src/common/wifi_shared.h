@@ -273,7 +273,7 @@ typedef struct WIFI_MAINSTRUCT {
    
 	uint16 debug_dswifi[30];
 
-   uint32 random; // semirandom number updated at the convenience of the arm7. use for initial seeds & such.
+	uint32 random; // semirandom number updated at the convenience of the arm7. use for initial seeds & such.
 
 	unsigned long dummy2[8];
 

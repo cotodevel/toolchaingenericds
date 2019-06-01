@@ -79,11 +79,10 @@ typedef void (*WifiSyncHandler)();
 extern "C" {
 #endif
 
-extern Wifi_MainStruct Wifi_Data_Struct;
 extern volatile Wifi_MainStruct * WifiData;
+extern volatile Wifi_MainStruct Wifi_Data_Struct;
 
 extern WifiSyncHandler synchandler;
-
 extern void Wifi_CopyMacAddr(volatile void * dest, volatile void * src);
 extern int Wifi_CmpMacAddr(volatile void * mac1, volatile void * mac2);
 

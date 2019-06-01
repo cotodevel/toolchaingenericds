@@ -35,6 +35,7 @@ USA
 #include "usrsettingsTGDS.h"
 #include <time.h>
 #include "memoryHandleTGDS.h"
+#include "wifi_shared.h"
 
 //irqs
 #define VCOUNT_LINE_INTERRUPT (sint32)(159)
@@ -164,7 +165,7 @@ struct sIPCSharedTGDS {
 	
 	//used when 3+ args sent between ARM cores
 	uint32 ipcmsg[0x10];
-	
+
 } __attribute__((aligned (4)));
 
 //Shared Work     027FF000h 4KB    -     -    -    R/W

@@ -34,7 +34,8 @@ SOFTWARE.
 #include "spiTGDS.h"
 #include "spifwTGDS.h"
 #include "biosTGDS.h"
-volatile Wifi_MainStruct * WifiData = 0;
+
+volatile Wifi_MainStruct * WifiData = NULL;
 WifiSyncHandler synchandler = 0;
 int keepalive_time = 0;
 int chdata_save5 = 0;
