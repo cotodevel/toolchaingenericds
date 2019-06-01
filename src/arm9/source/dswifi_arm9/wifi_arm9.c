@@ -1131,6 +1131,10 @@ bool Wifi_InitDefault(bool useFirmwareSettings) {
 	return true;
 }
 
+__attribute__((section(".itcm")))
+u32 getRandomSeed(){
+	return WifiData->random;
+}
 
 //coto: this function allows to completely re-initialize DSWIFI library so you can reconnect to same AP as many times possible even if connection was dropped from DS.
 //or go between offline mode -> localhost, or even localhost -> wifi directly.

@@ -129,6 +129,9 @@ extern void Wifi_TxBufferWrite(sint32 start, sint32 len, uint16 * data);
 extern void Timer_10ms(void);
 extern sgIP_Hub_HWInterface * wifi_hw;
 extern bool WNifi_InitSafeDefault(int DSWNIFI_MODE);
+
+extern u32 getRandomSeed();
+
 #ifdef __cplusplus
 }
 #endif
