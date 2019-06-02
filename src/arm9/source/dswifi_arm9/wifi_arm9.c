@@ -51,10 +51,7 @@ SOFTWARE.
 #include "sgIP.h"
 #include "wifi_shared.h"
 
-__attribute__((section(".dtcm")))
 sgIP_Hub_HWInterface * wifi_hw = NULL;
-
-__attribute__((section(".dtcm")))
 volatile Wifi_MainStruct * WifiData = NULL;
 
 volatile Wifi_MainStruct Wifi_Data_Struct;
