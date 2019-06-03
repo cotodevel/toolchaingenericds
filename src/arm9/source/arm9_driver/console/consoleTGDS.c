@@ -49,7 +49,7 @@ t_GUIZone DefaultZone;
 
 t_GUIZone * getDefaultZoneConsole(){
 	DefaultZone.x1 = 0; DefaultZone.y1 = 0; DefaultZone.x2 = 256; DefaultZone.y2 = 192;
-	DefaultZone.font = &smallfont_7_font;	//&trebuchet_9_font;
+	DefaultZone.font = &smallfont_7_font;
 	return (t_GUIZone *)&DefaultZone;
 }
 

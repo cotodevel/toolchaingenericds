@@ -462,7 +462,6 @@ extern void	GUI_clearScreen(int color);
 extern void	GUI_clear();
 
 //font 
-extern t_GUIFont trebuchet_9_font;
 extern t_GUIFont smallfont_7_font;
 
 extern void _glyph_loadline_8(uint8 *dst, uint8 *data, int pos, int size, uint8 *pal);
