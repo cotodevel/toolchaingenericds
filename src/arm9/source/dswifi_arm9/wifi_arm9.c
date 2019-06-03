@@ -226,6 +226,7 @@ void ethhdr_print(char f, void * d) {
 	char buffer[33];
 	int i;
 	int t,c;
+	(void)buffer;
 	buffer[0]=f;
 	buffer[1]=':';
 	buffer[14]=' ';
@@ -421,6 +422,7 @@ int Wifi_GetNumAP() {
 		for(i=0;i<WIFI_MAX_AP;i++) if(WifiData->aplist[i].flags&WFLAG_APDATA_ACTIVE) j++;
 		return j;
 	}
+	return -1;
 }
 
 int Wifi_GetAPData(int apnum, Wifi_AccessPoint * apdata) {
@@ -849,7 +851,7 @@ void Wifi_Timer(int num_ms) {
 
 unsigned long Wifi_Init(int initflags) {
 	coherent_user_range_by_size((uint32)&Wifi_Data_Struct,sizeof(Wifi_Data_Struct));
-	erasemem(&Wifi_Data_Struct,sizeof(Wifi_Data_Struct));
+	erasemem((void*)&Wifi_Data_Struct,sizeof(Wifi_Data_Struct));
 	WifiData = (Wifi_MainStruct *) EWRAMUncached((uint32)&Wifi_Data_Struct); // should prevent the cache from eating us alive.	//safe
 	
 #ifdef WIFI_USE_TCP_SGIP
@@ -1130,7 +1132,12 @@ bool Wifi_InitDefault(bool useFirmwareSettings) {
 
 __attribute__((section(".itcm")))
 u32 getRandomSeed(){
-	return WifiData->random;
+	if(WifiData != NULL){
+		arm9_synctoarm7();
+		coherent_user_range((uint32)TGDSIPCStartAddress, (uint32)(TGDSIPCStartAddress + (sint32)(4*1024)));
+		return WifiData->random;
+	}
+	return 0;
 }
 
 //coto: this function allows to completely re-initialize DSWIFI library so you can reconnect to same AP as many times possible even if connection was dropped from DS.
