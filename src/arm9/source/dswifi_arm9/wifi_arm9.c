@@ -1131,10 +1131,8 @@ bool Wifi_InitDefault(bool useFirmwareSettings) {
 }
 
 __attribute__((section(".itcm")))
-u32 getRandomSeed(){
+u32 getRandomSeed(){	//updated at vblank/wifi irq intervals. Always enabled by dswnifi design regardless if dswifi_udpnifimode, dswifi_localnifimode or dswifi_idlemode takes place.
 	if(WifiData != NULL){
-		arm9_synctoarm7();
-		coherent_user_range((uint32)TGDSIPCStartAddress, (uint32)(TGDSIPCStartAddress + (sint32)(4*1024)));
 		return WifiData->random;
 	}
 	return 0;
