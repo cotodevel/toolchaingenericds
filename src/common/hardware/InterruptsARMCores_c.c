@@ -62,12 +62,11 @@ void IRQInit(){
 __attribute__((section(".itcm")))
 #endif
 void NDS_IRQHandler(){
-	uint32 REG_IE_SET = (uint32)(REG_IF & REG_IE);		
-	if(REG_IE_SET & IRQ_HBLANK){
+	u32 handledIRQ = (REG_IF | SWI_CHECKBITS) & REG_IE;
+	if(handledIRQ & IRQ_HBLANK){
 		HblankUser();
-		REG_IF = IRQ_HBLANK;
 	}
-	if(REG_IE_SET & IRQ_VBLANK){
+	if(handledIRQ & IRQ_VBLANK){
 		#ifdef ARM7
 		doSPIARM7IO();
 		Wifi_Update();
@@ -77,60 +76,49 @@ void NDS_IRQHandler(){
 		sint32 currentDSWNIFIMode = doMULTIDaemonStage1();
 		#endif
 		VblankUser();
-		REG_IF = IRQ_VBLANK;
 	}
-	if(REG_IE_SET & IRQ_VCOUNT){
+	if(handledIRQ & IRQ_VCOUNT){
 		VcounterUser();
-		REG_IF = IRQ_VCOUNT;
 	}
-	if(REG_IE_SET & IRQ_TIMER0){
+	if(handledIRQ & IRQ_TIMER0){
 		Timer0handlerUser();
-		REG_IF = IRQ_TIMER0;
 	}
-	if(REG_IE_SET & IRQ_TIMER1){
+	if(handledIRQ & IRQ_TIMER1){
 		Timer1handlerUser();
-		REG_IF = IRQ_TIMER1;
 	}
-	if(REG_IE_SET & IRQ_TIMER2){
+	if(handledIRQ & IRQ_TIMER2){
 		Timer2handlerUser();
-		REG_IF = IRQ_TIMER2;
 	}
-	if(REG_IE_SET & IRQ_TIMER3){
+	if(handledIRQ & IRQ_TIMER3){
 		#ifdef ARM9
 		//wifi arm9 irq
 		Timer_10ms();
 		#endif
 		Timer3handlerUser();
-		REG_IF = IRQ_TIMER3;
 	}
-	if(REG_IE_SET & IRQ_IPCSYNC){
+	if(handledIRQ & IRQ_IPCSYNC){
 		IpcSynchandlerUser();
-		REG_IF = IRQ_IPCSYNC;
 	}
-	if(REG_IE_SET & IRQ_SENDFIFO_EMPTY){
+	if(handledIRQ & IRQ_SENDFIFO_EMPTY){
 		HandleFifoEmpty();
-		REG_IF = IRQ_SENDFIFO_EMPTY;
 	}
-	if(REG_IE_SET & IRQ_RECVFIFO_NOT_EMPTY){
+	if(handledIRQ & IRQ_RECVFIFO_NOT_EMPTY){
 		HandleFifoNotEmpty();
-		REG_IF = IRQ_RECVFIFO_NOT_EMPTY;
 	}
 	#ifdef ARM7
-	//arm7 wifi cart irq
-	if(REG_IE_SET & IRQ_WIFI){
+	//arm7 wifi irq
+	if(handledIRQ & IRQ_WIFI){
 		Wifi_Interrupt();
-		REG_IF = IRQ_WIFI;
 	}
-	if(REG_IE_SET & IRQ_RTCLOCK){
-		REG_IF = IRQ_RTCLOCK;
+	if(handledIRQ & IRQ_RTCLOCK){
+		
 	}
-	if(REG_IE_SET & IRQ_SCREENLID){
+	if(handledIRQ & IRQ_SCREENLID){
 		SendFIFOWords(FIFO_IRQ_SCREENLID_SIGNAL, 0);
 		ScreenlidhandlerUser();
-		REG_IF = IRQ_SCREENLID;
 	}
 	#endif
-	SWI_CHECKBITS = (REG_IE_SET & (IRQ_HBLANK|IRQ_VBLANK|IRQ_VCOUNT));	
+	REG_IF = handledIRQ;
 }
 
 
