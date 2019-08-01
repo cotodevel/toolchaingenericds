@@ -339,17 +339,12 @@ DWORD clust2sect (  /* !=0:Sector number, 0:Failed (invalid cluster#) */
 
 //FATFS: The file handle start cluster is in fp->obj.sclust as long as you haven't read from that file (otherwise its in fp->clust)
 uint32	getStructFDFirstCluster(struct fd *fdinst){
-	if(fdinst){
+	if(fdinst->filPtr){
 		if( (int)fdinst->filPtr->fptr == (int)0 ){
 			return (int)(fdinst->filPtr->obj.sclust);
 		}
 		else{
-			if(fdinst->filPtr){
-				return (int)(fdinst->filPtr->clust);
-			}
-			else{
-				return (uint32)structfd_posixInvalidFileDirHandle;
-			}
+			return (int)(fdinst->filPtr->clust);
 		}
 	}
 	return (uint32)structfd_posixInvalidFileDirHandle;
@@ -358,15 +353,9 @@ uint32	getStructFDFirstCluster(struct fd *fdinst){
 
 uint32	getStructFDNextCluster(struct fd *fdinst, int currCluster){
 	if((fdinst) && (fdinst->filPtr)){
-		DWORD clst;
+		DWORD clst = getStructFDFirstCluster(fdinst);
 		FIL * fil = fdinst->filPtr;
 		FATFS *fs = fil->obj.fs;
-		if( (int)fil->fptr == (int)0 ){
-			clst = fil->obj.sclust;
-		}
-		else{
-			clst = fil->clust;
-		}
 		clst = get_fat(&fil->obj, (DWORD)((int)clst + (int)currCluster) );		/* Get next cluster */
 		if ( (clst == 0xFFFFFFFF) || (clst < 2) || (clst >= fs->n_fatent) ){ 	/* Disk error , or  Reached to end of table or internal error */
 			return (uint32)structfd_posixInvalidFileDirHandle;	
@@ -378,10 +367,10 @@ uint32	getStructFDNextCluster(struct fd *fdinst, int currCluster){
 	return (uint32)structfd_posixInvalidFileDirHandle;
 }
 
-//Returns the First sector pointed at ClusterOffset, or, structfd_posixInvalidFileDirHandle if fails.
-uint32 getStructFDSectorOffset(struct fd *fdinst, int ClusterOffset){	//	struct File Descriptor (FILE * open through fopen() -> then converted to int32 from fileno())
+//Returns the First sector pointed at ClusterIndex, or, structfd_posixInvalidFileDirHandle if fails.
+uint32 getStructFDStartSectorByCluster(struct fd *fdinst, int ClusterIndex){	//	struct File Descriptor (FILE * open through fopen() -> then converted to int32 from fileno())
 	if(fdinst->filPtr){
-		return (uint32)(clust2sect(fdinst->filPtr->obj.fs, getStructFDFirstCluster(fdinst) + ClusterOffset));
+		return (uint32)(clust2sect(fdinst->filPtr->obj.fs, getStructFDFirstCluster(fdinst) + ClusterIndex));
 	}
 	return structfd_posixInvalidFileDirHandle;
 }
