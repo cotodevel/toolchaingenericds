@@ -25,7 +25,7 @@ USA
 #include "dsregs.h"
 #include <stdbool.h>
 #include "memoryHandleTGDS.h"
-#include "fsfatlayerTGDS.h"
+#include "fatfslayerTGDS.h"
 #include "ipcfifoTGDS.h"
 #include "videoTGDS.h"
 

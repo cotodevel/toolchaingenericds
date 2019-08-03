@@ -21,8 +21,8 @@ USA
 //Coto: this was rewritten by me so it could fit the following setup:
 //newlib libc nano ARM Toolchain. dirent.h is not supported in this newlib version so we restore it
 
-#ifndef __fsfatlayerTGDSLegacy_h__
-#define __fsfatlayerTGDSLegacy_h__
+#ifndef __fatfslayerTGDSLegacy_h__
+#define __fatfslayerTGDSLegacy_h__
 
 ////////////////////////////////////////////////////////////////////////////INTERNAL CODE START/////////////////////////////////////////////////////////////////////////////////////
 #include <sys/types.h>
@@ -55,10 +55,10 @@ USA
 
 //FileList specific (internal retCode)
 //these must be invalid values so false positives do not arise in lookup functions
-#define structfd_posixInvalidFileDirHandle	(sint32)(-1)	//used by fsfat_xxx layer, FAT_xxx layer (libfat wrapper), cluster functions, and finally an invalid structFD index file descriptor
+#define structfd_posixInvalidFileDirHandle	(sint32)(-1)	//used by fatfs_xxx layer, FAT_xxx layer (libfat wrapper), cluster functions, and finally an invalid structFD index file descriptor
 #define dirent_default_d_name	(sint8 *)("")
 
-//libfat attributes so gccnewlibnano_to_fsfat is compatible with libfat homebrew
+//libfat attributes so gccnewlibnano_to_fatfs is compatible with libfat homebrew
 #ifndef ATTRIB_ARCH
 #define ATTRIB_ARCH	(int)(0x20)			// Archive
 #define ATTRIB_DIR	(int)(0x10)			// Directory
@@ -101,7 +101,7 @@ struct fd {
 	DIR  * dirPtr;
 	FIL  fil;	//if aboveptr is NULL then it is not FIL
 	DIR  dir;	//if aboveptr is NULL then it is not DIR
-	bool UnicodeFileDetected;	//true: file is Unicode, false file is not (regular unsigned char)
+	bool fileIsUnicode;	//true: file is Unicode, false file is not (just standard ASCII encoding)
 };
 
 struct packedFDRet{
@@ -146,9 +146,9 @@ extern int remove(const char *filename);
 extern int chmod(const char *pathname, mode_t mode);
 extern DIR *fdopendir(int fd);
 extern void seekdir(DIR *dirp, long loc);
-extern int fsfat2libfatAttrib(int fsfatFlags);
-extern int libfat2fsfatAttrib(int libfatFlags);
-extern void SetfsfatAttributesToFile(char * filename, int Newgccnewlibnano_to_fsfatAttributes, int mask);
+extern int fatfs2libfatAttrib(int fatfsFlags);
+extern int libfat2fatfsAttrib(int libfatFlags);
+extern void SetfatfsAttributesToFile(char * filename, int Newgccnewlibnano_to_fatfsAttributes, int mask);
 
 extern DWORD clust2sect (  /* !=0:Sector number, 0:Failed (invalid cluster#) */
     FATFS* fs,      /* File system object */
@@ -198,8 +198,6 @@ extern struct FileClass * getFileClassFromList(int FileClassListIndex);
 extern void setFileClass(bool iterable, char * fullPath, int FileClassListIndex, int Typ, int StructFD);
 extern uint8* FileClassListPtr;
 extern bool TGDSFS_detectUnicode(struct fd *pfd);
-extern bool TGDSFS_GetStructFDUnicode(struct fd *pfd);
-extern void TGDSFS_SetStructFDUnicode(struct fd *pfd, bool unicode);
 ////////////////////////////////////////////////////////////////////////////USER CODE END/////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -210,13 +208,11 @@ extern int fatfs_write (int fd, sint8 *ptr, int len);
 extern int fatfs_read (int fd, sint8 *ptr, int len);
 extern int fatfs_close (int fd);
 extern void fillPosixStatStruct(const FILINFO *fno, struct stat *out);
-extern BYTE posix2fsfatAttrib(int flags);
-extern int fsfat2posixAttrib(BYTE flags);
+extern BYTE posix2fatfsAttrib(int flags);
+extern int fatfs2posixAttrib(BYTE flags);
 extern int fresult2errno(FRESULT result);
 extern int fatfs_fildir_alloc(int isfilordir);
-extern void fill_fd_fil(int fildes, FIL *fp, int flags, const FILINFO *fno, char * fullFilePath);
-extern void fill_fd_dir(int fildes, DIR *fp, int flags, const FILINFO *fno, char * fullFilePath);
-extern void initStructFD(struct fd *pfd, int flags, const FILINFO *fno);
+extern void initStructFDHandle(struct fd *pfd, int flags, const FILINFO *fno);
 extern int fatfs_open_file(const sint8 *pathname, int flags, const FILINFO *fno);	//(FRESULT is the file properties that must be copied to stat st)/ returns an internal index struct fd allocated
 extern int fatfs_open_dir(const sint8 *pathname, int flags, const FILINFO *fno);	//(FRESULT is the file properties that must be copied to stat st)/ returns an internal index struct fd allocated
 extern int fatfs_open_file_or_dir(const sint8 *pathname, int flags);	//returns an internal index struct fd allocated

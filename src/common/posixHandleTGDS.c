@@ -33,7 +33,7 @@ USA
 #include "consoleTGDS.h"
 #include "clockTGDS.h"
 #include "fileHandleTGDS.h"
-#include "fsfatlayerTGDS.h"
+#include "fatfslayerTGDS.h"
 #include "utilsTGDS.h"
 #include "limitsTGDS.h"
 
@@ -46,7 +46,7 @@ USA
 #include <reent.h>
 
 //Notes:
-//	- 	Before you get confused, the layer order is: POSIX file operations-> newlib POSIX fd assign-> devoptab filesystem -> fsfat_layer (n file descriptors for each file op) -> fsfat driver -> dldi.
+//	- 	Before you get confused, the layer order is: POSIX file operations-> newlib POSIX fd assign-> devoptab filesystem -> fatfs_layer (n file descriptors for each file op) -> fatfs driver -> dldi.
 //		So we can have a portable/compatible filesystem with multiple file operations.
 //
 //	-	Newlib dictates to override reentrant weak functions, overriding non reentrant is undefined behaviour.
@@ -153,7 +153,7 @@ int _end(int file)
 
 
 
-//	-	All below high level posix calls for FSFAT access must use the function getfatfsPath("file_or_dir_path") for file (dldi sd) handling
+//	-	All below high level posix calls for fatfs access must use the function getfatfsPath("file_or_dir_path") for file (dldi sd) handling
 _off_t _lseek_r(struct _reent *ptr,int fd, _off_t offset, int whence ){	//(FileDescriptor :struct fd index)
 	return fatfs_lseek(fd, offset, whence);	
 }

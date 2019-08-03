@@ -19,7 +19,7 @@ USA
 //Coto: this was rewritten by me so it could fit the following setup:
 //newlib libc ARM Toolchain. <dirent.h> implementation is platform-specific, thus, implemented for ToolchainGenericDS.
 
-#include "fsfatlayerTGDS.h"
+#include "fatfslayerTGDS.h"
 #include <string.h>
 #include <errno.h>
 #include <sys/stat.h>
@@ -42,7 +42,7 @@ USA
 #include "dldi.h"
 #include "clockTGDS.h"
 #include "utilsTGDS.h" 
-#include "fsfatlayerTGDS.h"
+#include "fatfslayerTGDS.h"
 #include <string.h>
 #include <errno.h>
 #include <sys/stat.h>
@@ -198,8 +198,8 @@ int remove(const char *filename){
 
 
 int chmod(const char *pathname, mode_t mode){
-	BYTE fsfatFlags = posix2fsfatAttrib(mode);
-	return f_chmod(pathname, fsfatFlags, AM_SYS );	//only care about the system bit (if the file we are changing is SYSTEM)
+	BYTE fatfsFlags = posix2fatfsAttrib(mode);
+	return f_chmod(pathname, fatfsFlags, AM_SYS );	//only care about the system bit (if the file we are changing is SYSTEM)
 }
 
 DIR *fdopendir(int fd)	//(FileDescriptor :struct fd index)
@@ -213,62 +213,62 @@ void seekdir(DIR *dirp, long loc){
 
 //Input: libfat directory flags
 //Output: FILINFO.fattrib 
-int libfat2fsfatAttrib(int libfatFlags){
-	int fsfatFlags = 0;
+int libfat2fatfsAttrib(int libfatFlags){
+	int fatfsFlags = 0;
 	if(libfatFlags & ATTRIB_RO){	/* Read only */
-		fsfatFlags|=AM_RDO;
+		fatfsFlags|=AM_RDO;
 	}
 	
 	if(libfatFlags & ATTRIB_HID){	/* Hidden */
-		fsfatFlags|=AM_HID;
+		fatfsFlags|=AM_HID;
 	}
 	
 	if(libfatFlags & ATTRIB_SYS){	/* System */
-		fsfatFlags|=AM_SYS;
+		fatfsFlags|=AM_SYS;
 	}
 	
 	if(libfatFlags & ATTRIB_DIR){	/* Directory */
-		fsfatFlags|=AM_DIR;
+		fatfsFlags|=AM_DIR;
 	}
 	
 	if(libfatFlags & ATTRIB_ARCH){	/* Archive */
-		fsfatFlags|=AM_ARC;
+		fatfsFlags|=AM_ARC;
 	}
-	return fsfatFlags;
+	return fatfsFlags;
 }
 
 //Input: FILINFO.fattrib 
 //Output: libfat directory flags
-int fsfat2libfatAttrib(int fsfatFlags){
+int fatfs2libfatAttrib(int fatfsFlags){
 	int libfatFlags = 0;
-	if(fsfatFlags & AM_RDO){	/* Read only */
+	if(fatfsFlags & AM_RDO){	/* Read only */
 		libfatFlags|=ATTRIB_RO;
 	}
 	
-	if(fsfatFlags & AM_HID){	/* Hidden */
+	if(fatfsFlags & AM_HID){	/* Hidden */
 		libfatFlags|=ATTRIB_HID;
 	}
 	
-	if(fsfatFlags & AM_SYS){	/* System */
+	if(fatfsFlags & AM_SYS){	/* System */
 		libfatFlags|=ATTRIB_SYS;
 	}
 	
-	if(fsfatFlags & AM_DIR){	/* Directory */
+	if(fatfsFlags & AM_DIR){	/* Directory */
 		libfatFlags|=ATTRIB_DIR;
 	}
 	
-	if(fsfatFlags & AM_ARC){	/* Archive */
+	if(fatfsFlags & AM_ARC){	/* Archive */
 		libfatFlags|=ATTRIB_ARCH;
 	}
 	return libfatFlags;
 }
 
-void SetfsfatAttributesToFile(char * filename, int Newgccnewlibnano_to_fsfatAttributes, int mask){
-	f_chmod(filename, Newgccnewlibnano_to_fsfatAttributes, mask);
+void SetfatfsAttributesToFile(char * filename, int Newgccnewlibnano_to_fatfsAttributes, int mask){
+	f_chmod(filename, Newgccnewlibnano_to_fatfsAttributes, mask);
 }
 
-//posix -> fsfat
-BYTE posix2fsfatAttrib(int flags){
+//posix -> fatfs
+BYTE posix2fatfsAttrib(int flags){
     BYTE mode = 0;
     int accmode = flags & O_ACCMODE;
     if ((accmode == O_RDONLY) || (accmode == O_RDWR)){
@@ -297,11 +297,11 @@ BYTE posix2fsfatAttrib(int flags){
     return mode;
 }
 
-//fsfat -> posix
-int fsfat2posixAttrib(BYTE flags){
-    #define FSFAT_O_ACCMODE (FA_READ|FA_WRITE)
+//fatfs -> posix
+int fatfs2posixAttrib(BYTE flags){
+    #define fatfs_O_ACCMODE (FA_READ|FA_WRITE)
 	int mode = 0;
-    BYTE accmode = flags & FSFAT_O_ACCMODE;
+    BYTE accmode = flags & fatfs_O_ACCMODE;
     if (accmode & FA_READ){
         mode |= O_RDONLY;
     }
@@ -389,7 +389,7 @@ sint32 getDiskSectorSize(){
 	}
 	else{
 		#if (FF_MAX_SS != FF_MIN_SS)
-		diskSectorSize = dldiFs.ssize;	//when fsfat sectorsize is variable, by default its 512
+		diskSectorSize = dldiFs.ssize;	//when fatfs sectorsize is variable, by default its 512
 		#endif
 	}
 	return diskSectorSize;
@@ -428,7 +428,7 @@ u8 FAT_GetFileAttributes (void){
 		struct FileClass * fileInst = getFileClassFromList((CurrentFileDirEntry - 1));
 		FILINFO finfo; 
 		if(getFileFILINFOfromFileClass(fileInst, &finfo) == true){
-			libfatAttributes = (uint8)fsfat2libfatAttrib((int)finfo.fattrib);
+			libfatAttributes = (uint8)fatfs2libfatAttrib((int)finfo.fattrib);
 		}
 	}
 	return libfatAttributes;
@@ -448,11 +448,11 @@ u8 FAT_SetFileAttributes (const char* filename, u8 attributes, u8 mask){
 	snprintf(fileInst.fd_namefullPath, sizeToCopy, "%s", filename);
 	FILINFO finfo; 
 	if(getFileFILINFOfromFileClass(&fileInst, &finfo) == true){	
-		libfatAttributesIn = (uint8)fsfat2libfatAttrib((int)finfo.fattrib);
+		libfatAttributesIn = (uint8)fatfs2libfatAttrib((int)finfo.fattrib);
 		libfatAttributesOut = (libfatAttributesIn & ~(mask & 0x27)) | (attributes & 0x27);
-		int	NEWgccnewlibnano_to_fsfatAttributes = libfat2fsfatAttrib((int)libfatAttributesOut);
-		int NEWmask = libfat2fsfatAttrib((int)mask);
-		SetfsfatAttributesToFile((char*)filename, NEWgccnewlibnano_to_fsfatAttributes, NEWmask);
+		int	NEWgccnewlibnano_to_fatfsAttributes = libfat2fatfsAttrib((int)libfatAttributesOut);
+		int NEWmask = libfat2fatfsAttrib((int)mask);
+		SetfatfsAttributesToFile((char*)filename, NEWgccnewlibnano_to_fatfsAttributes, NEWmask);
 	}
 	return libfatAttributesOut;
 }
@@ -809,16 +809,16 @@ int CurrentFileDirEntry = 0;
 //These update on getFirstFile/Dir getNextFile/Dir
 int LastFileEntry = 0;
 int LastDirEntry = 0;
-static bool fsfatFileClassInited = false;
+static bool fatfsFileClassInited = false;
 
 //return:  FT_DIR or FT_FILE: use getLFN(char buf[MAX_TGDSFILENAME_LENGTH+1]); to receive full first file
 //			or FT_NONE if invalid file
 int getFirstFile(char * path){
 	int fType = FT_NONE;	
-	//Just run once... and run only when using specific fsfatlayerTGDS fileClass functionality
-	if(fsfatFileClassInited == false){
+	//Just run once... and run only when using specific fatfslayerTGDS fileClass functionality
+	if(fatfsFileClassInited == false){
 		FileClassListPtr = malloc(sizeof(struct FileClass)*FileClassItems);
-		fsfatFileClassInited = true;
+		fatfsFileClassInited = true;
 	}
 	//path will have the current working directory the FileClass was built around. getFirstFile builds everything, and getNextFile iterates over each file until there are no more.
 	if(buildFileClassListFromPath(path) == true){
@@ -1170,36 +1170,8 @@ void fillPosixStatStruct(const FILINFO *fno, struct stat *out){
 #endif
 }
 
-//update struct fd with new FIL
-void fill_fd_fil(int fd, FIL *fp, int flags, const FILINFO *fno, char * fullFilePath){	//(FileDescriptor :struct fd index)
-    struct fd * fdinst = fd_struct_get(fd);
-    initStructFD(fdinst, flags, fno);
-    fdinst->filPtr = fp;
-	//copy full file path (posix <- fsfat)
-	int topsize = strlen(fullFilePath)+1;
-	if((sint32)topsize > (sint32)(MAX_TGDSFILENAME_LENGTH+1)){
-		topsize = (sint32)(MAX_TGDSFILENAME_LENGTH+1);
-	}
-	strncpy(fdinst->fd_name, fullFilePath, topsize);
-}
-
-//update struct fd with new DIR
-void fill_fd_dir(int fd, DIR *fp, int flags, const FILINFO *fno, char * fullFilePath){	//(FileDescriptor :struct fd index)
-    struct fd *fdinst = fd_struct_get(fd);
-	initStructFD(fdinst, flags, fno);
-    fdinst->dirPtr = fp;
-	//copy full directory path (posix <- fsfat)
-	int topsize = strlen(fullFilePath)+1;
-	if((sint32)topsize > (sint32)(MAX_TGDSFILENAME_LENGTH+1)){
-		topsize = (sint32)(MAX_TGDSFILENAME_LENGTH+1);
-	}
-	strncpy(fdinst->fd_name, fullFilePath, topsize);
-}
-
-//called from :
-	//fill_fd_dir && fill_fd_fil
-	//stat (newlib implementation)
-void initStructFD(struct fd *pfd, int flags, const FILINFO *fno){
+//called from : stat (newlib implementation)
+void initStructFDHandle(struct fd *pfd, int flags, const FILINFO *fno){
     pfd->isatty = 0;
     pfd->status_flags = flags;
     pfd->descriptor_flags = 0;
@@ -1230,16 +1202,22 @@ int fatfs_open_file(const sint8 *pathname, int flags, const FILINFO *fno){
 				//file doesn´t exist
 			}
 		}
-		mode = posix2fsfatAttrib(flags);
+		mode = posix2fatfsAttrib(flags);
 		result = f_open(fdinst->filPtr, pathname, mode);	/* Opens an existing file. If not exist, creates a new file. */
 		if (result == FR_OK){		
 			result = f_stat(pathname, &fno_after);
 			fno = &fno_after;			
-			if (result == FR_OK){
-				fill_fd_fil(fdinst->cur_entry.d_ino, fdinst->filPtr, flags, fno, (char*)pathname);
+			if ((result == FR_OK) && (TGDSFS_detectUnicode(fdinst) == true)){
+				//Update struct fd with new FIL
+				initStructFDHandle(fdinst, flags, fno);
+				//copy full file path (posix <- fatfs)
+				int topsize = strlen(pathname)+1;
+				if((sint32)topsize > (sint32)(MAX_TGDSFILENAME_LENGTH+1)){
+					topsize = (sint32)(MAX_TGDSFILENAME_LENGTH+1);
+				}
+				strncpy(fdinst->fd_name, pathname, topsize);
 			}
-			else
-			{
+			else{
 				fatfs_free(fdinst);
 				structfdIndex = structfd_posixInvalidFileDirHandle;	//file stat was valid but something happened while IO operation, so, invalid.
 			}
@@ -1264,7 +1242,14 @@ int fatfs_open_dir(const sint8 *pathname, int flags, const FILINFO *fno){
     else{
 		result = f_opendir(fdinst->dirPtr, pathname);
         if (result == FR_OK){
-			fill_fd_dir(fdret, fdinst->dirPtr, flags, fno, (char*)pathname);
+			//Update struct fd with new DIR
+			initStructFDHandle(fdinst, flags, fno);
+			//copy full directory path (posix <- fatfs)
+			int topsize = strlen(pathname)+1;
+			if((sint32)topsize > (sint32)(MAX_TGDSFILENAME_LENGTH+1)){
+				topsize = (sint32)(MAX_TGDSFILENAME_LENGTH+1);
+			}
+			strncpy(fdinst->fd_name, pathname, topsize);
         }
         else{
             fatfs_free(fdinst);
@@ -1608,7 +1593,7 @@ DIR *fatfs_fdopendir(int fd){	//(FileDescriptor :struct fd index)
     return ret;
 }
 
-//if iterable DIR * has a struct dirent *(StructFD index, being an object), return such struct dirent * (internal fsfat file handle descriptor)
+//if iterable DIR * has a struct dirent *(StructFD index, being an object), return such struct dirent * (internal fatfs file handle descriptor)
 //else return NULL (not valid iterable DIR * entry or not directory )
 struct dirent *fatfs_readdir(DIR *dirp){
     struct dirent *ret = NULL;
@@ -1653,7 +1638,7 @@ int fatfs_readdir_r(
 			//fill dir/file stats
 			fdinst->loc++;
 			
-			//d_name : dir or file name. NOT full path (posix <- fsfat)
+			//d_name : dir or file name. NOT full path (posix <- fatfs)
 			int topsize = strlen(fno.fname)+1;
 			if((sint32)topsize > (sint32)(MAX_TGDSFILENAME_LENGTH+1)){
 				topsize = (sint32)(MAX_TGDSFILENAME_LENGTH+1);
@@ -1756,29 +1741,16 @@ bool TGDSFS_detectUnicode(struct fd *pfd){
 			fseek(fil, 0, SEEK_SET);
 			fread((uint8*)&tStr[0], 1, 4, fil);
 			if(tStr[0] == 0 && tStr[2] == 0 && tStr[1] != 0 && tStr[3] != 0){	// fairly good chance it's unicode
-				pfd->UnicodeFileDetected = true;
+				pfd->fileIsUnicode = true;
 			}
 			else{
-				pfd->UnicodeFileDetected = false;
+				pfd->fileIsUnicode = false;
 			}
 			fseek(fil, cPos, SEEK_SET);
 			return true;
 		}
 	}
 	return false;
-}
-//these two require a prior call to TGDSFS_detectUnicode()
-bool TGDSFS_GetStructFDUnicode(struct fd *pfd){
-	if(pfd != NULL){
-		return pfd->UnicodeFileDetected;
-	}
-	return false;
-}
-
-void TGDSFS_SetStructFDUnicode(struct fd *pfd, bool unicode){
-	if(pfd != NULL){
-		pfd->UnicodeFileDetected = unicode;
-	}
 }
 
 ////////////////////////////////////////////////////////////////////////////INTERNAL CODE END///////////////////////////////////////////////////////////////////////////////

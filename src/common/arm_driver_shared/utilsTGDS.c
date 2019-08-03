@@ -72,7 +72,7 @@ size_t ucs2tombs(uint8* dst, const unsigned short* src, size_t len) {
 
 #include "consoleTGDS.h"
 #include "devoptab_devices.h"
-#include "fsfatlayerTGDS.h"
+#include "fatfslayerTGDS.h"
 #include "posixHandleTGDS.h"
 #include "fileHandleTGDS.h"
 

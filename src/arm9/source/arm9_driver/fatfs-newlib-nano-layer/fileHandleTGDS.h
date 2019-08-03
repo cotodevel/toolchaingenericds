@@ -27,7 +27,7 @@ USA
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "fsfatlayerTGDS.h"
+#include "fatfslayerTGDS.h"
 #include "limitsTGDS.h"
 #include "devoptab_devices.h"
 #include "posixHandleTGDS.h"
