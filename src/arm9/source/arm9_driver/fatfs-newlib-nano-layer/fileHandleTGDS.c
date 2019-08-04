@@ -39,7 +39,7 @@ USA
 
 volatile struct fd files[OPEN_MAXTGDS] __attribute__ ((aligned (4)));	//has file/dir descriptors and pointers
 
-struct fd *fd_struct_get(int fd){
+struct fd *getStructFD(int fd){
     struct fd *f = NULL;
     if((fd < OPEN_MAXTGDS) && (fd >= 0)){
         f = (struct fd *)&files[fd];
@@ -63,7 +63,7 @@ FILE * getPosixFileHandleFromStructFD(struct fd * fdinst, const char * mode){
 struct fd * getStructFDFromFileHandle(FILE * fh){
 	if(fh != NULL){
 		int StructFD = fileno(fh);
-		return fd_struct_get(StructFD);
+		return getStructFD(StructFD);
 	}
 	return NULL;
 }
@@ -165,7 +165,7 @@ int FileHandleFree(int fd){
 }
 
 
-sint8 * getDeviceNameByStructFDIndex(int StructFDIndex){
+sint8 * getDeviceNameByStructFD(int StructFDIndex){
 	sint8 * out;
 	if((StructFDIndex < 0) || (StructFDIndex > OPEN_MAXTGDS)){
 		out = NULL;
@@ -185,7 +185,7 @@ sint8 * getDeviceNameByStructFDIndex(int StructFDIndex){
 
 
 //useful for handling native DIR * to Internal File Descriptors (struct fd index)
-int getInternalFileDescriptorFromDIR(DIR *dirp){
+int getStructFDFromDIR(DIR *dirp){
 	int fd = 0;
     int ret = structfd_posixInvalidFileDirHandle;
     /* search in all struct fd instances*/

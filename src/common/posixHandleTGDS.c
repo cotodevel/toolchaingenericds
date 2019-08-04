@@ -82,7 +82,7 @@ pid_t _getpid (void){
 //ok _read_r reentrant called
 _ssize_t _read_r ( struct _reent *ptr, int fd, void *buf, size_t cnt ){
 	//Conversion here 
-	struct fd * fdinst = fd_struct_get(fd);
+	struct fd * fdinst = getStructFD(fd);
 	if((fdinst != NULL) && (fdinst->devoptabFileDescriptor != NULL) && (fdinst->devoptabFileDescriptor != (struct devoptab_t *)&devoptab_stub)){
 		return (_ssize_t)fdinst->devoptabFileDescriptor->read_r( NULL, fdinst->cur_entry.d_ino, buf, cnt );
 	}
@@ -93,7 +93,7 @@ _ssize_t _read_r ( struct _reent *ptr, int fd, void *buf, size_t cnt ){
 //write (get struct FD index from FILE * handle)
 _ssize_t _write_r ( struct _reent *ptr, int fd, const void *buf, size_t cnt ){
 	//Conversion here 
-	struct fd * fdinst = fd_struct_get(fd);
+	struct fd * fdinst = getStructFD(fd);
 	if((fdinst != NULL) && (fdinst->devoptabFileDescriptor != NULL) && (fdinst->devoptabFileDescriptor != (struct devoptab_t *)&devoptab_stub)){
 		return (_ssize_t)fdinst->devoptabFileDescriptor->write_r( NULL, fdinst->cur_entry.d_ino, buf, cnt );
 	}
@@ -133,7 +133,7 @@ int close (int fd){
 //not overriden, we force the call from fd_close
 int _close_r ( struct _reent *ptr, int fd ){
 	//Conversion here 
-	struct fd * fdinst = fd_struct_get(fd);	
+	struct fd * fdinst = getStructFD(fd);	
 	if((fdinst != NULL) && (fdinst->devoptabFileDescriptor != NULL) && (fdinst->devoptabFileDescriptor != (struct devoptab_t *)&devoptab_stub)){
 		return (_ssize_t)fdinst->devoptabFileDescriptor->close_r( NULL, fdinst->cur_entry.d_ino );
 	}	
@@ -389,7 +389,7 @@ char *fgets_tgds(char *s, int n, int fd){
 
 int feof_tgds(int fd){
 	int offset = -1;
-	struct fd * fdinst = fd_struct_get(fd);
+	struct fd * fdinst = getStructFD(fd);
 	offset = ftell_tgds(fd);
 	if(fdinst->stat.st_size <= offset){
 		//stream->_flags &= ~_EOF;

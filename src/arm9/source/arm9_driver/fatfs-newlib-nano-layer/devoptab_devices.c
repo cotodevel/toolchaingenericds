@@ -173,7 +173,7 @@ int open_r_fatfs ( struct _reent *r, const sint8 *path, int flags, int mode ){
 //write (get struct FD index from FILE * handle)
 _ssize_t read_r_fatfs( struct _reent *r, int fd, sint8 *ptr, int len ){	 
 	int ret = structfd_posixInvalidFileDirHandle;
-	struct fd *f = fd_struct_get(fd);
+	struct fd *f = getStructFD(fd);
     if (f == NULL)
     {
         errno = EBADF;
@@ -194,7 +194,7 @@ _ssize_t read_r_fatfs( struct _reent *r, int fd, sint8 *ptr, int len ){
 _ssize_t write_r_fatfs( struct _reent *r, int fd, const sint8 *ptr, int len ){
 	
     int ret = structfd_posixInvalidFileDirHandle;
-	struct fd *f = fd_struct_get(fd);
+	struct fd *f = getStructFD(fd);
     
 	if (f == NULL){
 		errno = EBADF;
@@ -212,7 +212,7 @@ _ssize_t write_r_fatfs( struct _reent *r, int fd, const sint8 *ptr, int len ){
 //close (get struct FD index from FILE * handle)
 int close_r_fatfs ( struct _reent *r, int fd ){
 	int ret = structfd_posixInvalidFileDirHandle;
-	struct fd *f = fd_struct_get(fd);
+	struct fd *f = getStructFD(fd);
     if (f == NULL){
         errno = EBADF;
     }

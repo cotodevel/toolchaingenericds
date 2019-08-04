@@ -376,7 +376,7 @@ sint8	**FS_getDirectoryList(sint8 *path, sint8 *mask, int *cnt){
 		while (1){
 			struct dirent* pent = readdir(dir);
 			if(pent != NULL){
-				struct fd * fdinst = fd_struct_get(pent->d_ino);	//struct stat st is generated at the moment readdir(); is called, so get access to it through fdinst->stat
+				struct fd * fdinst = getStructFD(pent->d_ino);	//struct stat st is generated at the moment readdir(); is called, so get access to it through fdinst->stat
 				if(fdinst){
 					if(!S_ISDIR(fdinst->stat.st_mode)){
 						continue;
@@ -414,7 +414,7 @@ sint8	**FS_getDirectoryList(sint8 *path, sint8 *mask, int *cnt){
 		while (1){
 			struct dirent* pent = readdir(dir);	//if NULL already not a dir
 			if(pent != NULL){
-				struct fd * fdinst = fd_struct_get(pent->d_ino);
+				struct fd * fdinst = getStructFD(pent->d_ino);
 				if(fdinst){
 					if(!S_ISDIR(fdinst->stat.st_mode)){
 						continue;
