@@ -53,14 +53,14 @@ struct fd *getStructFD(int fd){
     return f;
 }
 
-FILE * getPosixFileHandleFromStructFD(struct fd * fdinst, const char * mode){
+FILE * getPosixFileHandleByStructFD(struct fd * fdinst, const char * mode){
 	if(fdinst != NULL){
 		return fdopen(fdinst->cur_entry.d_ino, mode);
 	}
 	return NULL;
 }
 
-struct fd * getStructFDFromFileHandle(FILE * fh){
+struct fd * getStructFDByFileHandle(FILE * fh){
 	if(fh != NULL){
 		int StructFD = fileno(fh);
 		return getStructFD(StructFD);
@@ -68,15 +68,14 @@ struct fd * getStructFDFromFileHandle(FILE * fh){
 	return NULL;
 }
 
-int getStructFDByFileName(char * filename){
+int getStructFDIndexByFileName(char * filename){
 	int ret = structfd_posixInvalidFileDirHandle;
-    
 	int fd = 0;
 	/* search in all struct fd instances*/
 	for (fd = 0; fd < OPEN_MAXTGDS; fd++){
 		if(files[fd].isused == (sint32)structfd_isused){
 			if(strcmp((char*)&files[fd].fd_name, filename) == 0){
-				//printfDebugger("getStructFDByFileName(): idx:%d - f:%s",fd, files[fd].fd_name);
+				//printfDebugger("getStructFDIndexByFileName(): idx:%d - f:%s",fd, files[fd].fd_name);
 				return fd;
 			}
 		}
@@ -136,7 +135,6 @@ int FileHandleAlloc(struct devoptab_t * devoptabInst ){
             break;
         }
     }
-	
 	//if for some reason all the file handles are exhausted, discard the last one and assign that one. (fixes homebrew that opens a lot of file handles and doesn't close them up accordingly)
 	if(ret == structfd_posixInvalidFileDirHandle){
 		int retClose = fatfs_close(OPEN_MAXTGDS - 1);	//requires a struct fd(file descriptor), returns 0 if success, structfd_posixInvalidFileDirHandle if error
@@ -165,7 +163,7 @@ int FileHandleFree(int fd){
 }
 
 
-sint8 * getDeviceNameByStructFD(int StructFDIndex){
+sint8 * getDeviceNameByStructFDIndex(int StructFDIndex){
 	sint8 * out;
 	if((StructFDIndex < 0) || (StructFDIndex > OPEN_MAXTGDS)){
 		out = NULL;
@@ -185,7 +183,7 @@ sint8 * getDeviceNameByStructFD(int StructFDIndex){
 
 
 //useful for handling native DIR * to Internal File Descriptors (struct fd index)
-int getStructFDFromDIR(DIR *dirp){
+int getStructFDIndexByDIR(DIR *dirp){
 	int fd = 0;
     int ret = structfd_posixInvalidFileDirHandle;
     /* search in all struct fd instances*/

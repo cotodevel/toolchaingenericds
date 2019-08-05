@@ -208,9 +208,9 @@ extern int fatfs_write (int fd, sint8 *ptr, int len);
 extern int fatfs_read (int fd, sint8 *ptr, int len);
 extern int fatfs_close (int fd);
 extern void fillPosixStatStruct(const FILINFO *fno, struct stat *out);
-extern BYTE posix2fatfsAttrib(int flags);
-extern int fatfs2posixAttrib(BYTE flags);
-extern int fresult2errno(FRESULT result);
+extern BYTE posixToFatfsAttrib(int flags);
+extern int fatfsToPosixAttrib(BYTE flags);
+extern int fresultToErrno(FRESULT result);	/* POSIX ERROR Handling */
 extern int fatfs_fildir_alloc(int isfilordir);
 extern void initStructFDHandle(struct fd *pfd, int flags, const FILINFO *fno);
 extern int fatfs_open_file(const sint8 *pathname, int flags, const FILINFO *fno);	//(FRESULT is the file properties that must be copied to stat st)/ returns an internal index struct fd allocated

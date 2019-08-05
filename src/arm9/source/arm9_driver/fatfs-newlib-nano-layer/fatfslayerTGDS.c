@@ -132,7 +132,6 @@ bool closeFileFromStructFD(int StructFD){
 int FileExists(char * filename){
 	int Type = FT_NONE;
 	int StructFD = OpenFileFromPathGetStructFD((char *)filename);
-	
 	struct fd *pfd = getStructFD(StructFD);
 	if(pfd != NULL){
 		//file?
@@ -198,12 +197,11 @@ int remove(const char *filename){
 
 
 int chmod(const char *pathname, mode_t mode){
-	BYTE fatfsFlags = posix2fatfsAttrib(mode);
+	BYTE fatfsFlags = posixToFatfsAttrib(mode);
 	return f_chmod(pathname, fatfsFlags, AM_SYS );	//only care about the system bit (if the file we are changing is SYSTEM)
 }
 
-DIR *fdopendir(int fd)	//(FileDescriptor :struct fd index)
-{
+DIR *fdopendir(int fd){	//(FileDescriptor :struct fd index)
     return fatfs_fdopendir(fd);
 }
 
@@ -218,19 +216,15 @@ int libfat2fatfsAttrib(int libfatFlags){
 	if(libfatFlags & ATTRIB_RO){	/* Read only */
 		fatfsFlags|=AM_RDO;
 	}
-	
 	if(libfatFlags & ATTRIB_HID){	/* Hidden */
 		fatfsFlags|=AM_HID;
-	}
-	
+	}	
 	if(libfatFlags & ATTRIB_SYS){	/* System */
 		fatfsFlags|=AM_SYS;
 	}
-	
 	if(libfatFlags & ATTRIB_DIR){	/* Directory */
 		fatfsFlags|=AM_DIR;
 	}
-	
 	if(libfatFlags & ATTRIB_ARCH){	/* Archive */
 		fatfsFlags|=AM_ARC;
 	}
@@ -244,19 +238,15 @@ int fatfs2libfatAttrib(int fatfsFlags){
 	if(fatfsFlags & AM_RDO){	/* Read only */
 		libfatFlags|=ATTRIB_RO;
 	}
-	
 	if(fatfsFlags & AM_HID){	/* Hidden */
 		libfatFlags|=ATTRIB_HID;
 	}
-	
 	if(fatfsFlags & AM_SYS){	/* System */
 		libfatFlags|=ATTRIB_SYS;
 	}
-	
 	if(fatfsFlags & AM_DIR){	/* Directory */
 		libfatFlags|=ATTRIB_DIR;
 	}
-	
 	if(fatfsFlags & AM_ARC){	/* Archive */
 		libfatFlags|=ATTRIB_ARCH;
 	}
@@ -268,7 +258,7 @@ void SetfatfsAttributesToFile(char * filename, int Newgccnewlibnano_to_fatfsAttr
 }
 
 //posix -> fatfs
-BYTE posix2fatfsAttrib(int flags){
+BYTE posixToFatfsAttrib(int flags){
     BYTE mode = 0;
     int accmode = flags & O_ACCMODE;
     if ((accmode == O_RDONLY) || (accmode == O_RDWR)){
@@ -298,7 +288,7 @@ BYTE posix2fatfsAttrib(int flags){
 }
 
 //fatfs -> posix
-int fatfs2posixAttrib(BYTE flags){
+int fatfsToPosixAttrib(BYTE flags){
     #define fatfs_O_ACCMODE (FA_READ|FA_WRITE)
 	int mode = 0;
     BYTE accmode = flags & fatfs_O_ACCMODE;
@@ -326,6 +316,56 @@ int fatfs2posixAttrib(BYTE flags){
     return mode;
 }
 
+/* POSIX ERROR Handling */
+int fresultToErrno(FRESULT result){
+    int err ;
+    switch (result)
+    {
+        case FR_OK:
+            err = 0;
+            break;
+        case FR_EXIST:
+            err = EEXIST;
+            break;
+        case FR_NO_FILE:
+            err = ENOENT;
+            break;
+        case FR_NO_PATH:
+        case FR_INVALID_NAME:
+            err = ENOTDIR;
+            break;
+        case FR_WRITE_PROTECTED:
+            err = EROFS;
+            break;
+        case FR_DENIED:
+            err = EACCES;
+            break;
+        case FR_TOO_MANY_OPEN_FILES:
+            err = ENFILE;
+            break;
+        case FR_NOT_ENOUGH_CORE:
+            err = ENOMEM;
+            break;
+        case FR_DISK_ERR:
+        case FR_INT_ERR:
+        case FR_NOT_READY:
+        case FR_INVALID_OBJECT:
+        case FR_INVALID_DRIVE:
+        case FR_NOT_ENABLED:
+        case FR_NO_FILESYSTEM:
+        case FR_MKFS_ABORTED:
+        case FR_TIMEOUT:
+        case FR_LOCKED:
+        case FR_INVALID_PARAMETER:
+        /* TODO */
+        default:
+            err = EINVAL;
+            break;
+    }
+
+    return err;
+}
+
 DWORD clust2sect (  /* !=0:Sector number, 0:Failed (invalid cluster#) */
     FATFS* fs,      /* File system object */
     DWORD clst      /* Cluster# to be converted */
@@ -348,7 +388,6 @@ uint32	getStructFDFirstCluster(struct fd *fdinst){
 	}
 	return (uint32)structfd_posixInvalidFileDirHandle;
 }
-
 
 uint32	getStructFDNextCluster(struct fd *fdinst, int currCluster){
 	if((fdinst) && (fdinst->filPtr)){
@@ -400,10 +439,6 @@ char * dldi_tryingInterface(){
 	struct DLDI_INTERFACE * DLDI_INTERFACEInst = dldiGet();
 	return DLDI_INTERFACEInst->friendlyName;
 }
-
-
-
-
 
 
 ///////////////////////////////////This is the TGDS FS API extension. It emulates libfat FAT_xxx functions.//////////////////////////////////
@@ -529,16 +564,13 @@ bool FAT_GetAlias(char* alias){
 
 //stubbed because what these do is a workaround, described below:
 //in TGDS: while listing a dir, create/read/update/delete a new file works
-void FAT_preserveVars()
-{
+void FAT_preserveVars(){
 }
 
-void FAT_restoreVars()
-{
+void FAT_restoreVars(){
 }
 
-u32	disc_HostType(void)
-{
+u32	disc_HostType(void){
 	if(FS_InitStatus == true){
 		return dldiGet()->ioInterface.ioType;
 	}
@@ -678,8 +710,7 @@ Closes all open files then resets the CF card.
 Call this before exiting back to the GBAMP
 bool return OUT: true if successful.
 -----------------------------------------------------------------*/
-bool FAT_FreeFiles (void)
-{
+bool FAT_FreeFiles (void){
 	char * devoptabFSName = (char*)"0:/";
 	initTGDS(devoptabFSName);
 	if(FileClassListPtr != NULL){
@@ -696,8 +727,7 @@ Reads the FAT information from the CF card.
 You need to call this before reading any files.
 bool return OUT: true if successful.
 -----------------------------------------------------------------*/
-bool FAT_InitFiles (void)
-{
+bool FAT_InitFiles (void){
 	return true;	//TGDS assumes the card was already inited if you followed the TGDS Standard ARM9 Init code start
 }
 
@@ -769,6 +799,7 @@ bool getFileFILINFOfromFileClass(struct FileClass * fileInst, FILINFO * finfo){
 		}
 		else{
 			//stat error
+			errno = fresultToErrno(result);
 		}
 	}
 	return false;
@@ -905,59 +936,8 @@ int getNextFile(char * path){
 
 
 ////////////////////////////////////////////////////////////////////////////INTERNAL CODE START///////////////////////////////////////////////////////////////////////////////
-int  readdir_r(DIR * dirp,struct dirent * entry,struct dirent ** result)
-{
+int  readdir_r(DIR * dirp,struct dirent * entry,struct dirent ** result){
     return fatfs_readdir_r(dirp, entry, result);
-}
-
-int fresult2errno(FRESULT result)
-{
-    int err ;
-    switch (result)
-    {
-        case FR_OK:
-            err = 0;
-            break;
-        case FR_EXIST:
-            err = EEXIST;
-            break;
-        case FR_NO_FILE:
-            err = ENOENT;
-            break;
-        case FR_NO_PATH:
-        case FR_INVALID_NAME:
-            err = ENOTDIR;
-            break;
-        case FR_WRITE_PROTECTED:
-            err = EROFS;
-            break;
-        case FR_DENIED:
-            err = EACCES;
-            break;
-        case FR_TOO_MANY_OPEN_FILES:
-            err = ENFILE;
-            break;
-        case FR_NOT_ENOUGH_CORE:
-            err = ENOMEM;
-            break;
-        case FR_DISK_ERR:
-        case FR_INT_ERR:
-        case FR_NOT_READY:
-        case FR_INVALID_OBJECT:
-        case FR_INVALID_DRIVE:
-        case FR_NOT_ENABLED:
-        case FR_NO_FILESYSTEM:
-        case FR_MKFS_ABORTED:
-        case FR_TIMEOUT:
-        case FR_LOCKED:
-        case FR_INVALID_PARAMETER:
-        /* TODO */
-        default:
-            err = EINVAL;
-            break;
-    }
-
-    return err;
 }
 
 //returns / allocates a new struct fd index with either DIR or FIL structure allocated
@@ -1011,12 +991,10 @@ int fatfs_write (int fd, sint8 *ptr, int len){	//(FileDescriptor :struct fd inde
 	(pfd->filPtr == NULL)	//no FIL descriptor?
 	&&
 	(pfd->dirPtr == NULL)	//and no DIR descriptor? definitely can't write to this file descriptor
-	)
-    {
+	){
         errno = EBADF;
     }
-    else if (S_ISREG(pfd->stat.st_mode))
-	{
+    else if (S_ISREG(pfd->stat.st_mode)){
         FIL *filp;
         FRESULT result;
         UINT written;
@@ -1032,25 +1010,20 @@ int fatfs_write (int fd, sint8 *ptr, int len){	//(FileDescriptor :struct fd inde
         else{
             result = FR_OK;
         }
-        if (result == FR_OK)
-        {
+        if (result == FR_OK){
             result = f_write(filp, ptr, len, &written);	//writes success: if ret directory file invalid (7) check permission flags passed through fopen
         }
-        if (result == FR_OK)
-        {
+        if (result == FR_OK){
             ret = written;
         }
-        else
-        {
-            errno = fresult2errno(result);
+        else{
+            errno = fresultToErrno(result);
         }
     }
-    else if (S_ISDIR(pfd->stat.st_mode))
-	{
+    else if (S_ISDIR(pfd->stat.st_mode)){
 		errno = EISDIR;
     }
-    else
-    {
+    else{
         errno = EBADF;
     }
     return ret;
@@ -1069,13 +1042,11 @@ int fatfs_read(int fd, sint8 *ptr, int len){
         UINT nbytes_read;
         filp = pfd->filPtr;
         result = f_read(filp, ptr, len, &nbytes_read);
-        if (result == FR_OK)
-        {
+        if (result == FR_OK){
             ret = nbytes_read;
         }
-        else
-        {
-            errno = fresult2errno(result);
+        else{
+            errno = fresultToErrno(result);
         }
     }
     else if (S_ISDIR(pfd->stat.st_mode)){
@@ -1115,7 +1086,7 @@ int fatfs_close (int structFDIndex){
 			pfd->loc = 0;
         }
         else{
-			errno = fresult2errno(result);
+			errno = fresultToErrno(result);
         }
     }
 	//Directory?
@@ -1130,7 +1101,7 @@ int fatfs_close (int structFDIndex){
 			pfd->loc = 0;
         }
         else{
-			errno = fresult2errno(result);
+			errno = fresultToErrno(result);
         }
     }
     else{
@@ -1182,7 +1153,7 @@ void initStructFDHandle(struct fd *pfd, int flags, const FILINFO *fno){
 //returns an internal index struct fd allocated
 int fatfs_open_file(const sint8 *pathname, int flags, const FILINFO *fno){
 	//Lookup if file is already open.
-	int structfdIndex = getStructFDByFileName((char*)pathname);
+	int structfdIndex = getStructFDIndexByFileName((char*)pathname);
 	if(structfdIndex != structfd_posixInvalidFileDirHandle){
 		return structfdIndex;
 	}
@@ -1202,7 +1173,7 @@ int fatfs_open_file(const sint8 *pathname, int flags, const FILINFO *fno){
 				//file doesn´t exist
 			}
 		}
-		mode = posix2fatfsAttrib(flags);
+		mode = posixToFatfsAttrib(flags);
 		result = f_open(fdinst->filPtr, pathname, mode);	/* Opens an existing file. If not exist, creates a new file. */
 		if (result == FR_OK){		
 			result = f_stat(pathname, &fno_after);
@@ -1218,6 +1189,7 @@ int fatfs_open_file(const sint8 *pathname, int flags, const FILINFO *fno){
 				strncpy(fdinst->fd_name, pathname, topsize);
 			}
 			else{
+				errno = fresultToErrno(result);
 				fatfs_free(fdinst);
 				structfdIndex = structfd_posixInvalidFileDirHandle;	//file stat was valid but something happened while IO operation, so, invalid.
 			}
@@ -1252,6 +1224,7 @@ int fatfs_open_dir(const sint8 *pathname, int flags, const FILINFO *fno){
 			strncpy(fdinst->fd_name, pathname, topsize);
         }
         else{
+			errno = fresultToErrno(result);
             fatfs_free(fdinst);
         }
     }
@@ -1278,6 +1251,7 @@ int fatfs_open_file_or_dir(const sint8 *pathname, int flags){
 	}
     else {
 		//file/dir does not exist, couldn't create
+		errno = fresultToErrno(result);
 	}
     return structFD;
 }
@@ -1377,7 +1351,7 @@ off_t fatfs_lseek(int fd, off_t offset, int whence){	//(FileDescriptor :struct f
 				pfd->loc = pos;
 			}
 			else{
-				errno = fresult2errno(result);
+				errno = fresultToErrno(result);
 			}
 		}
 	}
@@ -1396,7 +1370,7 @@ int fatfs_unlink(const sint8 *path){
         ret = 0;
     }
     else{
-        errno = fresult2errno(result);
+        errno = fresultToErrno(result);
     }
     return ret;
 }
@@ -1413,7 +1387,7 @@ int fatfs_rename(const sint8 *oldfname, const sint8 * newfname){
     FRESULT result;
     result = f_rename(oldfname, newfname);
     if (result != FR_OK){
-        errno = fresult2errno(result);
+        errno = fresultToErrno(result);
     }
     else{
         ret = 0;
@@ -1437,7 +1411,7 @@ int fatfs_fsync(int fd){	//uses struct fd indexing
             ret = 0;
         }
         else{
-            errno = fresult2errno(result);
+            errno = fresultToErrno(result);
         }
     }
     else{
@@ -1457,7 +1431,7 @@ int fatfs_stat(const sint8 *path, struct stat *buf){
         ret = 0;
     }
     else{
-        errno = fresult2errno(result);
+        errno = fresultToErrno(result);
     }
     return ret;
 }
@@ -1471,7 +1445,7 @@ int fatfs_mkdir(const sint8 *path, mode_t mode){
         ret = 0;
     }
     else{
-        errno = fresult2errno(result);
+        errno = fresultToErrno(result);
     }
     return ret;
 }
@@ -1497,11 +1471,11 @@ int fatfs_rmdir(const sint8 *path){
             }
         }
         else{
-            errno = fresult2errno(result);
+            errno = fresultToErrno(result);
         }
     }
     else{
-        errno = fresult2errno(result);
+        errno = fresultToErrno(result);
     }
     return ret;
 }
@@ -1515,7 +1489,7 @@ int fatfs_chdir(const sint8 *path){
         ret = 0;
     }
     else{
-        errno = fresult2errno(result);   
+        errno = fresultToErrno(result);   
     }
     return ret;
 }
@@ -1529,7 +1503,7 @@ sint8 *fatfs_getcwd(sint8 *buf, size_t size){
         ret = buf;
     }
     else{
-        errno = fresult2errno(result);
+        errno = fresultToErrno(result);
     }
     return ret;
 }
@@ -1556,7 +1530,7 @@ DIR *fatfs_opendir(const sint8 *path){
 //else returns structfd_posixInvalidFileDirHandle if incorrect iterable DIR *
 int fatfs_closedir(DIR *dirp){
 	//we need a conversion from DIR * to struct fd *
-	int fd = getStructFDFromDIR(dirp);
+	int fd = getStructFDIndexByDIR(dirp);
 	return fatfs_close(fd);	//requires a struct fd(file descriptor), returns 0 if success, structfd_posixInvalidFileDirHandle if error
 }
 
@@ -1565,7 +1539,7 @@ int fatfs_closedir(DIR *dirp){
 int fatfs_dirfd(DIR *dirp){
     int ret = structfd_posixInvalidFileDirHandle;
 	//we need a conversion from DIR * to struct fd *
-	int fd = getStructFDFromDIR(dirp);
+	int fd = getStructFDIndexByDIR(dirp);
 	struct fd * pfd = getStructFD(fd);
     if ((pfd != NULL) && (S_ISDIR(pfd->stat.st_mode))){
 		ret = 0;
@@ -1597,7 +1571,7 @@ DIR *fatfs_fdopendir(int fd){	//(FileDescriptor :struct fd index)
 //else return NULL (not valid iterable DIR * entry or not directory )
 struct dirent *fatfs_readdir(DIR *dirp){
     struct dirent *ret = NULL;
-    int fd = getStructFDFromDIR(dirp);	//we need a conversion from DIR * to struct fd *
+    int fd = getStructFDIndexByDIR(dirp);	//we need a conversion from DIR * to struct fd *
 	struct fd * fdinst = getStructFD(fd);
 	if(fatfs_readdir_r(dirp, (struct dirent *)&fdinst->cur_entry, &ret) != structfd_posixInvalidFileDirHandle){
 		return ret;
@@ -1617,14 +1591,14 @@ int fatfs_readdir_r(
         struct dirent **result){	//pointer to rewrite above file handle struct fd
 
     int ret = structfd_posixInvalidFileDirHandle;
-	int fd = getStructFDFromDIR(dirp);
+	int fd = getStructFDIndexByDIR(dirp);
 	struct fd * fdinst = getStructFD(fd);
 	if(fdinst != NULL){
 		FRESULT fresult;
 		FILINFO fno;
 		fresult = f_readdir(dirp, &fno);
 		if (fresult != FR_OK){
-			errno = fresult2errno(fresult);
+			errno = fresultToErrno(fresult);
 			*result = NULL;
 		}
 		// end of entries
@@ -1651,7 +1625,7 @@ int fatfs_readdir_r(
 }
 
 void fatfs_rewinddir(DIR *dirp){
-	int fd = getStructFDFromDIR(dirp);
+	int fd = getStructFDIndexByDIR(dirp);
 	struct fd * fdinst = getStructFD(fd);
 	FRESULT result = f_readdir(dirp, NULL);
 	if (result == FR_OK){
@@ -1679,7 +1653,7 @@ long fatfs_tell(struct fd *f){	//NULL check already outside
 }
 
 void fatfs_seekdir(DIR *dirp, long loc){
-	int fd = getStructFDFromDIR(dirp);
+	int fd = getStructFDIndexByDIR(dirp);
 	struct fd * fdinst = getStructFD(fd);
     if (S_ISDIR(fdinst->stat.st_mode)){
         long cur_loc = fatfs_tell(fdinst);
@@ -1762,15 +1736,15 @@ bool buildFileClassListFromPath(char * path){
 	//decide wether we have a Working directory or not, if valid dir, enter that dir. If not, use the default dir and point to it.
 	if(updateFileClassList(path) == true){
 		//rebuild filelist
-		FRESULT res;
+		FRESULT result;
 		DIR dir;
 		int i = 0;
 		FILINFO fno;
 		InitGlobalFileClass();
-		res = f_opendir(&dir, path);                       /* Open the directory */
-		if (res == FR_OK) {
+		result = f_opendir(&dir, path);                       /* Open the directory */
+		if (result == FR_OK) {
 			for(;;){
-				res = f_readdir(&dir, &fno);                   /* Read a directory item */
+				result = f_readdir(&dir, &fno);                   /* Read a directory item */
 				int type = 0;
 				if (fno.fattrib & AM_DIR) {			           /* It is a directory */
 					type = FT_DIR;	
@@ -1790,7 +1764,7 @@ bool buildFileClassListFromPath(char * path){
 					type = FT_NONE;
 				}
 				
-				if (res != FR_OK || fno.fname[0] == 0){	//error or end of dir
+				if (result != FR_OK || fno.fname[0] == 0){	//Error or end of dir. No need to handle the error here.
 					break;
 				}
 				else if(i >= FileClassItems){
@@ -1812,9 +1786,12 @@ bool buildFileClassListFromPath(char * path){
 			}
 			f_closedir(&dir);
 		}
+		else{
+			errno = fresultToErrno(result);
+			return false;
+		}
 		return true;
 	}
-	
 	return false;
 }
 

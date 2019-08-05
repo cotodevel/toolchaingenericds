@@ -44,11 +44,11 @@ extern void initTGDS(char * devoptabFSName);
 extern struct fd *getStructFD(int fd);	//the fd here is the internal FD index
 extern int FileHandleAlloc(struct devoptab_t * devoptabInst );
 extern int FileHandleFree(int fd);
-extern sint8 * getDeviceNameByStructFD(int StructFDIndex);
-extern int getStructFDFromDIR(DIR *dirp);
-extern int getStructFDByFileName(char * filename);
-extern FILE * getPosixFileHandleFromStructFD(struct fd * fdinst, const char * mode);
-extern struct fd * getStructFDFromFileHandle(FILE * fh);
+extern sint8 * getDeviceNameByStructFDIndex(int StructFDIndex);
+extern int getStructFDIndexByDIR(DIR *dirp);
+extern int getStructFDIndexByFileName(char * filename);
+extern FILE * getPosixFileHandleByStructFD(struct fd * fdinst, const char * mode);
+extern struct fd * getStructFDByFileHandle(FILE * fh);
 
 #ifdef __cplusplus
 }
