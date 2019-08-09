@@ -103,7 +103,6 @@ extern sint32 glueARMHandlerConfig(struct VERSION_DESCRIPTOR * versionInst,struc
 extern int	FS_loadFile(sint8 *filename, sint8 *buf, int size);
 extern int	FS_saveFile(sint8 *filename, sint8 *buf, int size,bool force_file_creation);
 extern int	FS_getFileSize(sint8 *filename);
-extern int		setBacklight(int flags);
 extern int		FS_extram_init();
 extern void		FS_lock();
 extern void		FS_unlock();
@@ -128,6 +127,8 @@ extern int str_split(char * stream, char * haystack, char * outBuf);
 extern int inet_pton(int af, const char *src, void *dst);
 
 #endif
+
+extern int		setBacklight(int flags);
 
 #ifdef __cplusplus
 }

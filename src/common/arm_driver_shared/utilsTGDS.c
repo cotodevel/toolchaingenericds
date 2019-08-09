@@ -30,6 +30,31 @@ USA
 #include "ipcfifoTGDS.h"
 #include "spifwTGDS.h"
 
+//usage:
+//setBacklight(POWMAN_BACKLIGHT_TOP_BIT | POWMAN_BACKLIGHT_BOTTOM_BIT);	//both lit screens
+//setBacklight(POWMAN_BACKLIGHT_TOP_BIT);								//top lit screen
+//setBacklight(POWMAN_BACKLIGHT_BOTTOM_BIT);							//bottom lit screen
+//setBacklight(0);														//non-lit both LCD screens (poweroff)
+	
+int	setBacklight(int flags){
+	#ifdef ARM7
+		int PMBitsRead = PowerManagementDeviceRead((int)POWMAN_READ_BIT);
+		PMBitsRead &= ~(POWMAN_BACKLIGHT_BOTTOM_BIT|POWMAN_BACKLIGHT_TOP_BIT);
+		PMBitsRead |= (int)(flags & (POWMAN_BACKLIGHT_BOTTOM_BIT|POWMAN_BACKLIGHT_TOP_BIT));
+		PowerManagementDeviceWrite(POWMAN_WRITE_BIT, (int)PMBitsRead);
+	#endif
+	
+	#ifdef ARM9
+		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+		uint32 * fifomsg = (uint32 *)&TGDSIPC->ipcmsg[0];
+		fifomsg[0] = (uint32)FIFO_SCREENPOWER_WRITE;
+		fifomsg[1] = (uint32)(flags);
+		SendFIFOWords(FIFO_POWERMGMT_WRITE, (uint32)fifomsg);
+	#endif
+	return 0;
+}
+
+
 size_t ucs2tombs(uint8* dst, const unsigned short* src, size_t len) {
 	size_t i=0,j=0;
 	for (;src[i];i++){
@@ -276,21 +301,6 @@ int	FS_getFileSize(sint8 *filename)
 	fclose(f);
 	
 	return size;
-}
-
-//usage:
-//setBacklight(POWMAN_BACKLIGHT_TOP_BIT | POWMAN_BACKLIGHT_BOTTOM_BIT);	//both lit screens
-//setBacklight(POWMAN_BACKLIGHT_TOP_BIT);								//top lit screen
-//setBacklight(POWMAN_BACKLIGHT_BOTTOM_BIT);							//bottom lit screen
-//setBacklight(0);														//non-lit both LCD screens (poweroff)
-	
-int	setBacklight(int flags){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->ipcmsg[0];
-	fifomsg[0] = (uint32)FIFO_SCREENPOWER_WRITE;
-	fifomsg[1] = (uint32)(flags);
-	SendFIFOWords(FIFO_POWERMGMT_WRITE, (uint32)fifomsg);
-	return 0;
 }
 
 int setSoundPower(int flags){
