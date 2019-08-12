@@ -42,27 +42,6 @@ USA
 #include "dldi.h"
 #include "clockTGDS.h"
 #include "utilsTGDS.h" 
-#include "fatfslayerTGDS.h"
-#include <string.h>
-#include <errno.h>
-#include <sys/stat.h>
-#include <limits.h>
-#include "limitsTGDS.h"
-#include <fcntl.h>
-#include <dirent.h>
-#include "fileHandleTGDS.h"
-#include "typedefsTGDS.h"
-#include "dsregs.h"
-#include "devoptab_devices.h"
-#include "consoleTGDS.h"
-#include <stdio.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <time.h>
-#include "posixHandleTGDS.h"
-#include "dldi.h"
-#include "clockTGDS.h"
 
 //fatfs
 FATFS dldiFs;

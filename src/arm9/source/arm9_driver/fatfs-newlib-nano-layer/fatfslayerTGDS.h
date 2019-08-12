@@ -239,17 +239,9 @@ extern int _fstat_r ( struct _reent *_r, int fd, struct stat *buf );
 extern int  readdir_r(DIR * dirp,struct dirent * entry,struct dirent ** result);
 extern int OpenFileFromPathGetStructFD(char * fullPath);
 extern bool closeFileFromStructFD(int StructFD);
-
-
-
-
-
-
-
 ////////////////////////////////////////////////////////////////////////////INTERNAL CODE END/////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////// INTERNAL DIRECTORY FUNCTIONS /////////////////////////////////////////////////////////////////////
-
 extern bool buildFileClassListFromPath(char * path);
 extern char TGDSCurrentWorkingDirectory[MAX_TGDSFILENAME_LENGTH+1];
 extern void setTGDSCurrentWorkingDirectory(char * path);
@@ -257,7 +249,6 @@ extern char * getTGDSCurrentWorkingDirectory();
 extern bool enterDir(char* newDir);
 extern bool leaveDir(char* newDir);
 extern bool updateFileClassList(char * path);
-
 /////////////////////////////////////////////////////////////////////// INTERNAL DIRECTORY FUNCTIONS END //////////////////////////////////////////////////////////////////
 
 #ifdef __cplusplus
