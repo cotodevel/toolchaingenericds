@@ -91,7 +91,6 @@ export DIRS_ARM9_SRC = source/	\
 			../common/arm_driver_shared/	\
 			../common/dswifi/	\
 			../common/hardware/	\
-			../common/hardware/NotifierAPI/	\
 			data/	\
 			build/
 			
@@ -114,7 +113,6 @@ export DIRS_ARM9_HEADER = source/	\
 			../common/arm_driver_shared/	\
 			../common/dswifi/	\
 			../common/hardware/	\
-			../common/hardware/NotifierAPI/	\
 			data/	\
 			build/
 			
