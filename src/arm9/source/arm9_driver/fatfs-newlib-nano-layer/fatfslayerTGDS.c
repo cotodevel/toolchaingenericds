@@ -67,12 +67,6 @@ USA
 //fatfs
 FATFS dldiFs;
 
-//LongFilename scratchpad: has the latest fullfilepath accessed
-char lfnName[MAX_TGDSFILENAME_LENGTH+1];
-
-//scratchpad struct fd
-struct fd fdCur;
-
 /* functions */
 bool FS_InitStatus = false;	
 
@@ -493,25 +487,6 @@ u8 FAT_SetFileAttributes (const char* filename, u8 attributes, u8 mask){
 }
 
 //Internal
-//Filename must be at least MAX_TGDSFILENAME_LENGTH+1
-bool setLFN(char* filename){
-	if (filename == NULL){
-		return false;
-	}
-	strncpy (lfnName, filename, (MAX_TGDSFILENAME_LENGTH+1) - 1);
-	lfnName[(MAX_TGDSFILENAME_LENGTH+1) - 1] = '\0';
-	return true;	
-}
-
-//Filename must be at least MAX_TGDSFILENAME_LENGTH+1
-bool getLFN(char* filename){
-	if (filename == NULL){
-		return false;
-	}
-	strncpy(filename, lfnName, (MAX_TGDSFILENAME_LENGTH+1) - 1);
-	filename[(MAX_TGDSFILENAME_LENGTH+1) - 1] = '\0';
-	return true;
-}
 
 //FAT_GetAlias
 //Get the alias (short name) of the last file or directory entry read
@@ -842,8 +817,18 @@ int LastFileEntry = 0;
 int LastDirEntry = 0;
 static bool fatfsFileClassInited = false;
 
-//return:  FT_DIR or FT_FILE: use getLFN(char buf[MAX_TGDSFILENAME_LENGTH+1]); to receive full first file
-//			or FT_NONE if invalid file
+//returns:  FT_DIR or FT_FILE or FT_NONE if invalid file
+
+//filename_out must be at least MAX_TGDSFILENAME_LENGTH+1
+bool readFileNameFromFileClassIndex(char* filename_out, struct FileClass * FileClassInst){
+	if ((filename_out == NULL) || (FileClassInst == NULL)){
+		return false;
+	}
+	char *  FullPathStr = FileClassInst->fd_namefullPath;
+	strncpy(filename_out, FullPathStr, (MAX_TGDSFILENAME_LENGTH+1) - 1);
+	filename_out[(MAX_TGDSFILENAME_LENGTH+1) - 1] = '\0';
+	return true;
+}
 int getFirstFile(char * path){
 	int fType = FT_NONE;	
 	//Just run once... and run only when using specific fatfslayerTGDS fileClass functionality
@@ -860,18 +845,14 @@ int getFirstFile(char * path){
 			//dir
 			case(FT_DIR):{
 				LastDirEntry=CurrentFileDirEntry;
-				char *  FullPathStr = fileInst->fd_namefullPath;
-				setLFN((char*)FullPathStr);		//update last full path access
-				getLFN((char*)path);			//update source path				
+				readFileNameFromFileClassIndex((char*)path, fileInst);	//update source path
 			}
 			break;
 			//file
 			case(FT_FILE):{
 				LastFileEntry=CurrentFileDirEntry;
-				char *  FullPathStr = fileInst->fd_namefullPath;
-				setLFN((char*)FullPathStr);		//update last full path access
-				getLFN((char*)path);			//update source path
-			}
+				readFileNameFromFileClassIndex((char*)path, fileInst);	//update source path
+			}			
 			break;
 		}
 		//increase the file/dir counter after operation only if valid entry, otherwise it doesn't anymore
@@ -889,8 +870,7 @@ int getFirstFile(char * path){
 }
 
 //requires fullpath of the CURRENT file, it will return the next one
-//return:  FT_DIR or FT_FILE: use getLFN(char buf[MAX_TGDSFILENAME_LENGTH+1]); to receive full first file
-//			or FT_NONE if invalid file
+//return:  FT_DIR or FT_FILE or FT_NONE if invalid file
 int getNextFile(char * path){
 	int fType = FT_NONE;	//invalid. Should not happen 
 	struct FileClass * fileInst = getFileClassFromList(CurrentFileDirEntry);
@@ -900,17 +880,13 @@ int getNextFile(char * path){
 			//dir
 			case(FT_DIR):{
 				LastDirEntry=CurrentFileDirEntry;
-				char *  FullPathStr = fileInst->fd_namefullPath;
-				setLFN((char*)FullPathStr);		//update last full path access
-				getLFN((char*)path);			//update source path				
+				readFileNameFromFileClassIndex((char*)path, fileInst);	//update source path
 			}
 			break;
 			//file
 			case(FT_FILE):{
 				LastFileEntry=CurrentFileDirEntry;
-				char *  FullPathStr = fileInst->fd_namefullPath;
-				setLFN((char*)FullPathStr);		//update last full path access
-				getLFN((char*)path);			//update source path
+				readFileNameFromFileClassIndex((char*)path, fileInst);	//update source path
 			}
 			break;
 		}	

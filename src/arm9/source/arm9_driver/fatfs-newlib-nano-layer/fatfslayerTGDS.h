@@ -121,8 +121,6 @@ extern "C" {
 
 // Function prototypes 
 extern FATFS dldiFs;
-extern char lfnName[MAX_TGDSFILENAME_LENGTH+1];
-extern struct fd fdCur;
 extern bool FS_InitStatus;
 
 ////////////////////////////////////////////////////////////////////////////USER CODE START/////////////////////////////////////////////////////////////////////////////////////
@@ -168,8 +166,7 @@ extern int 	FAT_FindFirstFile(char* filename);
 extern int 	FAT_FindNextFile(char* filename);
 extern u8 	FAT_GetFileAttributes(void);
 extern u8 FAT_SetFileAttributes(const char* filename, u8 attributes, u8 mask);
-extern bool getLFN(char* filename);
-extern bool setLFN(char* filename);
+extern bool readFileNameFromFileClassIndex(char* filename_out, struct FileClass * FileClassInst);
 extern bool FAT_GetAlias(char* alias);
 extern void FAT_preserveVars();
 extern void FAT_restoreVars();
