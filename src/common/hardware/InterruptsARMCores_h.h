@@ -44,7 +44,8 @@ extern __attribute__((weak))	void Timer0handlerUser();
 extern __attribute__((weak))	void Timer1handlerUser();
 extern __attribute__((weak))	void Timer2handlerUser();
 extern __attribute__((weak))	void Timer3handlerUser();
-extern __attribute__((weak))	void ScreenlidhandlerUser();
+extern __attribute__((weak))	void screenLidHasOpenedhandlerUser();
+extern __attribute__((weak))	void screenLidHasClosedhandlerUser();
 extern __attribute__((weak))	void IpcSynchandlerUser();
 
 

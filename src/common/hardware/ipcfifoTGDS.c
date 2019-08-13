@@ -196,6 +196,9 @@ void HandleFifoNotEmpty(){
 			}
 			break;
 			
+			
+			
+			
 			//ARM7 command handler
 			#ifdef ARM7
 			case((uint32)FIFO_POWERCNT_ON):{
@@ -249,12 +252,17 @@ void HandleFifoNotEmpty(){
 				}
 			}
 			break;
-			//IRQ_SCREENLID signal from ARM7
-			case((uint32)FIFO_IRQ_SCREENLID_SIGNAL):{
-				ScreenlidhandlerUser();
+			//LID signaling open (ARM7 is hw triggered, but here, ARM9 is soft-triggered)
+			case((uint32)FIFO_IRQ_LIDHASOPENED_SIGNAL):{
+				screenLidHasOpenedhandlerUser();
+			}
+			break;
+			case((uint32)FIFO_IRQ_LIDHASCLOSED_SIGNAL):{
+				screenLidHasClosedhandlerUser();
 			}
 			break;
 			#endif
+			
 		}
 		HandleFifoNotEmptyWeakRef(data0,data1);
 	}

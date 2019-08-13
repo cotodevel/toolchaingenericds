@@ -114,8 +114,8 @@ void NDS_IRQHandler(){
 		
 	}
 	if(handledIRQ & IRQ_SCREENLID){
-		SendFIFOWords(FIFO_IRQ_SCREENLID_SIGNAL, 0);
-		ScreenlidhandlerUser();
+		SendFIFOWords(FIFO_IRQ_LIDHASOPENED_SIGNAL, 0);
+		screenLidHasOpenedhandlerUser();
 	}
 	#endif
 	REG_IF = handledIRQ;
