@@ -67,7 +67,6 @@ struct dsnwifisrvStr dswifiSrv;
 volatile 	uint8 data[4096];			//receiver frame, data + frameheader is recv TX'd frame nfdata[128]. Used by NIFI Mode
 volatile 	uint8 nfdata[128]			= {0xB2, 0xD1, (uint8)CRC_OK_SAYS_HOST, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};	//sender frame, recv as data[4096], see above. all valid frames have CRC_OK_SAYS_HOST sent.
 
-__attribute__((section(".itcm")))
 void Handler(int packetID, int readlength){
 	switch(getMULTIMode()){
 		case (dswifi_localnifimode):{
@@ -103,7 +102,6 @@ sint8 server_ip[MAX_TGDSFILENAME_LENGTH+1]; //(sint8*)"192.168.43.220";
 //SOCK_STREAM = TCP / SOCK_DGRAM = UDP
 
 //true == sends and frees the queued frame / false == didn't send, no frame
-__attribute__((section(".itcm")))
 bool sendDSWNIFIFame(struct frameBlock * frameInst){
 	uint8 * databuf_src = 	frameInst->framebuffer;
 	sint32 sizetoSend 		= 	frameInst->frameSize;
@@ -135,7 +133,6 @@ struct frameBlock FrameRecvBlock;	//used by the user receiver process, can be NU
 
 //reads raw packet (and raw read size) and defines if valid frame or not. 
 //must be called from either localnifi handler or udp nifi/wifi on-receive-packet handler
-__attribute__((section(".itcm")))
 struct frameBlock * receiveDSWNIFIFrame(uint8 * databuf_src, int frameSizeRecv){
 	struct frameBlock * frameRecvInst =  NULL;
 	if(databuf_src != NULL){
@@ -238,33 +235,27 @@ bool switch_dswnifi_mode(sint32 mode){
 	return true;
 }
 
-__attribute__((section(".itcm")))
 void setMULTIMode(sint32 flag){
 	dswifiSrv.dsnwifisrv_mode = (sint32)flag;
 }
 
-__attribute__((section(".itcm")))
 sint32 getMULTIMode(){
 	return (sint32)dswifiSrv.dsnwifisrv_mode;
 }
 
-__attribute__((section(".itcm")))
 bool getWIFISetup(){
 	return (bool)dswifiSrv.dswifi_setup;
 }
 
-__attribute__((section(".itcm")))
 void setWIFISetup(bool flag){
 	dswifiSrv.dswifi_setup = (bool)flag;
 }
 
 
-__attribute__((section(".itcm")))
 void setConnectionStatus(sint32 flag){
 	dswifiSrv.connectionStatus = (sint32)flag;
 }
 
-__attribute__((section(".itcm")))
 sint32 getConnectionStatus(){
 	return (sint32)dswifiSrv.connectionStatus;
 }
@@ -278,7 +269,6 @@ sint32 LastDSWnifiMode = dswifi_idlemode;
 //DSWNifi Daemon: Performs connect, execute and disconnect phases of a local/udp session between DS's (for now it's 2 DS)
 //ret: dswifi_idlemode (not connected) / dswifi_udpnifimode (UDP NIFI) / dswifi_localnifimode (LOCAL NIFI)
 
-__attribute__((section(".itcm")))
 sint32 doMULTIDaemonStage1(){
 	sint32 DSWnifiConnectionStatus =	getConnectionStatus();
 	if(DSWnifiConnectionStatus == proc_idle){
@@ -576,7 +566,6 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 }
 
 // datalen = size of packet from beginning of 802.11 header to end, but not including CRC.
-__attribute__((section(".itcm")))
 int Wifi_RawTxFrame_NIFI(sint32 datalen, uint16 rate, uint16 * data) {
 	int base,framelen, hdrlen, writelen;
 	int copytotal, copyexpect;
@@ -660,7 +649,6 @@ int Wifi_RawTxFrame_NIFI(sint32 datalen, uint16 rate, uint16 * data) {
 	return 0;
 }
 
-__attribute__((section(".itcm")))
 int Wifi_RawTxFrame_WIFI(sint32 datalen, uint8 * data) {
 	switch(dswifiSrv.dsnwifisrv_stat){	//sender phase: only send packets if we are in UDP DSWNifi mode
 		case(ds_netplay_host):case(ds_netplay_guest):{
