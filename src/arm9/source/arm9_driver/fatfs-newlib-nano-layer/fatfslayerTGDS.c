@@ -804,8 +804,7 @@ bool readFileNameFromFileClassIndex(char* filename_out, struct FileClass * FileC
 		return false;
 	}
 	char *  FullPathStr = FileClassInst->fd_namefullPath;
-	strncpy(filename_out, FullPathStr, (MAX_TGDSFILENAME_LENGTH+1) - 1);
-	filename_out[(MAX_TGDSFILENAME_LENGTH+1) - 1] = '\0';
+	strcpy(filename_out, FullPathStr);
 	return true;
 }
 int getFirstFile(char * path){
