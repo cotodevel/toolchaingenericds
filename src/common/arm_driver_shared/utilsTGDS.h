@@ -44,23 +44,7 @@ USA
 
 #define toolchain_generic_version ((char*)"1.5");
 
-//Method Export
-#define PLAINTEXT_METHOD_SEPARATOR	(uint32)(0xfedcba98)	//not valid ARM function
-struct METHOD_DESCRIPTOR{
-	uint32 * cback_address;
-	int cback_size;
-	char methodname[MAX_TGDSFILENAME_LENGTH+1];
-};
-		
-//Version Struct
-#define PLAINTEXT_VERSION_SEPARATOR	(sint8*)("-")	//sint8 * is char *
-struct VERSION_DESCRIPTOR {
-	char app_version[MAX_TGDSFILENAME_LENGTH+1];	//"0.6a-mm/dd/yyyy" //generated when parsing config file, section [Version]
-	char framework_version[MAX_TGDSFILENAME_LENGTH+1];	//"0.6a-mm/dd/yyyy" //generated when parsing config file, section [Version]
-};
-
 #endif
-
 
 //splitCustom logic
 typedef void(*splitCustom_fn)(const char *, size_t, char * ,int indexToLeftOut, char * delim);
@@ -77,27 +61,6 @@ extern "C"{
 extern size_t ucs2tombs(uint8* dst, const unsigned short* src, size_t len);
 
 #ifdef ARM9
-//reserved for project appVersion
-extern volatile char app_version_static[MAX_TGDSFILENAME_LENGTH+1];
-
-//METHOD_HANDLERS
-extern struct METHOD_DESCRIPTOR Methods[8];
-extern struct METHOD_DESCRIPTOR * callback_append_signature(uint32 * func_addr, uint32 * func_addr_end, char * methodname,struct METHOD_DESCRIPTOR * method_inst);
-extern sint32 cback_build();
-extern void cback_build_end();
-extern sint32 callback_export_buffer(struct METHOD_DESCRIPTOR * method_inst, uint8 * buf_out);
-extern sint32 callback_export_file(char * filename,struct METHOD_DESCRIPTOR * method_inst);
-
-//VERSION_HANDLERS
-extern struct VERSION_DESCRIPTOR Version[1];
-
-//Apps should update this at bootup
-extern sint32 addAppVersiontoCompiledCode(struct VERSION_DESCRIPTOR * versionInst,char * appVersion,int appVersionCharsize);
-
-//Framework sets this by default
-extern sint32 updateVersionfromCompiledCode(struct VERSION_DESCRIPTOR * versionInst);
-extern sint32 updateAssemblyParamsConfig(struct VERSION_DESCRIPTOR * versionInst);
-extern sint32 glueARMHandlerConfig(struct VERSION_DESCRIPTOR * versionInst,struct METHOD_DESCRIPTOR * method_inst);
 
 //misc
 extern int	FS_loadFile(sint8 *filename, sint8 *buf, int size);
@@ -123,7 +86,6 @@ extern int indexParse;
 extern void buildPath(const char *str, size_t len, char * outBuf, int indexToLeftOut, char * delim);
 extern int getLastDirFromPath(char * stream, char * haystack, char * outBuf);
 extern int str_split(char * stream, char * haystack, char * outBuf);
-
 extern int inet_pton(int af, const char *src, void *dst);
 
 #endif
