@@ -86,7 +86,7 @@ extern void setupCustomExceptionHandler(uint32 * Handler);
 extern uint32 CustomHandler;
 extern void CustomDebugException();
 
-extern int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list list);
+extern int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list args);
 extern void printfCoords(int x, int y, const char *format, ...);
 
 

@@ -89,8 +89,16 @@ void printfCoords(int x, int y, const char *format, ...){
 }
 #endif
 
-int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list list){
+int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list args){
+	#ifdef ARM7
 	return 0;
+	#endif
+	
+	#ifdef ARM9
+	char * stringBuf = (char*)&ConsolePrintfBuf[0];
+	vsnprintf ((sint8*)stringBuf, (int)sizeof(ConsolePrintfBuf), fmt, args);
+	return fputs (stringBuf, fp);
+	#endif
 }
 
 #include "InterruptsARMCores_h.h"
