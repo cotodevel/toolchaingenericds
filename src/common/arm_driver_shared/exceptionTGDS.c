@@ -27,7 +27,6 @@ USA
 #include <_ansi.h>
 #include <reent.h>
 
-
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -250,7 +249,8 @@ void exception_handler(uint32 arg){
 					//clrscr();
 					//Show IP and port here
 					printf("[Connect to GDB]:");
-					printf("Port:%d GDB IP:%s",remotePort,(char*)print_ip((uint32)Wifi_GetIP()));
+					char IP[16];
+					printf("Port:%d GDB IP:%s", remotePort, print_ip((uint32)Wifi_GetIP(), IP));
 					remoteInit();
 				}
 				else{
@@ -264,7 +264,8 @@ void exception_handler(uint32 arg){
 					//clrscr();
 					//Show IP and port here
 					printf("[Re-Connect to GDB]:So far:%d time(s)",reconnectCount);
-					printf("Port:%d GDB IP:%s",remotePort,(char*)print_ip((uint32)Wifi_GetIP()));
+					char IP[16];
+					printf("Port:%d GDB IP:%s",remotePort, print_ip((uint32)Wifi_GetIP(), IP) );
 					remoteInit();
 				}
 			}

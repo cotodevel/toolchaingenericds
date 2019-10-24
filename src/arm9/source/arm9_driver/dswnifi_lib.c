@@ -394,7 +394,8 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 							int k = 0;
 							for(k = 0; k < 4; k++){
 								char outgoingbuf[frameDSsize] = {0};
-								sprintf(outgoingbuf,"dsnotaware-NIFINintendoDS-%s-",(char*)print_ip((uint32)Wifi_GetIP()));
+								char IP[16];
+								sprintf(outgoingbuf,"dsnotaware-NIFINintendoDS-%s-",print_ip((uint32)Wifi_GetIP(), IP));
 								sendto(dswifiSrv.client_http_handler_context.socket_id__multi_notconnected,outgoingbuf,strlen(outgoingbuf),0,(struct sockaddr *)&dswifiSrv.client_http_handler_context.server_addr,sizeof(struct sockaddr_in));
 								swiDelay(8888);
 							}
@@ -489,7 +490,8 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 								sprintf(status,"guest");
 							}
 							char buf2[frameDSsize] = {0};
-							sprintf(buf2,"dsaware-%s-bindOK-%d-%s-",status,LISTENER_PORT,(char*)print_ip((uint32)Wifi_GetIP()));
+							char IP[16];
+							sprintf(buf2,"dsaware-%s-bindOK-%d-%s-", status, LISTENER_PORT, print_ip((uint32)Wifi_GetIP(), IP));
 							sendto(dswifiSrv.client_http_handler_context.socket_id__multi_notconnected,buf2,sizeof(buf2),0,(struct sockaddr *)&dswifiSrv.client_http_handler_context.server_addr,sizeof(struct sockaddr_in));
 							sentReq = true;	//acknowledge DS send
 						}

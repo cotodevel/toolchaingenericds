@@ -63,14 +63,13 @@ extern size_t ucs2tombs(uint8* dst, const unsigned short* src, size_t len);
 #ifdef ARM9
 
 //misc
-extern int	FS_loadFile(sint8 *filename, sint8 *buf, int size);
-extern int	FS_saveFile(sint8 *filename, sint8 *buf, int size,bool force_file_creation);
-extern int	FS_getFileSize(sint8 *filename);
+extern int		FS_loadFile(sint8 *filename, sint8 *buf, int size);
+extern int		FS_saveFile(sint8 *filename, sint8 *buf, int size,bool force_file_creation);
+extern int		FS_getFileSize(sint8 *filename);
 extern int		FS_extram_init();
 extern void		FS_lock();
 extern void		FS_unlock();
-extern sint8 ip_decimal[0x10];
-extern sint8 * print_ip(uint32 ip);
+extern char *	print_ip(uint32 ip, char * bufOut);
 
 //FileSystem utils
 extern sint8 	*_FS_getFileExtension(sint8 *filename);
@@ -82,7 +81,6 @@ extern sint8	**FS_getDirectoryList(sint8 *path, sint8 *mask, int *cnt);
 extern char * outSplitBuf[TOP_ITEMS_SPLIT][MAX_TGDSFILENAME_LENGTH+1];
 extern int count_substr(const char *str, const char* substr, bool overlap);
 extern void splitCustom(const char *str, char sep, splitCustom_fn fun, char * outBuf, int indexToLeftOut);
-extern int indexParse;
 extern void buildPath(const char *str, size_t len, char * outBuf, int indexToLeftOut, char * delim);
 extern int getLastDirFromPath(char * stream, char * haystack, char * outBuf);
 extern int str_split(char * stream, char * haystack, char * outBuf);

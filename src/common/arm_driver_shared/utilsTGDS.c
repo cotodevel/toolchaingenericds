@@ -146,48 +146,40 @@ int	FS_loadFile(sint8 *filename, sint8 *buf, int size)
 }
 
 //force_file_creation == true: create a savefile regardless. false otherwise
-int	FS_saveFile(sint8 *filename, sint8 *buf, int size,bool force_file_creation)
-{
+//returns: written data size
+int	FS_saveFile(sint8 *filename, sint8 *buf, int size, bool force_file_creation){
 	FILE * f;
-	volatile sint8 var[16];
-	
+	char var[16];
+	int retWritten = -1;
 	if(force_file_creation == true){
-		sprintf((sint8*)var,"%s","w+");
+		sprintf(var,"%s","w+");
 	}
 	else{
-		sprintf((sint8*)var,"%s","w");
+		sprintf(var,"%s","w");
 	}
-	
-	if((f = fopen(filename, (sint8*)var)) == NULL)
-	{
-		return -1;
+	if( (f = fopen(filename, (sint8*)var)) != NULL){
+		retWritten = fwrite(buf, 1, size, f);
+		fclose(f);
   	}
-	
-	fwrite(buf, 1, size, f);	//old: fwrite(buf, 1, size, f);
-	fclose(f);	//old: fclose(f);	
-	return 0;
+	return retWritten;
 }
 
-int	FS_getFileSize(sint8 *filename)
-{	
+int	FS_getFileSize(sint8 *filename){
 	FILE * f = fopen(filename, "r");
-	if (f == NULL)
-	{
-		FS_unlock();
-		return -1;
+	int size = -1;
+	if (f != NULL){
+		fseek(f, 0, SEEK_END);
+		size = ftell(f);
+		fseek(f, 0, SEEK_SET);
+		fclose(f);
 	}
-	fseek(f, 0, SEEK_END);
-	int size = ftell(f);
-	fseek(f, 0, SEEK_SET);
-	fclose(f);
-	
+	FS_unlock();
 	return size;
 }
 
 int setSoundPower(int flags){
 	return 0;
 }
-
 
 void	FS_lock()
 {
@@ -199,25 +191,18 @@ void	FS_unlock()
 	
 }
 
-
-sint8 ip_decimal[0x10];
-
-sint8 * print_ip(uint32 ip){
+//char * bufOut is returned so you can use the return function 
+char * print_ip(uint32 ip, char * bufOut){
     uint8 bytes[4];
     bytes[0] = ip & 0xFF;
     bytes[1] = (ip >> 8) & 0xFF;
     bytes[2] = (ip >> 16) & 0xFF;
     bytes[3] = (ip >> 24) & 0xFF;	
-    sprintf(ip_decimal,"%d.%d.%d.%d", bytes[0], bytes[1], bytes[2], bytes[3]);
-	return ip_decimal;
+    sprintf(bufOut,"%d.%d.%d.%d", bytes[0], bytes[1], bytes[2], bytes[3]);
+	return bufOut;
 }
 
-
-
-
 //FileSystem utils
-
-
 sint8 *_FS_getFileExtension(sint8 *filename){
 	static sint8 ext[4];
 	sint8	*ptr = filename;
@@ -242,8 +227,7 @@ sint8 *FS_getFileName(sint8 *filename){
 	static sint8 name[100];
 	sint8	*ptr = filename;
 	int		i = 0;
-	ptr = strrchr(ptr, '.');
-	
+	ptr = strrchr(ptr, '.');	
 	for (i = 0; i < ptr-filename; i++){
 		name[i] = filename[i]; 
 	}
@@ -252,10 +236,8 @@ sint8 *FS_getFileName(sint8 *filename){
 }
 
 int		FS_chdir(const sint8 *path){
-	int ret = fatfs_chdir(path);
-	return ret;
+	return fatfs_chdir(path);
 }
-
 
 //This is an example that uses opendir(); and readdir(); to iterate through dir/file contents.
 sint8	**FS_getDirectoryList(sint8 *path, sint8 *mask, int *cnt){
@@ -338,9 +320,9 @@ sint8	**FS_getDirectoryList(sint8 *path, sint8 *mask, int *cnt){
 	return list;
 }
 
-
 //taken from https://stackoverflow.com/questions/9052490/find-the-count-of-substring-in-string
 //modified by Coto
+static int indexParse = 0;
 int count_substr(const char *str, const char* substr, bool overlap) {
   if (strlen(substr) == 0) return -1; // forbid empty substr
 
@@ -364,7 +346,6 @@ void splitCustom(const char *str, char sep, splitCustom_fn fun, char * outBuf, i
     fun(str + start, stop - start, outBuf, indexToLeftOut, &sep);
 }
 
-int indexParse = 0;
 //this callback debugs every character separated from splitCustom()
 /*
 void print(const char *str, size_t len, char * outBuf, int indexToLeftOut, char * delim){
