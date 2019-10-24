@@ -50,21 +50,16 @@ USA
 #include "global_settings.h"
 #include "keypadTGDS.h"
 
+
 #ifdef ARM9
 #include "dswnifi_lib.h"
-#endif
-
-//File IO is stubbed even in buffered writes, so as a workaround I redirect the weak-symbol _vfprint_f (and that means good bye file stream operations on fatfs, thus we re-implement those by hand)
-//while allowing to use printf in DS
-int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list list){
-	#ifdef ARM7
-	return 0;
-	#endif
-	
-	#ifdef ARM9
+int printf(const char *fmt, ...){
 	char * stringBuf = (char*)&ConsolePrintfBuf[0];
+	va_list args;
+    va_start(args, fmt);
 	//merge any "..." special arguments where sint8 * ftm requires then store in output printf buffer
-	vsnprintf((sint8*)stringBuf, (int)sizeof(ConsolePrintfBuf), fmt, list);
+	vsnprintf ((sint8*)stringBuf, (int)sizeof(ConsolePrintfBuf), fmt, args);
+	va_end(args);
 	int stringSize = (int)strlen(stringBuf);
 	t_GUIZone * zoneInst = getDefaultZoneConsole();
 	bool readAndBlendFromVRAM = false;	//we discard current vram characters here so if we step over the same character in VRAM (through printfCoords), it is discarded.
@@ -72,12 +67,9 @@ int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list list){
 	GUI_drawText(zoneInst, 0, GUI.printfy, color, stringBuf, readAndBlendFromVRAM);
 	GUI.printfy += getFontHeightFromZone(zoneInst);	//skip to next line
 	return stringSize;
-	#endif
 }
 
-
-#ifdef ARM9
-//this needs a rework
+//same as printf but having X, Y coords (relative to char width and height)
 void printfCoords(int x, int y, const char *format, ...){
 	char * stringBuf = (char*)&ConsolePrintfBuf[0];
 	va_list args;
@@ -96,6 +88,10 @@ void printfCoords(int x, int y, const char *format, ...){
 	return stringSize;
 }
 #endif
+
+int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list list){
+	return 0;
+}
 
 #include "InterruptsARMCores_h.h"
 

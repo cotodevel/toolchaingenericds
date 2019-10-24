@@ -232,7 +232,7 @@ char processKeyboard(char* str, unsigned int max, unsigned int echo, int strYoff
 			{
 				if(echo==ECHO_ON)
 				{
-					//iprintf("\n");
+					//printf("\n");
 					g_col = 0;
 				}
 			} 
@@ -245,11 +245,11 @@ char processKeyboard(char* str, unsigned int max, unsigned int echo, int strYoff
 						if(g_col == 0)
 						{
 							g_col = 31;
-							//iprintf("\x1b[1A\x1b[31C \x1b[1D");	//todo
+							//printf("\x1b[1A\x1b[31C \x1b[1D");	//todo
 						}
 						else { 
 							g_col--; 
-							//iprintf("\x1b[1D \x1b[1D"); 			//todo
+							//printf("\x1b[1D \x1b[1D"); 			//todo
 						}
 					}
 					str[strlen(str)-1] = (char) NULL;
