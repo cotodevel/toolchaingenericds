@@ -73,15 +73,14 @@ export DIRS_ARM7_HEADER = source/	\
 #####################################################ARM9#####################################################
 
 export DIRS_ARM9_SRC = source/	\
-			source/arm9_driver/	\
-			source/arm9_driver/console/	\
-			source/arm9_driver/console/gui_draw/source/	\
-			source/arm9_driver/fatfs-newlib-nano-layer/	\
-			source/arm9_driver/fatfs-newlib-nano-layer/dldi/	\
-			source/arm9_driver/fatfs-newlib-nano-layer/fatfs/source/	\
-			source/arm9_driver/zlib/	\
-			source/arm9_driver/zip/	\
-			source/arm9_driver/keyboard/	\
+			source/console/	\
+			source/console/gui_draw/source/	\
+			source/fatfs-newlib-nano-layer/	\
+			source/fatfs-newlib-nano-layer/dldi/	\
+			source/fatfs-newlib-nano-layer/fatfs/source/	\
+			source/zlib/	\
+			source/zip/	\
+			source/keyboard/	\
 			source/dswifi_arm9/	\
 			source/wnifilib/	\
 			../include/	\
@@ -95,15 +94,14 @@ export DIRS_ARM9_SRC = source/	\
 			build/
 			
 export DIRS_ARM9_HEADER = source/	\
-			source/arm9_driver/	\
-			source/arm9_driver/console/	\
-			source/arm9_driver/console/gui_draw/include/	\
-			source/arm9_driver/fatfs-newlib-nano-layer/	\
-			source/arm9_driver/fatfs-newlib-nano-layer/dldi/	\
-			source/arm9_driver/fatfs-newlib-nano-layer/fatfs/source/	\
-			source/arm9_driver/zlib/	\
-			source/arm9_driver/zip/	\
-			source/arm9_driver/keyboard/	\
+			source/console/	\
+			source/console/gui_draw/include/	\
+			source/fatfs-newlib-nano-layer/	\
+			source/fatfs-newlib-nano-layer/dldi/	\
+			source/fatfs-newlib-nano-layer/fatfs/source/	\
+			source/zlib/	\
+			source/zip/	\
+			source/keyboard/	\
 			source/dswifi_arm9/	\
 			source/wnifilib/	\
 			../include/	\
