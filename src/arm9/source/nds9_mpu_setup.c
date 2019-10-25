@@ -27,7 +27,6 @@ USA
 //Use another for MPU settings : vectors @0xffff0000
 T_mpuSetting mpuSetting[2];
 
-
 uint32 EWRAMCached(uint32 address){
 	uint32 bottom_mem = (address & nds_ewram_mask);
 	return (uint32)(get_ewram_start() | bottom_mem);
@@ -38,10 +37,7 @@ uint32 EWRAMUncached(uint32 address){
 	return (uint32)(((uint32)get_ewram_start() | (uint32)get_ewram_size()) | bottom_mem);
 }
 
-
-//these functions allow to change the NDS system MPU settings as whole, preventing you to keep track of each custom MPU setting.
-// it is recomended that you use those functions for dealing with slower processes. For faster processes, just use the CP15 functions directly.
-
+//These functions allow to change the NDS system MPU settings as whole, preventing you to keep track of each custom MPU setting.
 void updateMPUSetting(T_mpuSetting * mpuSetting_inst){
 	
 	//Disable only DCACHE & ICACHE / mpu

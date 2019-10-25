@@ -47,26 +47,22 @@ export TARGET_LIBRARY_LIBNAME_9	=	l$(TARGET_LIBRARY_NAME_9)
 #####################################################ARM7#####################################################
 #the correct format is : ../include/sys/ otherwise recursive folders break in later bash scripts
 export DIRS_ARM7_SRC = source/	\
-			source/wireless/	\
+			source/dswifi_arm7/	\
 			../common/	\
-			../common/arm_driver_shared/	\
 			../common/dswifi/	\
 			../common/hardware/	\
-			../common/hardware/NotifierAPI/	\
+			../common/dswifi/netinet/	\
+			../common/dswifi/sys/	\
 			data/	\
 			build/
 			
 export DIRS_ARM7_HEADER = source/	\
-			source/wireless/	\
-			include/	\
-			../include/	\
-			../include/netinet/	\
-			../include/sys/	\
+			source/dswifi_arm7/	\
 			../common/	\
-			../common/arm_driver_shared/	\
 			../common/dswifi/	\
 			../common/hardware/	\
-			../common/hardware/NotifierAPI/	\
+			../common/dswifi/netinet/	\
+			../common/dswifi/sys/	\
 			data/	\
 			build/
 			
@@ -83,13 +79,11 @@ export DIRS_ARM9_SRC = source/	\
 			source/keyboard/	\
 			source/dswifi_arm9/	\
 			source/wnifilib/	\
-			../include/	\
-			../include/netinet/	\
-			../include/sys/	\
 			../common/	\
-			../common/arm_driver_shared/	\
 			../common/dswifi/	\
 			../common/hardware/	\
+			../common/dswifi/netinet/	\
+			../common/dswifi/sys/	\
 			data/	\
 			build/
 			
@@ -104,13 +98,11 @@ export DIRS_ARM9_HEADER = source/	\
 			source/keyboard/	\
 			source/dswifi_arm9/	\
 			source/wnifilib/	\
-			../include/	\
-			../include/netinet/	\
-			../include/sys/	\
 			../common/	\
-			../common/arm_driver_shared/	\
 			../common/dswifi/	\
 			../common/hardware/	\
+			../common/dswifi/netinet/	\
+			../common/dswifi/sys/	\
 			data/	\
 			build/
 			

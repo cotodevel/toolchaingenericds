@@ -29,17 +29,13 @@ USA
 #define VECTORS_0x00000000_MPU	0
 #define VECTORS_0xFFFF0000_MPU	1
 
-
 typedef struct s_regionSetting {
-	
 	//format: (Same as CP15Opcodes.S)
 	//addr = IO address
 	//PAGE_X = Region size in Page Size units to cover, starting addr
 	//(1<<0) & (region_enable_bit<<0) = bit setting for enable(1) or disable(0) such Region.
 	//example: ( PAGE_64M | addr | 1)
 	uint32 regionsettings;
-	
-
 }T_regionSetting;
 
 typedef struct s_mpuSetting {
@@ -49,20 +45,18 @@ typedef struct s_mpuSetting {
 	//http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0201d/I1033977.html <-- good explanation.
 	//Basically those regions are allowed to write-miss / write-back without causing external access (to whatever memory is connected to caches).
 	// If write-miss, data (changes) is buffered locally. If write-back happens the cache-line is marked as dirty ONLY (no external access), causing two scenarios:
-	//a) if a read happens, and ALSO causes a cache-hit, no external accesses happen. Speedups everything, literally.
-	//b) later, sooner or later, when a read cache-miss happens, before the old cache-line dirty is updated, a write-back happens.
-	//Basically: Access/Write external memory, ONLY when reads cause a cache-miss. Otherwise Writes are "cached".
+	//a) A read happens, and ALSO causes a cache-hit, no external accesses happen. Speeding up code.
+	//b) Otherwise, a read cache-miss will happen, a write-back happens, then the old cache-line dirty is updated.
+	//So: Access/Writes external memory, ONLY when reads cause a cache-miss. Otherwise Access/Writes are "cached".
 	
 	//DrainWrite buffer Opcode makes sure all writes buffered HAPPEN!
 	uint32 WriteBufferAvailabilityForRegions;
-	
-	
+		
 	uint32 DCacheAvailabilityForRegions;
 	uint32 ICacheAvailabilityForRegions;
 	
 	uint32 ITCMAccessForRegions;
 	uint32 DTCMAccessForRegions;
-	
 	
 }T_mpuSetting;
 
@@ -74,13 +68,10 @@ extern "C"{
 
 extern uint32 EWRAMUncached(uint32 address);
 extern uint32 EWRAMCached(uint32 address);
-
-
 //Each region listed.
 //Use one for MPU settings : vectors @0x00000000
 //Use another for MPU settings : vectors @0xffff0000 
 extern T_mpuSetting mpuSetting[2];
-
 
 extern void updateMPUSetting(T_mpuSetting * mpuSetting_inst);
 
@@ -107,7 +98,6 @@ extern void dma_inv_range(uint32 start,uint32  end);
 extern void dma_clean_range(uint32 start,uint32 end);
 extern void dma_flush_range(uint32 start,uint32 end);
 extern void dma_unmap_area(uint32 start,sint32 size,uint32 dir);
-
 
 //format:
 //addr = IO address
@@ -144,7 +134,6 @@ extern void DTCMEnable();
 extern void ITCMDisable();
 extern void DTCMDisable();
 
-
 //C1,C0,0 - Control Register (R/W, or R=Fixed)
 //  0  MMU/PU Enable         (0=Disable, 1=Enable) (Fixed 0 if none)
 //  1  Alignment Fault Check (0=Disable, 1=Enable) (Fixed 0/1 if none/always on)
@@ -170,8 +159,6 @@ extern void DTCMDisable();
   
 extern void CP15ControlRegisterEnable(uint32 ControlRegisterBits); //extern void cpu_SetCP15Cnt(uint32 v); 
 extern void CP15ControlRegisterDisable(uint32 ControlRegisterBits); //extern uint32 cpu_GetCP15Cnt(); 
-
-
 extern void DrainWriteBuffer();
 
 #ifdef EXCEPTION_VECTORS_0xffff0000
@@ -181,7 +168,6 @@ extern void set0xFFFF0000FastMPUSettings();
 
 extern void setitcm();
 extern void setdtcm();
-
 
 //todo
 
