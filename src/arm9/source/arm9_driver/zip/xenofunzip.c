@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include "zlib.h"
 #include "posixHandleTGDS.h"	//add Toolchain Generic DS Filesystem Support
-#include "memoryHandleTGDS.h"	//malloc support
+#include "utilsTGDS.h"
 #include "global_settings.h"
 
 //zalloc / zfree (zlib) default function prototypes look like:

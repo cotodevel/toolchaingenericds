@@ -45,7 +45,6 @@ USA
 #include "wifi_shared.h"
 #include "sgIP_Config.h"
 #include "utilsTGDS.h"
-#include "memoryHandleTGDS.h"
 
 #include "netdb.h"
 #include <ctype.h>

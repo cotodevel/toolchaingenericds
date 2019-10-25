@@ -20,7 +20,7 @@ USA
 
 #include "typedefsTGDS.h"
 #include "nds_cp15_misc.h"
-#include "memoryHandleTGDS.h"
+#include "utilsTGDS.h"
 
 //Each region listed.
 //Use one for MPU settings : vectors @0x00000000

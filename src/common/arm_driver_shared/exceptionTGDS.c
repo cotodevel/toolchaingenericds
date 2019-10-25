@@ -18,89 +18,30 @@ USA
 
 */
 
-#include <stdio.h>
-#include <string.h>
-#include <stdarg.h>
-#include <ctype.h>
-#include <stdlib.h>
+#include "dsregs.h"
+#include "dsregs_asm.h"
+#include "typedefsTGDS.h"
 
+#include <ctype.h>
 #include <_ansi.h>
 #include <reent.h>
-
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <time.h>
-
-#include "dsregs.h"
-#include "typedefsTGDS.h"
 #include "dmaTGDS.h"
 #include "biosTGDS.h"
-
-#include "dsregs.h"
-#include "dsregs_asm.h"
 #include "exceptionTGDS.h"
 #include "ipcfifoTGDS.h"
-
 #include "InterruptsARMCores_h.h"
-#include "memoryHandleTGDS.h"
 #include "global_settings.h"
 #include "keypadTGDS.h"
 
-
 #ifdef ARM9
 #include "dswnifi_lib.h"
-int printf(const char *fmt, ...){
-	char * stringBuf = (char*)&ConsolePrintfBuf[0];
-	va_list args;
-    va_start(args, fmt);
-	//merge any "..." special arguments where sint8 * ftm requires then store in output printf buffer
-	vsnprintf ((sint8*)stringBuf, (int)sizeof(ConsolePrintfBuf), fmt, args);
-	va_end(args);
-	int stringSize = (int)strlen(stringBuf);
-	t_GUIZone * zoneInst = getDefaultZoneConsole();
-	bool readAndBlendFromVRAM = false;	//we discard current vram characters here so if we step over the same character in VRAM (through printfCoords), it is discarded.
-	int color = 0xff;	//white
-	GUI_drawText(zoneInst, 0, GUI.printfy, color, stringBuf, readAndBlendFromVRAM);
-	GUI.printfy += getFontHeightFromZone(zoneInst);	//skip to next line
-	return stringSize;
-}
-
-//same as printf but having X, Y coords (relative to char width and height)
-void printfCoords(int x, int y, const char *format, ...){
-	char * stringBuf = (char*)&ConsolePrintfBuf[0];
-	va_list args;
-    va_start(args, format);
-	//merge any "..." special arguments where sint8 * ftm requires then store in output printf buffer
-	vsnprintf ((sint8*)stringBuf, (int)sizeof(ConsolePrintfBuf), format, args);
-	va_end(args);
-	int stringSize = (int)strlen(stringBuf);
-	t_GUIZone * zoneInst = getDefaultZoneConsole();
-	GUI.printfy = y * getFontHeightFromZone(zoneInst);
-	x = x * zoneInst->font->height;
-	bool readAndBlendFromVRAM = false;	//we discard current vram characters here so if we step over the same character in VRAM (through printfCoords), it is discarded.
-	int color = 0xff;	//white
-	GUI_drawText(zoneInst, x, GUI.printfy, color, stringBuf, readAndBlendFromVRAM);
-	GUI.printfy += getFontHeightFromZone(zoneInst);
-	return stringSize;
-}
 #endif
-
-int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list args){
-	#ifdef ARM7
-	return 0;
-	#endif
-	
-	#ifdef ARM9
-	char * stringBuf = (char*)&ConsolePrintfBuf[0];
-	vsnprintf ((sint8*)stringBuf, (int)sizeof(ConsolePrintfBuf), fmt, args);
-	return fputs (stringBuf, fp);
-	#endif
-}
-
-#include "InterruptsARMCores_h.h"
 
 void setupDefaultExceptionHandler(){
 	
@@ -140,10 +81,7 @@ void setupCustomExceptionHandler(uint32 * Handler){
 
 //Exception Sources
 
-//data abort
-
-
-
+//prefetch/data abort
 uint32 exceptionArmRegs[0x20];
 
 //crt0 wrong exit

@@ -20,7 +20,7 @@ USA
 
 #include "ipcfifoTGDS.h"
 #include "InterruptsARMCores_h.h"
-#include "memoryHandleTGDS.h"
+#include "utilsTGDS.h"
 
 #ifdef ARM7
 #include <string.h>

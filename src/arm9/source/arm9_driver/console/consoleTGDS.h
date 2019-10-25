@@ -24,7 +24,7 @@ USA
 #include "typedefsTGDS.h"
 #include "dsregs.h"
 #include <stdbool.h>
-#include "memoryHandleTGDS.h"
+#include "utilsTGDS.h"
 #include "fatfslayerTGDS.h"
 #include "ipcfifoTGDS.h"
 #include "videoTGDS.h"

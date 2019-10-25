@@ -18,7 +18,7 @@ USA
 
 */
 
-#include "memoryHandleTGDS.h"
+#include "utilsTGDS.h"
 #include "dsregs.h"
 #include "dsregs_asm.h"
 #include "nds_cp15_misc.h"

@@ -68,9 +68,6 @@ USA
 extern "C" {
 #endif
 
-#ifdef ARM7
-extern void printf7(char *fmt, ...);
-#endif
 
 extern void setupDefaultExceptionHandler();
 
@@ -85,10 +82,6 @@ extern void DebugException();
 extern void setupCustomExceptionHandler(uint32 * Handler);
 extern uint32 CustomHandler;
 extern void CustomDebugException();
-
-extern int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list args);
-extern void printfCoords(int x, int y, const char *format, ...);
-
 
 extern void LeaveExceptionMode();
 

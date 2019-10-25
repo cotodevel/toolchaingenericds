@@ -21,10 +21,17 @@ USA
 //Coto: this was rewritten by me so it could fit the following setup:
 //The overriden stock POSIX calls are specifically targeted to newlib libc nano ARM Toolchain
 
-
 #ifdef ARM9
+
+#include <stdio.h>
+#include <string.h>
+#include <stdarg.h>
+#include <ctype.h>
+#include <stdlib.h>
+#include <_ansi.h>
+#include <reent.h>
+
 #include "posixHandleTGDS.h"
-#include "memoryHandleTGDS.h"
 #include "dsregs_asm.h"
 #include "devoptab_devices.h"
 #include "errno.h"
@@ -36,14 +43,48 @@ USA
 #include "fatfslayerTGDS.h"
 #include "utilsTGDS.h"
 #include "limitsTGDS.h"
+#include "dswnifi_lib.h"
 
-#include <stdio.h>
-#include <string.h>
-#include <stdarg.h>
-#include <ctype.h>
-#include <stdlib.h>
-#include <_ansi.h>
-#include <reent.h>
+int printf(const char *fmt, ...){
+	char * stringBuf = (char*)&ConsolePrintfBuf[0];
+	va_list args;
+    va_start(args, fmt);
+	//merge any "..." special arguments where sint8 * ftm requires then store in output printf buffer
+	vsnprintf ((sint8*)stringBuf, (int)sizeof(ConsolePrintfBuf), fmt, args);
+	va_end(args);
+	int stringSize = (int)strlen(stringBuf);
+	t_GUIZone * zoneInst = getDefaultZoneConsole();
+	bool readAndBlendFromVRAM = false;	//we discard current vram characters here so if we step over the same character in VRAM (through printfCoords), it is discarded.
+	int color = 0xff;	//white
+	GUI_drawText(zoneInst, 0, GUI.printfy, color, stringBuf, readAndBlendFromVRAM);
+	GUI.printfy += getFontHeightFromZone(zoneInst);	//skip to next line
+	return stringSize;
+}
+
+//same as printf but having X, Y coords (relative to char width and height)
+void printfCoords(int x, int y, const char *format, ...){
+	char * stringBuf = (char*)&ConsolePrintfBuf[0];
+	va_list args;
+    va_start(args, format);
+	//merge any "..." special arguments where sint8 * ftm requires then store in output printf buffer
+	vsnprintf ((sint8*)stringBuf, (int)sizeof(ConsolePrintfBuf), format, args);
+	va_end(args);
+	int stringSize = (int)strlen(stringBuf);
+	t_GUIZone * zoneInst = getDefaultZoneConsole();
+	GUI.printfy = y * getFontHeightFromZone(zoneInst);
+	x = x * zoneInst->font->height;
+	bool readAndBlendFromVRAM = false;	//we discard current vram characters here so if we step over the same character in VRAM (through printfCoords), it is discarded.
+	int color = 0xff;	//white
+	GUI_drawText(zoneInst, x, GUI.printfy, color, stringBuf, readAndBlendFromVRAM);
+	GUI.printfy += getFontHeightFromZone(zoneInst);
+	return stringSize;
+}
+
+int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list args){
+	char * stringBuf = (char*)&ConsolePrintfBuf[0];
+	vsnprintf ((sint8*)stringBuf, (int)sizeof(ConsolePrintfBuf), fmt, args);
+	return fputs (stringBuf, fp);
+}
 
 //Notes:
 //	- 	Before you get confused, the layer order is: POSIX file operations-> newlib POSIX fd assign-> devoptab filesystem -> fatfs_layer (n file descriptors for each file op) -> fatfs driver -> dldi.
@@ -60,8 +101,7 @@ int fork(){
 //C++ requires this
 void _exit (int status){
 	
-	//todo: add some exception handlers to notify ARM cores program has ran
-	
+	//todo: add some exception handlers to notify ARM cores program has ran	
 	while(1);
 }
 
@@ -73,7 +113,6 @@ pid_t _getpid (void){
 	return 0;	//shall always return valid (0)
 }
 //C++ requires this end
-
 
 
 //read (get struct FD index from FILE * handle)
@@ -119,7 +158,6 @@ int _open_r ( struct _reent *ptr, const sint8 *file, int flags, int mode ){
 	return -1;
 }
 
-
 //POSIX Logic: hook devoptab descriptor into devoptab functions
 int _close (int fd){
 	return _close_r(NULL, fd);
@@ -128,6 +166,7 @@ int _close (int fd){
 int close (int fd){
 	return _close(fd);
 }
+
 //allocates a new struct fd index with either DIR or FIL structure allocated
 //not overriden, we force the call from fd_close
 int _close_r ( struct _reent *ptr, int fd ){
@@ -139,7 +178,6 @@ int _close_r ( struct _reent *ptr, int fd ){
 	return -1;
 }
 
-
 //isatty: Query whether output stream is a terminal.
 int _isatty(int file){
 	return  1;
@@ -150,13 +188,10 @@ int _end(int file)
 	return  1;
 }
 
-
-
 //	-	All below high level posix calls for fatfs access must use the function getfatfsPath("file_or_dir_path") for file (dldi sd) handling
 _off_t _lseek_r(struct _reent *ptr,int fd, _off_t offset, int whence ){	//(FileDescriptor :struct fd index)
 	return fatfs_lseek(fd, offset, whence);	
 }
-
 
 int _link(const sint8 *path1, const sint8 *path2){
     return fatfs_link(path1, path2);
@@ -202,7 +237,6 @@ int _gettimeofday(struct timeval *tv, struct timezone *tz){
 	return 0;
 }
 
-
 mode_t umask(mode_t mask)
 {
   __set_errno (ENOSYS);
@@ -210,50 +244,9 @@ mode_t umask(mode_t mask)
 }
 
 int readlink(const char *path, char *buf, size_t bufsize){
-	
-	/*
-	//save TGDS FS context
-	char TGDSCurrentWorkingDirectorySaved[MAX_TGDSFILENAME_LENGTH+1];
-	strcpy (TGDSCurrentWorkingDirectorySaved, getTGDSCurrentWorkingDirectory());
-	int ctxCurrentFileDirEntry = CurrentFileDirEntry;	
-	int ctxLastFileEntry = LastFileEntry;
-	int ctxLastDirEntry = LastDirEntry;
-
-	char fname[MAX_TGDSFILENAME_LENGTH+1] = {0};
-	strcpy(fname, path);
-	int retf = FAT_FindFirstFile(fname);
-	while(retf != FT_NONE){
-		char * FilenameOut = NULL;
-		//directory?
-		if(retf == FT_DIR){
-			struct FileClass * fileClassInst = getFileClassFromList(LastDirEntry);
-			FilenameOut = (char*)&fileClassInst->fd_namefullPath[0];
-		}
-		//file?
-		else if(retf == FT_FILE){
-			FilenameOut = (char*)&fname[0];
-		}
-		
-		//do logic here
-		
-		
-		//more file/dir objects?
-		retf = FAT_FindNextFile(fname);
-	}
-	
-	//restore TGDS FS context
-	strcpy (getTGDSCurrentWorkingDirectory(),TGDSCurrentWorkingDirectorySaved);
-	buildFileClassListFromPath(getTGDSCurrentWorkingDirectory());
-	CurrentFileDirEntry = ctxCurrentFileDirEntry;	
-	LastFileEntry = ctxLastFileEntry;
-	LastDirEntry = ctxLastDirEntry;
-	
-	*/
-	
 	__set_errno(ENOSYS);
 	return -1;
 }
-
 
 int lstat(const char * path, struct stat *buf){
 	return fatfs_stat((const sint8 *)path,buf);
@@ -358,7 +351,6 @@ int fprintf_tgds(int fd, const char *format, ...){
 	va_end (arg);
 	return write_tgds((char*)printfbuf, 1, strlen((char*)printfbuf), fd);
 }
-
 
 int fgetc_tgds(int fd){
 	unsigned char ch;

@@ -44,7 +44,7 @@ USA
 #ifdef ARM9
 
 #include "ff.h"
-#include "memoryHandleTGDS.h"
+#include "utilsTGDS.h"
 #include "typedefsTGDS.h"
 #include "dsregs.h"
 
@@ -83,13 +83,16 @@ struct devoptab_t{
 extern "C"{
 #endif
 
-
 #ifdef ARM7
+extern void printf7(char *fmt, ...);
 #endif
 
 #ifdef ARM9
 extern int _unlink(const sint8 *path);
+extern void printfCoords(int x, int y, const char *format, ...);
 #endif
+
+extern int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list args);
 
 extern int fork();
 extern int isatty(int file);

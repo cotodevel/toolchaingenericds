@@ -19,7 +19,6 @@ USA
 */
 
 #include "initNDSTGDS.h"
-#include "memoryHandleTGDS.h"
 #include "utilsTGDS.h"
 #include "dsregs.h"
 #include "typedefsTGDS.h"
@@ -29,7 +28,6 @@ USA
 #include <string.h>
 #include "dmaTGDS.h"
 #include "timerTGDS.h"
-#include "memoryHandleTGDS.h"
 #include "spifwTGDS.h"
 #include "powerTGDS.h"
 #include "ipcfifoTGDS.h"

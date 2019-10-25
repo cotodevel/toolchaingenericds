@@ -25,7 +25,7 @@ SOFTWARE.
 ******************************************************************************/
 
 
-#include "memoryHandleTGDS.h"
+#include "utilsTGDS.h"
 #include "dsregs.h"
 #include "dsregs_asm.h"
 #include "typedefsTGDS.h"
