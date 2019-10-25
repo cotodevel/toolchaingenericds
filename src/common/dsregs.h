@@ -569,8 +569,6 @@ USA
 #endif
 //ARM7 END
 
-
-
 // End of file!
 #endif
 

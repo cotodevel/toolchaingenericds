@@ -69,17 +69,15 @@ void initHardware(void) {
 	//Library init code
 	
 	//Newlib init
-	//Stream Devices Init: see stream_devices.c for specific DS hardware IO driver access
+	//Stream Devices Init: see devoptab_devices.c
 	//setbuf(stdin, NULL);
-	setbuf(stdout, NULL);	//printf ability to direct DS Framebuffer
+	setbuf(stdout, NULL);	//iprintf directs to DS Framebuffer (printf already does that)
 	//setbuf(stderr, NULL);
 	
-	//set up all devoptabs but filesystem devoptab because we enable it later
 	initTGDSDevoptab();
-
+	
 	TGDSIPC->arm9startaddress = get_ewram_start();
 	TGDSIPC->arm9endaddress = (uint32)(get_ewram_start() + get_ewram_size());
-	
 	#endif
 	
 }

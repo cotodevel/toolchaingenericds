@@ -36,15 +36,6 @@ USA
 #include "dswnifi_lib.h"
 #endif
 
-
-//
-
-//linker to C proper memory layouts.
-
-//Shared:
-
-//these toggle the WRAM_CR register depending on linker settings
-
 uint32 get_arm7_start_address(){
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	return (uint32)TGDSIPC->arm7startaddress;
@@ -74,7 +65,6 @@ sint32 get_arm9_ext_size(){
 	return (sint32)((uint8*)(uint32*)get_arm9_end_address() - (sint32)(get_arm9_start_address()));
 }
 
-
 #ifdef ARM7
 uint32 get_iwram_start(){
 	return (uint32)(&_iwram_start);
@@ -90,12 +80,14 @@ uint32 get_iwram_end(){
 #endif
 
 //Physical Memory Start: [ARM7/9 bin start ~ ARM7/9 bin end, 4 bytes alignment, get_lma_libend() <---- ] ------------------------------------------------------------ get_lma_wramend()
+inline __attribute__((always_inline)) 
 uint32 get_lma_libend(){
 	u32 wram_start = (u32)&__lib__end__;
 	return (uint32)((wram_start + (4 - 1)) & -4);  // Round up to 4-byte boundary // linear memory top (start)
 }
 
 //Physical Memory Start: [ARM7/9 bin start ~ ARM7/9 bin end, 4 bytes alignment, get_lma_libend()] ------------------------------------------------------------ get_lma_wramend() <----
+inline __attribute__((always_inline)) 
 uint32 get_lma_wramend(){
 	#ifdef ARM7
 	extern uint32 sp_USR;	//the farthest stack from the end memory is our free memory (in ARM7, shared stacks)
@@ -109,26 +101,32 @@ uint32 get_lma_wramend(){
 }
 
 #ifdef ARM9
+inline __attribute__((always_inline)) 
 uint32 get_ewram_start(){
 	return (uint32)(&_ewram_start);
 }
 
+inline __attribute__((always_inline)) 
 sint32 get_ewram_size(){
 	return (sint32)((uint8*)(uint32*)get_lma_wramend() - (sint32)(&_ewram_start));
 }
 
+inline __attribute__((always_inline)) 
 uint32 get_itcm_start(){
 	return (uint32)(&_itcm_start);
 }
 
+inline __attribute__((always_inline)) 
 sint32 get_itcm_size(){
 	return (sint32)((uint8*)(uint32*)get_lma_wramend() - (sint32)(&_itcm_start));
 }
 
+inline __attribute__((always_inline)) 
 uint32 get_dtcm_start(){
 	return (uint32)(&_dtcm_start);
 }
 
+inline __attribute__((always_inline)) 
 sint32 get_dtcm_size(){
 	return (sint32)((uint8*)(uint32*)&_dtcm_end - (sint32)(&_dtcm_start));
 }
@@ -148,6 +146,7 @@ sint32 get_dtcm_size(){
 volatile char 		*heap_end = NULL;		/* Previous end of heap or 0 if none */
 volatile char        *prev_heap_end = NULL;
 
+inline __attribute__((always_inline)) 
 void * _sbrk (int  incr)
 {
 	if (heap_end == NULL) {
@@ -169,10 +168,12 @@ void * _sbrk (int  incr)
 
 }	/* _sbrk () */
 
+inline __attribute__((always_inline)) 
 void * _sbrk_r (struct _reent * reent, int size){
 	return _sbrk (size);
 }
 
+inline __attribute__((always_inline)) 
 void Write8bitAddrExtArm(uint32 address, uint8 value){
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->ipcmsg[0];
@@ -181,6 +182,7 @@ void Write8bitAddrExtArm(uint32 address, uint8 value){
 	SendFIFOWords(WRITE_EXTARM_8, (uint32)fifomsg);
 }
 
+inline __attribute__((always_inline)) 
 void Write16bitAddrExtArm(uint32 address, uint16 value){
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->ipcmsg[0];
@@ -189,6 +191,7 @@ void Write16bitAddrExtArm(uint32 address, uint16 value){
 	SendFIFOWords(WRITE_EXTARM_16, (uint32)fifomsg);
 }
 
+inline __attribute__((always_inline)) 
 void Write32bitAddrExtArm(uint32 address, uint32 value){
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->ipcmsg[0];
@@ -200,8 +203,8 @@ void Write32bitAddrExtArm(uint32 address, uint32 value){
 //NDS Memory Map (valid):
 //todo: detect valid maps according to MPU settings
 #ifdef ARM9
-__attribute__ ((hot))
 __attribute__((section(".itcm")))
+inline __attribute__((always_inline)) 
 bool isValidMap(uint32 addr){
 	if(
 		#ifdef ARM9
@@ -333,7 +336,6 @@ size_t ucs2tombs(uint8* dst, const unsigned short* src, size_t len) {
 #include "posixHandleTGDS.h"
 #include "fileHandleTGDS.h"
 
-
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
@@ -350,7 +352,6 @@ size_t ucs2tombs(uint8* dst, const unsigned short* src, size_t len) {
 #include <reent.h>
 #include <sys/lock.h>
 #include <fcntl.h>
-
 
 int	FS_loadFile(sint8 *filename, sint8 *buf, int size)
 {
@@ -658,7 +659,6 @@ int str_split(char * stream, char * haystack, char * outBuf){
     return indexToLeftOut;
 }
 
-
 /*
 * Copyright (C) 1996-2001  Internet Software Consortium.
 *
@@ -678,45 +678,9 @@ int str_split(char * stream, char * haystack, char * outBuf){
 
 #include "socket.h"
 
-
 #define NS_INT16SZ       2
 #define NS_INADDRSZ      4
 #define NS_IN6ADDRSZ    16
-
-/*
-* WARNING: Don't even consider trying to compile this on a system where
-* sizeof(int) < 4.  sizeof(int) > 4 is fine; all the world's not a VAX.
-*/
-
-static int inet_pton4(const char *src, unsigned char *dst);
-static int inet_pton6(const char *src, unsigned char *dst);
-
-/* int
-* isc_net_pton(af, src, dst)
-*      convert from presentation format (which usually means ASCII printable)
-*      to network format (which is usually some kind of binary format).
-* return:
-*      1 if the address was valid for the specified address family
-*      0 if the address wasn't valid (`dst' is untouched in this case)
-*      -1 if some other error occurred (`dst' is untouched in this case, too)
-* author:
-*      Paul Vixie, 1996.
-*/
-int inet_pton(int af, const char *src, void *dst)
-{
-	switch (af) {
-	case AF_INET:
-		return (inet_pton4(src, dst));
-	#ifdef INET6
-	case AF_INET6:
-		return (inet_pton6(src, dst));
-	#endif
-	default:
-		errno = EAFNOSUPPORT;
-	return (-1);
-}
-/* NOTREACHED */
-}
 
 /* int
 * inet_pton4(src, dst)
@@ -768,265 +732,28 @@ unsigned char *dst;
 }
 
 /* int
-* inet_pton6(src, dst)
-*      convert presentation level address to network order binary form.
+* isc_net_pton(af, src, dst)
+*      convert from presentation format (which usually means ASCII printable)
+*      to network format (which is usually some kind of binary format).
 * return:
-*      1 if `src' is a valid [RFC1884 2.2] address, else 0.
-* notice:
-*      (1) does not touch `dst' unless it's returning 1.
-*      (2) :: in a full address is silently ignored.
-* credit:
-*      inspired by Mark Andrews.
+*      1 if the address was valid for the specified address family
+*      0 if the address wasn't valid (`dst' is untouched in this case)
+*      -1 if some other error occurred (`dst' is untouched in this case, too)
 * author:
 *      Paul Vixie, 1996.
 */
-#ifdef INET6
-static int inet_pton6(const char *src, unsigned char *dst)
-{
-	static const char xdigits_l[] = "0123456789abcdef",
-	xdigits_u[] = "0123456789ABCDEF";
-	unsigned char tmp[NS_IN6ADDRSZ], *tp, *endp, *colonp;
-	const char *xdigits, *curtok;
-	int ch, saw_xdigit;
-	unsigned int val;
-
-	memset((tp = tmp), '\0', NS_IN6ADDRSZ);
-	endp = tp + NS_IN6ADDRSZ;
-	colonp = NULL;
-	/* Leading :: requires some special handling. */
-	if (*src == ':')
-		if (*++src != ':')
-			return (0);
-	
-	curtok = src;
-	saw_xdigit = 0;
-	val = 0;
-	while ((ch = *src++) != '\0') {
-		const char *pch;
-		if ((pch = strchr((xdigits = xdigits_l), ch)) == NULL)
-			pch = strchr((xdigits = xdigits_u), ch);
-		if (pch != NULL) {
-			val <<= 4;
-			val |= (pch - xdigits);
-			if (val > 0xffff)
-				return (0);
-			saw_xdigit = 1;
-			continue;
+int inet_pton(int af, const char *src, void *dst){
+	switch(af){
+		case AF_INET:{
+			return (inet_pton4(src, dst));
 		}
-		if (ch == ':') {
-			curtok = src;
-			if (!saw_xdigit) {
-				if (colonp)
-					return (0);
-				colonp = tp;
-				continue;
-			}
-			if (tp + NS_INT16SZ > endp)
-				return (0);
-			*tp++ = (unsigned char) (val >> 8) & 0xff;
-			*tp++ = (unsigned char) val & 0xff;
-			saw_xdigit = 0;
-			val = 0;
-			continue;
+		break;
+		default:{
+			errno = EAFNOSUPPORT;
 		}
-		if (ch == '.' && ((tp + NS_INADDRSZ) <= endp) && inet_pton4(curtok, tp) > 0) {
-			tp += NS_INADDRSZ;
-			saw_xdigit = 0;
-			break;  /* '\0' was seen by inet_pton4(). */
-		}
-		return (0);
+		break;
 	}
-	if (saw_xdigit) {
-		if (tp + NS_INT16SZ > endp)
-			return (0);
-		*tp++ = (unsigned char) (val >> 8) & 0xff;
-		*tp++ = (unsigned char) val & 0xff;
-	}
-	if (colonp != NULL) {
-		/*
-		* Since some memmove()'s erroneously fail to handle
-		* overlapping regions, we'll do the shift by hand.
-		*/
-		const int n = tp - colonp;
-		int i = 0;
-		for (i = 1; i <= n; i++) {
-			endp[- i] = colonp[n - i];
-			colonp[n - i] = 0;
-		}
-		tp = endp;
-	}
-	if (tp != endp)
-		return (0);
-	memcpy(dst, tmp, NS_IN6ADDRSZ);
-	return (1);
-}
-#endif
-
-
-
-/*
- * Copyright (c) 1996-1999 by Internet Software Consortium.
- *
- * Permission to use, copy, modify, and distribute this software for any
- * purpose with or without fee is hereby granted, provided that the above
- * copyright notice and this permission notice appear in all copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND INTERNET SOFTWARE CONSORTIUM DISCLAIMS
- * ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL INTERNET SOFTWARE
- * CONSORTIUM BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
- * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
- * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
- * ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
- * SOFTWARE.
- */
-
-#ifdef SPRINTF_CHAR
-# define SPRINTF(x) strlen(sprintf x)
-#else
-# define SPRINTF(x) ((size_t)sprintf x)
-#endif
-/*
- * WARNING: Don't even consider trying to compile this on a system where
- * sizeof(int) < 4.  sizeof(int) > 4 is fine; all the world's not a VAX.
- */
-static const char *inet_ntop4 (const u_char *src, char *dst, socklen_t size);
-static const char *inet_ntop6 (const u_char *src, char *dst, socklen_t size);
-/* char *
- * inet_ntop(af, src, dst, size)
- *        convert a network format address to presentation format.
- * return:
- *        pointer to presentation format address (`dst'), or NULL (see errno).
- * author:
- *        Paul Vixie, 1996.
- */
-const char *
-inet_ntop (int af, const void *src, char *dst, socklen_t size)
-{
-        switch (af) {
-        case AF_INET:
-                return (inet_ntop4(src, dst, size));
-        case AF_INET6:
-                return (inet_ntop6(src, dst, size));
-        default:
-                __set_errno (EAFNOSUPPORT);
-                return (NULL);
-        }
-        /* NOTREACHED */
+	return (-1);
 }
 
-/* const char *
- * inet_ntop4(src, dst, size)
- *        format an IPv4 address
- * return:
- *        `dst' (as a const)
- * notes:
- *        (1) uses no statics
- *        (2) takes a u_char* not an in_addr as input
- * author:
- *        Paul Vixie, 1996.
- */
-
-static const char *
-inet_ntop4 (const u_char *src, char *dst, socklen_t size)
-{
-        static const char fmt[] = "%u.%u.%u.%u";
-        char tmp[sizeof "255.255.255.255"];
-        if (SPRINTF((tmp, fmt, src[0], src[1], src[2], src[3])) >= size) {
-                __set_errno (ENOSPC);
-                return (NULL);
-        }
-        return strcpy(dst, tmp);
-}
-/* const char *
- * inet_ntop6(src, dst, size)
- *        convert IPv6 binary address into presentation (printable) format
- * author:
- *        Paul Vixie, 1996.
- */
-static const char *
-inet_ntop6 (const u_char *src, char *dst, socklen_t size)
-{
-        /*
-         * Note that int32_t and int16_t need only be "at least" large enough
-         * to contain a value of the specified size.  On some systems, like
-         * Crays, there is no such thing as an integer variable with 16 bits.
-         * Keep this in mind if you think this function should have been coded
-         * to use pointer overlays.  All the world's not a VAX.
-         */
-        char tmp[sizeof "ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255"], *tp;
-        struct { int base, len; } best, cur;
-        u_int words[NS_IN6ADDRSZ / NS_INT16SZ];
-        int i;
-        /*
-         * Preprocess:
-         *        Copy the input (bytewise) array into a wordwise array.
-         *        Find the longest run of 0x00's in src[] for :: shorthanding.
-         */
-        memset(words, '\0', sizeof words);
-        for (i = 0; i < NS_IN6ADDRSZ; i += 2)
-                words[i / 2] = (src[i] << 8) | src[i + 1];
-        best.base = -1;
-        cur.base = -1;
-        best.len = 0;
-        cur.len = 0;
-        for (i = 0; i < (NS_IN6ADDRSZ / NS_INT16SZ); i++) {
-                if (words[i] == 0) {
-                        if (cur.base == -1)
-                                cur.base = i, cur.len = 1;
-                        else
-                                cur.len++;
-                } else {
-                        if (cur.base != -1) {
-                                if (best.base == -1 || cur.len > best.len)
-                                        best = cur;
-                                cur.base = -1;
-                        }
-                }
-        }
-        if (cur.base != -1) {
-                if (best.base == -1 || cur.len > best.len)
-                        best = cur;
-        }
-        if (best.base != -1 && best.len < 2)
-                best.base = -1;
-        /*
-         * Format the result.
-         */
-        tp = tmp;
-        for (i = 0; i < (NS_IN6ADDRSZ / NS_INT16SZ); i++) {
-                /* Are we inside the best run of 0x00's? */
-                if (best.base != -1 && i >= best.base &&
-                    i < (best.base + best.len)) {
-                        if (i == best.base)
-                                *tp++ = ':';
-                        continue;
-                }
-                /* Are we following an initial run of 0x00s or any real hex? */
-                if (i != 0)
-                        *tp++ = ':';
-                /* Is this address an encapsulated IPv4? */
-                if (i == 6 && best.base == 0 &&
-                    (best.len == 6 || (best.len == 5 && words[5] == 0xffff))) {
-                        if (!inet_ntop4(src+12, tp, sizeof tmp - (tp - tmp)))
-                                return (NULL);
-                        tp += strlen(tp);
-                        break;
-                }
-                tp += SPRINTF((tp, "%x", words[i]));
-        }
-        /* Was it a trailing run of 0x00's? */
-        if (best.base != -1 && (best.base + best.len) ==
-            (NS_IN6ADDRSZ / NS_INT16SZ))
-                *tp++ = ':';
-        *tp++ = '\0';
-        /*
-         * Check for overflow, copy, and we're done.
-         */
-        if ((socklen_t)(tp - tmp) > size) {
-                __set_errno (ENOSPC);
-                return (NULL);
-        }
-        return strcpy(dst, tmp);
-}
 #endif

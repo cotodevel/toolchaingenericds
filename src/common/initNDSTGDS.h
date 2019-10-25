@@ -31,8 +31,6 @@ extern "C"{
 #endif
 
 extern void resetMemory_ARMCores();
-
-//Shared
 extern void initHardware(void);
 
 #ifdef __cplusplus

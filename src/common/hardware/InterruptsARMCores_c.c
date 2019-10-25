@@ -32,7 +32,6 @@ USA
 #include "linkerTGDS.h"
 #include "keypadTGDS.h"
 
-
 void IRQInit(){
 	//fifo setups
 	REG_IME = 0;
@@ -51,7 +50,7 @@ void IRQInit(){
 	#endif
 	
 	INTERRUPT_VECTOR = (uint32)&NDS_IRQHandler;
-	REG_IF=REG_IF;
+	REG_IF = REG_IF;
 	REG_IME = 1;
 }
 
@@ -121,7 +120,6 @@ void NDS_IRQHandler(){
 	REG_IF = handledIRQ;
 }
 
-
 void EnableIrq(uint32 IRQ){
 	REG_IE	|=	IRQ;
 }
@@ -129,8 +127,6 @@ void EnableIrq(uint32 IRQ){
 void DisableIrq(uint32 IRQ){
 	REG_IE	&=	~(IRQ);
 }
-
-
 
 void RemoveQueuedIrq(uint32 IRQ){
 	if(REG_IF & IRQ){
