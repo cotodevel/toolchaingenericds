@@ -23,6 +23,7 @@ USA
 /////////////////////////////////////////////////// Shared BIOS ARM7/9 /////////////////////////////////////////////////////////////////
 #include "biosTGDS.h"
 #include "dmaTGDS.h"
+#include "InterruptsARMCores_h.h"
 
 //NDS BIOS Routines C code
 
@@ -30,7 +31,6 @@ USA
 //Dont optimize as vram is 16 or 32bit, optimization can end up in 8bit writes.
 //writes either a COPY_FIXED_SOURCE value = [r0], or plain copy from source to destination
 void swiFastCopy(uint32 * source, uint32 * dest, int flags){
-	
 	#ifdef ARM9
 	coherent_user_range_by_size((uint32)source, (int)((flags<<2)&0x1fffff));
 	coherent_user_range_by_size((uint32)dest, (int)((flags<<2)&0x1fffff));
@@ -46,4 +46,34 @@ void swiFastCopy(uint32 * source, uint32 * dest, int flags){
 }
 
 
-//extern void swiChangeSndBias(int enable, int delayvalue);
+//Services Implementation
+
+//These services run at least once a given VBLANK interrupt.
+
+#ifdef ARM7
+bool isArm7ClosedLid = false;
+inline __attribute__((always_inline)) 
+void handleARM7SVC(){
+	
+	//Lid Closing + backlight events (ARM7)
+	if(isArm7ClosedLid == false){
+		if((REG_KEYXY & KEY_HINGE) == KEY_HINGE){
+			SendFIFOWords(FIFO_IRQ_LIDHASCLOSED_SIGNAL, 0);
+			screenLidHasClosedhandlerUser();
+			isArm7ClosedLid = true;
+		}
+	}
+	
+}
+#endif
+
+#ifdef ARM9
+__attribute__((section(".itcm")))
+inline __attribute__((always_inline)) 
+void handleARM9SVC(){
+	
+	
+	
+}
+#endif
+
