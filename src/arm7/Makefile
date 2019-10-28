@@ -56,9 +56,9 @@ $(OBJDIR):
 
 #rule for reading *.bin in /data folder, converts to .C source code, which then gets compiled as object so it can be linked later
 $(OBJDIR)/%.o : %.bin
-	-@echo 'trying to convert .BIN ($<) -> .C output: ${@:.o=_out.c} : arrayName: $(subst build/,,${@:.o=})'
-	$(BIN2C)	$<	${@:.o=_out.c}	$(subst build/,,${@:.o=})
-	$(CC)	$(CC_ASFLAGS)	$(DIRLIBS_HDR)	$(DIRLIBS_SRC)	$(DIRLIBS_PROHIBITED)	-o $@ -c ${@:.o=_out.c}
+	-@echo 'trying to convert .BIN ($<) -> .C output: ${@:.o=.c} : arrayName: $(subst build/,,${@:.o=})'
+	$(BIN2C)	$<	${@:.o=.c}	$(subst build/,,${@:.o=})
+	$(CC)	$(CC_ASFLAGS)	$(DIRLIBS_HDR)	$(DIRLIBS_SRC)	$(DIRLIBS_PROHIBITED)	-o $@ -c ${@:.o=.c}
 
 #Do C Compile now!
 $(OBJDIR)/%.o : %.c

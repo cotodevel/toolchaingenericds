@@ -18,15 +18,15 @@
 #include <string.h>
 #include <stdbool.h>
 
-#include "keyboard_raw_lc_out.h"
-#include "keyboard_raw_uc_out.h"
-#include "keyboard_map_lc_out.h"
-#include "keyboard_map_uc_out.h"
-#include "keyboard_pal_out.h"
-#include "keyboard_pal_hl_out.h"
+#include "keyboard_raw_lc.h"
+#include "keyboard_raw_uc.h"
+#include "keyboard_map_lc.h"
+#include "keyboard_map_uc.h"
+#include "keyboard_pal.h"
+#include "keyboard_pal_hl.h"
 
-#include "clickdown_out.h"
-#include "clickup_out.h"
+#include "clickdown.h"
+#include "clickup.h"
 #include "keyboard.h"
 
 const unsigned char keyboard_Hit[12][32] = {
