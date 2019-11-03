@@ -18,51 +18,34 @@ USA
 
 */
 
-//DSWNifi Library 1.3 (update: 15/02/2018)
+//DSWNifi Library 1.4 (update: 3/11/2019)	(dd/mm/yyyy)
 
 #ifndef __dswnifi_lib_h__
 #define __dswnifi_lib_h__
 
-#include "ipcfifoTGDS.h"
+// Shared
 #include "wifi_shared.h"
-#include "clockTGDS.h"
 
-#include "dsregs.h"
-#include "dsregs_asm.h"
-#include "typedefsTGDS.h"
+#define dswifi_udpnifimode (sint32)(5)	//UDP Nifi
+#define dswifi_localnifimode (sint32)(6)	//Raw Network Packet Nifi
+#define dswifi_localadhocmode (sint32)(7)	//Raw Network Packet DS <-> DS syncronous transfer. WIP
+#define dswifi_idlemode (sint32)(8)	//Idle
+#define dswifi_gdbstubmode (sint32)(9)	//GDB Stub mode
 
-#include "biosTGDS.h"
-#include "InterruptsARMCores_h.h"
-#include "limitsTGDS.h"
-
-#ifdef ARM9
-
-#include "wifi_arm9.h"
-#include "dswifi9.h"
-#include "wifi_shared.h"
-#include "utilsTGDS.h"
-#include <netdb.h>
-#include <ctype.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <dirent.h>
-#include <stdbool.h>
-#include <socket.h>
-#include "in.h"
-#include <assert.h>
+//ARM7
+#ifdef ARM7
 #endif
+
+//ARM9
+#ifdef ARM9
+#include <in.h>
+#include <netdb.h>
+#include "fatfslayerTGDS.h"
+#include "wifi_arm9.h"
 
 //GDB Server
 #define minGDBMapFileAddress	(uint32)(0x00000000)
 #define maxGDBMapFileAddress	(uint32)(0xF0000000)
-
-//DSWNIFI_MODE flags: switch between nifi/wifi/idle mode
-#define DSWNIFI_ENTER_IDLEMODE (int)(1)
-#define DSWNIFI_ENTER_NIFIMODE (int)(2)
-#define DSWNIFI_ENTER_WIFIMODE (int)(3)
 
 //NIFI defs
 #define arm7_header_framesize 	(12 + 2)									//arm7 
@@ -82,18 +65,6 @@ USA
 #define TCP_PORT (sint32)(7777)		//used for TCP Server - NDS Companion connecting
 #define NDSMULTI_TCP_PORT_HOST (sint32)(7778)			//host 	listener - listener is local - sender is multi IP NDS
 #define NDSMULTI_TCP_PORT_GUEST (sint32)(7779)		//guest listener - 
-
-//process status
-#define proc_idle (sint32)(0)
-#define proc_connect (sint32)(1)
-#define proc_execution (sint32)(2)
-#define proc_shutdown (sint32)(3)
-
-//coto: nifi & wifi support.
-#define dswifi_udpnifimode (sint32)(5)	//UDP Nifi
-#define dswifi_localnifimode (sint32)(6)	//Raw Network Packet Nifi
-#define dswifi_idlemode (sint32)(7)	//Idle
-#define dswifi_gdbstubmode (sint32)(14)	//GDB Stub mode
 
 //flag extension 
 //connect stage
@@ -122,7 +93,18 @@ USA
 #define remoteStubMainWIFIConnectedGDBRunning (sint32)(17)	//Wifi & GDB running
 #define remoteStubMainWIFIConnectedGDBDisconnected (sint32)(18)	//Wifi running, GDB disconnected
 
-//DSWNIFI layer:
+//DSWNIFI:
+
+//process status
+#define proc_idle (sint32)(0)
+#define proc_connect (sint32)(1)
+#define proc_execution (sint32)(2)
+#define proc_shutdown (sint32)(3)
+
+//DSWNIFI_MODE flags: switch between nifi/wifi/idle mode
+#define DSWNIFI_ENTER_IDLEMODE (int)(1)
+#define DSWNIFI_ENTER_NIFIMODE (int)(2)
+#define DSWNIFI_ENTER_WIFIMODE (int)(3)
 
 //UDP Descriptor
 struct client_http_handler{
@@ -185,6 +167,7 @@ struct gdbStubMapFile {
 	int GDBMapFileSize;
 	FILE * GDBFileHandle;
 };
+#endif //ARM9 end
 
 #endif
 
@@ -192,6 +175,16 @@ struct gdbStubMapFile {
 #ifdef __cplusplus
 extern "C"{
 #endif
+
+// Shared
+
+// ARM7
+#ifdef ARM7
+
+#endif
+
+// ARM9
+#ifdef ARM9
 
 //These calls are implemented in TGDS layer
 
@@ -258,8 +251,6 @@ extern __attribute__((weak))	void OnDSWIFIudpnifiEnable();
 //Callback that runs upon setting DSWNIFI mode to dswifi_gdbstubmode
 extern __attribute__((weak))	void OnDSWIFIGDBStubEnable();
 
-
-
 extern bool sentReq;
 extern sint32 LastDSWnifiMode;
 extern struct dsnwifisrvStr * getDSWNIFIStr();
@@ -319,9 +310,8 @@ extern uint32 readu32GDBMapFile(uint32 address);
 extern void resetGDBSession();
 
 
-
-
-//These methods are used to Connect asynchronously to a server.
+//Example : 
+//	These methods are used to Connect asynchronously to a server.
 /*
 // Let's send a simple HTTP request to a server and print the results!
 void getHttp(char* url) {
@@ -371,11 +361,12 @@ extern int openAsyncConn(char * dnsOrIpAddr, int asyncPort, struct sockaddr_in *
 extern bool connectAsync(int sock, struct sockaddr_in * sain);
 extern bool disconnectAsync(int sock);
 
-
 //Server:
 
 //opens a port,and begins to listen through it. Then an accept() call (blocking), through the earlier port, will give client connection context.
 extern int openServerSyncConn(int SyncPort, struct sockaddr_in * sain);
+#endif
+
 
 #ifdef __cplusplus
 }

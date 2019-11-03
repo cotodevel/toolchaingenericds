@@ -18,47 +18,28 @@ USA
 
 */
 
-//DSWNifi Library 1.3 (update: 7/04/2018)	(dd/mm/yyyy)
+//DSWNifi Library 1.4 (update: 3/11/2019)	(dd/mm/yyyy)
 
-#include "ipcfifoTGDS.h"
-#include "wifi_shared.h"
-#include "clockTGDS.h"
+// Shared
+#include "dswnifi_lib.h"
 
+#include "typedefsTGDS.h"
 #include "dsregs.h"
 #include "dsregs_asm.h"
-#include "typedefsTGDS.h"
 
-#include "biosTGDS.h"
-#include "InterruptsARMCores_h.h"
-#include "dswnifi_lib.h"
+#include "wifi_shared.h"
+
+// ARM7
+#ifdef ARM7
+
+#endif
+
+// ARM9
+#ifdef ARM9
 
 #include "timerTGDS.h"
 #include "keyboard.h"
-
-#include <string.h>
-#include <unistd.h>
-
-#ifdef ARM9
-
-#include "wifi_arm9.h"
-#include "dswifi9.h"
-#include "wifi_shared.h"
-#include "sgIP_Config.h"
-#include "utilsTGDS.h"
-
-#include "netdb.h"
-#include <ctype.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <dirent.h>
-#include <stdbool.h>
-#include <socket.h>
-#include <in.h>
-#include <assert.h>
+#include "sgIP_sockets.h"
 
 __attribute__((section(".dtcm")))
 struct dsnwifisrvStr dswifiSrv;
@@ -683,7 +664,6 @@ struct frameBlock * HandleSendUserspace(uint8 * databuf_src, int bufsize){
 struct dsnwifisrvStr * getDSWNIFIStr(){
 	return (struct dsnwifisrvStr *)&dswifiSrv;
 }
-#endif
 
 
 /////////////////////////////////GDB Server stub Part////////////////////////////////////
@@ -1533,3 +1513,5 @@ bool disconnectAsync(int sock){
 	forceclosesocket(sock); // remove the socket.
 	return true;
 }
+
+#endif //ARM9 end
