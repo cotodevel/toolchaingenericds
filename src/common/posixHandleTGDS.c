@@ -83,6 +83,16 @@ void printfCoords(int x, int y, const char *format, ...){
 int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list args){
 	char * stringBuf = (char*)&ConsolePrintfBuf[0];
 	vsnprintf ((sint8*)stringBuf, (int)sizeof(ConsolePrintfBuf), fmt, args);
+	//if the fprintf points to stdout (unix shell C/C++ source code), redirect to DS printf.
+	if(fp == stdout){
+		int stringSize = (int)strlen(stringBuf);
+		t_GUIZone * zoneInst = getDefaultZoneConsole();
+		bool readAndBlendFromVRAM = false;	//we discard current vram characters here so if we step over the same character in VRAM, it is discarded.
+		int color = 0xff;	//white
+		GUI_drawText(zoneInst, 0, GUI.printfy, color, stringBuf, readAndBlendFromVRAM);
+		GUI.printfy += getFontHeightFromZone(zoneInst);
+		return stringSize;
+	}
 	return fputs (stringBuf, fp);
 }
 
