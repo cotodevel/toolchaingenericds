@@ -1,3 +1,5 @@
+![ToolchainGenericDS](img/TGDS-Logo.png)
+
 This is the ToolchainGenericDS 1.5 library for NintendoDS:
 
 Scroll down for examples. Otherwise keep reading:
