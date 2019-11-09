@@ -20,6 +20,7 @@ USA
 #include "videoTGDS.h"
 #include "consoleTGDS.h"
 
+#ifdef ARM9
 
 //power
 void SWAP_LCDS(){
@@ -111,3 +112,29 @@ void DISABLE_BG_SUB(int bg) {
 
 //Generic console (uses VRAM block C,VRAM block D for ARM7), SUB Engine.
 
+
+//Enables the NDS BMP RGB 15bit format for Engine_B at 0x06200000
+void initFBModeSubEngine0x06200000(){
+	//SETDISPCNT_MAIN(0);	//CONSOLE
+	SETDISPCNT_SUB(MODE_3_2D | DISPLAY_BG3_ACTIVE);
+	
+	// Don't scale bg3 (set its affine transformation matrix to [[1,0],[0,1]])
+	REG_BG3PA_SUB = 1 << 8;
+	REG_BG3PD_SUB= 1 << 8;
+	
+	#define BG_256x256       (1<<14)
+	#define BG_15BITCOLOR    (1<<7)
+	#define BG_CBB1          (1<<2)
+	
+	REG_BG3CNT_SUB = BG_256x256 | BG_15BITCOLOR | BG_CBB1;	
+}
+
+
+//Renders a buffer in NDS BMP RGB 15bit format. Note, the buffer must be 256x192
+void renderFBMode3SubEngine(u16 * srcBuf, int srcWidth, int srcHeight){
+	if((srcWidth != 256) || (srcHeight != 192)){
+		return;
+	}
+	dmaTransferHalfWord(3, (uint32)srcBuf, (uint32)(0x06200000), (uint32)srcWidth*srcHeight*(sizeof(u16)));
+}
+#endif

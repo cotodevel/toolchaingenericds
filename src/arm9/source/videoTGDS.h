@@ -216,6 +216,9 @@ extern void ENABLE_BG_SUB(int bg);
 extern void DISABLE_BG_MAIN(int number);
 extern void DISABLE_BG_SUB(int number);
 
+extern void initFBModeSubEngine0x06200000();
+extern void renderFBMode3SubEngine(u16 * srcBuf, int srcWidth, int srcHeight);
+
 #ifdef __cplusplus
 }
 #endif
