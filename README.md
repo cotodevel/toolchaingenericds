@@ -43,7 +43,8 @@ Thanks to:
 - Martin Korth extensive gba/nds docs (http://problemkaputt.de/gbatek.htm) most of any DS toolchains/emus out there would not exist without such docs.
 - Darkfader for ndstool
 - Archeide for NDS printf render code
-- TricksterGuy: https://github.com/TricksterGuy/nin10kit (ToolchainGenericDS Logo in DS hardware)
+- TricksterGuy: https://github.com/TricksterGuy/nin10kit (tool to convert ToolchainGenericDS Logo into DS BMP format)
+- freelogodesign.org (ToolchainGenericDS Logo)
 
 ---------------------------------------------
 
