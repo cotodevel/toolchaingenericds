@@ -2,14 +2,12 @@
 
 This is the ToolchainGenericDS 1.5 library for NintendoDS:
 
-Scroll down for examples. Otherwise keep reading:
-
-For building the toolchain you need three steps:
+[Building the devkit]:
 - Recompile Newlib 2.1 for Nintendo DS (mandatory, not on this guide). See: https://bitbucket.org/Coto88/newlib-nds
 - Recompile ToolchainGenericDS (this guide)
-- Recompile project (optional, not on this guide)
+- Recompile ToolchainGenericDS Project (optional, not on this guide)
 
-After you followed "Recompile Newlib 2.1 for Nintendo DS" you need to follow the below steps.
+After you followed "Recompile Newlib 2.1 for Nintendo DS" you can follow the upcoming steps.
 
 
 Build Steps:
@@ -39,10 +37,7 @@ Then:
 
 
 
-After building ToolchainGenericDS, then you are ready to recompile the project (not covered here, go to the specific project supporting this toolchain)
-
-For Project specifics check out the specific project. Remember that such project must support this toolchain for it to work. 
-For more technical informacion refer to SPECIFICS
+Then, only after building ToolchainGenericDS, you will be able to build a TGDS project. (Not covered here, go to the specific project supporting this toolchain)
 
 Thanks to:
 - Martin Korth extensive gba/nds docs (http://problemkaputt.de/gbatek.htm) most of any DS toolchains/emus out there would not exist without such docs.
@@ -50,11 +45,36 @@ Thanks to:
 - Archeide for NDS printf render code
 - TricksterGuy: https://github.com/TricksterGuy/nin10kit (ToolchainGenericDS Logo in DS hardware)
 
---
+---------------------------------------------
+
+Developers:
+
+I have been working on this for at least 2 years, but development started circa 2014. I just needed the "motivation" to gather the pieces together, and I am glad I wrote this.
+You are free to do almost whatever you want with it, just release the source codes so we all can benefit from it.
+
+The idea is to have a toolchain that is GNU GPL v2+ (so you can either re-release your sources as GNU GPL v2, GNU GPL v2+ or GNU GPL v3).
+
+Features:
+
+- Linkers
+- Default Makefiles per project, through template Makefiles. Or you add your own Makefile for each ARM7/9 Core.
+- Fat16/32/exFat (fatfs layer that extends POSIX file calls), interrupts, exceptions, touchscreen, spi, clock (from inferno DS), etc
+- Console render
+- Newlib nano (featuring POSIX filesystem: https://bitbucket.org/Coto88/gccnewlibnano_to_fatfs/, this means UNIX file POSIX layer: fread/fwrite/fopen/fclose/fprintf/etc supports natively DLDI driver)
+- Modified dswifi library so it supports valid frames sent/received between DS's:
+	-udp nifi 	(like local but through internet, requires a server that forwards WANIP-> local IP).
+	-localnifi	
+	-GDB Debugger (allows to read NDS memory real-time through TCP!)
+	-WIP other features.
+- TGDS drivers: 
+	-basic sound playback, FIFO, interrupt handlers, keypad, touchscreen through the TGDS driver (embedded in all TGDS Projects) so you can focus right into coding rather than NDS hardware.
+	-WIP: 3D Support
+
+The environment uses GCC 4.9.2 to build Newlib 2.1 for Nintendo DS, and ToolchainGenericDS.
 
 
-[Examples]:
+How to code things:
+-	Once you follow [Building the devkit], you can grab a TGDS Project template such as: https://bitbucket.org/Coto88/toolchaingenericds-template/ and rebuild it (a TGDS Project Makefile has some properties you can override).
 
-Iterate a directory and read each file contents (name and properties):
-src/common/arm_driver_shared/utilsTGDS.c -> FS_getDirectoryList() function
 
+Coto.
