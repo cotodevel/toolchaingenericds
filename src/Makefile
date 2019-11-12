@@ -54,7 +54,8 @@ export DIRS_ARM7_SRC = source/	\
 			../common/dswifi/netinet/	\
 			../common/dswifi/sys/	\
 			data/	\
-			build/
+			build/	\
+			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
 			
 export DIRS_ARM7_HEADER = source/	\
 			source/dswifi_arm7/	\
@@ -64,7 +65,8 @@ export DIRS_ARM7_HEADER = source/	\
 			../common/dswifi/netinet/	\
 			../common/dswifi/sys/	\
 			data/	\
-			build/
+			build/	\
+			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
 			
 #####################################################ARM9#####################################################
 
@@ -104,13 +106,14 @@ export DIRS_ARM9_HEADER = source/	\
 			../common/dswifi/netinet/	\
 			../common/dswifi/sys/	\
 			data/	\
-			build/
-			
+			build/	
+
 # Build Target(s)	(both processors here)
 all: compilelib
 
 #Make
 compilelib	:
+	cp	-r	$(CURDIR)/templateCode/	$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/
 ifeq ($(SOURCE_MAKEFILE7),default)
 	cp	-r	$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/$(DIR_ARM7)/Makefile	$(CURDIR)/$(DIR_ARM7)
 endif
@@ -132,3 +135,4 @@ ifeq ($(SOURCE_MAKEFILE9),default)
 	-@rm -rf $(CURDIR)/$(DIR_ARM9)/Makefile
 endif
 	-@rm -fr $(EXECUTABLE_FNAME)
+	-@rm -fr	$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
