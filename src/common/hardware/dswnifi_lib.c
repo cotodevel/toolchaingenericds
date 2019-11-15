@@ -1450,10 +1450,12 @@ int openAsyncConn(char * dnsOrIpAddr, int asyncPort, struct sockaddr_in * sain){
     // Create a TCP socket
     int my_socket = socket( AF_INET, SOCK_STREAM, 0 );
     if(my_socket < 0){
+		forceclosesocket(my_socket); // remove the socket.
 		return -1;
 	}
 	int enable = 1;
 	if (setsockopt(my_socket, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0){	//socket can be respawned ASAP if it's dropped
+		forceclosesocket(my_socket); // remove the socket.
 		return -1;
 	}
 	memset(sain, 0, sizeof(struct sockaddr_in)); 
@@ -1488,6 +1490,7 @@ int openServerSyncConn(int SyncPort, struct sockaddr_in * sain){
 	int my_socket = socket(AF_INET, SOCK_STREAM, 0);
 	int enable = 1;
 	if (setsockopt(my_socket, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0){	//socket can be respawned ASAP if it's dropped
+		forceclosesocket(my_socket); // remove the socket.
 		return -1;
 	}
 	if(my_socket == -1){

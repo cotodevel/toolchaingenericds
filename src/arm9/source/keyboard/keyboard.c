@@ -181,7 +181,7 @@ char processKeyboard(char* str, unsigned int max, unsigned int echo, int strYoff
 			tilex = g_dx/8;
 			tiley = g_dy/8;
 
-			if(tilex>=1 && tilex<=30 && tiley>=11 && tiley<=23)
+			if(tilex>=1 && tilex<31 && tiley>=11 && tiley<23)
 			{
 				char c;
 
@@ -213,7 +213,7 @@ char processKeyboard(char* str, unsigned int max, unsigned int echo, int strYoff
 		tilex = g_dx/8;
 		tiley = g_dy/8;
 
-		if(tilex>=1 && tilex<=30 && tiley>=11 && tiley<=23)
+		if(tilex>=1 && tilex<31 && tiley>=11 && tiley<23)
 		{
 			if(g_Mode==KB_NORMAL)
 				c = keyboard_Hit[tiley-TILE_OFFSET_Y][tilex];
