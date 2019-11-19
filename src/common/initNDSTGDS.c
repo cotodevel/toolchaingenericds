@@ -35,7 +35,6 @@ USA
 
 #ifdef ARM9
 #include "devoptab_devices.h"
-#include "fileHandleTGDS.h"
 #include "videoTGDS.h"
 #endif
 

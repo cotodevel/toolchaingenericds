@@ -38,9 +38,6 @@ USA
 #include "fatfslayerTGDS.h"
 #include "posixHandleTGDS.h"
 
-#include "fileHandleTGDS.h"
-
-
 //device name for stdin driver descriptor (max devoptab_fname_size size)
 const sint8 * stdin_name_desc = (sint8*)("stdin");
 //device name for stdout driver descriptor (max devoptab_fname_size size)
