@@ -334,6 +334,7 @@ size_t ucs2tombs(uint8* dst, const unsigned short* src, size_t len) {
 #include "devoptab_devices.h"
 #include "fatfslayerTGDS.h"
 #include "posixHandleTGDS.h"
+#include "biosTGDS.h"
 
 #include <stdio.h>
 #include <time.h>
@@ -755,4 +756,21 @@ int inet_pton(int af, const char *src, void *dst){
 	return (-1);
 }
 
+
+void RenderTGDSLogoSubEngine(u8 * compressedLZSSBMP, int compressedLZSSBMPSize){
+	initFBModeSubEngine0x06200000();
+	struct LZSSContext LZSSCtx = LZS_DecodeFromBuffer(compressedLZSSBMP, (unsigned int)compressedLZSSBMPSize);
+	//These are hardcoded: TGDSLogoLZSSCompressed.bin -> Size: 12.442 / CRC32: e7255f11
+	#define TGDSLOGONDSSIZE_SIZE 98304
+	#define TGDSLOGONDSSIZE_LENGTH 49152
+	#define TGDSLOGONDSSIZE_WIDTH 256
+	#define TGDSLOGONDSSIZE_HEIGHT 192
+	
+	//Prevent Cache problems.
+	coherent_user_range_by_size((uint32)LZSSCtx.bufferSource, (int)LZSSCtx.bufferSize);
+	renderFBMode3SubEngine((u16*)LZSSCtx.bufferSource, (int)TGDSLOGONDSSIZE_WIDTH,(int)TGDSLOGONDSSIZE_HEIGHT);
+	
+	//used? discard
+	free(LZSSCtx.bufferSource);
+}
 #endif

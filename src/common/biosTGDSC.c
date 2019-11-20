@@ -45,6 +45,34 @@ void swiFastCopy(uint32 * source, uint32 * dest, int flags){
 	}
 }
 
+#ifdef ARM9
+//Once called, you consume the struct LZSSContext and then call free(struct LZSSContext.bufferSource)
+struct LZSSContext LZS_DecodeFromBuffer(unsigned char *pak_buffer, unsigned int   pak_len){
+	struct LZSSContext LZSSCtx;
+	unsigned char *raw_buffer;
+	unsigned int   raw_len, header;
+	//printf("- decompressing from buffer... ");
+
+	header = *pak_buffer;
+	if (header != CMD_CODE_10) {
+		//printf("ERROR: file is not LZSS encoded!");
+		LZSSCtx.bufferSource = NULL;
+		LZSSCtx.bufferSize = -1;
+		return LZSSCtx;
+	}
+
+	raw_len = *(unsigned int *)pak_buffer >> 8;
+	raw_buffer = (unsigned char *) malloc(raw_len * sizeof(char));
+
+	swiDecompressLZSSWram((void *)pak_buffer, (void *)raw_buffer);
+
+	LZSSCtx.bufferSource = raw_buffer;
+	LZSSCtx.bufferSize = raw_len;
+
+	//printf("LZS_Decode() end.");
+	return LZSSCtx;
+}
+#endif
 
 //Services Implementation
 

@@ -18,6 +18,24 @@ USA
 
 */
 
+/*----------------------------------------------------------------------------*/
+/*--  lzss.c - LZSS coding for Nintendo GBA/DS                              --*/
+/*--  Copyright (C) 2011 CUE                                                --*/
+/*--                                                                        --*/
+/*--  This program is free software: you can redistribute it and/or modify  --*/
+/*--  it under the terms of the GNU General Public License as published by  --*/
+/*--  the Free Software Foundation, either version 3 of the License, or     --*/
+/*--  (at your option) any later version.                                   --*/
+/*--                                                                        --*/
+/*--  This program is distributed in the hope that it will be useful,       --*/
+/*--  but WITHOUT ANY WARRANTY; without even the implied warranty of        --*/
+/*--  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          --*/
+/*--  GNU General Public License for more details.                          --*/
+/*--                                                                        --*/
+/*--  You should have received a copy of the GNU General Public License     --*/
+/*--  along with this program. If not, see <http://www.gnu.org/licenses/>.  --*/
+/*----------------------------------------------------------------------------*/
+
 #ifndef __nds_bios_h__
 #define __nds_bios_h__
 
@@ -34,6 +52,51 @@ struct DecompressionStream {
 	int (*getResult)(uint8 * source); // can be NULL
 	uint8 (*readByte)(uint8 * source);
 };
+
+// CUE Author Code Start
+
+//LZSS
+struct LZSSContext {
+	u8 * bufferSource;
+	int bufferSize;
+};
+
+/*----------------------------------------------------------------------------*/
+#define CMD_DECODE    0x00       // decode
+#define CMD_CODE_10   0x10       // LZSS magic number
+
+#define LZS_NORMAL    0x00       // normal mode, (0)
+#define LZS_FAST      0x80       // fast mode, (1 << 7)
+#define LZS_BEST      0x40       // best mode, (1 << 6)
+
+#define LZS_WRAM      0x00       // VRAM not compatible (LZS_WRAM | LZS_NORMAL)
+#define LZS_VRAM      0x01       // VRAM compatible (LZS_VRAM | LZS_NORMAL)
+#define LZS_WFAST     0x80       // LZS_WRAM fast (LZS_WRAM | LZS_FAST)
+#define LZS_VFAST     0x81       // LZS_VRAM fast (LZS_VRAM | LZS_FAST)
+#define LZS_WBEST     0x40       // LZS_WRAM best (LZS_WRAM | LZS_BEST)
+#define LZS_VBEST     0x41       // LZS_VRAM best (LZS_VRAM | LZS_BEST)
+
+#define LZS_SHIFT     1          // bits to shift
+#define LZS_MASK      0x80       // bits to check:
+                                 // ((((1 << LZS_SHIFT) - 1) << (8 - LZS_SHIFT)
+
+#define LZS_THRESHOLD 2          // max number of bytes to not encode
+#define LZS_N         0x1000     // max offset (1 << 12)
+#define LZS_F         0x12       // max coded ((1 << 4) + LZS_THRESHOLD)
+#define LZS_NIL       LZS_N      // index for root of binary search trees
+
+#define RAW_MINIM     0x00000000 // empty file, 0 bytes
+#define RAW_MAXIM     0x00FFFFFF // 3-bytes length, 16MB - 1
+
+#define LZS_MINIM     0x00000004 // header only (empty RAW file)
+#define LZS_MAXIM     0x01400000 // 0x01200003, padded to 20MB:
+                                 // * header, 4
+                                 // * length, RAW_MAXIM
+                                 // * flags, (RAW_MAXIM + 7) / 8
+                                 // 4 + 0x00FFFFFF + 0x00200000 + padding
+
+//LZSS end
+// CUE Author Code End
 
 #endif
 
@@ -70,6 +133,9 @@ extern int swiDecompressLZSSVram(void * source, void * destination, uint32 toGet
 
 //C
 extern void swiFastCopy(uint32 * source, uint32 * dest, int flags);
+
+
+extern struct LZSSContext LZS_DecodeFromBuffer(unsigned char *pak_buffer, unsigned int   pak_len);
 
 
 //SVCs
