@@ -10,8 +10,6 @@ const sint8 DLDI_MAGIC_STRING_BACKWARDS [DLDI_MAGIC_STRING_LEN] =
 	{'\0', 'm', 'h', 's', 'i', 'h', 'C', ' '} ;
 
 // The only built in driver
-extern DLDI_INTERFACE _io_dldi_stub;
-
 const DLDI_INTERFACE* io_dldi_data = &_io_dldi_stub;
 
 const struct DISC_INTERFACE_STRUCT* dldiGetInternal (void) {
