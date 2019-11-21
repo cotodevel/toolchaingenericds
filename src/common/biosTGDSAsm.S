@@ -175,7 +175,7 @@ swiChangeSoundBias:
 swiSoftReset:
 REG_IME = 0;
 #ifdef ARM7
-	ldr	r0,=0x2FFFE34
+	ldr	r0,=0x02FFFE34
 #endif
 
 #ifdef ARM9
@@ -191,7 +191,7 @@ REG_IME = 0;
 	@ Wait for write buffer to empty 
 	mcr	p15, 0, r0, c7, c10, 4
 	
-	ldr	r0,=0x2FFFE24
+	ldr	r0,=0x02FFFE24
 #endif
 
 	ldr	r0,[r0]
