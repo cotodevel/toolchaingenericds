@@ -72,8 +72,6 @@ USA
 //FileClass Start directory if there is none
 #define FileClassStartDirectory TGDSDirectorySeparator
 
-extern FILE *fdopen(int fd, const char *mode);
-extern int fileno(FILE *);
 
 //FileClass parts (not used by POSIX at all, but ToolchainGenericDS high level API (for parsing fullpath directories and high level descriptors)
 struct FileClass{
@@ -243,6 +241,10 @@ extern bool enterDir(char* newDir);
 extern bool leaveDir(char* newDir);
 extern bool updateFileClassList(char * path);
 /////////////////////////////////////////////////////////////////////// INTERNAL DIRECTORY FUNCTIONS END //////////////////////////////////////////////////////////////////
+
+//Link C to C++ related dependencies
+extern FILE *fdopen(int fd, const char *mode);
+extern int fileno(FILE *);
 
 #ifdef __cplusplus
 }
