@@ -959,7 +959,6 @@ FRESULT sync_fs (	/* Returns FR_OK or FR_DISK_ERR */
 /* Get physical sector number from cluster number                        */
 /*-----------------------------------------------------------------------*/
 
-static
 DWORD clst2sect (	/* !=0:Sector number, 0:Failed (invalid cluster#) */
 	FATFS* fs,		/* Filesystem object */
 	DWORD clst		/* Cluster# to be converted */
@@ -976,7 +975,6 @@ DWORD clst2sect (	/* !=0:Sector number, 0:Failed (invalid cluster#) */
 /*-----------------------------------------------------------------------*/
 /* FAT access - Read value of a FAT entry                                */
 /*-----------------------------------------------------------------------*/
-
 DWORD get_fat (		/* 0xFFFFFFFF:Disk error, 1:Internal error, 2..0x7FFFFFFF:Cluster status */
 	FFOBJID* obj,	/* Corresponding object */
 	DWORD clst		/* Cluster number to get the value */
@@ -6057,7 +6055,10 @@ int f_puts (
 	return putc_flush(&pb);
 }
 
-
+DWORD f_getFat(FIL* fp, DWORD clst)
+{
+	return get_fat(&fp->obj, clst);
+}
 
 
 /*-----------------------------------------------------------------------*/

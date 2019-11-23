@@ -362,9 +362,16 @@ int ff_del_syncobj (FF_SYNC_t sobj);	/* Delete a sync object */
 #define AM_MASK		0x3F	// Mask of defined bits 
 
 
-extern DWORD  get_fat (		/* 0xFFFFFFFF:Disk error, 1:Internal error, 2..0x7FFFFFFF:Cluster status */
+extern DWORD get_fat (		/* 0xFFFFFFFF:Disk error, 1:Internal error, 2..0x7FFFFFFF:Cluster status */
 	FFOBJID* obj,	/* Corresponding object */
 	DWORD clst		/* Cluster number to get the value */
+);
+
+extern DWORD f_getFat(FIL* fp, DWORD clst);
+
+extern DWORD clst2sect (	/* !=0:Sector number, 0:Failed (invalid cluster#) */
+	FATFS* fs,		/* Filesystem object */
+	DWORD clst		/* Cluster# to be converted */
 );
 
 #ifdef __cplusplus
