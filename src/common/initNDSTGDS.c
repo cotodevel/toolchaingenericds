@@ -32,10 +32,14 @@ USA
 #include "powerTGDS.h"
 #include "ipcfifoTGDS.h"
 #include "soundTGDS.h"
+#include "global_settings.h"
 
 #ifdef ARM9
 #include "devoptab_devices.h"
 #include "videoTGDS.h"
+#include "wifi_arm9.h"
+#include "fatfslayerTGDS.h"
+#include "dldi.h"
 #endif
 
 void initHardware(void) {
@@ -81,6 +85,17 @@ void initHardware(void) {
 	TGDSIPC->arm9endaddress = (uint32)(get_ewram_start() + get_ewram_size());
 	
 	TryToDefragmentMemory();
+	
+	#ifdef ARM9_DLDI
+	//ARM9DLDI
+	setDLDIARM7Address((u32 *)&_dldi_start);
+	#endif
+	
+	//Allocate various TGDS objects
+	wifi_connect_point = (Wifi_AccessPoint*)malloc(sizeof(Wifi_AccessPoint));
+	WifiData = (Wifi_MainStruct *)malloc(sizeof(Wifi_MainStruct));
+	files = (struct fd*)malloc(sizeof(struct fd)*OPEN_MAXTGDS);
+	
 	#endif
 	
 }

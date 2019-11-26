@@ -34,13 +34,13 @@ void dldi_handler_deinit(){
 	dldiInit->ioInterface.shutdown();
 }
 
-//ARM7 DLDI implementation
-//////////////////////////////////////////////////////////////////////////DLDI ARM7 CODE START////////////////////////////////////////////////////////////////////
-#ifdef ARM7_DLDI
-//Shared
-
+//ARM7DLDI:
 //ARM7: ARM7 physical DLDI target location address
 //ARM9: Uses this as a pointer to: ARM7 physical DLDI target location address
+
+//ARM9DLDI:
+//ARM7: NULL ptr
+//ARM9: Global Physical DLDI section (rather than &_dldi_start, since it's discarded at TGDS init)
 u32 * DLDIARM7Address = NULL;
 
 void setDLDIARM7Address(u32 * address){
@@ -50,6 +50,10 @@ void setDLDIARM7Address(u32 * address){
 u32 * getDLDIARM7Address(){
 	return DLDIARM7Address;
 }
+
+//ARM7 DLDI implementation
+//////////////////////////////////////////////////////////////////////////DLDI ARM7 CODE START////////////////////////////////////////////////////////////////////
+#ifdef ARM7_DLDI
 
 //ARM9 only allowed to init TGDS DLDI @ ARM7
 #ifdef ARM9

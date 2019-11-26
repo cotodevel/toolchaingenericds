@@ -30,8 +30,7 @@ FATFS dldiFs;
 bool FS_InitStatus = false;	
 
 // Physical struct fd file handles
-__attribute__ ((aligned (4)))
-volatile struct fd files[OPEN_MAXTGDS];	//has file/dir descriptors and pointers
+struct fd * files = NULL;	//File/Dir MAX handles: OPEN_MAXTGDS
 
 ////////////////////////////////////////////////////////////////////////////USER CODE START/////////////////////////////////////////////////////////////////////////////////////
 
@@ -393,7 +392,8 @@ sint32 getDiskSectorSize(){
 
 char * dldi_tryingInterface(){
 	//DS DLDI
-	return (char *)&_dldi_start.friendlyName[0];
+	struct  DLDI_INTERFACE* dldiInterface = (struct  DLDI_INTERFACE*)DLDIARM7Address;
+	return (char *)&dldiInterface->friendlyName[0];
 }
 
 
@@ -656,7 +656,8 @@ bool FAT_FreeFiles (void){
 	char * devoptabFSName = (char*)"0:/";
 	initTGDS(devoptabFSName);
 	// Return status of card
-	return (bool)_dldi_start.ioInterface.isInserted();
+	struct  DLDI_INTERFACE* dldiInterface = (struct DLDI_INTERFACE*)DLDIARM7Address;	
+	return (bool)dldiInterface->ioInterface.isInserted();
 }
 
 
@@ -1102,9 +1103,9 @@ int fatfs_open_file(const sint8 *pathname, int flags, const FILINFO *fno){
 	//allocates a new struct fd index, allocating a FIL structure, for the devoptab_sdFilesystem object.
 	structFDIndex = FileHandleAlloc((struct devoptab_t *)&devoptab_sdFilesystem);	
     if (structFDIndex != structfd_posixInvalidFileDirHandle){
-		files[structFDIndex].filPtr	=	(FIL *)&files[structFDIndex].fil;
-		files[structFDIndex].dirPtr	= NULL;
-		files[structFDIndex].StructFDType = FT_FILE;
+		(files + structFDIndex)->filPtr	=	(FIL *)&(files + structFDIndex)->fil;
+		(files + structFDIndex)->dirPtr	= NULL;
+		(files + structFDIndex)->StructFDType = FT_FILE;
 	}
 	
 	struct fd * fdinst = getStructFD(structFDIndex);	//getStructFD requires struct fd index
@@ -1190,9 +1191,9 @@ int fatfs_open_dir(const sint8 *pathname, int flags, const FILINFO *fno){
 	//allocates a new struct fd index, allocating a DIR structure, for the devoptab_sdFilesystem object.
 	int structFDIndex = FileHandleAlloc((struct devoptab_t *)&devoptab_sdFilesystem);	
     if (structFDIndex != structfd_posixInvalidFileDirHandle){
-		files[structFDIndex].dirPtr	=	(DIR *)&files[structFDIndex].dir;
-		files[structFDIndex].filPtr	= NULL;
-		files[structFDIndex].StructFDType = FT_DIR;
+		(files + structFDIndex)->dirPtr	=	(DIR *)&(files + structFDIndex)->dir;
+		(files + structFDIndex)->filPtr	= NULL;
+		(files + structFDIndex)->StructFDType = FT_DIR;
 	}
 	
 	struct fd * fdinst = getStructFD(structFDIndex);
@@ -1695,8 +1696,9 @@ int fatfs_deinit(){
 	
 	//ARM9 DLDI impl.
 	#ifdef ARM9_DLDI
-	_dldi_start.ioInterface.clearStatus();
-	_dldi_start.ioInterface.shutdown();
+	struct  DLDI_INTERFACE* dldiInterface = (struct DLDI_INTERFACE*)DLDIARM7Address;	
+	dldiInterface->ioInterface.clearStatus();
+	dldiInterface->ioInterface.shutdown();
 	#endif
 	
 	return ret;

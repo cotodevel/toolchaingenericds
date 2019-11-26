@@ -240,7 +240,7 @@ extern int _fstat_r ( struct _reent *_r, int fd, struct stat *buf );
 extern int  readdir_r(DIR * dirp,struct dirent * entry,struct dirent ** result);
 extern int OpenFileFromPathGetStructFD(char * fullPath);
 extern bool closeFileFromStructFD(int StructFD);
-extern volatile struct fd files[OPEN_MAXTGDS];	//file/dir attrs, pointers for below struct
+extern struct fd * files;	//File/Dir MAX handles: OPEN_MAXTGDS
 
 ////////////////////////////////////////////////////////////////////////////INTERNAL CODE END/////////////////////////////////////////////////////////////////////////////////////
 
@@ -264,12 +264,12 @@ static inline __attribute__((always_inline))
 struct fd *getStructFD(int fd){
     struct fd *f = NULL;
     if((fd < OPEN_MAXTGDS) && (fd >= 0)){
-        f = (struct fd *)&files[fd];
+        f = (struct fd *)(files + fd);
 		if(f->dirPtr){
-			f->dirPtr = (DIR *)&files[fd].dir;
+			f->dirPtr = (DIR *)&(files + fd)->dir;
 		}
 		if(f->filPtr){
-			f->filPtr = (FIL *)&files[fd].fil;
+			f->filPtr = (FIL *)&(files + fd)->fil;
 		}
     }
     return f;
@@ -287,19 +287,19 @@ void initTGDS(char * devoptabFSName){
 	int fd = 0;
 	/* search in all struct fd instances*/
 	for (fd = 0; fd < OPEN_MAXTGDS; fd++){
-		memset((uint8*)&files[fd], 0, sizeof(struct fd));
-		files[fd].isused = (sint32)structfd_isunused;
+		memset((uint8*)(files + fd), 0, sizeof(struct fd));
+		(files + fd)->isused = (sint32)structfd_isunused;
 		//Internal default invalid value (overriden later)
-		files[fd].cur_entry.d_ino = (sint32)structfd_posixInvalidFileDirHandle;	//Posix File Descriptor
-		files[fd].StructFD = (sint32)structfd_posixInvalidFileDirHandle;		//TGDS File Descriptor (struct fd)
-		files[fd].StructFDType = FT_NONE;	//struct fd type invalid.
-		files[fd].isatty = (sint32)structfd_isattydefault;
-		files[fd].descriptor_flags = (sint32)structfd_descriptorflagsdefault;
-		files[fd].status_flags = (sint32)structfd_status_flagsdefault;
-		files[fd].loc = (sint32)structfd_fildir_offsetdefault;
+		(files + fd)->cur_entry.d_ino = (sint32)structfd_posixInvalidFileDirHandle;	//Posix File Descriptor
+		(files + fd)->StructFD = (sint32)structfd_posixInvalidFileDirHandle;		//TGDS File Descriptor (struct fd)
+		(files + fd)->StructFDType = FT_NONE;	//struct fd type invalid.
+		(files + fd)->isatty = (sint32)structfd_isattydefault;
+		(files + fd)->descriptor_flags = (sint32)structfd_descriptorflagsdefault;
+		(files + fd)->status_flags = (sint32)structfd_status_flagsdefault;
+		(files + fd)->loc = (sint32)structfd_fildir_offsetdefault;
 		
-		files[fd].filPtr = NULL;
-		files[fd].dirPtr = NULL;
+		(files + fd)->filPtr = NULL;
+		(files + fd)->dirPtr = NULL;
 	}
 	//Set up proper devoptab device mount name.
 	memcpy((uint32*)&devoptab_sdFilesystem.name[0], (uint32*)devoptabFSName, strlen(devoptabFSName));
@@ -328,9 +328,9 @@ int getStructFDIndexByFileName(char * filename){
 	int fd = 0;
 	/* search in all struct fd instances*/
 	for (fd = 0; fd < OPEN_MAXTGDS; fd++){
-		if(files[fd].isused == (sint32)structfd_isused){
-			if(strcmp((char*)&files[fd].fd_name, filename) == 0){
-				//printfDebugger("getStructFDIndexByFileName(): idx:%d - f:%s",fd, files[fd].fd_name);
+		if((files + fd)->isused == (sint32)structfd_isused){
+			if(strcmp((char*)&(files + fd)->fd_name, filename) == 0){
+				//printfDebugger("getStructFDIndexByFileName(): idx:%d - f:%s",fd, (files + fd)->fd_name);
 				return fd;
 			}
 		}
@@ -344,24 +344,24 @@ int FileHandleAlloc(struct devoptab_t * devoptabInst){
     int fd = 0;
     int ret = structfd_posixInvalidFileDirHandle;
     for (fd = 0; fd < OPEN_MAXTGDS; fd++){
-        if ((sint32)files[fd].isused == (sint32)structfd_isunused){
-			files[fd].isused = (sint32)structfd_isused;
+        if ((sint32)(files + fd)->isused == (sint32)structfd_isunused){
+			(files + fd)->isused = (sint32)structfd_isused;
 			
 			//PosixFD default valid value (overriden now)
-			files[fd].devoptabFileDescriptor = devoptabInst;
+			(files + fd)->devoptabFileDescriptor = devoptabInst;
 			
 			//Internal default value (overriden now)
-			files[fd].cur_entry.d_ino = (sint32)fd;	//Posix File Descriptor
-			files[fd].StructFD = (sint32)structfd_posixInvalidFileDirHandle;		//TGDS File Descriptor (struct fd) not valid yet. Set up by initStructFDHandle()
-			files[fd].StructFDType = FT_NONE;	//struct fd type not valid yet. Will be assigned by fatfs_open_file (FT_FILE), or fatfs_open_dir (FT_DIR)
+			(files + fd)->cur_entry.d_ino = (sint32)fd;	//Posix File Descriptor
+			(files + fd)->StructFD = (sint32)structfd_posixInvalidFileDirHandle;		//TGDS File Descriptor (struct fd) not valid yet. Set up by initStructFDHandle()
+			(files + fd)->StructFDType = FT_NONE;	//struct fd type not valid yet. Will be assigned by fatfs_open_file (FT_FILE), or fatfs_open_dir (FT_DIR)
 			
-			files[fd].isatty = (sint32)structfd_isattydefault;
-			files[fd].descriptor_flags = (sint32)structfd_descriptorflagsdefault;
-			files[fd].status_flags = (sint32)structfd_status_flagsdefault;
-			files[fd].loc = (sint32)structfd_fildir_offsetdefault;
+			(files + fd)->isatty = (sint32)structfd_isattydefault;
+			(files + fd)->descriptor_flags = (sint32)structfd_descriptorflagsdefault;
+			(files + fd)->status_flags = (sint32)structfd_status_flagsdefault;
+			(files + fd)->loc = (sint32)structfd_fildir_offsetdefault;
 			
-			files[fd].filPtr = NULL;
-			files[fd].dirPtr = NULL;
+			(files + fd)->filPtr = NULL;
+			(files + fd)->dirPtr = NULL;
 			
             ret = fd;
             break;
@@ -387,12 +387,12 @@ int FileHandleAlloc(struct devoptab_t * devoptabInst){
 static inline __attribute__((always_inline))
 int FileHandleFree(int fd){
 	int ret = structfd_posixInvalidFileDirHandle;
-    if ((fd < OPEN_MAXTGDS) && (fd >= 0) && (files[fd].isused == structfd_isused)){
-        files[fd].isused = (sint32)structfd_isunused;
-		files[fd].cur_entry.d_ino = (sint32)structfd_posixInvalidFileDirHandle;	//Posix File Descriptor
-		files[fd].StructFD = (sint32)structfd_posixInvalidFileDirHandle;		//TGDS File Descriptor (struct fd)
-		files[fd].StructFDType = FT_NONE;	//struct fd type invalid.
-		files[fd].loc = structfd_posixInvalidFileHandleOffset;
+    if ((fd < OPEN_MAXTGDS) && (fd >= 0) && ((files + fd)->isused == structfd_isused)){
+        (files + fd)->isused = (sint32)structfd_isunused;
+		(files + fd)->cur_entry.d_ino = (sint32)structfd_posixInvalidFileDirHandle;	//Posix File Descriptor
+		(files + fd)->StructFD = (sint32)structfd_posixInvalidFileDirHandle;		//TGDS File Descriptor (struct fd)
+		(files + fd)->StructFDType = FT_NONE;	//struct fd type invalid.
+		(files + fd)->loc = structfd_posixInvalidFileHandleOffset;
 		ret = fd;
     }
 	return ret;
@@ -409,7 +409,7 @@ sint8 * getDeviceNameByStructFDIndex(int StructFDIndex){
 	/* search in all struct fd instances*/
     for (i = 0; i < OPEN_MAXTGDS; i++)
     {
-        if (files[i].cur_entry.d_ino == StructFDIndex)
+        if ((files + i)->cur_entry.d_ino == StructFDIndex)
         {
 			out = (sint8*)(&devoptab_struct[i]->name);
 		}
@@ -425,10 +425,10 @@ int getStructFDIndexByDIR(DIR *dirp){
     /* search in all struct fd instances*/
     for (fd = 0; fd < OPEN_MAXTGDS; fd++)
     {
-        if (files[fd].dirPtr)
+        if ((files + fd)->dirPtr)
         {
-			if(files[fd].dirPtr->obj.id == dirp->obj.id){
-				ret = files[fd].cur_entry.d_ino;
+			if((files + fd)->dirPtr->obj.id == dirp->obj.id){
+				ret = (files + fd)->cur_entry.d_ino;
 				break;
 			}
 		}
