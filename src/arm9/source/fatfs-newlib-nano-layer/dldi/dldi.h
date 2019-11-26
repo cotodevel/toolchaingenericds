@@ -127,8 +127,6 @@ extern bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buff
 extern bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buffer);
 
 extern void initDLDIARM7(u32 srcDLDIAddr);
-extern void SetSlot1Slot2ARM7();
-extern void SetSlot1Slot2ARM9();
 
 #ifdef __cplusplus
 }

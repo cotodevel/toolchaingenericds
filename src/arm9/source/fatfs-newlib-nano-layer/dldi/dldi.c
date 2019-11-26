@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "dmaTGDS.h"
+#include "busTGDS.h"
 
 const uint32  DLDI_MAGIC_NUMBER = 
 	0xBF8DA5ED;	
@@ -195,7 +196,7 @@ bool dldiPatchLoader(bool clearBSS, u32 DldiRelocatedAddress, u32 dldiSourceInRa
 }
 
 void initDLDIARM7(u32 srcDLDIAddr){	//implementation
-	SetSlot1Slot2ARM7();
+	SetBusSLOT1SLOT2ARM7();
 	u32 dldiSourceInRam = (u32)srcDLDIAddr;
 	fixAndRelocateDLDI(dldiSourceInRam);
 	
