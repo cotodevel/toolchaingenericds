@@ -67,9 +67,7 @@ DSTATUS disk_initialize (
 		if(pdrv == DLDICART){
 			
 			//DS DLDI
-			struct DISC_INTERFACE_STRUCT* inst = (struct DISC_INTERFACE_STRUCT*)dldiGetInternal();
-		
-			if( (!inst->startup()) || (!inst->isInserted()) ){
+			if( (!_dldi_start.ioInterface.startup()) || (!_dldi_start.ioInterface.isInserted()) ){
 				ret = STA_NOINIT;
 			}
 			else{
@@ -94,7 +92,7 @@ DRESULT disk_read (
 	UINT count		/* Number of sectors to read */
 )
 {
-	return ( ((pdrv == DLDICART) && io_dldi_data->ioInterface.readSectors(sector, count, buff) == true) ? RES_OK : RES_ERROR);
+	return ( ((pdrv == DLDICART) && _dldi_start.ioInterface.readSectors(sector, count, buff) == true) ? RES_OK : RES_ERROR);
 }
 
 
@@ -110,7 +108,7 @@ DRESULT disk_write (
 	UINT count			/* Number of sectors to write */
 )
 {
-	return ( ((pdrv == DLDICART) && io_dldi_data->ioInterface.writeSectors(sector, count, buff) == true) ? RES_OK : RES_ERROR);
+	return ( ((pdrv == DLDICART) && _dldi_start.ioInterface.writeSectors(sector, count, buff) == true) ? RES_OK : RES_ERROR);
 }
 
 

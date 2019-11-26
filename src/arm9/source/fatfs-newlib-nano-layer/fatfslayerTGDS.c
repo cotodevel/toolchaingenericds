@@ -392,8 +392,7 @@ sint32 getDiskSectorSize(){
 
 char * dldi_tryingInterface(){
 	//DS DLDI
-	struct DLDI_INTERFACE * DLDI_INTERFACEInst = dldiGet();
-	return DLDI_INTERFACEInst->friendlyName;
+	return (char *)&_io_dldi.friendlyName[0];
 }
 
 
@@ -654,7 +653,7 @@ bool FAT_FreeFiles (void){
 		free(FileClassListPtr);
 	}
 	// Return status of card
-	return (bool)dldiGetInternal()->isInserted;
+	return (bool)_dldi_start.ioInterface.isInserted();
 }
 
 

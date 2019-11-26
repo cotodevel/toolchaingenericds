@@ -1,27 +1,29 @@
 @---------------------------------------------------------------------------------
 	.align	4
 	.arm
-	.global _io_dldi_stub
+	.global _io_dldi
+.global _dldi_start
+_dldi_start:
+
 @---------------------------------------------------------------------------------
 .equ FEATURE_MEDIUM_CANREAD,		0x00000001
 .equ FEATURE_MEDIUM_CANWRITE,		0x00000002
-.equ FEATURE_SLOT_GBA,			0x00000010
-.equ FEATURE_SLOT_NDS,			0x00000020
+.equ FEATURE_SLOT_GBA,				0x00000010
+.equ FEATURE_SLOT_NDS,				0x00000020
 
-.equ DLDI_ALLOCATED_SPACE,		32768
-
-_io_dldi_stub:
-
-dldi_start:
+.equ FIX_ALL,						0x01
+.equ FIX_GLUE,						0x02
+.equ FIX_GOT,						0x04
+.equ FIX_BSS,						0x08
 
 @---------------------------------------------------------------------------------
 @ Driver patch file standard header -- 16 bytes
 	.word	0xBF8DA5ED		@ Magic number to identify this region
 	.asciz	" Chishm"		@ Identifying Magic string (8 bytes with null terminator)
 	.byte	0x01			@ Version number
-	.byte	0x0F	@32KiB	@ Log [base-2] of the size of this driver in bytes.
+	.byte	0x0E	@16KiB	@ Log [base-2] of the size of this driver in bytes.
 	.byte	0x00			@ Sections to fix
-	.byte 	0x0F	@32KiB	@ Log [base-2] of the allocated space in bytes.
+	.byte 	0x0E	@16KiB	@ Log [base-2] of the allocated space in bytes.
 	
 @---------------------------------------------------------------------------------
 @ Text identifier - can be anything up to 47 chars + terminating null -- 16 bytes
@@ -31,8 +33,8 @@ dldi_start:
 @---------------------------------------------------------------------------------
 @ Offsets to important sections within the data	-- 32 bytes
 	.align	6
-	.word   dldi_start		@ data start
-	.word   dldi_end		@ data end
+	.word   _dldi_start		@ data start
+	.word   _dldi_end		@ data end
 	.word	0x00000000		@ Interworking glue start	-- Needs address fixing
 	.word	0x00000000		@ Interworking glue end
 	.word   0x00000000		@ GOT start					-- Needs address fixing
@@ -41,9 +43,10 @@ dldi_start:
 	.word   0x00000000		@ bss end
 
 @---------------------------------------------------------------------------------
-@ DISC_INTERFACE data -- 32 bytes
-	.ascii	"DLDI"				@ ioType
-	.word	0x00000000			@ Features
+@ IO_INTERFACE data -- 32 bytes
+_io_dldi:
+	.ascii	"DLDI"					@ ioType
+	.word	0x00000000				@ Features
 	.word	_DLDI_startup			@ 
 	.word	_DLDI_isInserted		@ 
 	.word	_DLDI_readSectors		@   Function pointers to standard device driver functions
@@ -68,11 +71,10 @@ _DLDI_shutdown:
 	.align
 	.pool
 
+
 dldi_data_end:
+.space 16384 - (dldi_data_end - _dldi_start)		@ Fill to 16KiB
 
-@ Pad to end of allocated space
-.space DLDI_ALLOCATED_SPACE - (dldi_data_end - dldi_start)	
-
-dldi_end:
+_dldi_end:
 	.end
 @---------------------------------------------------------------------------------
