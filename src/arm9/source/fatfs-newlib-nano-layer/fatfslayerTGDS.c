@@ -1668,7 +1668,10 @@ int fatfs_init(){
 
 //internal: SD de-init code: requires to call fatfs_init() at least once before.
 int fatfs_deinit(){
-	return (f_unmount("0:"));
+	int ret = f_unmount("0:");
+	_dldi_start.ioInterface.clearStatus();
+	_dldi_start.ioInterface.shutdown();
+	return ret;
 }
 
 //this copies stat from internal struct fd to output stat
