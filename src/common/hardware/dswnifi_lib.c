@@ -40,6 +40,7 @@ USA
 #include "timerTGDS.h"
 #include "keyboard.h"
 #include "sgIP_sockets.h"
+#include "nds_cp15_misc.h"
 
 __attribute__((section(".dtcm")))
 struct dsnwifisrvStr dswifiSrv;
@@ -1313,6 +1314,7 @@ u32 debuggerReadMemory(u32 addr){
 			return (u32)readu32GDBMapFile(addr);
 		}
 		else{
+			coherent_user_range_by_size((uint32)addr, (int)4);
 			return (*(u32*)addr);
 		}
 	}
@@ -1325,6 +1327,7 @@ u16 debuggerReadHalfWord(u32 addr){
 			return (u16)(readu32GDBMapFile(addr) & 0xffff);
 		}
 		else{
+			coherent_user_range_by_size((uint32)addr, (int)4);
 			return (*(u16*)addr);
 		}
 	}
@@ -1337,6 +1340,7 @@ u8 debuggerReadByte(u32 addr){
 			return (u8)(readu32GDBMapFile(addr)&0xff);	//correct format: (value 32bit) & 0xff
 		}
 		else{
+			coherent_user_range_by_size((uint32)addr, (int)4);
 			return (*(u8*)addr);
 		}
 	}
