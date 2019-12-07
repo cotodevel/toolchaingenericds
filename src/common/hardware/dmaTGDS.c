@@ -18,10 +18,65 @@ USA
 
 */
 
+#include "dmaTGDS.h"
 
 #include "typedefsTGDS.h"
 #include "dsregs.h"
 #include "dsregs_asm.h"
 
-#include "dmaTGDS.h"
+//DMA:
+#ifdef ARM9
+__attribute__((section(".itcm")))
+#endif
+void dmaFill(sint32 dmachannel,uint32 value, uint32 dest, uint32 mode){
+#ifdef ARM7	
+	DMAXSAD(dmachannel) = (uint32)&value;
+#endif
 
+#ifdef ARM9
+	DMAXFILL(dmachannel) = (vuint32)value;
+	DMAXSAD(dmachannel) = (uint32)&DMAXFILL(dmachannel);
+#endif
+	DMAXDAD(dmachannel) = (uint32)dest;
+	DMAXCNT(dmachannel) = mode;
+	while(DMAXCNT(dmachannel) & DMAENABLED);
+}
+
+
+#ifdef ARM9
+__attribute__((section(".itcm")))
+#endif
+void dmaFillWord(sint32 dmachannel,uint32 value, uint32 dest, uint32 word_count){
+	dmaFill(dmachannel,value,dest,(DMAFIXED_SRC | DMAINCR_DEST | DMA32BIT | DMASTART_INMEDIATE | DMAENABLED | (word_count>>2)));
+}
+
+#ifdef ARM9
+__attribute__((section(".itcm")))
+#endif
+void dmaFillHalfWord(sint32 dmachannel,uint32 value, uint32 dest, uint32 word_count){
+	dmaFill(dmachannel,value,dest,(DMAFIXED_SRC | DMAINCR_DEST | DMA16BIT | DMASTART_INMEDIATE | DMAENABLED | (word_count>>1)));
+}
+
+#ifdef ARM9
+__attribute__((section(".itcm")))
+#endif
+void dmaTransfer(sint32 dmachannel, uint32 source, uint32 dest, uint32 mode){	
+	DMAXSAD(dmachannel)= source;
+	DMAXDAD(dmachannel)= dest;
+	DMAXCNT(dmachannel)= mode;	
+	while(DMAXCNT(dmachannel) & DMAENABLED);
+}
+
+#ifdef ARM9
+__attribute__((section(".itcm")))
+#endif
+void dmaTransferHalfWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count){
+	dmaTransfer(dmachannel, source, dest, (DMAINCR_SRC | DMAINCR_DEST | DMA16BIT | DMASTART_INMEDIATE | DMAENABLED | (word_count>>1)));
+}
+
+#ifdef ARM9
+__attribute__((section(".itcm")))
+#endif
+void dmaTransferWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count){
+	dmaTransfer(dmachannel, source, dest, (DMAINCR_SRC | DMAINCR_DEST | DMA32BIT | DMASTART_INMEDIATE | DMAENABLED | (word_count>>2)));
+}

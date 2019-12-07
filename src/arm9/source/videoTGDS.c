@@ -19,7 +19,6 @@ USA
 */
 #include "videoTGDS.h"
 #include "consoleTGDS.h"
-#include "dmaTGDS.h"
 
 #ifdef ARM9
 

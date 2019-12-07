@@ -72,56 +72,18 @@ USA
 #define DMAXFILL(dmaindx)      (*(vuint32*)(0x040000E0+(dmaindx*0x4)))
 #endif
 
-static inline __attribute__((always_inline)) 
-void dmaFill(sint32 dmachannel,uint32 value, uint32 dest, uint32 mode){
-#ifdef ARM7	
-	DMAXSAD(dmachannel) = (uint32)&value;
-#endif
-#ifdef ARM9
-	DMAXFILL(dmachannel) = (vuint32)value;
-	DMAXSAD(dmachannel) = (uint32)&DMAXFILL(dmachannel);
-#endif
-
-    DMAXDAD(dmachannel) = (uint32)dest;
-	DMAXCNT(dmachannel) = mode;
-	while(DMAXCNT(dmachannel) & DMAENABLED);
-}
-
-static inline __attribute__((always_inline)) 
-void dmaFillWord(sint32 dmachannel,uint32 value, uint32 dest, uint32 word_count){
-	dmaFill(dmachannel,value,dest,(DMAFIXED_SRC | DMAINCR_DEST | DMA32BIT | DMASTART_INMEDIATE | DMAENABLED | (word_count>>2)));
-}
-
-static inline __attribute__((always_inline)) 
-void dmaFillHalfWord(sint32 dmachannel,uint32 value, uint32 dest, uint32 word_count){
-	dmaFill(dmachannel,value,dest,(DMAFIXED_SRC | DMAINCR_DEST | DMA16BIT | DMASTART_INMEDIATE | DMAENABLED | (word_count>>1)));
-}
-
-static inline __attribute__((always_inline)) 
-void dmaTransfer(sint32 dmachannel, uint32 source, uint32 dest, uint32 mode){	
-	DMAXSAD(dmachannel)= source;
-	DMAXDAD(dmachannel)= dest;
-	DMAXCNT(dmachannel)= mode;
-	while(DMAXCNT(dmachannel) & DMAENABLED);
-}
-
-static inline __attribute__((always_inline)) 
-void dmaTransferHalfWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count){
-	dmaTransfer(dmachannel, source, dest, (DMAINCR_SRC | DMAINCR_DEST | DMA16BIT | DMASTART_INMEDIATE | DMAENABLED | (word_count>>1)));
-}
-
-static inline __attribute__((always_inline)) 
-void dmaTransferWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count){
-	dmaTransfer(dmachannel, source, dest, (DMAINCR_SRC | DMAINCR_DEST | DMA32BIT | DMASTART_INMEDIATE | DMAENABLED | (word_count>>2)));
-}
-
-
 #endif
 
 #ifdef __cplusplus
 extern "C"{
 #endif
 
+extern void dmaFill(sint32 dmachannel,uint32 value, uint32 dest, uint32 mode);
+extern void dmaFillWord(sint32 dmachannel,uint32 value, uint32 dest, uint32 word_count);
+extern void dmaFillHalfWord(sint32 dmachannel,uint32 value, uint32 dest, uint32 word_count);
+extern void dmaTransfer(sint32 dmachannel, uint32 source, uint32 dest, uint32 mode);
+extern void dmaTransferHalfWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count);
+extern void dmaTransferWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count);
 
 #ifdef __cplusplus
 }
