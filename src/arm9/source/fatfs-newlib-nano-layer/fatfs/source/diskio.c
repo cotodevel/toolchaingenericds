@@ -67,7 +67,8 @@ DSTATUS disk_initialize (
 		if(pdrv == DLDICART){
 			
 			//DS DLDI
-			if( (!_dldi_start.ioInterface.startup()) || (!_dldi_start.ioInterface.isInserted()) ){
+			struct DLDI_INTERFACE* dldiInit = dldiGet();	//ensures SLOT-1 / SLOT-2 is mapped to ARM9 now
+			if( (!dldiInit->ioInterface.startup()) || (!dldiInit->ioInterface.isInserted()) ){
 				ret = STA_NOINIT;
 			}
 			else{

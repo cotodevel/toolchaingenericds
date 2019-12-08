@@ -3,7 +3,6 @@
 #include <string.h>
 
 #include "dmaTGDS.h"
-#include "busTGDS.h"
 
 const uint32  DLDI_MAGIC_NUMBER = 
 	0xBF8DA5ED;	
@@ -38,6 +37,12 @@ static addr_t quickFind (const data_t* data, const data_t* search, size_t dataLe
 const DLDI_INTERFACE* io_dldi_data = (const DLDI_INTERFACE*)&_dldi_start;
 
 struct DLDI_INTERFACE* dldiGet(void) {
+	if (_dldi_start.ioInterface.features & FEATURE_SLOT_GBA) {
+		SetBusSLOT1ARM7SLOT2ARM9();
+	}
+	if (_dldi_start.ioInterface.features & FEATURE_SLOT_NDS) {
+		SetBusSLOT1ARM9SLOT2ARM7();
+	}
 	return (struct DLDI_INTERFACE*)&_dldi_start;
 }
 
@@ -196,7 +201,7 @@ bool dldiPatchLoader(bool clearBSS, u32 DldiRelocatedAddress, u32 dldiSourceInRa
 }
 
 void initDLDIARM7(u32 srcDLDIAddr){	//implementation
-	SetBusSLOT1SLOT2ARM7();
+	//SetSlot1Slot2ARM7();	//todo: must be brought back from tgds ???? project
 	u32 dldiSourceInRam = (u32)srcDLDIAddr;
 	fixAndRelocateDLDI(dldiSourceInRam);
 	
