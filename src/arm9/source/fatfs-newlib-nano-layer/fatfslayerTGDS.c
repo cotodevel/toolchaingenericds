@@ -814,6 +814,11 @@ int getFirstFile(char * path){
 				readFileNameFromFileClassIndex((char*)path, fileInst);	//update source path
 			}			
 			break;
+			//empty / no dir or file
+			default:{
+				return FT_NONE;	//End the list regardless, no more room available!. 
+			}
+			break;
 		}
 		//increase the file/dir counter after operation only if valid entry, otherwise it doesn't anymore
 		if(CurrentFileDirEntry < (int)(FileClassItems)){ 
@@ -864,6 +869,9 @@ int getNextFile(char * path){
 	return fType;
 }
 
+int getCurrentDirectoryCount(){
+	return CurrentFileDirEntry;
+}
 ///////////////////////////////////////////////////////TGDS FS API extension end. /////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

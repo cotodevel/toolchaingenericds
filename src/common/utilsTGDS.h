@@ -100,7 +100,6 @@ extern char *	print_ip(uint32 ip, char * bufOut);
 extern sint8 	*_FS_getFileExtension(sint8 *filename);
 extern sint8 	*FS_getFileName(sint8 *filename);
 extern int		FS_chdir(const sint8 *path);
-extern sint8	**FS_getDirectoryList(sint8 *path, sint8 *mask, int *cnt);
 
 //splitCustom string by delimiter implementation in C, that does not use malloc/calloc and re-uses callbacks
 extern char * outSplitBuf[TOP_ITEMS_SPLIT][MAX_TGDSFILENAME_LENGTH+1];

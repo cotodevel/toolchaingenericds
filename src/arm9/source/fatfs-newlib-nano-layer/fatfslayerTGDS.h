@@ -175,6 +175,7 @@ extern int getNextFile(char * path);
 extern int CurrentFileDirEntry;
 extern int LastFileEntry;
 extern int LastDirEntry;
+extern int getCurrentDirectoryCount();
 extern bool getFileFILINFOfromFileClass(struct FileClass * fileInst, FILINFO * finfo);
 extern struct FileClass getFileClassFromPath(char * path);
 extern void InitGlobalFileClass();
