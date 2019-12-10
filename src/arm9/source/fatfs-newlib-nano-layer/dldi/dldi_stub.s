@@ -1,7 +1,6 @@
 @---------------------------------------------------------------------------------
 	.align	4
 	.arm
-	.global _io_dldi
 .global _dldi_start
 _dldi_start:
 
@@ -44,7 +43,6 @@ _dldi_start:
 
 @---------------------------------------------------------------------------------
 @ IO_INTERFACE data -- 32 bytes
-_io_dldi:
 	.ascii	"DLDI"					@ ioType
 	.word	0x00000000				@ Features
 	.word	_DLDI_startup			@ 

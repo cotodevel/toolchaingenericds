@@ -392,7 +392,7 @@ sint32 getDiskSectorSize(){
 
 char * dldi_tryingInterface(){
 	//DS DLDI
-	return (char *)&_io_dldi.friendlyName[0];
+	return (char *)&_dldi_start.friendlyName[0];
 }
 
 

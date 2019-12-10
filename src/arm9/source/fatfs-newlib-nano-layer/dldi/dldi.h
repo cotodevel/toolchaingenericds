@@ -110,7 +110,6 @@ extern "C" {
 
 // The only built in driver
 extern DLDI_INTERFACE _dldi_start;
-extern DLDI_INTERFACE _io_dldi;
 
 extern FN_MEDIUM_STARTUP _DLDI_startup_ptr;
 extern FN_MEDIUM_READSECTORS _DLDI_readSectors_ptr;
