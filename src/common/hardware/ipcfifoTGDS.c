@@ -1,5 +1,4 @@
 /*
-
 			Copyright (C) 2017  Coto
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -15,7 +14,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 USA
-
 */
 
 //TGDS IPC Version: 1.3
@@ -44,94 +42,30 @@ USA
 
 #endif
 
-//Software FIFO calls, Rely on Hardware FIFO calls so it doesnt matter if they are in different maps 
-volatile int FIFO_SOFT_PTR = 0;
-
-//useful for checking if something is pending
-inline __attribute__((always_inline)) 
-int GetSoftFIFOCount(){
-	return FIFO_SOFT_PTR;
+//IPC
+void sendByteIPC(uint8 inByte){
+	REG_IPC_SYNC = ((REG_IPC_SYNC&0xfffff0ff) | (inByte<<8) | (1<<13) );	// (1<<13) Send IRQ to remote CPU      (0=None, 1=Send IRQ)
 }
 
-//GetSoftFIFO: Stores up to FIFO_NDS_HW_SIZE. Exposed to usercode for fetching up to 64 bytes (in 4 bytes each) sent from other core, until it returns false (empty buffer).
-//Example: 
-//uint32 n = 0;
-//while(GetSoftFIFO(&n)== true){
-//	//n has 4 bytes from the other ARM Core.
-//}
+
+uint8 receiveByteIPC(){
+	return (REG_IPC_SYNC&0xf);
+}
+
+void idleIPC(){
+	sendByteIPC(0x0);
+}
+
+//Async FIFO Sender
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
 inline __attribute__((always_inline)) 
-bool GetSoftFIFO(uint32 * var){
-	if(FIFO_SOFT_PTR >= 1){
-		FIFO_SOFT_PTR--;
-		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-		*var = (uint32)TGDSIPC->FIFO_BUF_SOFT[FIFO_SOFT_PTR];
-		TGDSIPC->FIFO_BUF_SOFT[FIFO_SOFT_PTR] = (uint32)0;
-		return true;
-	}
-	else
-		return false;
-}
-
-//SetSoftFIFO == false means FULL
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif    
-//returns ammount of inserted uint32 blocks into FIFO hardware regs
-inline __attribute__((always_inline)) 
-bool SetSoftFIFO(uint32 value)
-{
-	if(FIFO_SOFT_PTR < (int)(FIFO_NDS_HW_SIZE/4)){
-		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-		TGDSIPC->FIFO_BUF_SOFT[FIFO_SOFT_PTR] = value;
-		FIFO_SOFT_PTR++;
-		return true;
-	}
-	else
-		return false;
-}
-
-//Software FIFO Handler receiver, add it wherever its required. (This is a FIFO that runs on software logic, rather than NDS FIFO).
-//Supports multiple arguments, in FIFO format.
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
-inline __attribute__((always_inline)) 
-void Handle_SoftFIFORECV()
-{
-	uint32 msg = 0;
-	while(GetSoftFIFO((uint32*)&msg) == true){
-		//process incoming packages
-		switch(msg){
-			
-			
-		}
-	}
-}
-
-//Software FIFO Sender. Send from external ARM Core, receive from the above function. Uses hardware FIFO.
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
-inline __attribute__((always_inline)) 
-void SoftFIFOSEND(uint32 value0,uint32 value1,uint32 value2,uint32 value3){
-	//todo: needs hardware IPC FIFO implementation.
-}
-
-
-//non blocking IPC FIFO
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
-inline __attribute__((always_inline)) 
-void SendFIFOWords(uint32 data0, uint32 data1){
-	REG_IPC_FIFO_TX = (uint32)data0;
+void SendFIFOWords(uint32 data0, uint32 data1){	//format: arg0: cmd, arg1: value
+	REG_IPC_FIFO_TX = (uint32)data0;	//last message should always be command
 	REG_IPC_FIFO_TX = (uint32)data1;
 }
 
-//FIFO HANDLER INIT
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
@@ -139,19 +73,16 @@ inline __attribute__((always_inline))
 void HandleFifoEmpty(){
 	HandleFifoEmptyWeakRef((uint32)0,(uint32)0);
 }
-
-//FIFO HANDLER INIT
+	
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
 inline __attribute__((always_inline)) 
 void HandleFifoNotEmpty(){
-
-	volatile uint32 data0 = 0,data1 = 0;
+	volatile uint32 data0 = 0, data1 = 0;
 	while(!(REG_IPC_FIFO_CR & RECV_FIFO_IPC_EMPTY)){
-		data0 = REG_IPC_FIFO_RX;
-		data1 = REG_IPC_FIFO_RX;
-		
+		data0 = (u32)REG_IPC_FIFO_RX;
+		data1 = (u32)REG_IPC_FIFO_RX;
 		//Do ToolchainGenericDS IPC handle here
 		switch (data0) {
 			// ARM7IO from ARM9
@@ -186,18 +117,6 @@ void HandleFifoNotEmpty(){
 				Wifi_Sync();
 			}
 			break;
-			//Process the packages (signal) that sent earlier FIFO_SEND_EXT
-			case((uint32)FIFO_SOFTFIFO_READ_EXT):{
-			
-			}
-			break;
-			case((uint32)FIFO_SOFTFIFO_WRITE_EXT):{
-				SetSoftFIFO(data1);
-			}
-			break;
-			
-			
-			
 			
 			//ARM7 command handler
 			#ifdef ARM7
@@ -261,9 +180,73 @@ void HandleFifoNotEmpty(){
 				screenLidHasClosedhandlerUser();
 			}
 			break;
+			
+			//Process the packages (signal) that sent earlier FIFO_SEND_EXT
+			case((uint32)READ_EXTARM_IPC):{
+				//take orders only if we have one
+				struct sSharedSENDCtx * ctx = (struct sSharedSENDCtx *)data1;
+				if(getSENDCtxStatus(ctx) == READ_EXTARM_IPC_BUSY){
+					REG_IME = 0;
+					memcpy((u8*)ctx->targetAddr, (u8*)ctx->srcAddr, ctx->size);
+					setSENDCtxStatus(READ_EXTARM_IPC_READY, ctx);
+					REG_IME = 1;
+				}
+			}
+			break;
+			
+			
 			#endif
 			
 		}
-		HandleFifoNotEmptyWeakRef(data0,data1);
+		HandleFifoNotEmptyWeakRef(data0, data1);	//this one follows: cmd, value order
 	}
+}
+
+
+//targetAddr == the output buffer : bufStart + bufSize will get written to
+//bufStart must be in EWRAM
+#ifdef ARM9
+__attribute__((section(".itcm")))
+#endif
+inline __attribute__((always_inline)) 
+void SendBufferThroughFIFOIrqsAsync(u32 bufStart, u32 targetAddr, int bufSize, struct sSharedSENDCtx * ctx){		//todo, put some callback here to read the chunk
+	setSENDCtx(bufStart, targetAddr, bufSize, ctx);
+	setSENDCtxStatus(READ_EXTARM_IPC_BUSY, ctx); 
+	SendFIFOWords(READ_EXTARM_IPC, (u32)ctx);
+	#ifdef ARM9
+	coherent_user_range_by_size(targetAddr, bufSize);
+	#endif
+	
+	while(getSENDCtxStatus(ctx) == READ_EXTARM_IPC_BUSY){
+		//some irq wait here...
+	}
+}
+
+#ifdef ARM9
+__attribute__((section(".itcm")))
+#endif
+void setSENDCtxStatus(int val, struct sSharedSENDCtx * ctx){
+	#ifdef ARM9
+	coherent_user_range_by_size((u32)ctx, sizeof(struct sSharedSENDCtx));
+	#endif
+	ctx->status = val;
+}
+
+#ifdef ARM9
+__attribute__((section(".itcm")))
+#endif
+int getSENDCtxStatus(struct sSharedSENDCtx * ctx){
+	return ctx->status;
+}
+
+#ifdef ARM9
+__attribute__((section(".itcm")))
+#endif
+void setSENDCtx(u32 srcAddr, u32 targetAddr, int Size, struct sSharedSENDCtx * ctx){
+	memset((u8*)ctx, 0, sizeof(struct sSharedSENDCtx));
+	//must be in ewram
+	ctx->targetAddr = targetAddr;
+	//relative to ARM processor
+	ctx->srcAddr = srcAddr;
+	ctx->size = Size;
 }

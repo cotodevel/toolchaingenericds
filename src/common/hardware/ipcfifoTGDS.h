@@ -37,39 +37,35 @@ USA
 #include "utilsTGDS.h"
 #include "wifi_shared.h"
 
+//FIFO Hardware
 //irqs
 #define VCOUNT_LINE_INTERRUPT (sint32)(159)
 
 //void Write8bitAddrExtArm
 //void Write16bitAddrExtArm
 //void Write32bitAddrExtArm
-#define WRITE_EXTARM_8	(uint32)(0xffff0201)
-#define WRITE_EXTARM_16	(uint32)(0xffff0202)
-#define WRITE_EXTARM_32	(uint32)(0xffff0203)
-
-//FIFO Hardware -> FIFO Software: GetSoftFIFO / SetSoftFIFO	/ 
-#define FIFO_NDS_HW_SIZE (sint32)(16*4)
-#define FIFO_SOFTFIFO_WRITE_EXT	(uint32)(0xffff1017)
-#define FIFO_SOFTFIFO_READ_EXT	(uint32)(0xffff1018)
-
+#define WRITE_EXTARM_8	(uint32)(0xffff0200)
+#define WRITE_EXTARM_16	(uint32)(0xffff0201)
+#define WRITE_EXTARM_32	(uint32)(0xffff0202)
+	
 //PowerCnt Read / PowerCnt Write
-#define FIFO_POWERCNT_ON	(uint32)(0xffff0004)
-#define FIFO_POWERCNT_OFF	(uint32)(0xffff0005)
+#define FIFO_POWERCNT_ON	(uint32)(0xffff0205)
+#define FIFO_POWERCNT_OFF	(uint32)(0xffff0206)
 
 //FIFO - WIFI
-#define WIFI_SYNC (uint32)(0xffff0006)
-#define WIFI_INIT (uint32)(0xffff0007)
-#define WIFI_DEINIT (uint32)(0xffff0100)
+#define WIFI_SYNC (uint32)(0xffff0207)
+#define WIFI_INIT (uint32)(0xffff0208)
+#define WIFI_DEINIT (uint32)(0xffff0209)
 
 //Exception Handling
-#define EXCEPTION_ARM7 (uint32)(0xffff0008)
-#define EXCEPTION_ARM9 (uint32)(0xffff0009)
+#define EXCEPTION_ARM7 (uint32)(0xffff020A)
+#define EXCEPTION_ARM9 (uint32)(0xffff020B)
 
 //PowerManagementWrite
-#define FIFO_POWERMGMT_WRITE	(uint32)(0xffff1019)
+#define FIFO_POWERMGMT_WRITE	(uint32)(0xffff020C)
 	//power management commands:
 	//screen power write
-	#define FIFO_SCREENPOWER_WRITE	(uint32)(0xffff101a)
+	#define FIFO_SCREENPOWER_WRITE	(uint32)(0xffff020D)
 
 #define SEND_FIFO_IPC_EMPTY	(uint32)(1<<0)	
 #define SEND_FIFO_IPC_FULL	(uint32)(1<<1)	
@@ -82,13 +78,16 @@ USA
 #define FIFO_IPC_ERROR	(uint32)(1<<14)	
 #define FIFO_IPC_ENABLE	(uint32)(1<<15)
 
-//IPC fifo bits
+//LID signaling at ARM9
+#define FIFO_IRQ_LIDHASOPENED_SIGNAL	(uint32)(0xffff020E)
+#define FIFO_IRQ_LIDHASCLOSED_SIGNAL	(uint32)(0xffff020F)
+
+//IPC bits
 #define REG_IPC_FIFO_TX		(*(vuint32*)0x4000188)
 #define REG_IPC_FIFO_RX		(*(vuint32*)0x4100000)
 #define REG_IPC_FIFO_CR		(*(vuint16*)0x4000184)
 
 #define REG_IPC_SYNC	(*(vuint16*)0x04000180)
-
 #define IPC_SYNC_IRQ_ENABLE		(uint16)(1<<14)
 #define IPC_SYNC_IRQ_REQUEST	(uint16)(1<<13)
 #define IPC_FIFO_SEND_EMPTY		(uint16)(1<<0)
@@ -101,14 +100,20 @@ USA
 #define IPC_FIFO_ERROR			(uint16)(1<<14)
 #define IPC_FIFO_ENABLE			(uint16)(1<<15)
 
+//Read callback between ARM processors (in chunks)
+#define READ_EXTARM_IPC	(uint8)(0xa)
+	#define READ_EXTARM_IPC_READY	(uint32)(0xffff22ff)
+	#define READ_EXTARM_IPC_BUSY	(uint32)(0xffff11ff)
+	#define READ_EXTARM_IPC_SIZE	(sint32)(32*1024)
 
-//notifierProcessor FIFO bits
-#define notifierProcessorRunThread	(uint32)(0xffff1020)				//set a thread to Run
-#define notifierProcessorRunAsyncAcknowledge	(uint32)(0xffff1021)	//an async thread that ran has acknowledged
 
-//LID signaling at ARM9
-#define FIFO_IRQ_LIDHASOPENED_SIGNAL	(uint32)(0xffff1100)
-#define FIFO_IRQ_LIDHASCLOSED_SIGNAL	(uint32)(0xffff1101)
+struct sSharedSENDCtx {
+    u32 targetAddr;
+	u32 srcAddr;
+	int size;		//buffer source, accounts size
+	int lastCopySz;
+	int status;	//0 not ready, 1 ready to take orders
+} __attribute__((aligned (4)));
 
 struct sIPCSharedTGDS {
     uint16 buttons7;  			// X, Y, /PENIRQ buttons
@@ -119,8 +124,6 @@ struct sIPCSharedTGDS {
 	sint16 touchZ1,  touchZ2;  // TSC x-panel measurements
     uint16 tdiode1,  tdiode2;  // TSC temperature diodes
     uint32 temperature;        // TSC computed temperature
-	
-	int notifierInternalIndex;	//this index == indexNotifierDescriptor;
 	
 	struct tm tmInst;	//DateTime
 	ulong ndsRTCSeconds; //DateTime in epoch time (seconds) starting from January 1, 1970 (midnight UTC/GMT)
@@ -157,16 +160,13 @@ struct sIPCSharedTGDS {
 	
 	uint32 WRAM_CR_ISSET;	//0 when ARM7 boots / 1 by ARM9 when its done
 	
-	//used by softFIFO
-	uint32 FIFO_BUF_SOFT[FIFO_NDS_HW_SIZE/4];
-	
 	//DS Firmware	Settings default set
 	struct sDSFWSETTINGS DSFWSETTINGSInst;
 	struct sEXTKEYIN	EXTKEYINInst;
 	
 	//used when 3+ args sent between ARM cores
 	uint32 ipcmsg[0x10];
-
+	
 } __attribute__((aligned (4)));
 
 //Shared Work     027FF000h 4KB    -     -    -    R/W
@@ -184,19 +184,21 @@ extern "C"{
 extern __attribute__((weak))	void HandleFifoNotEmptyWeakRef(uint32 cmd1,uint32 cmd2);
 extern __attribute__((weak))	void HandleFifoEmptyWeakRef(uint32 cmd1,uint32 cmd2);
 
-//FIFO
-	//software
-	extern int GetSoftFIFOCount();
-	extern bool SetSoftFIFO(uint32 value);
-	extern bool GetSoftFIFO(uint32 * var);
-	extern volatile int FIFO_SOFT_PTR;
-	extern void Handle_SoftFIFORECV();
-	extern void SoftFIFOSEND(uint32 value0,uint32 value1,uint32 value2,uint32 value3);
+extern void HandleFifoNotEmpty();
+extern void HandleFifoEmpty();
+extern void SendFIFOWords(uint32 data0, uint32 data1);
 
-	//hardware
-	extern void HandleFifoNotEmpty();
-	extern void HandleFifoEmpty();
-	extern void SendFIFOWords(uint32 data0, uint32 data1);
+//Async memory transfer
+extern void SendBufferThroughFIFOIrqsAsync(u32 bufStart, u32 targetAddr , int bufSize, struct sSharedSENDCtx * ctx);
+extern void setSENDCtxStatus(int val, struct sSharedSENDCtx * ctx);
+extern int getSENDCtxStatus(struct sSharedSENDCtx * ctx);
+//extern struct sSharedSENDCtx * getSENDCtx();
+extern void setSENDCtx(u32 srcAddr, u32 targetAddr, int Size, struct sSharedSENDCtx * ctx);
+
+extern void idleIPC();
+extern uint8 receiveByteIPC();
+extern void sendByteIPC(uint8 inByte);
+
 
 #ifdef __cplusplus
 }
