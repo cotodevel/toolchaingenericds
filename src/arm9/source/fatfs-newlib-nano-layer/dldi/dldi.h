@@ -117,7 +117,8 @@ extern FN_MEDIUM_WRITESECTORS _DLDI_writeSectors_ptr;
 
 extern uint8_t __vram_end;
 extern struct DLDI_INTERFACE* dldiGet(void);
-extern bool dldiPatchLoader(bool clearBSS, u32 DldiRelocatedAddress, u32 dldiSourceInRam);
+extern bool dldiRelocateLoader(bool clearBSS, u32 DldiRelocatedAddress, u32 dldiSourceInRam);
+extern bool dldiPatchLoader (data_t *binData, u32 binSize); //original DLDI code: seeks a DLDI section in binData, and uses current NTR TGDS homebrew's DLDI to relocate it in there
 
 extern void fixAndRelocateDLDI(u32 dldiSourceInRam);
 
@@ -125,7 +126,9 @@ extern bool dldi_handler_init();
 extern bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer);
 extern bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buffer);
 
+#ifdef ARM7
 extern void initDLDIARM7(u32 srcDLDIAddr);
+#endif
 
 #ifdef __cplusplus
 }
