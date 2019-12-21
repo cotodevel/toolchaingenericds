@@ -72,13 +72,27 @@ USA
 //FileClass Start directory if there is none
 #define FileClassStartDirectory TGDSDirectorySeparator
 
-
 //FileClass parts (not used by POSIX at all, but ToolchainGenericDS high level API (for parsing fullpath directories and high level descriptors)
 struct FileClass{
 	int type;	//FT_DIR / FT_FILE / FT_NONE	//  setup on Constructor / updated by getFileFILINFOfromPath(); / must be init from the outside 
 	sint8 fd_namefullPath[MAX_TGDSFILENAME_LENGTH+1];
 	bool isIterable;	//true = usable for buildfrompath / false = ignore lookup in buildfrompath
 	int d_ino;	//if any, assign it here
+	int curIndexInsideFileClassList;	//Current Index inside FileClassList
+	struct FileClassList * parentFileClassList;	//Pointer to its parent FileClass List object
+};
+
+//FileClass List context. To handle TGDS FileSystem + Directory functions you need to define it.
+struct FileClassList{
+	//The actual pointer inside the directory listing
+	int CurrentFileDirEntry;	
+	//These update on getFirstFile/Dir getNextFile/Dir
+	int LastFileEntry;
+	int LastDirEntry;
+	
+	int FileDirCount;	//actual Directory/File count
+	
+	struct FileClass fileList[FileClassItems];
 };
 
 struct fd {
@@ -151,18 +165,18 @@ extern sint32 getDiskSectorSize();
 extern char * dldi_tryingInterface();
 
 /////////////////////////////////////////Libfat wrapper layer. Call these as if you were calling libfat code./////////////////////////////////////////
-extern int 	FAT_FindFirstFile(char* filename);
-extern int 	FAT_FindNextFile(char* filename);
-extern u8 	FAT_GetFileAttributes(void);
+extern struct FileClass * FAT_FindFirstFile(char* filename, struct FileClassList * lst, int startFromGivenIndex);
+extern struct FileClass * 	FAT_FindNextFile(char* filename, struct FileClassList * lst);
+extern u8 	FAT_GetFileAttributes(struct FileClassList * lst);
 extern u8 FAT_SetFileAttributes(const char* filename, u8 attributes, u8 mask);
 extern bool readFileNameFromFileClassIndex(char* filename_out, struct FileClass * FileClassInst);
-extern bool FAT_GetAlias(char* alias);
+extern bool FAT_GetAlias(char* alias, struct FileClassList * lst);
 extern void FAT_preserveVars();
 extern void FAT_restoreVars();
 extern u32	disc_HostType(void);
-extern bool FAT_GetLongFilename(char* Longfilename);
-extern u32 FAT_GetFileSize(void);
-extern u32 FAT_GetFileCluster(void);
+extern bool FAT_GetLongFilename(char* Longfilename, struct FileClassList * lst);
+extern u32 FAT_GetFileSize(struct FileClassList * lst);
+extern u32 FAT_GetFileCluster(struct FileClassList * lst);
 extern bool disableWriting;
 extern void FAT_DisableWriting (void);
 extern int FAT_FileExists(char* filename);
@@ -170,20 +184,15 @@ extern bool FAT_FreeFiles (void);
 extern bool FAT_InitFiles (void);
 /////////////////////////////////////////////Libfat wrapper layer End/////////////////////////////////////////////
 
-extern int getFirstFile(char * path);
-extern int getNextFile(char * path);
-extern int CurrentFileDirEntry;
-extern int LastFileEntry;
-extern int LastDirEntry;
-extern int getCurrentDirectoryCount();
+extern struct FileClass * getFirstFile(char * path, struct FileClassList * lst, int startFromGivenIndex);
+extern struct FileClass * getNextFile(char * path, struct FileClassList * lst);
+extern int getCurrentDirectoryCount(struct FileClassList * lst);
 extern bool getFileFILINFOfromFileClass(struct FileClass * fileInst, FILINFO * finfo);
 extern struct FileClass getFileClassFromPath(char * path);
-extern void InitGlobalFileClass();
-extern struct FileClass * getFirstDirEntryFromList();
-extern struct FileClass * getFirstFileEntryFromList();
-extern struct FileClass * getFileClassFromList(int FileClassListIndex);
-extern void setFileClass(bool iterable, char * fullPath, int FileClassListIndex, int Typ, int StructFD);
-extern uint8* FileClassListPtr;
+extern struct FileClass * getFirstDirEntryFromList(struct FileClassList * lst);
+extern struct FileClass * getFirstFileEntryFromList(struct FileClassList * lst);
+extern struct FileClass * getFileClassFromList(int FileClassListIndex, struct FileClassList * lst);
+extern void setFileClass(bool iterable, char * fullPath, int FileClassListIndex, int Typ, int StructFD, struct FileClassList * lst);
 extern bool TGDSFS_detectUnicode(struct fd *pfd);
 ////////////////////////////////////////////////////////////////////////////USER CODE END/////////////////////////////////////////////////////////////////////////////////////
 
@@ -234,18 +243,20 @@ extern volatile struct fd files[OPEN_MAXTGDS];	//file/dir attrs, pointers for be
 ////////////////////////////////////////////////////////////////////////////INTERNAL CODE END/////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////// INTERNAL DIRECTORY FUNCTIONS /////////////////////////////////////////////////////////////////////
-extern bool buildFileClassListFromPath(char * path);
+extern bool buildFileClassListFromPath(char * path, struct FileClassList * lst, int startFromGivenIndex);
 extern char TGDSCurrentWorkingDirectory[MAX_TGDSFILENAME_LENGTH+1];
 extern void setTGDSCurrentWorkingDirectory(char * path);
 extern char * getTGDSCurrentWorkingDirectory();
 extern bool enterDir(char* newDir);
 extern bool leaveDir(char* newDir);
-extern bool updateFileClassList(char * path);
+extern bool updateGlobalCWD(char * path);
 /////////////////////////////////////////////////////////////////////// INTERNAL DIRECTORY FUNCTIONS END //////////////////////////////////////////////////////////////////
 
 //Link C to C++ related dependencies
 extern FILE *fdopen(int fd, const char *mode);
 extern int fileno(FILE *);
+
+extern void setFileClassObj(int FileClassListIndex, struct FileClass * FileClassObj, struct FileClassList * lst);
 
 #ifdef __cplusplus
 }
@@ -405,7 +416,6 @@ sint8 * getDeviceNameByStructFDIndex(int StructFDIndex){
 	return out;
 }
 
-
 //useful for handling native DIR * to Internal File Descriptors (struct fd index)
 static inline __attribute__((always_inline))
 int getStructFDIndexByDIR(DIR *dirp){
@@ -423,6 +433,16 @@ int getStructFDIndexByDIR(DIR *dirp){
 		}
     }
 	return ret;
+}
+
+static inline struct FileClassList * initFileList(){
+	return (struct FileClassList *)malloc(sizeof(struct FileClassList));
+}
+
+static inline void freeFileList(struct FileClassList * lst){
+	if(lst != NULL){
+		free(lst);
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////INTERNAL CODE END/////////////////////////////////////////////////////////////////////////////////////

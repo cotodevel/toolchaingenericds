@@ -403,19 +403,20 @@ char * dldi_tryingInterface(){
 /////////////////////////////////////////Libfat wrapper layer. Call these as if you were calling libfat code./////////////////////////////////////////
 
 //Filename must be at least MAX_TGDSFILENAME_LENGTH+1 in size
-int FAT_FindFirstFile(char* filename){	
-	return getFirstFile(filename);
+struct FileClass * FAT_FindFirstFile(char* filename, struct FileClassList * lst, int startFromGivenIndex){	
+	return getFirstFile(filename, lst, startFromGivenIndex);
 }
 
 //Filename must be at least MAX_TGDSFILENAME_LENGTH+1 in size
-int FAT_FindNextFile(char* filename){
-	return getNextFile(filename);
+struct FileClass * FAT_FindNextFile(char* filename, struct FileClassList * lst){
+	return getNextFile(filename, lst);
 }
 
-u8 FAT_GetFileAttributes (void){
+u8 FAT_GetFileAttributes(struct FileClassList * lst){
 	u8	libfatAttributes = 0;
-	if(CurrentFileDirEntry > 0){
-		struct FileClass * fileInst = getFileClassFromList((CurrentFileDirEntry - 1));
+	int curFileDirEntry = lst->CurrentFileDirEntry;
+	if(curFileDirEntry > 0){
+		struct FileClass * fileInst = getFileClassFromList((curFileDirEntry - 1), lst);
 		FILINFO finfo; 
 		if(getFileFILINFOfromFileClass(fileInst, &finfo) == true){
 			libfatAttributes = (uint8)fatfs2libfatAttrib((int)finfo.fattrib);
@@ -454,22 +455,26 @@ u8 FAT_SetFileAttributes (const char* filename, u8 attributes, u8 mask){
 //char* alias OUT: will be filled with the alias (short filename),
 //	should be at least 13 bytes long
 //bool return OUT: return true if successful
-bool FAT_GetAlias(char* alias){
+bool FAT_GetAlias(char* alias, struct FileClassList * lst){
 	if (alias == NULL){
 		return false;
 	}
 	int CurEntry = structfd_posixInvalidFileDirHandle;
-	if(LastFileEntry > LastDirEntry){
-		CurEntry = LastFileEntry;
+	
+	int lastFileEntry = lst->LastFileEntry;
+	int lastDirEntry = lst->LastDirEntry;
+	
+	if(lastFileEntry > lastDirEntry){
+		CurEntry = lastFileEntry;
 	}
 	else{
-		CurEntry = LastDirEntry;
+		CurEntry = lastDirEntry;
 	}
 	//for some reason the CurEntry is invalid (trying to call and fileList hasn't been rebuilt)
 	if(CurEntry == structfd_posixInvalidFileDirHandle){
 		return false;
 	}
-	struct FileClass * fileInst = getFileClassFromList(CurrentFileDirEntry);	//assign a FileClass to the StructFD generated before
+	struct FileClass * fileInst = getFileClassFromList(lst->CurrentFileDirEntry, lst);	//assign a FileClass to the StructFD generated before
 	FILINFO finfo;
 	if(getFileFILINFOfromFileClass(fileInst, &finfo) == true){			//actually open the file and check attributes (rather than read dir contents)
 		if (	 
@@ -523,22 +528,22 @@ char* filename: OUT will be filled with the filename, should be at
 	least 256 bytes long
 bool return OUT: return true if successful
 -----------------------------------------------------------------*/
-bool FAT_GetLongFilename(char* Longfilename){
+bool FAT_GetLongFilename(char* Longfilename, struct FileClassList * lst){
 	if (Longfilename == NULL){
 		return false;
 	}
 	int CurEntry = structfd_posixInvalidFileDirHandle;
-	if(LastFileEntry > LastDirEntry){
-		CurEntry = LastFileEntry;
+	if(lst->LastFileEntry > lst->LastDirEntry){
+		CurEntry = lst->LastFileEntry;
 	}
 	else{
-		CurEntry = LastDirEntry;
+		CurEntry = lst->LastDirEntry;
 	}
 	//for some reason the CurEntry is invalid (trying to call and fileList hasn't been rebuilt)
 	if(CurEntry == structfd_posixInvalidFileDirHandle){
 		return false;
 	}
-	struct FileClass * fileInst = getFileClassFromList(CurEntry);	//assign a FileClass to the StructFD generated before
+	struct FileClass * fileInst = getFileClassFromList(CurEntry, lst);	//assign a FileClass to the StructFD generated before
 	FILINFO finfo;
 	if(getFileFILINFOfromFileClass(fileInst, &finfo) == true){			//actually open the file and check attributes (rather than read dir contents)
 		if (	 
@@ -573,9 +578,9 @@ Get the file size of the last file found or openned.
 This idea is based on a modification by MoonLight
 u32 return OUT: the file size
 -----------------------------------------------------------------*/
-u32 FAT_GetFileSize(void){
+u32 FAT_GetFileSize(struct FileClassList * lst){
 	u32 fileSize = 0;
-	struct FileClass * fileInst = getFileClassFromList(LastFileEntry);	//assign a FileClass to the StructFD generated before
+	struct FileClass * fileInst = getFileClassFromList(lst->LastFileEntry, lst);	//assign a FileClass to the StructFD generated before
 	FILINFO finfo; 
 	if(getFileFILINFOfromFileClass(fileInst, &finfo) == true){			//actually open the file and check attributes (rather than read dir contents)	
 		if (//file
@@ -601,9 +606,9 @@ FAT_GetFileCluster
 Get the first cluster of the last file found or openned.
 u32 return OUT: the file start cluster
 -----------------------------------------------------------------*/
-u32 FAT_GetFileCluster(void){
+u32 FAT_GetFileCluster(struct FileClassList * lst){
 	u32 FirstClusterFromLastFileOpen = structfd_posixInvalidFileDirHandle;
-	struct FileClass * fileInst = getFileClassFromList(LastFileEntry);	//assign a FileClass to the StructFD generated before
+	struct FileClass * fileInst = getFileClassFromList(lst->LastFileEntry, lst);	//assign a FileClass to the StructFD generated before
 	char * FullPathStr = fileInst->fd_namefullPath;	//must store proper filepath	must return fullPath here (0:/folder0/filename.ext)
 	FILE * f = fopen(FullPathStr,"r");
 	sint32 structFDIndex = structfd_posixInvalidFileDirHandle;
@@ -649,9 +654,6 @@ bool return OUT: true if successful.
 bool FAT_FreeFiles (void){
 	char * devoptabFSName = (char*)"0:/";
 	initTGDS(devoptabFSName);
-	if(FileClassListPtr != NULL){
-		free(FileClassListPtr);
-	}
 	// Return status of card
 	return (bool)_dldi_start.ioInterface.isInserted();
 }
@@ -668,19 +670,29 @@ bool FAT_InitFiles (void){
 }
 
 /////////////////////////////////////////////Libfat wrapper layer End/////////////////////////////////////////////
+//
 
-
-uint8* FileClassListPtr = NULL;
-void setFileClass(bool iterable, char * fullPath, int FileClassListIndex, int Typ, int structFD){
-	struct FileClass * FileClassInst = (struct FileClass *)&FileClassListPtr[FileClassListIndex*sizeof(struct FileClass)];
-	FileClassInst->isIterable = iterable;
-	strcpy(FileClassInst->fd_namefullPath, (const char *)fullPath);
-	FileClassInst->type = Typ;
-	FileClassInst->d_ino = structFD;
+void setFileClass(bool iterable, char * fullPath, int FileClassListIndex, int Typ, int StructFD, struct FileClassList * lst){
+	if( (lst != NULL) && (FileClassListIndex < FileClassItems) ){	//prevent overlapping current FileClassList 
+		struct FileClass * FileClassInst = getFileClassFromList(FileClassListIndex, lst);
+		FileClassInst->isIterable = iterable;
+		strcpy(FileClassInst->fd_namefullPath, (const char *)fullPath);
+		FileClassInst->type = Typ;
+		FileClassInst->d_ino = StructFD;
+		FileClassInst->curIndexInsideFileClassList = FileClassListIndex;
+		FileClassInst->parentFileClassList = lst;	//Parent FileClass List node
+	}
 }
 
-struct FileClass * getFileClassFromList(int FileClassListIndex){
-	return (struct FileClass *)&FileClassListPtr[FileClassListIndex*sizeof(struct FileClass)];
+void setFileClassObj(int FileClassListIndex, struct FileClass * FileClassObj, struct FileClassList * lst){
+	if( (lst != NULL) && (FileClassListIndex < FileClassItems) ){	//prevent overlapping current FileClassList		
+		struct FileClassList * thisFileClass = getFileClassFromList(FileClassListIndex, lst);
+		memcpy ((u8*)thisFileClass, (u8*)FileClassObj, sizeof(struct FileClass));
+	}
+}
+
+struct FileClass * getFileClassFromList(int FileClassListIndex, struct FileClassList * lst){
+	return (struct FileClass *)&lst->fileList[FileClassListIndex];
 }
 
 //path can be either Directory or File, a proper FileClass will be returned.
@@ -713,16 +725,6 @@ struct FileClass getFileClassFromPath(char * path){
 }
 
 
-void InitGlobalFileClass(){
-	CurrentFileDirEntry = 0;
-	LastDirEntry=structfd_posixInvalidFileDirHandle;
-	LastFileEntry=structfd_posixInvalidFileDirHandle;
-	int i = 0;
-	for(i = 0; i < FileClassItems; i++){
-		bool iterable = false;
-		setFileClass(iterable, dirent_default_d_name, i, FT_NONE, structfd_posixInvalidFileDirHandle);
-	}
-}
 
 //requires a previously generated struct fd *
 bool getFileFILINFOfromFileClass(struct FileClass * fileInst, FILINFO * finfo){
@@ -742,44 +744,36 @@ bool getFileFILINFOfromFileClass(struct FileClass * fileInst, FILINFO * finfo){
 }
 
 //Note: Requires a fresh call to buildFileClassListFromPath prior to calling this
-struct FileClass * getFirstDirEntryFromList(){
+struct FileClass * getFirstDirEntryFromList(struct FileClassList * lst){
 	int i = 0;
 	struct FileClass * FileClassRet = NULL;
 	for(i = 0; i < FileClassItems; i++){
-		struct FileClass * fileClassInst = getFileClassFromList(i);
+		struct FileClass * fileClassInst = getFileClassFromList(i, lst);
 		if(fileClassInst->type == FT_DIR){
 			FileClassRet = fileClassInst;
 			break;
 		}
 	}
-	CurrentFileDirEntry = i;	//CurrentFileDirEntry is relative to getFirstDirEntryFromList() now
+	lst->CurrentFileDirEntry = i;	//CurrentFileDirEntry is relative to getFirstDirEntryFromList() now
 	return FileClassRet;
 }
 
 //Note: Requires a fresh call to buildFileClassListFromPath prior to calling this
-struct FileClass * getFirstFileEntryFromList(){
+struct FileClass * getFirstFileEntryFromList(struct FileClassList * lst){
 	int i = 0;
 	struct FileClass * FileClassRet = NULL;
 	for(i = 0; i < FileClassItems; i++){
-		struct FileClass * fileClassInst = getFileClassFromList(i);
+		struct FileClass * fileClassInst = getFileClassFromList(i, lst);
 		if(fileClassInst->type == FT_FILE){
 			FileClassRet = fileClassInst;
 			break;
 		}
 	}
-	CurrentFileDirEntry = i;	//CurrentFileDirEntry is relative to getFirstDirEntryFromList() now
+	lst->CurrentFileDirEntry = i;	//CurrentFileDirEntry is relative to getFirstDirEntryFromList() now
 	return FileClassRet;
 }
 
-//The actual pointer inside the directory listing
-int CurrentFileDirEntry = 0;	
-//These update on getFirstFile/Dir getNextFile/Dir
-int LastFileEntry = 0;
-int LastDirEntry = 0;
-static bool fatfsFileClassInited = false;
-
-//returns:  FT_DIR or FT_FILE or FT_NONE if invalid file
-
+//returns: true if read success, otherwise error if false 
 //filename_out must be at least MAX_TGDSFILENAME_LENGTH+1
 bool readFileNameFromFileClassIndex(char* filename_out, struct FileClass * FileClassInst){
 	if ((filename_out == NULL) || (FileClassInst == NULL)){
@@ -789,88 +783,84 @@ bool readFileNameFromFileClassIndex(char* filename_out, struct FileClass * FileC
 	strcpy(filename_out, FullPathStr);
 	return true;
 }
-int getFirstFile(char * path){
-	int fType = FT_NONE;	
-	//Just run once... and run only when using specific fatfslayerTGDS fileClass functionality
-	if(fatfsFileClassInited == false){
-		FileClassListPtr = malloc(sizeof(struct FileClass)*FileClassItems);
-		fatfsFileClassInited = true;
-	}
+
+//returns:  Valid FileClass entry or NULL
+struct FileClass * getFirstFile(char * path, struct FileClassList * lst, int startFromGivenIndex){
+	struct FileClass * fileInst = NULL;
 	//path will have the current working directory the FileClass was built around. getFirstFile builds everything, and getNextFile iterates over each file until there are no more.
-	if(buildFileClassListFromPath(path) == true){
-		CurrentFileDirEntry = 0;
-		struct FileClass * fileInst = getFileClassFromList(CurrentFileDirEntry);
-		fType = fileInst->type;
+	if(buildFileClassListFromPath(path, lst, startFromGivenIndex) == true){
+		lst->CurrentFileDirEntry = 0;
+		fileInst = getFileClassFromList(lst->CurrentFileDirEntry, lst);
+		int fType = fileInst->type;	//FT_NONE / FT_FILE / FT_DIR
 		switch(fType){
 			//dir
 			case(FT_DIR):{
-				LastDirEntry=CurrentFileDirEntry;
+				lst->LastDirEntry=lst->CurrentFileDirEntry;
 				readFileNameFromFileClassIndex((char*)path, fileInst);	//update source path
 			}
 			break;
 			//file
 			case(FT_FILE):{
-				LastFileEntry=CurrentFileDirEntry;
+				lst->LastFileEntry=lst->CurrentFileDirEntry;
 				readFileNameFromFileClassIndex((char*)path, fileInst);	//update source path
 			}			
 			break;
 			//empty / no dir or file
 			default:{
-				return FT_NONE;	//End the list regardless, no more room available!. 
+				return NULL;	//End the list regardless, no more room available!. 
 			}
 			break;
 		}
 		//increase the file/dir counter after operation only if valid entry, otherwise it doesn't anymore
-		if(CurrentFileDirEntry < (int)(FileClassItems)){ 
-			CurrentFileDirEntry++;	
+		if(lst->CurrentFileDirEntry < (int)(FileClassItems)){ 
+			lst->CurrentFileDirEntry++;	
 		}
 		else{
-			CurrentFileDirEntry = 0;
-			LastDirEntry=structfd_posixInvalidFileDirHandle;
-			LastFileEntry=structfd_posixInvalidFileDirHandle;
-			return FT_NONE;	//End the list regardless, no more room available!
+			lst->CurrentFileDirEntry = 0;
+			lst->LastDirEntry=structfd_posixInvalidFileDirHandle;
+			lst->LastFileEntry=structfd_posixInvalidFileDirHandle;
+			return NULL;	//End the list regardless, no more room available!
 		}
 	}
-	return fType;
+	return fileInst;
 }
 
 //requires fullpath of the CURRENT file, it will return the next one
-//return:  FT_DIR or FT_FILE or FT_NONE if invalid file
-int getNextFile(char * path){
-	int fType = FT_NONE;	//invalid. Should not happen 
-	struct FileClass * fileInst = getFileClassFromList(CurrentFileDirEntry);
+//return:  Valid FileClass entry or NULL
+struct FileClass * getNextFile(char * path, struct FileClassList * lst){
+	struct FileClass * fileInst = getFileClassFromList(lst->CurrentFileDirEntry, lst);	//NULL == invalid. Should not happen 
 	if(fileInst != NULL){
-		fType = fileInst->type;
+		int fType = fileInst->type;
 		switch(fType){
 			//dir
 			case(FT_DIR):{
-				LastDirEntry=CurrentFileDirEntry;
+				lst->LastDirEntry=lst->CurrentFileDirEntry;
 				readFileNameFromFileClassIndex((char*)path, fileInst);	//update source path
 			}
 			break;
 			//file
 			case(FT_FILE):{
-				LastFileEntry=CurrentFileDirEntry;
+				lst->LastFileEntry=lst->CurrentFileDirEntry;
 				readFileNameFromFileClassIndex((char*)path, fileInst);	//update source path
 			}
 			break;
 		}	
 		//increase the file counter after operation
-		if(CurrentFileDirEntry < (int)(FileClassItems)){ 
-			CurrentFileDirEntry++;	
+		if(lst->CurrentFileDirEntry < (int)(FileClassItems)){ 
+			lst->CurrentFileDirEntry++;	
 		}
 		else{
-			CurrentFileDirEntry = 0;
-			LastDirEntry=structfd_posixInvalidFileDirHandle;
-			LastFileEntry=structfd_posixInvalidFileDirHandle;
-			return FT_NONE;	//End the list regardless, no more room available!
+			lst->CurrentFileDirEntry = 0;
+			lst->LastDirEntry=structfd_posixInvalidFileDirHandle;
+			lst->LastFileEntry=structfd_posixInvalidFileDirHandle;
+			return NULL;	//End the list regardless, no more room available!
 		}
 	}
-	return fType;
+	return fileInst;
 }
 
-int getCurrentDirectoryCount(){
-	return CurrentFileDirEntry;
+int getCurrentDirectoryCount(struct FileClassList * lst){
+	return lst->FileDirCount;
 }
 ///////////////////////////////////////////////////////TGDS FS API extension end. /////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1724,15 +1714,20 @@ bool TGDSFS_detectUnicode(struct fd *pfd){
 ///////////////////////////////////////////////////////////////////////// INTERNAL DIRECTORY FUNCTIONS /////////////////////////////////////////////////////////////////////
 
 //returns the first free StructFD
-bool buildFileClassListFromPath(char * path){
+bool buildFileClassListFromPath(char * path, struct FileClassList * lst, int startFromGivenIndex){
 	//decide wether we have a Working directory or not, if valid dir, enter that dir. If not, use the default dir and point to it.
-	if(updateFileClassList(path) == true){
+	if(updateGlobalCWD(path) == true){
 		//rebuild filelist
 		FRESULT result;
 		DIR dir;
 		int i = 0;
 		FILINFO fno;
-		InitGlobalFileClass();
+		
+		memset(lst, 0, sizeof(struct FileClassList));
+		lst->CurrentFileDirEntry = 0;
+		lst->LastDirEntry=structfd_posixInvalidFileDirHandle;
+		lst->LastFileEntry=structfd_posixInvalidFileDirHandle;
+		
 		result = f_opendir(&dir, path);                       /* Open the directory */
 		if (result == FR_OK) {
 			for(;;){
@@ -1770,13 +1765,14 @@ bool buildFileClassListFromPath(char * path){
 					else if(type == FT_FILE){
 						sprintf(builtFilePath,"%s%s%s",getfatfsPath((sint8*)path),"/",fno.fname);
 					}		
-					//populate
+					//Generate FileClass from either a Directory or a File
 					bool iterable = true;
-					setFileClass(iterable, (char*)&builtFilePath[0], i, type, structfd_posixInvalidFileDirHandle);
+					setFileClass(iterable, (char*)&builtFilePath[0], startFromGivenIndex + i, type, structfd_posixInvalidFileDirHandle, lst);
 					i++;
 				}			
 			}
 			f_closedir(&dir);
+			lst->FileDirCount = i;
 		}
 		else{
 			errno = fresultToErrno(result);
@@ -1825,9 +1821,9 @@ bool leaveDir(char* newDir){
 	return false;
 }
 
-//Current iterator (FileClass from a directory). char * path : If a valid directory is passed, it will be used to populate the FileClassList. Otherwise the default Start Directory is used.
+//Global Current Working Directory updated by the FileClass iterator. char * path : If a valid directory is passed, it will be used to populate the FileClassList. Otherwise the default Start Directory is used.
 //Note: If any File or Directory is found then char * path will be destroyed by the current iterated File / Directory item.
-bool updateFileClassList(char * path){
+bool updateGlobalCWD(char * path){
 	char * CurrentWorkingDirectory = (char*)&TGDSCurrentWorkingDirectory[0];
 	//Set the base directory if the TGDS Current Working Directory is missing.
 	if(strlen(CurrentWorkingDirectory) == 0){
