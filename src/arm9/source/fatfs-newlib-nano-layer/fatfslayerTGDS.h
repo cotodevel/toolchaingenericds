@@ -39,7 +39,6 @@ USA
 
 #define structfd_isused 	(sint32)(1)
 #define structfd_isunused	(sint32)(0)
-
 #define structfd_isattydefault	(sint32)(0)
 #define structfd_descriptorflagsdefault	(sint32)(0)
 #define structfd_status_flagsdefault	(sint32)(0)
@@ -51,6 +50,7 @@ USA
 #define dirent_default_d_name	(sint8 *)("")
 #define structfd_posixInvalidFileSize	(sint32)(-1)
 #define structfd_posixInvalidFileHandleOffset	(sint32)(-1)	//internal offset currently held by the struct fd which exposes to POSIX API
+#define structfd_FileClassListInvalidEntry		(sint32)(-1)	//TGDS FS API -> Directory Iterator (FileClass): Invalid Entry within a FileClassList
 
 //libfat attributes so gccnewlibnano_to_fatfs is compatible with libfat homebrew
 #ifndef ATTRIB_ARCH
@@ -89,9 +89,7 @@ struct FileClassList{
 	//These update on getFirstFile/Dir getNextFile/Dir
 	int LastFileEntry;
 	int LastDirEntry;
-	
 	int FileDirCount;	//actual Directory/File count
-	
 	struct FileClass fileList[FileClassItems];
 };
 
@@ -168,31 +166,32 @@ extern char * dldi_tryingInterface();
 extern struct FileClass * FAT_FindFirstFile(char* filename, struct FileClassList * lst, int startFromGivenIndex);
 extern struct FileClass * 	FAT_FindNextFile(char* filename, struct FileClassList * lst);
 extern u8 	FAT_GetFileAttributes(struct FileClassList * lst);
-extern u8 FAT_SetFileAttributes(const char* filename, u8 attributes, u8 mask);
+extern u8 	FAT_SetFileAttributes(const char* filename, u8 attributes, u8 mask);
 extern bool readFileNameFromFileClassIndex(char* filename_out, struct FileClass * FileClassInst);
 extern bool FAT_GetAlias(char* alias, struct FileClassList * lst);
 extern void FAT_preserveVars();
 extern void FAT_restoreVars();
 extern u32	disc_HostType(void);
 extern bool FAT_GetLongFilename(char* Longfilename, struct FileClassList * lst);
-extern u32 FAT_GetFileSize(struct FileClassList * lst);
-extern u32 FAT_GetFileCluster(struct FileClassList * lst);
+extern u32 	FAT_GetFileSize(struct FileClassList * lst);
+extern u32 	FAT_GetFileCluster(struct FileClassList * lst);
 extern bool disableWriting;
 extern void FAT_DisableWriting (void);
-extern int FAT_FileExists(char* filename);
+extern int 	FAT_FileExists(char* filename);
 extern bool FAT_FreeFiles (void);
 extern bool FAT_InitFiles (void);
 /////////////////////////////////////////////Libfat wrapper layer End/////////////////////////////////////////////
 
 extern struct FileClass * getFirstFile(char * path, struct FileClassList * lst, int startFromGivenIndex);
 extern struct FileClass * getNextFile(char * path, struct FileClassList * lst);
-extern int getCurrentDirectoryCount(struct FileClassList * lst);
-extern bool getFileFILINFOfromFileClass(struct FileClass * fileInst, FILINFO * finfo);
+extern int	getCurrentDirectoryCount(struct FileClassList * lst);
+extern void	setCurrentDirectoryCount(struct FileClassList * lst, int value);
+extern bool	getFileFILINFOfromFileClass(struct FileClass * fileInst, FILINFO * finfo);
 extern struct FileClass getFileClassFromPath(char * path);
 extern struct FileClass * getFirstDirEntryFromList(struct FileClassList * lst);
 extern struct FileClass * getFirstFileEntryFromList(struct FileClassList * lst);
 extern struct FileClass * getFileClassFromList(int FileClassListIndex, struct FileClassList * lst);
-extern void setFileClass(bool iterable, char * fullPath, int FileClassListIndex, int Typ, int StructFD, struct FileClassList * lst);
+extern bool setFileClass(bool iterable, char * fullPath, int FileClassListIndex, int Typ, int StructFD, struct FileClassList * lst);
 extern bool TGDSFS_detectUnicode(struct fd *pfd);
 ////////////////////////////////////////////////////////////////////////////USER CODE END/////////////////////////////////////////////////////////////////////////////////////
 
@@ -255,8 +254,7 @@ extern bool updateGlobalCWD(char * path);
 //Link C to C++ related dependencies
 extern FILE *fdopen(int fd, const char *mode);
 extern int fileno(FILE *);
-
-extern void setFileClassObj(int FileClassListIndex, struct FileClass * FileClassObj, struct FileClassList * lst);
+extern bool setFileClassObj(int FileClassListIndex, struct FileClass * FileClassObj, struct FileClassList * lst);
 
 #ifdef __cplusplus
 }
@@ -439,11 +437,49 @@ static inline struct FileClassList * initFileList(){
 	return (struct FileClassList *)malloc(sizeof(struct FileClassList));
 }
 
+static inline void cleanFileList(struct FileClassList * lst){
+	if(lst != NULL){
+		memset((u8*)lst, 0, sizeof(struct FileClassList));
+		lst->CurrentFileDirEntry = 0;
+		lst->LastDirEntry=structfd_posixInvalidFileDirHandle;
+		lst->LastFileEntry=structfd_posixInvalidFileDirHandle;
+		setCurrentDirectoryCount(lst, 0);
+	}
+}
+
 static inline void freeFileList(struct FileClassList * lst){
 	if(lst != NULL){
 		free(lst);
 	}
 }
+
+//returns: the struct FileClassList * context if success
+//if error: returns NULL, which means, operation failed.
+
+static inline struct FileClassList * pushEntryToFileClassList(bool iterable, char * fullPath, int Typ, int StructFD, struct FileClassList * lst){
+	if(lst != NULL){		
+		int FileClassListIndex = lst->FileDirCount;
+		setFileClass(iterable, fullPath, FileClassListIndex, Typ, StructFD, lst);
+		return lst;
+	}
+	return NULL;
+}
+
+static inline struct FileClassList * popEntryfromFileClassList(struct FileClassList * lst){
+	if(lst != NULL){		
+		int FileClassListIndex = lst->FileDirCount;
+		if(FileClassListIndex > 0){
+			if( (lst != NULL) && (FileClassListIndex < FileClassItems) ){	//prevent overlapping current FileClassList 
+				lst->FileDirCount = FileClassListIndex - 1;
+				struct FileClass * FileClassInst = getFileClassFromList(FileClassListIndex, lst);
+				memset(FileClassInst, 0, sizeof(struct FileClass));
+				return lst;
+			}
+		}
+	}
+	return NULL;
+}
+
 
 ////////////////////////////////////////////////////////////////////////////INTERNAL CODE END/////////////////////////////////////////////////////////////////////////////////////
 

@@ -672,7 +672,7 @@ bool FAT_InitFiles (void){
 /////////////////////////////////////////////Libfat wrapper layer End/////////////////////////////////////////////
 //
 
-void setFileClass(bool iterable, char * fullPath, int FileClassListIndex, int Typ, int StructFD, struct FileClassList * lst){
+bool setFileClass(bool iterable, char * fullPath, int FileClassListIndex, int Typ, int StructFD, struct FileClassList * lst){
 	if( (lst != NULL) && (FileClassListIndex < FileClassItems) ){	//prevent overlapping current FileClassList 
 		struct FileClass * FileClassInst = getFileClassFromList(FileClassListIndex, lst);
 		FileClassInst->isIterable = iterable;
@@ -681,14 +681,21 @@ void setFileClass(bool iterable, char * fullPath, int FileClassListIndex, int Ty
 		FileClassInst->d_ino = StructFD;
 		FileClassInst->curIndexInsideFileClassList = FileClassListIndex;
 		FileClassInst->parentFileClassList = lst;	//Parent FileClass List node
+		lst->FileDirCount++;
+		return true;
 	}
+	return false;
 }
 
-void setFileClassObj(int FileClassListIndex, struct FileClass * FileClassObj, struct FileClassList * lst){
+bool setFileClassObj(int FileClassListIndex, struct FileClass * FileClassObj, struct FileClassList * lst){
 	if( (lst != NULL) && (FileClassListIndex < FileClassItems) ){	//prevent overlapping current FileClassList		
 		struct FileClassList * thisFileClass = getFileClassFromList(FileClassListIndex, lst);
-		memcpy ((u8*)thisFileClass, (u8*)FileClassObj, sizeof(struct FileClass));
+		coherent_user_range_by_size((uint32)thisFileClass, sizeof(struct FileClass));
+		memcpy((u8*)thisFileClass, (u8*)FileClassObj, sizeof(struct FileClass));
+		lst->FileDirCount++;
+		return true;
 	}
+	return false;
 }
 
 struct FileClass * getFileClassFromList(int FileClassListIndex, struct FileClassList * lst){
@@ -789,7 +796,7 @@ struct FileClass * getFirstFile(char * path, struct FileClassList * lst, int sta
 	struct FileClass * fileInst = NULL;
 	//path will have the current working directory the FileClass was built around. getFirstFile builds everything, and getNextFile iterates over each file until there are no more.
 	if(buildFileClassListFromPath(path, lst, startFromGivenIndex) == true){
-		lst->CurrentFileDirEntry = 0;
+		lst->CurrentFileDirEntry = startFromGivenIndex;
 		fileInst = getFileClassFromList(lst->CurrentFileDirEntry, lst);
 		int fType = fileInst->type;	//FT_NONE / FT_FILE / FT_DIR
 		switch(fType){
@@ -859,9 +866,22 @@ struct FileClass * getNextFile(char * path, struct FileClassList * lst){
 	return fileInst;
 }
 
+//TGDS FS Directory Iterator object:
+//returns current count of such context.
+//Otherwise error (structfd_FileClassListInvalidEntry) if: 
+//	- FileClassList exceeded the FileClass items to store
+//	- FileClassList exceeded the FileClass items to store
+
 int getCurrentDirectoryCount(struct FileClassList * lst){
-	return lst->FileDirCount;
+	if(lst != NULL){
+		return lst->FileDirCount;
+	}
+	return structfd_FileClassListInvalidEntry;
 }
+
+void setCurrentDirectoryCount(struct FileClassList * lst, int value){
+	lst->FileDirCount = value;
+} 
 ///////////////////////////////////////////////////////TGDS FS API extension end. /////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1723,7 +1743,7 @@ bool buildFileClassListFromPath(char * path, struct FileClassList * lst, int sta
 		int i = 0;
 		FILINFO fno;
 		
-		memset(lst, 0, sizeof(struct FileClassList));
+		memset(lst, 0, sizeof(struct FileClassList));	//clear TGDS FS Directory Iterator context
 		lst->CurrentFileDirEntry = 0;
 		lst->LastDirEntry=structfd_posixInvalidFileDirHandle;
 		lst->LastFileEntry=structfd_posixInvalidFileDirHandle;
