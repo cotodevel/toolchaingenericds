@@ -90,9 +90,9 @@ static inline bool ShowBrowser(char * Path, char * outBuf){
 	
 	//Create TGDS Dir API context
 	struct FileClassList * fileClassListCtx = initFileList();
+	cleanFileList(fileClassListCtx);
 	
 	//Use TGDS Dir API context
-	
 	int pressed = 0;
 	struct FileClass filStub;
 	{
