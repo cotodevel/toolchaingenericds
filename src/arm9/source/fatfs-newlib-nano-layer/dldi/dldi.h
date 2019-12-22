@@ -2,14 +2,14 @@
 #define __DLDI_H__
 
 #include "typedefsTGDS.h"
-
 #ifndef __ASSEMBLER__
+
+#include <string.h>
 
 #define FEATURE_MEDIUM_CANREAD		0x00000001
 #define FEATURE_MEDIUM_CANWRITE		0x00000002
 #define FEATURE_SLOT_GBA			0x00000010
 #define FEATURE_SLOT_NDS			0x00000020
-
 
 typedef uint32_t sec_t;
 
@@ -103,6 +103,8 @@ typedef struct DLDI_INTERFACE {
 
 #endif
 
+#endif
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -130,8 +132,11 @@ extern bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const voi
 extern void initDLDIARM7(u32 srcDLDIAddr);
 #endif
 
+extern addr_t readAddr (data_t *mem, addr_t offset);
+extern void writeAddr (data_t *mem, addr_t offset, addr_t value);
+extern addr_t quickFind (const data_t* data, const data_t* search, size_t dataLen, size_t searchLen);
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif
