@@ -32,16 +32,18 @@ static inline void parseDirNameTGDS(char * dirName){
 		
 		//trim the starting / if it has one
 		if ( (dirName[0] == '/') && (dirName[1] == '/') ) {
-			char fixDir[512];
+			char fixDir[MAX_TGDSFILENAME_LENGTH+1];
 		    strcpy(fixDir, (char*)&dirName[1]);
+			strcpy(dirName, "");	//clean
             strcpy(dirName, fixDir);
 		}
-		char tempDir[512];
+		char tempDir[MAX_TGDSFILENAME_LENGTH+1];
 		strcpy(tempDir, dirName);
 		
 		if(tempDir[strlen(tempDir)-1]== '/'){
 		   tempDir[strlen(tempDir)-1] = '\0'; 
 		}
+		strcpy(dirName, "");	//clean
 		strcpy(dirName, tempDir);
 	}
 	
@@ -51,14 +53,14 @@ static inline void parsefileNameTGDS(char * fileName){
 	int filelen = strlen(fileName) + 1;
 	if(filelen > 4){
 	    if (fileName[0] == '/') {
-			char fixDir[512];       //trim the starting / if it has one
+			char fixDir[MAX_TGDSFILENAME_LENGTH+1];       //trim the starting / if it has one
 		    memset(fixDir, 0, sizeof(fixDir));
 		    strcpy(fixDir, (char*)&fileName[1]);
 		    memset(fileName, 0, strlen(fileName));
             strcat(fileName, fixDir);
 		}
 		if ((fileName[2] == '/') && (fileName[3] == '/')) {
-		    char fixDir[512];       //trim the starting // if it has one (since getfspath appends 0:/)
+		    char fixDir[MAX_TGDSFILENAME_LENGTH+1];       //trim the starting // if it has one (since getfspath appends 0:/)
 		    memset(fixDir, 0, strlen(fixDir));
 		    fixDir[0] = fileName[0];
 		    fixDir[1] = fileName[1];
@@ -72,7 +74,7 @@ static inline void parsefileNameTGDS(char * fileName){
 				tmpBuf[0] = fileName[0];
 				tmpBuf[1] = fileName[1];
 				
-				char fixFile[512];       //trim the starting / if it has one
+				char fixFile[MAX_TGDSFILENAME_LENGTH+1];       //trim the starting / if it has one
 		        memset(fixFile, 0, sizeof(fixFile));
 		        strcat(fixFile, tmpBuf);
 		        strcat(fixFile, "/");
@@ -80,6 +82,39 @@ static inline void parsefileNameTGDS(char * fileName){
 			}
 		}
 	}
+}
+
+//a variation
+static inline void removeLastPath2(char * inPath, char * outPath){
+    int len = strlen(inPath);
+    if (len < 3){
+        outPath[0] = '/';
+        outPath[1] = '\0';
+        return;
+    }
+    //remove trailing "/"
+    if(inPath[len-1] == '/'){
+        inPath[len-1] = '\0';
+    }
+    int i = 0;
+    //remove leading "//"
+    if((inPath[i] == '/') && (inPath[i + 1] == '/')){
+        i++;
+    }
+    
+    //copy
+    while(i < len){
+        outPath[i] = inPath[i];
+        i++;
+    }
+    outPath[i] = '\0';
+    
+    //get and strip last delta
+    int wordsToRemove = 0;
+    while(outPath[len-wordsToRemove] != '/'){
+        wordsToRemove++;
+    }
+    outPath[len-wordsToRemove] = '\0';
 }
 
 static inline bool ShowBrowser(char * Path, char * outBuf){
@@ -104,7 +139,7 @@ static inline bool ShowBrowser(char * Path, char * outBuf){
 		filStub.curIndexInsideFileClassList = 0;
 		filStub.parentFileClassList = fileClassListCtx;
 	}
-	char fname[256+1];
+	char fname[MAX_TGDSFILENAME_LENGTH+1];
 	strcpy(fname, Path);
 	setFileClassObj(0, (struct FileClass *)&filStub, fileClassListCtx);
 	
@@ -115,14 +150,14 @@ static inline bool ShowBrowser(char * Path, char * outBuf){
 	while(fileClassInst != NULL){
 		//directory?
 		if(fileClassInst->type == FT_DIR){
-			char tmpBuf[512];
+			char tmpBuf[MAX_TGDSFILENAME_LENGTH+1];
 			strcpy(tmpBuf, fileClassInst->fd_namefullPath);
 			parseDirNameTGDS(tmpBuf);
 			strcpy(fileClassInst->fd_namefullPath, tmpBuf);
 		}
 		//file?
 		else if(fileClassInst->type  == FT_FILE){
-			char tmpBuf[512];
+			char tmpBuf[MAX_TGDSFILENAME_LENGTH+1];
 			strcpy(tmpBuf, fileClassInst->fd_namefullPath);
 			parsefileNameTGDS(tmpBuf);
 			strcpy(fileClassInst->fd_namefullPath, tmpBuf);
@@ -289,18 +324,20 @@ static inline bool ShowBrowser(char * Path, char * outBuf){
 	
 	//enter a dir
 	if(reloadDirA == true){
+		//Enter to dir in Directory Iterator CWD
+		enterDir((char*)newDir);
+		
 		//Free TGDS Dir API context
 		freeFileList(fileClassListCtx);
-		enterDir((char*)newDir);
 		return true;
 	}
 	
 	//leave a dir
 	if(reloadDirB == true){
+		//Rewind to preceding dir in Directory Iterator CWD
+		leaveDir(getTGDSCurrentWorkingDirectory());
 		//Free TGDS Dir API context
 		freeFileList(fileClassListCtx);
-		//rewind to preceding dir in TGDSCurrentWorkingDirectory
-		leaveDir(getTGDSCurrentWorkingDirectory());
 		return true;
 	}
 	
