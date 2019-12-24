@@ -437,14 +437,18 @@ static inline struct FileClassList * initFileList(){
 	return (struct FileClassList *)malloc(sizeof(struct FileClassList));
 }
 
-static inline void cleanFileList(struct FileClassList * lst){
+//return: true if clean success
+//false if lst == NULL
+static inline bool cleanFileList(struct FileClassList * lst){
 	if(lst != NULL){
 		memset((u8*)lst, 0, sizeof(struct FileClassList));
 		lst->CurrentFileDirEntry = 0;
 		lst->LastDirEntry=structfd_posixInvalidFileDirHandle;
 		lst->LastFileEntry=structfd_posixInvalidFileDirHandle;
 		setCurrentDirectoryCount(lst, 0);
+		return true;
 	}
+	return false;
 }
 
 static inline void freeFileList(struct FileClassList * lst){
