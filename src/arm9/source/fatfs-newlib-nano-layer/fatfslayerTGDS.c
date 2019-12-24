@@ -689,9 +689,8 @@ bool setFileClass(bool iterable, char * fullPath, int FileClassListIndex, int Ty
 
 bool setFileClassObj(int FileClassListIndex, struct FileClass * FileClassObj, struct FileClassList * lst){
 	if( (lst != NULL) && (FileClassListIndex < FileClassItems) ){	//prevent overlapping current FileClassList		
-		struct FileClassList * thisFileClass = getFileClassFromList(FileClassListIndex, lst);
-		coherent_user_range_by_size((uint32)thisFileClass, sizeof(struct FileClass));
-		memcpy((u8*)thisFileClass, (u8*)FileClassObj, sizeof(struct FileClass));
+		struct FileClass * thisFileClass = getFileClassFromList(FileClassListIndex, lst);
+		memcpy(((u8*)thisFileClass + 0x400000), (u8*)FileClassObj, sizeof(struct FileClass));	//uncached
 		lst->FileDirCount++;
 		return true;
 	}
@@ -1735,19 +1734,13 @@ bool TGDSFS_detectUnicode(struct fd *pfd){
 
 //returns the first free StructFD
 bool buildFileClassListFromPath(char * path, struct FileClassList * lst, int startFromGivenIndex){
-	//decide wether we have a Working directory or not, if valid dir, enter that dir. If not, use the default dir and point to it.
-	if(updateGlobalCWD(path) == true){
+	//Decide wether we have a Working directory or not, if valid dir, enter that dir. If not, use the default dir and point to it. + Clear TGDS FS Directory Iterator context
+	if((cleanFileList(lst) == true) && (updateGlobalCWD(path) == true)){
 		//rebuild filelist
 		FRESULT result;
 		DIR dir;
 		int i = 0;
 		FILINFO fno;
-		
-		memset(lst, 0, sizeof(struct FileClassList));	//clear TGDS FS Directory Iterator context
-		lst->CurrentFileDirEntry = 0;
-		lst->LastDirEntry=structfd_posixInvalidFileDirHandle;
-		lst->LastFileEntry=structfd_posixInvalidFileDirHandle;
-		
 		result = f_opendir(&dir, path);                       /* Open the directory */
 		if (result == FR_OK) {
 			for(;;){
