@@ -61,24 +61,21 @@ void startSound(int sampleRate, const void* data, u32 bytes, u8 channel, u8 vol,
 
 #ifdef ARM7
 static int curChannel = 0;
-//Called at VBLANK intervals
 inline void updateSoundContext(){
-	
-	//look out for assigned channels, playing.
+	//VBLANK intervals: Look out for assigned channels, playing.
 	struct soundSampleContext * curSoundSampleContext = getsoundSampleContextByIndex(curChannel);
 	int curChannel = curSoundSampleContext->channel;
 	
-	//returns -1 if channel is busy, or channel if idle
-	if( (isFreeSoundChannel(curChannel) == curChannel) && (curSoundSampleContext->status == SOUNDSAMPLECONTEXT_PENDING) ){
-		//play sample
+	//Returns -1 if channel is busy, or channel if idle
+	if( (isFreeSoundChannel(curChannel) == curChannel) && (curSoundSampleContext->status == SOUNDSAMPLECONTEXT_PENDING) ){	//Play sample?
 		startSound(curSoundSampleContext->sampleRate, curSoundSampleContext->data, curSoundSampleContext->bytes, curChannel, curSoundSampleContext->vol,  curSoundSampleContext->pan, curSoundSampleContext->format);
 		curSoundSampleContext->status = SOUNDSAMPLECONTEXT_PLAYING;
 	}
 	
-	//returns -1 if channel is busy, or channel if idle
-	if( (isFreeSoundChannel(curChannel) == curChannel) && (curSoundSampleContext->status == SOUNDSAMPLECONTEXT_PLAYING) ){
-		//idle? free context
+	//Returns -1 if channel is busy, or channel if idle
+	if( (isFreeSoundChannel(curChannel) == curChannel) && (curSoundSampleContext->status == SOUNDSAMPLECONTEXT_PLAYING) ){	//Idle? free context
 		freesoundSampleContext(curSoundSampleContext);
+		SendFIFOWords(FIFO_FLUSHSOUNDCONTEXT, curChannel);
 	}
 	
 	if(curChannel > SOUNDCONTEXTCAPACITY){
@@ -123,7 +120,7 @@ bool freesoundSampleContext(struct soundSampleContext * sampleInst){
 	return false;
 }
 
-//returns any available SoundSampleContext, or NULL
+//Returns any available SoundSampleContext, or NULL
 struct soundSampleContext * getFreeSoundSampleContext(){
 	int i = 0;
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
@@ -155,4 +152,10 @@ bool setSoundSampleContext(int sampleRate, u32 * data, u32 bytes, u8 channel, u8
 	}
 	return false;
 }
+
+//ARM7->ARM9: Just discarded the curChannelFreed's SoundSampleContext
+void flushSoundContext(int soundContextIndex){
+	
+}
+
 #endif

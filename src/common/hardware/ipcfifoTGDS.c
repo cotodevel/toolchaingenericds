@@ -231,6 +231,11 @@ void HandleFifoNotEmpty(){
 			}
 			break;
 			
+			case((uint32)FIFO_FLUSHSOUNDCONTEXT):{
+				int curChannelFreed = (int)data1;
+				flushSoundContext(curChannelFreed);
+			}
+			break;
 			
 			#endif
 			
