@@ -119,13 +119,6 @@ USA
 #define SOUND_8BIT       (0)
 #define SOUND_PAN(n)	((n) << 16)
 #define SCHANNEL_ENABLE (1<<31)
-#define SCHANNEL_CR(n)				(*(vuint32*)(0x04000400 + ((n)<<4)))
-#define SCHANNEL_VOL(n)				(*(vuint8*)(0x04000400 + ((n)<<4)))
-#define SCHANNEL_PAN(n)				(*(vuint8*)(0x04000402 + ((n)<<4)))
-#define SCHANNEL_SOURCE(n)			(*(vuint32*)(0x04000404 + ((n)<<4)))
-#define SCHANNEL_TIMER(n)			(*(vuint16*)(0x04000408 + ((n)<<4)))
-#define SCHANNEL_REPEAT_POINT(n)	(*(vuint16*)(0x0400040A + ((n)<<4)))
-#define SCHANNEL_LENGTH(n)			(*(vuint32*)(0x0400040C + ((n)<<4)))
 
 #define REG_KEYINPUT (*(uint16*)0x04000132)
 
@@ -512,9 +505,18 @@ USA
 // ARM7 specific registers
 #ifdef ARM7
 #define REG_KEYXY 		(*(vuint16*)0x04000136)
+#define	POWERCNT7	(*((uint16 volatile *) 0x04000304))
+
 #define REG_SOUNDCNT 	(*(vuint16*)0x4000500)
 #define SOUND_CR			REG_SOUNDCNT
-#define		POWERCNT7	(*((uint16 volatile *) 0x04000304))
+#define SCHANNEL_CR(n)				(*(vuint32*)(0x04000400 + ((n)<<4)))
+#define SCHANNEL_VOL(n)				(*(vuint8*)(0x04000400 + ((n)<<4)))
+#define SCHANNEL_PAN(n)				(*(vuint8*)(0x04000402 + ((n)<<4)))
+#define SCHANNEL_SOURCE(n)			(*(vuint32*)(0x04000404 + ((n)<<4)))
+#define SCHANNEL_TIMER(n)			(*(vuint16*)(0x04000408 + ((n)<<4)))
+#define SCHANNEL_REPEAT_POINT(n)	(*(vuint16*)(0x0400040A + ((n)<<4)))
+#define SCHANNEL_LENGTH(n)			(*(vuint32*)(0x0400040C + ((n)<<4)))
+
 
 //touch
 #define TSC_MEASURE_TEMP1    0x84

@@ -20,6 +20,7 @@ USA
 
 #ifdef ARM7
 #include "wifi_arm7.h"
+#include "soundTGDS.h"
 #endif
 
 #ifdef ARM9
@@ -69,6 +70,7 @@ void NDS_IRQHandler(){
 		#ifdef ARM7
 		doSPIARM7IO();
 		Wifi_Update();
+		updateSoundContext();
 		#endif
 		#ifdef ARM9
 		//handles DS-DS Comms

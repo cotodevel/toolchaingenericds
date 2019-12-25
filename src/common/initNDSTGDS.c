@@ -31,7 +31,7 @@ USA
 #include "spifwTGDS.h"
 #include "powerTGDS.h"
 #include "ipcfifoTGDS.h"
-
+#include "soundTGDS.h"
 
 #ifdef ARM9
 #include "devoptab_devices.h"
@@ -53,6 +53,9 @@ void initHardware(void) {
 	TGDSIPC->arm7startaddress = get_iwram_start();
 	TGDSIPC->arm7endaddress = (uint32)(get_iwram_start() + get_iwram_size());
 	
+	//Init SoundSampleContext
+	initSoundSampleContext();
+	initSound();
 	#endif
 	
 	#ifdef ARM9

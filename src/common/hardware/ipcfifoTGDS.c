@@ -30,6 +30,7 @@ USA
 #include "wifi_arm7.h"
 #include "spifwTGDS.h"
 #include "powerTGDS.h"
+#include "soundTGDS.h"
 #endif
 
 #ifdef ARM9
@@ -120,6 +121,42 @@ void HandleFifoNotEmpty(){
 			
 			//ARM7 command handler
 			#ifdef ARM7
+			case((uint32)FIFO_INITSOUND):{
+				initSound();
+			}
+			break;
+			
+			case((uint32)FIFO_PLAYSOUND):{
+				uint32* fifomsg = (uint32*)data1;		//data1 == uint32 * fifomsg					
+				int sampleRate = (uint32)fifomsg[0];
+				u32* data = (uint32)fifomsg[1];
+				u32 bytes = (uint32)fifomsg[2];
+				u32 packedSnd = (uint32)fifomsg[3];
+	
+				u8 channel = (u8)((packedSnd >> 24)&0xff);
+				u8 vol = (u8)((packedSnd >> 16)&0xff);
+				u8 pan = (u8)((packedSnd >> 8)&0xff);
+				u8 format = (u8)(packedSnd&0xff);
+				
+				//Try to play the sample through the specified channel
+				s32 chan = isFreeSoundChannel(channel);
+				if(chan != -1){ //means free channel / or channel is not auto (-1)
+					startSound(sampleRate, (const void*)data, bytes, chan, vol, pan, format);
+				}
+				//Otherwise, use a random alloc'd channel
+				else{
+					chan = getFreeSoundChannel();
+					if (chan >= 0){
+						startSound(sampleRate, (const void*)data, bytes, chan, vol, pan, format);
+					}
+				}
+				fifomsg[0] = 0;
+				fifomsg[1] = 0;
+				fifomsg[2] = 0;
+				fifomsg[3] = 0;
+			}
+			break;
+			
 			case((uint32)FIFO_POWERCNT_ON):{
 				powerON((uint16)data1);
 			}
@@ -128,8 +165,8 @@ void HandleFifoNotEmpty(){
 				powerOFF((uint16)data1);
 			}
 			break;
-			//Power Management: supported model so far: DS Phat.
-			//Todo add: DSLite/DSi
+			//Power Management: 
+				//Supported mode(s): NTR
 			case((uint32)FIFO_POWERMGMT_WRITE):{
 				
 				uint32* fifomsg = (uint32*)data1;		//data1 == uint32 * fifomsg

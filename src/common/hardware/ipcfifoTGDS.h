@@ -36,6 +36,7 @@ USA
 #include <time.h>
 #include "utilsTGDS.h"
 #include "wifi_shared.h"
+#include "soundTGDS.h"
 
 //FIFO Hardware
 //irqs
@@ -48,6 +49,11 @@ USA
 #define WRITE_EXTARM_16	(uint32)(0xffff0201)
 #define WRITE_EXTARM_32	(uint32)(0xffff0202)
 	
+//Linear sound playback (ARM9 -> ARM7)
+#define FIFO_PLAYSOUND	(uint32)(0xffff0203)
+#define FIFO_INITSOUND	(uint32)(0xffff0204)
+#define FIFO_FLUSHSOUNDCONTEXT	(uint32)(0xffff0210)
+
 //PowerCnt Read / PowerCnt Write
 #define FIFO_POWERCNT_ON	(uint32)(0xffff0205)
 #define FIFO_POWERCNT_OFF	(uint32)(0xffff0206)
@@ -116,7 +122,8 @@ struct sSharedSENDCtx {
 } __attribute__((aligned (4)));
 
 struct sIPCSharedTGDS {
-    uint16 buttons7;  			// X, Y, /PENIRQ buttons
+    struct soundSampleContextList soundContextShared;
+	uint16 buttons7;  			// X, Y, /PENIRQ buttons
     uint16 KEYINPUT7;			//REG_KEYINPUT ARM7
 	uint16 touchX,   touchY;   // raw x/y TSC SPI
 	sint16 touchXpx, touchYpx; // TFT x/y pixel (converted)
@@ -187,13 +194,6 @@ extern __attribute__((weak))	void HandleFifoEmptyWeakRef(uint32 cmd1,uint32 cmd2
 extern void HandleFifoNotEmpty();
 extern void HandleFifoEmpty();
 extern void SendFIFOWords(uint32 data0, uint32 data1);
-
-//Async memory transfer
-extern void SendBufferThroughFIFOIrqsAsync(u32 bufStart, u32 targetAddr , int bufSize, struct sSharedSENDCtx * ctx);
-extern void setSENDCtxStatus(int val, struct sSharedSENDCtx * ctx);
-extern int getSENDCtxStatus(struct sSharedSENDCtx * ctx);
-//extern struct sSharedSENDCtx * getSENDCtx();
-extern void setSENDCtx(u32 srcAddr, u32 targetAddr, int Size, struct sSharedSENDCtx * ctx);
 
 extern void idleIPC();
 extern uint8 receiveByteIPC();
