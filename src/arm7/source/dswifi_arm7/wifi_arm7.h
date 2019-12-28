@@ -63,10 +63,9 @@ SOFTWARE.
 #define W_RFSIODATA1	(*((volatile u16 *)(0x0480017E)))
 #define W_RFSIOBUSY		(*((volatile u16 *)(0x04800180)))
 
-
-
-
-
+#define LED_LONGBLINK	1
+#define LED_SHORTBLINK	3
+#define LED_ON			0
 
 #include "wifi_shared.h"
 

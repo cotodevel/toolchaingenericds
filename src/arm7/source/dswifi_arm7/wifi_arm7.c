@@ -184,9 +184,6 @@ int PowerChip_ReadWrite(int cmd, int data) {
 	return data;
 }
 
-#define LED_LONGBLINK	1
-#define LED_SHORTBLINK	3
-#define LED_ON			0
 int led_state=0;
 void SetLedState(int state) {
 	int i;
