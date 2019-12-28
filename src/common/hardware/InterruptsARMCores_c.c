@@ -37,7 +37,7 @@ void IRQInit(){
 	//fifo setups
 	REG_IME = 0;
 	REG_IPC_SYNC = (1 << 14);	//14    R/W  Enable IRQ from remote CPU  (0=Disable, 1=Enable)
-    REG_IPC_FIFO_CR = RECV_FIFO_IPC_IRQ  | FIFO_IPC_ENABLE;
+    REG_IPC_FIFO_CR = IPC_FIFO_SEND_CLEAR | RECV_FIFO_IPC_IRQ  | FIFO_IPC_ENABLE;
 	
 	//set up ppu: do irq on hblank/vblank/vcount/and vcount line is 159
     REG_DISPSTAT = REG_DISPSTAT | DISP_HBLANK_IRQ | DISP_VBLANK_IRQ | (DISP_YTRIGGER_IRQ | (VCOUNT_LINE_INTERRUPT << 15));
