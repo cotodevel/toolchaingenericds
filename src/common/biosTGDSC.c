@@ -92,6 +92,11 @@ void handleARM7SVC(){
 		}
 	}
 	
+	//Handles Sender FIFO overflows
+	if(REG_IPC_FIFO_CR & IPC_FIFO_ERROR){
+		REG_IPC_FIFO_CR = (REG_IPC_FIFO_CR | IPC_FIFO_SEND_CLEAR);	//bit14 FIFO ERROR ACK + Flush Send FIFO
+	}
+	
 }
 #endif
 
@@ -99,9 +104,10 @@ void handleARM7SVC(){
 __attribute__((section(".itcm")))
 inline __attribute__((always_inline)) 
 void handleARM9SVC(){
-	
-	
-	
+	//Handles Sender FIFO overflows
+	if(REG_IPC_FIFO_CR & IPC_FIFO_ERROR){
+		REG_IPC_FIFO_CR = (REG_IPC_FIFO_CR | IPC_FIFO_SEND_CLEAR);	//bit14 FIFO ERROR ACK + Flush Send FIFO
+	}
 }
 #endif
 
