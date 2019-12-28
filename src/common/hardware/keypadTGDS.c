@@ -45,7 +45,7 @@ uint32 last_frame_keys_arm9;
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
-void scanKeys(){
+inline void scanKeys(){
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	uint16 buttonsARM7 = TGDSIPC->buttons7;
 	uint32 readKeys = (uint32)(( ((~KEYINPUT)&0x3ff) | (((~buttonsARM7)&3)<<10) | (((~buttonsARM7)<<6) & (KEY_TOUCH|KEY_LID) ))^KEY_LID);
@@ -53,19 +53,19 @@ void scanKeys(){
 	global_keys_arm9 = readKeys;
 }
 
-uint32 keysPressed(){
+inline uint32 keysPressed(){
 	return global_keys_arm9;	//there is no other way. Required by CoreEmu
 }
 
-uint32 keysReleased(){
+inline uint32 keysReleased(){
 	return (uint32)((~keysPressed()) & last_frame_keys_arm9);
 }
 
-uint32 keysHeld(){
+inline uint32 keysHeld(){
 	return (uint32)(global_keys_arm9 & last_frame_keys_arm9);
 }
 
-uint32 keysRepeated(){
+inline uint32 keysRepeated(){
 	return (uint32)( keysPressed() | last_frame_keys_arm9);
 }
 
@@ -73,7 +73,7 @@ uint32 keysRepeated(){
 //struct touchScr touchScrStruct;
 //touchScrRead(&touchScrStruct);
 //read values..
-void touchScrRead(struct touchScr * touchScrInst){
+inline void touchScrRead(struct touchScr * touchScrInst){
 	struct sIPCSharedTGDS * sIPCSharedTGDSInst = TGDSIPCStartAddress;
 	touchScrInst->buttons7	=	sIPCSharedTGDSInst->buttons7;			// X, Y, /PENIRQ buttons
 	touchScrInst->touchX	=	sIPCSharedTGDSInst->touchX;
