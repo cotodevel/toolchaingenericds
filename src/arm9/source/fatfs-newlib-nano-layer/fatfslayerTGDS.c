@@ -21,6 +21,7 @@ USA
 
 #include "fatfslayerTGDS.h"
 #include "dldi.h"
+#include "fileBrowse.h"	//generic template functions from TGDS: maintain 1 source, whose changes are globally accepted by all TGDS Projects.
 
 //fatfs
 FATFS dldiFs;
@@ -1735,7 +1736,7 @@ bool TGDSFS_detectUnicode(struct fd *pfd){
 //returns the first free StructFD
 bool buildFileClassListFromPath(char * path, struct FileClassList * lst, int startFromGivenIndex){
 	//Decide wether we have a Working directory or not, if valid dir, enter that dir. If not, use the default dir and point to it. + Clear TGDS FS Directory Iterator context
-	if((cleanFileList(lst) == true) && (updateGlobalCWD(path) == true)){
+	if((cleanFileList(lst) == true) && (updateTGDSFSDirectoryIteratorCWD(path, lst) == true) && (chdir(path) == 0) ){
 		//rebuild filelist
 		FRESULT result;
 		DIR dir;
@@ -1796,55 +1797,40 @@ bool buildFileClassListFromPath(char * path, struct FileClassList * lst, int sta
 	return false;
 }
 
-//internal: used by the current working directory iterator in TGDS Filesystem. Also used by directory functions
-char TGDSCurrentWorkingDirectory[MAX_TGDSFILENAME_LENGTH+1];
-
-void setTGDSCurrentWorkingDirectory(char * path){
-	strcpy(TGDSCurrentWorkingDirectory, (const char *)path);
-}
-char * getTGDSCurrentWorkingDirectory(){
-	return (char*)&TGDSCurrentWorkingDirectory[0];
-}
-
 //Directory Functions
-bool enterDir(char* newDir){
-	char * CurrentWorkingDirectory = (char*)&TGDSCurrentWorkingDirectory[0];
-	//Update dir only when source dir is different
-	if(strcmp(CurrentWorkingDirectory, newDir) != 0){
-		strcpy(CurrentWorkingDirectory, (const char *)newDir);
-		//clrscr();
-	}	
-	if(chdir((char *)CurrentWorkingDirectory) == 0){
+bool enterDir(char* newDir, char* destinationPath){
+	if((newDir != NULL) && (destinationPath != NULL)){
+		strcpy(destinationPath, newDir); //update target DIR
 		return true;
 	}
 	return false;
 }
 
-//passes the full working directory, removes the last directory and reloads the current directory context
-bool leaveDir(char* newDir){
-	char tempnewDir[MAX_TGDSFILENAME_LENGTH+1] = {0};
-	char tempnewDiroutPath[MAX_TGDSFILENAME_LENGTH+1] = {0};    //used by splitCustom function as output path buffer
-	strcpy(tempnewDir, (const char *)newDir);
-    getLastDirFromPath(tempnewDir, TGDSDirectorySeparator, tempnewDiroutPath);
-	char * CurrentWorkingDirectory = (char*)&TGDSCurrentWorkingDirectory[0];
-	strcpy(CurrentWorkingDirectory, (const char *)tempnewDiroutPath);
-	if(chdir((char *)CurrentWorkingDirectory) == 0){
+//passes the full working directory held by the CWD from within this context is called from, then, 
+//removes the last directory of such context 
+bool leaveDir(char* oldNewDir){
+	if(oldNewDir != NULL){
+		char tempnewDir[MAX_TGDSFILENAME_LENGTH+1] = {0};
+		char tempnewDiroutPath[MAX_TGDSFILENAME_LENGTH+1] = {0};    //used by splitCustom function as output path buffer
+		strcpy(tempnewDir, (const char *)oldNewDir);
+		getLastDirFromPath(tempnewDir, TGDSDirectorySeparator, tempnewDiroutPath);
+		strcpy(oldNewDir, tempnewDiroutPath);
 		return true;
 	}
 	return false;
 }
 
 //Global Current Working Directory updated by the FileClass iterator. char * path : If a valid directory is passed, it will be used to populate the FileClassList. Otherwise the default Start Directory is used.
-//Note: If any File or Directory is found then char * path will be destroyed by the current iterated File / Directory item.
-bool updateGlobalCWD(char * path){
-	char * CurrentWorkingDirectory = (char*)&TGDSCurrentWorkingDirectory[0];
-	//Set the base directory if the TGDS Current Working Directory is missing.
-	if(strlen(CurrentWorkingDirectory) == 0){
-		strcpy(CurrentWorkingDirectory, (const char*)FileClassStartDirectory);
+//Note: 
+//Step 1): The Global CWD will be overriden by the char * path passed
+//Step 2): If any File or Directory is found then char * path will be destroyed by the current iterated File / Directory item.
+bool updateTGDSFSDirectoryIteratorCWD(char * newCWD, struct FileClassList * lst){
+	char * CurrentWorkingDirectory = (char*)&lst->TGDSCurrentWorkingDirectory[0];
+	if(strlen(newCWD) > 0){
+		strcpy(CurrentWorkingDirectory, (const char*)newCWD);
+		return true;
 	}
-	//Set the Current Working Directory as base directory to the destroyable filename source always.
-	strcpy(path, (const char*)CurrentWorkingDirectory);
-	return enterDir(path);
+	return false;
 }
 
 /////////////////////////////////////////////////////////////////////// INTERNAL DIRECTORY FUNCTIONS END //////////////////////////////////////////////////////////////////

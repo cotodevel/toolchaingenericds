@@ -84,6 +84,9 @@ struct FileClass{
 
 //FileClass List context. To handle TGDS FileSystem + Directory functions you need to define it.
 struct FileClassList{
+	//Current Working Directory held by the TGDS FS Directory Iterator (of which, is an instance)
+	char TGDSCurrentWorkingDirectory[MAX_TGDSFILENAME_LENGTH+1];
+
 	//The actual pointer inside the directory listing
 	int CurrentFileDirEntry;	
 	//These update on getFirstFile/Dir getNextFile/Dir
@@ -243,12 +246,9 @@ extern volatile struct fd files[OPEN_MAXTGDS];	//file/dir attrs, pointers for be
 
 ///////////////////////////////////////////////////////////////////////// INTERNAL DIRECTORY FUNCTIONS /////////////////////////////////////////////////////////////////////
 extern bool buildFileClassListFromPath(char * path, struct FileClassList * lst, int startFromGivenIndex);
-extern char TGDSCurrentWorkingDirectory[MAX_TGDSFILENAME_LENGTH+1];
-extern void setTGDSCurrentWorkingDirectory(char * path);
-extern char * getTGDSCurrentWorkingDirectory();
-extern bool enterDir(char* newDir);
-extern bool leaveDir(char* newDir);
-extern bool updateGlobalCWD(char * path);
+extern bool enterDir(char* newDir, char* destinationPath);
+extern bool leaveDir(char* oldNewDir);
+extern bool updateTGDSFSDirectoryIteratorCWD(char * newCWD, struct FileClassList * lst);
 /////////////////////////////////////////////////////////////////////// INTERNAL DIRECTORY FUNCTIONS END //////////////////////////////////////////////////////////////////
 
 //Link C to C++ related dependencies
