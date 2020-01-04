@@ -44,6 +44,16 @@ USA
 #endif
 
 //IPC
+void sendMultipleByteIPC(uint8 inByte0, uint8 inByte1, uint8 inByte2, uint8 inByte3){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint8 * ipcMsg = (uint8 *)&TGDSIPC->ipcMesaggingQueue[0];
+	ipcMsg[0] = (u8)inByte0;
+	ipcMsg[1] = (u8)inByte1;
+	ipcMsg[2] = (u8)inByte2;
+	ipcMsg[3] = (u8)inByte3;
+	sendByteIPC(IPC_SEND_MULTIPLE_CMDS);
+}
+
 void sendByteIPC(uint8 inByte){
 	REG_IPC_SYNC = ((REG_IPC_SYNC&0xfffff0ff) | (inByte<<8) | (1<<13) );	// (1<<13) Send IRQ to remote CPU      (0=None, 1=Send IRQ)
 }

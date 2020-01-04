@@ -106,6 +106,9 @@ USA
 #define IPC_FIFO_ERROR			(uint16)(1<<14)
 #define IPC_FIFO_ENABLE			(uint16)(1<<15)
 
+#define IPC_SEND_MULTIPLE_CMDS			(u8)(1)
+
+
 //Read callback between ARM processors (in chunks)
 #define READ_EXTARM_FIFO	(uint8)(0xffff22fe)
 	#define READ_EXTARM_FIFO_READY	(uint32)(0xffff22ff)
@@ -201,7 +204,7 @@ extern void SendFIFOWords(uint32 data0, uint32 data1);
 extern void idleIPC();
 extern uint8 receiveByteIPC();
 extern void sendByteIPC(uint8 inByte);
-
+extern void sendMultipleByteIPC(uint8 inByte0, uint8 inByte1, uint8 inByte2, uint8 inByte3);
 
 #ifdef __cplusplus
 }
