@@ -176,7 +176,7 @@ void * _sbrk_r (struct _reent * reent, int size){
 inline __attribute__((always_inline)) 
 void Write8bitAddrExtArm(uint32 address, uint8 value){
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->ipcmsg[0];
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[0] = address;
 	fifomsg[1] = (uint32)value;
 	SendFIFOWords(WRITE_EXTARM_8, (uint32)fifomsg);
@@ -185,7 +185,7 @@ void Write8bitAddrExtArm(uint32 address, uint8 value){
 inline __attribute__((always_inline)) 
 void Write16bitAddrExtArm(uint32 address, uint16 value){
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->ipcmsg[0];
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[0] = address;
 	fifomsg[1] = (uint32)value;
 	SendFIFOWords(WRITE_EXTARM_16, (uint32)fifomsg);
@@ -194,7 +194,7 @@ void Write16bitAddrExtArm(uint32 address, uint16 value){
 inline __attribute__((always_inline)) 
 void Write32bitAddrExtArm(uint32 address, uint32 value){
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->ipcmsg[0];
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[0] = address;
 	fifomsg[1] = (uint32)value;
 	SendFIFOWords(WRITE_EXTARM_32, (uint32)fifomsg);
@@ -281,7 +281,7 @@ int	setBacklight(int flags){
 	
 	#ifdef ARM9
 		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-		uint32 * fifomsg = (uint32 *)&TGDSIPC->ipcmsg[0];
+		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 		fifomsg[0] = (uint32)FIFO_SCREENPOWER_WRITE;
 		fifomsg[1] = (uint32)(flags);
 		SendFIFOWords(FIFO_POWERMGMT_WRITE, (uint32)fifomsg);

@@ -219,13 +219,13 @@ void HandleFifoNotEmpty(){
 			break;
 			
 			//Process the packages (signal) that sent earlier FIFO_SEND_EXT
-			case((uint32)READ_EXTARM_IPC):{
+			case((uint32)READ_EXTARM_FIFO):{
 				//take orders only if we have one
 				struct sSharedSENDCtx * ctx = (struct sSharedSENDCtx *)data1;
-				if(getSENDCtxStatus(ctx) == READ_EXTARM_IPC_BUSY){
+				if(getSENDCtxStatus(ctx) == READ_EXTARM_FIFO_BUSY){
 					REG_IME = 0;
 					memcpy((u8*)ctx->targetAddr, (u8*)ctx->srcAddr, ctx->size);
-					setSENDCtxStatus(READ_EXTARM_IPC_READY, ctx);
+					setSENDCtxStatus(READ_EXTARM_FIFO_READY, ctx);
 					REG_IME = 1;
 				}
 			}
@@ -253,13 +253,13 @@ __attribute__((section(".itcm")))
 inline __attribute__((always_inline)) 
 void SendBufferThroughFIFOIrqsAsync(u32 bufStart, u32 targetAddr, int bufSize, struct sSharedSENDCtx * ctx){		//todo, put some callback here to read the chunk
 	setSENDCtx(bufStart, targetAddr, bufSize, ctx);
-	setSENDCtxStatus(READ_EXTARM_IPC_BUSY, ctx); 
-	SendFIFOWords(READ_EXTARM_IPC, (u32)ctx);
+	setSENDCtxStatus(READ_EXTARM_FIFO_BUSY, ctx); 
+	SendFIFOWords(READ_EXTARM_FIFO, (u32)ctx);
 	#ifdef ARM9
 	coherent_user_range_by_size(targetAddr, bufSize);
 	#endif
 	
-	while(getSENDCtxStatus(ctx) == READ_EXTARM_IPC_BUSY){
+	while(getSENDCtxStatus(ctx) == READ_EXTARM_FIFO_BUSY){
 		//some irq wait here...
 	}
 }

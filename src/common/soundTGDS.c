@@ -37,8 +37,8 @@ void startSound(int sampleRate, const void* data, u32 bytes, u8 channel, u8 vol,
 {
 	#ifdef ARM9
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->ipcmsg[0];
-	coherent_user_range_by_size((uint32)fifomsg, sizeof(TGDSIPC->ipcmsg));
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	coherent_user_range_by_size((uint32)fifomsg, sizeof(TGDSIPC->fifoMesaggingQueue));
 	coherent_user_range_by_size((uint32)data, bytes);	//coherent sound buffer if within cached EWRAM
 	
 	fifomsg[0] = (uint32)sampleRate;

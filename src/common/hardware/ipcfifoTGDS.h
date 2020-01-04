@@ -107,10 +107,10 @@ USA
 #define IPC_FIFO_ENABLE			(uint16)(1<<15)
 
 //Read callback between ARM processors (in chunks)
-#define READ_EXTARM_IPC	(uint8)(0xa)
-	#define READ_EXTARM_IPC_READY	(uint32)(0xffff22ff)
-	#define READ_EXTARM_IPC_BUSY	(uint32)(0xffff11ff)
-	#define READ_EXTARM_IPC_SIZE	(sint32)(32*1024)
+#define READ_EXTARM_FIFO	(uint8)(0xffff22fe)
+	#define READ_EXTARM_FIFO_READY	(uint32)(0xffff22ff)
+	#define READ_EXTARM_FIFO_BUSY	(uint32)(0xffff11ff)
+	#define READ_EXTARM_FIFO_SIZE	(sint32)(32*1024)
 
 
 struct sSharedSENDCtx {
@@ -171,8 +171,11 @@ struct sIPCSharedTGDS {
 	struct sDSFWSETTINGS DSFWSETTINGSInst;
 	struct sEXTKEYIN	EXTKEYINInst;
 	
-	//used when 3+ args sent between ARM cores
-	uint32 ipcmsg[0x10];
+	//FIFO Mesagging: used when 3+ args sent between ARM cores through FIFO interrupts.
+	uint32 fifoMesaggingQueue[0x10];
+	
+	//IPC Mesagging: used when 1+ args sent between ARM Cores through IPC interrupts.
+	u8 ipcMesaggingQueue[0x10];
 	
 } __attribute__((aligned (4)));
 
