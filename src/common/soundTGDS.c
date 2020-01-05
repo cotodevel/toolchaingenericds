@@ -62,27 +62,29 @@ void startSound(int sampleRate, const void* data, u32 bytes, u8 channel, u8 vol,
 #ifdef ARM7
 static int curChannel = 0;
 inline void updateSoundContext(){
-	//VBLANK intervals: Look out for assigned channels, playing.
-	struct soundSampleContext * curSoundSampleContext = getsoundSampleContextByIndex(curChannel);
-	int curChannel = curSoundSampleContext->channel;
-	
-	//Returns -1 if channel is busy, or channel if idle
-	if( (isFreeSoundChannel(curChannel) == curChannel) && (curSoundSampleContext->status == SOUNDSAMPLECONTEXT_PENDING) ){	//Play sample?
-		startSound(curSoundSampleContext->sampleRate, curSoundSampleContext->data, curSoundSampleContext->bytes, curChannel, curSoundSampleContext->vol,  curSoundSampleContext->pan, curSoundSampleContext->format);
-		curSoundSampleContext->status = SOUNDSAMPLECONTEXT_PLAYING;
-	}
-	
-	//Returns -1 if channel is busy, or channel if idle
-	if( (isFreeSoundChannel(curChannel) == curChannel) && (curSoundSampleContext->status == SOUNDSAMPLECONTEXT_PLAYING) ){	//Idle? free context
-		freesoundSampleContext(curSoundSampleContext);
-		SendFIFOWords(FIFO_FLUSHSOUNDCONTEXT, curChannel);
-	}
-	
-	if(curChannel > SOUNDCONTEXTCAPACITY){
-		curChannel = 0;
-	}
-	else{
-		curChannel++;
+	if(getSoundSampleContextEnabledStatus() == true){
+		//VBLANK intervals: Look out for assigned channels, playing.
+		struct soundSampleContext * curSoundSampleContext = getsoundSampleContextByIndex(curChannel);
+		int curChannel = curSoundSampleContext->channel;
+		
+		//Returns -1 if channel is busy, or channel if idle
+		if( (isFreeSoundChannel(curChannel) == curChannel) && (curSoundSampleContext->status == SOUNDSAMPLECONTEXT_PENDING) ){	//Play sample?
+			startSound(curSoundSampleContext->sampleRate, curSoundSampleContext->data, curSoundSampleContext->bytes, curChannel, curSoundSampleContext->vol,  curSoundSampleContext->pan, curSoundSampleContext->format);
+			curSoundSampleContext->status = SOUNDSAMPLECONTEXT_PLAYING;
+		}
+		
+		//Returns -1 if channel is busy, or channel if idle
+		if( (isFreeSoundChannel(curChannel) == curChannel) && (curSoundSampleContext->status == SOUNDSAMPLECONTEXT_PLAYING) ){	//Idle? free context
+			freesoundSampleContext(curSoundSampleContext);
+			SendFIFOWords(FIFO_FLUSHSOUNDCONTEXT, curChannel);
+		}
+		
+		if(curChannel > SOUNDCONTEXTCAPACITY){
+			curChannel = 0;
+		}
+		else{
+			curChannel++;
+		}
 	}
 }
 
@@ -159,3 +161,27 @@ void flushSoundContext(int soundContextIndex){
 }
 
 #endif
+
+bool getSoundSampleContextEnabledStatus(){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	#ifdef ARM9
+	coherent_user_range_by_size((uint32)&TGDSIPC->soundContextShared, sizeof(TGDSIPC->soundContextShared));
+	#endif
+	return TGDSIPC->soundContextShared.soundSampleContextEnabled;
+}
+
+void EnableSoundSampleContext(){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	#ifdef ARM9
+	coherent_user_range_by_size((uint32)&TGDSIPC->soundContextShared, sizeof(TGDSIPC->soundContextShared));
+	#endif
+	TGDSIPC->soundContextShared.soundSampleContextEnabled = true;
+}
+
+void DisableSoundSampleContext(){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	#ifdef ARM9
+	coherent_user_range_by_size((uint32)&TGDSIPC->soundContextShared, sizeof(TGDSIPC->soundContextShared));
+	#endif
+	TGDSIPC->soundContextShared.soundSampleContextEnabled = false;
+}

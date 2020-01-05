@@ -47,6 +47,7 @@ struct soundSampleContext{
 };
 
 struct soundSampleContextList{
+	bool soundSampleContextEnabled;
 	struct soundSampleContext soundSampleCxt[SOUNDCONTEXTCAPACITY];
 };
 
@@ -96,6 +97,10 @@ extern struct soundSampleContext * getFreeSoundSampleContext();				//obtains a f
 #ifdef ARM9
 extern bool setSoundSampleContext(int sampleRate, u32 * data, u32 bytes, u8 channel, u8 vol, u8 pan, u8 format);
 #endif
+
+extern void EnableSoundSampleContext();
+extern void DisableSoundSampleContext();
+extern bool getSoundSampleContextEnabledStatus();
 
 #ifdef __cplusplus
 }
