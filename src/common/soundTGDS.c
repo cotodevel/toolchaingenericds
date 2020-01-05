@@ -94,6 +94,7 @@ void initSoundSampleContext(){
 		struct soundSampleContext * soundSampleCtx = getsoundSampleContextByIndex(i);
 		freesoundSampleContext(soundSampleCtx);
 	}
+	EnableSoundSampleContext();
 }
 #endif
 
