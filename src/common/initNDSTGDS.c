@@ -76,8 +76,6 @@ void initHardware(void) {
 	setbuf(stdout, NULL);	//iprintf directs to DS Framebuffer (printf already does that)
 	//setbuf(stderr, NULL);
 	
-	initTGDSDevoptab();
-	
 	TGDSIPC->arm9startaddress = get_ewram_start();
 	TGDSIPC->arm9endaddress = (uint32)(get_ewram_start() + get_ewram_size());
 	#endif

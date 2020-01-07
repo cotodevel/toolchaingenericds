@@ -281,6 +281,9 @@ void initTGDS(char * devoptabFSName){
 	if(devoptabFSName == NULL){
 		return;
 	}
+	
+	initTGDSDevoptab();
+	
 	int fd = 0;
 	/* search in all struct fd instances*/
 	for (fd = 0; fd < OPEN_MAXTGDS; fd++){
