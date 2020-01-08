@@ -262,7 +262,7 @@ int lstat(const char * path, struct stat *buf){
 }
 
 int getMaxRam(){
-	int maxRam = ( (int)(&_ewram_end)  - (int)sbrk(0));
+	int maxRam = ((int)(&_ewram_end)  - (int)sbrk(0) );
 	return (int)maxRam;
 }
 
@@ -275,7 +275,7 @@ void TryToDefragmentMemory(){
 	int memSteps = (freeRam / 4096);
 	int i = 0;
 	for(i = 0; i < memSteps; i++){
-		defragMalloc[i] = malloc(4096);
+		defragMalloc[i] = malloc(4);	//dmalloc blocks are 4K each 
 	}
 	for(i = 0; i < memSteps; i++){
 		if(defragMalloc[i] != NULL){

@@ -78,6 +78,8 @@ void initHardware(void) {
 	
 	TGDSIPC->arm9startaddress = get_ewram_start();
 	TGDSIPC->arm9endaddress = (uint32)(get_ewram_start() + get_ewram_size());
+	
+	TryToDefragmentMemory();
 	#endif
 	
 }
