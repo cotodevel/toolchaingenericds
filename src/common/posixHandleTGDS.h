@@ -134,6 +134,9 @@ extern char *fgets_tgds(char *s, int n, int fd);
 extern int feof_tgds(int fd);
 extern int ferror_tgds(int fd);
 
+extern int getMaxRam();
+extern void TryToDefragmentMemory();
+
 #ifdef __cplusplus
 }
 #endif
