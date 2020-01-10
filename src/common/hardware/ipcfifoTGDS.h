@@ -39,9 +39,6 @@ USA
 #include "soundTGDS.h"
 
 //FIFO Hardware
-//irqs
-#define VCOUNT_LINE_INTERRUPT (sint32)(159)
-
 //void Write8bitAddrExtArm
 //void Write16bitAddrExtArm
 //void Write32bitAddrExtArm

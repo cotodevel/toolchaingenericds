@@ -30,7 +30,6 @@ USA
 
 #include "InterruptsARMCores_h.h"
 #include "ipcfifoTGDS.h"
-#include "linkerTGDS.h"
 #include "keypadTGDS.h"
 
 void IRQInit(){
@@ -39,8 +38,11 @@ void IRQInit(){
 	REG_IPC_SYNC = (1 << 14);	//14    R/W  Enable IRQ from remote CPU  (0=Disable, 1=Enable)
     REG_IPC_FIFO_CR = IPC_FIFO_SEND_CLEAR | RECV_FIFO_IPC_IRQ  | FIFO_IPC_ENABLE;
 	
-	//set up ppu: do irq on hblank/vblank/vcount/and vcount line is 159
-    REG_DISPSTAT = REG_DISPSTAT | DISP_HBLANK_IRQ | DISP_VBLANK_IRQ | (DISP_YTRIGGER_IRQ | (VCOUNT_LINE_INTERRUPT << 15));
+	//Set up PPU IRQ: HBLANK/VBLANK/VCOUNT
+    REG_DISPSTAT = (DISP_HBLANK_IRQ | DISP_VBLANK_IRQ | DISP_YTRIGGER_IRQ);
+	
+	//Set up PPU IRQ Vertical Line
+	setVCountIRQLine(TGDS_VCOUNT_LINE_INTERRUPT);
 	
 	#ifdef ARM7
 	REG_IE = IRQ_TIMER1 | IRQ_HBLANK | IRQ_VBLANK | IRQ_VCOUNT | IRQ_IPCSYNC | IRQ_RECVFIFO_NOT_EMPTY | IRQ_SCREENLID;
@@ -54,8 +56,6 @@ void IRQInit(){
 	REG_IF = REG_IF;
 	REG_IME = 1;
 }
-
-
 
 //Software bios irq more or less emulated. (replaces default NDS bios for some parts)
 #ifdef ARM9

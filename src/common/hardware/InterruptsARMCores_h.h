@@ -27,6 +27,12 @@ USA
 #include "linkerTGDS.h"
 #include "ipcfifoTGDS.h"
 
+static inline void setVCountIRQLine(int VCountIRQ){
+	REG_DISPSTAT = (u16)((REG_DISPSTAT & ~(0xFF<<8)) | ((VCountIRQ & 0xFF)<<8));
+}
+
+#define TGDS_VCOUNT_LINE_INTERRUPT (int)(159)
+
 #endif
 #ifdef __cplusplus
 extern "C"{
