@@ -24,6 +24,7 @@ USA
 #include "biosTGDS.h"
 #include "dmaTGDS.h"
 #include "InterruptsARMCores_h.h"
+#include "global_settings.h"
 
 //NDS BIOS Routines C code
 
@@ -75,6 +76,19 @@ struct LZSSContext LZS_DecodeFromBuffer(unsigned char *pak_buffer, unsigned int 
 #endif
 
 //Services Implementation
+
+//These services run when a TGDS binary starts
+#ifdef ARM7
+void handleARM7InitSVC(){
+
+}
+#endif
+
+#ifdef ARM9
+void handleARM9InitSVC(){
+
+}
+#endif
 
 //These services run at least once a given VBLANK interrupt.
 

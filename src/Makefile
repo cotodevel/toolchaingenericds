@@ -51,7 +51,7 @@ export DIRS_ARM7_SRC = source/	\
 			../common/	\
 			../common/dswifi/	\
 			../common/hardware/	\
-			../common/hardware/dldi	\
+			../common/hardware/dldi/	\
 			../common/dswifi/netinet/	\
 			../common/dswifi/sys/	\
 			../templateCode/source	\
@@ -67,7 +67,7 @@ export DIRS_ARM7_HEADER = source/	\
 			../common/	\
 			../common/dswifi/	\
 			../common/hardware/	\
-			../common/hardware/dldi	\
+			../common/hardware/dldi/	\
 			../common/dswifi/netinet/	\
 			../common/dswifi/sys/	\
 			../templateCode/source	\
@@ -91,7 +91,7 @@ export DIRS_ARM9_SRC = source/	\
 			../common/	\
 			../common/dswifi/	\
 			../common/hardware/	\
-			../common/hardware/dldi	\
+			../common/hardware/dldi/	\
 			../common/dswifi/netinet/	\
 			../common/dswifi/sys/	\
 			../templateCode/source	\
@@ -112,7 +112,7 @@ export DIRS_ARM9_HEADER = source/	\
 			../common/	\
 			../common/dswifi/	\
 			../common/hardware/	\
-			../common/hardware/dldi	\
+			../common/hardware/dldi/	\
 			../common/dswifi/netinet/	\
 			../common/dswifi/sys/	\
 			../templateCode/source	\

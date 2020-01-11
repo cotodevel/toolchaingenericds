@@ -133,10 +133,16 @@ extern int swiDecompressLZSSVram(void * source, void * destination, uint32 toGet
 
 //C
 extern void swiFastCopy(uint32 * source, uint32 * dest, int flags);
-
-
 extern struct LZSSContext LZS_DecodeFromBuffer(unsigned char *pak_buffer, unsigned int   pak_len);
 
+//Init SVCs
+#ifdef ARM7
+extern void handleARM7InitSVC();
+#endif
+
+#ifdef ARM9
+extern void handleARM9InitSVC();
+#endif
 
 //SVCs
 #ifdef ARM7

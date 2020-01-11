@@ -1,10 +1,12 @@
-#include "typedefsTGDS.h"
 #include "dldi.h"
-#include <string.h>
-
+#include "typedefsTGDS.h"
 #include "dmaTGDS.h"
 #include "global_settings.h"
+#include "busTGDS.h"
+#include "ipcfifoTGDS.h"
+#include <string.h>
 
+// Common
 static const uint32  DLDI_MAGIC_NUMBER = 0xBF8DA5ED;	
 static const data_t dldiMagicString[12] = "\xED\xA5\x8D\xBF Chishm";	// Normal DLDI file
 static const data_t dldiMagicLoaderString[12] = "\xEE\xA5\x8D\xBF Chishm";	// Different to a normal DLDI file
@@ -13,26 +15,26 @@ static const data_t dldiMagicLoaderString[12] = "\xEE\xA5\x8D\xBF Chishm";	// Di
 const char DLDI_MAGIC_STRING_BACKWARDS [DLDI_MAGIC_STRING_LEN] =
 	{'\0', 'm', 'h', 's', 'i', 'h', 'C', ' '} ;
 
-const DLDI_INTERFACE* io_dldi_data = (const DLDI_INTERFACE*)&_dldi_start;
-
 struct DLDI_INTERFACE* dldiGet(void) {
 	#ifdef ARM7
-	if (_dldi_start.ioInterface.features & FEATURE_SLOT_GBA) {
+	struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
+	if (dldiInterface->ioInterface.features & FEATURE_SLOT_GBA) {
 		SetBusSLOT1ARM9SLOT2ARM7();
 	}
-	if (_dldi_start.ioInterface.features & FEATURE_SLOT_NDS) {
+	if (dldiInterface->ioInterface.features & FEATURE_SLOT_NDS) {
 		SetBusSLOT1ARM7SLOT2ARM9();
 	}
 	#endif
 	#ifdef ARM9
-	if (_dldi_start.ioInterface.features & FEATURE_SLOT_GBA) {
+	struct DLDI_INTERFACE* dldiInterface = (struct DLDI_INTERFACE*)&_dldi_start;
+	if (dldiInterface->ioInterface.features & FEATURE_SLOT_GBA) {
 		SetBusSLOT1ARM7SLOT2ARM9();
 	}
-	if (_dldi_start.ioInterface.features & FEATURE_SLOT_NDS) {
+	if (dldiInterface->ioInterface.features & FEATURE_SLOT_NDS) {
 		SetBusSLOT1ARM9SLOT2ARM7();
 	}
 	#endif
-	return (struct DLDI_INTERFACE*)&_dldi_start;
+	return (struct DLDI_INTERFACE*)dldiInterface;
 }
 
 
@@ -40,13 +42,24 @@ struct DLDI_INTERFACE* dldiGet(void) {
 
 
 #ifdef ARM7
+u32 * DLDIARM7Address = NULL;
+
+void setDLDIARM7Address(u32 * address){
+	DLDIARM7Address = address;
+}
+
 void initDLDIARM7(u32 srcDLDIAddr){	//implementation
 	
+	//FIFO Code must be sent from ARM7 here.
+	//ARM9 must receive this ptr, perform relocation to (EWRAM) temp memory, create (EWRAM) ptr temp memory. This must be done because the ARM7 IWRAM is scarse and extra DLDI code can't fit
+	//ARM7 must receive ptr temp memory and copy it to srcDLDIAddr
+	/*
 	fixAndRelocateDLDI((u32)srcDLDIAddr);
-
-	//memcpy ((char*)&_dldi_start, (u8*)srcDLDIAddr, 16*1024);
+	*/
 	
-
+	
+	//Then ARM7 can proceed like this
+	//memcpy ((char*)&_dldi_start, (u8*)srcDLDIAddr, 16*1024);
 	bool status = dldi_handler_init();
 	if(status == false){
 		SendFIFOWords(0x11ff00ff, 0);
@@ -59,8 +72,7 @@ void initDLDIARM7(u32 srcDLDIAddr){	//implementation
 }
 #endif
 
-bool dldi_handler_init()
-{
+bool dldi_handler_init(){
 	bool status = false;
 	struct DLDI_INTERFACE* dldiInit = dldiGet();	//ensures SLOT-1 / SLOT-2 is mapped to ARM7/ARM9 now
 	if( (!dldiInit->ioInterface.startup()) || (!dldiInit->ioInterface.isInserted()) ){
@@ -72,18 +84,9 @@ bool dldi_handler_init()
 	return status;
 }
 
-bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer){
-	return _dldi_start.ioInterface.readSectors(sector, numSectors, buffer);
-}
 
-bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buffer){
-	return _dldi_start.ioInterface.writeSectors(sector, numSectors, buffer);
-}
-
-////////////////////////////////////////////// DLDI ARM 9 CODE end ////////////////////////////////////////////// 
-
-
-////////////////////////////////////////////// DLDI ARM 7 CODE ////////////////////////////////////////////// 
+// WIP
+/*
 
 #ifdef ARM7_DLDI
 
@@ -159,5 +162,5 @@ PUT_IN_VRAM __attribute__((noinline)) __attribute__((aligned(4)))	void write_sd_
 #endif
 
 #endif
-
+*/
 ////////////////////////////////////////////// DLDI ARM 7 CODE end ////////////////////////////////////////////// 

@@ -1,12 +1,9 @@
 #ifndef __DLDI_H__
 #define __DLDI_H__
 
+#include <string.h>
 #include "typedefsTGDS.h"
 #include "global_settings.h"
-
-#ifndef __ASSEMBLER__
-
-#include <string.h>
 
 #define FEATURE_MEDIUM_CANREAD		0x00000001
 #define FEATURE_MEDIUM_CANWRITE		0x00000002
@@ -79,7 +76,7 @@ struct  DISC_INTERFACE_STRUCT{
 #define DLDI_FRIENDLY_NAME_LEN 		48
 
 // I/O interface with DLDI extensions
-typedef struct DLDI_INTERFACE {
+struct DLDI_INTERFACE {
 	uint32 	magicNumber;
 	char	magicString [DLDI_MAGIC_STRING_LEN];
 	uint8		versionNumber;
@@ -101,34 +98,56 @@ typedef struct DLDI_INTERFACE {
 	
 	// Original I/O interface data
 	struct DISC_INTERFACE_STRUCT ioInterface;
-} DLDI_INTERFACE;
+};
 
+// The only built in driver(s)
+#ifdef ARM7
+extern u32 * DLDIARM7Address;
 #endif
 
+#ifdef ARM9
+extern struct DLDI_INTERFACE _dldi_start;
 #endif
 
+static inline bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer){
+	#ifdef ARM7
+	struct  DLDI_INTERFACE* dldiInterface = (struct DLDI_INTERFACE*)DLDIARM7Address;
+	return dldiInterface->ioInterface.readSectors(sector, numSectors, buffer);
+	#endif
+	#ifdef ARM9
+	struct  DLDI_INTERFACE* dldiInterface = (struct  DLDI_INTERFACE*)&_dldi_start;
+	return dldiInterface->ioInterface.readSectors(sector, numSectors, buffer);
+	#endif
+}
+
+static inline bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buffer){
+	#ifdef ARM7
+	struct DLDI_INTERFACE* dldiInterface = (struct DLDI_INTERFACE*)DLDIARM7Address;
+	return dldiInterface->ioInterface.writeSectors(sector, numSectors, buffer);
+	#endif
+	#ifdef ARM9
+	struct DLDI_INTERFACE* dldiInterface = (struct DLDI_INTERFACE*)&_dldi_start;
+	return dldiInterface->ioInterface.writeSectors(sector, numSectors, buffer);
+	#endif
+}
+
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// The only built in driver
-extern DLDI_INTERFACE _dldi_start;
-
 extern FN_MEDIUM_STARTUP _DLDI_startup_ptr;
 extern FN_MEDIUM_READSECTORS _DLDI_readSectors_ptr;
 extern FN_MEDIUM_WRITESECTORS _DLDI_writeSectors_ptr;
 
-extern uint8_t __vram_end;
 extern struct DLDI_INTERFACE* dldiGet(void);
 extern void fixAndRelocateDLDI(u32 dldiSourceInRam);
-
 extern bool dldi_handler_init();
-extern bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer);
-extern bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buffer);
 
 #ifdef ARM7
-extern void initDLDIARM7(u32 srcDLDIAddr);
+extern void setDLDIARM7Address(u32 * address);	//	| Must be defined/standardized by the TGDS project at runtime. This way we ensure IWRAM 64K compatibility + DLDI at ARM7
+extern void initDLDIARM7(u32 srcDLDIAddr);		//	/
 #endif
 
 #ifdef __cplusplus
