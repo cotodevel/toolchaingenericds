@@ -7,9 +7,6 @@
 #include <string.h>
 
 // Common
-static const uint32  DLDI_MAGIC_NUMBER = 0xBF8DA5ED;	
-static const data_t dldiMagicString[12] = "\xED\xA5\x8D\xBF Chishm";	// Normal DLDI file
-static const data_t dldiMagicLoaderString[12] = "\xEE\xA5\x8D\xBF Chishm";	// Different to a normal DLDI file
 
 // Stored backwards to prevent it being picked up by DLDI patchers
 const char DLDI_MAGIC_STRING_BACKWARDS [DLDI_MAGIC_STRING_LEN] =
@@ -85,6 +82,10 @@ bool dldi_handler_init(){
 }
 
 #ifdef ARM9
+
+static const uint32  DLDI_MAGIC_NUMBER = 0xBF8DA5ED;	
+static const data_t dldiMagicString[12] = "\xED\xA5\x8D\xBF Chishm";	// Normal DLDI file
+static const data_t dldiMagicLoaderString[12] = "\xEE\xA5\x8D\xBF Chishm";	// Different to a normal DLDI file
 
 //Coto: this one copies the DLDI section from EWRAM and relocates it to u32 DldiRelocatedAddress, so all DLDI code can be called and executed from there.
 void fixAndRelocateDLDI(u32 dldiSourceInRam){
@@ -372,34 +373,6 @@ bool dldiPatchLoader (data_t *binData, u32 binSize)
 	*/
 
 	return true;
-}
-
-addr_t readAddr (data_t *mem, addr_t offset) {
-	return ((addr_t*)mem)[offset/sizeof(addr_t)];
-}
-
-void writeAddr (data_t *mem, addr_t offset, addr_t value) {
-	((addr_t*)mem)[offset/sizeof(addr_t)] = value;
-}
-
-addr_t quickFind (const data_t* data, const data_t* search, size_t dataLen, size_t searchLen) {
-	const int* dataChunk = (const int*) data;
-	int searchChunk = ((const int*)search)[0];
-	addr_t i;
-	addr_t dataChunkEnd = (addr_t)(dataLen / sizeof(int));
-
-	for ( i = 0; i < dataChunkEnd; i++) {
-		if (dataChunk[i] == searchChunk) {
-			if ((i*sizeof(int) + searchLen) > dataLen) {
-				return -1;
-			}
-			if (memcmp (&data[i*sizeof(int)], search, searchLen) == 0) {
-				return i*sizeof(int);
-			}
-		}
-	}
-
-	return -1;
 }
 
 #endif

@@ -131,6 +131,33 @@ static inline bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, co
 	#endif
 }
 
+static inline addr_t readAddr (data_t *mem, addr_t offset) {
+	return ((addr_t*)mem)[offset/sizeof(addr_t)];
+}
+
+static inline void writeAddr (data_t *mem, addr_t offset, addr_t value) {
+	((addr_t*)mem)[offset/sizeof(addr_t)] = value;
+}
+
+static inline addr_t quickFind (const data_t* data, const data_t* search, size_t dataLen, size_t searchLen) {
+	const int* dataChunk = (const int*) data;
+	int searchChunk = ((const int*)search)[0];
+	addr_t i;
+	addr_t dataChunkEnd = (addr_t)(dataLen / sizeof(int));
+
+	for ( i = 0; i < dataChunkEnd; i++) {
+		if (dataChunk[i] == searchChunk) {
+			if ((i*sizeof(int) + searchLen) > dataLen) {
+				return -1;
+			}
+			if (memcmp (&data[i*sizeof(int)], search, searchLen) == 0) {
+				return i*sizeof(int);
+			}
+		}
+	}
+	return -1;
+}
+
 #endif
 
 #ifdef __cplusplus
@@ -151,9 +178,6 @@ extern void initDLDIARM7(u32 srcDLDIAddr);		//	/
 #endif
 
 #ifdef ARM9
-extern addr_t readAddr (data_t *mem, addr_t offset);
-extern void writeAddr (data_t *mem, addr_t offset, addr_t value);
-extern addr_t quickFind (const data_t* data, const data_t* search, size_t dataLen, size_t searchLen);
 
 extern bool dldiRelocateLoader(bool clearBSS, u32 DldiRelocatedAddress, u32 dldiSourceInRam);
 extern bool dldiPatchLoader (data_t *binData, u32 binSize); //original DLDI code: seeks a DLDI section in binData, and uses current NTR TGDS homebrew's DLDI to relocate it in there
