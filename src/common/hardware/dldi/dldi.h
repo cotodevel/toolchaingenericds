@@ -2,6 +2,8 @@
 #define __DLDI_H__
 
 #include "typedefsTGDS.h"
+#include "global_settings.h"
+
 #ifndef __ASSEMBLER__
 
 #include <string.h>

@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "dmaTGDS.h"
+#include "global_settings.h"
 
 static const uint32  DLDI_MAGIC_NUMBER = 0xBF8DA5ED;	
 static const data_t dldiMagicString[12] = "\xED\xA5\x8D\xBF Chishm";	// Normal DLDI file
