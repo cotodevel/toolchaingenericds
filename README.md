@@ -68,7 +68,7 @@ Features:
 	-GDB Debugger (allows to read NDS memory real-time through TCP!)
 	-WIP other features.
 - TGDS drivers: 
-	-basic sound playback, FIFO, interrupt handlers, keypad, touchscreen through the TGDS driver (embedded in all TGDS Projects) so you can focus right into coding rather than NDS hardware.
+	- ARM9DLDI and ARM7DLDI (DSi), basic sound playback, FIFO, interrupt handlers, keypad, touchscreen through the TGDS driver (embedded in all TGDS Projects) so you can focus right into coding rather than NDS hardware.
 	-WIP: 3D Support
 
 The environment uses GCC 4.9.2 to build Newlib 2.1 for Nintendo DS, and ToolchainGenericDS.

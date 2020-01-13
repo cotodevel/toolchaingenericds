@@ -33,7 +33,7 @@ USA
 #error "Please provide either EXCEPTION_VECTORS_0xffff0000 or EXCEPTION_VECTORS_0x00000000"
 #endif
 
-//ARM7: DLDI Code runs from ARM7 (default)
+//ARM7: DLDI Code runs from ARM7 (experimental)
 //ARM9: DLDI Code runs from ARM9 (will break DSi compatibility)
 //#define ARM7_DLDI
 #define ARM9_DLDI

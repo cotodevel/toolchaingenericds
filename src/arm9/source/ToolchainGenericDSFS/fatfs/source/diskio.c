@@ -67,11 +67,15 @@ DSTATUS disk_initialize (
 		if(pdrv == DLDICART){
 			//DS DLDI
 			#ifdef ARM7_DLDI
-			//Todo
+			//Spinlock waiting for ARM7 to set up DLDI
+			while(dldiARM7InitStatus == false){
+				swiDelay(300);
+			}
+			ret = 0;	//init OK!
 			#endif
 			
 			#ifdef ARM9_DLDI
-			if(dldi_handler_init() == true){
+			if(dldi_handler_init() == true){	//Init DLDI: ARM9 version
 				ret = 0;	//init OK!
 			}
 			else{
@@ -97,7 +101,14 @@ DRESULT disk_read (
 	UINT count		/* Number of sectors to read */
 )
 {
+	#ifdef ARM7_DLDI
+	read_sd_sectors_safe(sector, count, buff);
+	return RES_OK;
+	#endif
+	
+	#ifdef ARM9_DLDI
 	return ( ((pdrv == DLDICART) && dldi_handler_read_sectors(sector, count, buff) == true) ? RES_OK : RES_ERROR);
+	#endif
 }
 
 
@@ -113,7 +124,14 @@ DRESULT disk_write (
 	UINT count			/* Number of sectors to write */
 )
 {
+	#ifdef ARM7_DLDI
+	write_sd_sectors_safe(sector, count, buff);
+	return RES_OK;
+	#endif
+	
+	#ifdef ARM9_DLDI
 	return ( ((pdrv == DLDICART) && dldi_handler_write_sectors(sector, count, buff) == true) ? RES_OK : RES_ERROR);
+	#endif
 }
 
 

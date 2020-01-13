@@ -37,6 +37,7 @@ USA
 #include "utilsTGDS.h"
 #include "wifi_shared.h"
 #include "soundTGDS.h"
+#include "global_settings.h"
 
 //FIFO Hardware
 //void Write8bitAddrExtArm
@@ -69,6 +70,22 @@ USA
 	//power management commands:
 	//screen power write
 	#define FIFO_SCREENPOWER_WRITE	(uint32)(0xffff020D)
+
+//DLDI ARM7
+#define TGDS_DLDI_ARM7_STATUS_INIT	(int)(0xffff0300)
+	#define TGDS_DLDI_ARM7_STATUS_STAGE0	(int)(0)	//ARM7 Inits ARM7 DLDI context. Passes the target DLDI address and waits for DLDI to be relocated to such address.
+	#define TGDS_DLDI_ARM7_STATUS_STAGE1	(int)(-1)
+	
+#define TGDS_DLDI_ARM7_INIT_OK	(uint32)(0xffff0301)
+#define TGDS_DLDI_ARM7_INIT_ERROR	(uint32)(0xffff0302)
+
+#define TGDS_DLDI_ARM7_READ	(uint32)(0xffff0303)
+	#define TGDS_DLDI_ARM7_STATUS_BUSY_READ	(int)(0xffff0304)	//ARM7 Inits ARM7 DLDI context. Passes the target DLDI address and waits for DLDI to be relocated to such address.
+	#define TGDS_DLDI_ARM7_STATUS_IDLE_READ	(int)(0xffff0305)
+
+#define TGDS_DLDI_ARM7_WRITE	(uint32)(0xffff0306)
+	#define TGDS_DLDI_ARM7_STATUS_BUSY_WRITE	(int)(0xffff0307)	//ARM7 Inits ARM7 DLDI context. Passes the target DLDI address and waits for DLDI to be relocated to such address.
+	#define TGDS_DLDI_ARM7_STATUS_IDLE_WRITE	(int)(0xffff0308)
 
 #define SEND_FIFO_IPC_EMPTY	(uint32)(1<<0)	
 #define SEND_FIFO_IPC_FULL	(uint32)(1<<1)	
@@ -105,13 +122,26 @@ USA
 
 #define IPC_SEND_MULTIPLE_CMDS			(u8)(1)
 
-
 //Read callback between ARM processors (in chunks)
 #define READ_EXTARM_FIFO	(uint8)(0xffff22fe)
 	#define READ_EXTARM_FIFO_READY	(uint32)(0xffff22ff)
 	#define READ_EXTARM_FIFO_BUSY	(uint32)(0xffff11ff)
 	#define READ_EXTARM_FIFO_SIZE	(sint32)(32*1024)
 
+
+struct sTGDSDLDIARM7DLDICmd {
+    uint32_t sector;
+	uint32_t numSectors;
+	void* buffer;
+	int DLDIStatus;
+} __attribute__((aligned (4)));
+
+struct sTGDSDLDIARM7Context {
+    u32 DLDISourceAddress;
+	int DLDISize;
+	int TGDSDLDIStatus;
+	struct sTGDSDLDIARM7DLDICmd * dldiCmdSharedCtx;
+} __attribute__((aligned (4)));
 
 struct sSharedSENDCtx {
     u32 targetAddr;
@@ -176,6 +206,11 @@ struct sIPCSharedTGDS {
 	
 	//IPC Mesagging: used when 1+ args sent between ARM Cores through IPC interrupts.
 	u8 ipcMesaggingQueue[0x10];
+	
+	//ARM7 DLDI implementation
+	#ifdef ARM7_DLDI
+	struct sTGDSDLDIARM7Context dldi7TGDSCtx;
+	#endif
 	
 } __attribute__((aligned (4)));
 

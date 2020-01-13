@@ -20,10 +20,13 @@ USA
 
 //Coto: Use them as you want , just make sure you read WELL the descriptions below.
 
+#include "global_settings.h"
+
 #include "ipcfifoTGDS.h"
 #include "InterruptsARMCores_h.h"
 #include "utilsTGDS.h"
 #include "timerTGDS.h"
+#include "dldi.h"
 
 #ifdef ARM7
 #include <string.h>
@@ -37,10 +40,8 @@ USA
 #include <stdbool.h>
 #include "dsregs.h"
 #include "dsregs_asm.h"
-#include "InterruptsARMCores_h.h"
 #include "wifi_arm9.h"
 #include "nds_cp15_misc.h"
-
 #endif
 
 //IPC
@@ -73,8 +74,8 @@ __attribute__((section(".itcm")))
 #endif
 inline __attribute__((always_inline)) 
 void SendFIFOWords(uint32 data0, uint32 data1){	//format: arg0: cmd, arg1: value
+	REG_IPC_FIFO_TX = (uint32)data1;	
 	REG_IPC_FIFO_TX = (uint32)data0;	//last message should always be command
-	REG_IPC_FIFO_TX = (uint32)data1;
 }
 
 #ifdef ARM9
@@ -95,12 +96,12 @@ void HandleFifoNotEmpty(){
 		data0 = (u32)REG_IPC_FIFO_RX;
 		data1 = (u32)REG_IPC_FIFO_RX;
 		//Do ToolchainGenericDS IPC handle here
-		switch (data0) {
+		switch (data1) {
 			// ARM7IO from ARM9
 			//	||
 			// ARM9IO from ARM7
 			case((uint32)WRITE_EXTARM_8):{
-				uint32* fifomsg = (uint32*)data1;		//data1 == uint32 * fifomsg
+				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg
 				uint32* address = (uint32*)fifomsg[0];
 				uint8 value = (uint8)((uint32)(fifomsg[1]&0xff));
 				*(uint8*)address = (uint8)(value);
@@ -108,7 +109,7 @@ void HandleFifoNotEmpty(){
 			}
 			break;
 			case((uint32)WRITE_EXTARM_16):{
-				uint32* fifomsg = (uint32*)data1;		//data1 == uint32 * fifomsg
+				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg
 				uint32* address = (uint32*)fifomsg[0];
 				uint16 value = (uint16)((uint32)(fifomsg[1]&0xffff));
 				*(uint16*)address = (uint16)(value);
@@ -116,7 +117,7 @@ void HandleFifoNotEmpty(){
 			}
 			break;
 			case((uint32)WRITE_EXTARM_32):{
-				uint32* fifomsg = (uint32*)data1;		//data1 == uint32 * fifomsg
+				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg
 				uint32* address = (uint32*)fifomsg[0];
 				uint32 value = (uint32)fifomsg[1];
 				*(uint32*)address = (uint32)(value);
@@ -131,13 +132,32 @@ void HandleFifoNotEmpty(){
 			
 			//ARM7 command handler
 			#ifdef ARM7
+			
+			//ARM7 DLDI implementation
+			#ifdef ARM7_DLDI
+			case((uint32)TGDS_DLDI_ARM7_READ):{
+				struct sTGDSDLDIARM7DLDICmd * sharedDLDICmdCtx = (struct sTGDSDLDIARM7DLDICmd *)data0;	
+				struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
+				dldiInterface->ioInterface.readSectors((u32)sharedDLDICmdCtx->sector, (u32)sharedDLDICmdCtx->numSectors, (u8*)sharedDLDICmdCtx->buffer);
+				setDLDICtxStatus(sharedDLDICmdCtx, TGDS_DLDI_ARM7_STATUS_IDLE_READ);
+			}
+			break;
+			case((uint32)TGDS_DLDI_ARM7_WRITE):{
+				struct sTGDSDLDIARM7DLDICmd * sharedDLDICmdCtx = (struct sTGDSDLDIARM7DLDICmd *)data0;	
+				struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
+				dldiInterface->ioInterface.writeSectors(sharedDLDICmdCtx->sector, sharedDLDICmdCtx->numSectors, sharedDLDICmdCtx->buffer);
+				setDLDICtxStatus(sharedDLDICmdCtx, TGDS_DLDI_ARM7_STATUS_IDLE_WRITE);
+			}
+			break;
+			#endif
+			
 			case((uint32)FIFO_INITSOUND):{
 				initSound();
 			}
 			break;
 			
 			case((uint32)FIFO_PLAYSOUND):{
-				uint32* fifomsg = (uint32*)data1;		//data1 == uint32 * fifomsg					
+				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg					
 				int sampleRate = (uint32)fifomsg[0];
 				u32* data = (uint32)fifomsg[1];
 				u32 bytes = (uint32)fifomsg[2];
@@ -168,18 +188,18 @@ void HandleFifoNotEmpty(){
 			break;
 			
 			case((uint32)FIFO_POWERCNT_ON):{
-				powerON((uint16)data1);
+				powerON((uint16)data0);
 			}
 			break;
 			case((uint32)FIFO_POWERCNT_OFF):{
-				powerOFF((uint16)data1);
+				powerOFF((uint16)data0);
 			}
 			break;
 			//Power Management: 
 				//Supported mode(s): NTR
 			case((uint32)FIFO_POWERMGMT_WRITE):{
 				
-				uint32* fifomsg = (uint32*)data1;		//data1 == uint32 * fifomsg
+				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg
 				uint32 cmd = (uint32)fifomsg[0];
 				uint32 flags = (uint32)fifomsg[1];
 				fifomsg[1] = fifomsg[0] = 0;
@@ -199,7 +219,7 @@ void HandleFifoNotEmpty(){
 			//arm9 wants to send a WIFI context block address / userdata is always zero here
 			case((uint32)WIFI_INIT):{
 				//	wifiAddressHandler( void * address, void * userdata )
-				wifiAddressHandler((Wifi_MainStruct *)(uint32)data1, 0);
+				wifiAddressHandler((Wifi_MainStruct *)(uint32)data0, 0);
 			}
 			break;
 			// Deinit WIFI
@@ -211,9 +231,45 @@ void HandleFifoNotEmpty(){
 			
 			//ARM9 command handler
 			#ifdef ARM9
+			
+			//ARM7 DLDI implementation
+			#ifdef ARM7_DLDI
+			case(TGDS_DLDI_ARM7_INIT_OK):{
+				/*
+				clrscr();
+				printf(" -- ");
+				printf(" -- ");
+				printf(" -- ");
+				printf(" -- ");
+				printf("DLDI 7 INIT OK!");
+				*/
+				dldiARM7InitStatus = true;
+			}
+			break;
+			
+			case(TGDS_DLDI_ARM7_INIT_ERROR):{
+				/*
+				clrscr();
+				printf(" -- ");
+				printf(" -- ");
+				printf(" -- ");
+				printf(" -- ");
+				printf("DLDI 7 INIT ERROR!");
+				*/
+				dldiARM7InitStatus = false;
+			}
+			break;
+			
+			case(TGDS_DLDI_ARM7_STATUS_INIT):{
+				u32 targetDLDI7Address = (u32)data0;
+				TGDSDLDIARM7SetupStage1(targetDLDI7Address);
+			}
+			break;
+			#endif
+			
 			//exception handler from arm7
 			case((uint32)EXCEPTION_ARM7):{
-				if((uint32)data1 == (uint32)unexpectedsysexit_7){
+				if((uint32)data0 == (uint32)unexpectedsysexit_7){
 					exception_handler((uint32)unexpectedsysexit_7);	//r0 = EXCEPTION_ARM7 / r1 = unexpectedsysexit_7
 				}
 			}
@@ -231,7 +287,7 @@ void HandleFifoNotEmpty(){
 			//Process the packages (signal) that sent earlier FIFO_SEND_EXT
 			case((uint32)READ_EXTARM_FIFO):{
 				//take orders only if we have one
-				struct sSharedSENDCtx * ctx = (struct sSharedSENDCtx *)data1;
+				struct sSharedSENDCtx * ctx = (struct sSharedSENDCtx *)data0;
 				if(getSENDCtxStatus(ctx) == READ_EXTARM_FIFO_BUSY){
 					REG_IME = 0;
 					memcpy((u8*)ctx->targetAddr, (u8*)ctx->srcAddr, ctx->size);
@@ -242,7 +298,7 @@ void HandleFifoNotEmpty(){
 			break;
 			
 			case((uint32)FIFO_FLUSHSOUNDCONTEXT):{
-				int curChannelFreed = (int)data1;
+				int curChannelFreed = (int)data0;
 				flushSoundContext(curChannelFreed);
 			}
 			break;
@@ -250,7 +306,7 @@ void HandleFifoNotEmpty(){
 			#endif
 			
 		}
-		HandleFifoNotEmptyWeakRef(data0, data1);	//this one follows: cmd, value order
+		HandleFifoNotEmptyWeakRef(data1, data0);	//this one follows: cmd, value order
 	}
 }
 
