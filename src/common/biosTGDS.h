@@ -148,6 +148,11 @@ extern void handleARM9InitSVC();
 #ifdef ARM7
 extern bool isArm7ClosedLid;
 extern void handleARM7SVC();
+
+#ifdef ARM7_DLDI
+extern void IPCIRQHandleDLDI();
+#endif
+
 #endif
 #ifdef ARM9
 extern void handleARM9SVC();

@@ -1687,8 +1687,19 @@ int fatfs_init(){
 //internal: SD de-init code: requires to call fatfs_init() at least once before.
 int fatfs_deinit(){
 	int ret = f_unmount("0:");
+	
+	//ARM7 DLDI implementation
+	#ifdef ARM7_DLDI
+	ARM9DeinitDLDI();
+	dldiARM7InitStatus = false;
+	#endif
+	
+	//ARM9 DLDI impl.
+	#ifdef ARM9_DLDI
 	_dldi_start.ioInterface.clearStatus();
 	_dldi_start.ioInterface.shutdown();
+	#endif
+	
 	return ret;
 }
 

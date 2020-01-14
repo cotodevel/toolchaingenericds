@@ -180,9 +180,9 @@ static inline int getDLDIInitStatus(){
 
 static inline int getDLDICtxStatus(struct sTGDSDLDIARM7DLDICmd * ctx){
 	#ifdef ARM9
-	coherent_user_range_by_size((u32)ctx, sizeof(struct sTGDSDLDIARM7DLDICmd));
+	coherent_user_range_by_size((u32)&ctx->DLDIStatus, sizeof(ctx->DLDIStatus));
 	#endif
-	return ctx->DLDIStatus;
+	return (int)ctx->DLDIStatus;
 }
 
 static inline void setDLDICtxStatus(struct sTGDSDLDIARM7DLDICmd * ctx, int status){
@@ -198,37 +198,39 @@ static inline void setDLDICtxStatus(struct sTGDSDLDIARM7DLDICmd * ctx, int statu
 #ifdef ARM9
 extern bool dldiARM7InitStatus;
 extern u8 ARM7DLDIBuf[64*512];
-extern struct sTGDSDLDIARM7DLDICmd sTGDSDLDIARM7DLDICmdShared;
+extern struct sTGDSDLDIARM7DLDICmd sTGDSDLDIARM7DLDICmdSharedRead;
+extern struct sTGDSDLDIARM7DLDICmd sTGDSDLDIARM7DLDICmdSharedWrite;
 
-static inline void read_sd_sectors_safe(sec_t sector, sec_t numSectors, void* buffer){
-	void * targetMem = (void *)((int)&ARM7DLDIBuf[0]);
-	struct sTGDSDLDIARM7DLDICmd * dldiCmdSharedCtx = (struct sTGDSDLDIARM7DLDICmd *)( (int)&sTGDSDLDIARM7DLDICmdShared + 0x400000);
-	memset(dldiCmdSharedCtx, 0, sizeof(struct sTGDSDLDIARM7DLDICmd));
-	dldiCmdSharedCtx->sector = sector;
-	dldiCmdSharedCtx->numSectors = numSectors;
-	dldiCmdSharedCtx->buffer = targetMem;
-	setDLDICtxStatus(dldiCmdSharedCtx, TGDS_DLDI_ARM7_STATUS_BUSY_READ);
-	SendFIFOWords(TGDS_DLDI_ARM7_READ, (u32)dldiCmdSharedCtx);
-	while(getDLDICtxStatus(dldiCmdSharedCtx) == TGDS_DLDI_ARM7_STATUS_BUSY_READ){
-		swiDelay(1);	//This delay is required!
+__attribute__((aligned(4)))	static inline void read_sd_sectors_safe(sec_t sector, sec_t numSectors, void* buffer){
+	void * targetMem = (void *)((int)&ARM7DLDIBuf[0] + 0x400000);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	fifomsg[0] = (uint32)sector;
+	fifomsg[1] = (uint32)numSectors;
+	fifomsg[2] = (uint32)targetMem;
+	fifomsg[7] = (uint32)TGDS_DLDI_ARM7_READ;
+	sendByteIPC(IPC_SERVE_DLDI7_REQBYIRQ);
+	while(fifomsg[7] == TGDS_DLDI_ARM7_READ){
+		swiDelay(2);
 	}
-	memcpy((uint16_t*)buffer, (uint16_t*)targetMem + 0x400000, (numSectors * 512));
+	memcpy((uint16_t*)buffer, (uint16_t*)targetMem, (numSectors * 512));
 }
 
-static inline void write_sd_sectors_safe(sec_t sector, sec_t numSectors, const void* buffer){
-	void * targetMem = (void *)((int)&ARM7DLDIBuf[0]);
-	struct sTGDSDLDIARM7DLDICmd * dldiCmdSharedCtx = (struct sTGDSDLDIARM7DLDICmd *)( (int)&sTGDSDLDIARM7DLDICmdShared + 0x400000);
-	memset(dldiCmdSharedCtx, 0, sizeof(struct sTGDSDLDIARM7DLDICmd));
-	dldiCmdSharedCtx->sector = sector;
-	dldiCmdSharedCtx->numSectors = numSectors;
-	dldiCmdSharedCtx->buffer = targetMem;
-	memcpy((uint16_t*)targetMem + 0x400000, (uint16_t*)buffer, (numSectors * 512));
-	setDLDICtxStatus(dldiCmdSharedCtx, TGDS_DLDI_ARM7_STATUS_BUSY_WRITE);
-	SendFIFOWords(TGDS_DLDI_ARM7_WRITE, (u32)dldiCmdSharedCtx);
-	while(getDLDICtxStatus(dldiCmdSharedCtx) == TGDS_DLDI_ARM7_STATUS_BUSY_WRITE){
-		swiDelay(1);	//This delay is required!
+__attribute__((aligned(4)))	static inline void write_sd_sectors_safe(sec_t sector, sec_t numSectors, const void* buffer){
+	void * targetMem = (void *)((int)&ARM7DLDIBuf[0] + 0x400000);
+	memcpy((uint16_t*)targetMem, (uint16_t*)buffer, (numSectors * 512));
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	fifomsg[3] = (uint32)sector;
+	fifomsg[4] = (uint32)numSectors;
+	fifomsg[5] = (uint32)targetMem;
+	fifomsg[8] = (uint32)TGDS_DLDI_ARM7_WRITE;
+	sendByteIPC(IPC_SERVE_DLDI7_REQBYIRQ);
+	while(fifomsg[8] == TGDS_DLDI_ARM7_WRITE){
+		swiDelay(2);
 	}
 }
+
 #endif
 
 #endif
@@ -243,6 +245,7 @@ extern FN_MEDIUM_WRITESECTORS _DLDI_writeSectors_ptr;
 
 extern struct DLDI_INTERFACE* dldiGet(void);
 extern bool dldi_handler_init();
+extern void dldi_handler_deinit();
 
 extern struct sTGDSDLDIARM7Context * getsTGDSDLDIARM7Context();
 
@@ -252,6 +255,7 @@ extern void TGDSDLDIARM7SetupStage0(u32 targetAddrDLDI7);
 
 #ifdef ARM9
 extern void TGDSDLDIARM7SetupStage1(u32 targetDLDI7Address);
+
 #endif
 
 #ifdef ARM7
@@ -268,17 +272,14 @@ extern bool dldiRelocateLoader(bool clearBSS, u32 DldiRelocatedAddress, u32 dldi
 
 //original DLDI code: seeks a DLDI section in binData, and uses current NTR TGDS homebrew's DLDI to relocate it in there
 extern bool dldiPatchLoader (data_t *binData, u32 binSize); 
-#endif
-
 
 //ARM7 DLDI implementation
 #ifdef ARM7_DLDI
-
-#ifdef ARM7
-extern struct sTGDSDLDIARM7DLDICmd * sTGDSDLDIARM7DLDICmdSharedPtr;
+extern void ARM9DeinitDLDI();
 #endif
 
 #endif
+
 
 #ifdef __cplusplus
 }

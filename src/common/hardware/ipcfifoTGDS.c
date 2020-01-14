@@ -55,18 +55,6 @@ void sendMultipleByteIPC(uint8 inByte0, uint8 inByte1, uint8 inByte2, uint8 inBy
 	sendByteIPC(IPC_SEND_MULTIPLE_CMDS);
 }
 
-void sendByteIPC(uint8 inByte){
-	REG_IPC_SYNC = ((REG_IPC_SYNC&0xfffff0ff) | (inByte<<8) | (1<<13) );	// (1<<13) Send IRQ to remote CPU      (0=None, 1=Send IRQ)
-}
-
-
-uint8 receiveByteIPC(){
-	return (REG_IPC_SYNC&0xf);
-}
-
-void idleIPC(){
-	sendByteIPC(0x0);
-}
 
 //Async FIFO Sender
 #ifdef ARM9
@@ -132,24 +120,6 @@ void HandleFifoNotEmpty(){
 			
 			//ARM7 command handler
 			#ifdef ARM7
-			
-			//ARM7 DLDI implementation
-			#ifdef ARM7_DLDI
-			case((uint32)TGDS_DLDI_ARM7_READ):{
-				struct sTGDSDLDIARM7DLDICmd * sharedDLDICmdCtx = (struct sTGDSDLDIARM7DLDICmd *)data0;	
-				struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
-				dldiInterface->ioInterface.readSectors((u32)sharedDLDICmdCtx->sector, (u32)sharedDLDICmdCtx->numSectors, (u8*)sharedDLDICmdCtx->buffer);
-				setDLDICtxStatus(sharedDLDICmdCtx, TGDS_DLDI_ARM7_STATUS_IDLE_READ);
-			}
-			break;
-			case((uint32)TGDS_DLDI_ARM7_WRITE):{
-				struct sTGDSDLDIARM7DLDICmd * sharedDLDICmdCtx = (struct sTGDSDLDIARM7DLDICmd *)data0;	
-				struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
-				dldiInterface->ioInterface.writeSectors(sharedDLDICmdCtx->sector, sharedDLDICmdCtx->numSectors, sharedDLDICmdCtx->buffer);
-				setDLDICtxStatus(sharedDLDICmdCtx, TGDS_DLDI_ARM7_STATUS_IDLE_WRITE);
-			}
-			break;
-			#endif
 			
 			case((uint32)FIFO_INITSOUND):{
 				initSound();
@@ -227,6 +197,15 @@ void HandleFifoNotEmpty(){
 				DeInitWIFI();
 			}
 			break;
+			
+			//ARM7 DLDI implementation
+			#ifdef ARM7_DLDI
+			case(TGDS_DLDI_ARM7_STATUS_DEINIT):{
+				dldi_handler_deinit();
+			}
+			break;
+			#endif
+			
 			#endif
 			
 			//ARM9 command handler
@@ -235,27 +214,13 @@ void HandleFifoNotEmpty(){
 			//ARM7 DLDI implementation
 			#ifdef ARM7_DLDI
 			case(TGDS_DLDI_ARM7_INIT_OK):{
-				/*
-				clrscr();
-				printf(" -- ");
-				printf(" -- ");
-				printf(" -- ");
-				printf(" -- ");
-				printf("DLDI 7 INIT OK!");
-				*/
+				//printf("DLDI 7 INIT OK!");
 				dldiARM7InitStatus = true;
 			}
 			break;
 			
 			case(TGDS_DLDI_ARM7_INIT_ERROR):{
-				/*
-				clrscr();
-				printf(" -- ");
-				printf(" -- ");
-				printf(" -- ");
-				printf(" -- ");
-				printf("DLDI 7 INIT ERROR!");
-				*/
+				//printf("DLDI 7 INIT ERROR!");
 				dldiARM7InitStatus = false;
 			}
 			break;

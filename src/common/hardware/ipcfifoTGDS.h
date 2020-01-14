@@ -86,6 +86,7 @@ USA
 #define TGDS_DLDI_ARM7_WRITE	(uint32)(0xffff0306)
 	#define TGDS_DLDI_ARM7_STATUS_BUSY_WRITE	(int)(0xffff0307)	//ARM7 Inits ARM7 DLDI context. Passes the target DLDI address and waits for DLDI to be relocated to such address.
 	#define TGDS_DLDI_ARM7_STATUS_IDLE_WRITE	(int)(0xffff0308)
+#define TGDS_DLDI_ARM7_STATUS_DEINIT	(int)(0xffff0309)
 
 #define SEND_FIFO_IPC_EMPTY	(uint32)(1<<0)	
 #define SEND_FIFO_IPC_FULL	(uint32)(1<<1)	
@@ -121,6 +122,7 @@ USA
 #define IPC_FIFO_ENABLE			(uint16)(1<<15)
 
 #define IPC_SEND_MULTIPLE_CMDS			(u8)(1)
+#define IPC_SERVE_DLDI7_REQBYIRQ		(u8)(2)
 
 //Read callback between ARM processors (in chunks)
 #define READ_EXTARM_FIFO	(uint8)(0xffff22fe)
@@ -128,6 +130,13 @@ USA
 	#define READ_EXTARM_FIFO_BUSY	(uint32)(0xffff11ff)
 	#define READ_EXTARM_FIFO_SIZE	(sint32)(32*1024)
 
+static inline void sendByteIPC(uint8 inByte){
+	REG_IPC_SYNC = ((REG_IPC_SYNC&0xfffff0ff) | (inByte<<8) | (1<<13) );	// (1<<13) Send IRQ to remote CPU      (0=None, 1=Send IRQ)
+}
+
+static inline uint8 receiveByteIPC(){
+	return (REG_IPC_SYNC&0xf);
+}
 
 struct sTGDSDLDIARM7DLDICmd {
     uint32_t sector;
@@ -233,7 +242,6 @@ extern void HandleFifoNotEmpty();
 extern void HandleFifoEmpty();
 extern void SendFIFOWords(uint32 data0, uint32 data1);
 
-extern void idleIPC();
 extern uint8 receiveByteIPC();
 extern void sendByteIPC(uint8 inByte);
 extern void sendMultipleByteIPC(uint8 inByte0, uint8 inByte1, uint8 inByte2, uint8 inByte3);

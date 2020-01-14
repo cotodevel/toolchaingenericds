@@ -52,7 +52,7 @@ extern __attribute__((weak))	void Timer2handlerUser();
 extern __attribute__((weak))	void Timer3handlerUser();
 extern __attribute__((weak))	void screenLidHasOpenedhandlerUser();
 extern __attribute__((weak))	void screenLidHasClosedhandlerUser();
-extern __attribute__((weak))	void IpcSynchandlerUser();
+extern __attribute__((weak))	void IpcSynchandlerUser(uint8 ipcByte);
 
 
 extern __attribute__((weak))	int main(int _argc, sint8 **_argv);

@@ -57,11 +57,12 @@ struct sTGDSDLDIARM7Context * getsTGDSDLDIARM7Context(){
 //ARM9 only allowed to init TGDS DLDI @ ARM7.
 //Trigger comes from ARM7
 #ifdef ARM9
+
 bool dldiARM7InitStatus = false;
+
 void TGDSDLDIARM7SetupStage1(u32 targetDLDI7Address){
 	struct sTGDSDLDIARM7Context * sharedDLDIInitCtx = getsTGDSDLDIARM7Context();
 	memset(sharedDLDIInitCtx, 0, sizeof(struct sTGDSDLDIARM7Context)); 
-	memset((u8*)&sTGDSDLDIARM7DLDICmdShared, 0, sizeof(struct sTGDSDLDIARM7DLDICmd)); //DLDI shared cmd context
 	
 	//Perform relocation, and pass the DLDI context to ARM7 Init code
 	u8* relocatedARM7DLDIBinary = (u8*)malloc(16*1024);
@@ -80,13 +81,18 @@ void TGDSDLDIARM7SetupStage1(u32 targetDLDI7Address){
 	
 	sharedDLDIInitCtx->DLDISourceAddress = (u32)relocatedARM7DLDIBinary;
 	sharedDLDIInitCtx->DLDISize = 16*1024;
-	sharedDLDIInitCtx->dldiCmdSharedCtx = (struct sTGDSDLDIARM7DLDICmd *)&sTGDSDLDIARM7DLDICmdShared;
+	sharedDLDIInitCtx->dldiCmdSharedCtx = NULL;
 	setDLDIInitStatus(TGDS_DLDI_ARM7_STATUS_STAGE1);
 	while(getDLDIInitStatus() == TGDS_DLDI_ARM7_STATUS_STAGE1){
-		swiDelay(888);	//This delay is required!
+		swiDelay(1);	//This delay is required!
 	}
 	free((u8*)relocatedARM7DLDIBinary);
 }
+
+void ARM9DeinitDLDI(){
+	SendFIFOWords(TGDS_DLDI_ARM7_STATUS_DEINIT, (u32)0);
+}
+
 #endif
 
 //Stage 0
@@ -96,14 +102,13 @@ void TGDSDLDIARM7SetupStage0(u32 targetAddrDLDI7){
 	setDLDIInitStatus(TGDS_DLDI_ARM7_STATUS_STAGE0);
 	SendFIFOWords(TGDS_DLDI_ARM7_STATUS_INIT, (u32)targetAddrDLDI7);
 	while(getDLDIInitStatus() == TGDS_DLDI_ARM7_STATUS_STAGE0){
-		swiDelay(888);	//This delay is required!
+		swiDelay(1);	//This delay is required!
 	}
 	
 	//TGDS_DLDI_ARM7_STATUS_BUSY_STAGE1 means DLDI code was relocated.
 	//Stage 1:
 	struct sTGDSDLDIARM7Context * sharedDLDIInitCtx = getsTGDSDLDIARM7Context();
 	memcpy((u8*)targetAddrDLDI7, (u8*)sharedDLDIInitCtx->DLDISourceAddress, (int)sharedDLDIInitCtx->DLDISize);
-	sTGDSDLDIARM7DLDICmdSharedPtr = sharedDLDIInitCtx->dldiCmdSharedCtx;
 	
 	setDLDIInitStatus(TGDS_DLDI_ARM7_STATUS_STAGE0);	//free ARM9
 	//Init DLDI
@@ -150,6 +155,13 @@ bool dldi_handler_init(){
 	}
 	return status;
 }
+
+void dldi_handler_deinit(){
+	struct DLDI_INTERFACE* dldiInit = dldiGet();	//ensures SLOT-1 / SLOT-2 is mapped to ARM7/ARM9 now
+	dldiInit->ioInterface.clearStatus();
+	dldiInit->ioInterface.shutdown();
+}
+
 
 #ifdef ARM9
 
@@ -410,12 +422,10 @@ bool dldiPatchLoader (data_t *binData, u32 binSize)
 //ARM7 DLDI implementation
 #ifdef ARM7_DLDI
 
-#ifdef ARM7
-struct sTGDSDLDIARM7DLDICmd * sTGDSDLDIARM7DLDICmdSharedPtr = NULL;
-#endif
-
 #ifdef ARM9
-struct sTGDSDLDIARM7DLDICmd sTGDSDLDIARM7DLDICmdShared;
+struct sTGDSDLDIARM7DLDICmd sTGDSDLDIARM7DLDICmdSharedRead;
+struct sTGDSDLDIARM7DLDICmd sTGDSDLDIARM7DLDICmdSharedWrite;
+
 u8 ARM7DLDIBuf[64*512];	//Up to 64KB per cluster, should allow 64K and below 
 #endif
 

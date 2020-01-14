@@ -69,7 +69,7 @@ DSTATUS disk_initialize (
 			#ifdef ARM7_DLDI
 			//Spinlock waiting for ARM7 to set up DLDI
 			while(dldiARM7InitStatus == false){
-				swiDelay(300);
+				swiDelay(333);
 			}
 			ret = 0;	//init OK!
 			#endif
@@ -102,8 +102,11 @@ DRESULT disk_read (
 )
 {
 	#ifdef ARM7_DLDI
-	read_sd_sectors_safe(sector, count, buff);
-	return RES_OK;
+	if(pdrv == DLDICART){
+		read_sd_sectors_safe(sector, count, buff);
+		return RES_OK;
+	}
+	return RES_ERROR;
 	#endif
 	
 	#ifdef ARM9_DLDI
@@ -125,8 +128,11 @@ DRESULT disk_write (
 )
 {
 	#ifdef ARM7_DLDI
-	write_sd_sectors_safe(sector, count, buff);
-	return RES_OK;
+	if(pdrv == DLDICART){
+		write_sd_sectors_safe(sector, count, buff);
+		return RES_OK;
+	}
+	return RES_ERROR;
 	#endif
 	
 	#ifdef ARM9_DLDI

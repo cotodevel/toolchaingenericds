@@ -22,9 +22,10 @@ USA
 
 /////////////////////////////////////////////////// Shared BIOS ARM7/9 /////////////////////////////////////////////////////////////////
 #include "biosTGDS.h"
+#include "global_settings.h"
+#include "dldi.h"
 #include "dmaTGDS.h"
 #include "InterruptsARMCores_h.h"
-#include "global_settings.h"
 
 //NDS BIOS Routines C code
 
@@ -110,8 +111,40 @@ void handleARM7SVC(){
 	if(REG_IPC_FIFO_CR & IPC_FIFO_ERROR){
 		REG_IPC_FIFO_CR = (REG_IPC_FIFO_CR | IPC_FIFO_SEND_CLEAR);	//bit14 FIFO ERROR ACK + Flush Send FIFO
 	}
-	
 }
+
+//ARM7 DLDI implementation
+#ifdef ARM7_DLDI
+void IPCIRQHandleDLDI(){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	switch(fifomsg[7]){
+		case((uint32)TGDS_DLDI_ARM7_READ):{
+			struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
+			u32 sector = (u32)fifomsg[0];
+			u32 numSectors = (u32)fifomsg[1];
+			u32 buffer = (u32)fifomsg[2];
+			dldiInterface->ioInterface.readSectors(sector, numSectors, buffer);
+			fifomsg[7] = fifomsg[2] = fifomsg[1] = fifomsg[0] = 0;
+		}
+		break;
+	}
+
+
+	switch(fifomsg[8]){
+		case((uint32)TGDS_DLDI_ARM7_WRITE):{
+			struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
+			u32 sector = (u32)fifomsg[3];
+			u32 numSectors = (u32)fifomsg[4];
+			u32 buffer = (u32)fifomsg[5];
+			dldiInterface->ioInterface.writeSectors(sector, numSectors, buffer);
+			fifomsg[8] = fifomsg[5] = fifomsg[4] = fifomsg[3] = 0;
+		}
+		break;
+	}	
+#endif
+}
+
 #endif
 
 #ifdef ARM9
@@ -123,5 +156,7 @@ void handleARM9SVC(){
 		REG_IPC_FIFO_CR = (REG_IPC_FIFO_CR | IPC_FIFO_SEND_CLEAR);	//bit14 FIFO ERROR ACK + Flush Send FIFO
 	}
 }
+
 #endif
+
 
