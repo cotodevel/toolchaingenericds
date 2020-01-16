@@ -45,24 +45,12 @@ struct DLDI_INTERFACE* dldiGet(void) {
 //ARM7 DLDI implementation
 #ifdef ARM7_DLDI
 
-struct sTGDSDLDIARM7Context * getsTGDSDLDIARM7Context(){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	#ifdef ARM9
-	coherent_user_range_by_size((u32)&TGDSIPC->dldi7TGDSCtx, sizeof(struct sTGDSDLDIARM7Context));
-	#endif
-	return (struct sTGDSDLDIARM7Context *)(&TGDSIPC->dldi7TGDSCtx);
-}
-
 //Stage 1
 //ARM9 only allowed to init TGDS DLDI @ ARM7.
 //Trigger comes from ARM7
 #ifdef ARM9
 
-bool dldiARM7InitStatus = false;
-
 void TGDSDLDIARM7SetupStage1(u32 targetDLDI7Address){
-	struct sTGDSDLDIARM7Context * sharedDLDIInitCtx = getsTGDSDLDIARM7Context();
-	memset(sharedDLDIInitCtx, 0, sizeof(struct sTGDSDLDIARM7Context)); 
 	
 	//Perform relocation, and pass the DLDI context to ARM7 Init code
 	u8* relocatedARM7DLDIBinary = (u8*)malloc(16*1024);
@@ -78,14 +66,15 @@ void TGDSDLDIARM7SetupStage1(u32 targetDLDI7Address){
 	else{
 		while(1==1);	//Error
 	}
-	
-	sharedDLDIInitCtx->DLDISourceAddress = (u32)relocatedARM7DLDIBinary;
-	sharedDLDIInitCtx->DLDISize = 16*1024;
-	sharedDLDIInitCtx->dldiCmdSharedCtx = NULL;
-	setDLDIInitStatus(TGDS_DLDI_ARM7_STATUS_STAGE1);
-	while(getDLDIInitStatus() == TGDS_DLDI_ARM7_STATUS_STAGE1){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	setValueSafe(&fifomsg[0], (u32)relocatedARM7DLDIBinary);
+	setValueSafe(&fifomsg[1], (u32)16*1024);
+	setValueSafe(&fifomsg[7], (u32)TGDS_DLDI_ARM7_STATUS_STAGE1);
+	while((u32)fifomsg[7] == (u32)TGDS_DLDI_ARM7_STATUS_STAGE1){
 		swiDelay(1);	//This delay is required!
 	}
+	
 	free((u8*)relocatedARM7DLDIBinary);
 }
 
@@ -99,21 +88,28 @@ void ARM9DeinitDLDI(){
 #ifdef ARM7
 void TGDSDLDIARM7SetupStage0(u32 targetAddrDLDI7){
 	setDLDIARM7Address((u32*)targetAddrDLDI7);
-	setDLDIInitStatus(TGDS_DLDI_ARM7_STATUS_STAGE0);
-	SendFIFOWords(TGDS_DLDI_ARM7_STATUS_INIT, (u32)targetAddrDLDI7);
-	while(getDLDIInitStatus() == TGDS_DLDI_ARM7_STATUS_STAGE0){
-		swiDelay(1);	//This delay is required!
+	
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	memset((u8*)fifomsg, 0, sizeof(TGDSIPC->fifoMesaggingQueue));
+	
+	setValueSafe(&fifomsg[0], (uint32)targetAddrDLDI7);
+	setValueSafe(&fifomsg[7], (uint32)TGDS_DLDI_ARM7_STATUS_STAGE0);
+	
+	//SendFIFOWords(TGDS_DLDI_ARM7_STATUS_INIT, (u32)targetAddrDLDI7);
+	while((u32)getValueSafe(&fifomsg[7])== (u32)TGDS_DLDI_ARM7_STATUS_STAGE0){
+		swiDelay(333);	//This delay is required!
 	}
+	u32 relocatedARM7DLDIBinary = (u32)getValueSafe(&fifomsg[0]);
+	int DLDISize = (u32)getValueSafe(&fifomsg[1]);
 	
-	//TGDS_DLDI_ARM7_STATUS_BUSY_STAGE1 means DLDI code was relocated.
-	//Stage 1:
-	struct sTGDSDLDIARM7Context * sharedDLDIInitCtx = getsTGDSDLDIARM7Context();
-	memcpy((u8*)targetAddrDLDI7, (u8*)sharedDLDIInitCtx->DLDISourceAddress, (int)sharedDLDIInitCtx->DLDISize);
+	//DLDI code was relocated: Stage 1
+	memcpy((u8*)targetAddrDLDI7, (u8*)relocatedARM7DLDIBinary, DLDISize);
 	
-	setDLDIInitStatus(TGDS_DLDI_ARM7_STATUS_STAGE0);	//free ARM9
 	//Init DLDI
 	if(dldi_handler_init() == true){
 		SendFIFOWords(TGDS_DLDI_ARM7_INIT_OK, 0);
+		setValueSafe(&fifomsg[7], (uint32)TGDS_DLDI_ARM7_STATUS_STAGE0);	//free ARM9
 		//while(1);
 	}
 	else{
@@ -423,9 +419,6 @@ bool dldiPatchLoader (data_t *binData, u32 binSize)
 #ifdef ARM7_DLDI
 
 #ifdef ARM9
-struct sTGDSDLDIARM7DLDICmd sTGDSDLDIARM7DLDICmdSharedRead;
-struct sTGDSDLDIARM7DLDICmd sTGDSDLDIARM7DLDICmdSharedWrite;
-
 u8 ARM7DLDIBuf[64*512];	//Up to 64KB per cluster, should allow 64K and below 
 #endif
 

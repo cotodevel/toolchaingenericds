@@ -1691,7 +1691,6 @@ int fatfs_deinit(){
 	//ARM7 DLDI implementation
 	#ifdef ARM7_DLDI
 	ARM9DeinitDLDI();
-	dldiARM7InitStatus = false;
 	#endif
 	
 	//ARM9 DLDI impl.

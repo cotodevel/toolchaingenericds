@@ -138,20 +138,6 @@ static inline uint8 receiveByteIPC(){
 	return (REG_IPC_SYNC&0xf);
 }
 
-struct sTGDSDLDIARM7DLDICmd {
-    uint32_t sector;
-	uint32_t numSectors;
-	void* buffer;
-	int DLDIStatus;
-} __attribute__((aligned (4)));
-
-struct sTGDSDLDIARM7Context {
-    u32 DLDISourceAddress;
-	int DLDISize;
-	int TGDSDLDIStatus;
-	struct sTGDSDLDIARM7DLDICmd * dldiCmdSharedCtx;
-} __attribute__((aligned (4)));
-
 struct sSharedSENDCtx {
     u32 targetAddr;
 	u32 srcAddr;
@@ -215,11 +201,6 @@ struct sIPCSharedTGDS {
 	
 	//IPC Mesagging: used when 1+ args sent between ARM Cores through IPC interrupts.
 	u8 ipcMesaggingQueue[0x10];
-	
-	//ARM7 DLDI implementation
-	#ifdef ARM7_DLDI
-	struct sTGDSDLDIARM7Context dldi7TGDSCtx;
-	#endif
 	
 } __attribute__((aligned (4)));
 

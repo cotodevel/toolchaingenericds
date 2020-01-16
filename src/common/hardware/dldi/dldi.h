@@ -162,44 +162,25 @@ static inline addr_t quickFind (const data_t* data, const data_t* search, size_t
 //ARM7 DLDI implementation
 #ifdef ARM7_DLDI
 
-static inline void setDLDIInitStatus(int status){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+static inline void setValueSafe(u32 * addr, u32 value){
 	#ifdef ARM9
-	coherent_user_range_by_size((u32)&TGDSIPC->dldi7TGDSCtx, sizeof(struct sTGDSDLDIARM7Context));
+	coherent_user_range_by_size(addr, sizeof(u32));
 	#endif
-	TGDSIPC->dldi7TGDSCtx.TGDSDLDIStatus = status;
-}
-	
-static inline int getDLDIInitStatus(){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	#ifdef ARM9
-	coherent_user_range_by_size((u32)&TGDSIPC->dldi7TGDSCtx, sizeof(struct sTGDSDLDIARM7Context));
-	#endif
-	return (int)(TGDSIPC->dldi7TGDSCtx.TGDSDLDIStatus);
+	*addr = value;
 }
 
-static inline int getDLDICtxStatus(struct sTGDSDLDIARM7DLDICmd * ctx){
+static inline u32 getValueSafe(u32 * addr){
 	#ifdef ARM9
-	coherent_user_range_by_size((u32)&ctx->DLDIStatus, sizeof(ctx->DLDIStatus));
+	coherent_user_range_by_size(addr, sizeof(u32));
 	#endif
-	return (int)ctx->DLDIStatus;
-}
-
-static inline void setDLDICtxStatus(struct sTGDSDLDIARM7DLDICmd * ctx, int status){
-	#ifdef ARM9
-	coherent_user_range_by_size((u32)ctx, sizeof(struct sTGDSDLDIARM7DLDICmd));
-	#endif
-	ctx->DLDIStatus = status;
+	return (u32)*addr;
 }
 
 #endif
 
 
 #ifdef ARM9
-extern bool dldiARM7InitStatus;
 extern u8 ARM7DLDIBuf[64*512];
-extern struct sTGDSDLDIARM7DLDICmd sTGDSDLDIARM7DLDICmdSharedRead;
-extern struct sTGDSDLDIARM7DLDICmd sTGDSDLDIARM7DLDICmdSharedWrite;
 
 __attribute__((aligned(4)))	static inline void read_sd_sectors_safe(sec_t sector, sec_t numSectors, void* buffer){
 	void * targetMem = (void *)((int)&ARM7DLDIBuf[0] + 0x400000);
@@ -246,8 +227,6 @@ extern FN_MEDIUM_WRITESECTORS _DLDI_writeSectors_ptr;
 extern struct DLDI_INTERFACE* dldiGet(void);
 extern bool dldi_handler_init();
 extern void dldi_handler_deinit();
-
-extern struct sTGDSDLDIARM7Context * getsTGDSDLDIARM7Context();
 
 #ifdef ARM7
 extern void TGDSDLDIARM7SetupStage0(u32 targetAddrDLDI7);

@@ -215,19 +215,18 @@ void HandleFifoNotEmpty(){
 			#ifdef ARM7_DLDI
 			case(TGDS_DLDI_ARM7_INIT_OK):{
 				//printf("DLDI 7 INIT OK!");
-				dldiARM7InitStatus = true;
+				
 			}
 			break;
 			
 			case(TGDS_DLDI_ARM7_INIT_ERROR):{
 				//printf("DLDI 7 INIT ERROR!");
-				dldiARM7InitStatus = false;
+				
 			}
 			break;
 			
 			case(TGDS_DLDI_ARM7_STATUS_INIT):{
-				u32 targetDLDI7Address = (u32)data0;
-				TGDSDLDIARM7SetupStage1(targetDLDI7Address);
+				
 			}
 			break;
 			#endif
