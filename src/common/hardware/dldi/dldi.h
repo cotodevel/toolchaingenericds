@@ -185,10 +185,12 @@ static inline u32 getValueSafe(u32 * addr){
 
 
 #ifdef ARM9
-extern u8 ARM7DLDIBuf[64*512];
+
+#define DLDI_CLUSTER_SIZE_BYTES	(int)(64*512)
+extern u8 * ARM7DLDIBuf;
 
 __attribute__((aligned(4)))	static inline void read_sd_sectors_safe(sec_t sector, sec_t numSectors, void* buffer){
-	void * targetMem = (void *)((int)&ARM7DLDIBuf[0] + 0x400000);
+	void * targetMem = (void *)((int)ARM7DLDIBuf + 0x400000);
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[0] = (uint32)sector;
@@ -203,7 +205,7 @@ __attribute__((aligned(4)))	static inline void read_sd_sectors_safe(sec_t sector
 }
 
 __attribute__((aligned(4)))	static inline void write_sd_sectors_safe(sec_t sector, sec_t numSectors, const void* buffer){
-	void * targetMem = (void *)((int)&ARM7DLDIBuf[0] + 0x400000);
+	void * targetMem = (void *)((int)ARM7DLDIBuf + 0x400000);
 	memcpy((uint16_t*)targetMem, (uint16_t*)buffer, (numSectors * 512));
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];

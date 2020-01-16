@@ -55,6 +55,9 @@ void TGDSDLDIARM7SetupStage1(u32 targetDLDI7Address){
 	//Perform relocation, and pass the DLDI context to ARM7 Init code
 	u8* relocatedARM7DLDIBinary = (u8*)malloc(16*1024);
 	
+	//ARM7DLDI Shared buffer
+	ARM7DLDIBuf = (u8*)malloc(DLDI_CLUSTER_SIZE_BYTES);
+	
 	//DldiRelocatedAddress == target DLDI relocated address
 	//dldiSourceInRam == physical DLDI section having a proper DLDI driver used as donor 
 	//dldiOutWriteAddress == new physical DLDI out buffer, except, relocated to a new DldiRelocatedAddress!
@@ -419,7 +422,7 @@ bool dldiPatchLoader (data_t *binData, u32 binSize)
 #ifdef ARM7_DLDI
 
 #ifdef ARM9
-u8 ARM7DLDIBuf[64*512];	//Up to 64KB per cluster, should allow 64K and below 
+u8 * ARM7DLDIBuf = NULL;	//Up to 64KB per cluster, should allow 64K and below 
 #endif
 
 #endif
