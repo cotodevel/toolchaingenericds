@@ -72,19 +72,42 @@ USA
 #define DMAXFILL(dmaindx)      (*(vuint32*)(0x040000E0+(dmaindx*0x4)))
 #endif
 
+//DMA:
+static inline void dmaFill(sint32 dmachannel,uint32 value, uint32 dest, uint32 mode){
+#ifdef ARM7	
+	DMAXSAD(dmachannel) = (uint32)&value;
 #endif
 
-#ifdef __cplusplus
-extern "C"{
+#ifdef ARM9
+	DMAXFILL(dmachannel) = (vuint32)value;
+	DMAXSAD(dmachannel) = (uint32)&DMAXFILL(dmachannel);
 #endif
-
-extern void dmaFill(sint32 dmachannel,uint32 value, uint32 dest, uint32 mode);
-extern void dmaFillWord(sint32 dmachannel,uint32 value, uint32 dest, uint32 word_count);
-extern void dmaFillHalfWord(sint32 dmachannel,uint32 value, uint32 dest, uint32 word_count);
-extern void dmaTransfer(sint32 dmachannel, uint32 source, uint32 dest, uint32 mode);
-extern void dmaTransferHalfWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count);
-extern void dmaTransferWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count);
-
-#ifdef __cplusplus
+	DMAXDAD(dmachannel) = (uint32)dest;
+	DMAXCNT(dmachannel) = mode;
+	while(DMAXCNT(dmachannel) & DMAENABLED);
 }
+
+static inline void dmaFillWord(sint32 dmachannel,uint32 value, uint32 dest, uint32 word_count){
+	dmaFill(dmachannel,value,dest,(DMAFIXED_SRC | DMAINCR_DEST | DMA32BIT | DMASTART_INMEDIATE | DMAENABLED | (word_count>>2)));
+}
+
+static inline void dmaFillHalfWord(sint32 dmachannel,uint32 value, uint32 dest, uint32 word_count){
+	dmaFill(dmachannel,value,dest,(DMAFIXED_SRC | DMAINCR_DEST | DMA16BIT | DMASTART_INMEDIATE | DMAENABLED | (word_count>>1)));
+}
+
+static inline void dmaTransfer(sint32 dmachannel, uint32 source, uint32 dest, uint32 mode){	
+	DMAXSAD(dmachannel)= source;
+	DMAXDAD(dmachannel)= dest;
+	DMAXCNT(dmachannel)= mode;	
+	while(DMAXCNT(dmachannel) & DMAENABLED);
+}
+
+static inline void dmaTransferHalfWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count){
+	dmaTransfer(dmachannel, source, dest, (DMAINCR_SRC | DMAINCR_DEST | DMA16BIT | DMASTART_INMEDIATE | DMAENABLED | (word_count>>1)));
+}
+
+static inline void dmaTransferWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count){
+	dmaTransfer(dmachannel, source, dest, (DMAINCR_SRC | DMAINCR_DEST | DMA32BIT | DMASTART_INMEDIATE | DMAENABLED | (word_count>>2)));
+}
+
 #endif

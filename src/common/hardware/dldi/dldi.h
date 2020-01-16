@@ -236,19 +236,18 @@ extern bool dldi_handler_init();
 extern void dldi_handler_deinit();
 
 #ifdef ARM7
-extern void TGDSDLDIARM7SetupStage0(u32 targetAddrDLDI7);
+extern void ARM7DLDIInit();
 #endif
 
 #ifdef ARM9
-extern void TGDSDLDIARM7SetupStage1(u32 targetDLDI7Address);
-
+extern void ARM7DLDIInit(u32 targetDLDI7Address);
 #endif
 
-#ifdef ARM7
+//ARM7: ARM7 physical DLDI target location address
+//ARM9: Uses this as a pointer to: ARM7 physical DLDI target location address
 extern u32 * getDLDIARM7Address();				//	/
 extern void setDLDIARM7Address(u32 * address);	//	| Must be defined/standardized by the TGDS project at runtime. This way we ensure IWRAM 64K compatibility + DLDI at ARM7
 extern void initDLDIARM7(u32 srcDLDIAddr);		//	/
-#endif
 
 #ifdef ARM9
 //DldiRelocatedAddress == target DLDI relocated address

@@ -45,18 +45,25 @@ struct DLDI_INTERFACE* dldiGet(void) {
 //ARM7 DLDI implementation
 #ifdef ARM7_DLDI
 
-//Stage 1
-//ARM9 only allowed to init TGDS DLDI @ ARM7.
-//Trigger comes from ARM7
+//ARM9 only allowed to init TGDS DLDI @ ARM7
 #ifdef ARM9
+void ARM9DeinitDLDI(){
+	SendFIFOWords(TGDS_DLDI_ARM7_STATUS_DEINIT, (u32)0);
+}
 
-void TGDSDLDIARM7SetupStage1(u32 targetDLDI7Address){
+void ARM7DLDIInit(u32 targetDLDI7Address){	//ARM9 Impl.
+	SetBusSLOT1SLOT2ARM7();
 	
-	//Perform relocation, and pass the DLDI context to ARM7 Init code
-	u8* relocatedARM7DLDIBinary = (u8*)malloc(16*1024);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	coherent_user_range_by_size((u32)fifomsg, sizeof(TGDSIPC->fifoMesaggingQueue));	//prevent cache problems
+	memset((u8*)fifomsg, 0, sizeof(TGDSIPC->fifoMesaggingQueue));
 	
 	//ARM7DLDI Shared buffer
 	ARM7DLDIBuf = (u8*)malloc(DLDI_CLUSTER_SIZE_BYTES);
+	
+	//Perform relocation, and pass the DLDI context to ARM7 Init code
+	u8* relocatedARM7DLDIBinary = (u8*)malloc(16*1024);
 	
 	//DldiRelocatedAddress == target DLDI relocated address
 	//dldiSourceInRam == physical DLDI section having a proper DLDI driver used as donor 
@@ -69,54 +76,55 @@ void TGDSDLDIARM7SetupStage1(u32 targetDLDI7Address){
 	else{
 		while(1==1);	//Error
 	}
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	
 	setValueSafe(&fifomsg[0], (u32)relocatedARM7DLDIBinary);
 	setValueSafe(&fifomsg[1], (u32)16*1024);
-	setValueSafe(&fifomsg[7], (u32)TGDS_DLDI_ARM7_STATUS_STAGE1);
-	while((u32)fifomsg[7] == (u32)TGDS_DLDI_ARM7_STATUS_STAGE1){
-		swiDelay(1);	//This delay is required!
+	setValueSafe(&fifomsg[2], (u32)targetDLDI7Address);
+	setValueSafe(&fifomsg[7], (u32)TGDS_DLDI_ARM7_STATUS_STAGE0);
+	
+	while(getValueSafe(&fifomsg[7]) == (u32)TGDS_DLDI_ARM7_STATUS_STAGE0){
+		IRQWait(IRQ_HBLANK);
+	}
+	
+	if(getValueSafe(&fifomsg[7]) == 0xFFFF1234){
+		printf("DLDI Init failed.");
+		while(1==1);
 	}
 	
 	free((u8*)relocatedARM7DLDIBinary);
 }
 
-void ARM9DeinitDLDI(){
-	SendFIFOWords(TGDS_DLDI_ARM7_STATUS_DEINIT, (u32)0);
-}
-
 #endif
 
-//Stage 0
 #ifdef ARM7
-void TGDSDLDIARM7SetupStage0(u32 targetAddrDLDI7){
-	setDLDIARM7Address((u32*)targetAddrDLDI7);
-	
+void ARM7DLDIInit(){	//ARM7 Impl.
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-	memset((u8*)fifomsg, 0, sizeof(TGDSIPC->fifoMesaggingQueue));
-	
-	setValueSafe(&fifomsg[0], (uint32)targetAddrDLDI7);
-	setValueSafe(&fifomsg[7], (uint32)TGDS_DLDI_ARM7_STATUS_STAGE0);
-	
-	//SendFIFOWords(TGDS_DLDI_ARM7_STATUS_INIT, (u32)targetAddrDLDI7);
-	while((u32)getValueSafe(&fifomsg[7])== (u32)TGDS_DLDI_ARM7_STATUS_STAGE0){
-		swiDelay(333);	//This delay is required!
+	while((u32)getValueSafe(&fifomsg[7]) != (u32)TGDS_DLDI_ARM7_STATUS_STAGE0){
+		IRQWait(IRQ_HBLANK);
 	}
+	
 	u32 relocatedARM7DLDIBinary = (u32)getValueSafe(&fifomsg[0]);
 	int DLDISize = (u32)getValueSafe(&fifomsg[1]);
+	u32 targetAddrDLDI7 = (u32)getValueSafe(&fifomsg[2]);
+	setDLDIARM7Address((u32*)targetAddrDLDI7);
 	
 	//DLDI code was relocated: Stage 1
 	memcpy((u8*)targetAddrDLDI7, (u8*)relocatedARM7DLDIBinary, DLDISize);
 	
+	//Some timeouts
+	int i = 0;
+	while(i < 500){
+		IRQWait(IRQ_HBLANK);
+		i++;
+	}
+	
 	//Init DLDI
 	if(dldi_handler_init() == true){
-		SendFIFOWords(TGDS_DLDI_ARM7_INIT_OK, 0);
-		setValueSafe(&fifomsg[7], (uint32)TGDS_DLDI_ARM7_STATUS_STAGE0);	//free ARM9
-		//while(1);
+		setValueSafe(&fifomsg[7], (uint32)0);	//DLDI Init done. Free ARM9
 	}
 	else{
-		SendFIFOWords(TGDS_DLDI_ARM7_INIT_ERROR, 0);
+		setValueSafe(&fifomsg[7], (uint32)0xFFFF1234);
 		while(1);
 	}
 }
@@ -129,7 +137,8 @@ void TGDSDLDIARM7SetupStage0(u32 targetAddrDLDI7){
 //ARM7 DLDI implementation
 #ifdef ARM7_DLDI
 
-#ifdef ARM7
+//ARM7: ARM7 physical DLDI target location address
+//ARM9: Uses this as a pointer to: ARM7 physical DLDI target location address
 u32 * DLDIARM7Address = NULL;
 
 void setDLDIARM7Address(u32 * address){
@@ -139,7 +148,6 @@ void setDLDIARM7Address(u32 * address){
 u32 * getDLDIARM7Address(){
 	return DLDIARM7Address;
 }
-#endif
  
 #endif
 

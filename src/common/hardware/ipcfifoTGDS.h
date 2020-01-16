@@ -73,8 +73,7 @@ USA
 
 //DLDI ARM7
 #define TGDS_DLDI_ARM7_STATUS_INIT	(int)(0xffff0300)
-	#define TGDS_DLDI_ARM7_STATUS_STAGE0	(int)(0)	//ARM7 Inits ARM7 DLDI context. Passes the target DLDI address and waits for DLDI to be relocated to such address.
-	#define TGDS_DLDI_ARM7_STATUS_STAGE1	(int)(-1)
+	#define TGDS_DLDI_ARM7_STATUS_STAGE0	(int)(0xffff1010)	//ARM9 Inits ARM7 DLDI context. Passes the target DLDI address and waits for DLDI to be relocated to such address.
 	
 #define TGDS_DLDI_ARM7_INIT_OK	(uint32)(0xffff0301)
 #define TGDS_DLDI_ARM7_INIT_ERROR	(uint32)(0xffff0302)

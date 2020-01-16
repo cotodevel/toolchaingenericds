@@ -56,6 +56,7 @@ void initHardware(void) {
 	//Init SoundSampleContext
 	initSoundSampleContext();
 	initSound();
+	
 	#endif
 	
 	#ifdef ARM9

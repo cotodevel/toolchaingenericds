@@ -67,26 +67,11 @@ DSTATUS disk_initialize (
 		if(pdrv == DLDICART){
 			//DS DLDI
 			#ifdef ARM7_DLDI
-			//Wait for cleanup
-			struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-			uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 			
-			printf("Wait for Shared mem.");
-			while((uint32)getValueSafe(&fifomsg[7]) != (uint32)0){
-				swiDelay(333);
-			}
-			
-			printf("Wait for Reloc. ARM7 Addr. ");
-			
-			//wait for ARM7 to pass the DLDIRelocationAddress
-			while((uint32)getValueSafe(&fifomsg[7]) != (uint32)TGDS_DLDI_ARM7_STATUS_STAGE0){
-				swiDelay(333);
-			}
-			
-			//Relocate DLDI, wait for STAGE1 to be acknowledged by ARM7
-			u32 targetAddrDLDI7 = (u32)getValueSafe(&fifomsg[0]);
-			TGDSDLDIARM7SetupStage1(targetAddrDLDI7);
-			
+			clrscr();
+			printf("ARM7 DLDI Init! ");
+			u32 targetAddrDLDI7 = (u32)getDLDIARM7Address();
+			ARM7DLDIInit(targetAddrDLDI7);
 			printf("ARM7 DLDI Done! ");
 			
 			ret = 0;	//init OK!
