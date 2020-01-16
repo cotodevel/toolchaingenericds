@@ -223,8 +223,6 @@ extern void HandleFifoNotEmpty();
 extern void HandleFifoEmpty();
 extern void SendFIFOWords(uint32 data0, uint32 data1);
 
-extern uint8 receiveByteIPC();
-extern void sendByteIPC(uint8 inByte);
 extern void sendMultipleByteIPC(uint8 inByte0, uint8 inByte1, uint8 inByte2, uint8 inByte3);
 
 #ifdef __cplusplus

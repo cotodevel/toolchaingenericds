@@ -1,10 +1,15 @@
 #ifndef __DLDI_H__
 #define __DLDI_H__
 
-#include <string.h>
+#include "global_settings.h"
 #include "typedefsTGDS.h"
 #include "ipcfifoTGDS.h"
-#include "global_settings.h"
+#include "biosTGDS.h"
+#include <string.h>
+
+#ifdef ARM9
+#include "nds_cp15_misc.h"
+#endif
 
 #define FEATURE_MEDIUM_CANREAD		0x00000001
 #define FEATURE_MEDIUM_CANWRITE		0x00000002
@@ -164,14 +169,14 @@ static inline addr_t quickFind (const data_t* data, const data_t* search, size_t
 
 static inline void setValueSafe(u32 * addr, u32 value){
 	#ifdef ARM9
-	coherent_user_range_by_size(addr, sizeof(u32));
+	coherent_user_range_by_size((u32)addr, sizeof(u32));
 	#endif
 	*addr = value;
 }
 
 static inline u32 getValueSafe(u32 * addr){
 	#ifdef ARM9
-	coherent_user_range_by_size(addr, sizeof(u32));
+	coherent_user_range_by_size((u32)addr, sizeof(u32));
 	#endif
 	return (u32)*addr;
 }
