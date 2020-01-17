@@ -142,8 +142,8 @@ void IPCIRQHandleDLDI(){
 		}
 		break;
 	}	
-#endif
 }
+#endif
 
 #endif
 
