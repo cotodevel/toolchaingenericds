@@ -34,6 +34,7 @@ USA
 #include "spifwTGDS.h"
 #include "powerTGDS.h"
 #include "soundTGDS.h"
+#include "microphone7.h"
 #endif
 
 #ifdef ARM9
@@ -121,6 +122,28 @@ void HandleFifoNotEmpty(){
 			//ARM7 command handler
 			#ifdef ARM7
 			
+			//Sound Player Context / Mic
+			case ARM7COMMAND_SOUND_SETLEN:{
+				sampleLen = (data0);
+			}
+			break;
+			case ARM7COMMAND_SOUND_SETRATE:{
+				sndRate = (data0);
+			}
+			break;
+			case ARM7COMMAND_SOUND_SETMULT:{
+				multRate = (data0);
+			}
+			break;
+			case ARM7COMMAND_START_RECORDING:{
+				micStartRecording();
+			}
+			break;				
+			case ARM7COMMAND_STOP_RECORDING:{
+				micStopRecording();
+			}
+			break;
+				
 			case((uint32)FIFO_INITSOUND):{
 				initSound();
 			}
@@ -211,25 +234,31 @@ void HandleFifoNotEmpty(){
 			//ARM9 command handler
 			#ifdef ARM9
 			
-			//ARM7 DLDI implementation
-			#ifdef ARM7_DLDI
-			case(TGDS_DLDI_ARM7_INIT_OK):{
-				//printf("DLDI 7 INIT OK!");
+				//ARM7 DLDI implementation
+				#ifdef ARM7_DLDI
+				case(TGDS_DLDI_ARM7_INIT_OK):{
+					//printf("DLDI 7 INIT OK!");
+					
+				}
+				break;
 				
-			}
-			break;
+				case(TGDS_DLDI_ARM7_INIT_ERROR):{
+					//printf("DLDI 7 INIT ERROR!");
+					
+				}
+				break;
+				
+				case(TGDS_DLDI_ARM7_STATUS_INIT):{
+					
+				}
+				break;
+				#endif
 			
-			case(TGDS_DLDI_ARM7_INIT_ERROR):{
-				//printf("DLDI 7 INIT ERROR!");
-				
+			case ((uint32)TGDS_SAVE_MIC_DATA):{
+				//printf("TGDS_SAVE_MIC_DATA!");
+				copyChunk();
 			}
 			break;
-			
-			case(TGDS_DLDI_ARM7_STATUS_INIT):{
-				
-			}
-			break;
-			#endif
 			
 			//exception handler from arm7
 			case((uint32)EXCEPTION_ARM7):{

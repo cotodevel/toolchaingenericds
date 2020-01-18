@@ -21,6 +21,7 @@ USA
 #ifdef ARM7
 #include "wifi_arm7.h"
 #include "soundTGDS.h"
+#include "microphone7.h"
 #endif
 
 #ifdef ARM9
@@ -88,6 +89,9 @@ void NDS_IRQHandler(){
 		Timer1handlerUser();
 	}
 	if(handledIRQ & IRQ_TIMER2){
+		#ifdef ARM7
+		micInterrupt();
+		#endif
 		Timer2handlerUser();
 	}
 	if(handledIRQ & IRQ_TIMER3){

@@ -47,7 +47,7 @@ USA
 #define WRITE_EXTARM_16	(uint32)(0xffff0201)
 #define WRITE_EXTARM_32	(uint32)(0xffff0202)
 	
-//Linear sound playback (ARM9 -> ARM7)
+//Linear sound sample playback: Sound Sample Context cmds (ARM9 -> ARM7)
 #define FIFO_PLAYSOUND	(uint32)(0xffff0203)
 #define FIFO_INITSOUND	(uint32)(0xffff0204)
 #define FIFO_FLUSHSOUNDCONTEXT	(uint32)(0xffff0210)
@@ -86,6 +86,17 @@ USA
 	#define TGDS_DLDI_ARM7_STATUS_BUSY_WRITE	(int)(0xffff0307)	//ARM7 Inits ARM7 DLDI context. Passes the target DLDI address and waits for DLDI to be relocated to such address.
 	#define TGDS_DLDI_ARM7_STATUS_IDLE_WRITE	(int)(0xffff0308)
 #define TGDS_DLDI_ARM7_STATUS_DEINIT	(int)(0xffff0309)
+
+//Mic
+#define TGDS_SAVE_MIC_DATA	(uint32)(0xffff03AA)	//aka ARM9COMMAND_SAVE_DATA
+#define ARM7COMMAND_SOUND_SETMULT (uint32)(0xffff03A1)
+#define ARM7COMMAND_SOUND_SETRATE (uint32)(0xffff03A2)
+#define ARM7COMMAND_SOUND_SETLEN (uint32)(0xffff03A3)
+#define ARM7COMMAND_SOUND_COPY (uint32)(0xffff03A4)
+#define ARM7COMMAND_SOUND_DEINTERLACE (uint32)(0xffff03A5)
+#define ARM7COMMAND_START_RECORDING (uint32)(0xffff03A6)
+#define ARM7COMMAND_STOP_RECORDING (uint32)(0xffff03A7)
+
 
 #define SEND_FIFO_IPC_EMPTY	(uint32)(1<<0)	
 #define SEND_FIFO_IPC_FULL	(uint32)(1<<1)	
@@ -202,6 +213,25 @@ struct sIPCSharedTGDS {
 	u8 ipcMesaggingQueue[0x10];
 	
 	bool ARM7DldiEnabled;	//True: TGDS runs ARM7DLDI / False: TGDS runs ARM9DLDI
+	
+	//Mic bits / Sound Player Context (Note: different from soundTGDS.h -> Sound Sample Context)
+	bool micRecordingStatus;	//false: Not recording / true: Recording
+	u32 micFrequency;	//mic samplerate
+	
+	s16 *arm9L;
+	s16 *arm9R;
+	
+	s16 *interlaced;
+	int channels;
+	u8 volume;
+	
+	//u32 tX;
+	//u32 tY;
+	
+	int psgChannel;
+	u32 cr;
+	u32 timer;
+	//Mic bits end
 	
 } __attribute__((aligned (4)));
 

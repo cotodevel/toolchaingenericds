@@ -410,6 +410,18 @@ int	FS_getFileSize(sint8 *filename){
 	return size;
 }
 
+//Takes an open file handle, gets filesize without updating its internal file pointer
+int	FS_getFileSizeFromOpenHandle(FILE * f){
+	int size = -1;
+	if (f != NULL){
+		int fLoc = ftell(f);
+		fseek(f, 0, SEEK_END);
+		size = ftell(f);
+		fseek(f, fLoc, SEEK_SET);
+	}
+	return size;
+}
+
 int setSoundPower(int flags){
 	return 0;
 }

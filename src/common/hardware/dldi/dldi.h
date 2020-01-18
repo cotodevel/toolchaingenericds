@@ -5,6 +5,7 @@
 #include "typedefsTGDS.h"
 #include "ipcfifoTGDS.h"
 #include "biosTGDS.h"
+#include "busTGDS.h"
 #include <string.h>
 
 #ifdef ARM9

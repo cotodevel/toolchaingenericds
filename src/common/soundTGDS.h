@@ -21,16 +21,27 @@ USA
 #ifndef __soundTGDS_h__
 #define __soundTGDS_h__
 
-#include "typedefsTGDS.h"
-#include "dsregs.h"
-#include "dsregs_asm.h"
-
 #define MAX_SNDBUF_SIZE (int)(128*1024)
 #define SOUNDCONTEXTCAPACITY (int)(16)
 
 #define SOUNDSAMPLECONTEXT_IDLE (u32)(0xffff1110)
 #define SOUNDSAMPLECONTEXT_PENDING (u32)(0xffff1111)	//play now!
 #define SOUNDSAMPLECONTEXT_PLAYING (u32)(0xffff1112)	//if SOUNDSAMPLECONTEXT_PLAYING && hw channel == disabled, -> SOUNDSAMPLECONTEXT_IDLE
+
+//WAV Descriptor
+typedef struct 
+{
+	char chunkID[4];
+	long chunkSize;
+
+	short wFormatTag;
+	unsigned short wChannels;
+	unsigned long dwSamplesPerSec;
+	unsigned long dwAvgBytesPerSec;
+	unsigned short wBlockAlign;
+	unsigned short wBitsPerSample;
+} wavFormatChunk;
+
 
 //ARM7 will send a FIFO IRQ to ARM9 to force update a given soundSampleContext by index
 
@@ -53,7 +64,6 @@ struct soundSampleContextList{
 
 
 #ifdef ARM7
-
 static inline s32 getFreeSoundChannel(){
 	int i;
 	for (i=0;i<16;++i){
@@ -78,6 +88,12 @@ static inline s32 isFreeSoundChannel(u8 chan){
 extern "C"{
 #endif
 
+//Audio commands: drive Sound Player Context (Note: different from soundTGDS.h -> Sound Sample Context)
+extern void setSoundLength(u32 len);
+extern void setSoundFrequency(u32 freq);
+extern void setSoundInterpolation(u32 mult);
+
+//Sound Sample Context: Plays raw sound samples at VBLANK intervals
 extern void startSound(int sampleRate, const void* data, u32 bytes, u8 channel, u8 vol,  u8 pan, u8 format);
 extern void initSound();
 
