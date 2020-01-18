@@ -106,7 +106,7 @@ DRESULT disk_read (
 {
 	#ifdef ARM7_DLDI
 	if(pdrv == DLDICART){
-		read_sd_sectors_safe(sector, count, buff);
+		dldi_handler_read_sectors(sector, count, buff);
 		return RES_OK;
 	}
 	return RES_ERROR;
@@ -132,7 +132,7 @@ DRESULT disk_write (
 {
 	#ifdef ARM7_DLDI
 	if(pdrv == DLDICART){
-		write_sd_sectors_safe(sector, count, buff);
+		dldi_handler_write_sectors(sector, count, buff);
 		return RES_OK;
 	}
 	return RES_ERROR;

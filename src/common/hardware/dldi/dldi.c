@@ -6,50 +6,54 @@
 #include "ipcfifoTGDS.h"
 #include <string.h>
 
-#ifdef ARM7
-#endif
-
 #ifdef ARM9
 #include "nds_cp15_misc.h"
 #endif
 
-// Common
+// Global:
 
 // Stored backwards to prevent it being picked up by DLDI patchers
 const char DLDI_MAGIC_STRING_BACKWARDS [DLDI_MAGIC_STRING_LEN] =
 	{'\0', 'm', 'h', 's', 'i', 'h', 'C', ' '} ;
 
-struct DLDI_INTERFACE* dldiGet(void) {
-	#ifdef ARM7
-	struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
-	if (dldiInterface->ioInterface.features & FEATURE_SLOT_GBA) {
-		SetBusSLOT1ARM9SLOT2ARM7();
+bool dldi_handler_init(){
+	bool status = false;
+	struct DLDI_INTERFACE* dldiInit = dldiGet();	//ensures SLOT-1 / SLOT-2 is mapped to ARM7/ARM9 now
+	if( (!dldiInit->ioInterface.startup()) || (!dldiInit->ioInterface.isInserted()) ){
+		status = false;
 	}
-	if (dldiInterface->ioInterface.features & FEATURE_SLOT_NDS) {
-		SetBusSLOT1ARM7SLOT2ARM9();
+	else{
+		status = true;	//init OK!
 	}
-	#endif
-	#ifdef ARM9
-	struct DLDI_INTERFACE* dldiInterface = (struct DLDI_INTERFACE*)&_dldi_start;
-	if (dldiInterface->ioInterface.features & FEATURE_SLOT_GBA) {
-		SetBusSLOT1ARM7SLOT2ARM9();
-	}
-	if (dldiInterface->ioInterface.features & FEATURE_SLOT_NDS) {
-		SetBusSLOT1ARM9SLOT2ARM7();
-	}
-	#endif
-	return (struct DLDI_INTERFACE*)dldiInterface;
+	return status;
 }
 
+void dldi_handler_deinit(){
+	struct DLDI_INTERFACE* dldiInit = dldiGet();	//ensures SLOT-1 / SLOT-2 is mapped to ARM7/ARM9 now
+	dldiInit->ioInterface.clearStatus();
+	dldiInit->ioInterface.shutdown();
+}
 
 //ARM7 DLDI implementation
+//////////////////////////////////////////////////////////////////////////DLDI ARM7 CODE START////////////////////////////////////////////////////////////////////
 #ifdef ARM7_DLDI
+//Shared
+
+//ARM7: ARM7 physical DLDI target location address
+//ARM9: Uses this as a pointer to: ARM7 physical DLDI target location address
+u32 * DLDIARM7Address = NULL;
+
+void setDLDIARM7Address(u32 * address){
+	DLDIARM7Address = address;
+}
+
+u32 * getDLDIARM7Address(){
+	return DLDIARM7Address;
+}
 
 //ARM9 only allowed to init TGDS DLDI @ ARM7
 #ifdef ARM9
-void ARM9DeinitDLDI(){
-	SendFIFOWords(TGDS_DLDI_ARM7_STATUS_DEINIT, (u32)0);
-}
+u8 * ARM7DLDIBuf = NULL;	//Up to 64KB per cluster, should allow 64K and below 
 
 void ARM7DLDIInit(u32 targetDLDI7Address){	//ARM9 Impl.
 	SetBusSLOT1SLOT2ARM7();
@@ -94,6 +98,9 @@ void ARM7DLDIInit(u32 targetDLDI7Address){	//ARM9 Impl.
 	free((u8*)relocatedARM7DLDIBinary);
 }
 
+void ARM9DeinitDLDI(){
+	SendFIFOWords(TGDS_DLDI_ARM7_STATUS_DEINIT, (u32)0);
+}
 #endif
 
 #ifdef ARM7
@@ -120,55 +127,30 @@ void ARM7DLDIInit(){	//ARM7 Impl.
 	}
 	
 	//Init DLDI
-	if(dldi_handler_init() == true){
-		setValueSafe(&fifomsg[7], (uint32)0);	//DLDI Init done. Free ARM9
+	if(dldi_handler_init() == true){	//Init DLDI: ARM7 version
+		setisTGDSARM7DLDIEnabled(true);
+		setValueSafe(&fifomsg[7], (uint32)0);	//Done? Free ARM9
 	}
 	else{
+		setisTGDSARM7DLDIEnabled(false);
 		setValueSafe(&fifomsg[7], (uint32)0xFFFF1234);
 		while(1);
 	}
 }
 #endif
 
+#endif	//ARM7_DLDI
+
+#ifdef ARM9_DLDI
+#ifdef ARM7
+void ARM7DLDIInit(){	//ARM7 Stub Impl.
+	setisTGDSARM7DLDIEnabled(false);
+}
+#endif
 #endif
 
-///////////////////////////////////////////////////////////////////////////DLDI ARM7 CODE START/////////////////////////////////////////////////////////////////////
 
-//ARM7 DLDI implementation
-#ifdef ARM7_DLDI
-
-//ARM7: ARM7 physical DLDI target location address
-//ARM9: Uses this as a pointer to: ARM7 physical DLDI target location address
-u32 * DLDIARM7Address = NULL;
-
-void setDLDIARM7Address(u32 * address){
-	DLDIARM7Address = address;
-}
-
-u32 * getDLDIARM7Address(){
-	return DLDIARM7Address;
-}
- 
-#endif
-
-bool dldi_handler_init(){
-	bool status = false;
-	struct DLDI_INTERFACE* dldiInit = dldiGet();	//ensures SLOT-1 / SLOT-2 is mapped to ARM7/ARM9 now
-	if( (!dldiInit->ioInterface.startup()) || (!dldiInit->ioInterface.isInserted()) ){
-		status = false;
-	}
-	else{
-		status = true;	//init OK!
-	}
-	return status;
-}
-
-void dldi_handler_deinit(){
-	struct DLDI_INTERFACE* dldiInit = dldiGet();	//ensures SLOT-1 / SLOT-2 is mapped to ARM7/ARM9 now
-	dldiInit->ioInterface.clearStatus();
-	dldiInit->ioInterface.shutdown();
-}
-
+///////////////////////////////////////////////////////////////////////////DLDI ARM7 CODE END/////////////////////////////////////////////////////////////////////
 
 #ifdef ARM9
 
@@ -308,26 +290,6 @@ bool dldiPatchLoader (data_t *binData, u32 binSize)
 	
 	if (*((u32*)(pDH + DO_ioType)) == DEVICE_TYPE_DLDI) 
 	{
-		/*
-		// no dldi present in DSO, lets load it from the file we found earlier if it's available	
-		char *dldiPath = getDLDI();
-		
-		if(strlen(dldiPath) == 0) // No DLDI patch
-			return false;
-		
-		// load and then present
-		
-		DRAGON_chdir(d_res);
-		
-		DRAGON_FILE *df = DRAGON_fopen(dldiPath, "r");
-		
-		u32 fLen = DRAGON_flength(df);
-		pDH = safeMalloc(PATCH_SIZE);
-		memset(pDH, 0, PATCH_SIZE);
-		
-		DRAGON_fread(pDH, 1, fLen, df);
-		DRAGON_fclose(df);
-		*/
 		printf("DLDI section not found in NTR binary. ");
 	}
 	else{
@@ -423,16 +385,4 @@ bool dldiPatchLoader (data_t *binData, u32 binSize)
 
 	return true;
 }
-
 #endif
-
-//ARM7 DLDI implementation
-#ifdef ARM7_DLDI
-
-#ifdef ARM9
-u8 * ARM7DLDIBuf = NULL;	//Up to 64KB per cluster, should allow 64K and below 
-#endif
-
-#endif
-
-////////////////////////////////////////////// DLDI ARM 7 CODE end ////////////////////////////////////////////// 

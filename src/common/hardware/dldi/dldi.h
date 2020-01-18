@@ -106,167 +106,217 @@ struct DLDI_INTERFACE {
 	struct DISC_INTERFACE_STRUCT ioInterface;
 };
 
-// The only built in driver(s)
+//ARM7 DLDI implementation
+#ifdef ARM7_DLDI
+	static inline void setValueSafe(u32 * addr, u32 value){
+		#ifdef ARM9
+		coherent_user_range_by_size((u32)addr, sizeof(u32));
+		#endif
+		*addr = value;
+	}
+
+	static inline u32 getValueSafe(u32 * addr){
+		#ifdef ARM9
+		coherent_user_range_by_size((u32)addr, sizeof(u32));
+		#endif
+		return (u32)*addr;
+	}
+#endif
+
 #ifdef ARM7
-extern u32 * DLDIARM7Address;
+	extern u32 * DLDIARM7Address;
 #endif
 
 #ifdef ARM9
-extern struct DLDI_INTERFACE _dldi_start;
+	extern struct DLDI_INTERFACE _dldi_start;
+
+	static inline addr_t readAddr (data_t *mem, addr_t offset) {
+		return ((addr_t*)mem)[offset/sizeof(addr_t)];
+	}
+
+	static inline void writeAddr (data_t *mem, addr_t offset, addr_t value) {
+		((addr_t*)mem)[offset/sizeof(addr_t)] = value;
+	}
+
+	static inline addr_t quickFind (const data_t* data, const data_t* search, size_t dataLen, size_t searchLen) {
+		const int* dataChunk = (const int*) data;
+		int searchChunk = ((const int*)search)[0];
+		addr_t i;
+		addr_t dataChunkEnd = (addr_t)(dataLen / sizeof(int));
+
+		for ( i = 0; i < dataChunkEnd; i++) {
+			if (dataChunk[i] == searchChunk) {
+				if ((i*sizeof(int) + searchLen) > dataLen) {
+					return -1;
+				}
+				if (memcmp (&data[i*sizeof(int)], search, searchLen) == 0) {
+					return i*sizeof(int);
+				}
+			}
+		}
+		return -1;
+	}
+
+	//ARM7 DLDI implementation
+	#ifdef ARM7_DLDI
+	#define DLDI_CLUSTER_SIZE_BYTES	(int)(64*512)
+	extern u8 * ARM7DLDIBuf;
+	#endif
 #endif
 
-static inline bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer){
-	#ifdef ARM7
-	struct  DLDI_INTERFACE* dldiInterface = (struct DLDI_INTERFACE*)DLDIARM7Address;
-	return dldiInterface->ioInterface.readSectors(sector, numSectors, buffer);
+static inline struct DLDI_INTERFACE* dldiGet(void) {
+	struct DLDI_INTERFACE * dldiInterface = NULL;
+	//ARM7 DLDI implementation
+	#ifdef ARM7_DLDI
+		#ifdef ARM7
+		dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
+		if (dldiInterface->ioInterface.features & FEATURE_SLOT_GBA) {
+			SetBusSLOT1ARM9SLOT2ARM7();
+		}
+		if (dldiInterface->ioInterface.features & FEATURE_SLOT_NDS) {
+			SetBusSLOT1ARM7SLOT2ARM9();
+		}
+		#endif
+		#ifdef ARM9
+		//Just get the DLDI data. No DLDI init code at all.
+		dldiInterface = (struct DLDI_INTERFACE*)&_dldi_start;
+		#endif
 	#endif
-	#ifdef ARM9
-	struct  DLDI_INTERFACE* dldiInterface = (struct  DLDI_INTERFACE*)&_dldi_start;
-	return dldiInterface->ioInterface.readSectors(sector, numSectors, buffer);
+	#ifdef ARM9_DLDI
+		//No DLDI data from ARM7.
+		#ifdef ARM7
+		#endif
+		#ifdef ARM9
+		dldiInterface = (struct DLDI_INTERFACE*)&_dldi_start;
+		if (dldiInterface->ioInterface.features & FEATURE_SLOT_GBA) {
+			SetBusSLOT1ARM7SLOT2ARM9();
+		}
+		if (dldiInterface->ioInterface.features & FEATURE_SLOT_NDS) {
+			SetBusSLOT1ARM9SLOT2ARM7();
+		}
+		#endif
+	#endif
+	return (struct DLDI_INTERFACE*)dldiInterface;
+}
+
+static inline bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer){
+	//ARM7 DLDI implementation
+	#ifdef ARM7_DLDI
+		#ifdef ARM7
+		struct  DLDI_INTERFACE* dldiInterface = (struct DLDI_INTERFACE*)DLDIARM7Address;
+		return dldiInterface->ioInterface.readSectors(sector, numSectors, buffer);
+		#endif
+		#ifdef ARM9
+		void * targetMem = (void *)((int)ARM7DLDIBuf + 0x400000);
+		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+		fifomsg[0] = (uint32)sector;
+		fifomsg[1] = (uint32)numSectors;
+		fifomsg[2] = (uint32)targetMem;
+		fifomsg[7] = (uint32)TGDS_DLDI_ARM7_READ;
+		sendByteIPC(IPC_SERVE_DLDI7_REQBYIRQ);
+		while(fifomsg[7] == TGDS_DLDI_ARM7_READ){
+			swiDelay(2);
+		}
+		memcpy((uint16_t*)buffer, (uint16_t*)targetMem, (numSectors * 512));
+		#endif	
+	#endif	
+	#ifdef ARM9_DLDI
+		#ifdef ARM7
+		return false;
+		#endif
+		#ifdef ARM9
+		struct  DLDI_INTERFACE* dldiInterface = (struct  DLDI_INTERFACE*)&_dldi_start;
+		return dldiInterface->ioInterface.readSectors(sector, numSectors, buffer);
+		#endif
 	#endif
 }
 
 static inline bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buffer){
-	#ifdef ARM7
-	struct DLDI_INTERFACE* dldiInterface = (struct DLDI_INTERFACE*)DLDIARM7Address;
-	return dldiInterface->ioInterface.writeSectors(sector, numSectors, buffer);
-	#endif
-	#ifdef ARM9
-	struct DLDI_INTERFACE* dldiInterface = (struct DLDI_INTERFACE*)&_dldi_start;
-	return dldiInterface->ioInterface.writeSectors(sector, numSectors, buffer);
-	#endif
-}
-
-static inline addr_t readAddr (data_t *mem, addr_t offset) {
-	return ((addr_t*)mem)[offset/sizeof(addr_t)];
-}
-
-static inline void writeAddr (data_t *mem, addr_t offset, addr_t value) {
-	((addr_t*)mem)[offset/sizeof(addr_t)] = value;
-}
-
-static inline addr_t quickFind (const data_t* data, const data_t* search, size_t dataLen, size_t searchLen) {
-	const int* dataChunk = (const int*) data;
-	int searchChunk = ((const int*)search)[0];
-	addr_t i;
-	addr_t dataChunkEnd = (addr_t)(dataLen / sizeof(int));
-
-	for ( i = 0; i < dataChunkEnd; i++) {
-		if (dataChunk[i] == searchChunk) {
-			if ((i*sizeof(int) + searchLen) > dataLen) {
-				return -1;
-			}
-			if (memcmp (&data[i*sizeof(int)], search, searchLen) == 0) {
-				return i*sizeof(int);
-			}
+	//ARM7 DLDI implementation
+	#ifdef ARM7_DLDI
+		#ifdef ARM7
+		struct  DLDI_INTERFACE* dldiInterface = (struct DLDI_INTERFACE*)DLDIARM7Address;
+		return dldiInterface->ioInterface.writeSectors(sector, numSectors, buffer);
+		#endif
+		#ifdef ARM9
+		void * targetMem = (void *)((int)ARM7DLDIBuf + 0x400000);
+		memcpy((uint16_t*)targetMem, (uint16_t*)buffer, (numSectors * 512));
+		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+		fifomsg[3] = (uint32)sector;
+		fifomsg[4] = (uint32)numSectors;
+		fifomsg[5] = (uint32)targetMem;
+		fifomsg[8] = (uint32)TGDS_DLDI_ARM7_WRITE;
+		sendByteIPC(IPC_SERVE_DLDI7_REQBYIRQ);
+		while(fifomsg[8] == TGDS_DLDI_ARM7_WRITE){
+			swiDelay(2);
 		}
-	}
-	return -1;
-}
-
-//ARM7 DLDI implementation
-#ifdef ARM7_DLDI
-
-static inline void setValueSafe(u32 * addr, u32 value){
-	#ifdef ARM9
-	coherent_user_range_by_size((u32)addr, sizeof(u32));
+		#endif	
+	#endif	
+	#ifdef ARM9_DLDI
+		#ifdef ARM7
+		return false;
+		#endif
+		#ifdef ARM9
+		struct  DLDI_INTERFACE* dldiInterface = (struct  DLDI_INTERFACE*)&_dldi_start;
+		return dldiInterface->ioInterface.writeSectors(sector, numSectors, buffer);
+		#endif
 	#endif
-	*addr = value;
 }
 
-static inline u32 getValueSafe(u32 * addr){
+static inline bool getisTGDSARM7DLDIEnabled(){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	#ifdef ARM9
-	coherent_user_range_by_size((u32)addr, sizeof(u32));
+	coherent_user_range_by_size((u32)&TGDSIPC->ARM7DldiEnabled, sizeof(TGDSIPC->ARM7DldiEnabled));
 	#endif
-	return (u32)*addr;
+	return (bool)TGDSIPC->ARM7DldiEnabled;
 }
 
-#endif
-
-
-#ifdef ARM9
-
-#define DLDI_CLUSTER_SIZE_BYTES	(int)(64*512)
-extern u8 * ARM7DLDIBuf;
-
-__attribute__((aligned(4)))	static inline void read_sd_sectors_safe(sec_t sector, sec_t numSectors, void* buffer){
-	void * targetMem = (void *)((int)ARM7DLDIBuf + 0x400000);
+static inline void setisTGDSARM7DLDIEnabled(bool value){
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-	fifomsg[0] = (uint32)sector;
-	fifomsg[1] = (uint32)numSectors;
-	fifomsg[2] = (uint32)targetMem;
-	fifomsg[7] = (uint32)TGDS_DLDI_ARM7_READ;
-	sendByteIPC(IPC_SERVE_DLDI7_REQBYIRQ);
-	while(fifomsg[7] == TGDS_DLDI_ARM7_READ){
-		swiDelay(2);
-	}
-	memcpy((uint16_t*)buffer, (uint16_t*)targetMem, (numSectors * 512));
+	#ifdef ARM9
+	coherent_user_range_by_size((u32)&TGDSIPC->ARM7DldiEnabled, sizeof(TGDSIPC->ARM7DldiEnabled));
+	#endif
+	TGDSIPC->ARM7DldiEnabled = value;
 }
-
-__attribute__((aligned(4)))	static inline void write_sd_sectors_safe(sec_t sector, sec_t numSectors, const void* buffer){
-	void * targetMem = (void *)((int)ARM7DLDIBuf + 0x400000);
-	memcpy((uint16_t*)targetMem, (uint16_t*)buffer, (numSectors * 512));
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-	fifomsg[3] = (uint32)sector;
-	fifomsg[4] = (uint32)numSectors;
-	fifomsg[5] = (uint32)targetMem;
-	fifomsg[8] = (uint32)TGDS_DLDI_ARM7_WRITE;
-	sendByteIPC(IPC_SERVE_DLDI7_REQBYIRQ);
-	while(fifomsg[8] == TGDS_DLDI_ARM7_WRITE){
-		swiDelay(2);
-	}
-}
-
-#endif
-
 #endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern FN_MEDIUM_STARTUP _DLDI_startup_ptr;
-extern FN_MEDIUM_READSECTORS _DLDI_readSectors_ptr;
-extern FN_MEDIUM_WRITESECTORS _DLDI_writeSectors_ptr;
-
 extern struct DLDI_INTERFACE* dldiGet(void);
 extern bool dldi_handler_init();
 extern void dldi_handler_deinit();
+
+//ARM7 DLDI implementation
+#ifdef ARM7_DLDI
+	//ARM7: ARM7 physical DLDI target location address
+	//ARM9: Uses this as a pointer to: ARM7 physical DLDI target location address
+	extern u32 * getDLDIARM7Address();				//	/
+	extern void setDLDIARM7Address(u32 * address);	//	| Must be defined/standardized by the TGDS project at runtime. This way we ensure IWRAM 64K compatibility + DLDI at ARM7
+	extern void initDLDIARM7(u32 srcDLDIAddr);		//	/
+
+	#ifdef ARM9
+	extern void ARM7DLDIInit(u32 targetDLDI7Address);
+	extern void ARM9DeinitDLDI();
+	#endif
+#endif
 
 #ifdef ARM7
 extern void ARM7DLDIInit();
 #endif
 
 #ifdef ARM9
-extern void ARM7DLDIInit(u32 targetDLDI7Address);
-#endif
-
-//ARM7: ARM7 physical DLDI target location address
-//ARM9: Uses this as a pointer to: ARM7 physical DLDI target location address
-extern u32 * getDLDIARM7Address();				//	/
-extern void setDLDIARM7Address(u32 * address);	//	| Must be defined/standardized by the TGDS project at runtime. This way we ensure IWRAM 64K compatibility + DLDI at ARM7
-extern void initDLDIARM7(u32 srcDLDIAddr);		//	/
-
-#ifdef ARM9
 //DldiRelocatedAddress == target DLDI relocated address
 //dldiSourceInRam == physical DLDI section having a proper DLDI driver used as donor 
 //dldiOutWriteAddress == new physical DLDI out buffer, except, relocated to a new DldiRelocatedAddress!
 extern bool dldiRelocateLoader(bool clearBSS, u32 DldiRelocatedAddress, u32 dldiSourceInRam, u32 dldiOutWriteAddress);
-
 //original DLDI code: seeks a DLDI section in binData, and uses current NTR TGDS homebrew's DLDI to relocate it in there
-extern bool dldiPatchLoader (data_t *binData, u32 binSize); 
-
-//ARM7 DLDI implementation
-#ifdef ARM7_DLDI
-extern void ARM9DeinitDLDI();
+extern bool dldiPatchLoader(data_t *binData, u32 binSize); 
 #endif
-
-#endif
-
 
 #ifdef __cplusplus
 }
 #endif
-
