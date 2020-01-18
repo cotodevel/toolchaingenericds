@@ -21,7 +21,7 @@
 #include "dsregs.h"
 #include "dsregs_asm.h"
 #include "microphone7.h"
-#include "microphoneShared.h"
+#include "soundplayerShared.h"
 #include "spiTGDS.h"
 #include "spifwTGDS.h"
 #include "soundTGDS.h"
@@ -132,7 +132,7 @@ u16 MIC_ReadData12()
 
 void micInterrupt()
 {
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	struct sSoundPlayerStruct * sndPlayerCtx = soundIPC();
 	
 #ifdef MIC_8
 	u8 *micData = NULL;
@@ -140,13 +140,13 @@ void micInterrupt()
 	switch(sndCursor)
 	{
 		case 0:
-			micData = (u8 *)TGDSIPC->arm9L;
+			micData = (u8 *)sndPlayerCtx->arm9L;
 			break;
 		case 1:
-			micData = (u8 *)TGDSIPC->arm9R;
+			micData = (u8 *)sndPlayerCtx->arm9R;
 			break;
 		case 2:
-			micData = (u8 *)TGDSIPC->interlaced;
+			micData = (u8 *)sndPlayerCtx->interlaced;
 			break;
 	}
 	
@@ -165,7 +165,7 @@ void micInterrupt()
 	if(micBufLoc == sampleLen)
 	{
 		micBufLoc = 0;
-		TGDSIPC->channels = sndCursor;
+		sndPlayerCtx->channels = sndCursor;
 		++sndCursor;
 		if(sndCursor > 2)
 			sndCursor = 0;
@@ -179,13 +179,13 @@ void micInterrupt()
 	switch(sndCursor)
 	{
 		case 0:
-			micData = (s16 *)TGDSIPC->arm9L;
+			micData = (s16 *)sndPlayerCtx->arm9L;
 			break;
 		case 1:
-			micData = (s16 *)TGDSIPC->arm9R;
+			micData = (s16 *)sndPlayerCtx->arm9R;
 			break;
 		case 2:
-			micData = (s16 *)TGDSIPC->interlaced;
+			micData = (s16 *)sndPlayerCtx->interlaced;
 			break;
 	}
 	

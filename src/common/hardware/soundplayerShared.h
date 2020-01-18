@@ -28,4 +28,11 @@
 //Better quality. Segfaults!!
 //#define MIC_16
 
+//TGDS Shared Sound Player Context
+static inline struct sSoundPlayerStruct * soundIPC(){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	struct sSoundPlayerStruct * sndPlayerctx = (struct sSoundPlayerStruct *)&TGDSIPC->sndPlayerCtx;
+	return sndPlayerctx;
+}
+
 #endif

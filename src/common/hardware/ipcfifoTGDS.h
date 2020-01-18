@@ -156,6 +156,29 @@ struct sSharedSENDCtx {
 	int status;	//0 not ready, 1 ready to take orders
 } __attribute__((aligned (4)));
 
+
+struct sSoundPlayerStruct {
+    //Mic bits / Sound Player Context (Note: different from soundTGDS.h -> Sound Sample Context)
+	bool micRecordingStatus;	//false: Not recording / true: Recording
+	u32 micFrequency;	//mic samplerate
+	
+	s16 *arm9L;
+	s16 *arm9R;
+	
+	s16 *interlaced;
+	int channels;
+	u8 volume;
+	
+	//u32 tX;
+	//u32 tY;
+	
+	int psgChannel;
+	u32 cr;
+	u32 timer;
+	//Mic bits end
+} __attribute__((aligned (4)));
+
+
 struct sIPCSharedTGDS {
     struct soundSampleContextList soundContextShared;
 	uint16 buttons7;  			// X, Y, /PENIRQ buttons
@@ -212,26 +235,9 @@ struct sIPCSharedTGDS {
 	//IPC Mesagging: used when 1+ args sent between ARM Cores through IPC interrupts.
 	u8 ipcMesaggingQueue[0x10];
 	
+	struct sSoundPlayerStruct sndPlayerCtx;
+	
 	bool ARM7DldiEnabled;	//True: TGDS runs ARM7DLDI / False: TGDS runs ARM9DLDI
-	
-	//Mic bits / Sound Player Context (Note: different from soundTGDS.h -> Sound Sample Context)
-	bool micRecordingStatus;	//false: Not recording / true: Recording
-	u32 micFrequency;	//mic samplerate
-	
-	s16 *arm9L;
-	s16 *arm9R;
-	
-	s16 *interlaced;
-	int channels;
-	u8 volume;
-	
-	//u32 tX;
-	//u32 tY;
-	
-	int psgChannel;
-	u32 cr;
-	u32 timer;
-	//Mic bits end
 	
 } __attribute__((aligned (4)));
 

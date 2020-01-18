@@ -21,7 +21,7 @@
 #include "dsregs.h"
 #include "dsregs_asm.h"
 #include "microphone9.h"
-#include "microphoneShared.h"
+#include "soundplayerShared.h"
 #include "ipcfifoTGDS.h"
 #include "utilsTGDS.h"
 #include <string.h>
@@ -136,23 +136,19 @@ void copyChunk()
 	if(!isRecording)
 		return;
 	
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	#ifdef ARM9
-	coherent_user_range_by_size((u32)TGDSIPC, sizeof(struct sIPCSharedTGDS));
-	#endif
-	
+	struct sSoundPlayerStruct * sndPlayerCtx = soundIPC();
 	u8 *micData = NULL;
 	
-	switch(TGDSIPC->channels)
+	switch(sndPlayerCtx->channels)
 	{
 		case 0:
-			micData = (u8 *)TGDSIPC->arm9L;
+			micData = (u8 *)sndPlayerCtx->arm9L;
 			break;
 		case 1:
-			micData = (u8 *)TGDSIPC->arm9R;
+			micData = (u8 *)sndPlayerCtx->arm9R;
 			break;
 		case 2:
-			micData = (u8 *)TGDSIPC->interlaced;
+			micData = (u8 *)sndPlayerCtx->interlaced;
 			break;
 	}
 	
@@ -164,10 +160,7 @@ void startRecording(char * fileName)
 	if(isRecording)
 		return;
 	
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	#ifdef ARM9
-	coherent_user_range_by_size((u32)TGDSIPC, sizeof(struct sIPCSharedTGDS));
-	#endif
+	struct sSoundPlayerStruct * sndPlayerCtx = soundIPC();
 	
 	// load the wav file in question
 	FILE *fp = fopen(fileName, "r");
@@ -216,13 +209,13 @@ void startRecording(char * fileName)
 	// write data chunk
 	fwrite("data    ", 1, 8, recFile);
 	
-	TGDSIPC->arm9L = (s16 *)malloc(REC_BLOCK_SIZE);
-	TGDSIPC->arm9R = (s16 *)malloc(REC_BLOCK_SIZE);
-	TGDSIPC->interlaced = (s16 *)malloc(REC_BLOCK_SIZE);
+	sndPlayerCtx->arm9L = (s16 *)malloc(REC_BLOCK_SIZE);
+	sndPlayerCtx->arm9R = (s16 *)malloc(REC_BLOCK_SIZE);
+	sndPlayerCtx->interlaced = (s16 *)malloc(REC_BLOCK_SIZE);
 
-	memset(TGDSIPC->arm9L, 0, REC_BLOCK_SIZE);
-	memset(TGDSIPC->arm9R, 0, REC_BLOCK_SIZE);
-	memset(TGDSIPC->interlaced, 0, REC_BLOCK_SIZE);
+	memset(sndPlayerCtx->arm9L, 0, REC_BLOCK_SIZE);
+	memset(sndPlayerCtx->arm9R, 0, REC_BLOCK_SIZE);
+	memset(sndPlayerCtx->interlaced, 0, REC_BLOCK_SIZE);
 	
 	setSoundFrequency(REC_FREQ);	
 	setSoundLength(REC_BLOCK_SIZE);
@@ -237,17 +230,13 @@ void endRecording()
 	if(!isRecording)
 		return;
 	
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	#ifdef ARM9
-	coherent_user_range_by_size((u32)TGDSIPC, sizeof(struct sIPCSharedTGDS));
-	#endif
-	
+	struct sSoundPlayerStruct * sndPlayerCtx = soundIPC();
 	SendFIFOWords(ARM7COMMAND_STOP_RECORDING, 0);
 	isRecording = false;
 	
-	free(TGDSIPC->arm9L);
-	free(TGDSIPC->arm9R);
-	free(TGDSIPC->interlaced);
+	free(sndPlayerCtx->arm9L);
+	free(sndPlayerCtx->arm9R);
+	free(sndPlayerCtx->interlaced);
 
 	if(recFile != NULL){
 		u32 length = FS_getFileSizeFromOpenHandle(recFile) - 8;
