@@ -286,7 +286,6 @@ static inline void setisTGDSARM7DLDIEnabled(bool value){
 extern "C" {
 #endif
 
-extern struct DLDI_INTERFACE* dldiGet(void);
 extern bool dldi_handler_init();
 extern void dldi_handler_deinit();
 
