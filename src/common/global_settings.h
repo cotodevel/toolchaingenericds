@@ -35,8 +35,8 @@ USA
 
 //ARM7: DLDI Code runs from ARM7 (experimental)
 //ARM9: DLDI Code runs from ARM9 (breaks DSi compatibility! But stable)
-//#define ARM7_DLDI
-#define ARM9_DLDI
+#define ARM7_DLDI
+//#define ARM9_DLDI
 
 #if defined(ARM7_DLDI) && defined(ARM9_DLDI)
 #error "DLDI is either ARM7 or ARM9 only."

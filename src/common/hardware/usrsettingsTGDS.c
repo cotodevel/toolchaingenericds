@@ -81,28 +81,3 @@ void ParseFWSettings(uint32 usersetting_offset){
 }
 
 #endif
-
-//DS when accessing shared region through Indirect function methods works fine. Where as direct access is undefined reads
-uint8 getLanguage(){
-	while(getFWSettingsstatus() == false){}
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	return (uint8)(((TGDSIPC->lang_flags[1]<<8)|TGDSIPC->lang_flags[0])&language_mask);
-}
-
-bool getFWSettingsstatus(){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	#ifdef ARM9
-	//Prevent Cache problems.
-	coherent_user_range_by_size((uint32)TGDSIPC, sizeof(struct sIPCSharedTGDS));
-	#endif
-	return (bool)TGDSIPC->valid_dsfwsettings;
-}
-
-void setFWSettingsstatus(bool status){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	#ifdef ARM9
-	//Prevent Cache problems.
-	coherent_user_range_by_size((uint32)TGDSIPC, sizeof(struct sIPCSharedTGDS));
-	#endif
-	TGDSIPC->valid_dsfwsettings = status;
-}

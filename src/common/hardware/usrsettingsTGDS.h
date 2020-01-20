@@ -194,10 +194,8 @@ extern "C"{
 extern void LoadFirmwareSettingsFromFlash();
 #endif
 
-extern uint8 getLanguage();
-extern bool getFWSettingsstatus();
-extern void setFWSettingsstatus(bool status);
 extern void ParseFWSettings(uint32 usersetting_offset);
+
 #ifdef __cplusplus
 }
 #endif

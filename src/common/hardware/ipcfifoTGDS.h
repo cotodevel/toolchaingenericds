@@ -246,6 +246,37 @@ struct sIPCSharedTGDS {
 #define TGDSIPCSize (int)(sizeof(struct sIPCSharedTGDS))
 #define TGDSIPCUserStartAddress (u32)(0x027FF000 + TGDSIPCSize)	//u32 because it`s unknown at this point. TGDS project will override it to specific USER IPC struct
 
+//DS when accessing shared region through Indirect function methods works fine. Where as direct access is undefined reads
+
+
+//usrsettings defs
+static inline bool getFWSettingsstatus(){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	#ifdef ARM9
+	//Prevent Cache problems.
+	coherent_user_range_by_size((uint32)&TGDSIPC->valid_dsfwsettings, sizeof(TGDSIPC->valid_dsfwsettings));
+	#endif
+	return (bool)TGDSIPC->valid_dsfwsettings;
+}
+
+static inline uint8 getLanguage(){
+	while(getFWSettingsstatus() == false){
+		swiDelay(33);
+	}
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	return (uint8)(((TGDSIPC->lang_flags[1]<<8)|TGDSIPC->lang_flags[0])&language_mask);
+}
+
+
+static inline void setFWSettingsstatus(bool status){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	#ifdef ARM9
+	//Prevent Cache problems.
+	coherent_user_range_by_size((uint32)&TGDSIPC->valid_dsfwsettings, sizeof(TGDSIPC->valid_dsfwsettings));
+	#endif
+	TGDSIPC->valid_dsfwsettings = status;
+}
+
 #endif
 
 #ifdef __cplusplus
