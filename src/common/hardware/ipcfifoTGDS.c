@@ -34,7 +34,6 @@ USA
 #include "spifwTGDS.h"
 #include "powerTGDS.h"
 #include "soundTGDS.h"
-#include "microphone7.h"
 #endif
 
 #ifdef ARM9
@@ -121,28 +120,6 @@ void HandleFifoNotEmpty(){
 			
 			//ARM7 command handler
 			#ifdef ARM7
-			
-			//Sound Player Context / Mic
-			case ARM7COMMAND_SOUND_SETLEN:{
-				sampleLen = (data0);
-			}
-			break;
-			case ARM7COMMAND_SOUND_SETRATE:{
-				sndRate = (data0);
-			}
-			break;
-			case ARM7COMMAND_SOUND_SETMULT:{
-				multRate = (data0);
-			}
-			break;
-			case ARM7COMMAND_START_RECORDING:{
-				micStartRecording();
-			}
-			break;				
-			case ARM7COMMAND_STOP_RECORDING:{
-				micStopRecording();
-			}
-			break;
 				
 			case((uint32)FIFO_INITSOUND):{
 				initSound();
@@ -253,12 +230,6 @@ void HandleFifoNotEmpty(){
 				}
 				break;
 				#endif
-			
-			case ((uint32)TGDS_SAVE_MIC_DATA):{
-				//printf("TGDS_SAVE_MIC_DATA!");
-				copyChunk();
-			}
-			break;
 			
 			//exception handler from arm7
 			case((uint32)EXCEPTION_ARM7):{

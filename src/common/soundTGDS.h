@@ -88,11 +88,6 @@ static inline s32 isFreeSoundChannel(u8 chan){
 extern "C"{
 #endif
 
-//Audio commands: drive Sound Player Context (Note: different from soundTGDS.h -> Sound Sample Context)
-extern void setSoundLength(u32 len);
-extern void setSoundFrequency(u32 freq);
-extern void setSoundInterpolation(u32 mult);
-
 //Sound Sample Context: Plays raw sound samples at VBLANK intervals
 extern void startSound(int sampleRate, const void* data, u32 bytes, u8 channel, u8 vol,  u8 pan, u8 format);
 extern void initSound();

@@ -33,23 +33,6 @@ void initSound(){
 	#endif
 }
 
-//Audio commands: drive Sound Player Context (Note: different from soundTGDS.h -> Sound Sample Context)
-void setSoundLength(u32 len)
-{
-	SendFIFOWords(ARM7COMMAND_SOUND_SETLEN, len);
-}
-
-void setSoundFrequency(u32 freq)
-{
-	SendFIFOWords(ARM7COMMAND_SOUND_SETRATE, freq);
-}
-
-void setSoundInterpolation(u32 mult)
-{
-	SendFIFOWords(ARM7COMMAND_SOUND_SETMULT, mult);
-}
-
-
 //Sound Sample Context: Plays raw sound samples at VBLANK intervals
 void startSound(int sampleRate, const void* data, u32 bytes, u8 channel, u8 vol,  u8 pan, u8 format)
 {
