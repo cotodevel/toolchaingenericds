@@ -25,14 +25,14 @@ USA
 #include <stdbool.h>
 
 //TouchScreen
-typedef struct XYTscPos {
+struct XYTscPos{
 	uint16	rawx; 
 	uint16	rawy; 
 	uint16	px;   
 	uint16	py;
 	uint16	z1;   
 	uint16	z2;
-}	XYTscPos;
+};
 
 //XY / PenIRQ
 #define KEY_XARM7 (1<<0)
@@ -110,7 +110,7 @@ void doSPIARM7IO();
 //Shared
 extern bool penIRQread();	//return true if TSC is touched, false if not
 
-extern void XYReadScrPos(XYTscPos * StouchScrPosInst);	//User exposed
+extern void XYReadScrPos(struct XYTscPos * StouchScrPosInst);	//User exposed
 extern void XYReadPos();	//Internal, requires to be called on interrupts
 #ifdef __cplusplus
 }

@@ -163,7 +163,7 @@ void XYReadPos(){
 #endif
 //External 
 //relies on doSPIARM7IO() XY Readings
-void XYReadScrPos(XYTscPos * StouchScrPosInst){
+void XYReadScrPos(struct XYTscPos * StouchScrPosInst){
     struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
     StouchScrPosInst->rawx =   TGDSIPC->touchX;
     StouchScrPosInst->rawy =   TGDSIPC->touchY;
