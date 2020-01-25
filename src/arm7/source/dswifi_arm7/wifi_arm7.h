@@ -138,6 +138,8 @@ extern u16 beacon_channel;
 extern void Wifi_LoadBeacon(int from, int to);
 extern void Wifi_SetBeaconChannel(int channel);
 
+extern int RF_Reglist[];
+
 #ifdef __cplusplus
 }
 #endif
