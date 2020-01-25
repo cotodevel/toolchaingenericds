@@ -77,5 +77,10 @@ The environment uses GCC 4.9.2 to build Newlib 2.1 for Nintendo DS, and Toolchai
 How to code things:
 -	Once you follow [Building the devkit], you can grab a TGDS Project template such as: https://bitbucket.org/Coto88/toolchaingenericds-template/ and rebuild it (a TGDS Project Makefile has some properties you can override).
 
+Note: use the Windows environment (a Virtual Machine works as well)to build ARM-EABI TGDS Binaries, of which are faster, and guaranteed to work with TGDS Binaries). 
+It is NOT recommended to build TGDS through a linux environment, because ARM-NONE-EABI TGDS Binaries will be built, and weird compiler issues may/will arise, besides about 30% slower NDS Binaries because modern compilers
+do not focus on older ARMv4T/ARMv5TE, being the processors of the NDS.
+More info:
+https://forums.nesdev.com/viewtopic.php?f=23&t=18659#p237701
 
 Coto.
