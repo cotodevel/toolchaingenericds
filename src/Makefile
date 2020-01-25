@@ -54,8 +54,8 @@ export DIRS_ARM7_SRC = source/	\
 			../common/hardware/dldi/	\
 			../common/dswifi/netinet/	\
 			../common/dswifi/sys/	\
-			../templateCode/source	\
-			../templateCode/data		\
+			../templateCode/source/	\
+			../templateCode/data/arm7/	\
 			data/	\
 			build/	\
 			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
@@ -70,8 +70,8 @@ export DIRS_ARM7_HEADER = source/	\
 			../common/hardware/dldi/	\
 			../common/dswifi/netinet/	\
 			../common/dswifi/sys/	\
-			../templateCode/source	\
-			../templateCode/data		\
+			../templateCode/source/	\
+			../templateCode/data/arm7/	\
 			data/	\
 			build/	\
 			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
@@ -94,8 +94,8 @@ export DIRS_ARM9_SRC = source/	\
 			../common/hardware/dldi/	\
 			../common/dswifi/netinet/	\
 			../common/dswifi/sys/	\
-			../templateCode/source	\
-			../templateCode/data		\
+			../templateCode/source/	\
+			../templateCode/data/arm9/	\
 			data/	\
 			build/
 			
@@ -115,8 +115,8 @@ export DIRS_ARM9_HEADER = source/	\
 			../common/hardware/dldi/	\
 			../common/dswifi/netinet/	\
 			../common/dswifi/sys/	\
-			../templateCode/source	\
-			../templateCode/data		\
+			../templateCode/source/	\
+			../templateCode/data/arm9/	\
 			data/	\
 			build/	
 
