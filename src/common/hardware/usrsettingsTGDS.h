@@ -29,9 +29,6 @@ USA
 /* Firmware Header */
 //Firmware Header (00000h-001FFh)
 
-#define DS_FW_HEADER_ADDRESS (uint32)(0x00000000)
-#define DS_FW_HEADER_SIZE (sint32)(0x0200)
-
 struct sDSFWHEADER {
   //Addr Size Expl.
   uint8	romaddrarm9guicode[2];	//000h 2    part3 romaddr/8 (arm9 gui code) (LZ/huffman compression)
@@ -72,6 +69,9 @@ struct sDSFWHEADER {
   uint8	stub[206+256];
   
 };	//must match DS_FW_HEADER_SIZE
+
+#define DS_FW_HEADER_ADDRESS (uint32)(0x00000000)
+#define DS_FW_HEADER_SIZE (sint32)(sizeof(struct sDSFWHEADER))
 
 //DS Firmware Wifi Internet Access Points
 
@@ -128,8 +128,8 @@ struct sDSFWSETTINGS {
 	uint8	birthday_day;	//004h  1   Birthday day   (1..31) (Binary, non-BCD)
 	uint8	unused1;	//005h  1   Not used (zero)
 	uint8	nickname_utf16[20];	//006h  20  Nickname string in UTF-16 format
-	uint8	nickname_length_chars[2];	//01Ah  2   Nickname length in characters    (0..10)
-	uint8	message_utf16[52];	//01Ch  52  Message string in UTF-16 format
+	uint8	nickname_length_chars[2];	//01Ah  2   Nickname length in characters    (0..10)	-> to int (signed 32 bit): int nicknameLength = (int)(TGDSIPC->DSFWSETTINGSInst.nickname_length_chars[0] | TGDSIPC->DSFWSETTINGSInst.nickname_length_chars[1] << 8);
+ 	uint8	message_utf16[52];	//01Ch  52  Message string in UTF-16 format
 	uint8	message_length_chars[2];	//050h  2   Message length in characters     (0..26)
 	uint8	alarm_hour;	//052h  1   Alarm hour     (0..23) (Binary, non-BCD)
 	uint8	alarm_minute;	//053h  1   Alarm minute   (0..59) (Binary, non-BCD)

@@ -69,6 +69,9 @@ void LoadFirmwareSettingsFromFlash(){
 		ParseFWSettings(usersetting_offset1);
 		setFWSettingsstatus(true);
 	}
+	else{
+		setFWSettingsstatus(true);	//Proceed, but invalid NVRAM settings
+	}
 	
 }
 
@@ -77,6 +80,8 @@ void ParseFWSettings(uint32 usersetting_offset){
 	readFirmwareSPI((uint32)usersetting_offset, (uint8*)&TGDSIPC->DSFWSETTINGSInst, sizeof(struct sDSFWSETTINGS));
 	readFirmwareSPI((uint32)usersetting_offset+0x01D, (uint8*)&TGDSIPC->consoletype, sizeof(TGDSIPC->consoletype));
 	ucs2tombs((uint8*)&TGDSIPC->nickname_schar8[0],(unsigned short*)&TGDSIPC->DSFWSETTINGSInst.nickname_utf16[0],32);
+	int nicknameLength = (int)(TGDSIPC->DSFWSETTINGSInst.nickname_length_chars[0] | TGDSIPC->DSFWSETTINGSInst.nickname_length_chars[1] << 8);
+	TGDSIPC->nickname_schar8[nicknameLength] = '\0'; 
 	readFirmwareSPI((uint32)usersetting_offset+0x64, (uint8*)&TGDSIPC->lang_flags[0], 0x2);
 }
 

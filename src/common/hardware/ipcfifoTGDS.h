@@ -187,6 +187,7 @@ struct sIPCSharedTGDS {
 	uint8 nickname_schar8[0x20];	//converted from UTF-16 to char*
 	bool valid_dsfwsettings;	//true or false
 	uint8 lang_flags[0x2];
+	
 	//Internal use, use functions inside mem_handler_shared.c for accessing those from BOTH ARM Cores.
 	uint32 arm7startaddress;
 	uint32 arm7endaddress;
