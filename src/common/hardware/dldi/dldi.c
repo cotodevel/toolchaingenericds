@@ -156,8 +156,6 @@ void ARM7DLDIInit(){	//ARM7 Stub Impl.
 
 ///////////////////////////////////////////////////////////////////////////DLDI ARM7 CODE END/////////////////////////////////////////////////////////////////////
 
-#ifdef ARM9
-
 static const uint32  DLDI_MAGIC_NUMBER = 0xBF8DA5ED;	
 static const data_t dldiMagicString[12] = "\xED\xA5\x8D\xBF Chishm";	// Normal DLDI file
 static const data_t dldiMagicLoaderString[12] = "\xEE\xA5\x8D\xBF Chishm";	// Different to a normal DLDI file
@@ -272,7 +270,11 @@ bool dldiRelocateLoader(bool clearBSS, u32 DldiRelocatedAddress, u32 dldiSourceI
 	return true;
 }
 
-bool dldiPatchLoader (data_t *binData, u32 binSize)
+//arg0: binary data address to patch
+//arg1: binary data size to patch
+//arg2: Physical valid DLDI address (containing the DLDI binary to-be used as donor)
+
+bool dldiPatchLoader(data_t *binData, u32 binSize, u32 physDLDIAddress)
 {
 	addr_t memOffset;			// Offset of DLDI after the file is loaded into memory
 	addr_t patchOffset;			// Position of patch destination in the file
@@ -289,15 +291,18 @@ bool dldiPatchLoader (data_t *binData, u32 binSize)
 
 	size_t dldiFileSize = 0;
 	
-	struct DLDI_INTERFACE* dldiInterface = dldiGet();
-	pDH = (data_t*)dldiInterface;
+	pDH = (data_t*)physDLDIAddress;
 	
 	if (*((u32*)(pDH + DO_ioType)) == DEVICE_TYPE_DLDI) 
 	{
+		#ifdef ARM9
 		printf("DLDI section not found in NTR binary. ");
+		#endif
 	}
 	else{
+		#ifdef ARM9
 		printf("DLDI section found in NTR binary. Patching... ");
+		#endif
 	}
 	
 	// Find the DLDI reserved space in the file
@@ -389,4 +394,3 @@ bool dldiPatchLoader (data_t *binData, u32 binSize)
 
 	return true;
 }
-#endif

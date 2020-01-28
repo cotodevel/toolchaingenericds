@@ -127,35 +127,35 @@ extern u32 * DLDIARM7Address;
 	}
 #endif
 
-#ifdef ARM9
-	extern struct DLDI_INTERFACE _dldi_start;
+static inline addr_t readAddr (data_t *mem, addr_t offset) {
+	return ((addr_t*)mem)[offset/sizeof(addr_t)];
+}
 
-	static inline addr_t readAddr (data_t *mem, addr_t offset) {
-		return ((addr_t*)mem)[offset/sizeof(addr_t)];
-	}
+static inline void writeAddr (data_t *mem, addr_t offset, addr_t value) {
+	((addr_t*)mem)[offset/sizeof(addr_t)] = value;
+}
 
-	static inline void writeAddr (data_t *mem, addr_t offset, addr_t value) {
-		((addr_t*)mem)[offset/sizeof(addr_t)] = value;
-	}
+static inline addr_t quickFind (const data_t* data, const data_t* search, size_t dataLen, size_t searchLen) {
+	const int* dataChunk = (const int*) data;
+	int searchChunk = ((const int*)search)[0];
+	addr_t i;
+	addr_t dataChunkEnd = (addr_t)(dataLen / sizeof(int));
 
-	static inline addr_t quickFind (const data_t* data, const data_t* search, size_t dataLen, size_t searchLen) {
-		const int* dataChunk = (const int*) data;
-		int searchChunk = ((const int*)search)[0];
-		addr_t i;
-		addr_t dataChunkEnd = (addr_t)(dataLen / sizeof(int));
-
-		for ( i = 0; i < dataChunkEnd; i++) {
-			if (dataChunk[i] == searchChunk) {
-				if ((i*sizeof(int) + searchLen) > dataLen) {
-					return -1;
-				}
-				if (memcmp (&data[i*sizeof(int)], search, searchLen) == 0) {
-					return i*sizeof(int);
-				}
+	for ( i = 0; i < dataChunkEnd; i++) {
+		if (dataChunk[i] == searchChunk) {
+			if ((i*sizeof(int) + searchLen) > dataLen) {
+				return -1;
+			}
+			if (memcmp (&data[i*sizeof(int)], search, searchLen) == 0) {
+				return i*sizeof(int);
 			}
 		}
-		return -1;
 	}
+	return -1;
+}
+
+#ifdef ARM9
+	extern struct DLDI_INTERFACE _dldi_start;
 
 	//ARM7 DLDI implementation
 	#ifdef ARM7_DLDI
@@ -313,14 +313,12 @@ extern void initDLDIARM7(u32 srcDLDIAddr);		//	/
 extern void ARM7DLDIInit();
 #endif
 
-#ifdef ARM9
 //DldiRelocatedAddress == target DLDI relocated address
 //dldiSourceInRam == physical DLDI section having a proper DLDI driver used as donor 
 //dldiOutWriteAddress == new physical DLDI out buffer, except, relocated to a new DldiRelocatedAddress!
 extern bool dldiRelocateLoader(bool clearBSS, u32 DldiRelocatedAddress, u32 dldiSourceInRam, u32 dldiOutWriteAddress);
 //original DLDI code: seeks a DLDI section in binData, and uses current NTR TGDS homebrew's DLDI to relocate it in there
-extern bool dldiPatchLoader(data_t *binData, u32 binSize); 
-#endif
+extern bool dldiPatchLoader(data_t *binData, u32 binSize, u32 physDLDIAddress); 
 
 #ifdef __cplusplus
 }
