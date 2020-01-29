@@ -44,11 +44,14 @@ extern "C"{
 
 extern uint32 global_keys_arm9;
 extern uint32 last_frame_keys_arm9;	//last frame keys before new frame keys
+extern uint32 buffered_keys_arm9;
+
 extern void scanKeys();
 extern uint32 keysPressed();
 extern uint32 keysReleased();
 extern uint32 keysHeld();
 extern uint32 keysRepeated();
+extern setKeys(u32 keys);
 
 extern void touchScrRead(struct touchScr * touchScrInst);
 #ifdef __cplusplus
