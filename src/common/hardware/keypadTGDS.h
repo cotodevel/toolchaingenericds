@@ -51,7 +51,7 @@ extern uint32 keysPressed();
 extern uint32 keysReleased();
 extern uint32 keysHeld();
 extern uint32 keysRepeated();
-extern setKeys(u32 keys);
+extern void setKeys(u32 keys);
 
 extern void touchScrRead(struct touchScr * touchScrInst);
 #ifdef __cplusplus

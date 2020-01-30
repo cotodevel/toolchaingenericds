@@ -60,7 +60,7 @@ inline void scanKeys(){
 	buffered_keys_arm9 = 0;
 }
 
-inline setKeys(u32 keys){
+inline void setKeys(u32 keys){
 	buffered_keys_arm9 |= keys;
 }
 
