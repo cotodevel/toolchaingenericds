@@ -197,31 +197,6 @@ REG_IME = 0;
 	ldr	r0,[r0]
 	bx	r0
 
-@coto: I separate these because ARM9Bootldr code compiles against ARM7 code, and everything is built for ARM7 code
-@void swiSoftResetARM9Bootldr(void);
-.global 	swiSoftResetARM9Bootldr
-.type   	swiSoftResetARM9Bootldr STT_FUNC
-swiSoftResetARM9Bootldr:
-REG_IME = 0;
-	.arch	armv5te
-	.cpu	arm946e-s
-	ldr	r1, =0x00002078			@ disable TCM and protection unit
-	mcr	p15, 0, r1, c1, c0
-	@ Disable cache
-	mov	r0, #0
-	mcr	p15, 0, r0, c7, c5, 0		@ Instruction cache
-	mcr	p15, 0, r0, c7, c6, 0		@ Data cache
-
-	@ Wait for write buffer to empty 
-	mcr	p15, 0, r0, c7, c10, 4
-	
-	ldr	r0,=0x02FFFE24
-
-	ldr	r0,[r0]
-	bx	r0
-
-
-
 @void swiDecompressLZSSWram(void * source, void * destination);
 .global 	swiDecompressLZSSWram
 .type   	swiDecompressLZSSWram STT_FUNC
