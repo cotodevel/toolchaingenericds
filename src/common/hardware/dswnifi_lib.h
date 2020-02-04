@@ -194,8 +194,7 @@ extern void Handler(int packetID, int readlength);
 extern void initNiFi();
 
 //DSWNIFI: nifi buffer IO
-extern volatile uint8	 data[4096];		//data[32] + is recv TX'd frame nfdata[128]
-extern volatile uint8	 nfdata[128];	//sender frame, recv as data[4096]
+extern volatile uint8	 data[4096];
 
 //TCP UDP DSWNIFI Part
 extern int Wifi_RawTxFrame_WIFI(sint32 datalen, uint8 * data);
@@ -226,10 +225,6 @@ extern sint8 server_ip[MAX_TGDSFILENAME_LENGTH+1];
 extern bool isValidIpAddress(char *ipAddress);
 
 //Send a frame to the other connected DS
-//example: 
-//if(!FrameSenderUser){
-//				FrameSenderUser = HandleSendUserspace((uint8*)nfdata,sizeof(nfdata)-sizeof(volatile uint16));	//make room for crc16 frame
-//}
 extern struct frameBlock * HandleSendUserspace(uint8 * databuf_src, int bufsize);
 
 //userCode must override, provide these functions.

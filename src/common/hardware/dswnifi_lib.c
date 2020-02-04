@@ -45,9 +45,7 @@ USA
 __attribute__((section(".dtcm")))
 struct dsnwifisrvStr dswifiSrv;
 
-volatile 	uint8 data[4096];			//receiver frame, data + frameheader is recv TX'd frame nfdata[128]. Used by NIFI Mode
-volatile 	uint8 nfdata[128]			= {0xB2, 0xD1, (uint8)CRC_OK_SAYS_HOST, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};	//sender frame, recv as data[4096], see above. all valid frames have CRC_OK_SAYS_HOST sent.
-
+volatile 	uint8 data[4096];			//receiver frame, data + frameheader. Used by NIFI Mode
 void Handler(int packetID, int readlength){
 	switch(getMULTIMode()){
 		case (dswifi_localnifimode):{
@@ -515,10 +513,6 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 					break;
 				}
 				retDaemonCode = dswifi_udpnifimode;
-				
-				///////////////////////////////////////Handle Send UserCode, if the user used the following code:
-				//struct frameBlock * FrameSenderUser = HandleSendUserspace((uint8*)&nfdata[0],sizeof(nfdata));	//use the nfdata as send buffer // struct frameBlock * FrameSenderInst is now used to detect if pending send frame or not
-				//then FrameSenderUser should be not NULL, send the packet here now. Packet must be NOT called from a function.
 				
 				///////////////////////////////////////Handle Send Library
 				// Send Frame UserCore
