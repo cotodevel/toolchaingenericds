@@ -28,6 +28,7 @@ USA
 #include "fatfslayerTGDS.h"
 #include "ipcfifoTGDS.h"
 #include "videoTGDS.h"
+#include "spifwTGDS.h"
 
 #define ENABLE_3D    (1<<3)
 #define DISPLAY_ENABLE_SHIFT 8
@@ -346,6 +347,9 @@ typedef struct
 	t_GUIImgList	*img_list;
 	
 	uint16	printfy;
+	bool consoleAtTopScreen;	//true: Console rendering at top screen / false: Console rendering at bottom screen
+	bool consoleBacklightOn;	//true: Backlight is on for console / false: Backlight is off for console
+	
 } t_GUI;
 
 typedef struct
@@ -431,10 +435,6 @@ typedef struct
 
 #define IDS_MULTIPLAYER_MODE		109
 
-
-#endif
-
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -497,4 +497,27 @@ extern void move_console_to_bottom_screen();
 
 #ifdef __cplusplus
 }
+#endif
+
+static inline void detectAndTurnOffConsole(){
+	//Read the console location register and shut down
+	if(GUI.consoleAtTopScreen == true){
+		setBacklight(POWMAN_BACKLIGHT_BOTTOM_BIT);
+	}
+	else{
+		setBacklight(POWMAN_BACKLIGHT_TOP_BIT);	
+	}
+}
+
+static inline void ToggleOnOffConsoleBacklight(){
+	if(GUI.consoleBacklightOn == true){
+		detectAndTurnOffConsole();
+		GUI.consoleBacklightOn = false;
+	}
+	else{
+		setBacklight(POWMAN_BACKLIGHT_BOTTOM_BIT | POWMAN_BACKLIGHT_TOP_BIT);
+		GUI.consoleBacklightOn = true;
+	}
+}
+
 #endif

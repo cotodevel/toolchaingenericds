@@ -307,6 +307,7 @@ void	GUI_init(bool project_specific_console){
 	global_project_specific_console = project_specific_console;
 	CurrentConsole = CurConsole;
 	GUI.printfy = 0;
+	GUI.consoleAtTopScreen = false; //ignore, setting actually applied per TGDS Project (gui_console_connector.c -> Console Implementation bits)
 }
 
 //based from video console settings at toolchaingenericds-keyboard-example
