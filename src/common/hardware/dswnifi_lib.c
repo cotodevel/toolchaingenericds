@@ -214,30 +214,6 @@ bool switch_dswnifi_mode(sint32 mode){
 	return true;
 }
 
-void setMULTIMode(sint32 flag){
-	dswifiSrv.dsnwifisrv_mode = (sint32)flag;
-}
-
-sint32 getMULTIMode(){
-	return (sint32)dswifiSrv.dsnwifisrv_mode;
-}
-
-bool getWIFISetup(){
-	return (bool)dswifiSrv.dswifi_setup;
-}
-
-void setWIFISetup(bool flag){
-	dswifiSrv.dswifi_setup = (bool)flag;
-}
-
-
-void setConnectionStatus(sint32 flag){
-	dswifiSrv.connectionStatus = (sint32)flag;
-}
-
-sint32 getConnectionStatus(){
-	return (sint32)dswifiSrv.connectionStatus;
-}
 
 //Used for NIFI server not aware req.
 bool sentReq = false;
@@ -1513,6 +1489,45 @@ bool disconnectAsync(int sock){
 	shutdown(sock,0); // good practice to shutdown the socket.
 	forceclosesocket(sock); // remove the socket.
 	return true;
+}
+
+
+//Synchronous Bi-directional NIFI commands: The DS Sender waits until the command was executed in Remote DS.
+
+//Host gets total of connected DSes. Todo: add some timeout
+int getTotalConnectedDSinNetwork(){
+	int TotalCount = 0;
+	switch(getMULTIMode()){
+		case (dswifi_localnifimode):
+		case (dswifi_udpnifimode):{
+			int retryCount = 0;
+			struct dsnwifisrvStr * dsnwifisrvStrInst = getDSWNIFIStr();
+			dsnwifisrvStrInst->DSIndexInNetwork = 0;
+			dsnwifisrvStrInst->nifiCommand = NIFI_SENDER_TOTAL_CONNECTED_DS;
+			char frame[frameDSsize];	//use frameDSsize as the sender buffer size, any other size won't be sent.
+			memcpy(frame, (u8*)dsnwifisrvStrInst, sizeof(struct dsnwifisrvStr));
+			FrameSenderUser = HandleSendUserspace((uint8*)frame, sizeof(frame));
+			
+			//wait until host sends us a response
+			while(dsnwifisrvStrInst->nifiCommand == NIFI_SENDER_TOTAL_CONNECTED_DS){
+				swiDelay(1);
+				
+				if(retryCount == 10000){
+					return getTotalConnectedDSinNetwork();
+				}
+				retryCount++;
+			}
+			
+			//Process ACK
+			if(dsnwifisrvStrInst->nifiCommand == NIFI_ACK_TOTAL_CONNECTED_DS){
+				u32 * shBuf = (u32*)&dsnwifisrvStrInst->sharedBuffer[0];
+				TotalCount = shBuf[0];
+			}
+			TotalCount++;
+		}
+		break;
+	}
+	return TotalCount;
 }
 
 #endif //ARM9 end

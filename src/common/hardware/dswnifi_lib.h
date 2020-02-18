@@ -187,12 +187,6 @@ extern int Wifi_RawTxFrame_WIFI(sint32 datalen, uint8 * data);
 extern int Wifi_RawTxFrame_NIFI(sint32 datalen, uint16 rate, uint16 * data);
 
 extern bool switch_dswnifi_mode(sint32 mode);
-extern void setMULTIMode(sint32 flag);	//idle(dswifi_idlemode) / raw packet(dswifi_localnifimode) / UDP nifi(dswifi_udpnifimode) / TCP wifi(dswifi_wifimode)
-extern sint32 getMULTIMode();			//idle(dswifi_idlemode) / raw packet(dswifi_localnifimode) / UDP nifi(dswifi_udpnifimode) / TCP wifi(dswifi_wifimode)
-extern bool getWIFISetup();
-extern void setWIFISetup(bool flag);
-extern void setConnectionStatus(sint32 flag);
-extern sint32	getConnectionStatus();
 extern struct frameBlock * FrameSenderUser;	//if !NULL, then must sendFrame. HandleSendUserspace(); generates this one
 
 //the process that runs on vblank and ensures DS - DS Comms
@@ -287,7 +281,7 @@ extern bool initGDBMapFile(char * filename, uint32 newRelocatableAddr);
 extern void closeGDBMapFile();
 extern uint32 readu32GDBMapFile(uint32 address);
 extern void resetGDBSession();
-
+extern int getTotalConnectedDSinNetwork();
 
 //Example : 
 //	These methods are used to Connect asynchronously to a server.
@@ -351,32 +345,31 @@ extern int openServerSyncConn(int SyncPort, struct sockaddr_in * sain);
 }
 #endif
 
-
-//Synchronous Bi-directional NIFI commands: The DS Sender waits until the command was executed in Remote DS.
-
-//Host gets total of connected DSes. Todo: add some timeout
-static inline int getTotalConnectedDSinNetwork(){
-	int TotalCount = 0;
-	struct dsnwifisrvStr * dsnwifisrvStrInst = getDSWNIFIStr();
-	dsnwifisrvStrInst->DSIndexInNetwork = 0;
-	dsnwifisrvStrInst->nifiCommand = NIFI_SENDER_TOTAL_CONNECTED_DS;
-	char frame[frameDSsize];	//use frameDSsize as the sender buffer size, any other size won't be sent.
-	memcpy(frame, (u8*)dsnwifisrvStrInst, sizeof(struct dsnwifisrvStr));
-	FrameSenderUser = HandleSendUserspace((uint8*)frame, sizeof(frame));
-	
-	//wait until host sends us a response
-	while(dsnwifisrvStrInst->nifiCommand == NIFI_SENDER_TOTAL_CONNECTED_DS){
-		swiDelay(1);
-	}
-	
-	//Process ACK
-	if(dsnwifisrvStrInst->nifiCommand == NIFI_ACK_TOTAL_CONNECTED_DS){
-		u32 * shBuf = (u32*)&dsnwifisrvStrInst->sharedBuffer[0];
-		TotalCount = shBuf[0];
-	}
-	TotalCount++;
-	return TotalCount;
+static inline void setMULTIMode(sint32 flag){
+	dswifiSrv.dsnwifisrv_mode = (sint32)flag;
 }
+
+static inline sint32 getMULTIMode(){
+	return (sint32)dswifiSrv.dsnwifisrv_mode;
+}
+
+static inline bool getWIFISetup(){
+	return (bool)dswifiSrv.dswifi_setup;
+}
+
+static inline void setWIFISetup(bool flag){
+	dswifiSrv.dswifi_setup = (bool)flag;
+}
+
+static inline void setConnectionStatus(sint32 flag){
+	dswifiSrv.connectionStatus = (sint32)flag;
+}
+
+static inline sint32 getConnectionStatus(){
+	return (sint32)dswifiSrv.connectionStatus;
+}
+
+
 //GDB Stub part
 #define debuggerWriteMemory(addr, value) \
   *(u32*)addr = (value)
