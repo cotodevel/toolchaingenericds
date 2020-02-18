@@ -18,7 +18,7 @@ USA
 
 */
 
-//DSWNifi Library 1.4 (update: 3/11/2019)	(dd/mm/yyyy)
+//DSWNifi Library 1.4 (update: 2/18/2020)	(mm/dd/yyyy)
 
 #ifndef __dswnifi_lib_h__
 #define __dswnifi_lib_h__
@@ -130,6 +130,17 @@ struct client_http_handler{
     bool wifi_enabled;
 };
 
+//Note: Each Sender command requires an user-defined implementation in 2 sides:
+
+//Synchronous Bi-directional NIFI commands (here, trigger)
+//dswnifi.c in TGDS-project (action, reply)
+
+//Sender command
+#define NIFI_SENDER_TOTAL_CONNECTED_DS (u32)(0xffff4440)
+
+//Ack command (reply to Sender command)
+#define NIFI_ACK_TOTAL_CONNECTED_DS (u32)(0xffff4441)
+
 //LOCAL/IDLE/GDB/UDP
 struct dsnwifisrvStr {
 	struct client_http_handler client_http_handler_context;	//Handles UDP DSWNIFI
@@ -138,7 +149,12 @@ struct dsnwifisrvStr {
 	sint32 	dsnwifisrv_stat;	//MULTI: inter DS Connect status: ds_multi_notrunning / ds_searching_for_multi / (ds_multiplay): ds_netplay_host ds_netplay_guest
 	bool dswifi_setup;	//false: not setup / true: setup already	//used by getWIFISetup() / setWIFISetup()
 	bool incoming_packet;	//when any of the above methods received a packet == true / no == false
-	bool GDBStubEnable;	
+	bool GDBStubEnable;
+	
+	//Session bits
+	int DSIndexInNetwork;
+	u32 nifiCommand;
+	u8 sharedBuffer[128];
 };
 
 //returned by HandleSendUserspace. Converts the user buffer and size into a struct the ToolchainGenericDS library understands.
@@ -147,46 +163,16 @@ struct frameBlock{
 	sint32	frameSize;
 };
 
-//Handles DSWNIFI service
-extern struct dsnwifisrvStr dswifiSrv;
-  
-//GDB Stub part
-#define debuggerWriteMemory(addr, value) \
-  *(u32*)addr = (value)
-
-#define debuggerWriteHalfWord(addr, value) \
-  *(u16*)addr = (value)
-
-#define debuggerWriteByte(addr, value) \
-  *(u8*)addr = (value)
-
-#define InternalRAM ((u8*)0x03000000)
-#define WorkRAM ((u8*)0x02000000)
-
-struct gdbStubMapFile {
-	int GDBMapFileSize;
-	FILE * GDBFileHandle;
-};
-#endif //ARM9 end
-
-#endif
-
-
 #ifdef __cplusplus
 extern "C"{
 #endif
 
 // Shared
 
-// ARM7
-#ifdef ARM7
+//Handles DSWNIFI service
+extern struct dsnwifisrvStr dswifiSrv;
 
-#endif
-
-// ARM9
 #ifdef ARM9
-
-//These calls are implemented in TGDS layer
 
 //NIFI Part
 //DSWNIFI: NIFI
@@ -230,9 +216,7 @@ extern struct frameBlock * HandleSendUserspace(uint8 * databuf_src, int bufsize)
 //userCode must override, provide these functions.
 
 //As long you define this ReceiveHandler, everytime the outter connected DS to this DS sends a packet, it will be received here.
-extern __attribute__((weak))	void HandleRecvUserspace(struct frameBlock * frameBlockRecv);	//called by receiveDSWNIFIFrame(); when a frame is valid
-//implementation defined. can map a buffer/shared object between DS or keymaps
-extern __attribute__((weak))	bool do_multi(struct frameBlock * frameBlockRecv);
+extern __attribute__((weak))	bool HandleRecvUserspace(struct frameBlock * frameBlockRecv);	//called by receiveDSWNIFIFrame(); when a frame is valid
 
 //Callback that runs upon setting DSWNIFI mode to dswifi_localnifimode
 extern __attribute__((weak))	void OnDSWIFIlocalnifiEnable();
@@ -365,4 +349,51 @@ extern int openServerSyncConn(int SyncPort, struct sockaddr_in * sain);
 
 #ifdef __cplusplus
 }
+#endif
+
+
+//Synchronous Bi-directional NIFI commands: The DS Sender waits until the command was executed in Remote DS.
+
+//Host gets total of connected DSes. Todo: add some timeout
+static inline int getTotalConnectedDSinNetwork(){
+	int TotalCount = 0;
+	struct dsnwifisrvStr * dsnwifisrvStrInst = getDSWNIFIStr();
+	dsnwifisrvStrInst->DSIndexInNetwork = 0;
+	dsnwifisrvStrInst->nifiCommand = NIFI_SENDER_TOTAL_CONNECTED_DS;
+	char frame[frameDSsize];	//use frameDSsize as the sender buffer size, any other size won't be sent.
+	memcpy(frame, (u8*)dsnwifisrvStrInst, sizeof(struct dsnwifisrvStr));
+	FrameSenderUser = HandleSendUserspace((uint8*)frame, sizeof(frame));
+	
+	//wait until host sends us a response
+	while(dsnwifisrvStrInst->nifiCommand == NIFI_SENDER_TOTAL_CONNECTED_DS){
+		swiDelay(1);
+	}
+	
+	//Process ACK
+	if(dsnwifisrvStrInst->nifiCommand == NIFI_ACK_TOTAL_CONNECTED_DS){
+		u32 * shBuf = (u32*)&dsnwifisrvStrInst->sharedBuffer[0];
+		TotalCount = shBuf[0];
+	}
+	TotalCount++;
+	return TotalCount;
+}
+//GDB Stub part
+#define debuggerWriteMemory(addr, value) \
+  *(u32*)addr = (value)
+
+#define debuggerWriteHalfWord(addr, value) \
+  *(u16*)addr = (value)
+
+#define debuggerWriteByte(addr, value) \
+  *(u8*)addr = (value)
+
+#define InternalRAM ((u8*)0x03000000)
+#define WorkRAM ((u8*)0x02000000)
+
+struct gdbStubMapFile {
+	int GDBMapFileSize;
+	FILE * GDBFileHandle;
+};
+#endif //ARM9 end
+
 #endif
