@@ -1494,7 +1494,7 @@ bool disconnectAsync(int sock){
 
 //Synchronous Bi-directional NIFI commands: The DS Sender waits until the command was executed in Remote DS.
 
-//Host gets total of connected DSes. Todo: add some timeout
+//Host gets total of connected DSes. 
 int getTotalConnectedDSinNetwork(){
 	int TotalCount = 0;
 	switch(getMULTIMode()){
@@ -1529,5 +1529,48 @@ int getTotalConnectedDSinNetwork(){
 	}
 	return TotalCount;
 }
+
+
+//Send a Binary over DS Wireless: Returns frames sent
+
+int SendDSBinary(u8 * binBuffer, int binSize){
+	switch(getMULTIMode()){
+		case (dswifi_localnifimode):
+		case (dswifi_udpnifimode):{
+			int retryCount = 0;
+			struct dsnwifisrvStr * dsnwifisrvStrInst = getDSWNIFIStr();
+			dsnwifisrvStrInst->frameIndex = 0;
+			dsnwifisrvStrInst->BinarySize = binSize;
+			
+			int s = 0;
+			for(s = 0; s < binSize/128; s++){
+				//Update packet
+				dsnwifisrvStrInst->nifiCommand = NIFI_SENDER_SEND_BINARY;
+				dsnwifisrvStrInst->frameIndex = s;
+				memcpy((u8*)&dsnwifisrvStrInst->sharedBuffer[0], (u8*)&binBuffer[s*128], sizeof(dsnwifisrvStrInst->sharedBuffer));
+				char frame[frameDSsize];	//use frameDSsize as the sender buffer size, any other size won't be sent.
+				memcpy(frame, (u8*)dsnwifisrvStrInst, sizeof(struct dsnwifisrvStr));
+				FrameSenderUser = HandleSendUserspace((uint8*)frame, sizeof(frame));
+				
+				//wait until host sends us a response
+				while(dsnwifisrvStrInst->nifiCommand == NIFI_SENDER_SEND_BINARY){
+					swiDelay(1);
+					/*
+					if(retryCount == 10000){
+						return SendDSBinary(binBuffer, binSize);
+					}
+					retryCount++;
+					*/
+				}
+				
+				//Process ACK
+				
+			}
+		}
+		break;
+	}
+	return 0;
+}
+
 
 #endif //ARM9 end

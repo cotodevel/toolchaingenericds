@@ -135,11 +135,16 @@ struct client_http_handler{
 //Synchronous Bi-directional NIFI commands (here, trigger)
 //dswnifi.c in TGDS-project (action, reply)
 
+//Idle command
+#define NIFI_IDLE_CMD (u32)(0xffff4445)
+
 //Sender command
 #define NIFI_SENDER_TOTAL_CONNECTED_DS (u32)(0xffff4440)
+#define NIFI_SENDER_SEND_BINARY (u32)(0xffff4442)
 
 //Ack command (reply to Sender command)
 #define NIFI_ACK_TOTAL_CONNECTED_DS (u32)(0xffff4441)
+#define NIFI_ACK_SEND_BINARY (u32)(0xffff4443)
 
 //LOCAL/IDLE/GDB/UDP
 struct dsnwifisrvStr {
@@ -154,6 +159,11 @@ struct dsnwifisrvStr {
 	//Session bits
 	int DSIndexInNetwork;
 	u32 nifiCommand;
+	
+	//Send Binary bits
+	int frameIndex;		//	/NIFI SEND BINARY only
+	int BinarySize;		//	/
+	
 	u8 sharedBuffer[128];
 };
 
