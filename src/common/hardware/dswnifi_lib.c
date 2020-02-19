@@ -1537,13 +1537,15 @@ int SendDSBinary(u8 * binBuffer, int binSize){
 	switch(getMULTIMode()){
 		case (dswifi_localnifimode):
 		case (dswifi_udpnifimode):{
+			//defaults
 			int retryCount = 0;
 			struct dsnwifisrvStr * dsnwifisrvStrInst = getDSWNIFIStr();
+			dsnwifisrvStrInst->nifiCommand = NIFI_SENDER_SEND_BINARY;
 			dsnwifisrvStrInst->frameIndex = 0;
 			dsnwifisrvStrInst->BinarySize = binSize;
 			
 			int s = 0;
-			for(s = 0; s < binSize/128; s++){
+			for(s = 0; s < binSize/128; s++){	
 				//Update packet
 				dsnwifisrvStrInst->nifiCommand = NIFI_SENDER_SEND_BINARY;
 				dsnwifisrvStrInst->frameIndex = s;
@@ -1555,16 +1557,17 @@ int SendDSBinary(u8 * binBuffer, int binSize){
 				//wait until host sends us a response
 				while(dsnwifisrvStrInst->nifiCommand == NIFI_SENDER_SEND_BINARY){
 					swiDelay(1);
-					/*
 					if(retryCount == 10000){
-						return SendDSBinary(binBuffer, binSize);
+						s = -1;
+						retryCount = 0;
+						break;
 					}
 					retryCount++;
-					*/
 				}
 				
-				//Process ACK
-				
+				if(dsnwifisrvStrInst->nifiCommand == NIFI_ACK_SEND_BINARY_FINISH){	//finish, exit.
+					break;
+				}
 			}
 		}
 		break;
