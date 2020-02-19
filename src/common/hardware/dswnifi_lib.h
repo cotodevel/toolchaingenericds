@@ -291,6 +291,9 @@ extern uint32 readu32GDBMapFile(uint32 address);
 extern void resetGDBSession();
 extern int getTotalConnectedDSinNetwork();
 
+extern int SendDSBinary(u8 * binBuffer, int binSize);
+extern int ReceiveDSBinary(u8 * inBuffer, int * inBinSize);
+
 //Example : 
 //	These methods are used to Connect asynchronously to a server.
 /*

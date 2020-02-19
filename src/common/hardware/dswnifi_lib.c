@@ -1532,7 +1532,6 @@ int getTotalConnectedDSinNetwork(){
 
 
 //Send a Binary over DS Wireless: Returns frames sent
-
 int SendDSBinary(u8 * binBuffer, int binSize){
 	int s = 0;
 	switch(getMULTIMode()){
@@ -1574,5 +1573,61 @@ int SendDSBinary(u8 * binBuffer, int binSize){
 	return s;
 }
 
+//Receive a Binary over DS Wireless: Returns frames received
+int ReceiveDSBinary(u8 * inBuffer, int * inBinSize){
+	int receiveCount = 0;
+	switch(getMULTIMode()){
+		case (dswifi_localnifimode):
+		case (dswifi_udpnifimode):{
+			struct dsnwifisrvStr * dsnwifisrvStrInst = getDSWNIFIStr();			
+			//defaults
+			int binSize = 0;
+			dsnwifisrvStrInst->nifiCommand = NIFI_ACK_SEND_BINARY;
+			dsnwifisrvStrInst->frameIndex = -1;
+			memset((u8*)&dsnwifisrvStrInst->sharedBuffer[0], 0, sizeof(dsnwifisrvStrInst->sharedBuffer));
+				
+			while(dsnwifisrvStrInst->nifiCommand != NIFI_SENDER_SEND_BINARY){	//todo: add timeout
+				swiDelay(1);
+			}
+			//copy
+			int frameIndex = dsnwifisrvStrInst->frameIndex;	//0
+			memcpy((u8*)inBuffer + (frameIndex*256), &dsnwifisrvStrInst->sharedBuffer[0], sizeof(dsnwifisrvStrInst->sharedBuffer));
+			
+			binSize = dsnwifisrvStrInst->BinarySize;
+			*inBinSize = binSize;
+			printf("receive start... size: %d ", binSize);
+			
+			dsnwifisrvStrInst->nifiCommand = NIFI_ACK_SEND_BINARY;	//SendDSBinary() continue next frame
+			char frame[frameDSsize];
+			memcpy(frame, (u8*)dsnwifisrvStrInst, sizeof(struct dsnwifisrvStr));
+			FrameSenderUser = HandleSendUserspace((uint8*)frame, sizeof(frame));
+			
+			int r = frameIndex + 1;	//1
+			for(r = 1; r < binSize/256; r++){
+				while(dsnwifisrvStrInst->nifiCommand != NIFI_SENDER_SEND_BINARY){	//todo: add timeout
+					swiDelay(1);
+				}
+				
+				//copy next
+				int frameIndex = dsnwifisrvStrInst->frameIndex;
+				if(frameIndex == 0){	//means the session got lost, retry from the beginning
+					r = 0;
+				}
+				memcpy((u8*)inBuffer + (frameIndex*256), &dsnwifisrvStrInst->sharedBuffer[0], sizeof(dsnwifisrvStrInst->sharedBuffer));
+				
+				dsnwifisrvStrInst->nifiCommand = NIFI_ACK_SEND_BINARY;	//SendDSBinary() continue next frame
+				char frame[frameDSsize];
+				memcpy(frame, (u8*)dsnwifisrvStrInst, sizeof(struct dsnwifisrvStr));
+				FrameSenderUser = HandleSendUserspace((uint8*)frame, sizeof(frame));
+			}
+			receiveCount = r;
+			dsnwifisrvStrInst->nifiCommand = NIFI_ACK_SEND_BINARY_FINISH;
+			memcpy(frame, (u8*)dsnwifisrvStrInst, sizeof(struct dsnwifisrvStr));
+			FrameSenderUser = HandleSendUserspace((uint8*)frame, sizeof(frame));
+		}
+		break;
+	}
+	return receiveCount;
+}
 
 #endif //ARM9 end
