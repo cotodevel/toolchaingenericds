@@ -52,7 +52,7 @@ void Handler(int packetID, int readlength){
 			Wifi_RxRawReadPacket(packetID, readlength, (unsigned short *)data);
 			struct frameBlock * frameHandled = receiveDSWNIFIFrame((uint8*)(data+frame_header_size),readlength);	//sender always cut off 2 bytes for crc16 we use	
 			if(frameHandled != NULL){	//LOCAL:Valid Frame?, then User Recv Process here
-				HandleRecvUserspace(frameHandled);
+				TGDSRecvHandler(frameHandled);
 			}
 		}
 		break;
@@ -482,7 +482,7 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 							//Valid Frame?
 							if(frameHandled != NULL){
 								//trigger the User Recv Process here
-								HandleRecvUserspace(frameHandled);
+								TGDSRecvHandler(frameHandled);
 							}
 						}
 					}
@@ -636,6 +636,84 @@ struct dsnwifisrvStr * getDSWNIFIStr(){
 	return (struct dsnwifisrvStr *)&dswifiSrv;
 }
 
+__attribute__((section(".itcm")))
+bool TGDSRecvHandler(struct frameBlock * frameBlockRecv){
+	//frameBlockRecv->framebuffer	//Pointer to received Frame
+	//frameBlockRecv->frameSize		//Size of received Frame
+	int DSWnifiMode = getMULTIMode();
+	switch(DSWnifiMode){
+		//single player, has no access to shared buffers.
+		case(dswifi_idlemode):{
+			//DSWNIFIStatus:SinglePlayer
+			
+			return false;
+		}
+		break;
+		
+		//NIFI local
+		case(dswifi_localnifimode):{
+			struct dsnwifisrvStr * dsnwifisrvStrInstWireless = (struct dsnwifisrvStr *)frameBlockRecv->framebuffer;	
+			//Sender command implementation
+			
+			switch(dsnwifisrvStrInstWireless->nifiCommand){				
+				//TotalDSConnected: Sender cmd
+				case(NIFI_SENDER_TOTAL_CONNECTED_DS):{
+					//Handle cmd
+					int TotalCount = 1;
+					u32 * shBuf = (u32*)&dsnwifisrvStrInstWireless->sharedBuffer[0];
+					shBuf[0] = (u32)TotalCount;
+					dsnwifisrvStrInstWireless->nifiCommand = NIFI_ACK_TOTAL_CONNECTED_DS;
+					FrameSenderUser = HandleSendUserspace((uint8*)dsnwifisrvStrInstWireless, frameBlockRecv->frameSize);
+				}
+				break;
+				//TotalDSConnected: Process Recv -> Sender ACK cmd
+				case(NIFI_ACK_TOTAL_CONNECTED_DS):{
+					struct dsnwifisrvStr * dsnwifisrvStrInst = getDSWNIFIStr();
+					memcpy((u8*)&dsnwifisrvStrInst->sharedBuffer[0], (u8*)&dsnwifisrvStrInstWireless->sharedBuffer[0], sizeof(dsnwifisrvStrInst->sharedBuffer));
+					dsnwifisrvStrInst->nifiCommand = dsnwifisrvStrInstWireless->nifiCommand;
+				}
+				break;
+				//SendBinary: Sender cmd
+				case(NIFI_SENDER_SEND_BINARY):{
+					struct dsnwifisrvStr * dsnwifisrvStrInst = getDSWNIFIStr();
+					dsnwifisrvStrInst->frameIndex = dsnwifisrvStrInstWireless->frameIndex;
+					dsnwifisrvStrInst->BinarySize = dsnwifisrvStrInstWireless->BinarySize;
+					memcpy((u8*)&dsnwifisrvStrInst->sharedBuffer[0], (u8*)&dsnwifisrvStrInstWireless->sharedBuffer[0], sizeof(dsnwifisrvStrInst->sharedBuffer));
+					dsnwifisrvStrInst->nifiCommand = dsnwifisrvStrInstWireless->nifiCommand;	//wait for recv in main() to copy these arriving packets					
+				}
+				break;
+				//SendBinary: Process Recv -> Sender ACK cmd
+				case(NIFI_ACK_SEND_BINARY):{
+					struct dsnwifisrvStr * dsnwifisrvStrInst = getDSWNIFIStr();
+					dsnwifisrvStrInst->nifiCommand = dsnwifisrvStrInstWireless->nifiCommand;	//SendDSBinary() continue next frame
+				}
+				break;
+				//SendBinary: Process Recv -> Sender Finish transfer cmd
+				case(NIFI_ACK_SEND_BINARY_FINISH):{
+					struct dsnwifisrvStr * dsnwifisrvStrInst = getDSWNIFIStr();
+					dsnwifisrvStrInst->nifiCommand = dsnwifisrvStrInstWireless->nifiCommand;	//wait for recv in main() to copy these arriving packets
+				}
+				break;
+				
+				default:{
+					return TGDSRecvHandlerUser(frameBlockRecv, DSWnifiMode);
+				}
+				break;
+			}
+			return true;
+		}
+		break;
+		
+		//UDP NIFI
+		case(dswifi_udpnifimode):{
+			//Todo: replicate the same stuff from LocalNifi
+			return true;
+		}
+		break;
+		
+	}
+	return false;
+}
 
 /////////////////////////////////GDB Server stub Part////////////////////////////////////
 

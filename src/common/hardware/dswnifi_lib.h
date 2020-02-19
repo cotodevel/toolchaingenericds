@@ -219,7 +219,8 @@ extern struct frameBlock * HandleSendUserspace(uint8 * databuf_src, int bufsize)
 //userCode must override, provide these functions.
 
 //As long you define this ReceiveHandler, everytime the outter connected DS to this DS sends a packet, it will be received here.
-extern __attribute__((weak))	bool HandleRecvUserspace(struct frameBlock * frameBlockRecv);	//called by receiveDSWNIFIFrame(); when a frame is valid
+extern bool TGDSRecvHandler(struct frameBlock * frameBlockRecv);	//called by receiveDSWNIFIFrame(); when a frame is valid. TGDS layer. //Returns: Current DSWnifi mode
+extern __attribute__((weak))	bool TGDSRecvHandlerUser(struct frameBlock * frameBlockRecv, int DSWnifiMode);	//called by TGDSRecvHandler when cmd is User implemented. TGDS User layer
 
 //Callback that runs upon setting DSWNIFI mode to dswifi_localnifimode
 extern __attribute__((weak))	void OnDSWIFIlocalnifiEnable();
