@@ -1534,6 +1534,7 @@ int getTotalConnectedDSinNetwork(){
 //Send a Binary over DS Wireless: Returns frames sent
 
 int SendDSBinary(u8 * binBuffer, int binSize){
+	int s = 0;
 	switch(getMULTIMode()){
 		case (dswifi_localnifimode):
 		case (dswifi_udpnifimode):{
@@ -1543,13 +1544,11 @@ int SendDSBinary(u8 * binBuffer, int binSize){
 			dsnwifisrvStrInst->nifiCommand = NIFI_SENDER_SEND_BINARY;
 			dsnwifisrvStrInst->frameIndex = 0;
 			dsnwifisrvStrInst->BinarySize = binSize;
-			
-			int s = 0;
-			for(s = 0; s < binSize/128; s++){	
+			for(s = 0; s < binSize/256; s++){	
 				//Update packet
 				dsnwifisrvStrInst->nifiCommand = NIFI_SENDER_SEND_BINARY;
 				dsnwifisrvStrInst->frameIndex = s;
-				memcpy((u8*)&dsnwifisrvStrInst->sharedBuffer[0], (u8*)&binBuffer[s*128], sizeof(dsnwifisrvStrInst->sharedBuffer));
+				memcpy((u8*)&dsnwifisrvStrInst->sharedBuffer[0], (u8*)&binBuffer[s*256], sizeof(dsnwifisrvStrInst->sharedBuffer));
 				char frame[frameDSsize];	//use frameDSsize as the sender buffer size, any other size won't be sent.
 				memcpy(frame, (u8*)dsnwifisrvStrInst, sizeof(struct dsnwifisrvStr));
 				FrameSenderUser = HandleSendUserspace((uint8*)frame, sizeof(frame));
@@ -1572,7 +1571,7 @@ int SendDSBinary(u8 * binBuffer, int binSize){
 		}
 		break;
 	}
-	return 0;
+	return s;
 }
 
 

@@ -85,7 +85,7 @@ USA
 #define ds_netplay_guest (sint32)(13)
 
 //Standard Frame Size
-#define frameDSsize (sint32)((256)+sizeof(volatile uint16))	//256 bytes
+#define frameDSsize (sint32)((512)+sizeof(volatile uint16))	//512 bytes
 
 //remoteStubMain retcodes
 #define remoteStubMainWIFINotConnected (sint32)(-1)	
@@ -162,7 +162,7 @@ struct dsnwifisrvStr {
 	int frameIndex;		//	/NIFI SEND BINARY only
 	int BinarySize;		//	/
 	
-	u8 sharedBuffer[128];
+	u8 sharedBuffer[256];
 };
 
 //returned by HandleSendUserspace. Converts the user buffer and size into a struct the ToolchainGenericDS library understands.
