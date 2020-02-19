@@ -1543,11 +1543,11 @@ int SendDSBinary(u8 * binBuffer, int binSize){
 			dsnwifisrvStrInst->nifiCommand = NIFI_SENDER_SEND_BINARY;
 			dsnwifisrvStrInst->frameIndex = 0;
 			dsnwifisrvStrInst->BinarySize = binSize;
-			for(s = 0; s < binSize/256; s++){	
+			for(s = 0; s < binSize/frameDSBufferSize; s++){	
 				//Update packet
 				dsnwifisrvStrInst->nifiCommand = NIFI_SENDER_SEND_BINARY;
 				dsnwifisrvStrInst->frameIndex = s;
-				memcpy((u8*)&dsnwifisrvStrInst->sharedBuffer[0], (u8*)&binBuffer[s*256], sizeof(dsnwifisrvStrInst->sharedBuffer));
+				memcpy((u8*)&dsnwifisrvStrInst->sharedBuffer[0], (u8*)&binBuffer[s*frameDSBufferSize], sizeof(dsnwifisrvStrInst->sharedBuffer));
 				char frame[frameDSsize];	//use frameDSsize as the sender buffer size, any other size won't be sent.
 				memcpy(frame, (u8*)dsnwifisrvStrInst, sizeof(struct dsnwifisrvStr));
 				FrameSenderUser = HandleSendUserspace((uint8*)frame, sizeof(frame));
@@ -1591,7 +1591,7 @@ int ReceiveDSBinary(u8 * inBuffer, int * inBinSize){
 			}
 			//copy
 			int frameIndex = dsnwifisrvStrInst->frameIndex;	//0
-			memcpy((u8*)inBuffer + (frameIndex*256), &dsnwifisrvStrInst->sharedBuffer[0], sizeof(dsnwifisrvStrInst->sharedBuffer));
+			memcpy((u8*)inBuffer + (frameIndex*frameDSBufferSize), &dsnwifisrvStrInst->sharedBuffer[0], sizeof(dsnwifisrvStrInst->sharedBuffer));
 			
 			binSize = dsnwifisrvStrInst->BinarySize;
 			*inBinSize = binSize;
@@ -1603,7 +1603,7 @@ int ReceiveDSBinary(u8 * inBuffer, int * inBinSize){
 			FrameSenderUser = HandleSendUserspace((uint8*)frame, sizeof(frame));
 			
 			int r = frameIndex + 1;	//1
-			for(r = 1; r < binSize/256; r++){
+			for(r = 1; r < binSize/frameDSBufferSize; r++){
 				while(dsnwifisrvStrInst->nifiCommand != NIFI_SENDER_SEND_BINARY){	//todo: add timeout
 					swiDelay(1);
 				}
@@ -1613,7 +1613,7 @@ int ReceiveDSBinary(u8 * inBuffer, int * inBinSize){
 				if(frameIndex == 0){	//means the session got lost, retry from the beginning
 					r = 0;
 				}
-				memcpy((u8*)inBuffer + (frameIndex*256), &dsnwifisrvStrInst->sharedBuffer[0], sizeof(dsnwifisrvStrInst->sharedBuffer));
+				memcpy((u8*)inBuffer + (frameIndex*frameDSBufferSize), &dsnwifisrvStrInst->sharedBuffer[0], sizeof(dsnwifisrvStrInst->sharedBuffer));
 				
 				dsnwifisrvStrInst->nifiCommand = NIFI_ACK_SEND_BINARY;	//SendDSBinary() continue next frame
 				char frame[frameDSsize];
