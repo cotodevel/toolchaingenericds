@@ -700,9 +700,27 @@ void RenderTGDSLogoSubEngine(u8 * compressedLZSSBMP, int compressedLZSSBMPSize){
 	
 	//Prevent Cache problems.
 	coherent_user_range_by_size((uint32)LZSSCtx.bufferSource, (int)LZSSCtx.bufferSize);
-	renderFBMode3SubEngine((u16*)LZSSCtx.bufferSource, (int)TGDSLOGONDSSIZE_WIDTH,(int)TGDSLOGONDSSIZE_HEIGHT);
+	renderFBMode3Engine((u16*)LZSSCtx.bufferSource, 0x06200000, (int)TGDSLOGONDSSIZE_WIDTH,(int)TGDSLOGONDSSIZE_HEIGHT);
 	
 	//used? discard
 	free(LZSSCtx.bufferSource);
 }
+
+void RenderTGDSLogoMainEngine(u8 * compressedLZSSBMP, int compressedLZSSBMPSize){
+	initFBModeMainEngine0x06000000();
+	struct LZSSContext LZSSCtx = LZS_DecodeFromBuffer(compressedLZSSBMP, (unsigned int)compressedLZSSBMPSize);
+	//These are hardcoded: TGDSLogoLZSSCompressed.bin -> Size: 12.442 / CRC32: e7255f11
+	#define TGDSLOGONDSSIZE_SIZE 98304
+	#define TGDSLOGONDSSIZE_LENGTH 49152
+	#define TGDSLOGONDSSIZE_WIDTH 256
+	#define TGDSLOGONDSSIZE_HEIGHT 192
+	
+	//Prevent Cache problems.
+	coherent_user_range_by_size((uint32)LZSSCtx.bufferSource, (int)LZSSCtx.bufferSize);
+	renderFBMode3Engine((u16*)LZSSCtx.bufferSource, 0x06000000, (int)TGDSLOGONDSSIZE_WIDTH,(int)TGDSLOGONDSSIZE_HEIGHT);
+	
+	//used? discard
+	free(LZSSCtx.bufferSource);
+}
+
 #endif

@@ -312,7 +312,6 @@ void	GUI_init(bool project_specific_console){
 
 //based from video console settings at toolchaingenericds-keyboard-example
 void move_console_to_top_screen(){
-	
 	//Only when default console is in use, then use CustomConsole as a current console render
 	if(global_project_specific_console == false){
 		ConsoleInstance * DefaultSessionConsoleInst = (ConsoleInstance *)(&DefaultConsole);
@@ -343,12 +342,8 @@ void move_console_to_top_screen(){
 		
 		VRAM_SETUP(CustomSessionConsoleInst);
 		
-		REG_BG3X = 0;
-		REG_BG3Y = 0;
-		REG_BG3PA = 1 << 8;
-		REG_BG3PB = 0;
-		REG_BG3PC = 0;
-		REG_BG3PD = 1 << 8;
+		bool mainEngine = true;
+		setOrientation(ORIENTATION_0, mainEngine);
 		
 		BG_PALETTE[0] = RGB15(0,0,0);			//back-ground tile color
 		BG_PALETTE[255] = RGB15(31,31,31);		//tile color
@@ -374,12 +369,8 @@ void move_console_to_bottom_screen(){
 		//Set current Engine
 		SetEngineConsole(DefaultSessionConsoleInst->ppuMainEngine, DefaultSessionConsoleInst);
 		
-		REG_BG3X_SUB = 0;
-		REG_BG3Y_SUB = 0;
-		REG_BG3PA_SUB = 1 << 8;
-		REG_BG3PB_SUB = 0;
-		REG_BG3PC_SUB = 0;
-		REG_BG3PD_SUB = 1 << 8;
+		bool mainEngine = false;
+		setOrientation(ORIENTATION_0, mainEngine);
 		
 		BG_PALETTE_SUB[0] = RGB15(0,0,0);			//back-ground tile color
 		BG_PALETTE_SUB[255] = RGB15(31,31,31);		//tile color
@@ -433,18 +424,26 @@ bool VRAM_SETUP(ConsoleInstance * currentConsoleInstance){
 
 //1) VRAM Layout
 ConsoleInstance * DEFAULT_CONSOLE_VRAMSETUP(){
-	ConsoleInstance * DefaultSessionConsoleInst = (ConsoleInstance *)(&DefaultConsole);
-	memset (DefaultSessionConsoleInst, 0, sizeof(ConsoleInstance));
-	vramSetup * vramSetupDefault = (vramSetup *)&DefaultSessionConsoleInst->thisVRAMSetupConsole;
+	ConsoleInstance * CustomSessionConsoleInst = (ConsoleInstance *)(&CustomConsole);
+	memset (CustomSessionConsoleInst, 0, sizeof(ConsoleInstance));
+	vramSetup * vramSetupInst = (vramSetup *)&CustomSessionConsoleInst->thisVRAMSetupConsole;
 	
-	vramSetupDefault->vramBankSetupInst[VRAM_C_INDEX].vrambankCR = VRAM_C_0x06200000_ENGINE_B_BG;
-	vramSetupDefault->vramBankSetupInst[VRAM_C_INDEX].enabled = true;
+	REG_DISPCNT	=	(uint32)(MODE_0_2D | DISPLAY_BG0_ACTIVE | DISPLAY_BG1_ACTIVE | DISPLAY_BG2_ACTIVE | DISPLAY_BG3_ACTIVE );	//Raw BMP Mode for main engine
 	
-	// Some memory for ARM7
-	vramSetupDefault->vramBankSetupInst[VRAM_D_INDEX].vrambankCR = VRAM_D_0x06000000_ARM7;
-	vramSetupDefault->vramBankSetupInst[VRAM_D_INDEX].enabled = true;
+	//LCDC + Text Mode 0
+	vramSetupInst->vramBankSetupInst[VRAM_A_INDEX].vrambankCR = VRAM_A_LCDC_MODE;	//6800000h-681FFFFh 
+	vramSetupInst->vramBankSetupInst[VRAM_A_INDEX].enabled = true;
 	
-	return DefaultSessionConsoleInst;
+	vramSetupInst->vramBankSetupInst[VRAM_B_INDEX].vrambankCR = VRAM_B_LCDC_MODE;	//6820000h-683FFFFh
+	vramSetupInst->vramBankSetupInst[VRAM_B_INDEX].enabled = true;
+	
+	vramSetupInst->vramBankSetupInst[VRAM_C_INDEX].vrambankCR = VRAM_C_0x06200000_ENGINE_B_BG;	//SUB Engine: Console here
+	vramSetupInst->vramBankSetupInst[VRAM_C_INDEX].enabled = true;
+	
+	vramSetupInst->vramBankSetupInst[VRAM_D_INDEX].vrambankCR = VRAM_D_0x06000000_ARM7;	//ARM7 128K @ 0x06000000
+	vramSetupInst->vramBankSetupInst[VRAM_D_INDEX].enabled = true;
+	
+	return CustomSessionConsoleInst;
 }
 
 //2) Uses subEngine: VRAM Layout -> Console Setup
@@ -454,24 +453,23 @@ bool InitDefaultConsole(ConsoleInstance * DefaultSessionConsoleInst){
 	SetEngineConsole(subEngine,DefaultSessionConsoleInst);
 	
 	//Set subEngine properties
-	DefaultSessionConsoleInst->ConsoleEngineStatus.ENGINE_DISPCNT	=	(uint32)(MODE_5_2D | DISPLAY_BG3_ACTIVE );
+	DefaultSessionConsoleInst->ConsoleEngineStatus.ENGINE_DISPCNT	=	(uint32)(MODE_5_2D | DISPLAY_BG0_ACTIVE | DISPLAY_BG1_ACTIVE | DISPLAY_BG2_ACTIVE | DISPLAY_BG3_ACTIVE );
 	
 	// BG3: FrameBuffer : 64(TILE:4) - 128 Kb
 	DefaultSessionConsoleInst->ConsoleEngineStatus.EngineBGS[3].BGNUM = 3;
 	DefaultSessionConsoleInst->ConsoleEngineStatus.EngineBGS[3].REGBGCNT = BG_BMP_BASE(4) | BG_BMP8_256x256 | BG_PRIORITY_1;
-	
 	DefaultSessionConsoleInst->VideoBuffer = GUI.DSFrameBuffer = (uint16 *)BG_BMP_RAM_SUB(4);
-	
-	REG_BG3X_SUB = 0;
-	REG_BG3Y_SUB = 0;
-	REG_BG3PA_SUB = 1 << 8;
-	REG_BG3PB_SUB = 0;
-	REG_BG3PC_SUB = 0;
-	REG_BG3PD_SUB = 1 << 8;
 	
 	BG_PALETTE_SUB[0] = RGB15(0,0,0);			//back-ground tile color
 	BG_PALETTE_SUB[255] = RGB15(31,31,31);		//tile color
 	
 	UpdateConsoleSettings(DefaultSessionConsoleInst);
+	
+	bool mainEngine = true;
+	setOrientation(ORIENTATION_0, mainEngine);
+	mainEngine = false;
+	setOrientation(ORIENTATION_0, mainEngine);
+	
+	SWAP_LCDS();	//Console at top screen, bottom is 3D + Touch
 	return true;
 }

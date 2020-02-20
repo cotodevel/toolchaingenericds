@@ -116,7 +116,6 @@ void DISABLE_BG_SUB(int bg) {
 
 //Enables the NDS BMP RGB 15bit format for Engine_B at 0x06200000
 void initFBModeSubEngine0x06200000(){
-	//SETDISPCNT_MAIN(0);	//CONSOLE
 	SETDISPCNT_SUB(MODE_3_2D | DISPLAY_BG3_ACTIVE);
 	
 	// Don't scale bg3 (set its affine transformation matrix to [[1,0],[0,1]])
@@ -130,61 +129,149 @@ void initFBModeSubEngine0x06200000(){
 	REG_BG3CNT_SUB = BG_256x256 | BG_15BITCOLOR | BG_CBB1;	
 }
 
+static u32 mainDISPCNTsaved = 0;
+static sint16 mainREG_BG3PAsaved = 0;
+static sint16 mainREG_BG3PDsaved = 0;
+static sint16 mainREG_BG3CNTsaved = 0;
+static uint8  mainVRAM_BANK_Asaved = 0;
+
+//Enables the NDS BMP RGB 15bit format for Engine_a at 0x06020000
+void initFBModeMainEngine0x06000000(){	
+	mainVRAM_BANK_Asaved = VRAM_A_CR;
+	VRAMBLOCK_SETBANK_A(VRAM_A_0x06000000_ENGINE_A_BG);
+	
+	mainDISPCNTsaved = REG_DISPCNT;
+	SETDISPCNT_MAIN(MODE_5_2D | DISPLAY_BG3_ACTIVE);
+	
+	// Don't scale bg3 (set its affine transformation matrix to [[1,0],[0,1]])
+	mainREG_BG3PAsaved = REG_BG3PA;
+	REG_BG3PA = 1 << 8;
+	mainREG_BG3PDsaved = REG_BG3PD;
+	REG_BG3PD= 1 << 8;
+	
+	#define BG_256x256       (1<<14)
+	#define BG_15BITCOLOR    (1<<7)
+	#define BG_CBB1          (1<<2)
+	
+	mainREG_BG3CNTsaved = REG_BG3CNT;
+	REG_BG3CNT = BG_256x256 | BG_15BITCOLOR | BG_CBB1;	
+}
+
+void restoreFBModeMainEngine(){
+	dmaFillHalfWord(3, 0, (uint32)0x06000000, (uint32)(128*1024));
+	VRAM_A_CR = mainVRAM_BANK_Asaved;
+	mainVRAM_BANK_Asaved = 0;
+	
+	SETDISPCNT_MAIN(mainDISPCNTsaved);
+	mainDISPCNTsaved = 0;
+	
+	REG_BG3PA = mainREG_BG3PAsaved;
+	mainREG_BG3PAsaved = 0;
+	
+	REG_BG3PD = mainREG_BG3PDsaved;
+	mainREG_BG3PDsaved = 0;
+	
+	REG_BG3CNT = mainREG_BG3CNTsaved;
+	mainREG_BG3CNTsaved = 0;
+}
 
 //Renders a buffer in NDS BMP RGB 15bit format. Note, the buffer must be 256x192
-void renderFBMode3SubEngine(u16 * srcBuf, int srcWidth, int srcHeight){
+void renderFBMode3Engine(u16 * srcBuf, u16 * targetBuf, int srcWidth, int srcHeight){
 	if((srcWidth != 256) || (srcHeight != 192)){
 		return;
 	}
-	dmaTransferHalfWord(3, (uint32)srcBuf, (uint32)(0x06200000), (uint32)srcWidth*srcHeight*(sizeof(u16)));
+	dmaTransferHalfWord(3, (uint32)srcBuf, (uint32)(targetBuf), (uint32)srcWidth*srcHeight*(sizeof(u16)));
 }
 
 //Screen Rotation registers
-void setOrientation(int orientation){
+void setOrientation(int orientation, bool mainEngine){
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	if(orientation == TGDSIPC->screenOrientation){
-		return;
-	}
 	switch(orientation){
 		case ORIENTATION_0:{
-			REG_BG3PA_SUB = 1 << 8;
-			REG_BG3PB_SUB = 0;
-			REG_BG3PC_SUB = 0;
-			REG_BG3PD_SUB = 1 << 8;
-			REG_BG3X_SUB = 0;
-			REG_BG3Y_SUB = 0;
+			if(mainEngine == true){
+				REG_BG3PA = 1 << 8;
+				REG_BG3PB = 0;
+				REG_BG3PC = 0;
+				REG_BG3PD = 1 << 8;
+				REG_BG3X = 0;
+				REG_BG3Y = 0;
+				TGDSIPC->screenOrientationMainEngine = orientation;
+			}
+			else{
+				REG_BG3PA_SUB = 1 << 8;
+				REG_BG3PB_SUB = 0;
+				REG_BG3PC_SUB = 0;
+				REG_BG3PD_SUB = 1 << 8;
+				REG_BG3X_SUB = 0;
+				REG_BG3Y_SUB = 0;
+				TGDSIPC->screenOrientationSubEngine = orientation;
+			}
 		}	
 		break;
 		case ORIENTATION_90:{
-			REG_BG3PA_SUB = 0;
-			REG_BG3PB_SUB = -1 << 8;
-			REG_BG3PC_SUB = 1 << 8;
-			REG_BG3PD_SUB = 0;
-			REG_BG3X_SUB = 191 << 8;
-			REG_BG3Y_SUB = 0;
+			if(mainEngine == true){
+				REG_BG3PA = 0;
+				REG_BG3PB = -1 << 8;
+				REG_BG3PC = 1 << 8;
+				REG_BG3PD = 0;
+				REG_BG3X = 191 << 8;
+				REG_BG3Y = 0;
+				TGDSIPC->screenOrientationMainEngine = orientation;
+			}
+			else{
+				REG_BG3PA_SUB = 0;
+				REG_BG3PB_SUB = -1 << 8;
+				REG_BG3PC_SUB = 1 << 8;
+				REG_BG3PD_SUB = 0;
+				REG_BG3X_SUB = 191 << 8;
+				REG_BG3Y_SUB = 0;
+				TGDSIPC->screenOrientationSubEngine = orientation;
+			}
 		}
 		break;
 		case ORIENTATION_180:{
-			REG_BG3PA_SUB = -1 << 8;
-			REG_BG3PB_SUB = 0;
-			REG_BG3PC_SUB = 0;
-			REG_BG3PD_SUB = -1 << 8;
-			REG_BG3X_SUB = 255 << 8;
-			REG_BG3Y_SUB = 191 << 8;
+			if(mainEngine == true){
+				REG_BG3PA = -1 << 8;
+				REG_BG3PB = 0;
+				REG_BG3PC = 0;
+				REG_BG3PD = -1 << 8;
+				REG_BG3X = 255 << 8;
+				REG_BG3Y = 191 << 8;
+				TGDSIPC->screenOrientationMainEngine = orientation;
+			}
+			else{
+				REG_BG3PA_SUB = -1 << 8;
+				REG_BG3PB_SUB = 0;
+				REG_BG3PC_SUB = 0;
+				REG_BG3PD_SUB = -1 << 8;
+				REG_BG3X_SUB = 255 << 8;
+				REG_BG3Y_SUB = 191 << 8;
+				TGDSIPC->screenOrientationSubEngine = orientation;
+			}
 		}
 		break;
 		case ORIENTATION_270:{
-			REG_BG3PA_SUB = 0;
-			REG_BG3PB_SUB = 1 << 8;
-			REG_BG3PC_SUB = -1 << 8;
-			REG_BG3PD_SUB = 0;
-			REG_BG3X_SUB = 0;
-			REG_BG3Y_SUB = 255 << 8;
+			if(mainEngine == true){
+				REG_BG3PA = 0;
+				REG_BG3PB = 1 << 8;
+				REG_BG3PC = -1 << 8;
+				REG_BG3PD = 0;
+				REG_BG3X = 0;
+				REG_BG3Y = 255 << 8;
+				TGDSIPC->screenOrientationMainEngine = orientation;
+			}
+			else{
+				REG_BG3PA_SUB = 0;
+				REG_BG3PB_SUB = 1 << 8;
+				REG_BG3PC_SUB = -1 << 8;
+				REG_BG3PD_SUB = 0;
+				REG_BG3X_SUB = 0;
+				REG_BG3Y_SUB = 255 << 8;
+				TGDSIPC->screenOrientationSubEngine = orientation;
+			}
 		}
 		break;
 	}
-	
-	TGDSIPC->screenOrientation = orientation;
 }
 
 #endif

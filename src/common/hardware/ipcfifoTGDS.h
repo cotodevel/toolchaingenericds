@@ -211,7 +211,9 @@ struct sIPCSharedTGDS {
 	
 	bool ARM7DldiEnabled;	//True: TGDS runs ARM7DLDI / False: TGDS runs ARM9DLDI
 	
-	int screenOrientation;
+	int screenOrientationMainEngine;
+	int screenOrientationSubEngine;
+	
 } __attribute__((aligned (4)));
 
 //Shared Work     027FF000h 4KB    -     -    -    R/W

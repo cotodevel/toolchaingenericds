@@ -137,6 +137,7 @@ extern bool isValidMap(uint32 addr);
 
 
 extern void RenderTGDSLogoSubEngine(u8 * compressedLZSSBMP, int compressedLZSSBMPSize);
+extern void RenderTGDSLogoMainEngine(u8 * compressedLZSSBMP, int compressedLZSSBMPSize);
 
 #ifdef __cplusplus
 }

@@ -215,8 +215,11 @@ extern void DISABLE_BG_MAIN(int number);
 extern void DISABLE_BG_SUB(int number);
 
 extern void initFBModeSubEngine0x06200000();
-extern void renderFBMode3SubEngine(u16 * srcBuf, int srcWidth, int srcHeight);
-extern void setOrientation(int orientation);
+extern void renderFBMode3Engine(u16 * srcBuf, u16 * targetBuf, int srcWidth, int srcHeight);
+extern void setOrientation(int orientation, bool mainEngine);
+
+extern void initFBModeMainEngine0x06000000();	//set FB mode, saves old MainEngine context
+extern void restoreFBModeMainEngine();	//restore from old MainEngine context discards such context
 
 #ifdef __cplusplus
 }
