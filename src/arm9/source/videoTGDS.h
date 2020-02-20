@@ -26,12 +26,8 @@ USA
 #include "dsregs_asm.h"
 #include <stdbool.h>
 
-
-
 #define VRAM_ENABLE		(uint8)(1<<7)
-
 #define VRAM_MAX_LETTER_INDEX	(sint32)(9)
-
 #define VRAM_A_INDEX	(sint32)(0)
 #define VRAM_B_INDEX	(sint32)(1)
 #define VRAM_C_INDEX	(sint32)(2)
@@ -42,18 +38,15 @@ USA
 #define VRAM_H_INDEX	(sint32)(7)
 #define VRAM_I_INDEX	(sint32)(8)
 
-typedef struct vramBankSetup
-{
+typedef struct vramBankSetup{
 	uint8 vrambankCR;	//a,b,c,d,e,f,g,h,i
 	bool enabled;	//true = yes /false = no
 	//sint32	setupMode;	//if mapped should setup accordingly by vramsetup(n)
 }vramBankSetup;
 
-typedef struct vramSetup
-{
+typedef struct vramSetup{
 	vramBankSetup vramBankSetupInst[VRAM_MAX_LETTER_INDEX];
 }vramSetup;
-
 
 //VRAM Setup 0: //MST 0
 /*
@@ -185,6 +178,11 @@ typedef struct vramSetup
 //todo other VRAM setups
 
 
+//Screen Rotation registers
+#define ORIENTATION_0 (int)(0)
+#define ORIENTATION_90 (int)(1)
+#define ORIENTATION_180 (int)(2)
+#define ORIENTATION_270 (int)(3)
 
 #endif
 
@@ -218,6 +216,7 @@ extern void DISABLE_BG_SUB(int number);
 
 extern void initFBModeSubEngine0x06200000();
 extern void renderFBMode3SubEngine(u16 * srcBuf, int srcWidth, int srcHeight);
+extern void setOrientation(int orientation);
 
 #ifdef __cplusplus
 }

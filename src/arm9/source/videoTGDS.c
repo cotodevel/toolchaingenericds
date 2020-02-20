@@ -138,4 +138,54 @@ void renderFBMode3SubEngine(u16 * srcBuf, int srcWidth, int srcHeight){
 	}
 	dmaTransferHalfWord(3, (uint32)srcBuf, (uint32)(0x06200000), (uint32)srcWidth*srcHeight*(sizeof(u16)));
 }
+
+//Screen Rotation registers
+void setOrientation(int orientation){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	if(orientation == TGDSIPC->screenOrientation){
+		return;
+	}
+	switch(orientation){
+		case ORIENTATION_0:{
+			REG_BG3PA_SUB = 1 << 8;
+			REG_BG3PB_SUB = 0;
+			REG_BG3PC_SUB = 0;
+			REG_BG3PD_SUB = 1 << 8;
+			REG_BG3X_SUB = 0;
+			REG_BG3Y_SUB = 0;
+		}	
+		break;
+		case ORIENTATION_90:{
+			REG_BG3PA_SUB = 0;
+			REG_BG3PB_SUB = -1 << 8;
+			REG_BG3PC_SUB = 1 << 8;
+			REG_BG3PD_SUB = 0;
+			REG_BG3X_SUB = 191 << 8;
+			REG_BG3Y_SUB = 0;
+		}
+		break;
+		case ORIENTATION_180:{
+			REG_BG3PA_SUB = -1 << 8;
+			REG_BG3PB_SUB = 0;
+			REG_BG3PC_SUB = 0;
+			REG_BG3PD_SUB = -1 << 8;
+			REG_BG3X_SUB = 255 << 8;
+			REG_BG3Y_SUB = 191 << 8;
+		}
+		break;
+		case ORIENTATION_270:{
+			REG_BG3PA_SUB = 0;
+			REG_BG3PB_SUB = 1 << 8;
+			REG_BG3PC_SUB = -1 << 8;
+			REG_BG3PD_SUB = 0;
+			REG_BG3X_SUB = 0;
+			REG_BG3Y_SUB = 255 << 8;
+		}
+		break;
+	}
+	
+	TGDSIPC->screenOrientation = orientation;
+}
+
 #endif
+
