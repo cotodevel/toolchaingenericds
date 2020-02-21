@@ -29,6 +29,7 @@ USA
 #include "ipcfifoTGDS.h"
 #include "videoTGDS.h"
 #include "spifwTGDS.h"
+#include "keypadTGDS.h"
 
 #define ENABLE_3D    (1<<3)
 #define DISPLAY_ENABLE_SHIFT 8
@@ -519,5 +520,7 @@ static inline void ToggleOnOffConsoleBacklight(){
 		GUI.consoleBacklightOn = true;
 	}
 }
+
+extern void ToggleTGDSConsole();
 
 #endif

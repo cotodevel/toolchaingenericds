@@ -213,6 +213,7 @@ struct sIPCSharedTGDS {
 	
 	int screenOrientationMainEngine;
 	int screenOrientationSubEngine;
+	bool touchScreenEnabled;
 	
 } __attribute__((aligned (4)));
 

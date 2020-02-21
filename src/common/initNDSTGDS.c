@@ -96,6 +96,7 @@ void initHardware(void) {
 	WifiData = (Wifi_MainStruct *)malloc(sizeof(Wifi_MainStruct));
 	files = (struct fd*)malloc(sizeof(struct fd)*OPEN_MAXTGDS);
 	
+	setTouchScreenEnabled(true);	//Enable TSC
 	#endif
 	
 }

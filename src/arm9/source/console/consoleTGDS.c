@@ -473,3 +473,17 @@ bool InitDefaultConsole(ConsoleInstance * DefaultSessionConsoleInst){
 	SWAP_LCDS();	//Console at top screen, bottom is 3D + Touch
 	return true;
 }
+
+//Moves the TGDS Console between Top and Bottom screen
+void ToggleTGDSConsole(){
+	//Update the console location register, and with it, the backlight setting
+	if(GUI.consoleAtTopScreen == true){
+		GUI.consoleAtTopScreen = false;
+		setTouchScreenEnabled(true);	//Enable TSC
+	}
+	else{
+		GUI.consoleAtTopScreen = true;
+		setTouchScreenEnabled(false);	//Disable TSC
+	}
+	SWAP_LCDS();
+}
