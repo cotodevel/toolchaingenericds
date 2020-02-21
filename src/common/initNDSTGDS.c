@@ -33,6 +33,7 @@ USA
 #include "ipcfifoTGDS.h"
 #include "soundTGDS.h"
 #include "global_settings.h"
+#include "eventsTGDS.h"
 
 #ifdef ARM9
 #include "devoptab_devices.h"
@@ -96,7 +97,11 @@ void initHardware(void) {
 	WifiData = (Wifi_MainStruct *)malloc(sizeof(Wifi_MainStruct));
 	files = (struct fd*)malloc(sizeof(struct fd)*OPEN_MAXTGDS);
 	
-	setTouchScreenEnabled(true);	//Enable TSC
+	//Enable TSC
+	setTouchScreenEnabled(true);	
+	
+	//Enable TGDS Event handling + Set timeout to turn off screens if idle.
+	setAndEnableSleepModeInSeconds(SLEEPMODE_SECONDS); //works fine
 	#endif
 	
 }

@@ -107,6 +107,14 @@ USA
 #define FIFO_IRQ_LIDHASOPENED_SIGNAL	(uint32)(0xffff020E)
 #define FIFO_IRQ_LIDHASCLOSED_SIGNAL	(uint32)(0xffff020F)
 
+#define TGDS_ARM7_RESET_BACKLIGHT (uint32)(0xFFFF0220)
+#define TGDS_ARM7_DISABLE_SLEEPMODE (uint32)(0xFFFF0221)
+#define TGDS_ARM7_ENABLE_SLEEPMODE (uint32)(0xFFFF0222)
+#define TGDS_ARM7_ENABLE_EVENT_HANDLING (uint32)(0xFFFF0223)
+#define TGDS_ARM7_DISABLE_EVENT_HANDLING (uint32)(0xFFFF0224)
+#define TGDS_ARM7_ENABLE_SLEEPMODE_TIMEOUT (uint32)(0xFFFF0225)
+#define TGDS_ARM7_SET_EVENT_HANDLING (uint32)(0xFFFF0226)
+
 //IPC bits
 #define REG_IPC_FIFO_TX		(*(vuint32*)0x4000188)
 #define REG_IPC_FIFO_RX		(*(vuint32*)0x4100000)
@@ -208,22 +216,17 @@ struct sIPCSharedTGDS {
 	u8 ipcMesaggingQueue[0x10];
 	
 	struct soundSampleContextList soundContextShared;
-	
-	bool ARM7DldiEnabled;	//True: TGDS runs ARM7DLDI / False: TGDS runs ARM9DLDI
-	
+	bool ARM7DldiEnabled;	//True: TGDS runs ARM7DLDI / False: TGDS runs ARM9DLDI	
 	int screenOrientationMainEngine;
 	int screenOrientationSubEngine;
 	bool touchScreenEnabled;
-	
+
 } __attribute__((aligned (4)));
 
 //Shared Work     027FF000h 4KB    -     -    -    R/W
 #define TGDSIPCStartAddress (__attribute__((aligned (4))) struct sIPCSharedTGDS*)(0x027FF000)
 #define TGDSIPCSize (int)(sizeof(struct sIPCSharedTGDS))
 #define TGDSIPCUserStartAddress (u32)(0x027FF000 + TGDSIPCSize)	//u32 because it`s unknown at this point. TGDS project will override it to specific USER IPC struct
-
-//DS when accessing shared region through Indirect function methods works fine. Where as direct access is undefined reads
-
 
 //usrsettings defs
 static inline bool getFWSettingsstatus(){

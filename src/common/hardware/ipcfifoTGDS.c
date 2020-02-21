@@ -206,6 +206,39 @@ void HandleFifoNotEmpty(){
 			break;
 			#endif
 			
+			case TGDS_ARM7_ENABLE_SLEEPMODE_TIMEOUT:{
+				setTurnOffScreensTimeout((int)data0);
+			}
+			break;
+			
+			case TGDS_ARM7_SET_EVENT_HANDLING:{
+				TGDSSetEvent((int)data0);
+			}
+			break;
+			
+			case TGDS_ARM7_ENABLE_EVENT_HANDLING:{
+				enableTGDSEventHandling();
+			}
+			break;
+			
+			case TGDS_ARM7_DISABLE_EVENT_HANDLING:{
+				disableTGDSEventHandling();
+			}
+			break;
+			
+			case TGDS_ARM7_RESET_BACKLIGHT:{
+				TurnOnScreens();
+			}
+			break;
+			case TGDS_ARM7_DISABLE_SLEEPMODE:{
+				disableSleepMode();
+			}
+			break;
+			case TGDS_ARM7_ENABLE_SLEEPMODE:{
+				enableSleepMode();
+			}
+			break;
+			
 			#endif
 			
 			//ARM9 command handler

@@ -31,6 +31,7 @@ USA
 #include "InterruptsARMCores_h.h"
 #include "ipcfifoTGDS.h"
 #include "keypadTGDS.h"
+#include "eventsTGDS.h"
 
 void IRQInit(){
 	//fifo setups
@@ -79,6 +80,9 @@ void NDS_IRQHandler(){
 		VblankUser();
 	}
 	if(handledIRQ & IRQ_VCOUNT){
+		#ifdef ARM7
+		TGDSEventHandler();
+		#endif
 		VcounterUser();
 	}
 	if(handledIRQ & IRQ_TIMER0){
