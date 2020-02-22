@@ -129,6 +129,8 @@ void enableSleepMode(){
 void disableSleepMode(){
 	#ifdef ARM7
 	sleepModeEnabled = false;
+	//Turn on screens if sleep mode was triggered before disabling it
+	TurnOnScreens();
 	#endif
 	#ifdef ARM9
 	SendFIFOWords(TGDS_ARM7_DISABLE_SLEEPMODE, 0);
