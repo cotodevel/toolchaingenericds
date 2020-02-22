@@ -47,10 +47,6 @@ USA
 #define	BIT_FWCMD_WEL	(1 << 1)
 
 
-
-
-
-
 //PowerMan bits
 #define 	POWMAN_CONTROL_BIT   0
 #define 	POWMAN_BATTERY_BIT   1
@@ -76,6 +72,11 @@ USA
 
 #ifdef __cplusplus
 extern "C"{
+#endif
+
+#ifdef ARM7
+//weak symbols : the implementation of these is project-defined. This callback performs custom button mapping logic in a per-TGDS project basis.
+extern __attribute__((weak))	void CustomInputMappingHandler(uint32 readKeys);
 #endif
 
 extern void writeFirmwareSPIPage(uint32 address, uint8 * buffer);

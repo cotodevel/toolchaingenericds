@@ -27,6 +27,8 @@ USA
 #include "clockTGDS.h"
 #include "eventsTGDS.h"
 
+
+
 //Source http://problemkaputt.de/gbatek.htm
 inline __attribute__((always_inline)) 
 void doSPIARM7IO(){
@@ -73,13 +75,17 @@ void doSPIARM7IO(){
 	sIPCSharedTGDSInst->ndsRTCSeconds = nds_get_time7();
 	
 	//Handle Sleep-wakeup events
+	uint16 buttonsARM7 = REG_KEYXY;
+	uint32 readKeys = (uint32)(( ((~KEYINPUT)&0x3ff) | (((~buttonsARM7)&3)<<10) | (((~buttonsARM7)<<6) & (KEY_TOUCH|KEY_LID) ))^KEY_LID);
 	if(sleepModeEnabled == true){
-		uint16 buttonsARM7 = REG_KEYXY;
-		uint32 readKeys = (uint32)(( ((~KEYINPUT)&0x3ff) | (((~buttonsARM7)&3)<<10) | (((~buttonsARM7)<<6) & (KEY_TOUCH|KEY_LID) ))^KEY_LID);
 		if (readKeys & (KEY_LEFT | KEY_RIGHT | KEY_UP | KEY_DOWN | KEY_A | KEY_B | KEY_X | KEY_Y | KEY_L | KEY_R | KEY_TOUCH)){
 			TurnOnScreens();
 		}
 	}
+	
+	//Custom Button Mapping Handler
+	CustomInputMappingHandler(readKeys);
+
 }
 #endif
 
