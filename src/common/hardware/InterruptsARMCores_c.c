@@ -151,6 +151,7 @@ void NDS_IRQHandler(){
 		
 	}
 	if(handledIRQ & IRQ_SCREENLID){
+		isArm7ClosedLid = false;
 		SendFIFOWords(FIFO_IRQ_LIDHASOPENED_SIGNAL, 0);
 		screenLidHasOpenedhandlerUser();
 	}

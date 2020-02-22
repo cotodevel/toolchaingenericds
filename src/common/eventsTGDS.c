@@ -23,6 +23,10 @@ USA
 #include "dsregs_asm.h"
 #include "eventsTGDS.h"
 #include "ipcfifoTGDS.h"
+#ifdef ARM7
+#include "wifi_arm7.h"
+#endif
+#include "spifwTGDS.h"
 
 //TGDS events implementation (useful for stuff like press input / play sound / power handling given some event)
 
@@ -83,11 +87,23 @@ void TurnOnScreens(){
 	#ifdef ARM7
 	secondsPassed = 0;
 	dsvcount = 0;
-	screenLidHasOpenedhandlerUser();
+	setBacklight(POWMAN_BACKLIGHT_TOP_BIT | POWMAN_BACKLIGHT_BOTTOM_BIT);	//both lit screens
+	SetLedState(LED_ON);
 	#endif
 	
 	#ifdef ARM9
-	SendFIFOWords(TGDS_ARM7_RESET_BACKLIGHT, 0);
+	SendFIFOWords(TGDS_ARM7_TURNON_BACKLIGHT, 0);
+	#endif
+}
+
+void TurnOffScreens(){
+	#ifdef ARM7
+	setBacklight(0);
+	SetLedState(LED_LONGBLINK);
+	#endif
+	
+	#ifdef ARM9
+	SendFIFOWords(TGDS_ARM7_TURNOFF_BACKLIGHT, 0);
 	#endif
 }
 

@@ -57,6 +57,7 @@ extern void disableTGDSEventHandling();
 extern void TGDSSetEvent(int newEvent);
 extern void setTurnOffScreensTimeout(int secondsBeforeEventTrigger);
 extern void TurnOnScreens();
+extern void TurnOffScreens();
 extern void enableSleepMode();
 extern void disableSleepMode();
 extern void setAndEnableSleepModeInSeconds(int seconds);
@@ -79,7 +80,7 @@ static inline void TGDSEventHandler(){
 					else{
 						secondsPassed++;
 						if(secondsPassed == SLEEPMODE_SECONDS){
-							screenLidHasClosedhandlerUser();
+							TurnOffScreens();
 						}
 						dsvcount = 0;
 					}

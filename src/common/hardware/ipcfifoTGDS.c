@@ -226,8 +226,12 @@ void HandleFifoNotEmpty(){
 			}
 			break;
 			
-			case TGDS_ARM7_RESET_BACKLIGHT:{
+			case TGDS_ARM7_TURNON_BACKLIGHT:{
 				TurnOnScreens();
+			}
+			break;
+			case TGDS_ARM7_TURNOFF_BACKLIGHT:{
+				TurnOffScreens();
 			}
 			break;
 			case TGDS_ARM7_DISABLE_SLEEPMODE:{

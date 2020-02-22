@@ -91,7 +91,7 @@ void handleARM9InitSVC(){
 }
 #endif
 
-//These services run at least once a given VBLANK interrupt.
+//Services
 
 #ifdef ARM7
 bool isArm7ClosedLid = false;
