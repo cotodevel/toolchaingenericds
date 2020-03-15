@@ -476,7 +476,7 @@ static inline struct FileClassList * popEntryfromFileClassList(struct FileClassL
 	if(lst != NULL){		
 		int FileClassListIndex = lst->FileDirCount;
 		if(FileClassListIndex > 0){
-			if( (lst != NULL) && (FileClassListIndex < FileClassItems) ){	//prevent overlapping current FileClassList 
+			if(FileClassListIndex < FileClassItems){	//prevent overlapping current FileClassList 
 				lst->FileDirCount = FileClassListIndex - 1;
 				struct FileClass * FileClassInst = getFileClassFromList(FileClassListIndex, lst);
 				memset(FileClassInst, 0, sizeof(struct FileClass));
