@@ -487,6 +487,64 @@ static inline struct FileClassList * popEntryfromFileClassList(struct FileClassL
 	return NULL;
 }
 
+static inline bool contains(int * arr, int arrSize, int value){
+    int i=0;
+	for(i=0; i < arrSize; i++){
+        if(arr[i] == value){
+            return true;
+        }
+    }
+    return false;
+} 
+
+static inline struct FileClassList * randomizeFileClassList(struct FileClassList * lst){
+	if(lst != NULL){
+		//Build rand table
+		int listCount = lst->FileDirCount;
+		int uniqueArr[FileClassItems];
+		int i=0;
+		for(i=0; i < FileClassItems; i++){
+            uniqueArr[i] = -1;
+        }
+		int indx=0;
+		for(;;){
+		    int randVal = rand() % (listCount);
+		    if (contains(uniqueArr, listCount, randVal) == false){
+		        uniqueArr[indx] = randVal;
+		        indx++;
+		    }
+		    if(indx == (listCount)){
+		        break;
+		    }
+		}
+		
+		//Shuffle it
+		for(indx=0; indx < listCount; indx++){
+			struct FileClass fileListSrc;
+			struct FileClass fileListTarget;
+			memset(&fileListSrc, 0, sizeof(struct FileClass));
+			memset(&fileListTarget, 0, sizeof(struct FileClass));
+			
+			int targetIndx = uniqueArr[indx];
+			int srcIndx = indx;
+			
+			if(targetIndx != srcIndx){
+				struct FileClass * FileClassInstSource = getFileClassFromList(srcIndx, lst);
+				struct FileClass * FileClassInstTarget = getFileClassFromList(targetIndx, lst);
+				
+				memcpy((u8*)&fileListSrc, (u8*)FileClassInstSource, sizeof(struct FileClass));
+				memcpy((u8*)&fileListTarget, (u8*)FileClassInstTarget, sizeof(struct FileClass));
+				
+				memcpy((u8*)FileClassInstSource, (u8*)&fileListTarget, sizeof(struct FileClass));
+				memcpy((u8*)FileClassInstTarget, (u8*)&fileListSrc, sizeof(struct FileClass));
+			}
+		}
+		
+		//done 
+		return lst;
+	}
+	return NULL;
+}
 
 ////////////////////////////////////////////////////////////////////////////INTERNAL CODE END/////////////////////////////////////////////////////////////////////////////////////
 
