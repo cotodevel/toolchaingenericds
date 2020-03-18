@@ -1334,6 +1334,7 @@ sint32 remoteStubMain(){
 	return remoteStubMainWIFINotConnected;				//gdb not running, WIFI not connected (first time connection)
 }
 
+//Shared for GDBFile and GDBBuffer map modes.
 uint32 GDBMapFileAddress = (uint32)0x00000000;
 void setCurrentRelocatableGDBFileAddress(uint32 addrInput){
 	GDBMapFileAddress = addrInput;
@@ -1358,7 +1359,10 @@ void remoteCleanUp()
 
 u32 debuggerReadMemory(u32 addr){
 	if(isValidMap(addr) == true){
-		if(getValidGDBMapFile() == true){
+		if(gdbStubMapMethod == GDBSTUB_METHOD_GDBBUFFER){
+			return (u32)readu32GDBMapBuffer(addr);
+		}
+		else if((getValidGDBMapFile() == true) && (gdbStubMapMethod == GDBSTUB_METHOD_GDBFILE)){
 			return (u32)readu32GDBMapFile(addr);
 		}
 		else{
@@ -1371,7 +1375,10 @@ u32 debuggerReadMemory(u32 addr){
 
 u16 debuggerReadHalfWord(u32 addr){
 	if(isValidMap(addr) == true){
-		if(getValidGDBMapFile() == true){
+		if(gdbStubMapMethod == GDBSTUB_METHOD_GDBBUFFER){
+			return (u16)(readu32GDBMapBuffer(addr)&0xffff);
+		}
+		else if((getValidGDBMapFile() == true) && (gdbStubMapMethod == GDBSTUB_METHOD_GDBFILE)){
 			return (u16)(readu32GDBMapFile(addr) & 0xffff);
 		}
 		else{
@@ -1384,7 +1391,10 @@ u16 debuggerReadHalfWord(u32 addr){
 
 u8 debuggerReadByte(u32 addr){
 	if(isValidMap(addr) == true){
-		if(getValidGDBMapFile() == true){
+		if(gdbStubMapMethod == GDBSTUB_METHOD_GDBBUFFER){
+			return (u8)(readu32GDBMapBuffer(addr)&0xff);
+		}
+		else if((getValidGDBMapFile() == true) && (gdbStubMapMethod == GDBSTUB_METHOD_GDBFILE)){
 			return (u8)(readu32GDBMapFile(addr)&0xff);	//correct format: (value 32bit) & 0xff
 		}
 		else{
@@ -1395,6 +1405,9 @@ u8 debuggerReadByte(u32 addr){
 	return (u8)(0xff);
 }
 
+
+int gdbStubMapMethod = GDBSTUB_METHOD_DEFAULT;
+//GDBMap: File impl.
 struct gdbStubMapFile globalGdbStubMapFile;
 bool isValidGDBMapFile = false;
 void setValidGDBMapFile(bool ValidGDBMapFile){
@@ -1406,8 +1419,8 @@ bool getValidGDBMapFile(){
 struct gdbStubMapFile * getGDBMapFile(){
 	return (struct gdbStubMapFile *)&globalGdbStubMapFile;
 }
-
 bool initGDBMapFile(char * filename, uint32 newRelocatableAddr){
+	gdbStubMapMethod = GDBSTUB_METHOD_GDBFILE;
 	struct gdbStubMapFile * gdbStubMapFileInst = getGDBMapFile();
 	if(gdbStubMapFileInst->GDBFileHandle != NULL){ 
 		fclose(gdbStubMapFileInst->GDBFileHandle);
@@ -1437,14 +1450,12 @@ bool initGDBMapFile(char * filename, uint32 newRelocatableAddr){
 	setValidGDBMapFile(false);
 	return false;
 }
-
 void closeGDBMapFile(){
 	struct gdbStubMapFile * gdbStubMapFileInst = getGDBMapFile();
 	if(gdbStubMapFileInst->GDBFileHandle != NULL){
 		fclose(gdbStubMapFileInst->GDBFileHandle);
 	}
 }
-
 uint32 readu32GDBMapFile(uint32 address){
 	u32 readVal = 0;
 	struct gdbStubMapFile * gdbStubMapFileInst = getGDBMapFile();
@@ -1465,6 +1476,54 @@ uint32 readu32GDBMapFile(uint32 address){
 			fseek(gdbStubMapFileInst->GDBFileHandle, offst, SEEK_SET);
 			fread((uint32*)&readVal, 1, 4, gdbStubMapFileInst->GDBFileHandle);
 			return readVal;
+		}
+	}
+	return (uint32)0xffffffff;
+}
+
+//GDBMap: Buffer impl.
+struct gdbStubMapBuffer globalGdbStubMapBuffer;
+struct gdbStubMapBuffer * getGDBMapBuffer(){
+	return (struct gdbStubMapFile *)&globalGdbStubMapBuffer;
+}
+
+bool initGDBMapBuffer(u32 * bufferStart, int GDBMapBufferSize, uint32 newRelocatableAddr){
+	closeGDBMapBuffer();
+	gdbStubMapMethod = GDBSTUB_METHOD_GDBBUFFER;
+	struct gdbStubMapBuffer * gdbStubMapBufferInst = getGDBMapBuffer();
+	if(
+		((uint32)newRelocatableAddr >= (uint32)minGDBMapFileAddress)
+		&&
+		((uint32)newRelocatableAddr < (uint32)maxGDBMapFileAddress)
+	){
+		gdbStubMapBufferInst->bufferStart = bufferStart;
+		gdbStubMapBufferInst->GDBMapBufferSize = GDBMapBufferSize;
+		setCurrentRelocatableGDBFileAddress(newRelocatableAddr);
+		return true;
+	}
+	return false;
+}
+void closeGDBMapBuffer(){
+	struct gdbStubMapBuffer * gdbStubMapBufferInst = getGDBMapBuffer();
+	memset((uint8*)gdbStubMapBufferInst, 0, sizeof(struct gdbStubMapBuffer));
+}
+uint32 readu32GDBMapBuffer(uint32 address){
+	struct gdbStubMapBuffer * gdbStubMapBufferInst = getGDBMapBuffer();
+	if(gdbStubMapBufferInst->bufferStart != 0){
+		int FSize = gdbStubMapBufferInst->GDBMapBufferSize;
+		if(
+			(FSize > 0)
+			&&
+			(address >= minGDBMapFileAddress)
+			&&
+			(address < maxGDBMapFileAddress)
+			&&
+			(address >= GDBMapFileAddress)
+			&&
+			(address < (GDBMapFileAddress + FSize))
+		){
+			int offst = (address & ((uint32)(FSize -1)));
+			return *(u32*)(gdbStubMapBufferInst->bufferStart + offst);
 		}
 	}
 	return (uint32)0xffffffff;

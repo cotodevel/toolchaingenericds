@@ -43,7 +43,7 @@ USA
 #include "fatfslayerTGDS.h"
 #include "wifi_arm9.h"
 
-//GDB Server
+//GDB Server. Shared for GDBFile and GDBBuffer map modes.
 #define minGDBMapFileAddress	(uint32)(0x00000000)
 #define maxGDBMapFileAddress	(uint32)(0xF0000000)
 
@@ -279,6 +279,7 @@ extern u8 debuggerReadByte(u32 addr);
 extern u16 debuggerReadHalfWord(u32 addr);
 extern u32 debuggerReadMemory(u32 addr);
 
+//GDBMap: File impl.
 extern uint32 GDBMapFileAddress;
 extern void setCurrentRelocatableGDBFileAddress(uint32 addrInput);
 extern uint32 getCurrentRelocatableGDBFileAddress();
@@ -291,8 +292,9 @@ extern bool initGDBMapFile(char * filename, uint32 newRelocatableAddr);
 extern void closeGDBMapFile();
 extern uint32 readu32GDBMapFile(uint32 address);
 extern void resetGDBSession();
-extern int getTotalConnectedDSinNetwork();
 
+//DSWNIFI synchronous commands
+extern int getTotalConnectedDSinNetwork();
 extern int SendDSBinary(u8 * binBuffer, int binSize);
 extern int ReceiveDSBinary(u8 * inBuffer, int * inBinSize);
 
@@ -400,6 +402,25 @@ struct gdbStubMapFile {
 	int GDBMapFileSize;
 	FILE * GDBFileHandle;
 };
+
+//GDBMap: Buffer impl.
+struct gdbStubMapBuffer {
+	u8 * bufferStart;
+	int GDBMapBufferSize;
+};
+
+#define GDBSTUB_METHOD_DEFAULT (int)(-1)
+#define GDBSTUB_METHOD_GDBFILE (int)(1)
+#define GDBSTUB_METHOD_GDBBUFFER (int)(2)
+
+extern int gdbStubMapMethod;
+extern struct gdbStubMapBuffer globalGdbStubMapBuffer;
+extern struct gdbStubMapBuffer * getGDBMapBuffer();
+
+extern bool initGDBMapBuffer(u32 * bufferStart, int GDBMapBufferSize, uint32 newRelocatableAddr);
+extern void closeGDBMapBuffer();
+extern uint32 readu32GDBMapBuffer(uint32 address);
+
 #endif //ARM9 end
 
 #endif
