@@ -21,12 +21,12 @@ USA
 //Coto: Use them as you want , just make sure you read WELL the descriptions below.
 
 #include "global_settings.h"
-
 #include "ipcfifoTGDS.h"
 #include "InterruptsARMCores_h.h"
 #include "utilsTGDS.h"
 #include "timerTGDS.h"
 #include "dldi.h"
+#include "dmaTGDS.h"
 
 #ifdef ARM7
 #include <string.h>
@@ -285,19 +285,6 @@ void HandleFifoNotEmpty(){
 			}
 			break;
 			
-			//Process the packages (signal) that sent earlier FIFO_SEND_EXT
-			case((uint32)READ_EXTARM_FIFO):{
-				//take orders only if we have one
-				struct sSharedSENDCtx * ctx = (struct sSharedSENDCtx *)data0;
-				if(getSENDCtxStatus(ctx) == READ_EXTARM_FIFO_BUSY){
-					REG_IME = 0;
-					memcpy((u8*)ctx->targetAddr, (u8*)ctx->srcAddr, ctx->size);
-					setSENDCtxStatus(READ_EXTARM_FIFO_READY, ctx);
-					REG_IME = 1;
-				}
-			}
-			break;
-			
 			case((uint32)FIFO_FLUSHSOUNDCONTEXT):{
 				int curChannelFreed = (int)data0;
 				flushSoundContext(curChannelFreed);
@@ -311,51 +298,21 @@ void HandleFifoNotEmpty(){
 	}
 }
 
-
-//targetAddr == the output buffer : bufStart + bufSize will get written to
-//bufStart must be in EWRAM
 #ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
-inline __attribute__((always_inline)) 
-void SendBufferThroughFIFOIrqsAsync(u32 bufStart, u32 targetAddr, int bufSize, struct sSharedSENDCtx * ctx){		//todo, put some callback here to read the chunk
-	setSENDCtx(bufStart, targetAddr, bufSize, ctx);
-	setSENDCtxStatus(READ_EXTARM_FIFO_BUSY, ctx); 
-	SendFIFOWords(READ_EXTARM_FIFO, (u32)ctx);
-	#ifdef ARM9
-	coherent_user_range_by_size(targetAddr, bufSize);
-	#endif
-	
-	while(getSENDCtxStatus(ctx) == READ_EXTARM_FIFO_BUSY){
-		//some irq wait here...
+//Note: Must be in EWRAM
+//Allows to read any memory mapped from ARM7 to ARM9 directly; IRQ Safe and blocking (ARM9 issues call -> ARM7 does it -> ARM9 receives memory)
+void ReadMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead){
+	coherent_user_range_by_size((uint32)targetMemory, (sint32)bytesToRead);
+	dmaFillWord(3, 0, (uint32)targetMemory, (uint32)bytesToRead);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	fifomsg[0] = (uint32)srcMemory;
+	fifomsg[1] = (uint32)targetMemory;
+	fifomsg[2] = (uint32)bytesToRead;
+	fifomsg[7] = (uint32)ARM7READMEMORY_BUSY;
+	sendByteIPC(IPC_ARM7READMEMORY_REQBYIRQ);
+	while(fifomsg[7] == ARM7READMEMORY_BUSY){
+		swiDelay(2);
 	}
 }
-
-#ifdef ARM9
-__attribute__((section(".itcm")))
 #endif
-void setSENDCtxStatus(int val, struct sSharedSENDCtx * ctx){
-	#ifdef ARM9
-	coherent_user_range_by_size((u32)ctx, sizeof(struct sSharedSENDCtx));
-	#endif
-	ctx->status = val;
-}
-
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
-int getSENDCtxStatus(struct sSharedSENDCtx * ctx){
-	return ctx->status;
-}
-
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
-void setSENDCtx(u32 srcAddr, u32 targetAddr, int Size, struct sSharedSENDCtx * ctx){
-	memset((u8*)ctx, 0, sizeof(struct sSharedSENDCtx));
-	//must be in ewram
-	ctx->targetAddr = targetAddr;
-	//relative to ARM processor
-	ctx->srcAddr = srcAddr;
-	ctx->size = Size;
-}

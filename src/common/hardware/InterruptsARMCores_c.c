@@ -120,6 +120,18 @@ void NDS_IRQHandler(){
 				ipcMsg[3] = ipcMsg[2] = ipcMsg[1] = ipcMsg[0] = 0;
 			}
 			break;
+			//Allows to read any memory mapped from ARM7 to ARM9 directly; IRQ Safe and blocking (ARM9 issues call -> ARM7 does it -> ARM9 receives memory)
+			case(IPC_ARM7READMEMORY_REQBYIRQ):{
+				//ARM7/9 impl.
+				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				uint32 srcMemory = fifomsg[0];
+				uint32 targetMemory = fifomsg[1];
+				int bytesToRead = (int)fifomsg[2];
+				memcpy((u8*)targetMemory,(u8*)srcMemory, bytesToRead);
+				fifomsg[7] = fifomsg[2] = fifomsg[1] = fifomsg[0] = (uint32)0;
+			}
+			break;			
 			#ifdef ARM7
 			#ifdef ARM7_DLDI
 			case(IPC_SERVE_DLDI7_REQBYIRQ):{

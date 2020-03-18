@@ -134,14 +134,13 @@ USA
 #define IPC_FIFO_ERROR			(uint16)(1<<14)
 #define IPC_FIFO_ENABLE			(uint16)(1<<15)
 
+//TGDS IPC Index
 #define IPC_SEND_MULTIPLE_CMDS			(u8)(1)
 #define IPC_SERVE_DLDI7_REQBYIRQ		(u8)(2)
 
-//Read callback between ARM processors (in chunks)
-#define READ_EXTARM_FIFO	(uint8)(0xffff22fe)
-	#define READ_EXTARM_FIFO_READY	(uint32)(0xffff22ff)
-	#define READ_EXTARM_FIFO_BUSY	(uint32)(0xffff11ff)
-	#define READ_EXTARM_FIFO_SIZE	(sint32)(32*1024)
+//Read Memory between ARM processors
+#define IPC_ARM7READMEMORY_REQBYIRQ		(u8)(9)
+#define ARM7READMEMORY_BUSY (int)(-1)
 
 static inline void sendByteIPC(uint8 inByte){
 	REG_IPC_SYNC = ((REG_IPC_SYNC&0xfffff0ff) | (inByte<<8) | (1<<13) );	// (1<<13) Send IRQ to remote CPU      (0=None, 1=Send IRQ)
@@ -150,15 +149,6 @@ static inline void sendByteIPC(uint8 inByte){
 static inline uint8 receiveByteIPC(){
 	return (REG_IPC_SYNC&0xf);
 }
-
-struct sSharedSENDCtx {
-    u32 targetAddr;
-	u32 srcAddr;
-	int size;		//buffer source, accounts size
-	int lastCopySz;
-	int status;	//0 not ready, 1 ready to take orders
-} __attribute__((aligned (4)));
-
 
 struct sIPCSharedTGDS {
     uint16 buttons7;  			// X, Y, /PENIRQ buttons
@@ -272,6 +262,11 @@ extern void HandleFifoEmpty();
 extern void SendFIFOWords(uint32 data0, uint32 data1);
 
 extern void sendMultipleByteIPC(uint8 inByte0, uint8 inByte1, uint8 inByte2, uint8 inByte3);
+
+//Allows to read any memory mapped from ARM7 to ARM9 directly; IRQ Safe and blocking (ARM9 issues call -> ARM7 does it -> ARM9 receives memory)
+#ifdef ARM9
+extern void ReadMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead);
+#endif
 
 #ifdef __cplusplus
 }
