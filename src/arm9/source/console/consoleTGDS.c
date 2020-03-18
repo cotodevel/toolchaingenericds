@@ -33,16 +33,15 @@ USA
 #include "videoTGDS.h"
 #include "ipcfifoTGDS.h"
 
-bool global_project_specific_console = false;
+bool globalTGDSCustomConsole = false;
 
 char ConsolePrintfBuf[MAX_TGDSFILENAME_LENGTH+1];
 
 t_GUI GUI;
-ConsoleInstance DefaultConsole = {0};		//Default Console used when ---->	bool project_specific_console = true;
-																				//GUI_init(project_specific_console);
-	
-ConsoleInstance CustomConsole = {0};		//Custom Console used when ---->	bool 	project_specific_console = false;
-																				//GUI_init(project_specific_console);
+ConsoleInstance ConsoleHandle[TGDS_CONSOLE_HANDLES];		//Default Console == 0 	Used when ---->	bool isTGDSCustomConsole = true;
+																				//GUI_init(isTGDSCustomConsole);
+															//Custom Console == 1+ 	Used when ---->	bool 	isTGDSCustomConsole = false;
+																				//GUI_init(isTGDSCustomConsole);
 ConsoleInstance * CurrentConsole = NULL;	//Current Console running globally.
 
 t_GUIZone DefaultZone;
@@ -289,12 +288,12 @@ void clrscr(){
 	GUI_clear();
 }
 
-//project_specific_console == true : you must provide an InitProjectSpecificConsole()
-//project_specific_console == false : default console for printf
+//isTGDSCustomConsole == true : you must provide an InitProjectSpecificConsole()
+//isTGDSCustomConsole == false : default console for printf
 //see gui_console_connector.c (project specific implementation)
-void	GUI_init(bool project_specific_console){
+void	GUI_init(bool isTGDSCustomConsole){
 	ConsoleInstance * CurConsole = NULL;
-	if(project_specific_console == true){
+	if(isTGDSCustomConsole == true){
 		CurConsole = getProjectSpecificVRAMSetup();
 		VRAM_SETUP(CurConsole);
 		InitProjectSpecificConsole(CurConsole);
@@ -304,7 +303,7 @@ void	GUI_init(bool project_specific_console){
 		VRAM_SETUP(CurConsole);
 		InitDefaultConsole(CurConsole);
 	}
-	global_project_specific_console = project_specific_console;
+	globalTGDSCustomConsole = isTGDSCustomConsole;
 	CurrentConsole = CurConsole;
 	GUI.printfy = 0;
 	GUI.consoleAtTopScreen = false; //ignore, setting actually applied per TGDS Project (gui_console_connector.c -> Console Implementation bits)
@@ -313,9 +312,9 @@ void	GUI_init(bool project_specific_console){
 //based from video console settings at toolchaingenericds-keyboard-example
 void move_console_to_top_screen(){
 	//Only when default console is in use, then use CustomConsole as a current console render
-	if(global_project_specific_console == false){
-		ConsoleInstance * DefaultSessionConsoleInst = (ConsoleInstance *)(&DefaultConsole);
-		ConsoleInstance * CustomSessionConsoleInst = (ConsoleInstance *)(&CustomConsole);
+	if(globalTGDSCustomConsole == false){
+		ConsoleInstance * DefaultSessionConsoleInst = (ConsoleInstance *)(&ConsoleHandle[0]);
+		ConsoleInstance * CustomSessionConsoleInst = (ConsoleInstance *)(&ConsoleHandle[1]);
 		memcpy ((uint8*)CustomSessionConsoleInst, (uint8*)DefaultSessionConsoleInst, sizeof(vramSetup));
 		
 		vramSetup * vramSetupInst = (vramSetup *)&CustomSessionConsoleInst->thisVRAMSetupConsole;
@@ -363,8 +362,8 @@ void move_console_to_top_screen(){
 void move_console_to_bottom_screen(){
 
 	//Only when default console is in use, restore DefaultConsole context
-	if(global_project_specific_console == false){
-		ConsoleInstance * DefaultSessionConsoleInst = (ConsoleInstance *)(&DefaultConsole);
+	if(globalTGDSCustomConsole == false){
+		ConsoleInstance * DefaultSessionConsoleInst = (ConsoleInstance *)(&ConsoleHandle[0]);
 		
 		//Set current Engine
 		SetEngineConsole(DefaultSessionConsoleInst->ppuMainEngine, DefaultSessionConsoleInst);
@@ -424,7 +423,7 @@ bool VRAM_SETUP(ConsoleInstance * currentConsoleInstance){
 
 //1) VRAM Layout
 ConsoleInstance * DEFAULT_CONSOLE_VRAMSETUP(){
-	ConsoleInstance * CustomSessionConsoleInst = (ConsoleInstance *)(&CustomConsole);
+	ConsoleInstance * CustomSessionConsoleInst = (ConsoleInstance *)(&ConsoleHandle[1]);
 	memset (CustomSessionConsoleInst, 0, sizeof(ConsoleInstance));
 	vramSetup * vramSetupInst = (vramSetup *)&CustomSessionConsoleInst->thisVRAMSetupConsole;
 	

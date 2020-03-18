@@ -98,6 +98,7 @@ USA
 #define	REG_BG3X_SUB		(*(vsint32*)0x4001038)
 #define	REG_BG3Y_SUB		(*(vsint32*)0x400103C)
 
+#define TGDS_CONSOLE_HANDLES (int)(4)
 
 //Console uses 2D. used by REG_DISPCNT / REG_DISPCNT_SUB
 typedef enum {
@@ -440,11 +441,10 @@ typedef struct
 extern "C" {
 #endif
 
-extern bool global_project_specific_console;
+extern bool globalTGDSCustomConsole;
 extern char ConsolePrintfBuf[MAX_TGDSFILENAME_LENGTH+1];
 extern	t_GUI	GUI;
-extern ConsoleInstance DefaultConsole;	
-extern ConsoleInstance CustomConsole;
+extern ConsoleInstance ConsoleHandle[TGDS_CONSOLE_HANDLES];
 extern ConsoleInstance * CurrentConsole;
 
 //weak symbols : the implementation of this is project-defined
@@ -477,7 +477,7 @@ extern int 	GUI_getFontHeight(t_GUIZone *zone);
 extern int	GUI_getZoneTextHeight(t_GUIZone *zone);
 extern int 	GUI_drawAlignText(t_GUIZone *zone, int flags, int y, int col, sint8 *text);
 extern void clrscr();
-extern void	GUI_init(bool project_specific_console);
+extern void	GUI_init(bool isTGDSCustomConsole);
 
 extern t_GUIZone DefaultZone;
 extern t_GUIZone * getDefaultZoneConsole();

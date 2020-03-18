@@ -250,7 +250,7 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 			if(getMULTIMode() == dswifi_udpnifimode){
 				
 				//Ask for Server Input IP here:
-				if(global_project_specific_console == false){
+				if(globalTGDSCustomConsole == false){
 					move_console_to_top_screen();
 					
 					printf("Connecting to UDP TGDS Server Companion: ");
@@ -286,8 +286,8 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 				}
 				else{
 					//special console code: todo
-					bool project_specific_console = false;	//set default console or custom console: default console
-					GUI_init(project_specific_console);
+					bool isTGDSCustomConsole = false;	//set default console or custom console: default console
+					GUI_init(isTGDSCustomConsole);
 					GUI_clear();
 					
 					printf("UDP Nifi mode keyboard support is not yet ");
