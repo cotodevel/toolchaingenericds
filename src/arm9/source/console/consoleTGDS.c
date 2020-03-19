@@ -309,85 +309,6 @@ void	GUI_init(bool isTGDSCustomConsole){
 	GUI.consoleAtTopScreen = false; //ignore, setting actually applied per TGDS Project (gui_console_connector.c -> Console Implementation bits)
 }
 
-//based from video console settings at toolchaingenericds-keyboard-example
-void move_console_to_top_screen(){
-	//Only when default console is in use, then use CustomConsole as a current console render
-	if(globalTGDSCustomConsole == false){
-		ConsoleInstance * DefaultSessionConsoleInst = (ConsoleInstance *)(&ConsoleHandle[0]);
-		ConsoleInstance * CustomSessionConsoleInst = (ConsoleInstance *)(&ConsoleHandle[1]);
-		memcpy ((uint8*)CustomSessionConsoleInst, (uint8*)DefaultSessionConsoleInst, sizeof(vramSetup));
-		
-		vramSetup * vramSetupInst = (vramSetup *)&CustomSessionConsoleInst->thisVRAMSetupConsole;
-		
-		uint16 * DSFramebufferOri = GUI.DSFrameBuffer;
-		DefaultSessionConsoleInst->VideoBuffer = DSFramebufferOri;
-		GUI.DSFrameBuffer = (uint16 *)BG_BMP_RAM(4);	//0x06000000
-		
-		vramSetupInst->vramBankSetupInst[VRAM_A_INDEX].vrambankCR = VRAM_A_0x06000000_ENGINE_A_BG;	//console here
-		vramSetupInst->vramBankSetupInst[VRAM_A_INDEX].enabled = true;
-		
-		vramSetupInst->vramBankSetupInst[VRAM_C_INDEX].vrambankCR = VRAM_C_0x06200000_ENGINE_B_BG;	//keyboard
-		vramSetupInst->vramBankSetupInst[VRAM_C_INDEX].enabled = true;
-		
-		//Set mainEngine
-		SetEngineConsole(mainEngine,CustomSessionConsoleInst);
-		
-		//Set mainEngine properties
-		CustomSessionConsoleInst->ConsoleEngineStatus.ENGINE_DISPCNT	=	(uint32)(MODE_5_2D | DISPLAY_BG3_ACTIVE );
-		
-		// BG3: FrameBuffer : 64(TILE:4) - 128 Kb
-		CustomSessionConsoleInst->ConsoleEngineStatus.EngineBGS[3].BGNUM = 3;
-		CustomSessionConsoleInst->ConsoleEngineStatus.EngineBGS[3].REGBGCNT = BG_BMP_BASE(4) | BG_BMP8_256x256 | BG_PRIORITY_1;
-		
-		VRAM_SETUP(CustomSessionConsoleInst);
-		
-		bool mainEngine = true;
-		setOrientation(ORIENTATION_0, mainEngine);
-		
-		BG_PALETTE[0] = RGB15(0,0,0);			//back-ground tile color
-		BG_PALETTE[255] = RGB15(31,31,31);		//tile color
-		
-		dmaTransferHalfWord(3, (uint32)0x06200000, (uint32)0x06000000,(uint32)(128*1024));
-		dmaFillHalfWord(3, 0, (uint32)0x06200000, (uint32)(128*1024));
-		CustomSessionConsoleInst->VideoBuffer = GUI.DSFrameBuffer;
-		UpdateConsoleSettings(CustomSessionConsoleInst);	//Console Top
-	}
-	else{	//todo: same swap video logic, but using ConsoleInstance CustomConsole
-		
-	}
-	
-	
-}
-
-void move_console_to_bottom_screen(){
-
-	//Only when default console is in use, restore DefaultConsole context
-	if(globalTGDSCustomConsole == false){
-		ConsoleInstance * DefaultSessionConsoleInst = (ConsoleInstance *)(&ConsoleHandle[0]);
-		
-		//Set current Engine
-		SetEngineConsole(DefaultSessionConsoleInst->ppuMainEngine, DefaultSessionConsoleInst);
-		
-		bool mainEngine = false;
-		setOrientation(ORIENTATION_0, mainEngine);
-		
-		BG_PALETTE_SUB[0] = RGB15(0,0,0);			//back-ground tile color
-		BG_PALETTE_SUB[255] = RGB15(31,31,31);		//tile color
-		
-		dmaTransferHalfWord(3, (uint32)0x06000000, (uint32)0x06200000,(uint32)(128*1024));
-		dmaFillHalfWord(3, 0, (uint32)0x06000000, (uint32)(128*1024));
-		
-		VRAM_SETUP(DefaultSessionConsoleInst);
-		GUI.DSFrameBuffer = DefaultSessionConsoleInst->VideoBuffer;
-		UpdateConsoleSettings(DefaultSessionConsoleInst);	//Restore console context
-	}
-	else{	//todo: same swap video logic, but using ConsoleInstance CustomConsole
-		
-	}
-}
-
-
-
 bool VRAM_SETUP(ConsoleInstance * currentConsoleInstance){
 	vramSetup * vramSetupInst = (vramSetup *)&currentConsoleInstance->thisVRAMSetupConsole;
 	if(vramSetupInst->vramBankSetupInst[VRAM_A_INDEX].enabled == true){
@@ -420,10 +341,9 @@ bool VRAM_SETUP(ConsoleInstance * currentConsoleInstance){
 	return true; 
 }
 
-
 //1) VRAM Layout
 ConsoleInstance * DEFAULT_CONSOLE_VRAMSETUP(){
-	ConsoleInstance * CustomSessionConsoleInst = (ConsoleInstance *)(&ConsoleHandle[1]);
+	ConsoleInstance * CustomSessionConsoleInst = (ConsoleInstance *)(&ConsoleHandle[0]);
 	memset (CustomSessionConsoleInst, 0, sizeof(ConsoleInstance));
 	vramSetup * vramSetupInst = (vramSetup *)&CustomSessionConsoleInst->thisVRAMSetupConsole;
 	
@@ -469,20 +389,39 @@ bool InitDefaultConsole(ConsoleInstance * DefaultSessionConsoleInst){
 	mainEngine = false;
 	setOrientation(ORIENTATION_0, mainEngine);
 	
-	SWAP_LCDS();	//Console at top screen, bottom is 3D + Touch
+	//Console at top screen, bottom is 3D + Touch
+	bool isDirectFramebuffer = true;
+	bool disableTSCWhenTGDSConsoleTop = false;
+	TGDSLCDSwap(disableTSCWhenTGDSConsoleTop, isDirectFramebuffer);
 	return true;
 }
 
-//Moves the TGDS Console between Top and Bottom screen
-void ToggleTGDSConsole(){
-	//Update the console location register, and with it, the backlight setting
+u8 * currentVRAMContext = NULL;
+
+//Moves the TGDS Console between Top and Bottom screen and update the console location register 
+void TGDSLCDSwap(bool disableTSCWhenTGDSConsoleTop, bool isDirectFramebuffer){
 	if(GUI.consoleAtTopScreen == true){
 		GUI.consoleAtTopScreen = false;
-		setTouchScreenEnabled(true);	//Enable TSC
+		if(disableTSCWhenTGDSConsoleTop == true){
+			setTouchScreenEnabled(true);	//Enable TSC
+		}
+		if(isDirectFramebuffer == true){
+			SWAP_LCDS();
+		}
+		else{
+			restoreTGDSConsoleFromSwapEngines();	//Proper impl.
+		}
 	}
 	else{
 		GUI.consoleAtTopScreen = true;
-		setTouchScreenEnabled(false);	//Disable TSC
+		if(disableTSCWhenTGDSConsoleTop == true){
+			setTouchScreenEnabled(false);	//Disable TSC
+		}
+		if(isDirectFramebuffer == true){
+			SWAP_LCDS();
+		}
+		else{
+			swapTGDSConsoleBetweenPPUEngines();	//Proper impl.
+		}
 	}
-	SWAP_LCDS();
 }

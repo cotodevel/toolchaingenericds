@@ -251,8 +251,9 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 				
 				//Ask for Server Input IP here:
 				if(globalTGDSCustomConsole == false){
-					move_console_to_top_screen();
-					
+					bool isDirectFramebuffer = false;
+					bool disableTSCWhenTGDSConsoleTop = false;
+					TGDSLCDSwap(disableTSCWhenTGDSConsoleTop, isDirectFramebuffer);
 					printf("Connecting to UDP TGDS Server Companion: ");
 					printf("Write down the IP then <Enter>, or tap <ESC> to quit. ");
 					
@@ -277,7 +278,7 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 							break;
 						}
 					}
-					move_console_to_bottom_screen();
+					TGDSLCDSwap(disableTSCWhenTGDSConsoleTop, isDirectFramebuffer);
 					if(validIPv4 == false){					
 						printf("Invalid IP address");
 						return dswifi_udpnifimodeFailConnectStage;

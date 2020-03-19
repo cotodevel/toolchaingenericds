@@ -30,6 +30,7 @@ USA
 #include "videoTGDS.h"
 #include "spifwTGDS.h"
 #include "keypadTGDS.h"
+#include "dmaTGDS.h"
 
 #define ENABLE_3D    (1<<3)
 #define DISPLAY_ENABLE_SHIFT 8
@@ -493,12 +494,106 @@ extern ConsoleInstance * DEFAULT_CONSOLE_VRAMSETUP();
 //2) Uses subEngine: VRAM Layout -> Console Setup
 extern bool InitDefaultConsole(ConsoleInstance * DefaultSessionConsoleInst);
 
-extern void move_console_to_top_screen();
-extern void move_console_to_bottom_screen();
+extern u8 * currentVRAMContext;
+
 
 #ifdef __cplusplus
 }
 #endif
+
+//based from video console settings at toolchaingenericds-keyboard-example
+static inline void swapTGDSConsoleBetweenPPUEngines(){
+	//Only when default console is in use, then use CustomConsole as a current console render
+	if(globalTGDSCustomConsole == false){
+		ConsoleInstance * DefaultSessionConsoleInst = (ConsoleInstance *)(&ConsoleHandle[0]);
+		ConsoleInstance * CustomSessionConsoleInst = (ConsoleInstance *)(&ConsoleHandle[1]);
+		memcpy ((uint8*)CustomSessionConsoleInst, (uint8*)DefaultSessionConsoleInst, sizeof(vramSetup));
+		
+		vramSetup * vramSetupInst = (vramSetup *)&CustomSessionConsoleInst->thisVRAMSetupConsole;
+		
+		uint16 * DSFramebufferOri = GUI.DSFrameBuffer;
+		DefaultSessionConsoleInst->VideoBuffer = DSFramebufferOri;
+		GUI.DSFrameBuffer = (uint16 *)BG_BMP_RAM(4);	//0x06000000
+		
+		vramSetupInst->vramBankSetupInst[VRAM_A_INDEX].vrambankCR = VRAM_A_0x06000000_ENGINE_A_BG;	//console here
+		vramSetupInst->vramBankSetupInst[VRAM_A_INDEX].enabled = true;
+		
+		vramSetupInst->vramBankSetupInst[VRAM_C_INDEX].vrambankCR = VRAM_C_0x06200000_ENGINE_B_BG;	//keyboard
+		vramSetupInst->vramBankSetupInst[VRAM_C_INDEX].enabled = true;
+		
+		//Set mainEngine
+		SetEngineConsole(mainEngine,CustomSessionConsoleInst);
+		
+		//Set mainEngine properties
+		CustomSessionConsoleInst->ConsoleEngineStatus.ENGINE_DISPCNT	=	(uint32)(MODE_5_2D | DISPLAY_BG3_ACTIVE );
+		
+		// BG3: FrameBuffer : 64(TILE:4) - 128 Kb
+		CustomSessionConsoleInst->ConsoleEngineStatus.EngineBGS[3].BGNUM = 3;
+		CustomSessionConsoleInst->ConsoleEngineStatus.EngineBGS[3].REGBGCNT = BG_BMP_BASE(4) | BG_BMP8_256x256 | BG_PRIORITY_1;
+		
+		VRAM_SETUP(CustomSessionConsoleInst);
+		
+		bool mainEngine = true;
+		setOrientation(ORIENTATION_0, mainEngine);
+		
+		BG_PALETTE[0] = RGB15(0,0,0);			//back-ground tile color
+		BG_PALETTE[255] = RGB15(31,31,31);		//tile color
+		
+		if(currentVRAMContext != NULL){
+			free(currentVRAMContext);
+		}
+		currentVRAMContext = (u8*)malloc(128*1024);
+		coherent_user_range_by_size((uint32)0x06000000, 128*1024);
+		dmaTransferHalfWord(3, (uint32)0x06000000, (uint32)currentVRAMContext, (uint32)(128*1024));
+		
+		dmaTransferHalfWord(3, (uint32)0x06200000, (uint32)0x06000000,(uint32)(128*1024));
+		dmaFillHalfWord(3, 0, (uint32)0x06200000, (uint32)(128*1024));
+		CustomSessionConsoleInst->VideoBuffer = GUI.DSFrameBuffer;
+		UpdateConsoleSettings(CustomSessionConsoleInst);	//Console Top
+		SWAP_LCDS(); //Required
+	}
+	else{	//todo: same swap video logic, but using ConsoleInstance CustomConsole
+		
+	}
+	
+	
+}
+
+static inline void restoreTGDSConsoleFromSwapEngines(){
+
+	//Only when default console is in use, restore DefaultConsole context
+	if(globalTGDSCustomConsole == false){
+		//Restore Console
+		ConsoleInstance * DefaultSessionConsoleInst = (ConsoleInstance *)(&ConsoleHandle[0]);
+		
+		//Set current Engine
+		SetEngineConsole(DefaultSessionConsoleInst->ppuMainEngine, DefaultSessionConsoleInst);
+		
+		bool mainEngine = false;
+		setOrientation(ORIENTATION_0, mainEngine);
+		
+		BG_PALETTE_SUB[0] = RGB15(0,0,0);			//back-ground tile color
+		BG_PALETTE_SUB[255] = RGB15(31,31,31);		//tile color
+		
+		VRAM_SETUP(DefaultSessionConsoleInst);
+		GUI.DSFrameBuffer = DefaultSessionConsoleInst->VideoBuffer;
+		UpdateConsoleSettings(DefaultSessionConsoleInst);	//Restore console context
+		
+		initFBModeMainEngine0x06000000();
+		
+		coherent_user_range_by_size((uint32)0x06000000, 128*1024);
+		dmaTransferHalfWord(3, (uint32)0x06000000, (uint32)0x06200000,(uint32)(128*1024));
+		coherent_user_range_by_size((uint32)currentVRAMContext, 128*1024);
+		dmaTransferHalfWord(3, (uint32)currentVRAMContext, (uint32)0x06000000, (uint32)(128*1024));
+		if(currentVRAMContext != NULL){
+			free(currentVRAMContext);
+		}
+		SWAP_LCDS(); //Required
+	}
+	else{	//todo: same swap video logic, but using ConsoleInstance CustomConsole
+		
+	}
+}
 
 static inline void detectAndTurnOffConsole(){
 	//Read the console location register and shut down
@@ -521,6 +616,6 @@ static inline void ToggleOnOffConsoleBacklight(){
 	}
 }
 
-extern void ToggleTGDSConsole();
+extern void TGDSLCDSwap(bool disableTSCWhenTGDSConsoleTop, bool isDirectFramebuffer);
 
 #endif
