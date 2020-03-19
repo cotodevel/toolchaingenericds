@@ -190,7 +190,6 @@ bool switch_dswnifi_mode(sint32 mode){
 	//GDBStub mode
 	else if (mode == (sint32)dswifi_gdbstubmode){
 		dswifiSrv.dsnwifisrv_stat	= ds_multi_notrunning;
-		resetGDBSession();
 		if (gdbNdsStart() == true){	//setWIFISetup set inside
 			setMULTIMode(mode);
 			OnDSWIFIGDBStubEnable();
@@ -208,6 +207,7 @@ bool switch_dswnifi_mode(sint32 mode){
 		setMULTIMode(mode);
 		setWIFISetup(false);
 		setConnectionStatus(proc_shutdown);
+		resetGDBSession();	//Requires all TGDS projects to start as dswifi_idlemode!!
 		connectDSWIFIAP(DSWNIFI_ENTER_IDLEMODE);
 		OnDSWIFIidlemodeEnable();
 	}
@@ -1363,76 +1363,61 @@ void remoteCleanUp()
 }
 
 u32 debuggerReadMemory(u32 addr){
-	if(isValidMap(addr) == true){
-		if(gdbStubMapMethod == GDBSTUB_METHOD_GDBBUFFER){
-			return (u32)readu32GDBMapBuffer(addr);
-		}
-		else if((getValidGDBMapFile() == true) && (gdbStubMapMethod == GDBSTUB_METHOD_GDBFILE)){
-			return (u32)readu32GDBMapFile(addr);
-		}
-		else{
-			coherent_user_range_by_size((uint32)addr, (int)4);
-			return (*(u32*)addr);
-		}
+	if(gdbStubMapMethod == GDBSTUB_METHOD_GDBBUFFER){
+		return (u32)readu32GDBMapBuffer(addr);
+	}
+	else if(gdbStubMapMethod == GDBSTUB_METHOD_GDBFILE){
+		return (u32)readu32GDBMapFile(addr);
+	}
+	else if(isValidMap(addr) == true){
+		coherent_user_range_by_size((uint32)addr, (int)4);
+		return (*(u32*)addr);
 	}
 	return (u32)(0xffffffff);
 }
 
 u16 debuggerReadHalfWord(u32 addr){
-	if(isValidMap(addr) == true){
-		if(gdbStubMapMethod == GDBSTUB_METHOD_GDBBUFFER){
-			return (u16)(readu32GDBMapBuffer(addr)&0xffff);
-		}
-		else if((getValidGDBMapFile() == true) && (gdbStubMapMethod == GDBSTUB_METHOD_GDBFILE)){
-			return (u16)(readu32GDBMapFile(addr) & 0xffff);
-		}
-		else{
-			coherent_user_range_by_size((uint32)addr, (int)4);
-			return (*(u16*)addr);
-		}
+	if(gdbStubMapMethod == GDBSTUB_METHOD_GDBBUFFER){
+		return (u16)(readu32GDBMapBuffer(addr)&0xffff);
+	}
+	else if(gdbStubMapMethod == GDBSTUB_METHOD_GDBFILE){
+		return (u16)(readu32GDBMapFile(addr) & 0xffff);
+	}
+	else if(isValidMap(addr) == true){
+		coherent_user_range_by_size((uint32)addr, (int)4);
+		return (*(u16*)addr);
 	}
 	return (u16)(0xffff);
 }
 
 u8 debuggerReadByte(u32 addr){
-	if(isValidMap(addr) == true){
-		if(gdbStubMapMethod == GDBSTUB_METHOD_GDBBUFFER){
-			return (u8)(readu32GDBMapBuffer(addr)&0xff);
-		}
-		else if((getValidGDBMapFile() == true) && (gdbStubMapMethod == GDBSTUB_METHOD_GDBFILE)){
-			return (u8)(readu32GDBMapFile(addr)&0xff);	//correct format: (value 32bit) & 0xff
-		}
-		else{
-			coherent_user_range_by_size((uint32)addr, (int)4);
-			return (*(u8*)addr);
-		}
+	if(gdbStubMapMethod == GDBSTUB_METHOD_GDBBUFFER){
+		return (u8)(readu32GDBMapBuffer(addr)&0xff);
+	}
+	else if(gdbStubMapMethod == GDBSTUB_METHOD_GDBFILE){
+		return (u8)(readu32GDBMapFile(addr)&0xff);	//correct format: (value 32bit) & 0xff
+	}
+	else if(isValidMap(addr) == true){
+		coherent_user_range_by_size((uint32)addr, (int)4);
+		return (*(u8*)addr);
 	}
 	return (u8)(0xff);
 }
 
 
-int gdbStubMapMethod = GDBSTUB_METHOD_DEFAULT;
+int gdbStubMapMethod = 0;
 //GDBMap: File impl.
 struct gdbStubMapFile globalGdbStubMapFile;
-bool isValidGDBMapFile = false;
-void setValidGDBMapFile(bool ValidGDBMapFile){
-	isValidGDBMapFile = ValidGDBMapFile;
-}
-bool getValidGDBMapFile(){
-	return isValidGDBMapFile;
-}
 struct gdbStubMapFile * getGDBMapFile(){
 	return (struct gdbStubMapFile *)&globalGdbStubMapFile;
 }
 bool initGDBMapFile(char * filename, uint32 newRelocatableAddr){
+	closeGDBMapFile();
+	switch_dswnifi_mode(dswifi_idlemode);
 	gdbStubMapMethod = GDBSTUB_METHOD_GDBFILE;
 	struct gdbStubMapFile * gdbStubMapFileInst = getGDBMapFile();
-	if(gdbStubMapFileInst->GDBFileHandle != NULL){ 
-		fclose(gdbStubMapFileInst->GDBFileHandle);
-		gdbStubMapFileInst->GDBFileHandle = NULL;
-	}
 	memset((uint8*)gdbStubMapFileInst, 0, sizeof(struct gdbStubMapFile));
-	FILE * fh = fopen(filename,"r");
+	FILE * fh = fopen(filename, "r");
 	if(fh){
 		fseek(fh,0,SEEK_END);
 		int fileSize = ftell(fh);
@@ -1445,19 +1430,17 @@ bool initGDBMapFile(char * filename, uint32 newRelocatableAddr){
 			gdbStubMapFileInst->GDBFileHandle = fh;
 			gdbStubMapFileInst->GDBMapFileSize = fileSize;
 			setCurrentRelocatableGDBFileAddress(newRelocatableAddr);
-			setValidGDBMapFile(true);
 			return true;
 		}
 		else{
 			fclose(fh);
 		}
 	}
-	setValidGDBMapFile(false);
 	return false;
 }
 void closeGDBMapFile(){
 	struct gdbStubMapFile * gdbStubMapFileInst = getGDBMapFile();
-	if(gdbStubMapFileInst->GDBFileHandle != NULL){
+	if(gdbStubMapFileInst->GDBFileHandle != NULL){ 
 		fclose(gdbStubMapFileInst->GDBFileHandle);
 	}
 }
@@ -1489,11 +1472,12 @@ uint32 readu32GDBMapFile(uint32 address){
 //GDBMap: Buffer impl.
 struct gdbStubMapBuffer globalGdbStubMapBuffer;
 struct gdbStubMapBuffer * getGDBMapBuffer(){
-	return (struct gdbStubMapFile *)&globalGdbStubMapBuffer;
+	return (struct gdbStubMapBuffer *)&globalGdbStubMapBuffer;
 }
 
 bool initGDBMapBuffer(u32 * bufferStart, int GDBMapBufferSize, uint32 newRelocatableAddr){
 	closeGDBMapBuffer();
+	switch_dswnifi_mode(dswifi_idlemode);
 	gdbStubMapMethod = GDBSTUB_METHOD_GDBBUFFER;
 	struct gdbStubMapBuffer * gdbStubMapBufferInst = getGDBMapBuffer();
 	if(
@@ -1514,30 +1498,27 @@ void closeGDBMapBuffer(){
 }
 uint32 readu32GDBMapBuffer(uint32 address){
 	struct gdbStubMapBuffer * gdbStubMapBufferInst = getGDBMapBuffer();
-	if(gdbStubMapBufferInst->bufferStart != 0){
-		int FSize = gdbStubMapBufferInst->GDBMapBufferSize;
-		if(
-			(FSize > 0)
-			&&
-			(address >= minGDBMapFileAddress)
-			&&
-			(address < maxGDBMapFileAddress)
-			&&
-			(address >= GDBMapFileAddress)
-			&&
-			(address < (GDBMapFileAddress + FSize))
-		){
-			int offst = (address & ((uint32)(FSize -1)));
-			return *(u32*)(gdbStubMapBufferInst->bufferStart + offst);
-		}
+	int FSize = gdbStubMapBufferInst->GDBMapBufferSize;
+	if(
+		(FSize > 0)
+		&&
+		(address >= minGDBMapFileAddress)
+		&&
+		(address < maxGDBMapFileAddress)
+		&&
+		(address >= GDBMapFileAddress)
+		&&
+		(address < (GDBMapFileAddress + FSize))
+	){
+		int offst = (address & ((uint32)(FSize -1)));
+		return *(u32*)(gdbStubMapBufferInst->bufferStart + offst);
 	}
 	return (uint32)0xffffffff;
 }
 
 void resetGDBSession(){
-	if(isValidGDBMapFile == false){
-		setCurrentRelocatableGDBFileAddress(-1);
-	}
+	setCurrentRelocatableGDBFileAddress(0);
+	gdbStubMapMethod = GDBSTUB_METHOD_DEFAULT;
 	setWIFISetup(false);
 }
 
