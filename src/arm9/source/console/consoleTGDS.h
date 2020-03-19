@@ -494,15 +494,13 @@ extern ConsoleInstance * DEFAULT_CONSOLE_VRAMSETUP();
 //2) Uses subEngine: VRAM Layout -> Console Setup
 extern bool InitDefaultConsole(ConsoleInstance * DefaultSessionConsoleInst);
 
-extern u8 * currentVRAMContext;
-
 
 #ifdef __cplusplus
 }
 #endif
 
 //based from video console settings at toolchaingenericds-keyboard-example
-static inline void swapTGDSConsoleBetweenPPUEngines(){
+static inline void swapTGDSConsoleBetweenPPUEngines(u8 * currentVRAMContext){
 	//Only when default console is in use, then use CustomConsole as a current console render
 	if(globalTGDSCustomConsole == false){
 		ConsoleInstance * DefaultSessionConsoleInst = (ConsoleInstance *)(&ConsoleHandle[0]);
@@ -539,10 +537,6 @@ static inline void swapTGDSConsoleBetweenPPUEngines(){
 		BG_PALETTE[0] = RGB15(0,0,0);			//back-ground tile color
 		BG_PALETTE[255] = RGB15(31,31,31);		//tile color
 		
-		if(currentVRAMContext != NULL){
-			free(currentVRAMContext);
-		}
-		currentVRAMContext = (u8*)malloc(128*1024);
 		coherent_user_range_by_size((uint32)0x06000000, 128*1024);
 		dmaTransferHalfWord(3, (uint32)0x06000000, (uint32)currentVRAMContext, (uint32)(128*1024));
 		
@@ -559,7 +553,7 @@ static inline void swapTGDSConsoleBetweenPPUEngines(){
 	
 }
 
-static inline void restoreTGDSConsoleFromSwapEngines(){
+static inline void restoreTGDSConsoleFromSwapEngines(u8 * currentVRAMContext){
 
 	//Only when default console is in use, restore DefaultConsole context
 	if(globalTGDSCustomConsole == false){
@@ -585,9 +579,6 @@ static inline void restoreTGDSConsoleFromSwapEngines(){
 		dmaTransferHalfWord(3, (uint32)0x06000000, (uint32)0x06200000,(uint32)(128*1024));
 		coherent_user_range_by_size((uint32)currentVRAMContext, 128*1024);
 		dmaTransferHalfWord(3, (uint32)currentVRAMContext, (uint32)0x06000000, (uint32)(128*1024));
-		if(currentVRAMContext != NULL){
-			free(currentVRAMContext);
-		}
 		SWAP_LCDS(); //Required
 	}
 	else{	//todo: same swap video logic, but using ConsoleInstance CustomConsole
@@ -616,6 +607,6 @@ static inline void ToggleOnOffConsoleBacklight(){
 	}
 }
 
-extern void TGDSLCDSwap(bool disableTSCWhenTGDSConsoleTop, bool isDirectFramebuffer);
+extern void TGDSLCDSwap(bool disableTSCWhenTGDSConsoleTop, bool isDirectFramebuffer, bool SaveConsoleContext, u8 * currentVRAMContext);
 
 #endif

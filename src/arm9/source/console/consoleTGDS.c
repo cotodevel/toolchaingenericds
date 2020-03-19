@@ -392,24 +392,18 @@ bool InitDefaultConsole(ConsoleInstance * DefaultSessionConsoleInst){
 	//Console at top screen, bottom is 3D + Touch
 	bool isDirectFramebuffer = true;
 	bool disableTSCWhenTGDSConsoleTop = false;
-	TGDSLCDSwap(disableTSCWhenTGDSConsoleTop, isDirectFramebuffer);
+	bool SaveConsoleContext = false;	//no effect because directFB == true
+	u8 * FBSaveContext = NULL;			//no effect because directFB == true
+	TGDSLCDSwap(disableTSCWhenTGDSConsoleTop, isDirectFramebuffer, SaveConsoleContext, FBSaveContext);
 	return true;
 }
 
-u8 * currentVRAMContext = NULL;
-
 //Moves the TGDS Console between Top and Bottom screen and update the console location register 
-void TGDSLCDSwap(bool disableTSCWhenTGDSConsoleTop, bool isDirectFramebuffer){
+void TGDSLCDSwap(bool disableTSCWhenTGDSConsoleTop, bool isDirectFramebuffer, bool SaveConsoleContext, u8 * currentVRAMContext){
 	if(GUI.consoleAtTopScreen == true){
 		GUI.consoleAtTopScreen = false;
 		if(disableTSCWhenTGDSConsoleTop == true){
 			setTouchScreenEnabled(true);	//Enable TSC
-		}
-		if(isDirectFramebuffer == true){
-			SWAP_LCDS();
-		}
-		else{
-			restoreTGDSConsoleFromSwapEngines();	//Proper impl.
 		}
 	}
 	else{
@@ -417,11 +411,16 @@ void TGDSLCDSwap(bool disableTSCWhenTGDSConsoleTop, bool isDirectFramebuffer){
 		if(disableTSCWhenTGDSConsoleTop == true){
 			setTouchScreenEnabled(false);	//Disable TSC
 		}
-		if(isDirectFramebuffer == true){
-			SWAP_LCDS();
+	}
+	if(isDirectFramebuffer == true){
+		SWAP_LCDS();
+	}
+	else{
+		if(SaveConsoleContext == true){
+			swapTGDSConsoleBetweenPPUEngines(currentVRAMContext);	//Proper impl.
 		}
 		else{
-			swapTGDSConsoleBetweenPPUEngines();	//Proper impl.
+			restoreTGDSConsoleFromSwapEngines(currentVRAMContext);	//Proper impl.
 		}
 	}
 }
