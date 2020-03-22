@@ -16,8 +16,7 @@
 @USA
 @
 
-#ifdef ARM9
-.text	@cant be at itcm
+.text	@ARM9: Cant be at itcm
 .arm
 .code 32
 
@@ -34,11 +33,25 @@
 DebugException:
 	
 	@exception stack
+	#ifdef ARM7
+	ldr r12,=exceptionArmRegsShared		@uint8 * exceptionArmRegsShared;
+	ldr r12, [r12]
+	#endif
+	
+	#ifdef ARM9
 	ldr r12,=exceptionArmRegs
+	#endif
+	
 	stmia r12, {r0-r11}	@r0 -- r11
 	
 	@get R12,SPSR & PC from source abort
+	#ifdef ARM7
+	ldr r0, =(0x0380FFDC)
+	#endif
+
+	#ifdef ARM9
 	ldr r0, =(0x02FFFD90)
+	#endif
 	
 	ldr	r2,[r0,#0]	@SPSR
 	str r2, [r12, #(4*17)]
@@ -75,30 +88,45 @@ DebugException:
 	orreq r2,r2,#0x1f
 	msreq cpsr,r2
 	
+	#ifdef ARM9
 	@disable MPU
 	mrc	p15,0,r0,c1,c0,0
 	bic	r0,r0,#1
 	mcr	p15,0,r0,c1,c0,0
+	#endif
 	
 	push {r0-r12,lr}
-	ldr	r12,=exception_data_abort
-	blx	r12
+	mov lr, pc
+	ldr r0, =generalARMExceptionHandler
+	bx r0
 	pop {r0-r12,lr}
 	
 	bx lr
-
-
 
 
 .global CustomDebugException
 CustomDebugException:
 	
 	@exception stack
+	#ifdef ARM7
+	ldr r12,=exceptionArmRegsShared		@uint8 * exceptionArmRegsShared;
+	ldr r12, [r12]
+	#endif
+	
+	#ifdef ARM9
 	ldr r12,=exceptionArmRegs
+	#endif
+	
 	stmia r12, {r0-r11}	@r0 -- r11
 	
 	@get R12,SPSR & PC from source abort
+	#ifdef ARM7
+	ldr r0, =(0x0380FFDC)
+	#endif
+
+	#ifdef ARM9
 	ldr r0, =(0x02FFFD90)
+	#endif
 	
 	ldr	r2,[r0,#0]	@SPSR
 	str r2, [r12, #(4*17)]
@@ -135,15 +163,18 @@ CustomDebugException:
 	orreq r2,r2,#0x1f
 	msreq cpsr,r2
 	
+	#ifdef ARM9
 	@disable MPU
 	mrc	p15,0,r0,c1,c0,0
 	bic	r0,r0,#1
 	mcr	p15,0,r0,c1,c0,0
+	#endif
 	
 	push {r0-r12,lr}
-	ldr	r12,=CustomHandler
-	ldr r12,[r12]
-	blx	r12
+	mov lr, pc
+	ldr r0, =CustomHandler
+	ldr r0, [r0]
+	bx r0
 	pop {r0-r12,lr}
 	
 	bx lr
@@ -154,15 +185,14 @@ CustomDebugException:
 LeaveExceptionMode:
 	push {r0-r3, lr}
 	
+	#ifdef ARM9
 	@disable MPU
 	mrc	p15,0,r0,c1,c0,0
 	bic	r0,r0,#1
 	mcr	p15,0,r0,c1,c0,0
+	#endif
 	
 	pop {r0-r3, lr}
-bx lr
-	
-	
-#endif
+	bx lr
 
 #endif

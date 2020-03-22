@@ -123,6 +123,13 @@ void HandleFifoNotEmpty(){
 			//ARM7 command handler
 			#ifdef ARM7
 			
+			case((uint32)TGDS_ARM7_SETUPEXCEPTIONHANDLER):{
+				exceptionArmRegsShared = (uint8*)data0;		//data0 == uint32 * fifomsg
+				memset(exceptionArmRegsShared, 0, 0x20);	//same as exceptionArmRegs[0x20]
+				setupDefaultExceptionHandler();	//ARM7 TGDS Exception Handler
+			}
+			break;
+			
 			case((uint32)TGDS_ARM7_PRINTF7SETUP):{
 				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg
 				printfBufferShared = (u8*)fifomsg[0];
@@ -281,10 +288,17 @@ void HandleFifoNotEmpty(){
 				break;
 				#endif
 			
-			//exception handler from arm7
+			//ARM7: Exception Handler
 			case((uint32)EXCEPTION_ARM7):{
-				if((uint32)data0 == (uint32)unexpectedsysexit_7){
-					exception_handler((uint32)unexpectedsysexit_7);	//r0 = EXCEPTION_ARM7 / r1 = unexpectedsysexit_7
+				switch((uint32)data0){
+					case(generalARM7Exception):{
+						exception_handler((uint32)generalARM7Exception);
+					}
+					break;
+					case(unexpectedsysexit_7):{
+						exception_handler((uint32)unexpectedsysexit_7);
+					}
+					break;
 				}
 			}
 			break;

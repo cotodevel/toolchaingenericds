@@ -46,20 +46,17 @@ USA
 #include <sys/lock.h>
 #include <fcntl.h>
 
-
-#ifdef ARM7
-#endif
-
 #ifdef ARM9
 #include "consoleTGDS.h"
 #endif
 
-#define unexpectedsysexit_9	0xdeaddea9
-#define unexpectedsysexit_7	0xdeaddea7
+//Hardware Exceptions
+#define generalARM7Exception	0xdead1000	//ARM7 can be: accidental software-jumps to the reset vector / unused SWI numbers within range 0..1Fh. / undefined exception / prefetch abort
+#define generalARM9Exception	0xdead1001	//ARM9 can be: accidental software-jumps to the reset vector / unused SWI numbers within range 0..1Fh. / undefined exception / prefetch abort / MPU Data Abort
 
-#ifdef ARM9
-#define dataabort_9	0xdead1000
-#endif
+//Software Exceptions
+#define unexpectedsysexit_9	(u32)(0xdeaddea9)
+#define unexpectedsysexit_7	(u32)(0xdeaddea7)
 
 #endif
 
@@ -68,12 +65,17 @@ USA
 extern "C" {
 #endif
 
+#ifdef ARM7
+extern uint8 * exceptionArmRegsShared;
+#endif
+
+#ifdef ARM9
+extern uint32 exceptionArmRegs[0x20];
+#endif
 
 extern void setupDefaultExceptionHandler();
-
-extern uint32 exceptionArmRegs[0x20];
 extern void exception_sysexit();
-extern void exception_data_abort();
+extern void generalARMExceptionHandler();
 
 extern void exception_handler(uint32 arg);
 extern void DebugException();
