@@ -124,7 +124,10 @@ void HandleFifoNotEmpty(){
 			#ifdef ARM7
 			
 			case((uint32)TGDS_ARM7_PRINTF7SETUP):{
-				printfBufferShared = (u8*)data0;	//data0 == uint32 * printfBufferShared
+				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg
+				printfBufferShared = (u8*)fifomsg[0];
+				arm7debugBufferShared = (u8*)fifomsg[1];
+				fifomsg[1] = fifomsg[0] = 0;
 			}
 			break;
 			

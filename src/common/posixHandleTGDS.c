@@ -30,24 +30,43 @@ USA
 #include <reent.h>
 #include "typedefsTGDS.h"
 #include "ipcfifoTGDS.h"
+#include "posixHandleTGDS.h"
 
 //basic print ARM7 support
 #ifdef ARM7
+uint8 * arm7debugBufferShared = NULL;
 uint8 * printfBufferShared = NULL;
 void printf7(char *chr){
-	if(printfBufferShared != NULL){
+	u8* printf7Buf = getarm7PrintfBuffer();
+	if(printf7Buf != NULL){
 		int strSize = strlen(chr);
-		memset(printfBufferShared, 0, strSize + 1);
-		memcpy((u8*)printfBufferShared, (u8*)chr, strSize);
-		printfBufferShared[strSize+1] = '\0';
-		SendFIFOWords(TGDS_ARM7_PRINTF7, (u32)printfBufferShared);
+		memset(printf7Buf, 0, strSize + 1);
+		memcpy((u8*)printf7Buf, (u8*)chr, strSize);
+		printf7Buf[strSize+1] = '\0';
+		SendFIFOWords(TGDS_ARM7_PRINTF7, (u32)printf7Buf);
+	}
+}
+
+void writeDebugBuffer7(char *chr){
+	u8* debugBuf = getarm7DebugBuffer();
+	if(debugBuf != NULL){
+		int strSize = strlen(chr);
+		memset(debugBuf, 0, strSize + 1);
+		memcpy((u8*)debugBuf, (u8*)chr, strSize);
+		debugBuf[strSize+1] = '\0';
 	}
 }
 #endif
+
 #ifdef ARM9
 u8 printf7Buffer[MAX_TGDSFILENAME_LENGTH+1];
+u8 arm7debugBuffer[MAX_TGDSFILENAME_LENGTH+1];
 void printf7Setup(){
-	SendFIFOWords(TGDS_ARM7_PRINTF7SETUP, (u32)&printf7Buffer[0]);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	fifomsg[0] = (uint32)&printf7Buffer[0];
+	fifomsg[1] = (uint32)&arm7debugBuffer[0];
+	SendFIFOWords(TGDS_ARM7_PRINTF7SETUP, fifomsg);
 }
 #endif
 

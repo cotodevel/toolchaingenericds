@@ -19,8 +19,8 @@ USA
 */
 
 
-#ifndef __posix_hook_shared_h__
-#define __posix_hook_shared_h__
+#ifndef posixHandleTGDS_h__
+#define posixHandleTGDS_h__
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -41,13 +41,8 @@ USA
 #include <sys/lock.h>
 #include <fcntl.h>
 
-#ifdef ARM7
-static inline void writePrintfBuffer7(char *chr){
-	printf7(chr);
-}
-#endif
-
 #ifdef ARM9
+
 #include "ff.h"
 #include "utilsTGDS.h"
 #include "typedefsTGDS.h"
@@ -80,21 +75,20 @@ struct devoptab_t{
 
 #endif
 
-
-#endif
-
-
 #ifdef __cplusplus
 extern "C"{
 #endif
 
 #ifdef ARM7
 extern u8 * printfBufferShared;
+extern uint8 * arm7debugBufferShared;
 extern void printf7(char *chr);	
+extern void writeDebugBuffer7(char *chr);	
 #endif
 
 #ifdef ARM9
 extern u8 printf7Buffer[MAX_TGDSFILENAME_LENGTH+1];
+extern u8 arm7debugBuffer[MAX_TGDSFILENAME_LENGTH+1];
 extern void printf7Setup();
 #endif
 
@@ -151,3 +145,23 @@ extern void TryToDefragmentMemory();
 #ifdef __cplusplus
 }
 #endif
+
+static inline u8 * getarm7DebugBuffer(){
+	#ifdef ARM7
+	return arm7debugBufferShared;
+	#endif
+	#ifdef ARM9
+	return (u8 *)&arm7debugBuffer[0];
+	#endif
+}
+
+static inline u8 * getarm7PrintfBuffer(){
+	#ifdef ARM7
+	return printfBufferShared;
+	#endif
+	#ifdef ARM9
+	return (u8 *)&printf7Buffer[0];
+	#endif
+}
+#endif
+
