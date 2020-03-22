@@ -41,8 +41,13 @@ USA
 #include <sys/lock.h>
 #include <fcntl.h>
 
-#ifdef ARM9
+#ifdef ARM7
+static inline void writePrintfBuffer7(char *chr){
+	printf7(chr);
+}
+#endif
 
+#ifdef ARM9
 #include "ff.h"
 #include "utilsTGDS.h"
 #include "typedefsTGDS.h"
@@ -84,7 +89,13 @@ extern "C"{
 #endif
 
 #ifdef ARM7
-extern void printf7(char *fmt, ...);
+extern u8 * printfBufferShared;
+extern void printf7(char *chr);	
+#endif
+
+#ifdef ARM9
+extern u8 printf7Buffer[MAX_TGDSFILENAME_LENGTH+1];
+extern void printf7Setup();
 #endif
 
 #ifdef ARM9

@@ -27,6 +27,7 @@ USA
 #include "timerTGDS.h"
 #include "dldi.h"
 #include "dmaTGDS.h"
+#include "eventsTGDS.h"
 
 #ifdef ARM7
 #include <string.h>
@@ -34,6 +35,7 @@ USA
 #include "spifwTGDS.h"
 #include "powerTGDS.h"
 #include "soundTGDS.h"
+#include "posixHandleTGDS.h"
 #endif
 
 #ifdef ARM9
@@ -120,7 +122,12 @@ void HandleFifoNotEmpty(){
 			
 			//ARM7 command handler
 			#ifdef ARM7
-				
+			
+			case((uint32)TGDS_ARM7_PRINTF7SETUP):{
+				printfBufferShared = (u8*)data0;	//data0 == uint32 * printfBufferShared
+			}
+			break;
+			
 			case((uint32)FIFO_INITSOUND):{
 				initSound();
 			}
@@ -129,7 +136,7 @@ void HandleFifoNotEmpty(){
 			case((uint32)FIFO_PLAYSOUND):{
 				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg					
 				int sampleRate = (uint32)fifomsg[0];
-				u32* data = (uint32)fifomsg[1];
+				u32* data = (u32*)fifomsg[1];
 				u32 bytes = (uint32)fifomsg[2];
 				u32 packedSnd = (uint32)fifomsg[3];
 	
@@ -248,17 +255,20 @@ void HandleFifoNotEmpty(){
 			//ARM9 command handler
 			#ifdef ARM9
 			
+			case((uint32)TGDS_ARM7_PRINTF7):{
+				printf((sint8*)data0);		//data0 == uint32 * printfBufferShared
+			}
+			break;
+			
 				//ARM7 DLDI implementation
 				#ifdef ARM7_DLDI
 				case(TGDS_DLDI_ARM7_INIT_OK):{
 					//printf("DLDI 7 INIT OK!");
-					
 				}
 				break;
 				
 				case(TGDS_DLDI_ARM7_INIT_ERROR):{
 					//printf("DLDI 7 INIT ERROR!");
-					
 				}
 				break;
 				
@@ -292,7 +302,6 @@ void HandleFifoNotEmpty(){
 			break;
 			
 			#endif
-			
 		}
 		HandleFifoNotEmptyWeakRef(data1, data0);	//this one follows: cmd, value order
 	}

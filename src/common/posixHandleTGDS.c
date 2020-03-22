@@ -21,8 +21,6 @@ USA
 //Coto: this was rewritten by me so it could fit the following setup:
 //The overriden stock POSIX calls are specifically targeted to newlib libc nano ARM Toolchain
 
-#ifdef ARM9
-
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
@@ -30,6 +28,30 @@ USA
 #include <stdlib.h>
 #include <_ansi.h>
 #include <reent.h>
+#include "typedefsTGDS.h"
+#include "ipcfifoTGDS.h"
+
+//basic print ARM7 support
+#ifdef ARM7
+uint8 * printfBufferShared = NULL;
+void printf7(char *chr){
+	if(printfBufferShared != NULL){
+		int strSize = strlen(chr);
+		memset(printfBufferShared, 0, strSize + 1);
+		memcpy((u8*)printfBufferShared, (u8*)chr, strSize);
+		printfBufferShared[strSize+1] = '\0';
+		SendFIFOWords(TGDS_ARM7_PRINTF7, (u32)printfBufferShared);
+	}
+}
+#endif
+#ifdef ARM9
+u8 printf7Buffer[MAX_TGDSFILENAME_LENGTH+1];
+void printf7Setup(){
+	SendFIFOWords(TGDS_ARM7_PRINTF7SETUP, (u32)&printf7Buffer[0]);
+}
+#endif
+
+#ifdef ARM9
 
 #include "posixHandleTGDS.h"
 #include "dsregs_asm.h"
