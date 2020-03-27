@@ -134,7 +134,8 @@ void HandleFifoNotEmpty(){
 				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg
 				printfBufferShared = (u8*)fifomsg[0];
 				arm7debugBufferShared = (u8*)fifomsg[1];
-				fifomsg[1] = fifomsg[0] = 0;
+				arm7ARGVBufferShared = (int*)fifomsg[2];
+				fifomsg[2] = fifomsg[1] = fifomsg[0] = 0;
 			}
 			break;
 			
@@ -266,7 +267,12 @@ void HandleFifoNotEmpty(){
 			#ifdef ARM9
 			
 			case((uint32)TGDS_ARM7_PRINTF7):{
-				printf((sint8*)data0);		//data0 == uint32 * printfBufferShared
+				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg
+				u8 * printfBufferShared = (u8 *)fifomsg[0];		//uint32 * printfBufferShared
+				int * arm7ARGVBufferShared = (int *)fifomsg[1];
+				int argvCount = (int)fifomsg[2];
+				fifomsg[2] = fifomsg[1] = fifomsg[0] = 0;
+				printf7(printfBufferShared, arm7ARGVBufferShared, argvCount);
 			}
 			break;
 			

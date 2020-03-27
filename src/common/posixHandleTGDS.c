@@ -36,14 +36,27 @@ USA
 #ifdef ARM7
 uint8 * arm7debugBufferShared = NULL;
 uint8 * printfBufferShared = NULL;
-void printf7(char *chr){
+int * arm7ARGVBufferShared = NULL;
+void printf7(char *chr, int argvCount, int * argv){
 	u8* printf7Buf = getarm7PrintfBuffer();
 	if(printf7Buf != NULL){
-		int strSize = strlen(chr);
-		memset(printf7Buf, 0, strSize + 1);
+		int strSize = strlen(chr) + 1;
+		memset(printf7Buf, 0, 256+1);	//MAX_TGDSFILENAME_LENGTH
 		memcpy((u8*)printf7Buf, (u8*)chr, strSize);
-		printf7Buf[strSize+1] = '\0';
-		SendFIFOWords(TGDS_ARM7_PRINTF7, (u32)printf7Buf);
+		printf7Buf[strSize] = 0;
+		if((argvCount > 0) && (argvCount < MAXPRINT7ARGVCOUNT) && (arm7ARGVBufferShared != NULL)){
+			memset((u8*)arm7ARGVBufferShared, 0, MAXPRINT7ARGVCOUNT*sizeof(int));
+			int i = 0;
+			for(i = 0; i < argvCount; i++){
+				arm7ARGVBufferShared[i] = argv[i];
+			}
+		}
+		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+		fifomsg[0] = (uint32)printf7Buf;
+		fifomsg[1] = (uint32)arm7ARGVBufferShared;
+		fifomsg[2] = (uint32)argvCount;
+		SendFIFOWords(TGDS_ARM7_PRINTF7, (u32)fifomsg);
 	}
 }
 
@@ -61,12 +74,33 @@ void writeDebugBuffer7(char *chr){
 #ifdef ARM9
 u8 printf7Buffer[MAX_TGDSFILENAME_LENGTH+1];
 u8 arm7debugBuffer[MAX_TGDSFILENAME_LENGTH+1];
+int arm7ARGVBuffer[MAXPRINT7ARGVCOUNT];
 void printf7Setup(){
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[0] = (uint32)&printf7Buffer[0];
 	fifomsg[1] = (uint32)&arm7debugBuffer[0];
+	fifomsg[2] = (uint32)&arm7ARGVBuffer[0];
 	SendFIFOWords(TGDS_ARM7_PRINTF7SETUP, fifomsg);
+}
+
+void printf7(u8 * printfBufferShared, int * arm7ARGVBufferShared, int argvCount){	
+	coherent_user_range_by_size((uint32)printfBufferShared, strlen(printfBufferShared) + 1);
+	coherent_user_range_by_size((uint32)arm7ARGVBufferShared, sizeof(int) * MAXPRINT7ARGVCOUNT);
+	
+	char argChar[MAX_TGDSFILENAME_LENGTH+1];
+	memset(argChar, 0, sizeof(argChar)); //Big note!!!! All buffers (strings, binary, etc) must be initialized like this! Otherwise you will get undefined behaviour!!
+	int i = 0;
+	for(i = 0; i < argvCount; i++){
+		sprintf((char*)argChar, "%s %x", argChar, arm7ARGVBufferShared[i]);
+	}
+	argChar[strlen(argChar) + 1] = '\0';
+	
+	char printfTemp[MAX_TGDSFILENAME_LENGTH+1];
+	strcpy(printfTemp, printfBufferShared);
+	strcat(printfTemp, argChar);
+	printfTemp[strlen(printfTemp)+1] = '\0';
+	printf(printfTemp);
 }
 #endif
 

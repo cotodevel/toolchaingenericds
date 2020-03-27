@@ -41,6 +41,8 @@ USA
 #include <sys/lock.h>
 #include <fcntl.h>
 
+#define MAXPRINT7ARGVCOUNT (int)(20)
+
 #ifdef ARM9
 
 #include "ff.h"
@@ -80,16 +82,21 @@ extern "C"{
 #endif
 
 #ifdef ARM7
+extern void printf7(char *chr, int argvCount, int * argv);	
+extern void writeDebugBuffer7(char *chr);	
+//shared
 extern u8 * printfBufferShared;
 extern uint8 * arm7debugBufferShared;
-extern void printf7(char *chr);	
-extern void writeDebugBuffer7(char *chr);	
+extern int * arm7ARGVBufferShared;
 #endif
 
 #ifdef ARM9
+extern void printf7Setup();
+extern void printf7(u8 * printfBufferShared, int * arm7ARGVBufferShared, int argvCount);
+//shared
 extern u8 printf7Buffer[MAX_TGDSFILENAME_LENGTH+1];
 extern u8 arm7debugBuffer[MAX_TGDSFILENAME_LENGTH+1];
-extern void printf7Setup();
+extern int arm7ARGVBuffer[MAXPRINT7ARGVCOUNT];
 #endif
 
 #ifdef ARM9
