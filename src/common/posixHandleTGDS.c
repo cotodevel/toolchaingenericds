@@ -32,11 +32,29 @@ USA
 #include "ipcfifoTGDS.h"
 #include "posixHandleTGDS.h"
 
+#ifdef ARM9
+#include "dsregs_asm.h"
+#include "devoptab_devices.h"
+#include "errno.h"
+#include "sys/stat.h"
+#include "dirent.h"
+#include "consoleTGDS.h"
+#include "clockTGDS.h"
+#include "fatfslayerTGDS.h"
+#include "utilsTGDS.h"
+#include "limitsTGDS.h"
+#include "dswnifi_lib.h"
+#endif
+
 //basic print ARM7 support
 #ifdef ARM7
 uint8 * arm7debugBufferShared = NULL;
 uint8 * printfBufferShared = NULL;
 int * arm7ARGVBufferShared = NULL;
+
+//args through ARM7 print debugger
+int * arm7ARGVDebugBufferShared = NULL;
+
 void printf7(char *chr, int argvCount, int * argv){
 	u8* printf7Buf = getarm7PrintfBuffer();
 	if(printf7Buf != NULL){
@@ -60,13 +78,29 @@ void printf7(char *chr, int argvCount, int * argv){
 	}
 }
 
-void writeDebugBuffer7(char *chr){
-	u8* debugBuf = getarm7DebugBuffer();
+void writeDebugBuffer7(char *chr, int argvCount, int * argv){
+	u8* debugBuf = arm7debugBufferShared;
 	if(debugBuf != NULL){
-		int strSize = strlen(chr);
-		memset(debugBuf, 0, strSize + 1);
+		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; //Actually used here because the ARM7 Debug buffer can be read asynchronously
+		TGDSIPC->argvCount = argvCount;
+		
+		int strSize = strlen(chr)+1;
+		memset(debugBuf, 0, 256+1);	//MAX_TGDSFILENAME_LENGTH
 		memcpy((u8*)debugBuf, (u8*)chr, strSize);
-		debugBuf[strSize+1] = '\0';
+		debugBuf[strSize] = 0;
+		if((argvCount > 0) && (argvCount < MAXPRINT7ARGVCOUNT) && (arm7ARGVDebugBufferShared != NULL)){
+			memset((u8*)arm7ARGVDebugBufferShared, 0, MAXPRINT7ARGVCOUNT*sizeof(int));
+			int i = 0;
+			for(i = 0; i < argvCount; i++){
+				arm7ARGVDebugBufferShared[i] = argv[i];
+			}
+		}
+		//struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+		//uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+		//fifomsg[0] = (uint32)debugBuf;
+		//fifomsg[1] = (uint32)arm7ARGVBufferShared;
+		//fifomsg[2] = (uint32)argvCount;
+		//SendFIFOWords(TGDS_ARM7_PRINTF7, (u32)fifomsg);
 	}
 }
 #endif
@@ -75,16 +109,25 @@ void writeDebugBuffer7(char *chr){
 u8 printf7Buffer[MAX_TGDSFILENAME_LENGTH+1];
 u8 arm7debugBuffer[MAX_TGDSFILENAME_LENGTH+1];
 int arm7ARGVBuffer[MAXPRINT7ARGVCOUNT];
+
+//args through ARM7 print debugger
+int arm7ARGVDebugBuffer[MAXPRINT7ARGVCOUNT];
+
 void printf7Setup(){
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[0] = (uint32)&printf7Buffer[0];
 	fifomsg[1] = (uint32)&arm7debugBuffer[0];
 	fifomsg[2] = (uint32)&arm7ARGVBuffer[0];
+	
+	//ARM7 print debugger
+	fifomsg[3] = (uint32)&arm7ARGVDebugBuffer[0];
+	
 	SendFIFOWords(TGDS_ARM7_PRINTF7SETUP, fifomsg);
 }
 
-void printf7(u8 * printfBufferShared, int * arm7ARGVBufferShared, int argvCount){	
+void printf7(u8 * printfBufferShared, int * arm7ARGVBufferShared, int argvCount){
+	//argvCount can't be retrieved from here because this call comes from FIFO hardware (and with it, the argvCount value)
 	coherent_user_range_by_size((uint32)printfBufferShared, strlen(printfBufferShared) + 1);
 	coherent_user_range_by_size((uint32)arm7ARGVBufferShared, sizeof(int) * MAXPRINT7ARGVCOUNT);
 	
@@ -97,27 +140,40 @@ void printf7(u8 * printfBufferShared, int * arm7ARGVBufferShared, int argvCount)
 	argChar[strlen(argChar) + 1] = '\0';
 	
 	char printfTemp[MAX_TGDSFILENAME_LENGTH+1];
-	strcpy(printfTemp, printfBufferShared);
+	memset(printfTemp, 0, sizeof(argChar));
+	strcpy(printfTemp, (char*)printfBufferShared);
 	strcat(printfTemp, argChar);
 	printfTemp[strlen(printfTemp)+1] = '\0';
 	printf(printfTemp);
 }
-#endif
 
-#ifdef ARM9
-
-#include "posixHandleTGDS.h"
-#include "dsregs_asm.h"
-#include "devoptab_devices.h"
-#include "errno.h"
-#include "sys/stat.h"
-#include "dirent.h"
-#include "consoleTGDS.h"
-#include "clockTGDS.h"
-#include "fatfslayerTGDS.h"
-#include "utilsTGDS.h"
-#include "limitsTGDS.h"
-#include "dswnifi_lib.h"
+void printarm7DebugBuffer(){
+	//add args parsing
+	u8 * arm7debugBufferShared = (u8 *)&arm7debugBuffer[0];
+	int * arm7ARGVBufferShared = (int *)&arm7ARGVDebugBuffer[0];
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 
+	
+	coherent_user_range_by_size((uint32)arm7debugBufferShared, sizeof(arm7debugBuffer));
+	coherent_user_range_by_size((uint32)arm7ARGVBufferShared, sizeof(int) * MAXPRINT7ARGVCOUNT);
+	coherent_user_range_by_size((uint32)&TGDSIPC->argvCount, sizeof(int));
+	
+	int argvCount = TGDSIPC->argvCount;
+	
+	char argChar[MAX_TGDSFILENAME_LENGTH+1];
+	memset(argChar, 0, sizeof(argChar)); //Big note!!!! All buffers (strings, binary, etc) must be initialized like this! Otherwise you will get undefined behaviour!!
+	int i = 0;
+	for(i = 0; i < argvCount; i++){
+		sprintf((char*)argChar, "%s %x", argChar, arm7ARGVBufferShared[i]);
+	}
+	argChar[strlen(argChar) + 1] = '\0';
+	
+	char printfTemp[MAX_TGDSFILENAME_LENGTH+1];
+	memset(printfTemp, 0, sizeof(argChar));
+	strcpy(printfTemp, (char*)arm7debugBufferShared);
+	strcat(printfTemp, argChar);
+	printfTemp[strlen(printfTemp)+1] = '\0';
+	printf(printfTemp); 
+}
 
 int printf(const char *fmt, ...){
 	char * stringBuf = (char*)&ConsolePrintfBuf[0];

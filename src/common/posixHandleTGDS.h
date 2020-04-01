@@ -49,6 +49,8 @@ USA
 #include "utilsTGDS.h"
 #include "typedefsTGDS.h"
 #include "dsregs.h"
+#include "nds_cp15_misc.h"
+#include "ipcfifoTGDS.h"
 
 enum _flags {
     _READ = 01,     /* file open for reading */
@@ -83,11 +85,15 @@ extern "C"{
 
 #ifdef ARM7
 extern void printf7(char *chr, int argvCount, int * argv);	
-extern void writeDebugBuffer7(char *chr);	
+extern void writeDebugBuffer7(char *chr, int argvCount, int * argv);
 //shared
 extern u8 * printfBufferShared;
 extern uint8 * arm7debugBufferShared;
 extern int * arm7ARGVBufferShared;
+
+//args through ARM7 print debugger
+extern int * arm7ARGVDebugBufferShared;
+
 #endif
 
 #ifdef ARM9
@@ -97,9 +103,24 @@ extern void printf7(u8 * printfBufferShared, int * arm7ARGVBufferShared, int arg
 extern u8 printf7Buffer[MAX_TGDSFILENAME_LENGTH+1];
 extern u8 arm7debugBuffer[MAX_TGDSFILENAME_LENGTH+1];
 extern int arm7ARGVBuffer[MAXPRINT7ARGVCOUNT];
+
+//args through ARM7 print debugger
+extern int argvCount;
+extern int arm7ARGVDebugBuffer[MAXPRINT7ARGVCOUNT];
+
 #endif
 
 #ifdef ARM9
+//Requires first a call of:
+//int argBuffer[MAXPRINT7ARGVCOUNT];
+//memset((unsigned char *)&argBuffer[0], 0, sizeof(argBuffer));
+//argBuffer[0] = 0xc0701111;
+//argBuffer[1] = 0xc0702222;
+//argBuffer[2] = 0xc0703333;
+//writeDebugBuffer7("Write buffer 7 tests: Args: ", 3, (int)&argBuffer[0]);
+
+extern void printarm7DebugBuffer();
+
 extern int _unlink(const sint8 *path);
 extern void printfCoords(int x, int y, const char *format, ...);
 #endif
@@ -153,14 +174,6 @@ extern void TryToDefragmentMemory();
 }
 #endif
 
-static inline u8 * getarm7DebugBuffer(){
-	#ifdef ARM7
-	return arm7debugBufferShared;
-	#endif
-	#ifdef ARM9
-	return (u8 *)&arm7debugBuffer[0];
-	#endif
-}
 
 static inline u8 * getarm7PrintfBuffer(){
 	#ifdef ARM7

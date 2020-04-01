@@ -214,7 +214,9 @@ struct sIPCSharedTGDS {
 	int screenOrientationMainEngine;
 	int screenOrientationSubEngine;
 	bool touchScreenEnabled;
-
+	
+	//args through ARM7 print debugger
+	int argvCount;
 } __attribute__((aligned (4)));
 
 //Shared Work     027FF000h 4KB    -     -    -    R/W

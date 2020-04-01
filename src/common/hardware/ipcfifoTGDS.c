@@ -135,7 +135,11 @@ void HandleFifoNotEmpty(){
 				printfBufferShared = (u8*)fifomsg[0];
 				arm7debugBufferShared = (u8*)fifomsg[1];
 				arm7ARGVBufferShared = (int*)fifomsg[2];
-				fifomsg[2] = fifomsg[1] = fifomsg[0] = 0;
+				
+				//ARM7 print debugger
+				arm7ARGVDebugBufferShared = (int*)fifomsg[3];
+				
+				fifomsg[3] = fifomsg[2] = fifomsg[1] = fifomsg[0] = 0;
 			}
 			break;
 			

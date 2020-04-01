@@ -38,6 +38,7 @@ USA
 #include "InterruptsARMCores_h.h"
 #include "global_settings.h"
 #include "keypadTGDS.h"
+#include "posixHandleTGDS.h"
 
 #ifdef ARM9
 #include "dswnifi_lib.h"
@@ -98,7 +99,11 @@ uint32 exceptionArmRegs[0x20];
 //__attribute__((section(".itcm"))) //cant be at ITCM
 void exception_sysexit(){
 	#ifdef ARM7
-	writeDebugBuffer7("TGDS ARM7.bin Exception: Unexpected main() exit.");
+	
+	int argBuffer[MAXPRINT7ARGVCOUNT];
+	memset((unsigned char *)&argBuffer[0], 0, sizeof(argBuffer));
+	writeDebugBuffer7("TGDS ARM7.bin Exception: Unexpected main() exit. ", 0, (int)&argBuffer[0]);
+	
 	SendFIFOWords(EXCEPTION_ARM7, unexpectedsysexit_7);
 	while(1){
 		IRQWait(IRQ_VBLANK);
@@ -113,7 +118,11 @@ void exception_sysexit(){
 //__attribute__((section(".itcm")))	//cant be at ITCM
 void generalARMExceptionHandler(){
 	#ifdef ARM7
-	writeDebugBuffer7("TGDS ARM7.bin Exception: Hardware Exception.");
+	
+	int argBuffer[MAXPRINT7ARGVCOUNT];
+	memset((unsigned char *)&argBuffer[0], 0, sizeof(argBuffer));
+	writeDebugBuffer7("TGDS ARM7.bin Exception: Hardware Exception.", 0, (int)&argBuffer[0]);
+	
 	SendFIFOWords(EXCEPTION_ARM7, generalARM7Exception);
 	while(1==1){
 		IRQVBlankWait();
