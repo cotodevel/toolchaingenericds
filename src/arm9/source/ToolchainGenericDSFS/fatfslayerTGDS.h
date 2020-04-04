@@ -46,7 +46,9 @@ USA
 
 //FileList specific (internal retCode)
 //these must be invalid values so false positives do not arise in lookup functions
-#define structfd_posixInvalidFileDirHandle	(sint32)(-1)	//used by fatfs_xxx layer, FAT_xxx layer (libfat wrapper), cluster functions, and finally an invalid structFD index file descriptor
+#define structfd_posixInvalidFileDirHandle	(sint32)(-1)	//used by fatfs_xxx layer, FAT_xxx layer (libfat wrapper), cluster functions. Marks a TGDS FileHandle as invalid (TGDS FileHandle: structFD index file descriptor)
+#define structfd_posixExcludedFileDirHandle	(sint32)(-2)	//used by fatfs_xxx layer, FAT_xxx layer (libfat wrapper), cluster functions. Marks a TGDS FileHandle as excluded and unused by TGDS FS API (TGDS FileHandle: structFD index file descriptor)
+
 #define dirent_default_d_name	(sint8 *)("")
 #define structfd_posixInvalidFileSize	(sint32)(-1)
 #define structfd_posixInvalidFileHandleOffset	(sint32)(-1)	//internal offset currently held by the struct fd which exposes to POSIX API

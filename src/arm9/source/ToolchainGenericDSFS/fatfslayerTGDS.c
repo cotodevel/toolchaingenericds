@@ -398,7 +398,7 @@ char * dldi_tryingInterface(){
 
 
 ///////////////////////////////////This is the TGDS FS API extension. It emulates libfat FAT_xxx functions.//////////////////////////////////
-/////////////// For an example, please refer to https://bitbucket.org/Coto88/toolchaingenericds-template/src , main.cpp file/////////////////
+/////////////// For an example, please refer to https://bitbucket.org/Coto88/toolchaingenericds-ndstools/src , main.cpp file/////////////////
 
 
 /////////////////////////////////////////Libfat wrapper layer. Call these as if you were calling libfat code./////////////////////////////////////////
