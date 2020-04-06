@@ -262,6 +262,27 @@ extern bool setFileClassObj(int FileClassListIndex, struct FileClass * FileClass
 }
 #endif
 
+
+//Takes an open file handle, gets filesize without updating its internal file pointer
+static inline int	FS_getFileSizeFromOpenHandle(FILE * f){
+	int size = -1;
+	if (f != NULL){
+		int fLoc = ftell(f);
+		fseek(f, 0, SEEK_END);
+		size = ftell(f);
+		fseek(f, fLoc, SEEK_SET);
+	}
+	return size;
+}
+
+static inline int	FS_getFileSizeFromOpenStructFD(struct fd * tgdsfd){
+	int size = -1;
+	if ((tgdsfd != NULL) && (tgdsfd->filPtr != NULL)){
+		size = f_size(tgdsfd->filPtr);
+	}
+	return size;
+}
+
 static inline __attribute__((always_inline))
 struct fd *getStructFD(int fd){
     struct fd *f = NULL;
