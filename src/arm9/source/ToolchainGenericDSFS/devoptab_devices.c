@@ -111,54 +111,54 @@ sint32 open_posix_filedescriptor_devices(){
 
 //stdin: todo
 int open_r_stdin ( struct _reent *r, const sint8 *path, int flags, int mode ){
-	return structfd_posixInvalidFileDirHandle;
+	return structfd_posixInvalidFileDirOrBufferHandle;
 }
 
 int close_r_stdin ( struct _reent *r, int fd ){
-	return structfd_posixInvalidFileDirHandle;
+	return structfd_posixInvalidFileDirOrBufferHandle;
 }
 
 _ssize_t write_r_stdin( struct _reent *r, int fd, const sint8 *ptr, int len ){
-	return structfd_posixInvalidFileDirHandle;
+	return structfd_posixInvalidFileDirOrBufferHandle;
 }
 
 _ssize_t read_r_stdin ( struct _reent *r, int fd, sint8 *ptr, int len ){
-	return structfd_posixInvalidFileDirHandle;
+	return structfd_posixInvalidFileDirOrBufferHandle;
 }
 
 int open_r_stdout ( struct _reent *r, const sint8 *path, int flags, int mode ){
-	return structfd_posixInvalidFileDirHandle;
+	return structfd_posixInvalidFileDirOrBufferHandle;
 }
 
 int close_r_stdout ( struct _reent *r, int fd ){
-	return structfd_posixInvalidFileDirHandle;
+	return structfd_posixInvalidFileDirOrBufferHandle;
 }
 
 //int _vfiprintf_r/_vfprintf_r is overriden in posix_hook_shared.c due to how newlib parses the printf buffer. So we retarget printf to GUI_Printf which already works.
 _ssize_t write_r_stdout( struct _reent *r, int fd, const sint8 *ptr, int len ){
-	return structfd_posixInvalidFileDirHandle;
+	return structfd_posixInvalidFileDirOrBufferHandle;
 }
 
 _ssize_t read_r_stdout ( struct _reent *r, int fd, sint8 *ptr, int len ){
-	return structfd_posixInvalidFileDirHandle;
+	return structfd_posixInvalidFileDirOrBufferHandle;
 }
 
 
 //stderr: todo
 int open_r_stderr ( struct _reent *r, const sint8 *path, int flags, int mode ){
-	return structfd_posixInvalidFileDirHandle;
+	return structfd_posixInvalidFileDirOrBufferHandle;
 }
 
 int close_r_stderr ( struct _reent *r, int fd ){
-	return structfd_posixInvalidFileDirHandle;
+	return structfd_posixInvalidFileDirOrBufferHandle;
 }
 
 _ssize_t write_r_stderr( struct _reent *r, int fd, const sint8 *ptr, int len ){
-	return structfd_posixInvalidFileDirHandle;
+	return structfd_posixInvalidFileDirOrBufferHandle;
 }
 
 _ssize_t read_r_stderr ( struct _reent *r, int fd, sint8 *ptr, int len ){
-	return structfd_posixInvalidFileDirHandle;
+	return structfd_posixInvalidFileDirOrBufferHandle;
 }
 
 //fatfs: 
@@ -169,7 +169,7 @@ int open_r_fatfs ( struct _reent *r, const sint8 *path, int flags, int mode ){
 
 //write (get struct FD index from FILE * handle)
 _ssize_t read_r_fatfs( struct _reent *r, int fd, sint8 *ptr, int len ){	 
-	int ret = structfd_posixInvalidFileDirHandle;
+	int ret = structfd_posixInvalidFileDirOrBufferHandle;
 	struct fd *f = getStructFD(fd);
     if (f == NULL)
     {
@@ -190,7 +190,7 @@ _ssize_t read_r_fatfs( struct _reent *r, int fd, sint8 *ptr, int len ){
 //close (get struct FD index from FILE * handle)
 _ssize_t write_r_fatfs( struct _reent *r, int fd, const sint8 *ptr, int len ){
 	
-    int ret = structfd_posixInvalidFileDirHandle;
+    int ret = structfd_posixInvalidFileDirOrBufferHandle;
 	struct fd *f = getStructFD(fd);
     
 	if (f == NULL){
@@ -208,7 +208,7 @@ _ssize_t write_r_fatfs( struct _reent *r, int fd, const sint8 *ptr, int len ){
 
 //close (get struct FD index from FILE * handle)
 int close_r_fatfs ( struct _reent *r, int fd ){
-	int ret = structfd_posixInvalidFileDirHandle;
+	int ret = structfd_posixInvalidFileDirOrBufferHandle;
 	struct fd *f = getStructFD(fd);
     if (f == NULL){
         errno = EBADF;

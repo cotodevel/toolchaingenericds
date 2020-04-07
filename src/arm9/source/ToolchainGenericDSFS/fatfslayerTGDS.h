@@ -32,10 +32,11 @@ USA
 #include "devoptab_devices.h"
 #include <stdio.h>
 
-//TGDS FS defs: These must be typecasted otherwise strb happens (we don't want that)
+//TGDS FS defs: These must be typecasted otherwise compiler will generate wrong strb opcodes
 #define FT_NONE (int)(0)
 #define FT_FILE (int)(1)
 #define FT_DIR (int)(2)
+#define FT_BUFFER (int)(3)
 
 #define structfd_isused 	(sint32)(1)
 #define structfd_isunused	(sint32)(0)
@@ -44,10 +45,12 @@ USA
 #define structfd_status_flagsdefault	(sint32)(0)
 #define structfd_fildir_offsetdefault	(sint32)(0)
 
+//These must be invalid values so false positives do not arise in lookup functions
 //FileList specific (internal retCode)
+
 //these must be invalid values so false positives do not arise in lookup functions
-#define structfd_posixInvalidFileDirHandle	(sint32)(-1)	//used by fatfs_xxx layer, FAT_xxx layer (libfat wrapper), cluster functions. Marks a TGDS FileHandle as invalid (TGDS FileHandle: structFD index file descriptor)
-#define structfd_posixExcludedFileDirHandle	(sint32)(-2)	//used by fatfs_xxx layer, FAT_xxx layer (libfat wrapper), cluster functions. Marks a TGDS FileHandle as excluded and unused by TGDS FS API (TGDS FileHandle: structFD index file descriptor)
+#define structfd_posixInvalidFileDirOrBufferHandle	(sint32)(-1)	//used by fatfs_xxx layer, FAT_xxx layer (libfat wrapper), cluster functions. Marks a TGDS FileHandle as invalid (TGDS FileHandle: structFD index file descriptor)
+#define structfd_posixExcludedFileDirOrBufferHandle	(sint32)(-2)	//used by fatfs_xxx layer, FAT_xxx layer (libfat wrapper), cluster functions. Marks a TGDS FileHandle as excluded and unused by TGDS FS API (TGDS FileHandle: structFD index file descriptor)
 
 #define dirent_default_d_name	(sint8 *)("")
 #define structfd_posixInvalidFileSize	(sint32)(-1)
@@ -74,7 +77,7 @@ USA
 //FileClass Start directory if there is none
 #define FileClassStartDirectory TGDSDirectorySeparator
 
-//FileClass parts (not used by POSIX at all, but ToolchainGenericDS high level API (for parsing fullpath directories and high level descriptors)
+//FileClass parts (not used by POSIX at all, but ToolchainGenericDS high level API (for parsing fullpath directories and high level descriptors, and completely unrelated to TGDS FileOrBuffer handles)
 struct FileClass{
 	int type;	//FT_DIR / FT_FILE / FT_NONE	//  setup on Constructor / updated by getFileFILINFOfromPath(); / must be init from the outside 
 	sint8 fd_namefullPath[MAX_TGDSFILENAME_LENGTH+1];
@@ -217,7 +220,7 @@ extern void fillPosixStatStruct(const FILINFO *fno, struct stat *out);
 extern BYTE posixToFatfsAttrib(int flags);
 extern int fatfsToPosixAttrib(BYTE flags);
 extern int fresultToErrno(FRESULT result);	/* POSIX ERROR Handling */
-extern void initStructFDHandle(struct fd *pfd, int flags, const FILINFO *fno, int structFD);
+extern void initStructFDHandle(struct fd *pfd, int flags, const FILINFO *fno, int structFD, int StructFDType);
 
 extern int fatfs_open_file(const sint8 *pathname, int flags, const FILINFO *fno);	//(FRESULT is the file properties that must be copied to stat st)/ returns an internal index struct fd allocated
 extern int fatfs_open_dir(const sint8 *pathname, int flags, const FILINFO *fno);	//(FRESULT is the file properties that must be copied to stat st)/ returns an internal index struct fd allocated
@@ -318,8 +321,8 @@ void initTGDS(char * devoptabFSName){
 		memset((uint8*)(files + fd), 0, sizeof(struct fd));
 		(files + fd)->isused = (sint32)structfd_isunused;
 		//Internal default invalid value (overriden later)
-		(files + fd)->cur_entry.d_ino = (sint32)structfd_posixInvalidFileDirHandle;	//Posix File Descriptor
-		(files + fd)->StructFD = (sint32)structfd_posixInvalidFileDirHandle;		//TGDS File Descriptor (struct fd)
+		(files + fd)->cur_entry.d_ino = (sint32)structfd_posixInvalidFileDirOrBufferHandle;	//Posix File Descriptor
+		(files + fd)->StructFD = (sint32)structfd_posixInvalidFileDirOrBufferHandle;		//TGDS File Descriptor (struct fd)
 		(files + fd)->StructFDType = FT_NONE;	//struct fd type invalid.
 		(files + fd)->isatty = (sint32)structfd_isattydefault;
 		(files + fd)->descriptor_flags = (sint32)structfd_descriptorflagsdefault;
@@ -352,7 +355,7 @@ struct fd * getStructFDByFileHandle(FILE * fh){
 
 static inline __attribute__((always_inline))
 int getStructFDIndexByFileName(char * filename){
-	int ret = structfd_posixInvalidFileDirHandle;
+	int ret = structfd_posixInvalidFileDirOrBufferHandle;
 	int fd = 0;
 	/* search in all struct fd instances*/
 	for (fd = 0; fd < OPEN_MAXTGDS; fd++){
@@ -370,7 +373,7 @@ int getStructFDIndexByFileName(char * filename){
 static inline __attribute__((always_inline))
 int FileHandleAlloc(struct devoptab_t * devoptabInst){
     int fd = 0;
-    int ret = structfd_posixInvalidFileDirHandle;
+    int ret = structfd_posixInvalidFileDirOrBufferHandle;
     for (fd = 0; fd < OPEN_MAXTGDS; fd++){
         if ((sint32)(files + fd)->isused == (sint32)structfd_isunused){
 			(files + fd)->isused = (sint32)structfd_isused;
@@ -380,7 +383,7 @@ int FileHandleAlloc(struct devoptab_t * devoptabInst){
 			
 			//Internal default value (overriden now)
 			(files + fd)->cur_entry.d_ino = (sint32)fd;	//Posix File Descriptor
-			(files + fd)->StructFD = (sint32)structfd_posixInvalidFileDirHandle;		//TGDS File Descriptor (struct fd) not valid yet. Set up by initStructFDHandle()
+			(files + fd)->StructFD = (sint32)structfd_posixInvalidFileDirOrBufferHandle;		//TGDS File Descriptor (struct fd) not valid yet. Set up by initStructFDHandle()
 			(files + fd)->StructFDType = FT_NONE;	//struct fd type not valid yet. Will be assigned by fatfs_open_file (FT_FILE), or fatfs_open_dir (FT_DIR)
 			
 			(files + fd)->isatty = (sint32)structfd_isattydefault;
@@ -396,9 +399,9 @@ int FileHandleAlloc(struct devoptab_t * devoptabInst){
         }
     }
 	//if for some reason all the file handles are exhausted, discard the last one and assign that one. (fixes homebrew that opens a lot of file handles and doesn't close them up accordingly)
-	if(ret == structfd_posixInvalidFileDirHandle){
-		int retClose = fatfs_close(OPEN_MAXTGDS - 1);	//requires a struct fd(file descriptor), returns 0 if success, structfd_posixInvalidFileDirHandle if error
-		if(retClose == structfd_posixInvalidFileDirHandle){
+	if(ret == structfd_posixInvalidFileDirOrBufferHandle){
+		int retClose = fatfs_close(OPEN_MAXTGDS - 1);	//requires a struct fd(file descriptor), returns 0 if success, structfd_posixInvalidFileDirOrBufferHandle if error
+		if(retClose == structfd_posixInvalidFileDirOrBufferHandle){
 			//couldnt really close file handle
 			ret = retClose;
 		}
@@ -414,11 +417,11 @@ int FileHandleAlloc(struct devoptab_t * devoptabInst){
 //deallocates a posix index, returns such index deallocated
 static inline __attribute__((always_inline))
 int FileHandleFree(int fd){
-	int ret = structfd_posixInvalidFileDirHandle;
+	int ret = structfd_posixInvalidFileDirOrBufferHandle;
     if ((fd < OPEN_MAXTGDS) && (fd >= 0) && ((files + fd)->isused == structfd_isused)){
         (files + fd)->isused = (sint32)structfd_isunused;
-		(files + fd)->cur_entry.d_ino = (sint32)structfd_posixInvalidFileDirHandle;	//Posix File Descriptor
-		(files + fd)->StructFD = (sint32)structfd_posixInvalidFileDirHandle;		//TGDS File Descriptor (struct fd)
+		(files + fd)->cur_entry.d_ino = (sint32)structfd_posixInvalidFileDirOrBufferHandle;	//Posix File Descriptor
+		(files + fd)->StructFD = (sint32)structfd_posixInvalidFileDirOrBufferHandle;		//TGDS File Descriptor (struct fd)
 		(files + fd)->StructFDType = FT_NONE;	//struct fd type invalid.
 		(files + fd)->loc = structfd_posixInvalidFileHandleOffset;
 		ret = fd;
@@ -449,7 +452,7 @@ sint8 * getDeviceNameByStructFDIndex(int StructFDIndex){
 static inline __attribute__((always_inline))
 int getStructFDIndexByDIR(DIR *dirp){
 	int fd = 0;
-    int ret = structfd_posixInvalidFileDirHandle;
+    int ret = structfd_posixInvalidFileDirOrBufferHandle;
     /* search in all struct fd instances*/
     for (fd = 0; fd < OPEN_MAXTGDS; fd++)
     {
@@ -474,8 +477,8 @@ static inline bool cleanFileList(struct FileClassList * lst){
 	if(lst != NULL){
 		memset((u8*)lst, 0, sizeof(struct FileClassList));
 		lst->CurrentFileDirEntry = 0;
-		lst->LastDirEntry=structfd_posixInvalidFileDirHandle;
-		lst->LastFileEntry=structfd_posixInvalidFileDirHandle;
+		lst->LastDirEntry=structfd_posixInvalidFileDirOrBufferHandle;
+		lst->LastFileEntry=structfd_posixInvalidFileDirOrBufferHandle;
 		setCurrentDirectoryCount(lst, 0);
 		return true;
 	}

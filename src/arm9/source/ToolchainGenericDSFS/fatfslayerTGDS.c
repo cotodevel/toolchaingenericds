@@ -73,7 +73,7 @@ int OpenFileFromPathGetStructFD(char * fullPath){
 	if(fil != NULL){
 		return fileno(fil);
 	}
-	return structfd_posixInvalidFileDirHandle;
+	return structfd_posixInvalidFileDirOrBufferHandle;
 }
 bool closeFileFromStructFD(int StructFD){
 	FILE* fh = fdopen(StructFD, "r");
@@ -342,7 +342,7 @@ uint32	getStructFDFirstCluster(struct fd *fdinst){
 			return (int)(fdinst->filPtr->clust);
 		}
 	}
-	return (uint32)structfd_posixInvalidFileDirHandle;
+	return (uint32)structfd_posixInvalidFileDirOrBufferHandle;
 }
 
 uint32	getStructFDNextCluster(struct fd *fdinst, int currCluster){
@@ -352,21 +352,21 @@ uint32	getStructFDNextCluster(struct fd *fdinst, int currCluster){
 		FATFS *fs = fil->obj.fs;
 		clst = get_fat(&fil->obj, (DWORD)((int)clst + (int)currCluster) );		/* Get next cluster */
 		if ( (clst == 0xFFFFFFFF) || (clst < 2) || (clst >= fs->n_fatent) ){ 	/* Disk error , or  Reached to end of table or internal error */
-			return (uint32)structfd_posixInvalidFileDirHandle;	
+			return (uint32)structfd_posixInvalidFileDirOrBufferHandle;	
 		}
 		else{
 			return (sint32)clst;
 		}
 	}
-	return (uint32)structfd_posixInvalidFileDirHandle;
+	return (uint32)structfd_posixInvalidFileDirOrBufferHandle;
 }
 
-//Returns the First sector pointed at ClusterIndex, or, structfd_posixInvalidFileDirHandle if fails.
+//Returns the First sector pointed at ClusterIndex, or, structfd_posixInvalidFileDirOrBufferHandle if fails.
 uint32 getStructFDStartSectorByCluster(struct fd *fdinst, int ClusterIndex){	//	struct File Descriptor (FILE * open through fopen() -> then converted to int32 from fileno())
 	if(fdinst->filPtr != NULL){
 		return (uint32)(clust2sect(fdinst->filPtr->obj.fs, getStructFDFirstCluster(fdinst) + ClusterIndex));
 	}
-	return structfd_posixInvalidFileDirHandle;
+	return structfd_posixInvalidFileDirOrBufferHandle;
 }
 
 sint32 getDiskClusterSize(){		/* Sectors per Cluster */
@@ -460,7 +460,7 @@ bool FAT_GetAlias(char* alias, struct FileClassList * lst){
 	if (alias == NULL){
 		return false;
 	}
-	int CurEntry = structfd_posixInvalidFileDirHandle;
+	int CurEntry = structfd_posixInvalidFileDirOrBufferHandle;
 	
 	int lastFileEntry = lst->LastFileEntry;
 	int lastDirEntry = lst->LastDirEntry;
@@ -472,7 +472,7 @@ bool FAT_GetAlias(char* alias, struct FileClassList * lst){
 		CurEntry = lastDirEntry;
 	}
 	//for some reason the CurEntry is invalid (trying to call and fileList hasn't been rebuilt)
-	if(CurEntry == structfd_posixInvalidFileDirHandle){
+	if(CurEntry == structfd_posixInvalidFileDirOrBufferHandle){
 		return false;
 	}
 	struct FileClass * fileInst = getFileClassFromList(lst->CurrentFileDirEntry, lst);	//assign a FileClass to the StructFD generated before
@@ -533,7 +533,7 @@ bool FAT_GetLongFilename(char* Longfilename, struct FileClassList * lst){
 	if (Longfilename == NULL){
 		return false;
 	}
-	int CurEntry = structfd_posixInvalidFileDirHandle;
+	int CurEntry = structfd_posixInvalidFileDirOrBufferHandle;
 	if(lst->LastFileEntry > lst->LastDirEntry){
 		CurEntry = lst->LastFileEntry;
 	}
@@ -541,7 +541,7 @@ bool FAT_GetLongFilename(char* Longfilename, struct FileClassList * lst){
 		CurEntry = lst->LastDirEntry;
 	}
 	//for some reason the CurEntry is invalid (trying to call and fileList hasn't been rebuilt)
-	if(CurEntry == structfd_posixInvalidFileDirHandle){
+	if(CurEntry == structfd_posixInvalidFileDirOrBufferHandle){
 		return false;
 	}
 	struct FileClass * fileInst = getFileClassFromList(CurEntry, lst);	//assign a FileClass to the StructFD generated before
@@ -608,11 +608,11 @@ Get the first cluster of the last file found or openned.
 u32 return OUT: the file start cluster
 -----------------------------------------------------------------*/
 u32 FAT_GetFileCluster(struct FileClassList * lst){
-	u32 FirstClusterFromLastFileOpen = structfd_posixInvalidFileDirHandle;
+	u32 FirstClusterFromLastFileOpen = structfd_posixInvalidFileDirOrBufferHandle;
 	struct FileClass * fileInst = getFileClassFromList(lst->LastFileEntry, lst);	//assign a FileClass to the StructFD generated before
 	char * FullPathStr = fileInst->fd_namefullPath;	//must store proper filepath	must return fullPath here (0:/folder0/filename.ext)
 	FILE * f = fopen(FullPathStr,"r");
-	sint32 structFDIndex = structfd_posixInvalidFileDirHandle;
+	sint32 structFDIndex = structfd_posixInvalidFileDirOrBufferHandle;
 	struct fd * fdinst = NULL;
 	if(f){
 		structFDIndex = fileno(f);
@@ -728,7 +728,7 @@ struct FileClass getFileClassFromPath(char * path){
 	}
 	
 	FileClassOut.isIterable = false;	//destroyable FileClass item, does not belong to a list
-	FileClassOut.d_ino = structfd_posixInvalidFileDirHandle;	//destroyable FileClass are always invalid filehandles
+	FileClassOut.d_ino = structfd_posixInvalidFileDirOrBufferHandle;	//destroyable FileClass are always invalid filehandles
 	return FileClassOut;
 }
 
@@ -825,8 +825,8 @@ struct FileClass * getFirstFile(char * path, struct FileClassList * lst, int sta
 		}
 		else{
 			lst->CurrentFileDirEntry = 0;
-			lst->LastDirEntry=structfd_posixInvalidFileDirHandle;
-			lst->LastFileEntry=structfd_posixInvalidFileDirHandle;
+			lst->LastDirEntry=structfd_posixInvalidFileDirOrBufferHandle;
+			lst->LastFileEntry=structfd_posixInvalidFileDirOrBufferHandle;
 			return NULL;	//End the list regardless, no more room available!
 		}
 	}
@@ -859,8 +859,8 @@ struct FileClass * getNextFile(char * path, struct FileClassList * lst){
 		}
 		else{
 			lst->CurrentFileDirEntry = 0;
-			lst->LastDirEntry=structfd_posixInvalidFileDirHandle;
-			lst->LastFileEntry=structfd_posixInvalidFileDirHandle;
+			lst->LastDirEntry=structfd_posixInvalidFileDirOrBufferHandle;
+			lst->LastFileEntry=structfd_posixInvalidFileDirOrBufferHandle;
 			return NULL;	//End the list regardless, no more room available!
 		}
 	}
@@ -896,7 +896,7 @@ int  readdir_r(DIR * dirp,struct dirent * entry,struct dirent ** result){
 }
 
 int fatfs_write(int structFDIndex, sint8 *ptr, int len){	//(FileDescriptor :struct fd index)
-    int ret = structfd_posixInvalidFileDirHandle;
+    int ret = structfd_posixInvalidFileDirOrBufferHandle;
     struct fd *pfd = getStructFD(structFDIndex);
     if (pfd == NULL){	//not file? not alloced struct fd?
 		errno = EBADF;
@@ -945,7 +945,7 @@ int fatfs_write(int structFDIndex, sint8 *ptr, int len){	//(FileDescriptor :stru
 
 //read (get struct FD index from FILE * handle)
 int fatfs_read(int structFDIndex, sint8 *ptr, int len){
-    int ret = structfd_posixInvalidFileDirHandle;
+    int ret = structfd_posixInvalidFileDirOrBufferHandle;
     struct fd *pfd = getStructFD(structFDIndex);
     if ( (pfd == NULL) || (pfd->filPtr == NULL) ){	//not file/dir? not alloced struct fd?
         errno = EBADF;
@@ -975,9 +975,9 @@ int fatfs_read(int structFDIndex, sint8 *ptr, int len){
 //receives a new struct fd index with either DIR or FIL structure allocated so it can be closed.
 //returns 0 if success, 1 if error
 int fatfs_close (int structFDIndex){
-    int ret = structfd_posixInvalidFileDirHandle;
+    int ret = structfd_posixInvalidFileDirOrBufferHandle;
     struct fd * pfd = getStructFD(structFDIndex);
-    if ( (pfd == NULL) || ((pfd->filPtr == NULL) && (pfd->dirPtr == NULL)) || (pfd->isused != (sint32)structfd_isused) || (structFDIndex == structfd_posixInvalidFileDirHandle) ){	//not file/dir? not alloced struct fd? or not valid file handle(two cases)?
+    if ( (pfd == NULL) || ((pfd->filPtr == NULL) && (pfd->dirPtr == NULL)) || (pfd->isused != (sint32)structfd_isused) || (structFDIndex == structfd_posixInvalidFileDirOrBufferHandle) ){	//not file/dir? not alloced struct fd? or not valid file handle(two cases)?
 		errno = EBADF;
     }
 	//File?
@@ -996,7 +996,7 @@ int fatfs_close (int structFDIndex){
 			
 			//free struct fd
 			int i_fil = FileHandleFree(pfd->cur_entry.d_ino);	//returns structfd index that was deallocated
-			if (i_fil != structfd_posixInvalidFileDirHandle){	//FileHandleFree could free struct fd properly? set filesAlloc[index] free
+			if (i_fil != structfd_posixInvalidFileDirOrBufferHandle){	//FileHandleFree could free struct fd properly? set filesAlloc[index] free
 				if(pfd->filPtr){	//must we clean a FIL?
 					pfd->filPtr = NULL;
 				}
@@ -1012,7 +1012,7 @@ int fatfs_close (int structFDIndex){
 			
 			ret = 0;
 			//update d_ino here (POSIX compliant)
-			pfd->cur_entry.d_ino = (sint32)structfd_posixInvalidFileDirHandle;
+			pfd->cur_entry.d_ino = (sint32)structfd_posixInvalidFileDirOrBufferHandle;
 			pfd->loc = 0;
         }
         else{
@@ -1080,12 +1080,13 @@ void fillPosixStatStruct(const FILINFO *fno, struct stat *out){
 }
 
 //called from : stat (newlib implementation)
-void initStructFDHandle(struct fd *pfd, int flags, const FILINFO *fno, int structFD){
+void initStructFDHandle(struct fd *pfd, int flags, const FILINFO *fno, int structFD, int StructFDType){
     pfd->isatty = 0;
     pfd->status_flags = flags;
     pfd->descriptor_flags = 0;
 	pfd->loc = 0;	//internal file/dir offset zero
 	pfd->StructFD = structFD;
+	pfd->StructFDType = StructFDType;
 	fillPosixStatStruct(fno, &pfd->stat);
 }
 
@@ -1093,7 +1094,7 @@ void initStructFDHandle(struct fd *pfd, int flags, const FILINFO *fno, int struc
 int fatfs_open_file(const sint8 *pathname, int flags, const FILINFO *fno){
 	//Lookup if file is already open.
 	int structFDIndex = getStructFDIndexByFileName((char*)pathname);
-	if(structFDIndex != structfd_posixInvalidFileDirHandle){
+	if(structFDIndex != structfd_posixInvalidFileDirOrBufferHandle){
 		return structFDIndex;
 	}
 	//If not, then allocate a new file handle (struct FD)
@@ -1102,7 +1103,7 @@ int fatfs_open_file(const sint8 *pathname, int flags, const FILINFO *fno){
 	
 	//allocates a new struct fd index, allocating a FIL structure, for the devoptab_sdFilesystem object.
 	structFDIndex = FileHandleAlloc((struct devoptab_t *)&devoptab_sdFilesystem);	
-    if (structFDIndex != structfd_posixInvalidFileDirHandle){
+    if (structFDIndex != structfd_posixInvalidFileDirOrBufferHandle){
 		(files + structFDIndex)->filPtr	=	(FIL *)&(files + structFDIndex)->fil;
 		(files + structFDIndex)->dirPtr	= NULL;
 		(files + structFDIndex)->StructFDType = FT_FILE;
@@ -1130,7 +1131,7 @@ int fatfs_open_file(const sint8 *pathname, int flags, const FILINFO *fno){
 			fno = &fno_after;			
 			if ((result == FR_OK) && (TGDSFS_detectUnicode(fdinst) == true)){
 				//Update struct fd with new FIL
-				initStructFDHandle(fdinst, flags, fno, structFDIndex);
+				initStructFDHandle(fdinst, flags, fno, structFDIndex, FT_FILE);
 				//copy full file path (posix <- fatfs)
 				int topsize = strlen(pathname)+1;
 				if((sint32)topsize > (sint32)(MAX_TGDSFILENAME_LENGTH+1)){
@@ -1143,7 +1144,7 @@ int fatfs_open_file(const sint8 *pathname, int flags, const FILINFO *fno){
 				
 				//free struct fd
 				int i_fil = FileHandleFree(fdinst->cur_entry.d_ino);	//returns structfd index that was deallocated
-				if (i_fil != structfd_posixInvalidFileDirHandle){	//FileHandleFree could free struct fd properly? set filesAlloc[index] free
+				if (i_fil != structfd_posixInvalidFileDirOrBufferHandle){	//FileHandleFree could free struct fd properly? set filesAlloc[index] free
 					if(fdinst->filPtr){	//must we clean a FIL?
 						fdinst->filPtr = NULL;
 					}
@@ -1157,14 +1158,14 @@ int fatfs_open_file(const sint8 *pathname, int flags, const FILINFO *fno){
 					//file_free failed
 				}
 			
-				structFDIndex = structfd_posixInvalidFileDirHandle;	//file stat was valid but something happened while IO operation, so, invalid.
+				structFDIndex = structfd_posixInvalidFileDirOrBufferHandle;	//file stat was valid but something happened while IO operation, so, invalid.
 			}
 		}
         else {	//invalid file or O_CREAT wasn't issued
 			
 			//free struct fd
 			int i_fil = FileHandleFree(fdinst->cur_entry.d_ino);	//returns structfd index that was deallocated
-			if (i_fil != structfd_posixInvalidFileDirHandle){	//FileHandleFree could free struct fd properly? set filesAlloc[index] free
+			if (i_fil != structfd_posixInvalidFileDirOrBufferHandle){	//FileHandleFree could free struct fd properly? set filesAlloc[index] free
 				if(fdinst->filPtr){	//must we clean a FIL?
 					fdinst->filPtr = NULL;
 				}
@@ -1177,7 +1178,7 @@ int fatfs_open_file(const sint8 *pathname, int flags, const FILINFO *fno){
 			else{
 				//file_free failed
 			}
-			structFDIndex = structfd_posixInvalidFileDirHandle;	//file handle generated, but file open failed, so, invalid.
+			structFDIndex = structfd_posixInvalidFileDirOrBufferHandle;	//file handle generated, but file open failed, so, invalid.
 		}
     }// failed to allocate a file handle / allocated file handle OK end.
 	
@@ -1190,7 +1191,7 @@ int fatfs_open_dir(const sint8 *pathname, int flags, const FILINFO *fno){
     
 	//allocates a new struct fd index, allocating a DIR structure, for the devoptab_sdFilesystem object.
 	int structFDIndex = FileHandleAlloc((struct devoptab_t *)&devoptab_sdFilesystem);	
-    if (structFDIndex != structfd_posixInvalidFileDirHandle){
+    if (structFDIndex != structfd_posixInvalidFileDirOrBufferHandle){
 		(files + structFDIndex)->dirPtr	=	(DIR *)&(files + structFDIndex)->dir;
 		(files + structFDIndex)->filPtr	= NULL;
 		(files + structFDIndex)->StructFDType = FT_DIR;
@@ -1204,7 +1205,7 @@ int fatfs_open_dir(const sint8 *pathname, int flags, const FILINFO *fno){
 		result = f_opendir(fdinst->dirPtr, pathname);
         if (result == FR_OK){
 			//Update struct fd with new DIR
-			initStructFDHandle(fdinst, flags, fno, structFDIndex);
+			initStructFDHandle(fdinst, flags, fno, structFDIndex, FT_DIR);
 			//copy full directory path (posix <- fatfs)
 			int topsize = strlen(pathname)+1;
 			if((sint32)topsize > (sint32)(MAX_TGDSFILENAME_LENGTH+1)){
@@ -1216,7 +1217,7 @@ int fatfs_open_dir(const sint8 *pathname, int flags, const FILINFO *fno){
 			errno = fresultToErrno(result);            
 			//free struct fd
 			int i_fil = FileHandleFree(fdinst->cur_entry.d_ino);	//returns structfd index that was deallocated
-			if (i_fil != structfd_posixInvalidFileDirHandle){	//FileHandleFree could free struct fd properly? set filesAlloc[index] free
+			if (i_fil != structfd_posixInvalidFileDirOrBufferHandle){	//FileHandleFree could free struct fd properly? set filesAlloc[index] free
 				if(fdinst->filPtr){	//must we clean a FIL?
 					fdinst->filPtr = NULL;
 				}
@@ -1238,7 +1239,7 @@ int fatfs_open_dir(const sint8 *pathname, int flags, const FILINFO *fno){
 //returns / allocates a new struct fd index with either DIR or FIL structure allocated
 int fatfs_open_file_or_dir(const sint8 *pathname, int flags){
 	FILINFO fno;
-	int structFD = structfd_posixInvalidFileDirHandle;
+	int structFD = structfd_posixInvalidFileDirOrBufferHandle;
 	fno.fname[0] = '\0'; /* initialize as invalid */
 	FRESULT result = f_stat(pathname, &fno);
 	//dir case // todo: same logic as below file if dir does not exists and must be created
@@ -1276,21 +1277,21 @@ DWORD get_fattime (void){
 }
 
 //returns / allocates a new struct fd index with either DIR or FIL structure allocated
-//if error, returns structfd_posixInvalidFileDirHandle (invalid structFD file handle index)
+//if error, returns structfd_posixInvalidFileDirOrBufferHandle (invalid structFD file handle index)
 int fatfs_open(const sint8 *pathname, int flags){
 	int structFDIndex = fatfs_open_file_or_dir(pathname, flags);	
-	if (structFDIndex != structfd_posixInvalidFileDirHandle){
+	if (structFDIndex != structfd_posixInvalidFileDirOrBufferHandle){
 		//update d_ino here (POSIX compliant) - through correct (internal struct fd) file handle
 		struct fd *pfd = getStructFD(structFDIndex);
 		pfd->cur_entry.d_ino = structFDIndex;
 	}
 	return structFDIndex;
 }
-// ret: structfd_posixInvalidFileDirHandle if invalid posixFDStruct
+// ret: structfd_posixInvalidFileDirOrBufferHandle if invalid posixFDStruct
 //		else if POSIX retcodes (if an error happened)
 //		else return new offset position (offset + current file position (internal)) in file handle
 off_t fatfs_lseek(int structFDIndex, off_t offset, int whence){	//(FileDescriptor :struct fd index)
-    off_t ret = (off_t)structfd_posixInvalidFileDirHandle;
+    off_t ret = (off_t)structfd_posixInvalidFileDirOrBufferHandle;
     struct fd *pfd = getStructFD(structFDIndex);
     if ((pfd == NULL) || (pfd->filPtr == NULL) || (pfd->isused == structfd_isunused) ){
 		errno = EBADF;
@@ -1363,7 +1364,7 @@ off_t fatfs_lseek(int structFDIndex, off_t offset, int whence){	//(FileDescripto
 
 //delete / remove
 int fatfs_unlink(const sint8 *path){
-    int ret = structfd_posixInvalidFileDirHandle;
+    int ret = structfd_posixInvalidFileDirOrBufferHandle;
     FRESULT result;
     result = f_unlink(path);
     if (result == FR_OK){
@@ -1376,14 +1377,14 @@ int fatfs_unlink(const sint8 *path){
 }
 
 int fatfs_link(const sint8 *path1, const sint8 *path2){
-    int ret = structfd_posixInvalidFileDirHandle;
+    int ret = structfd_posixInvalidFileDirOrBufferHandle;
     // FAT does not support links
     errno = EMLINK; /* maximum number of "links" is 1: the file itself */
     return ret;
 }
 
 int fatfs_rename(const sint8 *oldfname, const sint8 * newfname){
-    int ret = structfd_posixInvalidFileDirHandle;
+    int ret = structfd_posixInvalidFileDirOrBufferHandle;
     FRESULT result;
     result = f_rename(oldfname, newfname);
     if (result != FR_OK){
@@ -1396,7 +1397,7 @@ int fatfs_rename(const sint8 *oldfname, const sint8 * newfname){
 }
 
 int fatfs_fsync(int structFDIndex){	//uses struct fd indexing
-    int ret = structfd_posixInvalidFileDirHandle;
+    int ret = structfd_posixInvalidFileDirOrBufferHandle;
     struct fd * pfd = getStructFD(structFDIndex);
     if (pfd == NULL){
         errno = EBADF;
@@ -1421,9 +1422,9 @@ int fatfs_fsync(int structFDIndex){	//uses struct fd indexing
 }
 
 //if ok: return 0
-//else if error return structfd_posixInvalidFileDirHandle / struct stat * is empty or invalid
+//else if error return structfd_posixInvalidFileDirOrBufferHandle / struct stat * is empty or invalid
 int fatfs_stat(const sint8 *path, struct stat *buf){
-    int ret = structfd_posixInvalidFileDirHandle;
+    int ret = structfd_posixInvalidFileDirOrBufferHandle;
     FILINFO fno;
 	FRESULT result = f_stat(path, &fno);
     if ((result == FR_OK) && (buf != NULL)){
@@ -1437,9 +1438,9 @@ int fatfs_stat(const sint8 *path, struct stat *buf){
 }
 
 //if ok: return 0
-//else if error return structfd_posixInvalidFileDirHandle if path exists or failed due to other IO reason
+//else if error return structfd_posixInvalidFileDirOrBufferHandle if path exists or failed due to other IO reason
 int fatfs_mkdir(const sint8 *path, mode_t mode){
-    int ret = structfd_posixInvalidFileDirHandle;
+    int ret = structfd_posixInvalidFileDirOrBufferHandle;
     FRESULT result = f_mkdir(path);
     if (result == FR_OK){
         ret = 0;
@@ -1451,9 +1452,9 @@ int fatfs_mkdir(const sint8 *path, mode_t mode){
 }
 
 //if ok: return 0
-//else if error return structfd_posixInvalidFileDirHandle if readonly or not empty, or failed due to other IO reason
+//else if error return structfd_posixInvalidFileDirOrBufferHandle if readonly or not empty, or failed due to other IO reason
 int fatfs_rmdir(const sint8 *path){
-    int ret = structfd_posixInvalidFileDirHandle;
+    int ret = structfd_posixInvalidFileDirOrBufferHandle;
     FRESULT result = f_unlink(path);
     if (result == FR_OK){
         ret = 0;
@@ -1481,9 +1482,9 @@ int fatfs_rmdir(const sint8 *path){
 }
 
 //if ok: return 0
-//else if error return structfd_posixInvalidFileDirHandle if incorrect path, or failed due to other IO reason
+//else if error return structfd_posixInvalidFileDirOrBufferHandle if incorrect path, or failed due to other IO reason
 int fatfs_chdir(const sint8 *path){
-    int ret = structfd_posixInvalidFileDirHandle;
+    int ret = structfd_posixInvalidFileDirOrBufferHandle;
     FRESULT result = f_chdir(path);
     if (result == FR_OK){
         ret = 0;
@@ -1513,7 +1514,7 @@ sint8 *fatfs_getcwd(sint8 *buf, size_t size){
 DIR *fatfs_opendir(const sint8 *path){
     DIR *ret = NULL;
     int structFDIndex = fatfs_open(path, O_RDONLY);	//returns an internal index struct fd allocated
-	if (structFDIndex != structfd_posixInvalidFileDirHandle){
+	if (structFDIndex != structfd_posixInvalidFileDirOrBufferHandle){
 		struct fd *pfd = getStructFD(structFDIndex);
         if (pfd != NULL){
             ret = pfd->dirPtr;
@@ -1527,17 +1528,17 @@ DIR *fatfs_opendir(const sint8 *path){
 }
 
 //if the iterable DIR * was closed, return 0
-//else returns structfd_posixInvalidFileDirHandle if incorrect iterable DIR *
+//else returns structfd_posixInvalidFileDirOrBufferHandle if incorrect iterable DIR *
 int fatfs_closedir(DIR *dirp){
 	//we need a conversion from DIR * to struct fd *
 	int structFDIndex = getStructFDIndexByDIR(dirp);
-	return fatfs_close(structFDIndex);	//requires a struct fd(file descriptor), returns 0 if success, structfd_posixInvalidFileDirHandle if error
+	return fatfs_close(structFDIndex);	//requires a struct fd(file descriptor), returns 0 if success, structfd_posixInvalidFileDirOrBufferHandle if error
 }
 
 //if iterable DIR * is directory, return 0
-//else return structfd_posixInvalidFileDirHandle (not valid iterable DIR * entry or not directory )
+//else return structfd_posixInvalidFileDirOrBufferHandle (not valid iterable DIR * entry or not directory )
 int fatfs_dirfd(DIR *dirp){
-    int ret = structfd_posixInvalidFileDirHandle;
+    int ret = structfd_posixInvalidFileDirOrBufferHandle;
 	//we need a conversion from DIR * to struct fd *
 	int structFDIndex = getStructFDIndexByDIR(dirp);
 	struct fd * pfd = getStructFD(structFDIndex);
@@ -1573,7 +1574,7 @@ struct dirent *fatfs_readdir(DIR *dirp){
     struct dirent *ret = NULL;
     int structFDIndex = getStructFDIndexByDIR(dirp);	//we need a conversion from DIR * to struct fd *
 	struct fd * fdinst = getStructFD(structFDIndex);
-	if(fatfs_readdir_r(dirp, (struct dirent *)&fdinst->cur_entry, &ret) != structfd_posixInvalidFileDirHandle){
+	if(fatfs_readdir_r(dirp, (struct dirent *)&fdinst->cur_entry, &ret) != structfd_posixInvalidFileDirOrBufferHandle){
 		return ret;
 	}
 	else{
@@ -1584,13 +1585,13 @@ struct dirent *fatfs_readdir(DIR *dirp){
 }
 
 //if return equals 0 : means the struct dirent * (internal read file / dir) coming from DIR * was correctly parsed. 
-//else if return equals structfd_posixInvalidFileDirHandle: the DIR * could not parse the output struct dirent * (internal read file / dir), being NULL.
+//else if return equals structfd_posixInvalidFileDirOrBufferHandle: the DIR * could not parse the output struct dirent * (internal read file / dir), being NULL.
 int fatfs_readdir_r(
         DIR *dirp,
         struct dirent *entry,	//current dirent of file handle struct fd
         struct dirent **result){	//pointer to rewrite above file handle struct fd
 
-    int ret = structfd_posixInvalidFileDirHandle;
+    int ret = structfd_posixInvalidFileDirOrBufferHandle;
 	int structFDIndex = getStructFDIndexByDIR(dirp);
 	struct fd * fdinst = getStructFD(structFDIndex);
 	if(fdinst != NULL){
@@ -1640,7 +1641,7 @@ void fatfs_rewinddir(DIR *dirp){
 }
 
 long fatfs_tell(struct fd *f){	//NULL check already outside
-    long ret = structfd_posixInvalidFileDirHandle;
+    long ret = structfd_posixInvalidFileDirOrBufferHandle;
 	//dir
 	if ((f->dirPtr) && (S_ISDIR(f->stat.st_mode))){
 		ret = f->loc;
@@ -1661,7 +1662,7 @@ void fatfs_seekdir(DIR *dirp, long loc){
             fatfs_rewinddir(dirp);
         }
         while(loc > cur_loc){
-            int ret = structfd_posixInvalidFileDirHandle;
+            int ret = structfd_posixInvalidFileDirOrBufferHandle;
             struct dirent entry;
             struct dirent *result = NULL;
             ret = fatfs_readdir_r(dirp, &entry, &result);
@@ -1706,12 +1707,12 @@ int fatfs_deinit(){
 
 //this copies stat from internal struct fd to output stat
 //if StructFD (structFDIndex) index is created by fatfs_open (either file / dir), return 0 and the such struct stat * is updated.
-//else return structfd_posixInvalidFileDirHandle (not valid struct stat * entry, being NULL)
+//else return structfd_posixInvalidFileDirOrBufferHandle (not valid struct stat * entry, being NULL)
 int _fstat_r( struct _reent *_r, int structFDIndex, struct stat *buf ){	//(FileDescriptor :struct fd index)
     struct fd * f = getStructFD(structFDIndex);
     if ((f == NULL) || (f->isused == structfd_isunused)){
         _r->_errno = EBADF;
-		return structfd_posixInvalidFileDirHandle;
+		return structfd_posixInvalidFileDirOrBufferHandle;
     }
     *buf = f->stat;
     return 0;
@@ -1793,7 +1794,7 @@ bool buildFileClassListFromPath(char * path, struct FileClassList * lst, int sta
 					}		
 					//Generate FileClass from either a Directory or a File
 					bool iterable = true;
-					setFileClass(iterable, (char*)&builtFilePath[0], startFromGivenIndex + i, type, structfd_posixInvalidFileDirHandle, lst);
+					setFileClass(iterable, (char*)&builtFilePath[0], startFromGivenIndex + i, type, structfd_posixInvalidFileDirOrBufferHandle, lst);
 					i++;
 				}			
 			}

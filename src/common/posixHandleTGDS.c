@@ -557,7 +557,7 @@ int feof_tgds(int fd){
 
 //stub
 int ferror_tgds(int fd){
-	if(fd == structfd_posixInvalidFileDirHandle){
+	if(fd == structfd_posixInvalidFileDirOrBufferHandle){
 		return 1;
 	}
 	return 0;
