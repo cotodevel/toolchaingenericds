@@ -137,12 +137,13 @@ USA
 #define IPC_FIFO_ERROR			(uint16)(1<<14)
 #define IPC_FIFO_ENABLE			(uint16)(1<<15)
 
-//TGDS IPC Index
+//TGDS IPC Command Interrupt Index
+#define IPC_NULL_CMD					(u8)(0)	//NULL cmd is unused by TGDS, and relies on IPC irqs by TGDS project itself
 #define IPC_SEND_MULTIPLE_CMDS			(u8)(1)
 #define IPC_SERVE_DLDI7_REQBYIRQ		(u8)(2)
+#define IPC_ARM7READMEMORY_REQBYIRQ		(u8)(3)
 
 //Read Memory between ARM processors
-#define IPC_ARM7READMEMORY_REQBYIRQ		(u8)(9)
 #define ARM7READMEMORY_BUSY (int)(-1)
 
 static inline void sendByteIPC(uint8 inByte){
