@@ -22,6 +22,7 @@ USA
 #ifndef posixHandleTGDS_h__
 #define posixHandleTGDS_h__
 
+#include "typedefsTGDS.h"
 #include <ctype.h>
 #include <stdlib.h>
 
@@ -41,17 +42,41 @@ USA
 #include <sys/lock.h>
 #include <fcntl.h>
 
-#define MAXPRINT7ARGVCOUNT (int)(20)
+#ifdef ARM7
+#include "xmem.h"
+#endif
 
 #ifdef ARM9
-
 #include "ff.h"
 #include "utilsTGDS.h"
 #include "typedefsTGDS.h"
 #include "dsregs.h"
 #include "nds_cp15_misc.h"
 #include "ipcfifoTGDS.h"
+#endif
 
+#define MAXPRINT7ARGVCOUNT (int)(20)
+
+#ifdef ARM7
+//TGDS Malloc implementation, before using them requires a call from ARM9: void initARM7Malloc(u32 ARM7MallocStartaddress, u32 memSizeBytes)
+static inline u8* TGDSARM7Malloc(int size){
+	return (u8*)Xmalloc((const int)size);
+}
+
+static inline u8 * TGDSARM7Calloc(int blockCount, int blockSize){
+	return (u8*)Xcalloc((const int)blockSize, (const int)blockCount);
+}
+
+static inline void TGDSARM7Free(void *ptr){
+	Xfree((const void *)ptr);
+}
+
+static inline u32 TGDSARM7MallocFreeMemory(){
+	return (u32)XMEM_FreeMem();
+}
+#endif
+
+#ifdef ARM9
 enum _flags {
     _READ = 01,     /* file open for reading */
     _WRITE = 02,    /* file open for writing */
@@ -76,7 +101,6 @@ struct devoptab_t{
    _ssize_t (*write_r ) ( struct _reent *r, int fd, const sint8 *ptr, int len );
    _ssize_t (*read_r )( struct _reent *r, int fd, sint8 *ptr, int len );
 };
-
 #endif
 
 #ifdef __cplusplus
@@ -84,6 +108,11 @@ extern "C"{
 #endif
 
 #ifdef ARM7
+//ARM7 Malloc
+extern u32 ARM7MallocBaseAddress;
+extern void setTGDSARM7MallocBaseAddress(u32 address);
+extern u32 getTGDSARM7MallocBaseAddress();
+
 extern void printf7(char *chr, int argvCount, int * argv);	
 extern void writeDebugBuffer7(char *chr, int argvCount, int * argv);
 //shared
@@ -93,8 +122,10 @@ extern int * arm7ARGVBufferShared;
 
 //args through ARM7 print debugger
 extern int * arm7ARGVDebugBufferShared;
-
 #endif
+
+//Shared ARM7 Malloc
+extern void initARM7Malloc(u32 ARM7MallocStartaddress, u32 memSizeBytes);
 
 #ifdef ARM9
 extern void printf7Setup();
@@ -107,7 +138,6 @@ extern int arm7ARGVBuffer[MAXPRINT7ARGVCOUNT];
 //args through ARM7 print debugger
 extern int argvCount;
 extern int arm7ARGVDebugBuffer[MAXPRINT7ARGVCOUNT];
-
 #endif
 
 #ifdef ARM9
@@ -120,13 +150,11 @@ extern int arm7ARGVDebugBuffer[MAXPRINT7ARGVCOUNT];
 //writeDebugBuffer7("Write buffer 7 tests: Args: ", 3, (int)&argBuffer[0]);
 
 extern void printarm7DebugBuffer();
-
 extern int _unlink(const sint8 *path);
 extern void printfCoords(int x, int y, const char *format, ...);
 #endif
 
 extern int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list args);
-
 extern int fork();
 extern int isatty(int file);
 extern int vfiprintf(FILE *fp,const sint8 *fmt, va_list list);
@@ -136,14 +164,12 @@ extern int _end(int file);
 extern _ssize_t _read_r ( struct _reent *ptr, int fd, void *buf, size_t cnt );
 extern _ssize_t _write_r ( struct _reent *ptr, int fd, const void *buf, size_t cnt );
 extern int _open_r ( struct _reent *ptr, const sint8 *file, int flags, int mode );
-
 extern int _vfiprintf_r(struct _reent *reent, FILE *fp,const sint8 *fmt, va_list list);
 extern int _link(const sint8 *path1, const sint8 *path2);
 extern int	_stat_r ( struct _reent *_r, const char *file, struct stat *pstat );
 extern void _exit (int status);
 extern int _kill (pid_t pid, int sig);
 extern pid_t _getpid (void);
-
 extern int _close (int fd);
 extern int close (int fd);
 extern int _close_r ( struct _reent *ptr, int fd );
@@ -151,7 +177,6 @@ extern int _close_r ( struct _reent *ptr, int fd );
 // High level POSIX functions:
 // Alternate TGDS high level API if current posix implementation is missing or does not work. 
 // Note: uses int filehandles (or StructFD index, being a TGDS internal file handle index)
-
 extern int	open_tgds(const char * filepath, sint8 * args);
 extern size_t	read_tgds(_PTR buf, size_t blocksize, size_t readsize, int fd);
 extern size_t write_tgds(_PTR buf, size_t blocksize, size_t readsize, int fd);
@@ -166,14 +191,12 @@ extern int fgetc_tgds(int fd);
 extern char *fgets_tgds(char *s, int n, int fd);
 extern int feof_tgds(int fd);
 extern int ferror_tgds(int fd);
-
 extern int getMaxRam();
 extern void TryToDefragmentMemory();
 
 #ifdef __cplusplus
 }
 #endif
-
 
 static inline u8 * getarm7PrintfBuffer(){
 	#ifdef ARM7

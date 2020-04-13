@@ -32,6 +32,10 @@ USA
 #include "ipcfifoTGDS.h"
 #include "posixHandleTGDS.h"
 
+#ifdef ARM7
+#include "xmem.h"
+#endif
+
 #ifdef ARM9
 #include "dsregs_asm.h"
 #include "devoptab_devices.h"
@@ -104,6 +108,47 @@ void writeDebugBuffer7(char *chr, int argvCount, int * argv){
 	}
 }
 #endif
+
+//ARM7 malloc support. Will depend on the current memory mapped (can be either IWRAM(very scarse), EWRAM, VRAM or maybe other)
+#ifdef ARM7
+u32 ARM7MallocBaseAddress = 0;
+void setTGDSARM7MallocBaseAddress(u32 address){
+	ARM7MallocBaseAddress = address;
+}
+
+u32 getTGDSARM7MallocBaseAddress(){
+	return ARM7MallocBaseAddress;
+}
+
+//example: u32 ARM7MallocStartaddress = 0x06000000, u32 memSize = 128*1024
+void initARM7Malloc(u32 ARM7MallocStartaddress, u32 memSizeBytes){
+	setTGDSARM7MallocBaseAddress(ARM7MallocStartaddress);
+	XMEMTOTALSIZE = memSizeBytes;
+	//Init XMEM (let's see how good this one behaves...)
+	u32 xmemsize = XMEMTOTALSIZE;
+	xmemsize = xmemsize - (xmemsize/XMEM_BS) - 1024;
+	xmemsize = xmemsize - (xmemsize%1024);
+	XmemSetup(xmemsize, XMEM_BS);
+	XmemInit();
+}
+
+#endif
+
+#ifdef ARM9
+//blocking, because several processes depend on ARM7 having a proper malloc impl.
+void initARM7Malloc(u32 ARM7MallocStartaddress, u32 memSizeBytes){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	fifomsg[0] = (uint32)ARM7MallocStartaddress;
+	fifomsg[1] = (uint32)memSizeBytes;
+	fifomsg[2] = (uint32)TGDS_ARM7_SETUPARM7MALLOC;
+	SendFIFOWords(TGDS_ARM7_SETUPARM7MALLOC, fifomsg);
+	while(fifomsg[2] == TGDS_ARM7_SETUPARM7MALLOC){
+		swiDelay(2);
+	}
+}
+#endif
+
 
 #ifdef ARM9
 u8 printf7Buffer[MAX_TGDSFILENAME_LENGTH+1];
@@ -225,6 +270,7 @@ int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list args){
 	}
 	return fputs (stringBuf, fp);
 }
+
 
 //Notes:
 //	- 	Before you get confused, the layer order is: POSIX file operations-> newlib POSIX fd assign-> devoptab filesystem -> fatfs_layer (n file descriptors for each file op) -> fatfs driver -> dldi.

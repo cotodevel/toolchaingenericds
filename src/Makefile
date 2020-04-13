@@ -48,6 +48,7 @@ export TARGET_LIBRARY_LIBNAME_9	=	l$(TARGET_LIBRARY_NAME_9)
 #the correct format is : ../include/sys/ otherwise recursive folders break in later bash scripts
 export DIRS_ARM7_SRC = source/	\
 			source/dswifi_arm7/	\
+			source/xmalloc/	\
 			../common/	\
 			../common/dswifi/	\
 			../common/hardware/	\
@@ -62,6 +63,7 @@ export DIRS_ARM7_SRC = source/	\
 			
 export DIRS_ARM7_HEADER = source/	\
 			source/dswifi_arm7/	\
+			source/xmalloc/	\
 			../common/templateCode/source	\
 			../common/templateCode/data		\
 			../common/	\

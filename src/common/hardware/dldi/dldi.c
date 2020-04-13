@@ -24,6 +24,7 @@ bool dldi_handler_init(){
 	}
 	else{
 		status = true;	//init OK!
+		DLDIARM7Address = (u32*)dldiInit;
 	}
 	return status;
 }

@@ -32,6 +32,7 @@ USA
 #include "biosTGDS.h"
 #include "videoTGDS.h"
 #include "ipcfifoTGDS.h"
+#include "posixHandleTGDS.h"
 
 bool globalTGDSCustomConsole = false;
 
@@ -395,6 +396,10 @@ bool InitDefaultConsole(ConsoleInstance * DefaultSessionConsoleInst){
 	bool SaveConsoleContext = false;	//no effect because directFB == true
 	u8 * FBSaveContext = NULL;			//no effect because directFB == true
 	TGDSLCDSwap(disableTSCWhenTGDSConsoleTop, isDirectFramebuffer, SaveConsoleContext, FBSaveContext);
+	
+	initARM7Malloc((u32)0x06000000, (u32)128*1024);	//Since the default console setup allocates ARM7 @ 0x06000000, 128K, initialize a malloc for ARM7. 
+													//Otherwise if custom console, this routine is custom impl.
+	
 	return true;
 }
 

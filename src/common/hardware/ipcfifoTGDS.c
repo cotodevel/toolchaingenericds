@@ -123,8 +123,17 @@ void HandleFifoNotEmpty(){
 			//ARM7 command handler
 			#ifdef ARM7
 			
+			case((uint32)TGDS_ARM7_SETUPARM7MALLOC):{
+				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg
+				u32 ARM7MallocStartaddress = (u32)fifomsg[0];
+				u32 memSizeBytes = (uint32)fifomsg[1];
+				initARM7Malloc(ARM7MallocStartaddress, memSizeBytes);
+				fifomsg[2] = fifomsg[1] = fifomsg[0] = 0;
+			}
+			break;
+			
 			case((uint32)TGDS_ARM7_SETUPEXCEPTIONHANDLER):{
-				exceptionArmRegsShared = (uint8*)data0;		//data0 == uint32 * fifomsg
+				exceptionArmRegsShared = (uint8*)data0;		//data0 == ARM9's exceptionArmRegs
 				memset(exceptionArmRegsShared, 0, 0x20);	//same as exceptionArmRegs[0x20]
 				setupDefaultExceptionHandler();	//ARM7 TGDS Exception Handler
 			}
@@ -264,7 +273,6 @@ void HandleFifoNotEmpty(){
 				enableSleepMode();
 			}
 			break;
-			
 			#endif
 			
 			//ARM9 command handler
