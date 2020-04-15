@@ -57,55 +57,93 @@ USA
 
 #define MAXPRINT7ARGVCOUNT (int)(20)
 
-#ifdef ARM7
+
+#ifdef ARM9
+//ARM9 Malloc
+typedef u8* (*TGDSARM9MallocHandler)(int);
+typedef u8* (*TGDSARM9CallocHandler)(int, int);
+typedef void (*TGDSARM9FreeHandler)(void *);
+typedef u32 (*TGDSARM9MallocFreeMemoryHandler)();
+
+typedef struct AllocatorInstance
+{
+	TGDSARM9MallocHandler 			CustomTGDSMalloc9;
+	TGDSARM9CallocHandler 			CustomTGDSCalloc9;
+	TGDSARM9FreeHandler				CustomTGDSFree9;
+	TGDSARM9MallocFreeMemoryHandler	CustomTGDSMallocFreeMemory9;
+	int memoryToAllocate;
+	u32 ARM9MallocStartaddress;
+}AllocatorInstance;
+
+#ifdef __cplusplus
+extern "C"{
+#endif
+//POSIX Malloc implementation
+extern int getMaxRam();
+
 //TGDS Malloc implementation, before using them requires a call from ARM9: void initARM7Malloc(u32 ARM7MallocStartaddress, u32 memSizeBytes)
-static inline u8* TGDSARM7Malloc(int size){
-	return (u8*)Xmalloc((const int)size);
-}
+extern bool customMallocARM9;
+//weak symbols : the implementation of this is project-defined
+extern  __attribute__((weak))	AllocatorInstance * getProjectSpecificMemoryAllocatorSetup();
 
-static inline u8 * TGDSARM7Calloc(int blockCount, int blockSize){
-	return (u8*)Xcalloc((const int)blockSize, (const int)blockCount);
-}
+extern AllocatorInstance CustomAllocatorInstance;
+extern TGDSARM9MallocHandler 			TGDSMalloc9;
+extern TGDSARM9CallocHandler 			TGDSCalloc9;
+extern TGDSARM9FreeHandler				TGDSFree9;
+extern TGDSARM9MallocFreeMemoryHandler	TGDSMallocFreeMemory9;
 
-static inline void TGDSARM7Free(void *ptr){
-	Xfree((const void *)ptr);
-}
+extern u32 ARM9MallocBaseAddress;
+extern void setTGDSARM9MallocBaseAddress(u32 address);
+extern u32 getTGDSARM9MallocBaseAddress();
+extern void initARM9Malloc(u32 ARM9MallocStartaddress, u32 memSizeBytes, u32 * mallocHandler, u32 * callocHandler, u32 * freeHandler, u32 * MallocFreeMemoryHandler, bool customAllocator);
 
-static inline u32 TGDSARM7MallocFreeMemory(){
-	return (u32)XMEM_FreeMem();
+#ifdef __cplusplus
 }
 #endif
 
-#ifdef ARM9
-enum _flags {
-    _READ = 01,     /* file open for reading */
-    _WRITE = 02,    /* file open for writing */
-    _UNBUF = 03,    /* file is unbuffered */
-    _EOF    = 010,  /* EOF has occurred on this file */
-    _ERR    = 020,  /* error occurred on this file */
-};
+static inline u8* TGDSARM9Malloc(int size){
+	if(customMallocARM9 == false){
+		return (u8*)malloc((const int)size);
+	}
+	else{
+		return (u8*)TGDSMalloc9((const int)size);
+	}
+}
 
+static inline u8 * TGDSARM9Calloc(int blockCount, int blockSize){
+	if(customMallocARM9 == false){
+		return (u8*)calloc(blockSize, blockCount);	//reverse order
+	}
+	else{
+		return (u8*)TGDSCalloc9(blockCount, blockSize);	//same order
+	}
+}
 
-//File Descriptor Semantics for Newlib
-//Stream 0 is defined by convention to be the "standard input" stream, which newlib uses for the getc() and similar functions that don't otherwise specify an input stream. 
-//Stream 1 is "standard output," the destination for printf() and puts(). 
-//Stream 2 refers to "standard error," the destination conventionally reserved for messages of grave importance.
+static inline void TGDSARM9Free(void *ptr){
+	if(customMallocARM9 == false){
+		free(ptr);
+	}
+	else{
+		TGDSFree9(ptr);
+	}
+}
 
-#define devoptab_fname_size 32
+static inline u32 TGDSARM9MallocFreeMemory(){
+	if(customMallocARM9 == false){
+		return (u32)getMaxRam();
+	}
+	else{
+		return (u32)TGDSMallocFreeMemory9();
+	}
+}
 
-//devoptab_t that match file descriptors
-struct devoptab_t{
-   const sint8 name[devoptab_fname_size];
-   int (*open_r )( struct _reent *r, const sint8 *path, int flags, int mode );
-   int (*close_r )( struct _reent *r, int fd ); 
-   _ssize_t (*write_r ) ( struct _reent *r, int fd, const sint8 *ptr, int len );
-   _ssize_t (*read_r )( struct _reent *r, int fd, sint8 *ptr, int len );
-};
 #endif
 
 #ifdef __cplusplus
 extern "C"{
 #endif
+
+extern void setTGDSMemoryAllocator(struct AllocatorInstance * TGDSMemoryAllocator);
 
 #ifdef ARM7
 //ARM7 Malloc
@@ -191,11 +229,37 @@ extern int fgetc_tgds(int fd);
 extern char *fgets_tgds(char *s, int n, int fd);
 extern int feof_tgds(int fd);
 extern int ferror_tgds(int fd);
-extern int getMaxRam();
 extern void TryToDefragmentMemory();
 
 #ifdef __cplusplus
 }
+#endif
+
+#ifdef ARM9
+enum _flags {
+    _READ = 01,     /* file open for reading */
+    _WRITE = 02,    /* file open for writing */
+    _UNBUF = 03,    /* file is unbuffered */
+    _EOF    = 010,  /* EOF has occurred on this file */
+    _ERR    = 020,  /* error occurred on this file */
+};
+
+
+//File Descriptor Semantics for Newlib
+//Stream 0 is defined by convention to be the "standard input" stream, which newlib uses for the getc() and similar functions that don't otherwise specify an input stream. 
+//Stream 1 is "standard output," the destination for printf() and puts(). 
+//Stream 2 refers to "standard error," the destination conventionally reserved for messages of grave importance.
+
+#define devoptab_fname_size 32
+
+//devoptab_t that match file descriptors
+struct devoptab_t{
+   const sint8 name[devoptab_fname_size];
+   int (*open_r )( struct _reent *r, const sint8 *path, int flags, int mode );
+   int (*close_r )( struct _reent *r, int fd ); 
+   _ssize_t (*write_r ) ( struct _reent *r, int fd, const sint8 *ptr, int len );
+   _ssize_t (*read_r )( struct _reent *r, int fd, sint8 *ptr, int len );
+};
 #endif
 
 static inline u8 * getarm7PrintfBuffer(){
@@ -205,6 +269,26 @@ static inline u8 * getarm7PrintfBuffer(){
 	#ifdef ARM9
 	return (u8 *)&printf7Buffer[0];
 	#endif
+}
+#endif
+
+
+#ifdef ARM7
+//TGDS Malloc implementation, before using them requires a call from ARM9: void initARM7Malloc(u32 ARM7MallocStartaddress, u32 memSizeBytes)
+static inline u8* TGDSARM7Malloc(int size){
+	return (u8*)Xmalloc((const int)size);
+}
+
+static inline u8 * TGDSARM7Calloc(int blockCount, int blockSize){
+	return (u8*)Xcalloc((const int)blockSize, (const int)blockCount);
+}
+
+static inline void TGDSARM7Free(void *ptr){
+	Xfree((const void *)ptr);
+}
+
+static inline u32 TGDSARM7MallocFreeMemory(){
+	return (u32)XMEM_FreeMem();
 }
 #endif
 

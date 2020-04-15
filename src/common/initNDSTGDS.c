@@ -34,6 +34,7 @@ USA
 #include "soundTGDS.h"
 #include "global_settings.h"
 #include "eventsTGDS.h"
+#include "posixHandleTGDS.h"
 
 #ifdef ARM9
 #include "devoptab_devices.h"
@@ -103,7 +104,7 @@ void initHardware(void) {
 	setTouchScreenEnabled(true);	
 	
 	//Enable TGDS Event handling + Set timeout to turn off screens if idle.
-	setAndEnableSleepModeInSeconds(SLEEPMODE_SECONDS); //works fine
+	setAndEnableSleepModeInSeconds(SLEEPMODE_SECONDS);
 	#endif
 	
 }

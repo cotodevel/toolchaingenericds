@@ -127,9 +127,68 @@ void initARM7FS(char * ARM7FS_ARM9Filename){	//ARM7 Impl.
 }
 #endif
 
+void deinitARM7FS(){
+	/*
+	#ifdef ARM7
+	#endif
+	
+	#ifdef ARM9
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	TGDSIPC->IR_readbufsize=0;
+	//todo add: ARM9 updatable malloc
+	TGDSIPC->IR_readbuf=0;
+	if(fout!= NULL){
+		fclose(fout);
+	}
+	//setup vars
+	if(ARM7FS_FileHandleRead !=NULL ){
+		fclose(ARM7FS_FileHandleRead);
+	}
+	TGDSIPC->IR_readbuf=(u8*)malloc(splitBufferSize);	//Must be EWRAM because then ARM7 can receive it into ARM7's 0x06000000 through DMA (hardware ring buffer)
+	ARM7FS_FileHandleRead = fopen(inFilename, "r");
+	ARM7FS_FileHandleWrite = fopen(outFilename, "w+");
+	TGDSIPC->IR_ReadOffset = 0;
+	TGDSIPC->IR_WrittenOffset = 0;
+	TGDSIPC->IR_filesize = FS_getFileSizeFromOpenHandle(ARM7FS_FileHandleRead);
+	if(ARM7FS_FileHandleRead != NULL){
+		printf("fileopenOK: Size: %d",TGDSIPC->IR_filesize);
+	}
+	//ARM7 MP2 FS test case start.
+	setARM7FSTransactionStatus(ARM7FS_TRANSACTIONSTATUS_BUSY);
+	
+	//Wait for ARM7FS init.
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	fifomsg[0] = (u32)inFilename;
+	fifomsg[1] = (uint32)TGDSIPC->IR_filesize;
+	fifomsg[2] = (uint32)splitBufferSize;
+	fifomsg[3] = (uint32)IPC_ARM7INIT_ARM7FS;
+	fifomsg[4] = (uint32)debugVar;
+	fifomsg[5] = (uint32)0xc070c070;	//Test case enable
+	
+	sendByteIPC(IPC_ARM7INIT_ARM7FS);
+	while(fifomsg[3] == IPC_ARM7INIT_ARM7FS){
+		swiDelay(1);
+	}
+	
+	//Test Case: file read/writes are async (through interrupts)
+	
+	//wait until async file writes are done.
+	while(getARM7FSTransactionStatus() == ARM7FS_TRANSACTIONSTATUS_BUSY){
+		swiDelay(1);
+	}
+	
+	fclose(ARM7FS_FileHandleRead);
+	fclose(ARM7FS_FileHandleWrite);
+	free((u8*)TGDSIPC->IR_readbuf);
+	printf("ARM7FS() Test Case: end!");
+	#endif
+	*/
+}
+
 #ifdef ARM9
-void initARM7FS(char * ARM7FS_ARM9Filename){	//ARM9. 
-	//Todo: Add async code from ARM9's performARM7MP2FSTestCase(), or maybe ARM7FS implementation is project specific... WIP.
+
+void initARM7FS(char * inFilename, char * outFilename, FILE * fout, int splitBufferSize, u32 * debugVar){	//ARM9. 
+	
 }
 
 void performARM7MP2FSTestCase(char * inFilename, char * outFilename, FILE * fout, int splitBufferSize, u32 * debugVar){	//ARM9 Impl.

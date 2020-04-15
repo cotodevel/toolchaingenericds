@@ -135,7 +135,7 @@ void initARM7Malloc(u32 ARM7MallocStartaddress, u32 memSizeBytes){
 #endif
 
 #ifdef ARM9
-//blocking, because several processes depend on ARM7 having a proper malloc impl.
+//ARM7 Malloc implementation: Blocking, because several processes depend on ARM7 having a proper malloc impl.
 void initARM7Malloc(u32 ARM7MallocStartaddress, u32 memSizeBytes){
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
@@ -145,6 +145,75 @@ void initARM7Malloc(u32 ARM7MallocStartaddress, u32 memSizeBytes){
 	SendFIFOWords(TGDS_ARM7_SETUPARM7MALLOC, fifomsg);
 	while(fifomsg[2] == TGDS_ARM7_SETUPARM7MALLOC){
 		swiDelay(2);
+	}
+}
+
+//ARM9 Malloc implementation: Blocking, because several processes running on ARM7 may require ARM9 having a proper malloc impl.
+u32 ARM9MallocBaseAddress = 0;
+void setTGDSARM9MallocBaseAddress(u32 address){
+	ARM9MallocBaseAddress = address;
+}
+
+u32 getTGDSARM9MallocBaseAddress(){
+	return ARM9MallocBaseAddress;
+}
+//Global
+bool customMallocARM9 = false;
+TGDSARM9MallocHandler 			TGDSMalloc9;
+TGDSARM9CallocHandler 			TGDSCalloc9;
+TGDSARM9FreeHandler				TGDSFree9;
+TGDSARM9MallocFreeMemoryHandler	TGDSMallocFreeMemory9;
+
+//Prototype
+AllocatorInstance CustomAllocatorInstance;
+
+void initARM9Malloc(u32 ARM9MallocStartaddress, u32 memSizeBytes, u32 * mallocHandler, u32 * callocHandler, u32 * freeHandler, u32 * MallocFreeMemoryHandler, bool customAllocator){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	fifomsg[0] = (uint32)ARM9MallocStartaddress;
+	fifomsg[1] = (uint32)memSizeBytes;
+	fifomsg[2] = (uint32)customAllocator;
+	fifomsg[3] = (uint32)TGDS_ARM7_SETUPARM9MALLOC;
+	setTGDSARM9MallocBaseAddress(ARM9MallocStartaddress);
+	if(customAllocator == true){
+		if(mallocHandler != NULL){
+			TGDSMalloc9 = (TGDSARM9MallocHandler)mallocHandler;
+		}
+		if(callocHandler != NULL){
+			TGDSCalloc9 = (TGDSARM9CallocHandler)callocHandler;
+		}
+		if(freeHandler != NULL){
+			TGDSFree9 = (TGDSARM9FreeHandler)freeHandler;
+		}
+		if(MallocFreeMemoryHandler != NULL){
+			TGDSMallocFreeMemory9 = (TGDSARM9MallocFreeMemoryHandler)MallocFreeMemoryHandler;
+		}
+	}
+	
+	SendFIFOWords(TGDS_ARM7_SETUPARM9MALLOC, fifomsg);
+	while(fifomsg[3] == TGDS_ARM7_SETUPARM9MALLOC){
+		swiDelay(2);
+	}
+}
+
+void setTGDSMemoryAllocator(AllocatorInstance * TGDSMemoryAllocator){
+	//Enable Default/Custom TGDS Memory Allocator
+	u32 ARM9MallocStartaddress = (u32)sbrk(0);
+	if(TGDSMemoryAllocator == NULL){
+		customMallocARM9 = false;
+		initARM9Malloc(ARM9MallocStartaddress, getMaxRam(), NULL, NULL, NULL, NULL, customMallocARM9);
+	}
+	else{
+		customMallocARM9 = true;
+		initARM9Malloc(
+			(u32)TGDSMemoryAllocator->ARM9MallocStartaddress, 
+			(u32)TGDSMemoryAllocator->memoryToAllocate, 
+			(u32 *)TGDSMemoryAllocator->CustomTGDSMalloc9, 
+			(u32 *)TGDSMemoryAllocator->CustomTGDSCalloc9, 
+			(u32 *)TGDSMemoryAllocator->CustomTGDSFree9, 
+			(u32 *)TGDSMemoryAllocator->CustomTGDSMallocFreeMemory9, 
+			customMallocARM9
+		);
 	}
 }
 #endif

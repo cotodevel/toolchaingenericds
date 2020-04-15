@@ -133,6 +133,18 @@ void HandleFifoNotEmpty(){
 			}
 			break;
 			
+			case((uint32)TGDS_ARM7_SETUPARM9MALLOC):{	//ARM7
+				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg
+				u32 ARM9MallocStartaddress = (u32)fifomsg[0];
+				u32 memSizeBytes = (u32)fifomsg[1];
+				bool customAllocator = (bool)fifomsg[2];
+				
+				//Do ARM7 related things when initializing TGDS ARM9 Malloc.
+				
+				fifomsg[3] = fifomsg[2] = fifomsg[1] = fifomsg[0] = 0;
+			}
+			break;
+			
 			case((uint32)TGDS_ARM7_SETUPEXCEPTIONHANDLER):{
 				exceptionArmRegsShared = (uint8*)data0;		//data0 == ARM9's exceptionArmRegs
 				memset(exceptionArmRegsShared, 0, 0x20);	//same as exceptionArmRegs[0x20]
@@ -278,6 +290,11 @@ void HandleFifoNotEmpty(){
 			
 			//ARM9 command handler
 			#ifdef ARM9
+			
+			case((uint32)TGDS_ARM7_SETUPARM9MALLOC):{	//ARM9
+				
+			}
+			break;
 			
 			//ARM7 FS: read from ARM9 POSIX filehandle to ARM7
 			case(IR_ARM7FS_Read):{
