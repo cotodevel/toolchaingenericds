@@ -147,6 +147,19 @@ USA
 //Read Memory between ARM processors
 #define ARM7READMEMORY_BUSY (int)(-1)
 
+//ARM7 FS IPC Commands
+#define IPC_ARM7INIT_ARM7FS (u8)(0xE)
+#define IPC_ARM7DEINIT_ARM7FS (u8)(0xF)
+
+//ARM7 FS IO
+#define ARM7FS_IOSTATUS_IDLE (int)(-1)
+#define ARM7FS_IOSTATUS_BUSY (int)(0)
+
+//ARM7 FS Transaction Status
+#define ARM7FS_TRANSACTIONSTATUS_IDLE (int)(-1)
+#define ARM7FS_TRANSACTIONSTATUS_BUSY (int)(0)
+
+
 static inline void sendByteIPC(uint8 inByte){
 	REG_IPC_SYNC = ((REG_IPC_SYNC&0xfffff0ff) | (inByte<<8) | (1<<13) );	// (1<<13) Send IRQ to remote CPU      (0=None, 1=Send IRQ)
 }
@@ -219,6 +232,20 @@ struct sIPCSharedTGDS {
 	
 	//args through ARM7 print debugger
 	int argvCount;
+	
+	//ARM7 Filesystem
+	bool initStatus;
+	int ARM7FSStatus;	//IO busy/idle
+	int ARM7FSTransactionStatus;	//Global transaction status. This one decides the whole streaming context
+	
+	//File from ARM7
+	int IR;				//Command Status. This is used as acknowledge from IR sent through IPC IRQ Index Command
+	int IR_filesize;	//file size
+	u32 *IR_readbuf;
+	int IR_readbufsize;
+	int IR_ReadOffset;
+	int IR_WrittenOffset;
+	
 } __attribute__((aligned (4)));
 
 //Shared Work     027FF000h 4KB    -     -    -    R/W

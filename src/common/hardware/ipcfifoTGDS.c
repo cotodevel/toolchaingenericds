@@ -28,6 +28,7 @@ USA
 #include "dldi.h"
 #include "dmaTGDS.h"
 #include "eventsTGDS.h"
+#include "ARM7FS.h"
 
 #ifdef ARM7
 #include <string.h>
@@ -277,6 +278,34 @@ void HandleFifoNotEmpty(){
 			
 			//ARM9 command handler
 			#ifdef ARM9
+			
+			//ARM7 FS: read from ARM9 POSIX filehandle to ARM7
+			case(IR_ARM7FS_Read):{
+				uint32* fifomsg = (uint32*)data0;		//data1 == uint32 * fifomsg
+				//Index 0 -- 4 used, do not use.
+				u8* readbuf = (u8*)fifomsg[5];
+				int readBufferSize = (int)fifomsg[6];
+				int fileOffset = (int)fifomsg[7];
+				int readSoFar = ARM7FS_ReadBuffer_ARM9Callback(readbuf, fileOffset, ARM7FS_FileHandleRead, readBufferSize);	//UpdateDPG_Audio();
+				coherent_user_range_by_size((uint32)readbuf, readBufferSize);
+				fifomsg[7] = fifomsg[6] = fifomsg[5] = 0;
+				setARM7FSIOStatus(ARM7FS_IOSTATUS_IDLE);
+			}
+			break;
+			
+			//ARM7 FS: write from ARM7 to ARM9 POSIX filehandle
+			case(IR_ARM7FS_Save):{
+				uint32* fifomsg = (uint32*)data0;		//data1 == uint32 * fifomsg
+				//Index 0 -- 4 used, do not use.
+				u8* readbuf = (u8*)fifomsg[5];
+				int writeBufferSize = (int)fifomsg[6];
+				int fileOffset = (int)fifomsg[7];
+				coherent_user_range_by_size((uint32)readbuf, writeBufferSize);
+				int writtenSoFar = ARM7FS_SaveBuffer_ARM9Callback(readbuf, fileOffset, ARM7FS_FileHandleWrite, writeBufferSize);
+				fifomsg[7] = fifomsg[6] = fifomsg[5] = 0;
+				setARM7FSIOStatus(ARM7FS_IOSTATUS_IDLE);
+			}
+			break;
 			
 			case((uint32)TGDS_ARM7_PRINTF7):{
 				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg

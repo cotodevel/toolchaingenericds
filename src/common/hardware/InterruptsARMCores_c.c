@@ -133,12 +133,49 @@ void NDS_IRQHandler(){
 			}
 			break;			
 			#ifdef ARM7
+			//ARM7 FS Init
+			case(IPC_ARM7INIT_ARM7FS):{	//ARM7
+				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				char *  ARM7FS_ARM9Filename = (char *)fifomsg[0];
+				int fileHandleSize = (int)fifomsg[1];
+				int splitBufferSize = (int)fifomsg[2];
+				u32 * debugVar = (int)fifomsg[4];
+				u32 testCase = fifomsg[5]; 
+				initARM7FS((char*)ARM7FS_ARM9Filename);
+				if(testCase == (u32)0xc070c070){
+					performARM7MP2FSTestCase(ARM7FS_ARM9Filename, splitBufferSize, debugVar);
+				}
+				fifomsg[5] = fifomsg[4] = fifomsg[3] = fifomsg[2] = fifomsg[1] = fifomsg[0] = 0;
+			}
+			break;
+			
+			case(IPC_ARM7DEINIT_ARM7FS):{	//ARM7
+				//todo
+			}
+			break;
+			
 			#ifdef ARM7_DLDI
 			case(IPC_SERVE_DLDI7_REQBYIRQ):{
 				IPCIRQHandleDLDI();
 			}
 			break;
 			#endif
+			
+			#endif
+			
+			#ifdef ARM9
+			case (IPC_ARM7INIT_ARM7FS):	//ARM9 
+			{
+				
+			}
+			break;
+			
+			case(IPC_ARM7DEINIT_ARM7FS):{	//ARM9 
+				//todo
+			}
+			break;
+			
 			#endif
 			
 			default:{
