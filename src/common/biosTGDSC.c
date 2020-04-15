@@ -26,6 +26,7 @@ USA
 #include "dldi.h"
 #include "dmaTGDS.h"
 #include "InterruptsARMCores_h.h"
+#include "posixHandleTGDS.h"
 
 //NDS BIOS Routines C code
 
@@ -64,7 +65,7 @@ struct LZSSContext LZS_DecodeFromBuffer(unsigned char *pak_buffer, unsigned int 
 	}
 
 	raw_len = *(unsigned int *)pak_buffer >> 8;
-	raw_buffer = (unsigned char *) malloc(raw_len * sizeof(char));
+	raw_buffer = (unsigned char *) TGDSARM9Malloc(raw_len * sizeof(char));
 
 	swiDecompressLZSSWram((void *)pak_buffer, (void *)raw_buffer);
 

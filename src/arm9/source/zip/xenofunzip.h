@@ -105,6 +105,9 @@ extern int do_decompression_ewramstack(char *inname, char *outname);	//Coto: use
 //UserCode: (char*)"path1ToFileZipped","path2ToFileToCreateUnzipped"
 extern int load_gz(char *fname, char *newtempfname);
 
+extern u8* xenoTGDSARM9Malloc(int size);
+extern void xenoTGDSARM9Free(void *ptr);
+
 #ifdef __cplusplus
 }
 #endif

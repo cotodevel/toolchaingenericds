@@ -3,7 +3,7 @@
  * note: xenogzip uses gzio but xenofunzip uses normal inflateInit2()/inflate().
  */
 
-//Coto: rewritten compressor code so it's ZLIB standard through malloc/free default memory allocator.
+//Coto: rewritten compressor code so it's ZLIB standard through TGDS malloc/free memory allocator.
 //Also use EWRAM as stack for giant compressed .zip / .gz files, see zipSwapStack.S for specifics.
 
 #include "xenofunzip.h"
@@ -85,7 +85,7 @@ int funzipstdio(FILE *in, FILE *out){
 		z_stream z;
 		int result;
 		
-		//use the default malloc/free		
+		//Use TGDS malloc/free directly, don't let ZLIB to create buffers internally
 		z.zalloc = Z_NULL;
 		z.zfree = Z_NULL;
 		z.opaque = Z_NULL;
@@ -97,8 +97,8 @@ int funzipstdio(FILE *in, FILE *out){
 			err( buf );
 		}
 		
-		ibuffer = (Bytef *)malloc(UNZIPBUFFER_SIZE);
-		obuffer = (Bytef *)malloc(UNZIPBUFFER_SIZE);
+		ibuffer = (Bytef *)TGDSARM9Malloc(UNZIPBUFFER_SIZE);
+		obuffer = (Bytef *)TGDSARM9Malloc(UNZIPBUFFER_SIZE);
 		
 		memset ( ibuffer, 0, UNZIPBUFFER_SIZE);
 		memset ( obuffer, 0, UNZIPBUFFER_SIZE);
@@ -142,8 +142,8 @@ int funzipstdio(FILE *in, FILE *out){
 		}
 		
 		inflateEnd( &z );
-		free(ibuffer);
-		free(obuffer);
+		TGDSARM9Free(ibuffer);
+		TGDSARM9Free(obuffer);
 		
 	}else{ //stored
 		while (size--) {
@@ -156,13 +156,13 @@ int funzipstdio(FILE *in, FILE *out){
 }
 
 
-//UserCode: (char*)"path1ToFileZipped","path2ToFileToCreateUnzipped"
-int load_gz(char *fname, char *newtempfname)	//fname,newtempfname must use getfatfsPath() outside!
+//UserCode: (char*)"path1ToFileZipped", (char*)"path2ToNewFileCreatedUnzipped"
+int load_gz(char *fname, char *newtempfname)
 {
 	return do_decompression_ewramstack(fname, newtempfname);	//use EWRAM as STACK
 }
 
-int do_decompression(char *inname, char *outname){ //dszip frontend
+int do_decompression(char *inname, char *outname){
 	FILE *in=fopen(inname,"r");
 	if(!in)return -1;
 	FILE *out=fopen(outname,"w+");
@@ -174,3 +174,13 @@ int do_decompression(char *inname, char *outname){ //dszip frontend
 	
 	return ret;
 }
+
+u8* xenoTGDSARM9Malloc(int size){
+	return TGDSARM9Malloc(size);
+}
+
+void xenoTGDSARM9Free(void *ptr){
+	TGDSARM9Free(ptr);
+}
+
+//void TGDSARM9Free(void *ptr)

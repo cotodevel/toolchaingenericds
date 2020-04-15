@@ -26,11 +26,12 @@ USA
 
 ////////////////////////////////////////////////////////////////////////////INTERNAL CODE START/////////////////////////////////////////////////////////////////////////////////////
 
-#include "ff.h"	//DIR struct definition here. dirent.h´s DIR was removed, and rewritten
 #include <dirent.h>
+#include <stdio.h>
 #include <sys/stat.h>
 #include "devoptab_devices.h"
-#include <stdio.h>
+#include "posixHandleTGDS.h"
+#include "ff.h"	//DIR struct definition here. dirent.h´s DIR was removed, and rewritten
 
 //TGDS FS defs: These must be typecasted otherwise compiler will generate wrong strb opcodes
 #define FT_NONE (int)(0)
@@ -468,7 +469,7 @@ int getStructFDIndexByDIR(DIR *dirp){
 }
 
 static inline struct FileClassList * initFileList(){
-	return (struct FileClassList *)malloc(sizeof(struct FileClassList));
+	return (struct FileClassList *)TGDSARM9Malloc(sizeof(struct FileClassList));
 }
 
 //return: true if clean success
@@ -487,7 +488,7 @@ static inline bool cleanFileList(struct FileClassList * lst){
 
 static inline void freeFileList(struct FileClassList * lst){
 	if(lst != NULL){
-		free(lst);
+		TGDSARM9Free(lst);
 	}
 }
 

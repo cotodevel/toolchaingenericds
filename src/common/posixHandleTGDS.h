@@ -18,7 +18,6 @@ USA
 
 */
 
-
 #ifndef posixHandleTGDS_h__
 #define posixHandleTGDS_h__
 
@@ -57,6 +56,24 @@ USA
 
 #define MAXPRINT7ARGVCOUNT (int)(20)
 
+#ifdef ARM7
+//TGDS Malloc implementation, before using them requires a call from ARM9: void initARM7Malloc(u32 ARM7MallocStartaddress, u32 memSizeBytes)
+static inline u8* TGDSARM7Malloc(int size){
+	return (u8*)Xmalloc((const int)size);
+}
+
+static inline u8 * TGDSARM7Calloc(int blockCount, int blockSize){
+	return (u8*)Xcalloc((const int)blockSize, (const int)blockCount);
+}
+
+static inline void TGDSARM7Free(void *ptr){
+	Xfree((const void *)ptr);
+}
+
+static inline u32 TGDSARM7MallocFreeMemory(){
+	return (u32)XMEM_FreeMem();
+}
+#endif
 
 #ifdef ARM9
 //ARM9 Malloc
@@ -269,26 +286,6 @@ static inline u8 * getarm7PrintfBuffer(){
 	#ifdef ARM9
 	return (u8 *)&printf7Buffer[0];
 	#endif
-}
-#endif
-
-
-#ifdef ARM7
-//TGDS Malloc implementation, before using them requires a call from ARM9: void initARM7Malloc(u32 ARM7MallocStartaddress, u32 memSizeBytes)
-static inline u8* TGDSARM7Malloc(int size){
-	return (u8*)Xmalloc((const int)size);
-}
-
-static inline u8 * TGDSARM7Calloc(int blockCount, int blockSize){
-	return (u8*)Xcalloc((const int)blockSize, (const int)blockCount);
-}
-
-static inline void TGDSARM7Free(void *ptr){
-	Xfree((const void *)ptr);
-}
-
-static inline u32 TGDSARM7MallocFreeMemory(){
-	return (u32)XMEM_FreeMem();
 }
 #endif
 

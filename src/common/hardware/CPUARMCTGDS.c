@@ -24,6 +24,7 @@ USA
 #include "ipcfifoTGDS.h"
 #include "linkerTGDS.h"
 #include "CPUARMTGDS.h"
+#include "xmem.h"
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
@@ -31,13 +32,13 @@ USA
 
 uint32 globalVRAMStackStartPtr;
 uint32 allocVRAMStacks(){
-	globalVRAMStackStartPtr = (uint32)malloc(1024 * 8);	
+	globalVRAMStackStartPtr = (uint32)Xmalloc(1024 * 8);	
 	return globalVRAMStackStartPtr;
 }
 
 
 void deallocVRAMStacks(){
-	free((uint32*)globalVRAMStackStartPtr);
+	Xfree((uint32*)globalVRAMStackStartPtr);
 }
 
 #endif

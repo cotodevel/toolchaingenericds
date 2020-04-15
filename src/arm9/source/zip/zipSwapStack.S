@@ -24,6 +24,8 @@
 
 #define EWRAM_STACK_SIZE (32*1024)
 
+.extern xenoTGDSARM9Malloc
+.extern xenoTGDSARM9Free
 @int do_decompression_ewramstack(r0 = char *inname, r1 = char *outname);
 	.global	do_decompression_ewramstack
 	.type	do_decompression_ewramstack STT_FUNC
@@ -36,7 +38,7 @@ do_decompression_ewramstack:
 	
 	mov r0, #(EWRAM_STACK_SIZE)
 	push {r7-r9}
-	bl malloc 
+	bl xenoTGDSARM9Malloc
 	pop {r7-r9}
 	add sp,r0,#(EWRAM_STACK_SIZE)	@use banked stack and forward to ARM full descending nature
 	
@@ -51,7 +53,7 @@ do_decompression_ewramstack:
 	add r0,sp,#-(EWRAM_STACK_SIZE)	@use banked stack and rewind from ARM full descending nature to malloc/free linear deallocation
 	
 	push {r1,r9}
-	bl free
+	bl xenoTGDSARM9Free
 	pop {r1,r9}
 	
 	mov sp,r9

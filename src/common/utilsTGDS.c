@@ -31,6 +31,7 @@ USA
 #include <errno.h>
 #include <stddef.h>
 #include "reent.h"	//sbrk
+#include "posixHandleTGDS.h"
 
 #ifdef ARM9
 #include "dswnifi_lib.h"
@@ -687,7 +688,7 @@ void RenderTGDSLogoSubEngine(u8 * compressedLZSSBMP, int compressedLZSSBMPSize){
 	renderFBMode3Engine((u16*)LZSSCtx.bufferSource, 0x06200000, (int)TGDSLOGONDSSIZE_WIDTH,(int)TGDSLOGONDSSIZE_HEIGHT);
 	
 	//used? discard
-	free(LZSSCtx.bufferSource);
+	TGDSARM9Free(LZSSCtx.bufferSource);
 }
 
 void RenderTGDSLogoMainEngine(u8 * compressedLZSSBMP, int compressedLZSSBMPSize){
@@ -704,7 +705,7 @@ void RenderTGDSLogoMainEngine(u8 * compressedLZSSBMP, int compressedLZSSBMPSize)
 	renderFBMode3Engine((u16*)LZSSCtx.bufferSource, 0x06000000, (int)TGDSLOGONDSSIZE_WIDTH,(int)TGDSLOGONDSSIZE_HEIGHT);
 	
 	//used? discard
-	free(LZSSCtx.bufferSource);
+	TGDSARM9Free(LZSSCtx.bufferSource);
 }
 
 #endif

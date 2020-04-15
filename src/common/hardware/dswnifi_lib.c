@@ -253,7 +253,7 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 				if(globalTGDSCustomConsole == false){
 					bool isDirectFramebuffer = false;
 					bool disableTSCWhenTGDSConsoleTop = false;
-					u8* currentVRAMContext = (u8*)malloc(128*1024);
+					u8* currentVRAMContext = (u8*)TGDSARM9Malloc(128*1024);
 					bool SaveConsoleContext = true; //Save Console context
 					TGDSLCDSwap(disableTSCWhenTGDSConsoleTop, isDirectFramebuffer, SaveConsoleContext, currentVRAMContext);
 					printf("Connecting to UDP TGDS Server Companion: ");
@@ -282,7 +282,7 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 					}
 					SaveConsoleContext = false; //Restore Console context
 					TGDSLCDSwap(disableTSCWhenTGDSConsoleTop, isDirectFramebuffer, SaveConsoleContext, currentVRAMContext);
-					free(currentVRAMContext);
+					TGDSARM9Free(currentVRAMContext);
 					if(validIPv4 == false){					
 						printf("Invalid IP address");
 						return dswifi_udpnifimodeFailConnectStage;
@@ -907,7 +907,7 @@ void remoteInit()
 void remotePutPacket(char *packet)
 {
   char *hex = "0123456789abcdef";
-  char * buffer = (char *)malloc(1024);
+  char * buffer = (char *)TGDSARM9Malloc(1024);
 	
   int count = strlen(packet);
   unsigned char csum = 0;
@@ -934,14 +934,14 @@ void remotePutPacket(char *packet)
   else if(c=='-')
     //printf("NACK\n");
   */
-  free(buffer);
+  TGDSARM9Free(buffer);
 }
 
 
 
 void remoteOutput(char *s, u32 addr)
 {
-  char * buffer = (char *)malloc(16384);
+  char * buffer = (char *)TGDSARM9Malloc(16384);
   char *d = buffer;
   *d++ = 'O';
 
@@ -963,20 +963,20 @@ void remoteOutput(char *s, u32 addr)
     }
   }
   remotePutPacket(buffer);
-  free(buffer);
+  TGDSARM9Free(buffer);
 }
 
 void remoteSendSignal()
 {
-    char * buffer = (char *)malloc(1024);
+    char * buffer = (char *)TGDSARM9Malloc(1024);
 	sprintf(buffer, "S%02x", remoteSignal);
 	remotePutPacket(buffer);
-	free(buffer);
+	TGDSARM9Free(buffer);
 }
 
 void remoteSendStatus()
 {
-  char * buffer = (char *)malloc(1024);
+  char * buffer = (char *)TGDSARM9Malloc(1024);
   sprintf(buffer, "T%02x", remoteSignal);
   char *s = buffer;
   s += 3;
@@ -1006,7 +1006,7 @@ void remoteSendStatus()
   *s = 0;
   //  //printf("Sending %s\n", buffer);
   remotePutPacket(buffer);
-  free(buffer);
+  TGDSARM9Free(buffer);
 }
 
 void remoteBinaryWrite(char *p)
@@ -1072,7 +1072,7 @@ void remoteMemoryRead(char *p)
   int count = 0;
   sscanf(p,"%x,%d:", &address, &count);
   
-  char * buffer = (char *)malloc(1024);
+  char * buffer = (char *)TGDSARM9Malloc(1024);
   char *s = buffer;
   int i = 0;
   for( i = 0; i < count; i++) {
@@ -1083,7 +1083,7 @@ void remoteMemoryRead(char *p)
   }
   *s = 0;
   remotePutPacket(buffer);
-  free(buffer);
+  TGDSARM9Free(buffer);
 }
 
 void remoteStepOverRange(char *p)
@@ -1146,7 +1146,7 @@ void remoteWriteWatch(char *p, bool active)
 
 void remoteReadRegisters(char *p)
 {
-  char * buffer = (char *)malloc(1024);
+  char * buffer = (char *)TGDSARM9Malloc(1024);
   char *s = buffer;
   int i;
   // regular registers
@@ -1179,7 +1179,7 @@ void remoteReadRegisters(char *p)
   s += 8;
   *s = 0;
   remotePutPacket(buffer);
-  free(buffer);
+  TGDSARM9Free(buffer);
 }
 
 void remoteWriteRegister(char *p)
@@ -1235,7 +1235,7 @@ sint32 remoteStubMain(){
 			remoteSendStatus();
 			remoteResumed = false;
 		}
-		char * buffer = (char *)malloc(1024);
+		char * buffer = (char *)TGDSARM9Malloc(1024);
 		int res = remoteRecvFnc(buffer, 1024);
 		//if DSWIFI connection is lost, re-connect and init GDB Server if external logic says so.
 		if(res > 0){
@@ -1328,7 +1328,7 @@ sint32 remoteStubMain(){
 			remoteCleanUp();
 			remoteStubMainStatus = remoteStubMainWIFIConnectedGDBDisconnected;	//Socket closed
 		}
-		free(buffer);
+		TGDSARM9Free(buffer);
 		return remoteStubMainStatus;
 	}
 	else{

@@ -12,6 +12,7 @@
 
 #include "xmem.h"
 #include "posixHandleTGDS.h"
+#include "InterruptsARMCores_h.h"
 
 // default use 128K VRAM (ARM7 Mapped), may be overriden.
 unsigned int XMEMTOTALSIZE = (128*1024);
@@ -52,7 +53,9 @@ void XmemInit() {
 		int argBuffer[MAXPRINT7ARGVCOUNT];
 		memset((unsigned char *)&argBuffer[0], 0, sizeof(argBuffer));
 		writeDebugBuffer7("XMEM: Could not allocate %d bytes of main ram for XMEM...", 0, (int)&argBuffer[0]);
-		
+		while(1==1){
+			IRQVBlankWait();
+		}
 		if (xmem_table) //free(xmem_table);
 		if (xmem_blocks) //free(xmem_blocks);
 		return;

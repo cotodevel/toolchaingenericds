@@ -69,10 +69,10 @@ void ARM7DLDIInit(u32 targetDLDI7Address){	//ARM9 Impl.
 	memset((u8*)fifomsg, 0, sizeof(TGDSIPC->fifoMesaggingQueue));
 	
 	//ARM7DLDI Shared buffer
-	ARM7DLDIBuf = (u8*)malloc(DLDI_CLUSTER_SIZE_BYTES);
+	ARM7DLDIBuf = (u8*)TGDSARM9Malloc(DLDI_CLUSTER_SIZE_BYTES);
 	
 	//Perform relocation, and pass the DLDI context to ARM7 Init code
-	u8* relocatedARM7DLDIBinary = (u8*)malloc(16*1024);
+	u8* relocatedARM7DLDIBinary = (u8*)TGDSARM9Malloc(16*1024);
 	
 	//DldiRelocatedAddress == target DLDI relocated address
 	//dldiSourceInRam == physical DLDI section having a proper DLDI driver used as donor 
@@ -100,7 +100,7 @@ void ARM7DLDIInit(u32 targetDLDI7Address){	//ARM9 Impl.
 		while(1==1);
 	}
 	
-	free((u8*)relocatedARM7DLDIBinary);
+	TGDSARM9Free((u8*)relocatedARM7DLDIBinary);
 }
 
 void ARM9DeinitDLDI(){

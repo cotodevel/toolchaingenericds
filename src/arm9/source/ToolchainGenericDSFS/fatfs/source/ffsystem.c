@@ -5,7 +5,7 @@
 
 
 #include "ff.h"
-
+#include "posixHandleTGDS.h"
 
 
 #if FF_USE_LFN == 3	/* Dynamic memory allocation */
@@ -18,7 +18,7 @@ void* ff_memalloc (	/* Returns pointer to the allocated memory block (null on no
 	UINT msize		/* Number of bytes to allocate */
 )
 {
-	return malloc(msize);	/* Allocate a new memory block with POSIX API */
+	return TGDSMalloc9(msize);	/* Allocate a new memory block with POSIX API */
 }
 
 
@@ -30,7 +30,7 @@ void ff_memfree (
 	void* mblock	/* Pointer to the memory block to free */
 )
 {
-	free(mblock);	/* Free the memory block with POSIX API */
+	TGDSARM9Free(mblock);	/* Free the memory block with POSIX API */
 }
 
 #endif

@@ -23,6 +23,11 @@ USA
 #include "typedefsTGDS.h"
 #include "dmaTGDS.h"
 #include "dldi.h"
+#include "posixHandleTGDS.h"
+
+#ifdef ARM7
+#include "xmem.h"
+#endif
 
 #ifdef ARM9
 #include "fatfslayerTGDS.h"
@@ -79,7 +84,6 @@ int ARM7FS_BufferSaveByIRQ(void *InBuffer, int fileOffset, int writeBufferSize){
 	return writeBufferSize;
 }
 
-//Todo: call TGDS_ARM7_ARM7FILESYSTEMTESTCASE from ARM9
 //Test case: reads a whole file into ARM9 and dumps it to fat fs
 void performARM7MP2FSTestCase(char * ARM7fsfname, int ARM7BuffSize, u32 * writtenDebug){	//ARM7 impl.
 	while(getARM7FSInitStatus() == false){	//Wait for ARM7Init
@@ -144,7 +148,7 @@ void deinitARM7FS(){
 	if(ARM7FS_FileHandleRead !=NULL ){
 		fclose(ARM7FS_FileHandleRead);
 	}
-	TGDSIPC->IR_readbuf=(u8*)malloc(splitBufferSize);	//Must be EWRAM because then ARM7 can receive it into ARM7's 0x06000000 through DMA (hardware ring buffer)
+	TGDSIPC->IR_readbuf=(u8*)TGDSARM9Malloc(splitBufferSize);	//Must be EWRAM because then ARM7 can receive it into ARM7's 0x06000000 through DMA (hardware ring buffer)
 	ARM7FS_FileHandleRead = fopen(inFilename, "r");
 	ARM7FS_FileHandleWrite = fopen(outFilename, "w+");
 	TGDSIPC->IR_ReadOffset = 0;
@@ -179,14 +183,13 @@ void deinitARM7FS(){
 	
 	fclose(ARM7FS_FileHandleRead);
 	fclose(ARM7FS_FileHandleWrite);
-	free((u8*)TGDSIPC->IR_readbuf);
+	TGDSARM9Free((u8*)TGDSIPC->IR_readbuf);
 	printf("ARM7FS() Test Case: end!");
 	#endif
 	*/
 }
 
 #ifdef ARM9
-
 void initARM7FS(char * inFilename, char * outFilename, FILE * fout, int splitBufferSize, u32 * debugVar){	//ARM9. 
 	
 }
@@ -203,7 +206,7 @@ void performARM7MP2FSTestCase(char * inFilename, char * outFilename, FILE * fout
 	if(ARM7FS_FileHandleRead !=NULL ){
 		fclose(ARM7FS_FileHandleRead);
 	}
-	TGDSIPC->IR_readbuf=(u8*)malloc(splitBufferSize);	//Must be EWRAM because then ARM7 can receive it into ARM7's 0x06000000 through DMA (hardware ring buffer)
+	TGDSIPC->IR_readbuf=(u8*)TGDSARM9Malloc(splitBufferSize);	//Must be EWRAM because then ARM7 can receive it into ARM7's 0x06000000 through DMA (hardware ring buffer)
 	ARM7FS_FileHandleRead = fopen(inFilename, "r");
 	ARM7FS_FileHandleWrite = fopen(outFilename, "w+");
 	TGDSIPC->IR_ReadOffset = 0;
@@ -238,7 +241,7 @@ void performARM7MP2FSTestCase(char * inFilename, char * outFilename, FILE * fout
 	
 	fclose(ARM7FS_FileHandleRead);
 	fclose(ARM7FS_FileHandleWrite);
-	free((u8*)TGDSIPC->IR_readbuf);
+	TGDSARM9Free((u8*)TGDSIPC->IR_readbuf);
 	printf("ARM7FS() Test Case: end!");
 }
 
