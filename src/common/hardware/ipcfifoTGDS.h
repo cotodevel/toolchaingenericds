@@ -145,9 +145,6 @@ USA
 #define IPC_SERVE_DLDI7_REQBYIRQ		(u8)(2)
 #define IPC_ARM7READMEMORY_REQBYIRQ		(u8)(3)
 
-//Read Memory between ARM processors
-#define ARM7READMEMORY_BUSY (int)(-1)
-
 //ARM7 FS IPC Commands
 #define IPC_ARM7INIT_ARM7FS (u8)(0xE)
 #define IPC_ARM7DEINIT_ARM7FS (u8)(0xF)
@@ -160,6 +157,8 @@ USA
 #define ARM7FS_TRANSACTIONSTATUS_IDLE (int)(-1)
 #define ARM7FS_TRANSACTIONSTATUS_BUSY (int)(0)
 
+//Read Memory between ARM processors
+#define ARM7READMEMORY_BUSY (int)(-1)
 
 static inline void sendByteIPC(uint8 inByte){
 	REG_IPC_SYNC = ((REG_IPC_SYNC&0xfffff0ff) | (inByte<<8) | (1<<13) );	// (1<<13) Send IRQ to remote CPU      (0=None, 1=Send IRQ)

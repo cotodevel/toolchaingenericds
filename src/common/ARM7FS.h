@@ -29,15 +29,6 @@ USA
 #include "fatfslayerTGDS.h"
 #endif
 
-//TGDS IPC Index commands reserved:	1, 2, 3
-/*
-#define IR_MP2_Idle (u8)(IPC_NULL_CMD)		//read process
-#define IR_MP2_Busy (u8)(4)					//
-
-#define IR_MP2_Init (u8)(5)			//Init MP2 ARM7 FS
-#define IR_MP2_Deinit (u8)(6)		//De-init MP2 ARM7 FS
-*/
-
 #define IR_ARM7FS_Read (u32)(0xffffaaa0)		
 #define IR_ARM7FS_Save (u32)(0xffffaab0)		
 
