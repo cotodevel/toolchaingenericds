@@ -151,7 +151,13 @@ void NDS_IRQHandler(){
 			break;
 			
 			case(IPC_ARM7DEINIT_ARM7FS):{	//ARM7
-				//todo
+				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				
+				//Do ARM7(FS) de-init
+				deinitARM7FS();
+				
+				fifomsg[0] = 0;
 			}
 			break;
 			

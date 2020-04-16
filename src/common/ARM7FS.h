@@ -120,14 +120,16 @@ extern void performARM7MP2FSTestCase(char * ARM7fsfname, int ARM7BuffSize, u32 *
 
 #ifdef ARM9
 //Internal impl.
-extern void initARM7FS(char * inFilename, char * outFilename, FILE * fout, int splitBufferSize, u32 * debugVar);	//ARM9. Todo: Add async code from ARM9's performARM7MP2FSTestCase()
+extern bool initARM7FS(char * inFilename, char * outFilename, int splitBufferSize, u32 * debugVar);	//ARM9.
+extern void closeARM7FS();	//Must use this!! Instead deinitARM7FS(); directly when closing an ARM7FS session
+
 extern int ARM7FS_ReadBuffer_ARM9Callback(u8 * outBuffer, int fileOffset, FILE * fIn, int bufferSize);
 extern int ARM7FS_SaveBuffer_ARM9Callback(u8 * inBuffer, int fileOffset, FILE * fOut, int bufferSize);
-
-//Test case
 extern FILE * ARM7FS_FileHandleWrite;
 extern FILE * ARM7FS_FileHandleRead;
-extern void performARM7MP2FSTestCase(char * inFilename, char * outFilename, FILE * fout, int splitBufferSize, u32 * debugVar);	//ARM9 
+
+//Test Case
+extern void performARM7MP2FSTestCase(char * inFilename, char * outFilename, int splitBufferSize, u32 * debugVar);	//ARM9 
 
 #endif
 
