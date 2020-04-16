@@ -142,7 +142,7 @@ void initARM7Malloc(u32 ARM7MallocStartaddress, u32 memSizeBytes){
 	fifomsg[0] = (uint32)ARM7MallocStartaddress;
 	fifomsg[1] = (uint32)memSizeBytes;
 	fifomsg[2] = (uint32)TGDS_ARM7_SETUPARM7MALLOC;
-	SendFIFOWords(TGDS_ARM7_SETUPARM7MALLOC, fifomsg);
+	SendFIFOWords(TGDS_ARM7_SETUPARM7MALLOC, (u32)fifomsg);
 	while(fifomsg[2] == TGDS_ARM7_SETUPARM7MALLOC){
 		swiDelay(2);
 	}
@@ -190,7 +190,7 @@ void initARM9Malloc(u32 ARM9MallocStartaddress, u32 memSizeBytes, u32 * mallocHa
 		}
 	}
 	
-	SendFIFOWords(TGDS_ARM7_SETUPARM9MALLOC, fifomsg);
+	SendFIFOWords(TGDS_ARM7_SETUPARM9MALLOC, (u32)fifomsg);
 	while(fifomsg[3] == TGDS_ARM7_SETUPARM9MALLOC){
 		swiDelay(2);
 	}
@@ -237,12 +237,12 @@ void printf7Setup(){
 	//ARM7 print debugger
 	fifomsg[3] = (uint32)&arm7ARGVDebugBuffer[0];
 	
-	SendFIFOWords(TGDS_ARM7_PRINTF7SETUP, fifomsg);
+	SendFIFOWords(TGDS_ARM7_PRINTF7SETUP, (u32)fifomsg);
 }
 
 void printf7(u8 * printfBufferShared, int * arm7ARGVBufferShared, int argvCount){
 	//argvCount can't be retrieved from here because this call comes from FIFO hardware (and with it, the argvCount value)
-	coherent_user_range_by_size((uint32)printfBufferShared, strlen(printfBufferShared) + 1);
+	coherent_user_range_by_size((uint32)printfBufferShared, strlen((char*)printfBufferShared) + 1);
 	coherent_user_range_by_size((uint32)arm7ARGVBufferShared, sizeof(int) * MAXPRINT7ARGVCOUNT);
 	
 	char argChar[MAX_TGDSFILENAME_LENGTH+1];
@@ -321,7 +321,6 @@ void printfCoords(int x, int y, const char *format, ...){
 	int color = 0xff;	//white
 	GUI_drawText(zoneInst, x, GUI.printfy, color, stringBuf, readAndBlendFromVRAM);
 	GUI.printfy += getFontHeightFromZone(zoneInst);
-	return stringSize;
 }
 
 int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list args){

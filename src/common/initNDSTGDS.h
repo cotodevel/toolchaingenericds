@@ -25,6 +25,12 @@ USA
 #include "dsregs.h"
 #include "dmaTGDS.h"
 #include "timerTGDS.h"
+#include <string.h>
+#include <stdio.h>
+
+#ifdef ARM9
+#include "videoTGDS.h"
+#endif
 
 static inline void resetMemory_ARMCores()
 {

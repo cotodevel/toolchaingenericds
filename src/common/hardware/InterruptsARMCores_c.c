@@ -141,10 +141,11 @@ void NDS_IRQHandler(){
 				int fileHandleSize = (int)fifomsg[1];
 				int splitBufferSize = (int)fifomsg[2];
 				u32 * debugVar = (int)fifomsg[4];
-				u32 testCase = fifomsg[5]; 
-				initARM7FS((char*)ARM7FS_ARM9Filename);
+				u32 testCase = (u32)fifomsg[5]; 
+				int curARM7FS_HandleMethod = (int)fifomsg[6];
+				initARM7FS((char*)ARM7FS_ARM9Filename, curARM7FS_HandleMethod);
 				if(testCase == (u32)0xc070c070){
-					performARM7MP2FSTestCase(ARM7FS_ARM9Filename, splitBufferSize, debugVar);
+					performARM7MP2FSTestCase(ARM7FS_ARM9Filename, splitBufferSize, debugVar);	//ARM7 Setup
 				}
 				fifomsg[5] = fifomsg[4] = fifomsg[3] = fifomsg[2] = fifomsg[1] = fifomsg[0] = 0;
 			}
@@ -154,7 +155,7 @@ void NDS_IRQHandler(){
 				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 				
-				//Do ARM7(FS) de-init
+				//ARM7(FS) de-init
 				deinitARM7FS();
 				
 				fifomsg[0] = 0;

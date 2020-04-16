@@ -33,6 +33,11 @@ USA
 #include "fatfslayerTGDS.h"
 #endif
 
+#ifdef ARM9
+__attribute__((section(".dtcm")))
+#endif
+int ARM7FS_HandleMethod = 0;
+
 /////////////////////////////////////////////////////////// [ARM7FS ARM7 User file IO start] ///////////////////////////////////////////////////////////
 
 #ifdef ARM7
@@ -128,15 +133,17 @@ void performARM7MP2FSTestCase(char * ARM7fsfname, int ARM7BuffSize, u32 * writte
 	setARM7FSTransactionStatus(ARM7FS_TRANSACTIONSTATUS_IDLE);
 }
 
-void initARM7FS(char * ARM7FS_ARM9Filename){	//ARM7 Impl.
+void initARM7FS(char * ARM7FS_ARM9Filename, int curARM7FS_HandleMethod){	//ARM7 Impl.
 	setARM7FSTransactionStatus(ARM7FS_TRANSACTIONSTATUS_BUSY);
 	setARM7FSInitStatus(true); //finish ARM7FS 
-	//ARM7 continues with performARM7MP2FSTestCase(testcaseFilename, splitBufferSize)...
+	ARM7FS_HandleMethod = curARM7FS_HandleMethod;	//ARM7
+	//ARM7 may continue with performARM7MP2FSTestCase(testcaseFilename, splitBufferSize) or async...
 }
 #endif
 
 //Blocking. Will ensure ARM9 and ARM7'S ARM7FS context is discarded.
 void deinitARM7FS(){
+	ARM7FS_HandleMethod = TGDS_ARM7FS_INVALID;
 	#ifdef ARM7
 	#endif
 	
@@ -146,17 +153,22 @@ void deinitARM7FS(){
 	TGDSIPC->IR_ReadOffset = 0;
 	TGDSIPC->IR_WrittenOffset = 0;
 	TGDSIPC->IR_filesize = 0;
+	ARM7FS_ReadBuffer_ARM9TGDSFD = NULL;
+	ARM7FS_SaveBuffer_ARM9TGDSFD = NULL;
 	u8 * sharedBuffer = (u8 *)TGDSIPC->IR_readbuf;
 	if(sharedBuffer != NULL){
 		TGDSARM9Free(sharedBuffer);
 	}
-	TGDSIPC->IR_readbuf=(u8*)0;
+	TGDSIPC->IR_readbuf=0;
 	if(ARM7FS_FileHandleRead != NULL){
 		fclose(ARM7FS_FileHandleRead);
 	}
 	if(ARM7FS_FileHandleWrite != NULL){
 		fclose(ARM7FS_FileHandleWrite);
 	}
+	
+	ARM7FS_TGDSFileDescriptorRead = NULL;
+	ARM7FS_TGDSFileDescriptorWrite = NULL;
 	
 	//ARM7 MP2 FS test case start.
 	setARM7FSTransactionStatus(ARM7FS_TRANSACTIONSTATUS_BUSY);
@@ -178,30 +190,33 @@ void deinitARM7FS(){
 //When done, please close the ARM7FS through closeARM7FS(); in ARM9
 
 //ARM7FS Example code: see https://bitbucket.org/Coto88/toolchaingenericds-ndstools/src/master/arm9/source/main.cpp, KEY_LEFT event.
-bool initARM7FS(char * inFilename, char * outFilename, int splitBufferSize, u32 * debugVar){	//ARM9. 
+bool initARM7FSPOSIX(char * inFilename, char * outFilename, int splitBufferSize, u32 * debugVar){	//ARM9. 
 	deinitARM7FS();
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	
+	TGDSIPC->IR_readbufsize=0;
+	TGDSIPC->IR_readbuf=0;
 	//setup vars
+	TGDSIPC->IR_readbuf=(u32*)TGDSARM9Malloc(splitBufferSize);	//Must be EWRAM because then ARM7 can receive it into ARM7's 0x06000000 through DMA (hardware ring buffer)
 	ARM7FS_FileHandleRead = fopen(inFilename, "r");
-	if(ARM7FS_FileHandleRead == NULL){
-		return false;
-	}
 	ARM7FS_FileHandleWrite = fopen(outFilename, "w+");
-	if(ARM7FS_FileHandleWrite == NULL){
-		deinitARM7FS();
-		return false;
-	}
-	TGDSIPC->IR_readbuf=(u8*)TGDSARM9Malloc(splitBufferSize);	//Must be EWRAM because then ARM7 can receive it into ARM7's 0x06000000 through DMA (hardware ring buffer)
-	if((u8*)TGDSIPC->IR_readbuf == (u8*)NULL){
-		deinitARM7FS();
-		return false;
-	}
+	
+	ARM7FS_HandleMethod = TGDS_ARM7FS_FILEHANDLEPOSIX;	//ARM9
+	int fdindexRead = fileno(ARM7FS_FileHandleRead);
+	ARM7FS_TGDSFileDescriptorRead = getStructFD(fdindexRead);
+	
+	int fdindexWrite = fileno(ARM7FS_FileHandleWrite);
+	ARM7FS_TGDSFileDescriptorWrite = getStructFD(fdindexWrite);
 	
 	TGDSIPC->IR_ReadOffset = 0;
 	TGDSIPC->IR_WrittenOffset = 0;
 	TGDSIPC->IR_filesize = FS_getFileSizeFromOpenHandle(ARM7FS_FileHandleRead);
 	
+	if((ARM7FS_FileHandleRead != NULL) && (ARM7FS_FileHandleWrite != NULL)){
+	}
+	else{
+		printf("ARM9:initARM7FSPOSIX() failed");
+		while(1==1){}
+	}
 	//ARM7 MP2 FS test case start.
 	setARM7FSTransactionStatus(ARM7FS_TRANSACTIONSTATUS_BUSY);
 	
@@ -213,6 +228,63 @@ bool initARM7FS(char * inFilename, char * outFilename, int splitBufferSize, u32 
 	fifomsg[3] = (uint32)IPC_ARM7INIT_ARM7FS;
 	fifomsg[4] = (uint32)debugVar;
 	fifomsg[5] = (uint32)0xFFFFFFFF;	//Test case disable
+	fifomsg[6] = (uint32)ARM7FS_HandleMethod;
+	
+	sendByteIPC(IPC_ARM7INIT_ARM7FS);
+	while(fifomsg[3] == IPC_ARM7INIT_ARM7FS){
+		swiDelay(1);
+	}
+	return true;
+}
+
+char * TGDSFileHandleARM7FSName = "TGDSFileDescriptor";
+
+//If ret value: false, file not found or couldn't create the ARM7FS context
+//ret value: true, success. ARM7 code is now able to use "ARM7FS ARM7 User file IO" section async. 
+//When done, please close the ARM7FS through closeARM7FS(); in ARM9
+
+//ARM7FS Example code: see https://bitbucket.org/Coto88/toolchaingenericds-ndstools/src/master/arm9/source/main.cpp, KEY_LEFT event.
+bool initARM7FSTGDSFileHandle(struct fd * TGDSFileHandleIn, struct fd * TGDSFileHandleOut, int splitBufferSize, u32 * ARM7FS_ReadBuffer_ARM9ImplementationTGDSFDCall, u32 * ARM7FS_WriteBuffer_ARM9ImplementationTGDSFDCall, u32 * ARM7FS_close_ARM9ImplementationTGDSFDCall, u32 * debugVar){	//ARM9 Impl. 
+	deinitARM7FS();
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	//setup vars
+	if(TGDSFileHandleIn == NULL){
+		deinitARM7FS();
+		return false;
+	}
+	if(TGDSFileHandleOut == NULL){
+		deinitARM7FS();
+		return false;
+	}
+	TGDSIPC->IR_readbuf=(u32*)TGDSARM9Malloc(splitBufferSize);	//Must be EWRAM because then ARM7 can receive it into ARM7's 0x06000000 through DMA (hardware ring buffer)
+	if((u32*)TGDSIPC->IR_readbuf == (u32*)NULL){
+		deinitARM7FS();
+		return false;
+	}
+	
+	ARM7FS_HandleMethod = TGDS_ARM7FS_TGDSFILEDESCRIPTOR;	//ARM9
+	ARM7FS_TGDSFileDescriptorRead = TGDSFileHandleIn;
+	ARM7FS_TGDSFileDescriptorWrite = TGDSFileHandleOut;
+	TGDSIPC->IR_ReadOffset = 0;
+	TGDSIPC->IR_WrittenOffset = 0;
+	TGDSIPC->IR_filesize = FS_getFileSizeFromOpenStructFD(TGDSFileHandleIn);
+	
+	ARM7FS_ReadBuffer_ARM9TGDSFD = (ARM7FS_ReadBuffer_ARM9CallbackTGDSFD)ARM7FS_ReadBuffer_ARM9ImplementationTGDSFDCall;
+	ARM7FS_SaveBuffer_ARM9TGDSFD = (ARM7FS_SaveBuffer_ARM9CallbackTGDSFD)ARM7FS_WriteBuffer_ARM9ImplementationTGDSFDCall;
+	ARM7FS_close_ARM9TGDSFD = (ARM7FS_close_ARM9CallbackTGDSFD)ARM7FS_close_ARM9ImplementationTGDSFDCall;
+	
+	//ARM7 MP2 FS test case start.
+	setARM7FSTransactionStatus(ARM7FS_TRANSACTIONSTATUS_BUSY);
+	
+	//Wait for ARM7FS init.
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	fifomsg[0] = (u32)&TGDSFileHandleARM7FSName[0];
+	fifomsg[1] = (uint32)TGDSIPC->IR_filesize;
+	fifomsg[2] = (uint32)splitBufferSize;
+	fifomsg[3] = (uint32)IPC_ARM7INIT_ARM7FS;
+	fifomsg[4] = (uint32)debugVar;
+	fifomsg[5] = (uint32)0xFFFFFFFF;	//Test case disable
+	fifomsg[6] = (uint32)ARM7FS_HandleMethod;
 	
 	sendByteIPC(IPC_ARM7INIT_ARM7FS);
 	while(fifomsg[3] == IPC_ARM7INIT_ARM7FS){
@@ -225,24 +297,34 @@ void closeARM7FS(){
 	deinitARM7FS();
 }
 
-void performARM7MP2FSTestCase(char * inFilename, char * outFilename, int splitBufferSize, u32 * debugVar){	//ARM9 Impl.
+void performARM7MP2FSTestCasePOSIX(char * inFilename, char * outFilename, int splitBufferSize, u32 * debugVar){	//ARM9 Impl.
 	deinitARM7FS();
-	printf("ARM7FS() Test Case: start!");
+	printf("performARM7MP2FSTestCasePOSIX() Test Case: start!");
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	TGDSIPC->IR_readbufsize=0;
 	TGDSIPC->IR_readbuf=0;
 	//setup vars
-	if(ARM7FS_FileHandleRead !=NULL ){
-		fclose(ARM7FS_FileHandleRead);
-	}
-	TGDSIPC->IR_readbuf=(u8*)TGDSARM9Malloc(splitBufferSize);	//Must be EWRAM because then ARM7 can receive it into ARM7's 0x06000000 through DMA (hardware ring buffer)
+	TGDSIPC->IR_readbuf=(u32*)TGDSARM9Malloc(splitBufferSize);	//Must be EWRAM because then ARM7 can receive it into ARM7's 0x06000000 through DMA (hardware ring buffer)
 	ARM7FS_FileHandleRead = fopen(inFilename, "r");
 	ARM7FS_FileHandleWrite = fopen(outFilename, "w+");
+	
+	ARM7FS_HandleMethod = TGDS_ARM7FS_FILEHANDLEPOSIX;	//ARM9
+	int fdindexRead = fileno(ARM7FS_FileHandleRead);
+	ARM7FS_TGDSFileDescriptorRead = getStructFD(fdindexRead);
+	
+	int fdindexWrite = fileno(ARM7FS_FileHandleWrite);
+	ARM7FS_TGDSFileDescriptorWrite = getStructFD(fdindexWrite);
+	
 	TGDSIPC->IR_ReadOffset = 0;
 	TGDSIPC->IR_WrittenOffset = 0;
 	TGDSIPC->IR_filesize = FS_getFileSizeFromOpenHandle(ARM7FS_FileHandleRead);
-	if(ARM7FS_FileHandleRead != NULL){
-		printf("fileopenOK: Size: %d",TGDSIPC->IR_filesize);
+	
+	if((ARM7FS_FileHandleRead != NULL) && (ARM7FS_FileHandleWrite != NULL)){
+		
+	}
+	else{
+		printf("ARM9:performARM7MP2FSTestCasePOSIX() Test failed");
+		while(1==1){}
 	}
 	//ARM7 MP2 FS test case start.
 	setARM7FSTransactionStatus(ARM7FS_TRANSACTIONSTATUS_BUSY);
@@ -255,6 +337,7 @@ void performARM7MP2FSTestCase(char * inFilename, char * outFilename, int splitBu
 	fifomsg[3] = (uint32)IPC_ARM7INIT_ARM7FS;
 	fifomsg[4] = (uint32)debugVar;
 	fifomsg[5] = (uint32)0xc070c070;	//Test case enable
+	fifomsg[6] = (uint32)ARM7FS_HandleMethod;
 	
 	sendByteIPC(IPC_ARM7INIT_ARM7FS);
 	while(fifomsg[3] == IPC_ARM7INIT_ARM7FS){
@@ -271,32 +354,105 @@ void performARM7MP2FSTestCase(char * inFilename, char * outFilename, int splitBu
 	fclose(ARM7FS_FileHandleRead);
 	fclose(ARM7FS_FileHandleWrite);
 	TGDSARM9Free((u8*)TGDSIPC->IR_readbuf);
-	printf("ARM7FS() Test Case: end!");
+	printf("performARM7MP2FSTestCasePOSIX() Test Case: end!");
 }
 
+
+void performARM7MP2FSTestCaseTGDSFileDescriptor(struct fd * TGDSFileHandleIn, struct fd * TGDSFileHandleOut, int splitBufferSize, u32 * ARM7FS_ReadBuffer_ARM9ImplementationTGDSFDCall, u32 * ARM7FS_WriteBuffer_ARM9ImplementationTGDSFDCall, u32 * ARM7FS_close_ARM9ImplementationTGDSFDCall, u32 * debugVar){	//ARM9 Impl.
+	deinitARM7FS();
+	printf("performARM7MP2FSTestCaseTGDSFileDescriptor()");
+	printf("Test Case: start!");
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
+	//setup vars
+	if(TGDSFileHandleIn == NULL){
+		deinitARM7FS();
+		return false;
+	}
+	if(TGDSFileHandleOut == NULL){
+		deinitARM7FS();
+		return false;
+	}
+	TGDSIPC->IR_readbuf=(u32*)TGDSARM9Malloc(splitBufferSize);	//Must be EWRAM because then ARM7 can receive it into ARM7's 0x06000000 through DMA (hardware ring buffer)
+	if((u32*)TGDSIPC->IR_readbuf == (u32*)NULL){
+		deinitARM7FS();
+		return false;
+	}
+	
+	ARM7FS_HandleMethod = TGDS_ARM7FS_TGDSFILEDESCRIPTOR;	//ARM9
+	ARM7FS_TGDSFileDescriptorRead = TGDSFileHandleIn;
+	ARM7FS_TGDSFileDescriptorWrite = TGDSFileHandleOut;
+	TGDSIPC->IR_ReadOffset = 0;
+	TGDSIPC->IR_WrittenOffset = 0;
+	TGDSIPC->IR_filesize = FS_getFileSizeFromOpenStructFD(TGDSFileHandleIn);
+	
+	ARM7FS_ReadBuffer_ARM9TGDSFD = (ARM7FS_ReadBuffer_ARM9CallbackTGDSFD)ARM7FS_ReadBuffer_ARM9ImplementationTGDSFDCall;
+	ARM7FS_SaveBuffer_ARM9TGDSFD = (ARM7FS_SaveBuffer_ARM9CallbackTGDSFD)ARM7FS_WriteBuffer_ARM9ImplementationTGDSFDCall;
+	ARM7FS_close_ARM9TGDSFD = (ARM7FS_close_ARM9CallbackTGDSFD)ARM7FS_close_ARM9ImplementationTGDSFDCall;
+	
+	//ARM7 MP2 FS test case start.
+	setARM7FSTransactionStatus(ARM7FS_TRANSACTIONSTATUS_BUSY);
+	
+	//Wait for ARM7FS init.
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	fifomsg[0] = (u32)&TGDSFileHandleARM7FSName[0];
+	fifomsg[1] = (uint32)TGDSIPC->IR_filesize;
+	fifomsg[2] = (uint32)splitBufferSize;
+	fifomsg[3] = (uint32)IPC_ARM7INIT_ARM7FS;
+	fifomsg[4] = (uint32)debugVar;
+	fifomsg[5] = (uint32)0xc070c070;	//Test case enable
+	fifomsg[6] = (uint32)ARM7FS_HandleMethod;
+	
+	sendByteIPC(IPC_ARM7INIT_ARM7FS);
+	while(fifomsg[3] == IPC_ARM7INIT_ARM7FS){
+		swiDelay(1);
+	}
+	
+	//Test Case: file read/writes are async (through interrupts)
+	
+	//wait until async file writes are done.
+	while(getARM7FSTransactionStatus() == ARM7FS_TRANSACTIONSTATUS_BUSY){
+		swiDelay(1);
+	}
+	
+	ARM7FS_close_ARM9TGDSFD(TGDSFileHandleIn);
+	ARM7FS_close_ARM9TGDSFD(TGDSFileHandleOut);
+	TGDSARM9Free((u8*)TGDSIPC->IR_readbuf);
+	printf("performARM7MP2FSTestCaseTGDSFileDescriptor()");
+	printf("Test Case: end!");
+}
+
+//Callbacks
+ARM7FS_ReadBuffer_ARM9CallbackTGDSFD 			ARM7FS_ReadBuffer_ARM9TGDSFD;
+ARM7FS_SaveBuffer_ARM9CallbackTGDSFD 			ARM7FS_SaveBuffer_ARM9TGDSFD;
+ARM7FS_close_ARM9CallbackTGDSFD 				ARM7FS_close_ARM9TGDSFD;
+
 FILE * ARM7FS_FileHandleWrite = NULL;
+struct fd * ARM7FS_TGDSFileDescriptorWrite = NULL;
+
 FILE * ARM7FS_FileHandleRead = NULL;
+struct fd * ARM7FS_TGDSFileDescriptorRead = NULL;
+
+
+///////////////////////////////////////////////TGDS FS POSIX Callbacks Implementation Start ///////////////////////////////////////////////
+//												See ARM7FS.h, TGDS FileDescriptor Implementation)
+//These callbacks are required when setting up initARM7FSPOSIX() or performARM7MP2FSTestCasePOSIX()
 
 //ARM7 FS: Write from ARM7 to ARM9 POSIX filehandle
-int ARM7FS_SaveBuffer_ARM9Callback(u8 * inBuffer, int fileOffset, FILE * fOut, int bufferSize){
+int ARM7FS_SaveBuffer_ARM9CallbackPOSIX(u8 * inBuffer, int fileOffset, struct fd * fdinstOut, int bufferSize){
 	UINT written;
-	//Get TGDS file handle
-	int fdindex = fileno(fOut);
-	struct fd * fdinst = getStructFD(fdindex);
-	f_lseek(fdinst->filPtr,(FSIZE_t)fileOffset);
-	f_write(fdinst->filPtr, inBuffer, bufferSize, &written);
+	f_lseek(fdinstOut->filPtr,(FSIZE_t)fileOffset);
+	f_write(fdinstOut->filPtr, inBuffer, bufferSize, &written);
 	return (int)(written);
 }
 
 //ARM7 FS: Read from ARM9 POSIX filehandle to ARM7
-int ARM7FS_ReadBuffer_ARM9Callback(u8 * outBuffer, int fileOffset, FILE * fIn, int bufferSize){
+int ARM7FS_ReadBuffer_ARM9CallbackPOSIX(u8 * outBuffer, int fileOffset, struct fd * fdinstIn, int bufferSize){
 	UINT read;
-	//Get TGDS file handle
-	int fdindex = fileno(fIn);
-	struct fd * fdinst = getStructFD(fdindex);
-	f_lseek(fdinst->filPtr,(FSIZE_t)fileOffset);
-	f_read(fdinst->filPtr, outBuffer, bufferSize, &read);
+	f_lseek(fdinstIn->filPtr,(FSIZE_t)fileOffset);
+	f_read(fdinstIn->filPtr, outBuffer, bufferSize, &read);
 	return (int)(read);
 }
+///////////////////////////////////////////////TGDS FS POSIX Callbacks Implementation End ///////////////////////////////////////////////
 
 #endif

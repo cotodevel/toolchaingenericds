@@ -30,14 +30,33 @@ USA
 #endif
 
 //TGDS IPC Index commands reserved:	1, 2, 3
+/*
 #define IR_MP2_Idle (u8)(IPC_NULL_CMD)		//read process
 #define IR_MP2_Busy (u8)(4)					//
 
 #define IR_MP2_Init (u8)(5)			//Init MP2 ARM7 FS
 #define IR_MP2_Deinit (u8)(6)		//De-init MP2 ARM7 FS
+*/
 
 #define IR_ARM7FS_Read (u32)(0xffffaaa0)		
 #define IR_ARM7FS_Save (u32)(0xffffaab0)		
+
+//TGDS ARM7FS Handle Method: Internal. Set at ARM7 and ARM9
+#define TGDS_ARM7FS_INVALID (int)(-1)
+#define TGDS_ARM7FS_FILEHANDLEPOSIX (int)(1)
+#define TGDS_ARM7FS_TGDSFILEDESCRIPTOR (int)(2)
+
+#ifdef ARM9
+//typedef int (*ARM7FS_ReadBuffer_ARM9CallbackTGDSFD)(u8 * outBuffer, int fileOffset, struct fd * fdinstIn, int bufferSize);
+typedef int (*ARM7FS_ReadBuffer_ARM9CallbackTGDSFD)(u8 *, int, struct fd *, int);
+
+//typedef int (*ARM7FS_SaveBuffer_ARM9CallbackTGDSFD)(u8 * inBuffer, int fileOffset, struct fd * fdinstOut, int bufferSize);
+typedef int (*ARM7FS_SaveBuffer_ARM9CallbackTGDSFD)(u8 *, int, struct fd *, int);
+
+//typedef int (*ARM7FS_close_ARM9CallbackTGDSFD)(u8 * inBuffer, int fileOffset, struct fd * fdinstOut, int bufferSize);
+typedef int (*ARM7FS_close_ARM9CallbackTGDSFD)(struct fd *);
+
+#endif
 
 static inline bool getARM7FSInitStatus(){
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
@@ -89,30 +108,18 @@ static inline void setARM7FSTransactionStatus(int ARM7FSTransactionStatus){
 	TGDSIPC->ARM7FSTransactionStatus = ARM7FSTransactionStatus;
 }
 
-
-
-static inline void ackARM7FSCommand(){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	#ifdef ARM9
-	coherent_user_range_by_size((uint32)&TGDSIPC->IR, sizeof(TGDSIPC->IR));
-	#endif
-	TGDSIPC->IR = IR_MP2_Idle;
-}
-
 #endif
 
 #ifdef __cplusplus
 extern "C"{
 #endif
 
-extern u32 handleCommand;	//sadly ARM7FS commands must be issued from mainloop, IRQs seem to cause lockups
-
 #ifdef ARM7
 //Internal impl.
 extern int FileSys_GetFileSize(void);
 extern int ARM7FS_BufferReadByIRQ(void *OutBuffer, int fileOffset, int readBufferSize);
 extern int ARM7FS_BufferSaveByIRQ(void *InBuffer, int fileOffset, int writeBufferSize);
-extern void initARM7FS(char * ARM7FS_ARM9Filename);	//ARM7
+extern void initARM7FS(char * ARM7FS_ARM9Filename, int curARM7FS_HandleMethod);	//ARM7
 
 //Test case
 extern void performARM7MP2FSTestCase(char * ARM7fsfname, int ARM7BuffSize, u32 * writtenDebug);	//ARM7
@@ -120,20 +127,41 @@ extern void performARM7MP2FSTestCase(char * ARM7fsfname, int ARM7BuffSize, u32 *
 
 #ifdef ARM9
 //Internal impl.
-extern bool initARM7FS(char * inFilename, char * outFilename, int splitBufferSize, u32 * debugVar);	//ARM9.
+extern char * TGDSFileHandleARM7FSName;
 extern void closeARM7FS();	//Must use this!! Instead deinitARM7FS(); directly when closing an ARM7FS session
 
-extern int ARM7FS_ReadBuffer_ARM9Callback(u8 * outBuffer, int fileOffset, FILE * fIn, int bufferSize);
-extern int ARM7FS_SaveBuffer_ARM9Callback(u8 * inBuffer, int fileOffset, FILE * fOut, int bufferSize);
-extern FILE * ARM7FS_FileHandleWrite;
-extern FILE * ARM7FS_FileHandleRead;
+//TGDS FS POSIX Implementation:
+	extern bool initARM7FSPOSIX(char * inFilename, char * outFilename, int splitBufferSize, u32 * debugVar);	//ARM9.
+	extern int ARM7FS_ReadBuffer_ARM9CallbackPOSIX(u8 * outBuffer, int fileOffset, struct fd * fdinstIn, int bufferSize);
+	extern int ARM7FS_SaveBuffer_ARM9CallbackPOSIX(u8 * inBuffer, int fileOffset, struct fd * fdinstOut, int bufferSize);
+	extern FILE * ARM7FS_FileHandleWrite;
+	extern FILE * ARM7FS_FileHandleRead;
 
-//Test Case
-extern void performARM7MP2FSTestCase(char * inFilename, char * outFilename, int splitBufferSize, u32 * debugVar);	//ARM9 
+//TGDS FileDescriptor Implementation:
+	extern bool initARM7FSTGDSFileHandle(struct fd * TGDSFileHandleIn, struct fd * TGDSFileHandleOut, int splitBufferSize, u32 * ARM7FS_ReadBuffer_ARM9ImplementationTGDSFDCall, u32 * ARM7FS_WriteBuffer_ARM9ImplementationTGDSFDCall, u32 * ARM7FS_close_ARM9ImplementationTGDSFDCall, u32 * debugVar);
+	extern struct fd * ARM7FS_TGDSFileDescriptorWrite;	//same as FILE * ARM7FS_FileHandleWrite but the internal TGDS file descriptor handle
+	extern struct fd * ARM7FS_TGDSFileDescriptorRead;	//same as FILE * ARM7FS_FileHandleRead but the internal TGDS file descriptor handle
+	//Callbacks
+	extern ARM7FS_ReadBuffer_ARM9CallbackTGDSFD 			ARM7FS_ReadBuffer_ARM9TGDSFD;
+	extern ARM7FS_SaveBuffer_ARM9CallbackTGDSFD 			ARM7FS_SaveBuffer_ARM9TGDSFD;
+	extern ARM7FS_close_ARM9CallbackTGDSFD 					ARM7FS_close_ARM9TGDSFD;
+	
+	
+	//TGDS FileDescriptor implementation; weak symbols: The implementation of this is project-defined
+	extern  __attribute__((weak))	int ARM7FS_ReadBuffer_ARM9ImplementationTGDSFD(u8 * outBuffer, int fileOffset, struct fd * fdinstIn, int bufferSize);
+	extern  __attribute__((weak))	int ARM7FS_WriteBuffer_ARM9ImplementationTGDSFD(u8 * inBuffer, int fileOffset, struct fd * fdinstOut, int bufferSize);
+	extern  __attribute__((weak))	int ARM7FS_close_ARM9ImplementationTGDSFD(struct fd * fdinstOut);
+	
+//Test Cases
+//Posix
+extern void performARM7MP2FSTestCasePOSIX(char * inFilename, char * outFilename, int splitBufferSize, u32 * debugVar);	//ARM9 
+//TGDS FileDescriptor
+extern void performARM7MP2FSTestCaseTGDSFileDescriptor(struct fd * TGDSFileHandleIn, struct fd * TGDSFileHandleOut, int splitBufferSize, u32 * ARM7FS_ReadBuffer_ARM9ImplementationTGDSFDCall, u32 * ARM7FS_WriteBuffer_ARM9ImplementationTGDSFDCall, u32 * ARM7FS_close_ARM9ImplementationTGDSFDCall, u32 * debugVar);
 
 #endif
 
 extern void deinitARM7FS();
+extern int ARM7FS_HandleMethod;
 
 #ifdef __cplusplus
 }

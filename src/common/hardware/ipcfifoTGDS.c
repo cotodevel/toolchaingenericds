@@ -303,7 +303,17 @@ void HandleFifoNotEmpty(){
 				u8* readbuf = (u8*)fifomsg[5];
 				int readBufferSize = (int)fifomsg[6];
 				int fileOffset = (int)fifomsg[7];
-				int readSoFar = ARM7FS_ReadBuffer_ARM9Callback(readbuf, fileOffset, ARM7FS_FileHandleRead, readBufferSize);	//UpdateDPG_Audio();
+				switch(ARM7FS_HandleMethod){
+					case(TGDS_ARM7FS_FILEHANDLEPOSIX):{
+						int readSoFar = ARM7FS_ReadBuffer_ARM9CallbackPOSIX(readbuf, fileOffset, ARM7FS_TGDSFileDescriptorRead, readBufferSize);	//UpdateDPG_Audio();
+					}
+					break;
+					case(TGDS_ARM7FS_TGDSFILEDESCRIPTOR):{
+						int readSoFar = ARM7FS_ReadBuffer_ARM9TGDSFD(readbuf, fileOffset, ARM7FS_TGDSFileDescriptorRead, readBufferSize);
+					}
+					break;
+				}
+				
 				coherent_user_range_by_size((uint32)readbuf, readBufferSize);
 				fifomsg[7] = fifomsg[6] = fifomsg[5] = 0;
 				setARM7FSIOStatus(ARM7FS_IOSTATUS_IDLE);
@@ -318,7 +328,18 @@ void HandleFifoNotEmpty(){
 				int writeBufferSize = (int)fifomsg[6];
 				int fileOffset = (int)fifomsg[7];
 				coherent_user_range_by_size((uint32)readbuf, writeBufferSize);
-				int writtenSoFar = ARM7FS_SaveBuffer_ARM9Callback(readbuf, fileOffset, ARM7FS_FileHandleWrite, writeBufferSize);
+				
+				switch(ARM7FS_HandleMethod){
+					case(TGDS_ARM7FS_FILEHANDLEPOSIX):{
+						int writtenSoFar = ARM7FS_SaveBuffer_ARM9CallbackPOSIX(readbuf, fileOffset, ARM7FS_TGDSFileDescriptorWrite, writeBufferSize);
+					}
+					break;
+					case(TGDS_ARM7FS_TGDSFILEDESCRIPTOR):{
+						int writtenSoFar = ARM7FS_SaveBuffer_ARM9TGDSFD(readbuf, fileOffset, ARM7FS_TGDSFileDescriptorWrite, writeBufferSize);
+					}
+					break;
+				}
+				
 				fifomsg[7] = fifomsg[6] = fifomsg[5] = 0;
 				setARM7FSIOStatus(ARM7FS_IOSTATUS_IDLE);
 			}

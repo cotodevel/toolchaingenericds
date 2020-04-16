@@ -160,8 +160,6 @@ static inline u32 TGDSARM9MallocFreeMemory(){
 extern "C"{
 #endif
 
-extern void setTGDSMemoryAllocator(struct AllocatorInstance * TGDSMemoryAllocator);
-
 #ifdef ARM7
 //ARM7 Malloc
 extern u32 ARM7MallocBaseAddress;
@@ -183,6 +181,7 @@ extern int * arm7ARGVDebugBufferShared;
 extern void initARM7Malloc(u32 ARM7MallocStartaddress, u32 memSizeBytes);
 
 #ifdef ARM9
+extern void setTGDSMemoryAllocator(struct AllocatorInstance * TGDSMemoryAllocator);
 extern void printf7Setup();
 extern void printf7(u8 * printfBufferShared, int * arm7ARGVBufferShared, int argvCount);
 //shared
