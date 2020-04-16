@@ -32,13 +32,13 @@ USA
 
 uint32 globalVRAMStackStartPtr;
 uint32 allocVRAMStacks(){
-	globalVRAMStackStartPtr = (uint32)Xmalloc(1024 * 8);	
+	globalVRAMStackStartPtr = (uint32)TGDSARM7Malloc(1024 * 8);	
 	return globalVRAMStackStartPtr;
 }
 
 
 void deallocVRAMStacks(){
-	Xfree((uint32*)globalVRAMStackStartPtr);
+	TGDSARM7Free((uint32*)globalVRAMStackStartPtr);
 }
 
 #endif

@@ -101,7 +101,7 @@ void performARM7MP2FSTestCase(char * ARM7fsfname, int ARM7BuffSize, u32 * writte
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	
 	//ARM7 MP2 FS test case start
-	u8* buffer =(u8*)Xmalloc(ARM7BuffSize);
+	u8* buffer =(u8*)TGDSARM7Malloc(ARM7BuffSize);
 	TGDSIPC->IR_readbufsize = ARM7BuffSize;
 	int filesize = TGDSIPC->IR_filesize;
 	
@@ -127,7 +127,7 @@ void performARM7MP2FSTestCase(char * ARM7fsfname, int ARM7BuffSize, u32 * writte
 	}
 	
 	*writtenDebug = (u32)(TGDSIPC->IR_readbuf);
-	Xfree(buffer);
+	TGDSARM7Free(buffer);
 	
 	//end testcase
 	setARM7FSTransactionStatus(ARM7FS_TRANSACTIONSTATUS_IDLE);
