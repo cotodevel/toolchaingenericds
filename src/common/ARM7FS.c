@@ -143,7 +143,6 @@ void initARM7FS(char * ARM7FS_ARM9Filename, int curARM7FS_HandleMethod){	//ARM7 
 
 //Blocking. Will ensure ARM9 and ARM7'S ARM7FS context is discarded.
 void deinitARM7FS(){
-	ARM7FS_HandleMethod = TGDS_ARM7FS_INVALID;
 	#ifdef ARM7
 	#endif
 	
@@ -153,22 +152,41 @@ void deinitARM7FS(){
 	TGDSIPC->IR_ReadOffset = 0;
 	TGDSIPC->IR_WrittenOffset = 0;
 	TGDSIPC->IR_filesize = 0;
-	ARM7FS_ReadBuffer_ARM9TGDSFD = NULL;
-	ARM7FS_SaveBuffer_ARM9TGDSFD = NULL;
+	
 	u8 * sharedBuffer = (u8 *)TGDSIPC->IR_readbuf;
 	if(sharedBuffer != NULL){
 		TGDSARM9Free(sharedBuffer);
 	}
 	TGDSIPC->IR_readbuf=0;
-	if(ARM7FS_FileHandleRead != NULL){
-		fclose(ARM7FS_FileHandleRead);
-	}
-	if(ARM7FS_FileHandleWrite != NULL){
-		fclose(ARM7FS_FileHandleWrite);
+	
+	
+	switch(ARM7FS_HandleMethod){
+		case(TGDS_ARM7FS_FILEHANDLEPOSIX):{
+			if(ARM7FS_FileHandleRead != NULL){
+				fclose(ARM7FS_FileHandleRead);
+			}
+			if(ARM7FS_FileHandleWrite != NULL){
+				fclose(ARM7FS_FileHandleWrite);
+			}
+		}
+		break;
+		case(TGDS_ARM7FS_TGDSFILEDESCRIPTOR):{
+			if(ARM7FS_TGDSFileDescriptorRead != NULL){
+				ARM7FS_close_ARM9TGDSFD(ARM7FS_TGDSFileDescriptorRead);
+			}
+			if(ARM7FS_TGDSFileDescriptorWrite != NULL){
+				ARM7FS_close_ARM9TGDSFD(ARM7FS_TGDSFileDescriptorWrite);
+			}
+		}
+		break;
 	}
 	
+	ARM7FS_HandleMethod = TGDS_ARM7FS_INVALID;
 	ARM7FS_TGDSFileDescriptorRead = NULL;
 	ARM7FS_TGDSFileDescriptorWrite = NULL;
+	ARM7FS_ReadBuffer_ARM9TGDSFD = NULL;
+	ARM7FS_SaveBuffer_ARM9TGDSFD = NULL;
+	ARM7FS_close_ARM9TGDSFD = NULL;
 	
 	//ARM7 MP2 FS test case start.
 	setARM7FSTransactionStatus(ARM7FS_TRANSACTIONSTATUS_BUSY);
