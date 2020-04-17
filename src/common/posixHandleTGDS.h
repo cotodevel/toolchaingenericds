@@ -70,9 +70,17 @@ static inline void TGDSARM7Free(void *ptr){
 	Xfree((const void *)ptr);
 }
 
+static inline u8 * TGDSARM7Realloc(void *ptr, int size){
+	if(ptr != NULL){
+		TGDSARM7Free(ptr);
+	}
+	return (u8*)TGDSARM7Malloc(size);
+}
+
 static inline u32 TGDSARM7MallocFreeMemory(){
 	return (u32)XMEM_FreeMem();
 }
+
 #endif
 
 #ifdef ARM9
@@ -133,6 +141,21 @@ static inline u8 * TGDSARM9Calloc(int blockCount, int blockSize){
 	}
 	else{
 		return (u8*)TGDSCalloc9(blockCount, blockSize);	//same order
+	}
+}
+
+static inline u8 * TGDSARM9Realloc(void *ptr, int size){
+	if(customMallocARM9 == false){
+		if(ptr != NULL){
+			free(ptr);
+		}
+		return (u8*)malloc(size);
+	}
+	else{
+		if(ptr != NULL){
+			TGDSFree9(ptr);
+		}
+		return (u8*)TGDSMalloc9(size);
 	}
 }
 
