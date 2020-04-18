@@ -49,6 +49,7 @@ export TARGET_LIBRARY_LIBNAME_9	=	l$(TARGET_LIBRARY_NAME_9)
 export DIRS_ARM7_SRC = source/	\
 			source/dswifi_arm7/	\
 			source/xmalloc/	\
+			source/TGDSARM7Logger/	\
 			../common/	\
 			../common/dswifi/	\
 			../common/hardware/	\
@@ -64,6 +65,7 @@ export DIRS_ARM7_SRC = source/	\
 export DIRS_ARM7_HEADER = source/	\
 			source/dswifi_arm7/	\
 			source/xmalloc/	\
+			source/TGDSARM7Logger/	\
 			../common/templateCode/source	\
 			../common/templateCode/data		\
 			../common/	\
