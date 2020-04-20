@@ -48,8 +48,11 @@ int FileSys_GetFileSize(void)
 }
 
 int ARM7FS_BufferReadByIRQ(void *OutBuffer, int fileOffset, int readBufferSize){
-	if(readBufferSize == 0){
+	if(readBufferSize <= 0){
 		return 0;
+	}
+	if(fileOffset <= 0){
+		fileOffset = 0;
 	}
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
@@ -70,8 +73,11 @@ int ARM7FS_BufferReadByIRQ(void *OutBuffer, int fileOffset, int readBufferSize){
 }
 
 int ARM7FS_BufferSaveByIRQ(void *InBuffer, int fileOffset, int writeBufferSize){
-	if(writeBufferSize == 0){
+	if(writeBufferSize <= 0){
 		return 0;
+	}
+	if(fileOffset <= 0){
+		fileOffset = 0;
 	}
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	dmaTransferWord(0, (uint32)(u32)InBuffer, (u32)TGDSIPC->IR_readbuf, (uint32)writeBufferSize);	//dmaTransferHalfWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count)
