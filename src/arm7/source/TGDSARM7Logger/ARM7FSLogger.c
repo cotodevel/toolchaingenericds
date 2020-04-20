@@ -29,7 +29,8 @@ int ARM7Logger(char *str)
 	char buffOut[MAX_TGDSFILENAME_LENGTH+1];
 	memset(buffOut, 0, sizeof(buffOut));
 	strcpy(buffOut, str);
-	ARM7FS_BufferSaveByIRQ((u8*)&buffOut[0], curARM7LoggerWriteOffset, strlen(buffOut) + 1); 
-	curARM7LoggerWriteOffset+=(strlen(buffOut) + 1);
-	return (strlen(buffOut) + 1);
+	buffOut[strlen(str) + 1] = '\0';
+	ARM7FS_BufferSaveByIRQ((u8*)&buffOut[0], curARM7LoggerWriteOffset, strlen(str) + 1); 
+	curARM7LoggerWriteOffset+=(strlen(str) + 1);
+	return (strlen(str) + 1);
 }
