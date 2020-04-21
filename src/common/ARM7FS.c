@@ -215,6 +215,9 @@ void deinitARM7FS(){
 
 //ARM7FS Example code: see https://bitbucket.org/Coto88/toolchaingenericds-ndstools/src/master/arm9/source/main.cpp, KEY_LEFT event.
 bool initARM7FSPOSIX(char * inFilename, char * outFilename, int splitBufferSize, u32 * debugVar){	//ARM9. 
+	if(inFilename == NULL){
+		return false;
+	}
 	deinitARM7FS();
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	TGDSIPC->IR_readbufsize=0;
@@ -222,26 +225,27 @@ bool initARM7FSPOSIX(char * inFilename, char * outFilename, int splitBufferSize,
 	//setup vars
 	TGDSIPC->IR_readbuf=(u32*)TGDSARM9Malloc(splitBufferSize);	//Must be EWRAM because then ARM7 can receive it into ARM7's 0x06000000 through DMA (hardware ring buffer)
 	ARM7FS_FileHandleRead = fopen(inFilename, "r");
-	ARM7FS_FileHandleWrite = fopen(outFilename, "w+");
+	
+	if(outFilename != NULL){
+		ARM7FS_FileHandleWrite = fopen(outFilename, "w+");
+		int fdindexWrite = fileno(ARM7FS_FileHandleWrite);
+		ARM7FS_TGDSFileDescriptorWrite = getStructFD(fdindexWrite);
+	}
 	
 	ARM7FS_HandleMethod = TGDS_ARM7FS_FILEHANDLEPOSIX;	//ARM9
 	int fdindexRead = fileno(ARM7FS_FileHandleRead);
 	ARM7FS_TGDSFileDescriptorRead = getStructFD(fdindexRead);
 	
-	int fdindexWrite = fileno(ARM7FS_FileHandleWrite);
-	ARM7FS_TGDSFileDescriptorWrite = getStructFD(fdindexWrite);
-	
 	TGDSIPC->IR_ReadOffset = 0;
 	TGDSIPC->IR_WrittenOffset = 0;
 	TGDSIPC->IR_filesize = FS_getFileSizeFromOpenHandle(ARM7FS_FileHandleRead);
 	
-	if((ARM7FS_FileHandleRead != NULL) && (ARM7FS_FileHandleWrite != NULL)){
+	if(ARM7FS_FileHandleRead != NULL){
 	}
 	else{
 		printf("ARM9:initARM7FSPOSIX() failed");
 		while(1==1){}
 	}
-	//ARM7 MP2 FS test case start.
 	setARM7FSTransactionStatus(ARM7FS_TRANSACTIONSTATUS_BUSY);
 	
 	//Wait for ARM7FS init.
@@ -276,10 +280,7 @@ bool initARM7FSTGDSFileHandle(struct fd * TGDSFileHandleIn, struct fd * TGDSFile
 		deinitARM7FS();
 		return false;
 	}
-	if(TGDSFileHandleOut == NULL){
-		deinitARM7FS();
-		return false;
-	}
+	
 	TGDSIPC->IR_readbuf=(u32*)TGDSARM9Malloc(splitBufferSize);	//Must be EWRAM because then ARM7 can receive it into ARM7's 0x06000000 through DMA (hardware ring buffer)
 	if((u32*)TGDSIPC->IR_readbuf == (u32*)NULL){
 		deinitARM7FS();
@@ -294,10 +295,11 @@ bool initARM7FSTGDSFileHandle(struct fd * TGDSFileHandleIn, struct fd * TGDSFile
 	TGDSIPC->IR_filesize = FS_getFileSizeFromOpenStructFD(TGDSFileHandleIn);
 	
 	ARM7FS_ReadBuffer_ARM9TGDSFD = (ARM7FS_ReadBuffer_ARM9CallbackTGDSFD)ARM7FS_ReadBuffer_ARM9ImplementationTGDSFDCall;
-	ARM7FS_SaveBuffer_ARM9TGDSFD = (ARM7FS_SaveBuffer_ARM9CallbackTGDSFD)ARM7FS_WriteBuffer_ARM9ImplementationTGDSFDCall;
+	if(ARM7FS_TGDSFileDescriptorWrite != NULL){
+		ARM7FS_SaveBuffer_ARM9TGDSFD = (ARM7FS_SaveBuffer_ARM9CallbackTGDSFD)ARM7FS_WriteBuffer_ARM9ImplementationTGDSFDCall;
+	}
 	ARM7FS_close_ARM9TGDSFD = (ARM7FS_close_ARM9CallbackTGDSFD)ARM7FS_close_ARM9ImplementationTGDSFDCall;
 	
-	//ARM7 MP2 FS test case start.
 	setARM7FSTransactionStatus(ARM7FS_TRANSACTIONSTATUS_BUSY);
 	
 	//Wait for ARM7FS init.

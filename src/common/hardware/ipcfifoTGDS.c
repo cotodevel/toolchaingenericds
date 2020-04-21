@@ -331,11 +331,15 @@ void HandleFifoNotEmpty(){
 				
 				switch(ARM7FS_HandleMethod){
 					case(TGDS_ARM7FS_FILEHANDLEPOSIX):{
-						int writtenSoFar = ARM7FS_SaveBuffer_ARM9CallbackPOSIX(readbuf, fileOffset, ARM7FS_TGDSFileDescriptorWrite, writeBufferSize);
+						if(ARM7FS_TGDSFileDescriptorWrite != NULL){
+							int writtenSoFar = ARM7FS_SaveBuffer_ARM9CallbackPOSIX(readbuf, fileOffset, ARM7FS_TGDSFileDescriptorWrite, writeBufferSize);
+						}
 					}
 					break;
 					case(TGDS_ARM7FS_TGDSFILEDESCRIPTOR):{
-						int writtenSoFar = ARM7FS_SaveBuffer_ARM9TGDSFD(readbuf, fileOffset, ARM7FS_TGDSFileDescriptorWrite, writeBufferSize);
+						if(ARM7FS_TGDSFileDescriptorWrite != NULL){
+							int writtenSoFar = ARM7FS_SaveBuffer_ARM9TGDSFD(readbuf, fileOffset, ARM7FS_TGDSFileDescriptorWrite, writeBufferSize);
+						}
 					}
 					break;
 				}
