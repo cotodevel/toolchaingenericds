@@ -144,6 +144,7 @@ USA
 #define IPC_SEND_MULTIPLE_CMDS			(u8)(1)
 #define IPC_SERVE_DLDI7_REQBYIRQ		(u8)(2)
 #define IPC_ARM7READMEMORY_REQBYIRQ		(u8)(3)
+#define IPC_TGDSUSER_START_FREE_INDEX	(u8)(4)	//TGDS User Project rely on it
 
 //ARM7 FS IPC Commands
 #define IPC_ARM7INIT_ARM7FS (u8)(0xE)
