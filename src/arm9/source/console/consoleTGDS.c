@@ -380,8 +380,25 @@ bool InitDefaultConsole(ConsoleInstance * DefaultSessionConsoleInst){
 	DefaultSessionConsoleInst->ConsoleEngineStatus.EngineBGS[3].REGBGCNT = BG_BMP_BASE(4) | BG_BMP8_256x256 | BG_PRIORITY_1;
 	DefaultSessionConsoleInst->VideoBuffer = GUI.DSFrameBuffer = (uint16 *)BG_BMP_RAM_SUB(4);
 	
-	BG_PALETTE_SUB[0] = RGB15(0,0,0);			//back-ground tile color
-	BG_PALETTE_SUB[255] = RGB15(31,31,31);		//tile color
+	GUI.Palette = &BG_PALETTE_SUB[0];
+	GUI.Palette[0] = 	RGB8(0,0,0);			//Back-ground tile color / Black
+	GUI.Palette[1] =	RGB8(255, 255, 255); 	//White
+	GUI.Palette[2] =  	RGB8(150, 75, 0); 		//Brown
+	GUI.Palette[3] =  	RGB8(255, 127, 0); 		//Orange
+	GUI.Palette[4] = 	RGB8(255, 0, 255); 		//Magenta
+	GUI.Palette[5] = 	RGB8(0, 255, 255); 		//Cyan
+	GUI.Palette[6] = 	RGB8(255, 255, 0); 		//Yellow
+	GUI.Palette[7] = 	RGB8(0, 0, 255); 		//Blue
+	GUI.Palette[8] = 	RGB8(0, 255, 0); 		//Green
+	GUI.Palette[9] = 	RGB8(255, 0, 0); 		//Red
+	GUI.Palette[0xa] = 	RGB8(128, 128, 128); 	//Grey
+	GUI.Palette[0xb] = 	RGB8(240, 240, 240);	//Light-Grey
+	
+	//Fill the Pallette
+	int i = 0;
+	for(i=0;i < (256 - 0xb); i++){
+		GUI.Palette[i + 0xc] = GUI.Palette[TGDSPrintfColor_White];
+	}
 	
 	UpdateConsoleSettings(DefaultSessionConsoleInst);
 	

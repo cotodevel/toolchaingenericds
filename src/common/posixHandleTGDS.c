@@ -285,6 +285,9 @@ void printarm7DebugBuffer(){
 	memset(printfTemp, 0, sizeof(argChar));
 	strcpy(printfTemp, (char*)arm7debugBufferShared);
 	strcat(printfTemp, argChar);
+	
+	strcat(printfTemp, ">6");	//TGDS Console Font Color: TGDSPrintfColor_Yellow
+	
 	printfTemp[strlen(printfTemp)+1] = '\0';
 	printf(printfTemp); 
 }
@@ -296,10 +299,23 @@ int printf(const char *fmt, ...){
 	//merge any "..." special arguments where sint8 * ftm requires then store in output printf buffer
 	vsnprintf ((sint8*)stringBuf, (int)sizeof(ConsolePrintfBuf), fmt, args);
 	va_end(args);
-	int stringSize = (int)strlen(stringBuf);
+	
 	t_GUIZone * zoneInst = getDefaultZoneConsole();
 	bool readAndBlendFromVRAM = false;	//we discard current vram characters here so if we step over the same character in VRAM (through printfCoords), it is discarded.
-	int color = 0xff;	//white
+	
+	int color = (int)TGDSPrintfColor_LightGrey;	//default color
+	int stringSize = (int)strlen(stringBuf);
+	
+	//Separate the TGDS Console font color if exists
+	char cpyBuf[256+1] = {0};
+	strcpy(cpyBuf, stringBuf);
+	char * colorChar = (char*)&outSplitBuf[1][0];
+	int matchCount = str_split((char*)cpyBuf, ">", NULL);
+	if(matchCount > 0){
+		color = atoi(colorChar);
+		stringBuf[strlen(stringBuf) - (strlen(colorChar)+1) ] = '\0';
+	}
+	
 	GUI_drawText(zoneInst, 0, GUI.printfy, color, stringBuf, readAndBlendFromVRAM);
 	GUI.printfy += getFontHeightFromZone(zoneInst);	//skip to next line
 	return stringSize;
