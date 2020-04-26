@@ -47,6 +47,7 @@ int FileSys_GetFileSize(void)
 	return(TGDSIPC->IR_filesize);
 }
 
+//If void *OutBuffer is NULL, the internal buffer is refilled from the current read file handle
 int ARM7FS_BufferReadByIRQ(void *OutBuffer, int fileOffset, int readBufferSize){
 	if(readBufferSize <= 0){
 		return 0;
@@ -67,11 +68,13 @@ int ARM7FS_BufferReadByIRQ(void *OutBuffer, int fileOffset, int readBufferSize){
 	while(getARM7FSIOStatus() == ARM7FS_IOSTATUS_BUSY){
 		swiDelay(1);
 	}
-	
-	dmaTransferWord(0, (u32)((u8*)TGDSIPC->IR_readbuf), (uint32)(u32)OutBuffer, (uint32) readBufferSize);	//dmaTransferHalfWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count)
+	if(OutBuffer != NULL){
+		dmaTransferWord(0, (u32)((u8*)TGDSIPC->IR_readbuf), (uint32)OutBuffer, (uint32) readBufferSize);	//dmaTransferHalfWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count)
+	}
 	return readBufferSize;
 }
 
+//If void *InBuffer is NULL, the internal buffer is written to current write file handle
 int ARM7FS_BufferSaveByIRQ(void *InBuffer, int fileOffset, int writeBufferSize){
 	if(writeBufferSize <= 0){
 		return 0;
@@ -80,7 +83,10 @@ int ARM7FS_BufferSaveByIRQ(void *InBuffer, int fileOffset, int writeBufferSize){
 		fileOffset = 0;
 	}
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	dmaTransferWord(0, (uint32)(u32)InBuffer, (u32)TGDSIPC->IR_readbuf, (uint32)writeBufferSize);	//dmaTransferHalfWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count)
+	
+	if(InBuffer != NULL){
+		dmaTransferWord(0, (uint32)InBuffer, (u32)TGDSIPC->IR_readbuf, (uint32)writeBufferSize);	//dmaTransferHalfWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count)
+	}
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	//Index 0 -- 4 used, do not use.
 	fifomsg[5] = (uint32)TGDSIPC->IR_readbuf;
