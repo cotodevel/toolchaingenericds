@@ -18,13 +18,12 @@ USA
 
 */
 
-#ifndef __nds_dma_h__
-#define __nds_dma_h__
+#ifndef __dmaTGDS_h__
+#define __dmaTGDS_h__
 
 #include "typedefsTGDS.h"
 #include "dsregs.h"
 #include "dsregs_asm.h"
-
 
 #define		DMAINCR_DEST	(uint32)(0<<(16+5))	//aka DMA_DST_INC
 #define		DMADECR_DEST	(uint32)(1<<(16+5))
@@ -87,27 +86,11 @@ static inline void dmaFill(sint32 dmachannel,uint32 value, uint32 dest, uint32 m
 	while(DMAXCNT(dmachannel) & DMAENABLED);
 }
 
-static inline void dmaFillWord(sint32 dmachannel,uint32 value, uint32 dest, uint32 word_count){
-	dmaFill(dmachannel,value,dest,(DMAFIXED_SRC | DMAINCR_DEST | DMA32BIT | DMASTART_INMEDIATE | DMAENABLED | (word_count>>2)));
-}
-
-static inline void dmaFillHalfWord(sint32 dmachannel,uint32 value, uint32 dest, uint32 word_count){
-	dmaFill(dmachannel,value,dest,(DMAFIXED_SRC | DMAINCR_DEST | DMA16BIT | DMASTART_INMEDIATE | DMAENABLED | (word_count>>1)));
-}
-
 static inline void dmaTransfer(sint32 dmachannel, uint32 source, uint32 dest, uint32 mode){	
 	DMAXSAD(dmachannel)= source;
 	DMAXDAD(dmachannel)= dest;
 	DMAXCNT(dmachannel)= mode;	
 	while(DMAXCNT(dmachannel) & DMAENABLED);
-}
-
-static inline void dmaTransferHalfWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count){
-	dmaTransfer(dmachannel, source, dest, (DMAINCR_SRC | DMAINCR_DEST | DMA16BIT | DMASTART_INMEDIATE | DMAENABLED | (word_count>>1)));
-}
-
-static inline void dmaTransferWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count){
-	dmaTransfer(dmachannel, source, dest, (DMAINCR_SRC | DMAINCR_DEST | DMA32BIT | DMASTART_INMEDIATE | DMAENABLED | (word_count>>2)));
 }
 
 #endif
