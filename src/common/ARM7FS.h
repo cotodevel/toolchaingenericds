@@ -107,7 +107,7 @@ extern "C"{
 
 #ifdef ARM7
 //Internal impl.
-extern int FileSys_GetFileSize(void);
+extern int ARM7FS_GetFileSize(void);
 extern int ARM7FS_BufferReadByIRQ(void *OutBuffer, int fileOffset, int readBufferSize);
 extern int ARM7FS_BufferSaveByIRQ(void *InBuffer, int fileOffset, int writeBufferSize);
 extern void initARM7FS(char * ARM7FS_ARM9Filename, int curARM7FS_HandleMethod);	//ARM7

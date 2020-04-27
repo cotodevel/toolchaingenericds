@@ -41,7 +41,7 @@ int ARM7FS_HandleMethod = 0;
 /////////////////////////////////////////////////////////// [ARM7FS ARM7 User file IO start] ///////////////////////////////////////////////////////////
 
 #ifdef ARM7
-int FileSys_GetFileSize(void)
+int ARM7FS_GetFileSize(void)
 {
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	return(TGDSIPC->IR_filesize);
