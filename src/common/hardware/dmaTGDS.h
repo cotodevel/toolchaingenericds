@@ -94,3 +94,16 @@ static inline void dmaTransfer(sint32 dmachannel, uint32 source, uint32 dest, ui
 }
 
 #endif
+
+#ifdef __cplusplus
+extern "C"{
+#endif
+
+extern void dmaFillWord(sint32 dmachannel,uint32 value, uint32 dest, uint32 word_count);
+extern void dmaFillHalfWord(sint32 dmachannel,uint32 value, uint32 dest, uint32 word_count);
+extern void dmaTransferHalfWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count);
+extern void dmaTransferWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count);
+
+#ifdef __cplusplus
+}
+#endif
