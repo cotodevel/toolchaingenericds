@@ -214,7 +214,7 @@ static inline bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, voi
 		fifomsg[1] = (uint32)numSectors;
 		fifomsg[2] = (uint32)targetMem;
 		fifomsg[7] = (uint32)TGDS_DLDI_ARM7_READ;
-		sendByteIPC(IPC_SERVE_DLDI7_REQBYIRQ);
+		sendByteIPCIndirect(IPC_SERVE_DLDI7_REQBYIRQ);sendIPCIRQOnly();
 		while(fifomsg[7] == TGDS_DLDI_ARM7_READ){
 			swiDelay(2);
 		}
@@ -248,7 +248,7 @@ static inline bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, co
 		fifomsg[4] = (uint32)numSectors;
 		fifomsg[5] = (uint32)targetMem;
 		fifomsg[8] = (uint32)TGDS_DLDI_ARM7_WRITE;
-		sendByteIPC(IPC_SERVE_DLDI7_REQBYIRQ);
+		sendByteIPCIndirect(IPC_SERVE_DLDI7_REQBYIRQ);sendIPCIRQOnly();
 		while(fifomsg[8] == TGDS_DLDI_ARM7_WRITE){
 			swiDelay(2);
 		}

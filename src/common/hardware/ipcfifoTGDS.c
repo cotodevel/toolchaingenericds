@@ -55,7 +55,7 @@ void sendMultipleByteIPC(uint8 inByte0, uint8 inByte1, uint8 inByte2, uint8 inBy
 	ipcMsg[1] = (u8)inByte1;
 	ipcMsg[2] = (u8)inByte2;
 	ipcMsg[3] = (u8)inByte3;
-	sendByteIPC(IPC_SEND_MULTIPLE_CMDS);
+	sendByteIPCIndirect(IPC_SEND_MULTIPLE_CMDS);sendIPCIRQOnly();
 }
 
 
@@ -425,7 +425,7 @@ void ReadMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead){
 	fifomsg[1] = (uint32)targetMemory;
 	fifomsg[2] = (uint32)bytesToRead;
 	fifomsg[7] = (uint32)ARM7READMEMORY_BUSY;
-	sendByteIPC(IPC_ARM7READMEMORY_REQBYIRQ);
+	sendByteIPCIndirect(IPC_ARM7READMEMORY_REQBYIRQ);sendIPCIRQOnly();
 	while(fifomsg[7] == ARM7READMEMORY_BUSY){
 		swiDelay(2);
 	}

@@ -206,7 +206,7 @@ void deinitARM7FS(){
 	//Wait for ARM7FS de-init.
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[0] = (u32)IPC_ARM7DEINIT_ARM7FS;
-	sendByteIPC(IPC_ARM7DEINIT_ARM7FS);
+	sendByteIPCIndirect(IPC_ARM7DEINIT_ARM7FS);sendIPCIRQOnly();
 	while(fifomsg[0] == (u32)IPC_ARM7DEINIT_ARM7FS){
 		swiDelay(1);
 	}
@@ -264,7 +264,7 @@ bool initARM7FSPOSIX(char * inFilename, char * outFilename, int splitBufferSize,
 	fifomsg[5] = (uint32)0xFFFFFFFF;	//Test case disable
 	fifomsg[6] = (uint32)ARM7FS_HandleMethod;
 	
-	sendByteIPC(IPC_ARM7INIT_ARM7FS);
+	sendByteIPCIndirect(IPC_ARM7INIT_ARM7FS);sendIPCIRQOnly();
 	while(fifomsg[3] == IPC_ARM7INIT_ARM7FS){
 		swiDelay(1);
 	}
@@ -318,7 +318,7 @@ bool initARM7FSTGDSFileHandle(struct fd * TGDSFileHandleIn, struct fd * TGDSFile
 	fifomsg[5] = (uint32)0xFFFFFFFF;	//Test case disable
 	fifomsg[6] = (uint32)ARM7FS_HandleMethod;
 	
-	sendByteIPC(IPC_ARM7INIT_ARM7FS);
+	sendByteIPCIndirect(IPC_ARM7INIT_ARM7FS);sendIPCIRQOnly();
 	while(fifomsg[3] == IPC_ARM7INIT_ARM7FS){
 		swiDelay(1);
 	}
@@ -371,7 +371,7 @@ void performARM7MP2FSTestCasePOSIX(char * inFilename, char * outFilename, int sp
 	fifomsg[5] = (uint32)0xc070c070;	//Test case enable
 	fifomsg[6] = (uint32)ARM7FS_HandleMethod;
 	
-	sendByteIPC(IPC_ARM7INIT_ARM7FS);
+	sendByteIPCIndirect(IPC_ARM7INIT_ARM7FS);sendIPCIRQOnly();
 	while(fifomsg[3] == IPC_ARM7INIT_ARM7FS){
 		swiDelay(1);
 	}
@@ -435,7 +435,7 @@ void performARM7MP2FSTestCaseTGDSFileDescriptor(struct fd * TGDSFileHandleIn, st
 	fifomsg[5] = (uint32)0xc070c070;	//Test case enable
 	fifomsg[6] = (uint32)ARM7FS_HandleMethod;
 	
-	sendByteIPC(IPC_ARM7INIT_ARM7FS);
+	sendByteIPCIndirect(IPC_ARM7INIT_ARM7FS);sendIPCIRQOnly();
 	while(fifomsg[3] == IPC_ARM7INIT_ARM7FS){
 		swiDelay(1);
 	}

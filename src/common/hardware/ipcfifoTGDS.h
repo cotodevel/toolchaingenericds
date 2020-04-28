@@ -140,7 +140,7 @@ USA
 #define IPC_FIFO_ENABLE			(uint16)(1<<15)
 
 //TGDS IPC Command Interrupt Index
-#define IPC_NULL_CMD					(u8)(0)	//NULL cmd is unused by TGDS, and relies on IPC irqs by TGDS project itself
+#define IPC_NULL_CMD					(u8)(0)	//NULL cmd is unused by TGDS, fallbacks to TGDS project IPCIRQ Handler
 #define IPC_SEND_MULTIPLE_CMDS			(u8)(1)
 #define IPC_SERVE_DLDI7_REQBYIRQ		(u8)(2)
 #define IPC_ARM7READMEMORY_REQBYIRQ		(u8)(3)
@@ -160,18 +160,6 @@ USA
 
 //Read Memory between ARM processors
 #define ARM7READMEMORY_BUSY (int)(-1)
-
-static inline void sendIPCIRQ(){
-	REG_IPC_SYNC|=IPC_SYNC_IRQ_REQUEST;
-}
-
-static inline void sendByteIPC(uint8 inByte){
-	REG_IPC_SYNC = ((REG_IPC_SYNC&0xfffff0ff) | (inByte<<8) | (1<<13) );	// (1<<13) Send IRQ to remote CPU      (0=None, 1=Send IRQ)
-}
-
-static inline uint8 receiveByteIPC(){
-	return (REG_IPC_SYNC&0xf);
-}
 
 typedef struct sIPCSharedTGDS {
     uint16 buttons7;  			// X, Y, /PENIRQ buttons
@@ -238,6 +226,9 @@ typedef struct sIPCSharedTGDS {
 	//args through ARM7 print debugger
 	int argvCount;
 	
+	//IPC IRQ CMD
+	u8 IPCIRQCMD;
+	
 	//ARM7 Filesystem
 	bool initStatus;
 	int ARM7FSStatus;	//IO busy/idle
@@ -255,6 +246,24 @@ typedef struct sIPCSharedTGDS {
 //Shared Work     027FF000h 4KB    -     -    -    R/W
 #define TGDSIPC ((IPCSharedTGDS volatile *)(0x027FF000))
 #define TGDSIPCSize (int)(sizeof(struct sIPCSharedTGDS))
+
+//Hardware IPC IRQ, faster
+static inline void sendByteIPCIndirect(u8 ipcByte){
+	TGDSIPC->IPCIRQCMD = ipcByte;
+}
+
+static inline void sendIPCIRQOnly(){
+	REG_IPC_SYNC|=IPC_SYNC_IRQ_REQUEST;
+}
+
+//Slower
+static inline void sendByteIPC(uint8 inByte){
+	REG_IPC_SYNC = ((REG_IPC_SYNC&0xfffff0ff) | (inByte<<8) | IPC_SYNC_IRQ_REQUEST);	// (1<<13) Send IRQ to remote CPU      (0=None, 1=Send IRQ)
+}
+
+static inline uint8 receiveByteIPC(){
+	return (REG_IPC_SYNC&0xf);
+}
 
 //usrsettings defs
 static inline bool getFWSettingsstatus(){

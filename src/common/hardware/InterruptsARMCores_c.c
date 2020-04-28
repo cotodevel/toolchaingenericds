@@ -102,7 +102,7 @@ void NDS_IRQHandler(){
 		Timer3handlerUser();
 	}
 	if(handledIRQ & IRQ_IPCSYNC){
-		uint8 ipcByte = receiveByteIPC();
+		uint8 ipcByte = TGDSIPC->IPCIRQCMD;
 		switch(ipcByte){
 			//External ARM Core's sendMultipleByteIPC(uint8 inByte0, uint8 inByte1, uint8 inByte2, uint8 inByte3) received bytes:
 			case(IPC_SEND_MULTIPLE_CMDS):{
