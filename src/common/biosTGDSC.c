@@ -117,7 +117,7 @@ void handleARM7SVC(){
 //ARM7 DLDI implementation
 #ifdef ARM7_DLDI
 void IPCIRQHandleDLDI(){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	switch(fifomsg[7]){
 		case((uint32)TGDS_DLDI_ARM7_READ):{

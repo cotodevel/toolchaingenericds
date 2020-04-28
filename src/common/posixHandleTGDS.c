@@ -73,7 +73,7 @@ void printf7(char *chr, int argvCount, int * argv){
 				arm7ARGVBufferShared[i] = argv[i];
 			}
 		}
-		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+		
 		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 		fifomsg[0] = (uint32)printf7Buf;
 		fifomsg[1] = (uint32)arm7ARGVBufferShared;
@@ -85,7 +85,7 @@ void printf7(char *chr, int argvCount, int * argv){
 void writeDebugBuffer7(char *chr, int argvCount, int * argv){
 	u8* debugBuf = arm7debugBufferShared;
 	if(debugBuf != NULL){
-		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; //Actually used here because the ARM7 Debug buffer can be read asynchronously
+		 //Actually used here because the ARM7 Debug buffer can be read asynchronously
 		TGDSIPC->argvCount = argvCount;
 		
 		int strSize = strlen(chr)+1;
@@ -99,7 +99,7 @@ void writeDebugBuffer7(char *chr, int argvCount, int * argv){
 				arm7ARGVDebugBufferShared[i] = argv[i];
 			}
 		}
-		//struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+		//
 		//uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 		//fifomsg[0] = (uint32)debugBuf;
 		//fifomsg[1] = (uint32)arm7ARGVBufferShared;
@@ -137,7 +137,7 @@ void initARM7Malloc(u32 ARM7MallocStartaddress, u32 memSizeBytes){
 #ifdef ARM9
 //ARM7 Malloc implementation: Blocking, because several processes depend on ARM7 having a proper malloc impl.
 void initARM7Malloc(u32 ARM7MallocStartaddress, u32 memSizeBytes){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[0] = (uint32)ARM7MallocStartaddress;
 	fifomsg[1] = (uint32)memSizeBytes;
@@ -168,7 +168,7 @@ TGDSARM9MallocFreeMemoryHandler	TGDSMallocFreeMemory9;
 AllocatorInstance CustomAllocatorInstance;
 
 void initARM9Malloc(u32 ARM9MallocStartaddress, u32 memSizeBytes, u32 * mallocHandler, u32 * callocHandler, u32 * freeHandler, u32 * MallocFreeMemoryHandler, bool customAllocator){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[0] = (uint32)ARM9MallocStartaddress;
 	fifomsg[1] = (uint32)memSizeBytes;
@@ -228,7 +228,7 @@ int arm7ARGVBuffer[MAXPRINT7ARGVCOUNT];
 int arm7ARGVDebugBuffer[MAXPRINT7ARGVCOUNT];
 
 void printf7Setup(){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[0] = (uint32)&printf7Buffer[0];
 	fifomsg[1] = (uint32)&arm7debugBuffer[0];
@@ -265,7 +265,7 @@ void printarm7DebugBuffer(){
 	//add args parsing
 	u8 * arm7debugBufferShared = (u8 *)&arm7debugBuffer[0];
 	int * arm7ARGVBufferShared = (int *)&arm7ARGVDebugBuffer[0];
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 
+	 
 	
 	coherent_user_range_by_size((uint32)arm7debugBufferShared, sizeof(arm7debugBuffer));
 	coherent_user_range_by_size((uint32)arm7ARGVBufferShared, sizeof(int) * MAXPRINT7ARGVCOUNT);

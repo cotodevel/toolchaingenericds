@@ -106,7 +106,7 @@ void NDS_IRQHandler(){
 		switch(ipcByte){
 			//External ARM Core's sendMultipleByteIPC(uint8 inByte0, uint8 inByte1, uint8 inByte2, uint8 inByte3) received bytes:
 			case(IPC_SEND_MULTIPLE_CMDS):{
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+				
 				uint8 * ipcMsg = (uint8 *)&TGDSIPC->ipcMesaggingQueue[0];
 				#ifdef ARM9
 				coherent_user_range_by_size((uint32)ipcMsg, sizeof(TGDSIPC->ipcMesaggingQueue));
@@ -123,7 +123,7 @@ void NDS_IRQHandler(){
 			//Allows to read any memory mapped from ARM7 to ARM9 directly; IRQ Safe and blocking (ARM9 issues call -> ARM7 does it -> ARM9 receives memory)
 			case(IPC_ARM7READMEMORY_REQBYIRQ):{
 				//ARM7/9 impl.
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+				
 				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 				uint32 srcMemory = fifomsg[0];
 				uint32 targetMemory = fifomsg[1];
@@ -135,7 +135,7 @@ void NDS_IRQHandler(){
 			#ifdef ARM7
 			//ARM7 FS Init
 			case(IPC_ARM7INIT_ARM7FS):{	//ARM7
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+				
 				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 				char *  ARM7FS_ARM9Filename = (char *)fifomsg[0];
 				int fileHandleSize = (int)fifomsg[1];
@@ -152,7 +152,7 @@ void NDS_IRQHandler(){
 			break;
 			
 			case(IPC_ARM7DEINIT_ARM7FS):{	//ARM7
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+				
 				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 				
 				//ARM7(FS) de-init

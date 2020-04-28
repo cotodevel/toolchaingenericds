@@ -52,7 +52,7 @@ uint32 last_frame_keys_arm9;
 __attribute__((section(".itcm")))
 #endif
 inline void scanKeys(){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	uint16 buttonsARM7 = TGDSIPC->buttons7;
 	uint32 readKeys = (uint32)(( ((~KEYINPUT)&0x3ff) | (((~buttonsARM7)&3)<<10) | (((~buttonsARM7)<<6) & (KEY_TOUCH|KEY_LID) ))^KEY_LID);
 	last_frame_keys_arm9 = global_keys_arm9;
@@ -85,11 +85,10 @@ inline uint32 keysRepeated(){
 //touchScrRead(&touchScrStruct);
 //read values..
 inline void touchScrRead(struct touchScr * touchScrInst){
-	struct sIPCSharedTGDS * sIPCSharedTGDSInst = TGDSIPCStartAddress;
-	touchScrInst->buttons7	=	sIPCSharedTGDSInst->buttons7;			// X, Y, /PENIRQ buttons
-	touchScrInst->touchX	=	sIPCSharedTGDSInst->touchX;
-	touchScrInst->touchY	=	sIPCSharedTGDSInst->touchY;				// raw x/y TSC SPI
-	touchScrInst->touchXpx	=	sIPCSharedTGDSInst->touchXpx;
-	touchScrInst->touchYpx	=	sIPCSharedTGDSInst->touchYpx;			// TFT x/y pixel (converted)
-	touchScrInst->KEYINPUT7	=	sIPCSharedTGDSInst->KEYINPUT7;			// TFT x/y pixel (converted)
+	touchScrInst->buttons7	=	TGDSIPC->buttons7;			// X, Y, /PENIRQ buttons
+	touchScrInst->touchX	=	TGDSIPC->touchX;
+	touchScrInst->touchY	=	TGDSIPC->touchY;				// raw x/y TSC SPI
+	touchScrInst->touchXpx	=	TGDSIPC->touchXpx;
+	touchScrInst->touchYpx	=	TGDSIPC->touchYpx;			// TFT x/y pixel (converted)
+	touchScrInst->KEYINPUT7	=	TGDSIPC->KEYINPUT7;			// TFT x/y pixel (converted)
 }

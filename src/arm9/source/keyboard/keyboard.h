@@ -65,7 +65,7 @@
 
 #define TILE_OFFSET_Y 11	// 11 tiles from the top
 
-#define PEN_DOWN (~ ( ((struct sIPCSharedTGDS *)TGDSIPCStartAddress)->buttons7) & (1 << 6))
+#define PEN_DOWN (~ (TGDSIPC->buttons7) & (1 << 6))
 
 #endif
 

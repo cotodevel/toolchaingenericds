@@ -38,12 +38,12 @@ USA
 #endif
 
 uint32 get_arm7_start_address(){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	return (uint32)TGDSIPC->arm7startaddress;
 }
 
 uint32 get_arm7_end_address(){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	return (uint32)TGDSIPC->arm7endaddress;
 }
 
@@ -53,12 +53,12 @@ sint32 get_arm7_ext_size(){
 
 
 uint32 get_arm9_start_address(){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	return (uint32)TGDSIPC->arm9startaddress;
 }
 
 uint32 get_arm9_end_address(){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	return (uint32)TGDSIPC->arm9endaddress;
 }
 
@@ -176,7 +176,7 @@ void * _sbrk_r (struct _reent * reent, int size){
 
 inline __attribute__((always_inline)) 
 void Write8bitAddrExtArm(uint32 address, uint8 value){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[0] = address;
 	fifomsg[1] = (uint32)value;
@@ -185,7 +185,7 @@ void Write8bitAddrExtArm(uint32 address, uint8 value){
 
 inline __attribute__((always_inline)) 
 void Write16bitAddrExtArm(uint32 address, uint16 value){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[0] = address;
 	fifomsg[1] = (uint32)value;
@@ -194,7 +194,7 @@ void Write16bitAddrExtArm(uint32 address, uint16 value){
 
 inline __attribute__((always_inline)) 
 void Write32bitAddrExtArm(uint32 address, uint32 value){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[0] = address;
 	fifomsg[1] = (uint32)value;
@@ -277,7 +277,7 @@ int	setBacklight(int flags){
 	#endif
 	
 	#ifdef ARM9
-		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+		
 		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 		fifomsg[0] = (uint32)FIFO_SCREENPOWER_WRITE;
 		fifomsg[1] = (uint32)(flags);

@@ -43,7 +43,7 @@ int ARM7FS_HandleMethod = 0;
 #ifdef ARM7
 int ARM7FS_GetFileSize(void)
 {
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	return(TGDSIPC->IR_filesize);
 }
 
@@ -55,7 +55,7 @@ int ARM7FS_BufferReadByIRQ(void *OutBuffer, int fileOffset, int readBufferSize){
 	if(fileOffset <= 0){
 		fileOffset = 0;
 	}
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	//Index 0 -- 4 used, do not use.
 	fifomsg[5] = (uint32)TGDSIPC->IR_readbuf;
@@ -82,7 +82,7 @@ int ARM7FS_BufferSaveByIRQ(void *InBuffer, int fileOffset, int writeBufferSize){
 	if(fileOffset <= 0){
 		fileOffset = 0;
 	}
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	
 	if(InBuffer != NULL){
 		dmaTransferWord(0, (uint32)InBuffer, (u32)TGDSIPC->IR_readbuf, (uint32)writeBufferSize);	//dmaTransferHalfWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count)
@@ -110,7 +110,7 @@ void performARM7MP2FSTestCase(char * ARM7fsfname, int ARM7BuffSize, u32 * writte
 	while(getARM7FSInitStatus() == false){	//Wait for ARM7Init
 		swiDelay(1);
 	}
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	
 	//ARM7 MP2 FS test case start
 	u8* buffer =(u8*)TGDSARM7Malloc(ARM7BuffSize);
@@ -159,7 +159,7 @@ void deinitARM7FS(){
 	#endif
 	
 	#ifdef ARM9
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	TGDSIPC->IR_readbufsize=0;
 	TGDSIPC->IR_ReadOffset = 0;
 	TGDSIPC->IR_WrittenOffset = 0;
@@ -225,7 +225,7 @@ bool initARM7FSPOSIX(char * inFilename, char * outFilename, int splitBufferSize,
 		return false;
 	}
 	deinitARM7FS();
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	TGDSIPC->IR_readbufsize=0;
 	TGDSIPC->IR_readbuf=0;
 	//setup vars
@@ -280,7 +280,7 @@ char * TGDSFileHandleARM7FSName = "TGDSFileDescriptor";
 //ARM7FS Example code: see https://bitbucket.org/Coto88/toolchaingenericds-ndstools/src/master/arm9/source/main.cpp, KEY_LEFT event.
 bool initARM7FSTGDSFileHandle(struct fd * TGDSFileHandleIn, struct fd * TGDSFileHandleOut, int splitBufferSize, u32 * ARM7FS_ReadBuffer_ARM9ImplementationTGDSFDCall, u32 * ARM7FS_WriteBuffer_ARM9ImplementationTGDSFDCall, u32 * ARM7FS_close_ARM9ImplementationTGDSFDCall, u32 * debugVar){	//ARM9 Impl. 
 	deinitARM7FS();
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	//setup vars
 	if(TGDSFileHandleIn == NULL){
 		deinitARM7FS();
@@ -332,7 +332,7 @@ void closeARM7FS(){
 void performARM7MP2FSTestCasePOSIX(char * inFilename, char * outFilename, int splitBufferSize, u32 * debugVar){	//ARM9 Impl.
 	deinitARM7FS();
 	printf("performARM7MP2FSTestCasePOSIX() Test Case: start!");
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	TGDSIPC->IR_readbufsize=0;
 	TGDSIPC->IR_readbuf=0;
 	//setup vars
@@ -394,7 +394,7 @@ void performARM7MP2FSTestCaseTGDSFileDescriptor(struct fd * TGDSFileHandleIn, st
 	deinitARM7FS();
 	printf("performARM7MP2FSTestCaseTGDSFileDescriptor()");
 	printf("Test Case: start!");
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	
 	//setup vars
 	if(TGDSFileHandleIn == NULL){

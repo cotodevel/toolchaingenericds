@@ -38,12 +38,12 @@ struct touchScr {
 
 //Enables / Disables the touchscreen
 static inline void setTouchScreenEnabled(bool status){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	TGDSIPC->touchScreenEnabled = status;
 }
 
 static inline bool getTouchScreenEnabled(){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	return (bool)TGDSIPC->touchScreenEnabled;
 }
 

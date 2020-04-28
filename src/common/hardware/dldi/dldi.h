@@ -208,7 +208,7 @@ static inline bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, voi
 		#endif
 		#ifdef ARM9
 		void * targetMem = (void *)((int)ARM7DLDIBuf + 0x400000);
-		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+		
 		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 		fifomsg[0] = (uint32)sector;
 		fifomsg[1] = (uint32)numSectors;
@@ -242,7 +242,7 @@ static inline bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, co
 		#ifdef ARM9
 		void * targetMem = (void *)((int)ARM7DLDIBuf + 0x400000);
 		memcpy((uint16_t*)targetMem, (uint16_t*)buffer, (numSectors * 512));
-		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+		
 		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 		fifomsg[3] = (uint32)sector;
 		fifomsg[4] = (uint32)numSectors;
@@ -266,7 +266,7 @@ static inline bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, co
 }
 
 static inline bool getisTGDSARM7DLDIEnabled(){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	#ifdef ARM9
 	coherent_user_range_by_size((u32)&TGDSIPC->ARM7DldiEnabled, sizeof(TGDSIPC->ARM7DldiEnabled));
 	#endif
@@ -274,7 +274,7 @@ static inline bool getisTGDSARM7DLDIEnabled(){
 }
 
 static inline void setisTGDSARM7DLDIEnabled(bool value){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	#ifdef ARM9
 	coherent_user_range_by_size((u32)&TGDSIPC->ARM7DldiEnabled, sizeof(TGDSIPC->ARM7DldiEnabled));
 	#endif

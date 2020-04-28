@@ -49,7 +49,7 @@ USA
 
 //IPC
 void sendMultipleByteIPC(uint8 inByte0, uint8 inByte1, uint8 inByte2, uint8 inByte3){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	uint8 * ipcMsg = (uint8 *)&TGDSIPC->ipcMesaggingQueue[0];
 	ipcMsg[0] = (u8)inByte0;
 	ipcMsg[1] = (u8)inByte1;
@@ -419,7 +419,7 @@ void HandleFifoNotEmpty(){
 void ReadMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead){
 	coherent_user_range_by_size((uint32)targetMemory, (sint32)bytesToRead);
 	dmaFillWord(3, 0, (uint32)targetMemory, (uint32)bytesToRead);
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[0] = (uint32)srcMemory;
 	fifomsg[1] = (uint32)targetMemory;

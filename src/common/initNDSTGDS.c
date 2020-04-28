@@ -48,7 +48,7 @@ void initHardware(void) {
 //---------------------------------------------------------------------------------
 	//Reset Both Cores
 	resetMemory_ARMCores();
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	
 	#ifdef ARM7
 	//Init Shared Address Region

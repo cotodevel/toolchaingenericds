@@ -76,7 +76,7 @@ void LoadFirmwareSettingsFromFlash(){
 }
 
 void ParseFWSettings(uint32 usersetting_offset){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	readFirmwareSPI((uint32)usersetting_offset, (uint8*)&TGDSIPC->DSFWSETTINGSInst, sizeof(struct sDSFWSETTINGS));
 	readFirmwareSPI((uint32)usersetting_offset+0x01D, (uint8*)&TGDSIPC->consoletype, sizeof(TGDSIPC->consoletype));
 	ucs2tombs((uint8*)&TGDSIPC->nickname_schar8[0],(unsigned short*)&TGDSIPC->DSFWSETTINGSInst.nickname_utf16[0],32);

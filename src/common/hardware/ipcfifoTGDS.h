@@ -21,11 +21,11 @@ USA
 //TGDS IPC Version: 1.3
 
 //IPC FIFO Description: 
-//		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 														// Access to TGDS internal IPC FIFO structure. 		(ipcfifoTGDS.h)
-//		struct sIPCSharedTGDSSpecific * TGDSUSERIPC = (struct sIPCSharedTGDSSpecific *)TGDSIPCUserStartAddress;		// Access to TGDS Project (User) IPC FIFO structure	(ipcfifoTGDSUser.h)
+//		TGDSIPC 		= 	Access to TGDS internal IPC FIFO structure. 		(ipcfifoTGDS.h)
+//		TGDSUSERIPC		=	Access to TGDS Project (User) IPC FIFO structure	(ipcfifoTGDSUser.h)
 
-#ifndef __nds_ipc_h__
-#define __nds_ipc_h__
+#ifndef __ipcfifoTGDS_h__
+#define __ipcfifoTGDS_h__
 
 #include "typedefsTGDS.h"
 #include "dsregs.h"
@@ -161,6 +161,10 @@ USA
 //Read Memory between ARM processors
 #define ARM7READMEMORY_BUSY (int)(-1)
 
+static inline void sendIPCIRQ(){
+	REG_IPC_SYNC|=IPC_SYNC_IRQ_REQUEST;
+}
+
 static inline void sendByteIPC(uint8 inByte){
 	REG_IPC_SYNC = ((REG_IPC_SYNC&0xfffff0ff) | (inByte<<8) | (1<<13) );	// (1<<13) Send IRQ to remote CPU      (0=None, 1=Send IRQ)
 }
@@ -169,7 +173,7 @@ static inline uint8 receiveByteIPC(){
 	return (REG_IPC_SYNC&0xf);
 }
 
-struct sIPCSharedTGDS {
+typedef struct sIPCSharedTGDS {
     uint16 buttons7;  			// X, Y, /PENIRQ buttons
     uint16 KEYINPUT7;			//REG_KEYINPUT ARM7
 	uint16 touchX,   touchY;   // raw x/y TSC SPI
@@ -246,17 +250,15 @@ struct sIPCSharedTGDS {
 	int IR_readbufsize;
 	int IR_ReadOffset;
 	int IR_WrittenOffset;
-	
-} __attribute__((aligned (4)));
+} IPCSharedTGDS	__attribute__((aligned (4)));
 
 //Shared Work     027FF000h 4KB    -     -    -    R/W
-#define TGDSIPCStartAddress (__attribute__((aligned (4))) struct sIPCSharedTGDS*)(0x027FF000)
+#define TGDSIPC ((IPCSharedTGDS volatile *)(0x027FF000))
 #define TGDSIPCSize (int)(sizeof(struct sIPCSharedTGDS))
-#define TGDSIPCUserStartAddress (u32)(0x027FF000 + TGDSIPCSize)	//u32 because it`s unknown at this point. TGDS project will override it to specific USER IPC struct
 
 //usrsettings defs
 static inline bool getFWSettingsstatus(){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	#ifdef ARM9
 	//Prevent Cache problems.
 	coherent_user_range_by_size((uint32)&TGDSIPC->valid_dsfwsettings, sizeof(TGDSIPC->valid_dsfwsettings));
@@ -268,13 +270,13 @@ static inline uint8 getLanguage(){
 	while(getFWSettingsstatus() == false){
 		swiDelay(33);
 	}
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	return (uint8)(((TGDSIPC->lang_flags[1]<<8)|TGDSIPC->lang_flags[0])&language_mask);
 }
 
 
 static inline void setFWSettingsstatus(bool status){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	#ifdef ARM9
 	//Prevent Cache problems.
 	coherent_user_range_by_size((uint32)&TGDSIPC->valid_dsfwsettings, sizeof(TGDSIPC->valid_dsfwsettings));

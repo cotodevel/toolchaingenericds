@@ -63,7 +63,7 @@ u8 * ARM7DLDIBuf = NULL;	//Up to 64KB per cluster, should allow 64K and below
 void ARM7DLDIInit(u32 targetDLDI7Address){	//ARM9 Impl.
 	SetBusSLOT1SLOT2ARM7();
 	
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	coherent_user_range_by_size((u32)fifomsg, sizeof(TGDSIPC->fifoMesaggingQueue));	//prevent cache problems
 	memset((u8*)fifomsg, 0, sizeof(TGDSIPC->fifoMesaggingQueue));
@@ -110,7 +110,7 @@ void ARM9DeinitDLDI(){
 
 #ifdef ARM7
 void ARM7DLDIInit(){	//ARM7 Impl.
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	while((u32)getValueSafe(&fifomsg[7]) != (u32)TGDS_DLDI_ARM7_STATUS_STAGE0){
 		IRQWait(IRQ_HBLANK);

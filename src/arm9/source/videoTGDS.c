@@ -185,7 +185,7 @@ void renderFBMode3Engine(u16 * srcBuf, u16 * targetBuf, int srcWidth, int srcHei
 
 //Screen Rotation registers
 void setOrientation(int orientation, bool mainEngine){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	switch(orientation){
 		case ORIENTATION_0:{
 			if(mainEngine == true){

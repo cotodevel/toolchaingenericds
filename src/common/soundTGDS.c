@@ -37,7 +37,7 @@ void initSound(){
 void startSound(int sampleRate, const void* data, u32 bytes, u8 channel, u8 vol,  u8 pan, u8 format)
 {
 	#ifdef ARM9
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	coherent_user_range_by_size((uint32)fifomsg, sizeof(TGDSIPC->fifoMesaggingQueue));
 	coherent_user_range_by_size((uint32)data, bytes);	//coherent sound buffer if within cached EWRAM
@@ -103,7 +103,7 @@ struct soundSampleContext * getsoundSampleContextByIndex(int index){
 	if((index < 0) || (index > SOUNDCONTEXTCAPACITY)){
 		return NULL;
 	}
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	return(struct soundSampleContext *)&TGDSIPC->soundContextShared.soundSampleCxt[index];
 }
 
@@ -127,7 +127,7 @@ bool freesoundSampleContext(struct soundSampleContext * sampleInst){
 //Returns any available SoundSampleContext, or NULL
 struct soundSampleContext * getFreeSoundSampleContext(){
 	int i = 0;
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	for(i = 0; i < SOUNDCONTEXTCAPACITY; i++){
 		struct soundSampleContext * thisSoundSampleCtx = getsoundSampleContextByIndex(i);
 		if(thisSoundSampleCtx->status == SOUNDSAMPLECONTEXT_IDLE){
@@ -165,7 +165,7 @@ void flushSoundContext(int soundContextIndex){
 #endif
 
 bool getSoundSampleContextEnabledStatus(){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	#ifdef ARM9
 	coherent_user_range_by_size((uint32)&TGDSIPC->soundContextShared, sizeof(TGDSIPC->soundContextShared));
 	#endif
@@ -173,7 +173,7 @@ bool getSoundSampleContextEnabledStatus(){
 }
 
 void EnableSoundSampleContext(){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	#ifdef ARM9
 	coherent_user_range_by_size((uint32)&TGDSIPC->soundContextShared, sizeof(TGDSIPC->soundContextShared));
 	#endif
@@ -181,7 +181,7 @@ void EnableSoundSampleContext(){
 }
 
 void DisableSoundSampleContext(){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	#ifdef ARM9
 	coherent_user_range_by_size((uint32)&TGDSIPC->soundContextShared, sizeof(TGDSIPC->soundContextShared));
 	#endif
