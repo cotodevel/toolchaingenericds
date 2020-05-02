@@ -144,22 +144,20 @@ USA
 #define IPC_SEND_MULTIPLE_CMDS			(u8)(1)
 #define IPC_SERVE_DLDI7_REQBYIRQ		(u8)(2)
 #define IPC_ARM7READMEMORY_REQBYIRQ		(u8)(3)
-#define IPC_TGDSUSER_START_FREE_INDEX	(u8)(4)	//TGDS User Project rely on it
+#define IPC_ARM7SAVEMEMORY_REQBYIRQ		(u8)(4)
+#define IPC_TGDSUSER_START_FREE_INDEX	(u8)(5)	//TGDS User Project rely on it
 
 //ARM7 FS IPC Commands
 #define IPC_ARM7INIT_ARM7FS (u8)(0xE)
 #define IPC_ARM7DEINIT_ARM7FS (u8)(0xF)
 
 //ARM7 FS IO
-#define ARM7FS_IOSTATUS_IDLE (int)(-1)
-#define ARM7FS_IOSTATUS_BUSY (int)(0)
+#define ARM7FS_IOSTATUS_IDLE (int)(0)
+#define ARM7FS_IOSTATUS_BUSY (int)(-1)
 
 //ARM7 FS Transaction Status
 #define ARM7FS_TRANSACTIONSTATUS_IDLE (int)(-1)
 #define ARM7FS_TRANSACTIONSTATUS_BUSY (int)(0)
-
-//Read Memory between ARM processors
-#define ARM7READMEMORY_BUSY (int)(-1)
 
 typedef struct sIPCSharedTGDS {
     uint16 buttons7;  			// X, Y, /PENIRQ buttons
@@ -308,11 +306,8 @@ extern void HandleFifoEmpty();
 extern void SendFIFOWords(uint32 data0, uint32 data1);
 
 extern void sendMultipleByteIPC(uint8 inByte0, uint8 inByte1, uint8 inByte2, uint8 inByte3);
-
-//Allows to read any memory mapped from ARM7 to ARM9 directly; IRQ Safe and blocking (ARM9 issues call -> ARM7 does it -> ARM9 receives memory)
-#ifdef ARM9
 extern void ReadMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead);
-#endif
+extern void SaveMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead);
 
 #ifdef __cplusplus
 }

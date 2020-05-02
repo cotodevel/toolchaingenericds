@@ -120,18 +120,27 @@ void NDS_IRQHandler(){
 				ipcMsg[3] = ipcMsg[2] = ipcMsg[1] = ipcMsg[0] = 0;
 			}
 			break;
-			//Allows to read any memory mapped from ARM7 to ARM9 directly; IRQ Safe and blocking (ARM9 issues call -> ARM7 does it -> ARM9 receives memory)
 			case(IPC_ARM7READMEMORY_REQBYIRQ):{
-				//ARM7/9 impl.
-				
 				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 				uint32 srcMemory = fifomsg[0];
 				uint32 targetMemory = fifomsg[1];
 				int bytesToRead = (int)fifomsg[2];
 				memcpy((u8*)targetMemory,(u8*)srcMemory, bytesToRead);
-				fifomsg[7] = fifomsg[2] = fifomsg[1] = fifomsg[0] = (uint32)0;
+				fifomsg[7] = fifomsg[2] = fifomsg[1] = fifomsg[0] = (uint32)ARM7FS_IOSTATUS_IDLE;
 			}
-			break;			
+			break;
+			case(IPC_ARM7SAVEMEMORY_REQBYIRQ):{
+				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				uint32 srcMemory = fifomsg[0];
+				uint32 targetMemory = fifomsg[1];
+				int bytesToRead = (int)fifomsg[2];
+				#ifdef ARM9
+				dmaFillWord(0, 0, (uint32)srcMemory, (uint32)bytesToRead);
+				#endif
+				memcpy((u8*)srcMemory, (u8*)targetMemory, bytesToRead);
+				fifomsg[7] = fifomsg[2] = fifomsg[1] = fifomsg[0] = (uint32)ARM7FS_IOSTATUS_IDLE;
+			}
+			break;
 			#ifdef ARM7
 			//ARM7 FS Init
 			case(IPC_ARM7INIT_ARM7FS):{	//ARM7

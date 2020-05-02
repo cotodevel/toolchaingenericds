@@ -413,21 +413,47 @@ void HandleFifoNotEmpty(){
 	}
 }
 
+//Note: u32* srcMemory must be in EWRAM in both cases
+
+//Allows to read (EWRAM) memory from source ARM Core to destination ARM Core; IRQ Safe and blocking
+//u32 * targetMemory == EWRAM Memory source buffer to copy -FROM- u32 * srcMemory
+//u32 * srcMemory == External ARM Core Base Address
 #ifdef ARM9
-//Note: Must be in EWRAM
-//Allows to read any memory mapped from ARM7 to ARM9 directly; IRQ Safe and blocking (ARM9 issues call -> ARM7 does it -> ARM9 receives memory)
+__attribute__((section(".itcm")))
+#endif
 void ReadMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead){
-	coherent_user_range_by_size((uint32)targetMemory, (sint32)bytesToRead);
-	dmaFillWord(3, 0, (uint32)targetMemory, (uint32)bytesToRead);
-	
+	dmaFillWord(0, 0, (uint32)targetMemory, (uint32)bytesToRead);
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[0] = (uint32)srcMemory;
 	fifomsg[1] = (uint32)targetMemory;
 	fifomsg[2] = (uint32)bytesToRead;
-	fifomsg[7] = (uint32)ARM7READMEMORY_BUSY;
+	fifomsg[7] = (uint32)ARM7FS_IOSTATUS_BUSY;
 	sendByteIPCIndirect(IPC_ARM7READMEMORY_REQBYIRQ);sendIPCIRQOnly();
-	while(fifomsg[7] == ARM7READMEMORY_BUSY){
+	while((uint32)fifomsg[7] == (uint32)ARM7FS_IOSTATUS_BUSY){
+		swiDelay(2);
+	}
+	#ifdef ARM9
+	coherent_user_range_by_size((uint32)targetMemory, (sint32)bytesToRead);
+	#endif
+}
+
+//Allows to save (EWRAM) memory from source ARM Core to destination ARM Core; IRQ Safe and blocking
+//u32 * targetMemory == EWRAM Memory source buffer to copy -TO- u32 * srcMemory
+//u32 * srcMemory == External ARM Core Base Address
+#ifdef ARM9
+__attribute__((section(".itcm")))
+#endif
+void SaveMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead){
+	#ifdef ARM9
+	coherent_user_range_by_size((uint32)targetMemory, (sint32)bytesToRead);
+	#endif
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	fifomsg[0] = (uint32)srcMemory;
+	fifomsg[1] = (uint32)targetMemory;
+	fifomsg[2] = (uint32)bytesToRead;
+	fifomsg[7] = (uint32)ARM7FS_IOSTATUS_BUSY;
+	sendByteIPCIndirect(IPC_ARM7SAVEMEMORY_REQBYIRQ);sendIPCIRQOnly();
+	while((uint32)fifomsg[7] == (uint32)ARM7FS_IOSTATUS_BUSY){
 		swiDelay(2);
 	}
 }
-#endif
