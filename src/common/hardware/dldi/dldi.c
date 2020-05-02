@@ -4,6 +4,8 @@
 #include "global_settings.h"
 #include "busTGDS.h"
 #include "ipcfifoTGDS.h"
+#include "posixHandleTGDS.h"
+
 #include <string.h>
 
 #ifdef ARM9
