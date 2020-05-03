@@ -21,6 +21,12 @@ USA
 #ifndef __soundTGDS_h__
 #define __soundTGDS_h__
 
+#ifdef ARM9
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#endif
+
 #define MAX_SNDBUF_SIZE (int)(128*1024)
 #define SOUNDCONTEXTCAPACITY (int)(16)
 
@@ -62,6 +68,23 @@ struct soundSampleContextList{
 	struct soundSampleContext soundSampleCxt[SOUNDCONTEXTCAPACITY];
 };
 
+
+struct soundPlayerContext{
+	int fileSize;
+	int fileOffset;
+	//XX decoders:
+	
+	//Wav
+	wavFormatChunk wavDescriptor;
+	
+	//Decoded XX buffers
+	u8 *lData;
+	u8 *rData;
+	
+	#ifdef ARM9
+	FILE * fh;
+	#endif
+};
 
 #ifdef ARM7
 static inline s32 getFreeSoundChannel(){

@@ -165,7 +165,7 @@ TGDSARM9FreeHandler				TGDSFree9;
 TGDSARM9MallocFreeMemoryHandler	TGDSMallocFreeMemory9;
 
 //Prototype
-AllocatorInstance CustomAllocatorInstance;
+struct AllocatorInstance CustomAllocatorInstance;
 
 void initARM9Malloc(u32 ARM9MallocStartaddress, u32 memSizeBytes, u32 * mallocHandler, u32 * callocHandler, u32 * freeHandler, u32 * MallocFreeMemoryHandler, bool customAllocator){
 	
@@ -196,7 +196,7 @@ void initARM9Malloc(u32 ARM9MallocStartaddress, u32 memSizeBytes, u32 * mallocHa
 	}
 }
 
-void setTGDSMemoryAllocator(AllocatorInstance * TGDSMemoryAllocator){
+void setTGDSMemoryAllocator(struct AllocatorInstance * TGDSMemoryAllocator){
 	//Enable Default/Custom TGDS Memory Allocator
 	u32 ARM9MallocStartaddress = (u32)sbrk(0);
 	if(TGDSMemoryAllocator == NULL){

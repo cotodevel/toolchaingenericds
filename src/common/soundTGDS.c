@@ -66,18 +66,18 @@ inline void updateSoundContext(){
 	if(getSoundSampleContextEnabledStatus() == true){
 		//VBLANK intervals: Look out for assigned channels, playing.
 		struct soundSampleContext * curSoundSampleContext = getsoundSampleContextByIndex(curChannel);
-		int curChannel = curSoundSampleContext->channel;
+		int thisChannel = curSoundSampleContext->channel;
 		
 		//Returns -1 if channel is busy, or channel if idle
-		if( (isFreeSoundChannel(curChannel) == curChannel) && (curSoundSampleContext->status == SOUNDSAMPLECONTEXT_PENDING) ){	//Play sample?
-			startSound(curSoundSampleContext->sampleRate, curSoundSampleContext->data, curSoundSampleContext->bytes, curChannel, curSoundSampleContext->vol,  curSoundSampleContext->pan, curSoundSampleContext->format);
+		if( (isFreeSoundChannel(thisChannel) == thisChannel) && (curSoundSampleContext->status == SOUNDSAMPLECONTEXT_PENDING) ){	//Play sample?
+			startSound(curSoundSampleContext->sampleRate, curSoundSampleContext->data, curSoundSampleContext->bytes, thisChannel, curSoundSampleContext->vol,  curSoundSampleContext->pan, curSoundSampleContext->format);
 			curSoundSampleContext->status = SOUNDSAMPLECONTEXT_PLAYING;
 		}
 		
 		//Returns -1 if channel is busy, or channel if idle
-		if( (isFreeSoundChannel(curChannel) == curChannel) && (curSoundSampleContext->status == SOUNDSAMPLECONTEXT_PLAYING) ){	//Idle? free context
+		if( (isFreeSoundChannel(thisChannel) == thisChannel) && (curSoundSampleContext->status == SOUNDSAMPLECONTEXT_PLAYING) ){	//Idle? free context
 			freesoundSampleContext(curSoundSampleContext);
-			SendFIFOWords(FIFO_FLUSHSOUNDCONTEXT, curChannel);
+			SendFIFOWords(FIFO_FLUSHSOUNDCONTEXT, thisChannel);
 		}
 		
 		if(curChannel > SOUNDCONTEXTCAPACITY){

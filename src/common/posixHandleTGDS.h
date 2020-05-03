@@ -90,7 +90,7 @@ typedef u8* (*TGDSARM9CallocHandler)(int, int);
 typedef void (*TGDSARM9FreeHandler)(void *);
 typedef u32 (*TGDSARM9MallocFreeMemoryHandler)();
 
-typedef struct AllocatorInstance
+struct AllocatorInstance
 {
 	TGDSARM9MallocHandler 			CustomTGDSMalloc9;
 	TGDSARM9CallocHandler 			CustomTGDSCalloc9;
@@ -98,7 +98,7 @@ typedef struct AllocatorInstance
 	TGDSARM9MallocFreeMemoryHandler	CustomTGDSMallocFreeMemory9;
 	int memoryToAllocate;
 	u32 ARM9MallocStartaddress;
-}AllocatorInstance;
+};
 
 #ifdef __cplusplus
 extern "C"{
@@ -109,9 +109,9 @@ extern int getMaxRam();
 //TGDS Malloc implementation, before using them requires a call from ARM9: void initARM7Malloc(u32 ARM7MallocStartaddress, u32 memSizeBytes)
 extern bool customMallocARM9;
 //weak symbols : the implementation of this is project-defined
-extern  __attribute__((weak))	AllocatorInstance * getProjectSpecificMemoryAllocatorSetup();
+extern  __attribute__((weak))	struct AllocatorInstance * getProjectSpecificMemoryAllocatorSetup();
 
-extern AllocatorInstance CustomAllocatorInstance;
+extern struct AllocatorInstance CustomAllocatorInstance;
 extern TGDSARM9MallocHandler 			TGDSMalloc9;
 extern TGDSARM9CallocHandler 			TGDSCalloc9;
 extern TGDSARM9FreeHandler				TGDSFree9;
