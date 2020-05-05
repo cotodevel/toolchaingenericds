@@ -290,8 +290,12 @@ void HandleFifoNotEmpty(){
 			
 			//ARM9 command handler
 			#ifdef ARM9
+			case((uint32)TGDS_ARM7_DETECTTURNOFFCONSOLE):{
+				detectAndTurnOffConsole();
+			}
+			break;
 			
-			case((uint32)TGDS_ARM7_SETUPARM9MALLOC):{	//ARM9
+			case((uint32)TGDS_ARM7_SETUPARM9MALLOC):{	//ARM9 impl.
 				
 			}
 			break;
