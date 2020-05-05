@@ -68,6 +68,11 @@ struct soundSampleContextList{
 	struct soundSampleContext soundSampleCxt[SOUNDCONTEXTCAPACITY];
 };
 
+struct soundPlayerChannelContext{
+	u8 *chData;
+	int channelIndex;
+	int sampleSize;
+};
 
 struct soundPlayerContext{
 	int fileSize;
@@ -78,8 +83,7 @@ struct soundPlayerContext{
 	wavFormatChunk wavDescriptor;
 	
 	//Decoded XX buffers
-	u8 *lData;
-	u8 *rData;
+	struct soundPlayerChannelContext soundPlayerContextCh[2];
 	
 	#ifdef ARM9
 	FILE * fh;
