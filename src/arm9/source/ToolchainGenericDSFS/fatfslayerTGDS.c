@@ -1620,6 +1620,15 @@ int fatfs_readdir_r(
 			}
 			strncpy((sint8*)entry->d_name, (sint8*)fno.fname, topsize);
 			*result = entry;
+			
+			//update FT_FILE / FT_DIR
+			if (fno.fattrib & AM_DIR) {
+				fdinst->StructFDType = FT_DIR;
+			}
+			
+			if (fno.fattrib & AM_ARC) {
+				fdinst->StructFDType = FT_FILE;
+			}
 		}
     }
 	return ret;
