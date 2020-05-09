@@ -131,7 +131,7 @@ extern uint32 	_vector_end;
 
 //NDS Memory Map
 extern bool isValidMap(uint32 addr);
-
+extern void separateExtension(char *str, char *ext);
 #endif
 
 

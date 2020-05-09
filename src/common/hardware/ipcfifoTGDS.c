@@ -86,7 +86,7 @@ void HandleFifoNotEmpty(){
 	while(!(REG_IPC_FIFO_CR & RECV_FIFO_IPC_EMPTY)){
 		data0 = (u32)REG_IPC_FIFO_RX;
 		data1 = (u32)REG_IPC_FIFO_RX;
-		//Do ToolchainGenericDS IPC handle here
+		//Execute ToolchainGenericDS FIFO commands
 		switch (data1) {
 			// ARM7IO from ARM9
 			//	||
@@ -123,6 +123,132 @@ void HandleFifoNotEmpty(){
 			
 			//ARM7 command handler
 			#ifdef ARM7
+			
+			//Sound Player Context / Mic
+			case ARM7COMMAND_SOUND_SETLEN:{
+				sampleLen = (data0);
+			}
+			break;
+			case ARM7COMMAND_SOUND_SETRATE:{
+				sndRate = (data0);
+			}
+			break;
+			case ARM7COMMAND_SOUND_SETMULT:{
+				multRate = (data0);
+			}
+			break;
+			case ARM7COMMAND_START_SOUND:{
+				SetupSound();
+			}
+			break;
+			case ARM7COMMAND_STOP_SOUND:{
+				StopSound();
+			}
+			break;
+			case ARM7COMMAND_SOUND_COPY:
+			{
+				s16 *lbuf = NULL;
+				s16 *rbuf = NULL;
+				
+				if(!sndCursor)
+				{
+					lbuf = strpcmL0;
+					rbuf = strpcmR0;
+				}
+				else
+				{
+					lbuf = strpcmL1;
+					rbuf = strpcmR1;
+				}
+				
+				u32 i;
+				struct soundPlayerContext * soundPlayerCtx = (struct soundPlayerContext *)&TGDSIPC->sndPlayerCtx;
+				int vMul = soundPlayerCtx->volume;
+				int lSample = 0;
+				int rSample = 0;
+				s16 *arm9LBuf = soundPlayerCtx->soundSampleCxt[SOUNDSTREAM_L_BUFFER].arm9data;
+				s16 *arm9RBuf = soundPlayerCtx->soundSampleCxt[SOUNDSTREAM_R_BUFFER].arm9data;
+				
+				switch(multRate)
+				{
+					case 1:{
+						for(i=0;i<sampleLen;++i)
+						{
+							lSample = ((*arm9LBuf++) * vMul) >> 2;
+							rSample = ((*arm9RBuf++) * vMul) >> 2;
+							
+							*lbuf++ = checkClipping(lSample);
+							*rbuf++ = checkClipping(rSample);
+						}
+					}	
+					break;
+					case 2:{
+						for(i=0;i<sampleLen;++i)
+						{
+							lSample = ((*arm9LBuf++) * vMul) >> 2;
+							rSample = ((*arm9RBuf++) * vMul) >> 2;
+							
+							int midLSample = (lastL + lSample) >> 1;
+							int midRSample = (lastR + rSample) >> 1;
+							
+							*lbuf++ = checkClipping(midLSample);
+							*rbuf++ = checkClipping(midRSample);
+							*lbuf++ = checkClipping(lSample);
+							*rbuf++ = checkClipping(rSample);
+							
+							lastL = lSample;
+							lastR = rSample;
+						}
+					}	
+					break;
+					case 4:{
+						// unrolling this one out completely because it's soo much slower
+						
+						for(i=0;i<sampleLen;++i)
+						{
+							lSample = ((*arm9LBuf++) * vMul) >> 2;
+							rSample = ((*arm9RBuf++) * vMul) >> 2;
+							
+							int midLSample = (lastL + lSample) >> 1;
+							int midRSample = (lastR + rSample) >> 1;
+							
+							int firstLSample = (lastL + midLSample) >> 1;
+							int firstRSample = (lastR + midRSample) >> 1;
+							
+							int secondLSample = (midLSample + lSample) >> 1;
+							int secondRSample = (midRSample + rSample) >> 1;
+							
+							*lbuf++ = checkClipping(firstLSample);
+							*rbuf++ = checkClipping(firstRSample);
+							*lbuf++ = checkClipping(midLSample);
+							*rbuf++ = checkClipping(midRSample);
+							*lbuf++ = checkClipping(secondLSample);
+							*rbuf++ = checkClipping(secondRSample);
+							*lbuf++ = checkClipping(lSample);
+							*rbuf++ = checkClipping(rSample);							
+							
+							lastL = lSample;
+							lastR = rSample;							
+						}
+					}	
+					break;
+				}
+				VblankUser();
+			}
+			break;
+			case((uint32)TGDS_ARM7_ENABLESOUNDSAMPLECTX):{
+				EnableSoundSampleContext((int)data0);
+			}
+			break;
+			case((uint32)TGDS_ARM7_DISABLESOUNDSAMPLECTX):{
+				DisableSoundSampleContext();
+			}
+			break;
+			
+			case((uint32)TGDS_ARM7_INITSTREAMSOUNDCTX):{
+				initSoundStream();
+			}
+			break;
 			
 			case((uint32)TGDS_ARM7_SETUPARM7MALLOC):{
 				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg
@@ -290,6 +416,16 @@ void HandleFifoNotEmpty(){
 			
 			//ARM9 command handler
 			#ifdef ARM9
+			case ARM9COMMAND_UPDATE_BUFFER:{
+				switch(TGDSIPC->sndPlayerCtx.sourceFmt)
+				{
+					case SRC_WAV:{
+						updateSoundContextStreamPlayback();
+					}
+					break;
+				}
+			}	
+			break;
 			case((uint32)TGDS_ARM7_DETECTTURNOFFCONSOLE):{
 				detectAndTurnOffConsole();
 			}
@@ -302,7 +438,7 @@ void HandleFifoNotEmpty(){
 			
 			//ARM7 FS: read from ARM9 POSIX filehandle to ARM7
 			case(IR_ARM7FS_Read):{
-				uint32* fifomsg = (uint32*)data0;		//data1 == uint32 * fifomsg
+				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg
 				//Index 0 -- 4 used, do not use.
 				u8* readbuf = (u8*)fifomsg[5];
 				int readBufferSize = (int)fifomsg[6];
@@ -326,7 +462,7 @@ void HandleFifoNotEmpty(){
 			
 			//ARM7 FS: write from ARM7 to ARM9 POSIX filehandle
 			case(IR_ARM7FS_Save):{
-				uint32* fifomsg = (uint32*)data0;		//data1 == uint32 * fifomsg
+				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg
 				//Index 0 -- 4 used, do not use.
 				u8* readbuf = (u8*)fifomsg[5];
 				int writeBufferSize = (int)fifomsg[6];

@@ -1,5 +1,4 @@
 /*
-
 			Copyright (C) 2017  Coto
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -22,6 +21,13 @@ USA
 #include "dsregs_asm.h"
 #include "soundTGDS.h"
 #include "ipcfifoTGDS.h"
+#include "powerTGDS.h"
+#include "timerTGDS.h"
+#include "posixHandleTGDS.h"
+
+#ifdef ARM9
+#include "utilsTGDS.h"
+#endif
 
 void initSound(){
 	#ifdef ARM7
@@ -62,15 +68,17 @@ void startSound(int sampleRate, const void* data, u32 bytes, u8 channel, u8 vol,
 
 #ifdef ARM7
 static int curChannel = 0;
-inline void updateSoundContext(){
-	if(getSoundSampleContextEnabledStatus() == true){
+int soundSampleContextCurrentMode = SOUNDSAMPLECONTEXT_SOUND_IDLE;
+
+void updateSoundContextSamplePlayback(){
+	if(getSoundSampleContextEnabledStatus() == SOUNDSAMPLECONTEXT_SOUND_SAMPLEPLAYBACK){
 		//VBLANK intervals: Look out for assigned channels, playing.
 		struct soundSampleContext * curSoundSampleContext = getsoundSampleContextByIndex(curChannel);
 		int thisChannel = curSoundSampleContext->channel;
 		
 		//Returns -1 if channel is busy, or channel if idle
 		if( (isFreeSoundChannel(thisChannel) == thisChannel) && (curSoundSampleContext->status == SOUNDSAMPLECONTEXT_PENDING) ){	//Play sample?
-			startSound(curSoundSampleContext->sampleRate, curSoundSampleContext->data, curSoundSampleContext->bytes, thisChannel, curSoundSampleContext->vol,  curSoundSampleContext->pan, curSoundSampleContext->format);
+			startSound(curSoundSampleContext->sampleRate, curSoundSampleContext->arm9data, curSoundSampleContext->bytes, thisChannel, curSoundSampleContext->vol,  curSoundSampleContext->pan, curSoundSampleContext->format);
 			curSoundSampleContext->status = SOUNDSAMPLECONTEXT_PLAYING;
 		}
 		
@@ -80,7 +88,7 @@ inline void updateSoundContext(){
 			SendFIFOWords(FIFO_FLUSHSOUNDCONTEXT, thisChannel);
 		}
 		
-		if(curChannel > SOUNDCONTEXTCAPACITY){
+		if(curChannel > SoundSampleContextChannels){
 			curChannel = 0;
 		}
 		else{
@@ -91,16 +99,16 @@ inline void updateSoundContext(){
 
 void initSoundSampleContext(){
 	int i = 0;
-	for(i = 0; i < SOUNDCONTEXTCAPACITY; i++){
+	for(i = 0; i < SoundSampleContextChannels; i++){
 		struct soundSampleContext * soundSampleCtx = getsoundSampleContextByIndex(i);
 		freesoundSampleContext(soundSampleCtx);
 	}
-	EnableSoundSampleContext();
+	EnableSoundSampleContext(SOUNDSAMPLECONTEXT_SOUND_SAMPLEPLAYBACK);
 }
 #endif
 
 struct soundSampleContext * getsoundSampleContextByIndex(int index){
-	if((index < 0) || (index > SOUNDCONTEXTCAPACITY)){
+	if((index < 0) || (index > SoundSampleContextChannels)){
 		return NULL;
 	}
 	
@@ -111,7 +119,7 @@ bool freesoundSampleContext(struct soundSampleContext * sampleInst){
 	if(sampleInst != NULL){
 		memset(sampleInst, 0, sizeof(struct soundSampleContext));		
 		sampleInst->sampleRate = -1;
-		sampleInst->data = NULL;
+		sampleInst->arm9data = NULL;
 		sampleInst->bytes = -1;
 		sampleInst->channel = -1;
 		sampleInst->vol = -1;
@@ -128,7 +136,7 @@ bool freesoundSampleContext(struct soundSampleContext * sampleInst){
 struct soundSampleContext * getFreeSoundSampleContext(){
 	int i = 0;
 	
-	for(i = 0; i < SOUNDCONTEXTCAPACITY; i++){
+	for(i = 0; i < SoundSampleContextChannels; i++){
 		struct soundSampleContext * thisSoundSampleCtx = getsoundSampleContextByIndex(i);
 		if(thisSoundSampleCtx->status == SOUNDSAMPLECONTEXT_IDLE){
 			return thisSoundSampleCtx;
@@ -137,15 +145,504 @@ struct soundSampleContext * getFreeSoundSampleContext(){
 	return NULL;
 }
 
+//Sound stream code taken from DSOrganize because it works 100% through interrupts and that's wonderful
 
+
+/***************************************************************************
+ *                                                                         *
+ *  This file is part of DSOrganize.                                       *
+ *                                                                         *
+ *  DSOrganize is free software: you can redistribute it and/or modify     *
+ *  it under the terms of the GNU General Public License as published by   *
+ *  the Free Software Foundation, either version 3 of the License, or      *
+ *  (at your option) any later version.                                    *
+ *                                                                         *
+ *  DSOrganize is distributed in the hope that it will be useful,          *
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of         *
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          *
+ *  GNU General Public License for more details.                           *
+ *                                                                         *
+ *  You should have received a copy of the GNU General Public License      *
+ *  along with DSOrganize.  If not, see <http://www.gnu.org/licenses/>.    *
+ *                                                                         *
+ ***************************************************************************/
+ 
+ 
 #ifdef ARM9
+
+// sound out
+void (*wavDecode)() = NULL;
+static bool sndPaused = false;
+FILE * GlobalSoundStreamFile = NULL;
+static bool playing = false;
+s16 * SharedEWRAM0 = NULL;	//ptr start = 0
+s16 * SharedEWRAM1 = NULL;	//ptr start = 0 + 0x4000
+static int SwapSoundStreamBuffers = 0;
+static int SwapSoundStreamBufferSize = 0;
+s16 *lBufferSwapped = NULL;
+s16 *rBufferSwapped = NULL;
+static bool cutOff = false;
+
+void mallocData(int size)
+{
+	struct soundPlayerContext * soundPlayerCtx = (struct soundPlayerContext *)&TGDSIPC->sndPlayerCtx;
+	SwapSoundStreamBuffers = 0;
+	
+	u32 *siTemp = (u32 *)SharedEWRAM0;
+	int i=0;
+	for(i=0;i<0x2000;++i)
+		siTemp[i] = 0;
+	
+	SwapSoundStreamBufferSize = size;
+	
+	lBufferSwapped = SharedEWRAM0;
+	rBufferSwapped = SharedEWRAM0 + SwapSoundStreamBufferSize;
+	
+	soundPlayerCtx->soundSampleCxt[SOUNDSTREAM_L_BUFFER].arm9data = NULL; // temporary
+	soundPlayerCtx->soundSampleCxt[SOUNDSTREAM_R_BUFFER].arm9data = NULL; // temporary
+}
+
+void freeData()
+{
+	lBufferSwapped = NULL;
+	rBufferSwapped = NULL;
+}
+
+void swapData()
+{
+	struct soundPlayerContext * soundPlayerCtx = (struct soundPlayerContext *)&TGDSIPC->sndPlayerCtx;
+	
+	SwapSoundStreamBuffers = 1 - SwapSoundStreamBuffers;
+	
+	switch(SwapSoundStreamBuffers)
+	{
+		case 0:
+			lBufferSwapped = SharedEWRAM0;
+			rBufferSwapped = SharedEWRAM0 + SwapSoundStreamBufferSize;
+			
+			soundPlayerCtx->soundSampleCxt[SOUNDSTREAM_L_BUFFER].arm9data = SharedEWRAM1; 
+			soundPlayerCtx->soundSampleCxt[SOUNDSTREAM_R_BUFFER].arm9data = (SharedEWRAM1 + SwapSoundStreamBufferSize);
+			break;
+		case 1:
+			lBufferSwapped = SharedEWRAM1;
+			rBufferSwapped = SharedEWRAM1 + SwapSoundStreamBufferSize;
+			
+			soundPlayerCtx->soundSampleCxt[SOUNDSTREAM_L_BUFFER].arm9data = SharedEWRAM0; 
+			soundPlayerCtx->soundSampleCxt[SOUNDSTREAM_R_BUFFER].arm9data = (SharedEWRAM0 + SwapSoundStreamBufferSize);
+			
+			break;
+	}
+}
+
+void swapAndSend(u32 type)
+{
+	swapData();
+	SendFIFOWords(type,0);
+}
+
+void startSound9()
+{	
+	if(!playing)
+		SendFIFOWords(ARM7COMMAND_START_SOUND, 0);
+	playing = true;
+}
+
+void stopSound()
+{
+	if(playing)
+		SendFIFOWords(ARM7COMMAND_STOP_SOUND, 0);
+	playing = false;
+}
+
+void pauseSound(bool pause)
+{
+	sndPaused = pause;
+}
+
+void setSoundLength(u32 len)
+{
+	SendFIFOWords(ARM7COMMAND_SOUND_SETLEN, len);
+}
+
+void setSoundFrequency(u32 freq)
+{
+	SendFIFOWords(ARM7COMMAND_SOUND_SETRATE, freq);
+}
+
+void setSoundInterpolation(u32 mult)
+{
+	SendFIFOWords(ARM7COMMAND_SOUND_SETMULT, mult);
+}
+
+//Returns the next offset right after "data". Which is the raw Waveform length (4 bytes) and then the raw Waveform
+int parseWaveData(FILE * fh){
+    u32 bytes=0;
+	int fileOffset = 0;
+	
+	// Read first 4 bytes.
+	// (Should be RIFF descriptor.)
+	if (fread((u8*)&bytes, 1, 4, fh) < 0) {
+		return -1;
+	}
+	
+	fileOffset+=4;
+	
+	// First subchunk will always be at byte 12.
+	// (There is no other dependable constant.)
+	fseek(fh, 8, SEEK_CUR);
+	fileOffset+=8;
+	
+	for (;;) {
+		// Read chunk length.
+		if (fread((u8*)&bytes, 1, 4, fh) < 0) {
+			return -1;
+		}
+		
+		//64[3] 61[2] 74[1] 61[0]	== "data"
+		if((u32)bytes == (u32)0x61746164){
+			// Skip the length of this chunk.
+			// Next bytes should be another descriptor or EOF.
+			return (fileOffset+4);
+		}
+		fileOffset+=4;
+	}
+	return -1;
+}
+
+void wavDecode8Bit()
+{
+	// 8bit wav file
+	u8 *s8Data = (u8 *)TGDSARM9Malloc(WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels);
+	int rSize = getWavData(s8Data, (WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels), GlobalSoundStreamFile);
+	if(rSize < (WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels))
+	{
+		cutOff = true;
+		memset(s8Data + rSize, 0, (WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels) - rSize);
+	}
+	coherent_user_range((uint32)SharedEWRAM0, (uint32)(32*1024));
+	
+	u8 *lData = (u8 *)lBufferSwapped + 1;
+	u8 *rData = (u8 *)rBufferSwapped + 1;
+	if(TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels == 2)
+	{
+		uint i=0;
+		for(i=0;i<(WAV_READ_SIZE << 1);i+=2)
+		{
+			lData[i] = (s8Data[i] - 128);
+			rData[i] = (s8Data[i + 1] - 128);
+		}
+	}
+	else
+	{
+		uint i=0,j=0;
+		for(i=0,j=0;i<(WAV_READ_SIZE << 1);i+=2,++j)
+		{
+			lData[i] = (s8Data[j] - 128);
+			rData[i] = lData[i];
+		}
+	}
+	TGDSARM9Free(s8Data);
+}
+
+void wavDecode16Bit()
+{
+	// 16bit wav file
+	s16 *tmpData = (s16 *)TGDSARM9Malloc(WAV_READ_SIZE * 2 * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels);
+	int rSize = getWavData(tmpData, (WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels * 2), GlobalSoundStreamFile);
+	if(rSize < (WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels * 2))
+	{
+		cutOff = true;
+		memset(tmpData + (rSize >> 1), 0, (WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels * 2) - rSize);
+	}
+	coherent_user_range((uint32)SharedEWRAM0, (uint32)(32*1024));
+	
+	if(TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels == 2)
+	{
+		uint i=0;
+		for(i=0;i<WAV_READ_SIZE;++i)
+		{					
+			lBufferSwapped[i] = tmpData[i << 1];
+			rBufferSwapped[i] = tmpData[(i << 1) | 1];
+		}
+	}
+	else
+	{
+		uint i=0;
+		for(i=0;i<WAV_READ_SIZE;++i)
+		{
+			lBufferSwapped[i] = tmpData[i];
+			rBufferSwapped[i] = tmpData[i];
+		}
+	}
+		
+	TGDSARM9Free(tmpData);
+}
+
+void wavDecode24Bit()
+{
+	// 24bit wav file
+	u8 *tmpData = (u8 *)TGDSARM9Malloc(WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels * 3);
+	int rSize = getWavData(tmpData, (WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels * 3), GlobalSoundStreamFile);
+	if(rSize < (WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels * 3))
+	{
+		cutOff = true;
+		memset(tmpData + rSize, 0, (WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels * 3) - rSize);
+	}
+	coherent_user_range((uint32)SharedEWRAM0, (uint32)(32*1024));
+	
+	void *oldPointer = tmpData;
+	u16 tmpVal;
+	s16 *tmpSound = (s16 *)&tmpVal;
+	
+	if(TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels == 2)
+	{
+		uint i=0;
+		for(i=0;i<WAV_READ_SIZE;++i)
+		{					
+			tmpVal = (tmpData[1]) | ((tmpData[2]) << 8);
+			lBufferSwapped[i] = *tmpSound;
+			tmpData+=3;
+			
+			tmpVal = (tmpData[1]) | ((tmpData[2]) << 8);
+			rBufferSwapped[i] = *tmpSound;
+			tmpData+=3;
+		}
+	}
+	else
+	{
+		uint i=0;
+		for(i=0;i<WAV_READ_SIZE;++i)
+		{	
+			tmpVal = (tmpData[1]) | ((tmpData[2]) << 8);
+			
+			lBufferSwapped[i] = *tmpSound;
+			rBufferSwapped[i] = *tmpSound;
+			
+			tmpData+=3;
+		}
+	}
+	TGDSARM9Free(oldPointer);
+}
+
+void wavDecode32Bit()
+{
+	// 32bit wav file
+	s16 *tmpData = (s16 *)TGDSARM9Malloc(WAV_READ_SIZE * 4 * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels);	
+	int rSize = getWavData(tmpData, (WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels * 4), GlobalSoundStreamFile);
+	if(rSize < (WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels * 4))
+	{
+		cutOff = true;
+		memset(tmpData + (rSize >> 1), 0, (WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels * 4) - rSize);
+	}
+	coherent_user_range((uint32)SharedEWRAM0, (uint32)(32*1024));
+	
+	if(TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels == 2)
+	{
+		uint i=0;
+		for(i=0;i<WAV_READ_SIZE;++i)
+		{					
+			lBufferSwapped[i] = tmpData[(i << 2) + 1];
+			rBufferSwapped[i] = tmpData[(i << 2) + 3];
+		}
+	}
+	else
+	{
+		uint i=0;
+		for(i=0;i<WAV_READ_SIZE;++i)
+		{
+			lBufferSwapped[i] = tmpData[(i << 1) + 1];
+			rBufferSwapped[i] = lBufferSwapped[i];
+		}
+	}
+	
+	TGDSARM9Free(tmpData);
+}
+
+void freeSound()
+{
+	stopSound();
+	freeData();
+	if(GlobalSoundStreamFile != NULL){
+		fclose(GlobalSoundStreamFile);
+		GlobalSoundStreamFile = NULL;
+		TGDSIPC->sndPlayerCtx.sourceFmt = SRC_NONE;	
+	}
+}
+
+void initComplexSound()
+{	
+	struct soundPlayerContext * soundPlayerCtx = (struct soundPlayerContext *)&TGDSIPC->sndPlayerCtx;
+	soundPlayerCtx->volume = 4;
+	soundPlayerCtx->sourceFmt = SRC_NONE;
+	SendFIFOWords(TGDS_ARM7_INITSTREAMSOUNDCTX, 0);
+}
+
+//Opens a file handle
+bool initSoundStream(char * WAVfilename){	//ARM9 Impl.
+	char tmpName[256+1] = {0};
+	char ext[256+1] = {0};
+	strcpy(tmpName, WAVfilename);	
+	separateExtension(tmpName, ext);
+	strlwr(ext);
+	
+	initComplexSound(); // initialize sound variables
+	
+	if(SharedEWRAM0 != NULL){
+		TGDSARM9Free(SharedEWRAM0);
+		SharedEWRAM1 = NULL;
+	}
+	
+	SharedEWRAM0 = (s16*)TGDSARM9Malloc(32*1024);
+	SharedEWRAM1 = (s16*)((u8*)SharedEWRAM0 + 0x4000);
+	
+	freeSound();	
+	
+	if(strcmp(ext,".wav") == 0)
+	{
+		// wav file!
+		TGDSIPC->sndPlayerCtx.sourceFmt = SRC_WAV;
+		TGDSIPC->sndPlayerCtx.fileOffset = 0;
+		
+		char header[13];
+		
+		FILE *fp = fopen(WAVfilename, "r");
+		fread(header, 1, 12, fp);
+		
+		header[12] = 0;
+		header[4] = ' ';
+		header[5] = ' ';
+		header[6] = ' ';
+		header[7] = ' ';
+		
+		if(strcmp(header, "RIFF    WAVE") != 0)
+		{
+			// wrong header
+			
+			fclose(fp);
+			return false;
+		}		
+		
+		fread((char*)&TGDSIPC->sndPlayerCtx.wavDescriptor, 1, sizeof(wavFormatChunk), fp);
+		
+		if(strncmp((char*)&TGDSIPC->sndPlayerCtx.wavDescriptor.chunkID[0], "fmt ", 4) != 0)
+		{
+			// wrong chunk at beginning
+			
+			fclose(fp);
+			return false;
+		}
+		
+		if(TGDSIPC->sndPlayerCtx.wavDescriptor.wFormatTag != 1)
+		{
+			// compression used, hell no to loading this
+			
+			fclose(fp);
+			return false;
+		}
+		
+		if(TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels > 2)
+		{
+			// more than 2 channels.... uh no!
+			
+			fclose(fp);
+			return false;
+		}
+		
+		
+		if(TGDSIPC->sndPlayerCtx.wavDescriptor.wBitsPerSample <= 8)
+		{
+			wavDecode = wavDecode8Bit;
+		}
+		else if(TGDSIPC->sndPlayerCtx.wavDescriptor.wBitsPerSample <= 16)
+		{
+			wavDecode = wavDecode16Bit;
+		}
+		else if(TGDSIPC->sndPlayerCtx.wavDescriptor.wBitsPerSample <= 24)
+		{
+			wavDecode = wavDecode24Bit;
+		}
+		else if(TGDSIPC->sndPlayerCtx.wavDescriptor.wBitsPerSample <= 32)
+		{
+			wavDecode = wavDecode32Bit;
+		}
+		else
+		{
+			// more than 32bit sound, not supported
+			
+			fclose(fp);
+			return false;		
+		}
+		
+		//rewind
+		fseek(fp, 0, SEEK_SET);
+		int wavStartOffset = parseWaveData(fp);
+		
+		if(wavStartOffset < 0)
+		{
+			// wav block not found
+			fclose(fp);
+			return false;
+		}
+		
+		u32 len = 0;
+		fread(&len, 1, sizeof(len), fp);
+		wavStartOffset+=4;
+		
+		TGDSIPC->sndPlayerCtx.fileSize = len;
+		TGDSIPC->sndPlayerCtx.fileOffset = wavStartOffset;
+		GlobalSoundStreamFile = fp;
+		
+		setSoundInterpolation(1);
+		setSoundFrequency(TGDSIPC->sndPlayerCtx.wavDescriptor.dwSamplesPerSec);
+		
+		setSoundLength(WAV_READ_SIZE);		
+		mallocData(WAV_READ_SIZE);
+		
+		wavDecode();
+		startSound9();
+		
+		return true;
+	}
+	return false;
+}
+
+//ARM9: Stream Playback handler
+void updateSoundContextStreamPlayback(){
+	if(lBufferSwapped == NULL || rBufferSwapped == NULL)
+	{
+		// file is done
+		stopSound();
+		return;
+	}
+	
+	if(sndPaused)
+	{
+		memset(lBufferSwapped, 0, SwapSoundStreamBufferSize * 2);
+		memset(rBufferSwapped, 0, SwapSoundStreamBufferSize * 2);
+		
+		swapAndSend(ARM7COMMAND_SOUND_COPY);
+		return;
+	}
+	
+	switch(TGDSIPC->sndPlayerCtx.sourceFmt)
+	{
+		case SRC_WAV:
+		{
+			swapAndSend(ARM7COMMAND_SOUND_COPY);
+			wavDecode();
+			TGDSIPC->sndPlayerCtx.fileOffset = ftell(GlobalSoundStreamFile);
+		}
+		break;
+	}
+}
+
 //Allocates by free sampleContext. Sound Sample Context is queued
 //Returns: true if success, false if full samples alloc'ed
 bool setSoundSampleContext(int sampleRate, u32 * data, u32 bytes, u8 channel, u8 vol, u8 pan, u8 format){
 	struct soundSampleContext * sampleInst = getFreeSoundSampleContext();
 	if(sampleInst != NULL){
 		sampleInst->sampleRate = sampleRate;
-		sampleInst->data = data;
+		sampleInst->arm9data = data;
 		sampleInst->bytes = bytes;
 		sampleInst->channel = channel;
 		sampleInst->vol = vol;
@@ -161,29 +658,118 @@ bool setSoundSampleContext(int sampleRate, u32 * data, u32 bytes, u8 channel, u8
 void flushSoundContext(int soundContextIndex){
 	
 }
-
 #endif
 
-bool getSoundSampleContextEnabledStatus(){
-	
-	#ifdef ARM9
-	coherent_user_range_by_size((uint32)&TGDSIPC->soundContextShared, sizeof(TGDSIPC->soundContextShared));
+void EnableSoundSampleContext(int SndSamplemode){
+	#ifdef ARM7
+	soundSampleContextCurrentMode = SndSamplemode;
 	#endif
-	return TGDSIPC->soundContextShared.soundSampleContextEnabled;
-}
-
-void EnableSoundSampleContext(){
-	
 	#ifdef ARM9
-	coherent_user_range_by_size((uint32)&TGDSIPC->soundContextShared, sizeof(TGDSIPC->soundContextShared));
+	SendFIFOWords(TGDS_ARM7_ENABLESOUNDSAMPLECTX, (u32)SndSamplemode);
 	#endif
-	TGDSIPC->soundContextShared.soundSampleContextEnabled = true;
 }
 
 void DisableSoundSampleContext(){
-	
-	#ifdef ARM9
-	coherent_user_range_by_size((uint32)&TGDSIPC->soundContextShared, sizeof(TGDSIPC->soundContextShared));
+	#ifdef ARM7
+	soundSampleContextCurrentMode = SOUNDSAMPLECONTEXT_SOUND_IDLE;
 	#endif
-	TGDSIPC->soundContextShared.soundSampleContextEnabled = false;
+	#ifdef ARM9
+	SendFIFOWords(TGDS_ARM7_DISABLESOUNDSAMPLECTX, 0);
+	#endif
 }
+
+#ifdef ARM7
+u32 sampleLen = 0;
+int multRate = 1;
+int sndRate = 0;
+u32 sndCursor = 0;
+
+s16 *strpcmL0 = NULL;
+s16 *strpcmL1 = NULL;
+s16 *strpcmR0 = NULL;
+s16 *strpcmR1 = NULL;
+
+int lastL = 0;
+int lastR = 0;
+
+/////////////////////////////////////////////////////////Interrupt code //////////////////////////////////////////////////////
+void mallocData(int size)
+{
+	// clear vram d bank to not have sound leftover
+	int i = 0;
+	
+	for(i=0;i<(size);++i)
+	{
+		strpcmL0[i] = 0;
+	}
+	
+	for(i=0;i<(size);++i)
+	{
+		strpcmR0[i] = 0;
+	}
+}
+
+void freeData()
+{	
+	
+}
+
+void SetupSound()
+{
+    sndCursor = 0;
+	if(multRate != 1 && multRate != 2 && multRate != 4){
+		multRate = 1;
+	}
+	
+	mallocData(sampleLen * multRate);
+    
+	int ch=0;
+	for(ch=0;ch<4;++ch)
+	{
+		SCHANNEL_CR(ch) = 0;
+		SCHANNEL_TIMER(ch) = SOUND_FREQ((sndRate * multRate));
+		SCHANNEL_LENGTH(ch) = (sampleLen * multRate) >> 1;
+		SCHANNEL_REPEAT_POINT(ch) = 0;
+	}
+	
+	lastL = 0;
+	lastR = 0;
+	
+	TIMERXDATA(2) = SOUND_FREQ((sndRate * multRate));
+	TIMERXCNT(2) = TIMER_DIV_1 | TIMER_ENABLE;
+  
+	TIMERXDATA(3) = 0x10000 - (sampleLen * 2 * multRate);
+	TIMERXCNT(3) = TIMER_CASCADE | TIMER_IRQ_REQ | TIMER_ENABLE;
+	
+	REG_IE|=(IRQ_TIMER3);
+}
+
+void StopSound() 
+{
+	TIMERXCNT(2) = 0;
+	TIMERXCNT(3) = 0;
+	
+	SCHANNEL_CR(0) = 0;
+	SCHANNEL_CR(1) = 0;
+	SCHANNEL_CR(2) = 0;
+	SCHANNEL_CR(3) = 0;
+	
+	REG_IE&=~(IRQ_TIMER3);
+	
+	freeData();
+}
+/////////////////////////////////////////////////////////Interrupt code end //////////////////////////////////////////////////////
+
+
+void closeSoundStream(){
+	
+}
+
+void initSoundStream(){		//ARM7 Impl.
+	SoundPowerON(127);		//volume
+	initSoundStreamUser();
+	EnableSoundSampleContext(SOUNDSAMPLECONTEXT_SOUND_STREAMPLAYBACK);
+}
+
+#endif
+

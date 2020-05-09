@@ -121,6 +121,18 @@ USA
 #define TGDS_ARM7_SETUPARM7MALLOC (uint32)(0xFFFF022B)
 #define TGDS_ARM7_SETUPARM9MALLOC (uint32)(0xFFFF022C)
 #define TGDS_ARM7_DETECTTURNOFFCONSOLE (uint32)(0xFFFF022D)
+#define TGDS_ARM7_ENABLESOUNDSAMPLECTX (uint32)(0xFFFF022E)
+#define TGDS_ARM7_DISABLESOUNDSAMPLECTX (uint32)(0xFFFF022F)
+#define TGDS_ARM7_INITSTREAMSOUNDCTX (uint32)(0xFFFF0230)
+
+//SoundStream bits
+#define ARM9COMMAND_UPDATE_BUFFER (uint32)(0xFFFFFF02)
+#define ARM7COMMAND_START_SOUND (uint32)(0xFFFFFF10)
+#define ARM7COMMAND_STOP_SOUND (uint32)(0xFFFFFF11)
+#define ARM7COMMAND_SOUND_SETMULT (uint32)(0xffff03A1)
+#define ARM7COMMAND_SOUND_SETRATE (uint32)(0xffff03A2)
+#define ARM7COMMAND_SOUND_SETLEN (uint32)(0xffff03A3)
+#define ARM7COMMAND_SOUND_COPY (uint32)(0xFFFFFF15)
 
 //IPC bits
 #define REG_IPC_FIFO_TX		(*(vuint32*)0x4000188)
@@ -240,6 +252,12 @@ typedef struct sIPCSharedTGDS {
 	int IR_readbufsize;
 	int IR_ReadOffset;
 	int IR_WrittenOffset;
+	
+	u32 stub[0x60];
+	
+	//Sound Stream ctx
+	struct soundPlayerContext sndPlayerCtx;
+	
 } IPCSharedTGDS	__attribute__((aligned (4)));
 
 //Shared Work     027FF000h 4KB    -     -    -    R/W

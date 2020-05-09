@@ -71,7 +71,7 @@ void NDS_IRQHandler(){
 		#ifdef ARM7
 		doSPIARM7IO();
 		Wifi_Update();
-		updateSoundContext();
+		updateSoundContextSamplePlayback();
 		#endif
 		#ifdef ARM9
 		//handles DS-DS Comms
@@ -95,6 +95,11 @@ void NDS_IRQHandler(){
 		Timer2handlerUser();
 	}
 	if(handledIRQ & IRQ_TIMER3){
+		#ifdef ARM7
+		//Audio playback handler
+		setSwapChannel();
+		SendFIFOWords(ARM9COMMAND_UPDATE_BUFFER, 0);
+		#endif
 		#ifdef ARM9
 		//wifi arm9 irq
 		Timer_10ms();

@@ -453,6 +453,42 @@ sint8 *_FS_getFileExtension(sint8 *filename){
 	return ext;
 }
 
+void separateExtension(char *str, char *ext)
+{
+	int x = 0;
+	int y = 0;
+	for(y = strlen(str) - 1; y > 0; y--)
+	{
+		if(str[y] == '.')
+		{
+			// found last dot
+			x = y;
+			break;
+		}
+		if(str[y] == '/')
+		{
+			// found a slash before a dot, no ext
+			ext[0] = 0;
+			return;
+		}
+	}
+	
+	if(x > 0)
+	{
+		int y = 0;
+		while(str[x] != 0)
+		{
+			ext[y] = str[x];
+			str[x] = 0;
+			x++;
+			y++;
+		}
+		ext[y] = 0;
+	}
+	else
+		ext[0] = 0;	
+}
+
 sint8 *FS_getFileName(sint8 *filename){
 	static sint8 name[100];
 	sint8	*ptr = filename;
