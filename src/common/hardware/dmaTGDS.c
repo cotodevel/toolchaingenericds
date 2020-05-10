@@ -19,30 +19,19 @@ USA
 */
 #include "dmaTGDS.h"
 
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
+//These calls can't be at ITCM because the default MPU Settings enable cache for ITCM / DTCM and these calls may be unreliable if there!!!
 void dmaFillWord(sint32 dmachannel,uint32 value, uint32 dest, uint32 word_count){
 	dmaFill(dmachannel,value,dest,(DMAFIXED_SRC | DMAINCR_DEST | DMA32BIT | DMASTART_INMEDIATE | DMAENABLED | (word_count>>2)));
 }
 
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
 void dmaFillHalfWord(sint32 dmachannel,uint32 value, uint32 dest, uint32 word_count){
 	dmaFill(dmachannel,value,dest,(DMAFIXED_SRC | DMAINCR_DEST | DMA16BIT | DMASTART_INMEDIATE | DMAENABLED | (word_count>>1)));
 }
 
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
 void dmaTransferHalfWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count){
 	dmaTransfer(dmachannel, source, dest, (DMAINCR_SRC | DMAINCR_DEST | DMA16BIT | DMASTART_INMEDIATE | DMAENABLED | (word_count>>1)));
 }
 
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
 void dmaTransferWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count){
 	dmaTransfer(dmachannel, source, dest, (DMAINCR_SRC | DMAINCR_DEST | DMA32BIT | DMASTART_INMEDIATE | DMAENABLED | (word_count>>2)));
 }

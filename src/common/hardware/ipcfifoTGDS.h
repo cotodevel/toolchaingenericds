@@ -253,8 +253,6 @@ typedef struct sIPCSharedTGDS {
 	int IR_ReadOffset;
 	int IR_WrittenOffset;
 	
-	u32 stub[0x60];
-	
 	//Sound Stream ctx
 	struct soundPlayerContext sndPlayerCtx;
 	
