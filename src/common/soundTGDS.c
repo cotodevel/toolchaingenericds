@@ -276,12 +276,12 @@ void setSoundInterpolation(u32 mult)
 
 //Returns the next offset right after "data". Which is the raw Waveform length (4 bytes) and then the raw Waveform
 int parseWaveData(FILE * fh){
-    u32 bytes=0;
+    u32 bytes[4];
 	int fileOffset = 0;
 	
 	// Read first 4 bytes.
 	// (Should be RIFF descriptor.)
-	if (fread((u8*)&bytes, 1, 4, fh) < 0) {
+	if (fread((u8*)&bytes[0], 1, 4, fh) < 0) {
 		return -1;
 	}
 	
@@ -294,17 +294,39 @@ int parseWaveData(FILE * fh){
 	
 	for (;;) {
 		// Read chunk length.
-		if (fread((u8*)&bytes, 1, 4, fh) < 0) {
+		if (fread((u8*)&bytes[0], 1, sizeof(bytes), fh) < 0) {
 			return -1;
 		}
 		
-		//64[3] 61[2] 74[1] 61[0]	== "data"
-		if((u32)bytes == (u32)0x61746164){
-			// Skip the length of this chunk.
-			// Next bytes should be another descriptor or EOF.
-			return (fileOffset+4);
+		int match = 0;
+		//Aligned / not aligned headers. (why would somebody build a non aligned header!!!!)
+		int j = 0;
+		int k = 0;
+		for(j=0; j < sizeof(bytes)/sizeof(u32); j++){
+			u32 word = bytes[j];
+			for(k=0; k < sizeof(u32); k++){
+				u8 var = ((word >> (8*k))&0xff);
+				if((u8)var == (u8)0x61){
+					match++;
+				}
+				else if((u8)var == (u8)0x74){
+					match++;
+				}
+				if((u8)var == (u8)0x61){
+					match++;
+				}
+				if((u8)var == (u8)0x64){
+					match++;
+				}
+				if(match>=4){
+					return (fileOffset+(j*sizeof(u32))+k);
+				}
+				
+			}
 		}
-		fileOffset+=4;
+		
+		
+		fileOffset+=16;
 	}
 	return -1;
 }
