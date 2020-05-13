@@ -62,15 +62,13 @@ void LoadFirmwareSettingsFromFlash(){
 	//Slot0 Valid
 	if(crcslot0 == crcreadUserSet0){
 		ParseFWSettings(usersetting_offset0);
-		setFWSettingsstatus(true);
 	}
 	//Slot1 Valid
 	else if(crcslot1 == crcreadUserSet1){
 		ParseFWSettings(usersetting_offset1);
-		setFWSettingsstatus(true);
 	}
 	else{
-		setFWSettingsstatus(true);	//Proceed, but invalid NVRAM settings
+		//Proceed, but invalid NVRAM settings
 	}
 	
 }

@@ -303,6 +303,7 @@ void	GUI_init(bool isTGDSCustomConsole){
 		CurConsole = DEFAULT_CONSOLE_VRAMSETUP();
 		VRAM_SETUP(CurConsole);
 		InitDefaultConsole(CurConsole);
+		while (!(*((vuint8*)0x04000243) & (VRAM_D_0x06000000_ARM7)));	//Default TGDS console uses VRAM_D_0x06000000_ARM7 when allocating ARM7 mem + console code, wait for ARM7 until it's done.
 	}
 	globalTGDSCustomConsole = isTGDSCustomConsole;
 	CurrentConsole = CurConsole;

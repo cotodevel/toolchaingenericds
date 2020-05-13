@@ -38,13 +38,11 @@ USA
 #endif
 
 uint32 get_arm7_start_address(){
-	
-	return (uint32)TGDSIPC->arm7startaddress;
+	return (uint32)TGDSIPC->DSHeader.arm7entryaddress;
 }
 
 uint32 get_arm7_end_address(){
-	
-	return (uint32)TGDSIPC->arm7endaddress;
+	return (uint32)((u8*)TGDSIPC->DSHeader.arm7entryaddress + TGDSIPC->DSHeader.arm7size);
 }
 
 sint32 get_arm7_ext_size(){
@@ -54,12 +52,12 @@ sint32 get_arm7_ext_size(){
 
 uint32 get_arm9_start_address(){
 	
-	return (uint32)TGDSIPC->arm9startaddress;
+	return (uint32)TGDSIPC->DSHeader.arm9entryaddress;
 }
 
 uint32 get_arm9_end_address(){
 	
-	return (uint32)TGDSIPC->arm9endaddress;
+	return (uint32)((u8*)TGDSIPC->DSHeader.arm9entryaddress + TGDSIPC->DSHeader.arm9size);
 }
 
 sint32 get_arm9_ext_size(){

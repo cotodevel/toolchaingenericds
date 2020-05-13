@@ -39,6 +39,7 @@ USA
 #include "wifi_shared.h"
 #include "soundTGDS.h"
 #include "global_settings.h"
+#include "cartHeader.h"
 
 #ifdef ARM9
 #include "nds_cp15_misc.h"
@@ -206,15 +207,10 @@ typedef struct sIPCSharedTGDS {
 	The Health and Safety message is skipped if Bit9=1, or if one or more of the following bits is zero: Bits 10,11,13,14,15. However, as soon as entering the bootmenu, the Penalty-Prompt occurs.
 	*/
 	uint8 nickname_schar8[0x20];	//converted from UTF-16 to char*
-	bool valid_dsfwsettings;	//true or false
 	uint8 lang_flags[0x2];
 	
-	//Internal use, use functions inside mem_handler_shared.c for accessing those from BOTH ARM Cores.
-	uint32 arm7startaddress;
-	uint32 arm7endaddress;
-	
-	uint32 arm9startaddress;
-	uint32 arm9endaddress;
+	//NDS Header: Set up by ARM9 on boot.
+	struct sDSCARTHEADER DSHeader;
 	
 	uint32 WRAM_CR_ISSET;	//0 when ARM7 boots / 1 by ARM9 when its done
 	
@@ -280,34 +276,9 @@ static inline uint8 receiveByteIPC(){
 	return (REG_IPC_SYNC&0xf);
 }
 
-//usrsettings defs
-static inline bool getFWSettingsstatus(){
-	
-	#ifdef ARM9
-	//Prevent Cache problems.
-	coherent_user_range_by_size((uint32)&TGDSIPC->valid_dsfwsettings, sizeof(TGDSIPC->valid_dsfwsettings));
-	#endif
-	return (bool)TGDSIPC->valid_dsfwsettings;
-}
-
 static inline uint8 getLanguage(){
-	while(getFWSettingsstatus() == false){
-		swiDelay(33);
-	}
-	
 	return (uint8)(((TGDSIPC->lang_flags[1]<<8)|TGDSIPC->lang_flags[0])&language_mask);
 }
-
-
-static inline void setFWSettingsstatus(bool status){
-	
-	#ifdef ARM9
-	//Prevent Cache problems.
-	coherent_user_range_by_size((uint32)&TGDSIPC->valid_dsfwsettings, sizeof(TGDSIPC->valid_dsfwsettings));
-	#endif
-	TGDSIPC->valid_dsfwsettings = status;
-}
-
 #endif
 
 #ifdef __cplusplus

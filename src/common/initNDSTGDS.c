@@ -56,8 +56,6 @@ void initHardware(void) {
 	
 	//Read DHCP settings (in order)
 	LoadFirmwareSettingsFromFlash();
-	TGDSIPC->arm7startaddress = get_iwram_start();
-	TGDSIPC->arm7endaddress = (uint32)(get_iwram_start() + get_iwram_size());
 	
 	//Init SoundSampleContext
 	initSoundSampleContext();
@@ -84,10 +82,6 @@ void initHardware(void) {
 	//setbuf(stderr, NULL);
 	
 	printf7Setup();
-	
-	TGDSIPC->arm9startaddress = get_ewram_start();
-	TGDSIPC->arm9endaddress = (uint32)(get_ewram_start() + get_ewram_size());
-	
 	TryToDefragmentMemory();
 	
 	#ifdef ARM9_DLDI
