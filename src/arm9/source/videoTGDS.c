@@ -135,7 +135,7 @@ static sint16 mainREG_BG3PDsaved = 0;
 static sint16 mainREG_BG3CNTsaved = 0;
 static uint8  mainVRAM_BANK_Asaved = 0;
 
-//Enables the NDS BMP RGB 15bit format for Engine_a at 0x06020000
+//Enables the NDS BMP RGB 15bit format for Engine_a at 0x06000000
 void initFBModeMainEngine0x06000000(){	
 	mainVRAM_BANK_Asaved = VRAM_A_CR;
 	VRAMBLOCK_SETBANK_A(VRAM_A_0x06000000_ENGINE_A_BG);

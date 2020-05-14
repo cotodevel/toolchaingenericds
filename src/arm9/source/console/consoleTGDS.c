@@ -38,13 +38,17 @@ bool globalTGDSCustomConsole = false;
 
 char ConsolePrintfBuf[MAX_TGDSFILENAME_LENGTH+1];
 
-t_GUI GUI;
-ConsoleInstance ConsoleHandle[TGDS_CONSOLE_HANDLES];		//Default Console == 0 	Used when ---->	bool isTGDSCustomConsole = true;
-																				//GUI_init(isTGDSCustomConsole);
-															//Custom Console == 1+ 	Used when ---->	bool 	isTGDSCustomConsole = false;
-																				//GUI_init(isTGDSCustomConsole);
+ConsoleInstance ConsoleHandle[TGDS_CONSOLE_HANDLES];
 ConsoleInstance * CurrentConsole = NULL;	//Current Console running globally.
 
+//Console layout
+//Default Console at Index 0 	Used when ---->	bool isTGDSCustomConsole = true;
+												//GUI_init(isTGDSCustomConsole);
+//Custom Console #1 at Index 1+ 	Used when ---->	bool 	isTGDSCustomConsole = false;
+												//GUI_init(isTGDSCustomConsole);
+		//Keyboard (or any other Console save/restore event):
+		//Custom Console #2 at Index 2+: Saves/Restores old Engine context
+t_GUI GUI;
 t_GUIZone DefaultZone;
 
 t_GUIZone * getDefaultZoneConsole(){
@@ -445,5 +449,138 @@ void TGDSLCDSwap(bool disableTSCWhenTGDSConsoleTop, bool isDirectFramebuffer, bo
 		else{
 			restoreTGDSConsoleFromSwapEngines(currentVRAMContext);	//Proper impl.
 		}
+	}
+}
+
+//based from video console settings at toolchaingenericds-keyboard-example
+void swapTGDSConsoleBetweenPPUEngines(u8 * currentVRAMContext){
+	//Only when default console is in use, then use CustomConsole as a current console render
+	if(globalTGDSCustomConsole == false){
+		ConsoleInstance * DefaultSessionConsoleInst = (ConsoleInstance *)(&ConsoleHandle[0]);
+		ConsoleInstance * CustomSessionConsoleInst = (ConsoleInstance *)(&ConsoleHandle[1]);
+		ConsoleInstance * OldEngineContextInst = (ConsoleInstance *)(&ConsoleHandle[2]);
+		memset(OldEngineContextInst, 0, sizeof(sizeof(ConsoleInstance)));
+		
+		//Save Old Engine context: 0x06000000
+		SetEngineConsole(mainEngine,OldEngineContextInst);
+		OldEngineContextInst->ConsoleEngineStatus.ENGINE_DISPCNT = REG_DISPCNT;
+		
+		OldEngineContextInst->ConsoleEngineStatus.EngineBGS[0].BGNUM = 0;
+		OldEngineContextInst->ConsoleEngineStatus.EngineBGS[0].REGBGCNT = REG_BGXCNT(0);
+		
+		OldEngineContextInst->ConsoleEngineStatus.EngineBGS[1].BGNUM = 1;
+		OldEngineContextInst->ConsoleEngineStatus.EngineBGS[1].REGBGCNT = REG_BGXCNT(1);
+		
+		OldEngineContextInst->ConsoleEngineStatus.EngineBGS[2].BGNUM = 2;
+		OldEngineContextInst->ConsoleEngineStatus.EngineBGS[2].REGBGCNT = REG_BGXCNT(2);
+		
+		OldEngineContextInst->ConsoleEngineStatus.EngineBGS[3].BGNUM = 3;
+		OldEngineContextInst->ConsoleEngineStatus.EngineBGS[3].REGBGCNT = REG_BGXCNT(3);
+		OldEngineContextInst->thisVRAMSetupConsole = DefaultSessionConsoleInst->thisVRAMSetupConsole;
+		
+		coherent_user_range_by_size((uint32)0x06000000, 128*1024);
+		dmaTransferHalfWord(0, (uint32)0x06000000, (uint32)currentVRAMContext, (uint32)(128*1024));
+		
+		
+		//Perform Console swap
+		memcpy ((uint8*)CustomSessionConsoleInst, (uint8*)DefaultSessionConsoleInst, sizeof(vramSetup));
+		vramSetup * vramSetupInst = (vramSetup *)&CustomSessionConsoleInst->thisVRAMSetupConsole;
+		
+		uint16 * DSFramebufferOri = GUI.DSFrameBuffer;
+		DefaultSessionConsoleInst->VideoBuffer = DSFramebufferOri;
+		CustomSessionConsoleInst->VideoBuffer = GUI.DSFrameBuffer = (uint16 *)BG_BMP_RAM(4);	//0x06000000
+		
+		vramSetupInst->vramBankSetupInst[VRAM_A_INDEX].vrambankCR = VRAM_A_0x06000000_ENGINE_A_BG;	//console here
+		vramSetupInst->vramBankSetupInst[VRAM_A_INDEX].enabled = true;
+		
+		vramSetupInst->vramBankSetupInst[VRAM_C_INDEX].vrambankCR = VRAM_C_0x06200000_ENGINE_B_BG;	//keyboard
+		vramSetupInst->vramBankSetupInst[VRAM_C_INDEX].enabled = true;
+		
+		//Set mainEngine
+		SetEngineConsole(mainEngine,CustomSessionConsoleInst);
+		
+		//Set mainEngine properties
+		CustomSessionConsoleInst->ConsoleEngineStatus.ENGINE_DISPCNT	=	(uint32)(MODE_5_2D | DISPLAY_BG3_ACTIVE );
+		
+		// BG3: FrameBuffer : 64(TILE:4) - 128 Kb
+		CustomSessionConsoleInst->ConsoleEngineStatus.EngineBGS[3].BGNUM = 3;
+		CustomSessionConsoleInst->ConsoleEngineStatus.EngineBGS[3].REGBGCNT = BG_BMP_BASE(4) | BG_BMP8_256x256 | BG_PRIORITY_1;
+		
+		VRAM_SETUP(CustomSessionConsoleInst);
+		
+		bool mainEngine = true;
+		setOrientation(ORIENTATION_0, mainEngine);
+		
+		u16 * newPallete = &GUI.Palette[0];
+		BG_PALETTE[0] = 	newPallete[0];			//Back-ground tile color / Black
+		BG_PALETTE[1] =		newPallete[1]; 	//White
+		BG_PALETTE[2] =  	newPallete[2]; 		//Brown
+		BG_PALETTE[3] =  	newPallete[3]; 		//Orange
+		BG_PALETTE[4] = 	newPallete[4]; 		//Magenta
+		BG_PALETTE[5] = 	newPallete[5]; 		//Cyan
+		BG_PALETTE[6] = 	newPallete[6]; 		//Yellow
+		BG_PALETTE[7] = 	newPallete[7]; 		//Blue
+		BG_PALETTE[8] = 	newPallete[8]; 		//Green
+		BG_PALETTE[9] = 	newPallete[9]; 		//Red
+		BG_PALETTE[0xa] = 	newPallete[10]; 	//Grey
+		BG_PALETTE[0xb] = 	newPallete[11];	//Light-Grey
+		
+		//Fill the Pallette
+		int i = 0;
+		for(i=0;i < (256 - 0xb); i++){
+			BG_PALETTE[i + 0xc] = newPallete[TGDSPrintfColor_White];
+		}
+		
+		//copy Console
+		coherent_user_range_by_size((uint32)0x06200000, 128*1024);
+		dmaTransferHalfWord(0, (uint32)0x06200000, (uint32)0x06000000,(uint32)(128*1024));
+		
+		//clear old console
+		dmaFillHalfWord(0, 0, (uint32)0x06200000, (uint32)(128*1024));
+		
+		UpdateConsoleSettings(CustomSessionConsoleInst);	//Console Top
+		
+		
+		bool isDirectFramebuffer = true;
+		bool disableTSCWhenTGDSConsoleTop = true;
+		bool SaveConsoleContext = false;	//no effect because directFB == true
+		u8 * FBSaveContext = NULL;			//no effect because directFB == true
+		TGDSLCDSwap(disableTSCWhenTGDSConsoleTop, isDirectFramebuffer, SaveConsoleContext, FBSaveContext);
+		
+	}
+	else{	//todo: same swap video logic, but using ConsoleInstance CustomConsole
+		
+	}
+	
+	
+}
+
+void restoreTGDSConsoleFromSwapEngines(u8 * currentVRAMContext){
+
+	//Only when default console is in use, restore DefaultConsole context
+	if(globalTGDSCustomConsole == false){
+		//Restore Console
+		ConsoleInstance * DefaultSessionConsoleInst = (ConsoleInstance *)(&ConsoleHandle[0]);
+		ConsoleInstance * OldEngineContextInst = (ConsoleInstance *)(&ConsoleHandle[2]);
+		
+		//Set current Engine
+		InitDefaultConsole(DefaultSessionConsoleInst);
+		
+		//Restore (new -> current) console
+		coherent_user_range_by_size((uint32)0x06800000, 128*1024);
+		dmaTransferHalfWord(0, (uint32)0x06000000, (uint32)0x06200000,(uint32)(128*1024));
+		
+		//Restore Engine ctx
+		REG_DISPCNT = OldEngineContextInst->ConsoleEngineStatus.ENGINE_DISPCNT;
+		REG_BGXCNT(0) = OldEngineContextInst->ConsoleEngineStatus.EngineBGS[0].REGBGCNT;
+		REG_BGXCNT(1) = OldEngineContextInst->ConsoleEngineStatus.EngineBGS[1].REGBGCNT;
+		REG_BGXCNT(2) = OldEngineContextInst->ConsoleEngineStatus.EngineBGS[2].REGBGCNT;
+		REG_BGXCNT(3) = OldEngineContextInst->ConsoleEngineStatus.EngineBGS[3].REGBGCNT;
+		initFBModeMainEngine0x06000000();
+		coherent_user_range_by_size((uint32)currentVRAMContext, 128*1024);
+		dmaTransferHalfWord(0, (uint32)currentVRAMContext, (uint32)0x06000000, (uint32)(128*1024));
+	}
+	else{	//todo: same swap video logic, but using ConsoleInstance CustomConsole
+		
 	}
 }
