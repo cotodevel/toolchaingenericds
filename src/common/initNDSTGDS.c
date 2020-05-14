@@ -51,8 +51,9 @@ void initHardware(void) {
 	
 	
 	#ifdef ARM7
-	//Init Shared Address Region
+	//Init Shared Address Region and get NDS Header
 	memset((uint32*)TGDSIPC, 0, TGDSIPCSize);
+	memcpy((u8*)&TGDSIPC->DSHeader,(u8*)0x027FFE00, sizeof(TGDSIPC->DSHeader));
 	
 	//Read DHCP settings (in order)
 	LoadFirmwareSettingsFromFlash();
