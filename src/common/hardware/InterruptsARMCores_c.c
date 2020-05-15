@@ -98,7 +98,7 @@ void NDS_IRQHandler(){
 		#ifdef ARM7
 		//Audio playback handler
 		setSwapChannel();
-		SendFIFOWords(ARM9COMMAND_UPDATE_BUFFER, 0);
+		SendFIFOWords(ARM9COMMAND_UPDATE_BUFFER, srcFrmt);
 		#endif
 		#ifdef ARM9
 		//wifi arm9 irq

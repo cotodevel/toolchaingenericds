@@ -138,11 +138,21 @@ void HandleFifoNotEmpty(){
 			}
 			break;
 			case ARM7COMMAND_START_SOUND:{
-				SetupSound();
+				if(data0 == (u32)SRC_WAV){
+					SetupSound(data0);
+				}
+				else{
+					SetupSoundUser(data0);
+				}
 			}
 			break;
 			case ARM7COMMAND_STOP_SOUND:{
-				StopSound();
+				if(data0 == (u32)SRC_WAV){
+					StopSound(data0);
+				}
+				else{
+					StopSoundUser(data0);
+				}
 			}
 			break;
 			case ARM7COMMAND_SOUND_COPY:
@@ -246,7 +256,7 @@ void HandleFifoNotEmpty(){
 			break;
 			
 			case((uint32)TGDS_ARM7_INITSTREAMSOUNDCTX):{
-				initSoundStream();
+				initSoundStream(data0);
 			}
 			break;
 			
@@ -417,13 +427,7 @@ void HandleFifoNotEmpty(){
 			//ARM9 command handler
 			#ifdef ARM9
 			case ARM9COMMAND_UPDATE_BUFFER:{
-				switch(TGDSIPC->sndPlayerCtx.sourceFmt)
-				{
-					case SRC_WAV:{
-						updateSoundContextStreamPlayback();
-					}
-					break;
-				}
+				updateSoundContextStreamPlayback((u32)data0);
 			}	
 			break;
 			case((uint32)TGDS_ARM7_DETECTTURNOFFCONSOLE):{

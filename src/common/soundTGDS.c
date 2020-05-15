@@ -183,7 +183,7 @@ s16 *lBufferSwapped = NULL;
 s16 *rBufferSwapped = NULL;
 static bool cutOff = false;
 
-void mallocData(int size)
+void mallocData9TGDS(int size)
 {
 	struct soundPlayerContext * soundPlayerCtx = (struct soundPlayerContext *)&TGDSIPC->sndPlayerCtx;
 	SwapSoundStreamBuffers = 0;
@@ -202,13 +202,13 @@ void mallocData(int size)
 	soundPlayerCtx->soundSampleCxt[SOUNDSTREAM_R_BUFFER].arm9data = NULL; // temporary
 }
 
-void freeData()
+void freeData9TGDS()
 {
 	lBufferSwapped = NULL;
 	rBufferSwapped = NULL;
 }
 
-void swapData()
+void swapDataTGDS()
 {
 	struct soundPlayerContext * soundPlayerCtx = (struct soundPlayerContext *)&TGDSIPC->sndPlayerCtx;
 	
@@ -234,29 +234,26 @@ void swapData()
 	}
 }
 
-void swapAndSend(u32 type)
+void swapAndSendTGDS(u32 type)
 {
-	swapData();
+	swapDataTGDS();
 	SendFIFOWords(type,0);
 }
 
-void startSound9()
+void startSound9(u32 srcFrmt)
 {	
-	if(!playing)
-		SendFIFOWords(ARM7COMMAND_START_SOUND, 0);
+	if(!playing){
+		SendFIFOWords(ARM7COMMAND_START_SOUND, (u32)srcFrmt);
+	}
 	playing = true;
 }
 
-void stopSound()
+void stopSound(u32 srcFrmt)	//ARM9 impl.
 {
-	if(playing)
-		SendFIFOWords(ARM7COMMAND_STOP_SOUND, 0);
+	if(playing){
+		SendFIFOWords(ARM7COMMAND_STOP_SOUND, srcFrmt);
+	}
 	playing = false;
-}
-
-void pauseSound(bool pause)
-{
-	sndPaused = pause;
 }
 
 void setSoundLength(u32 len)
@@ -480,10 +477,10 @@ void wavDecode32Bit()
 	TGDSARM9Free(tmpData);
 }
 
-void freeSound()
+void freeSoundTGDS()
 {
-	stopSound();
-	freeData();
+	stopSound(TGDSIPC->sndPlayerCtx.sourceFmt);//ARM9
+	freeData9TGDS();
 	if(GlobalSoundStreamFile != NULL){
 		fclose(GlobalSoundStreamFile);
 		GlobalSoundStreamFile = NULL;
@@ -491,12 +488,12 @@ void freeSound()
 	}
 }
 
-void initComplexSound()
+void initComplexSoundTGDS(u32 srcFmt)
 {	
 	struct soundPlayerContext * soundPlayerCtx = (struct soundPlayerContext *)&TGDSIPC->sndPlayerCtx;
 	soundPlayerCtx->volume = 4;
-	soundPlayerCtx->sourceFmt = SRC_NONE;
-	SendFIFOWords(TGDS_ARM7_INITSTREAMSOUNDCTX, 0);
+	soundPlayerCtx->sourceFmt = srcFmt;
+	SendFIFOWords(TGDS_ARM7_INITSTREAMSOUNDCTX, srcFmt);
 }
 
 //Opens a file handle
@@ -507,8 +504,6 @@ bool initSoundStream(char * WAVfilename){	//ARM9 Impl.
 	separateExtension(tmpName, ext);
 	strlwr(ext);
 	
-	initComplexSound(); // initialize sound variables
-	
 	if(SharedEWRAM0 != NULL){
 		TGDSARM9Free(SharedEWRAM0);
 		SharedEWRAM1 = NULL;
@@ -517,16 +512,15 @@ bool initSoundStream(char * WAVfilename){	//ARM9 Impl.
 	SharedEWRAM0 = (s16*)TGDSARM9Malloc(32*1024);
 	SharedEWRAM1 = (s16*)((u8*)SharedEWRAM0 + 0x4000);
 	
-	freeSound();	
+	freeSoundTGDS();
 	
 	if(strcmp(ext,".wav") == 0)
 	{
 		// wav file!
-		TGDSIPC->sndPlayerCtx.sourceFmt = SRC_WAV;
+		initComplexSoundTGDS(SRC_WAV); // initialize sound variables
 		TGDSIPC->sndPlayerCtx.fileOffset = 0;
 		
 		char header[13];
-		
 		FILE *fp = fopen(WAVfilename, "r");
 		fread(header, 1, 12, fp);
 		
@@ -618,10 +612,10 @@ bool initSoundStream(char * WAVfilename){	//ARM9 Impl.
 		setSoundFrequency(TGDSIPC->sndPlayerCtx.wavDescriptor.dwSamplesPerSec);
 		
 		setSoundLength(WAV_READ_SIZE);		
-		mallocData(WAV_READ_SIZE);
+		mallocData9TGDS(WAV_READ_SIZE);
 		
 		wavDecode();
-		startSound9();
+		startSound9((u32)SRC_WAV);
 		
 		return true;
 	}
@@ -629,30 +623,33 @@ bool initSoundStream(char * WAVfilename){	//ARM9 Impl.
 }
 
 //ARM9: Stream Playback handler
-void updateSoundContextStreamPlayback(){
-	if(lBufferSwapped == NULL || rBufferSwapped == NULL)
-	{
-		// file is done
-		stopSound();
-		return;
-	}
-	
-	if(sndPaused)
-	{
-		memset(lBufferSwapped, 0, SwapSoundStreamBufferSize * 2);
-		memset(rBufferSwapped, 0, SwapSoundStreamBufferSize * 2);
-		
-		swapAndSend(ARM7COMMAND_SOUND_COPY);
-		return;
-	}
-	
-	switch(TGDSIPC->sndPlayerCtx.sourceFmt)
+void updateSoundContextStreamPlayback(u32 srcFrmt){
+	switch(srcFrmt)
 	{
 		case SRC_WAV:
 		{
-			swapAndSend(ARM7COMMAND_SOUND_COPY);
+			if(lBufferSwapped == NULL || rBufferSwapped == NULL)
+			{
+				// file is done
+				stopSound(TGDSIPC->sndPlayerCtx.sourceFmt); //ARM9
+				return;
+			}
+			
+			if(sndPaused)
+			{
+				memset(lBufferSwapped, 0, SwapSoundStreamBufferSize * 2);
+				memset(rBufferSwapped, 0, SwapSoundStreamBufferSize * 2);
+				
+				swapAndSendTGDS(ARM7COMMAND_SOUND_COPY);
+				return;
+			}	
+			swapAndSendTGDS(ARM7COMMAND_SOUND_COPY);
 			wavDecode();
 			TGDSIPC->sndPlayerCtx.fileOffset = ftell(GlobalSoundStreamFile);
+		}
+		break;
+		default:{
+			updateSoundContextStreamPlaybackUser(srcFrmt);	//User impl.
 		}
 		break;
 	}
@@ -701,6 +698,7 @@ void DisableSoundSampleContext(){
 }
 
 #ifdef ARM7
+u32 srcFrmt = 0;
 u32 sampleLen = 0;
 int multRate = 1;
 int sndRate = 0;
@@ -715,7 +713,7 @@ int lastL = 0;
 int lastR = 0;
 
 /////////////////////////////////////////////////////////Interrupt code //////////////////////////////////////////////////////
-void mallocData(int size)
+void mallocData7TGDS(int size)
 {
 	// clear vram d bank to not have sound leftover
 	int i = 0;
@@ -731,19 +729,20 @@ void mallocData(int size)
 	}
 }
 
-void freeData()
+void freeData7TGDS()
 {	
 	
 }
 
-void SetupSound()
+void SetupSound(u32 srcFrmtInst)
 {
+	srcFrmt = srcFrmtInst;
     sndCursor = 0;
 	if(multRate != 1 && multRate != 2 && multRate != 4){
 		multRate = 1;
 	}
 	
-	mallocData(sampleLen * multRate);
+	mallocData7TGDS(sampleLen * multRate);
     
 	int ch=0;
 	for(ch=0;ch<4;++ch)
@@ -766,7 +765,7 @@ void SetupSound()
 	REG_IE|=(IRQ_TIMER3);
 }
 
-void StopSound() 
+void StopSound(u32 srcFrmtInst) //ARM7 impl.
 {
 	TIMERXCNT(2) = 0;
 	TIMERXCNT(3) = 0;
@@ -778,7 +777,7 @@ void StopSound()
 	
 	REG_IE&=~(IRQ_TIMER3);
 	
-	freeData();
+	freeData7TGDS();
 }
 /////////////////////////////////////////////////////////Interrupt code end //////////////////////////////////////////////////////
 
@@ -787,9 +786,9 @@ void closeSoundStream(){
 	
 }
 
-void initSoundStream(){		//ARM7 Impl.
+void initSoundStream(u32 srcFmt){		//ARM7 Impl.
 	SoundPowerON(127);		//volume
-	initSoundStreamUser();
+	initSoundStreamUser(srcFmt);
 	EnableSoundSampleContext(SOUNDSAMPLECONTEXT_SOUND_STREAMPLAYBACK);
 }
 

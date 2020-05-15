@@ -41,7 +41,20 @@ USA
 #define SOUNDSTREAM_R_BUFFER (int)(1)
 
 #define SRC_NONE	(int)(0)
-#define SRC_WAV	(int)(14)
+#define SRC_WAV		(int)(1)
+#define SRC_MIKMOD	(int)(2)
+#define SRC_MP3		(int)(3)
+#define SRC_OGG		(int)(4)
+#define SRC_AAC		(int)(5)
+#define SRC_FLAC	(int)(6)
+#define SRC_SID		(int)(7)
+#define SRC_NSF		(int)(8)
+#define SRC_SPC		(int)(9)
+#define SRC_SNDH	(int)(10)
+#define SRC_GBS		(int)(11)
+#define SRC_STREAM_MP3		(int)(12)
+#define SRC_STREAM_OGG		(int)(13)
+#define SRC_STREAM_AAC		(int)(14)
 
 #define WAV_READ_SIZE 2048
 
@@ -97,6 +110,9 @@ struct soundPlayerContext{
 	wavFormatChunk wavDescriptor;
 	
 	//Playback properties
+	s16 *interlaced;
+	int channels;
+	int psgChannel;
 	u8 volume;
 	u32 cr;
 	u32 timer;
@@ -115,14 +131,15 @@ extern void initSound();
 #ifdef ARM7
 extern int soundSampleContextCurrentMode;
 extern void initSoundSampleContext();
-extern void initSoundStream();
+extern void initSoundStream(u32 srcFmt);
 
 //weak symbols : the implementation of these is project-defined, also abstracted from the hardware IPC FIFO Implementation for easier programming.
-extern __attribute__((weak))	void initSoundStreamUser();
+extern __attribute__((weak))	void initSoundStreamUser(u32 srcFmt);
 
 //ARM7: Sample Playback handler
 extern void updateSoundContextSamplePlayback();
 
+extern u32 srcFrmt;
 extern s16 *strpcmL0;
 extern s16 *strpcmL1;
 extern s16 *strpcmR0;
@@ -131,10 +148,16 @@ extern s16 *strpcmR1;
 extern int lastL;
 extern int lastR;
 
-extern void mallocData(int size);
-extern void freeData();
-extern void SetupSound();
-extern void StopSound();
+//TGDS
+extern void mallocData7TGDS(int size);
+extern void freeData7TGDS();
+extern void SetupSound(u32 srcFrmtInst);
+extern void StopSound(u32 srcFrmtInst);
+
+//weak symbols : the implementation of these is project-defined, also abstracted from the hardware IPC FIFO Implementation for easier programming.
+extern __attribute__((weak))	void SetupSoundUser(u32 srcFrmt);
+extern __attribute__((weak))	void StopSoundUser(u32 srcFrmt);
+extern __attribute__((weak))    void updateSoundContextStreamPlaybackUser(u32 srcFrmt);
 
 extern u32 sampleLen;
 extern int multRate;
@@ -158,30 +181,25 @@ extern bool setSoundSampleContext(int sampleRate, u32 * data, u32 bytes, u8 chan
 extern s16 * SharedEWRAM0;	//ptr start = 0
 extern s16 * SharedEWRAM1;	//ptr start = 0 + 0x4000
 
-extern void startSound9();
-extern void stopSound();
-
 extern int parseWaveData(FILE * fh);
 extern void setSoundLength(u32 len);
 extern void setSoundFrequency(u32 freq);
 extern void setSoundInterpolation(u32 mult);
 extern void copyChunk();
 extern void setSoundFrequency(u32 freq);
-extern void freeSound();
-extern void swapAndSend(u32 type);
-extern void swapData();
-extern void freeData();
-extern void mallocData(int size);
+extern void freeSoundTGDS();
+extern void swapAndSendTGDS(u32 type);
+extern void swapDataTGDS();
+extern void freeData9TGDS();
+extern void mallocData9TGDS(int size);
 #endif
 
 extern void EnableSoundSampleContext(int SndSamplemode);
 extern void DisableSoundSampleContext();
 extern void closeSoundStream();
-extern void startSound9();
-extern void stopSound();
-extern void updateSoundContextStreamPlayback();
-extern void initComplexSound();
-extern void pauseSound(bool pause);
+extern void startSound9(u32 srcFrmt);
+extern void stopSound(u32 srcFrmt);
+extern void initComplexSoundTGDS(u32 srcFmt);
 
 #ifdef __cplusplus
 }
