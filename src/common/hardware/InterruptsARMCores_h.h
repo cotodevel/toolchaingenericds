@@ -55,7 +55,6 @@ extern __attribute__((weak))	void screenLidHasClosedhandlerUser();
 extern __attribute__((weak))	void IpcSynchandlerUser(uint8 ipcByte);
 
 
-extern __attribute__((weak))	int main(int _argc, sint8 **_argv);
 //weak symbols end
 
 extern uint32 getIRQs();

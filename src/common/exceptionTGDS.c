@@ -102,7 +102,7 @@ void exception_sysexit(){
 	
 	int argBuffer[MAXPRINT7ARGVCOUNT];
 	memset((unsigned char *)&argBuffer[0], 0, sizeof(argBuffer));
-	writeDebugBuffer7("TGDS ARM7.bin Exception: Unexpected main() exit. ", 0, (int)&argBuffer[0]);
+	writeDebugBuffer7("TGDS ARM7.bin Exception: Unexpected main() exit. ", 0, (int*)&argBuffer[0]);
 	
 	SendFIFOWords(EXCEPTION_ARM7, unexpectedsysexit_7);
 	while(1){
@@ -121,7 +121,7 @@ void generalARMExceptionHandler(){
 	
 	int argBuffer[MAXPRINT7ARGVCOUNT];
 	memset((unsigned char *)&argBuffer[0], 0, sizeof(argBuffer));
-	writeDebugBuffer7("TGDS ARM7.bin Exception: Hardware Exception.", 0, (int)&argBuffer[0]);
+	writeDebugBuffer7("TGDS ARM7.bin Exception: Hardware Exception.", 0, (int*)&argBuffer[0]);
 	
 	SendFIFOWords(EXCEPTION_ARM7, generalARM7Exception);
 	while(1==1){

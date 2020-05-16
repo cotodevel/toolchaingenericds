@@ -21,6 +21,11 @@ USA
 #ifndef __soundTGDS_h__
 #define __soundTGDS_h__
 
+//Linear sound sample playback: Sound Sample Context cmds (ARM9 -> ARM7)
+#define FIFO_PLAYSOUND	(uint32)(0xffff0203)
+#define FIFO_INITSOUND	(uint32)(0xffff0204)
+#define FIFO_FLUSHSOUNDCONTEXT	(uint32)(0xffff0210)
+
 #ifdef ARM9
 #include <stdio.h>
 #include <string.h>
@@ -37,8 +42,15 @@ USA
 #define SOUNDSAMPLECONTEXT_SOUND_SAMPLEPLAYBACK (int)(1)
 #define SOUNDSAMPLECONTEXT_SOUND_STREAMPLAYBACK (int)(2)
 
+//Hardware Channels used by soundStream playback
 #define SOUNDSTREAM_L_BUFFER (int)(0)
 #define SOUNDSTREAM_R_BUFFER (int)(1)
+//Auxiliary Hardware Channels used by soundStream playback
+#define SOUNDSTREAM_L_BUFFER_AUX (int)(0+2)
+#define SOUNDSTREAM_R_BUFFER_AUX (int)(1+2)
+
+//Free Hardware channels for either sampleStream or soundStream
+#define SOUNDSTREAM_FREE_CHANNEL (int)(SOUNDSTREAM_R_BUFFER_AUX + 1)
 
 #define SRC_NONE	(int)(0)
 #define SRC_WAV		(int)(1)
@@ -124,6 +136,8 @@ struct soundPlayerContext{
 extern "C"{
 #endif
 
+extern void SendFIFOWords(uint32 data0, uint32 data1);
+
 //Sound Sample Context: Plays raw sound samples at VBLANK intervals
 extern void startSound(int sampleRate, const void* data, u32 bytes, u8 channel, u8 vol,  u8 pan, u8 format);
 extern void initSound();
@@ -132,12 +146,10 @@ extern void initSound();
 extern int soundSampleContextCurrentMode;
 extern void initSoundSampleContext();
 extern void initSoundStream(u32 srcFmt);
+extern int SoundTGDSCurChannel;
 
 //weak symbols : the implementation of these is project-defined, also abstracted from the hardware IPC FIFO Implementation for easier programming.
 extern __attribute__((weak))	void initSoundStreamUser(u32 srcFmt);
-
-//ARM7: Sample Playback handler
-extern void updateSoundContextSamplePlayback();
 
 extern u32 srcFrmt;
 extern s16 *strpcmL0;
@@ -157,7 +169,6 @@ extern void StopSound(u32 srcFrmtInst);
 //weak symbols : the implementation of these is project-defined, also abstracted from the hardware IPC FIFO Implementation for easier programming.
 extern __attribute__((weak))	void SetupSoundUser(u32 srcFrmt);
 extern __attribute__((weak))	void StopSoundUser(u32 srcFrmt);
-extern __attribute__((weak))    void updateSoundContextStreamPlaybackUser(u32 srcFrmt);
 
 extern u32 sampleLen;
 extern int multRate;
@@ -168,6 +179,7 @@ extern u32 sndCursor;
 #ifdef ARM9
 //ARM9: Stream Playback handler
 extern void updateSoundContextStreamPlayback();
+extern __attribute__((weak))    void updateSoundContextStreamPlaybackUser(u32 srcFrmt);
 extern void flushSoundContext(int soundContextIndex);
 extern bool initSoundStream(char * WAVfilename);
 #endif
@@ -208,7 +220,7 @@ extern void initComplexSoundTGDS(u32 srcFmt);
 #ifdef ARM7
 static inline s32 getFreeSoundChannel(){
 	int i;
-	for (i=0;i<16;++i){
+	for (i=SOUNDSTREAM_FREE_CHANNEL;i<16;++i){
 		if (!(SCHANNEL_CR(i) & SCHANNEL_ENABLE)) return i;
 	}
 	return -1;
@@ -259,6 +271,38 @@ static inline s16 checkClipping(int data)
 
 static inline int getSoundSampleContextEnabledStatus(){	
 	return soundSampleContextCurrentMode;
+}
+
+//ARM7: Sample Playback handler
+static inline void updateSoundContextSamplePlayback(){
+	switch(getSoundSampleContextEnabledStatus()){
+		case(SOUNDSAMPLECONTEXT_SOUND_SAMPLEPLAYBACK):
+		case(SOUNDSAMPLECONTEXT_SOUND_STREAMPLAYBACK):
+		{
+			//VBLANK intervals: Look out for assigned channels, playing.
+			struct soundSampleContext * curSoundSampleContext = getsoundSampleContextByIndex(SoundTGDSCurChannel);
+			int thisChannel = curSoundSampleContext->channel;
+			
+			//Returns -1 if channel is busy, or channel if idle
+			if( (isFreeSoundChannel(thisChannel) == thisChannel) && (curSoundSampleContext->status == SOUNDSAMPLECONTEXT_PENDING) ){	//Play sample?
+				startSound(curSoundSampleContext->sampleRate, curSoundSampleContext->arm9data, curSoundSampleContext->bytes, thisChannel, curSoundSampleContext->vol,  curSoundSampleContext->pan, curSoundSampleContext->format);
+				curSoundSampleContext->status = SOUNDSAMPLECONTEXT_PLAYING;
+			}
+			
+			//Returns -1 if channel is busy, or channel if idle
+			if( (isFreeSoundChannel(thisChannel) == thisChannel) && (curSoundSampleContext->status == SOUNDSAMPLECONTEXT_PLAYING) ){	//Idle? free context
+				freesoundSampleContext(curSoundSampleContext);
+				SendFIFOWords(FIFO_FLUSHSOUNDCONTEXT, thisChannel);
+			}
+			
+			if(SoundTGDSCurChannel > SoundSampleContextChannels){
+				SoundTGDSCurChannel = 0;
+			}
+			else{
+				SoundTGDSCurChannel++;
+			}
+		}
+	}
 }
 
 #endif

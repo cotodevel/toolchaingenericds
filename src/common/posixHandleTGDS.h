@@ -224,7 +224,7 @@ extern int arm7ARGVDebugBuffer[MAXPRINT7ARGVCOUNT];
 //argBuffer[0] = 0xc0701111;
 //argBuffer[1] = 0xc0702222;
 //argBuffer[2] = 0xc0703333;
-//writeDebugBuffer7("Write buffer 7 tests: Args: ", 3, (int)&argBuffer[0]);
+//writeDebugBuffer7("Write buffer 7 tests: Args: ", 3, (int*)&argBuffer[0]);
 
 extern void printarm7DebugBuffer();
 extern int _unlink(const sint8 *path);

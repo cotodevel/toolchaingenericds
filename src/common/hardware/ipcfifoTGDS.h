@@ -52,11 +52,6 @@ USA
 #define WRITE_EXTARM_8	(uint32)(0xffff0200)
 #define WRITE_EXTARM_16	(uint32)(0xffff0201)
 #define WRITE_EXTARM_32	(uint32)(0xffff0202)
-	
-//Linear sound sample playback: Sound Sample Context cmds (ARM9 -> ARM7)
-#define FIFO_PLAYSOUND	(uint32)(0xffff0203)
-#define FIFO_INITSOUND	(uint32)(0xffff0204)
-#define FIFO_FLUSHSOUNDCONTEXT	(uint32)(0xffff0210)
 
 //PowerCnt Read / PowerCnt Write
 #define FIFO_POWERCNT_ON	(uint32)(0xffff0205)

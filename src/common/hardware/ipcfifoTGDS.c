@@ -88,6 +88,7 @@ void HandleFifoNotEmpty(){
 		data1 = (u32)REG_IPC_FIFO_RX;
 		//Execute ToolchainGenericDS FIFO commands
 		switch (data1) {
+			
 			// ARM7IO from ARM9
 			//	||
 			// ARM9IO from ARM7

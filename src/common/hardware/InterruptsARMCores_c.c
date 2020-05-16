@@ -71,7 +71,6 @@ void NDS_IRQHandler(){
 		#ifdef ARM7
 		doSPIARM7IO();
 		Wifi_Update();
-		updateSoundContextSamplePlayback();
 		#endif
 		#ifdef ARM9
 		//handles DS-DS Comms
@@ -82,6 +81,7 @@ void NDS_IRQHandler(){
 	if(handledIRQ & IRQ_VCOUNT){
 		#ifdef ARM7
 		TGDSEventHandler();
+		updateSoundContextSamplePlayback();
 		#endif
 		VcounterUser();
 	}
@@ -193,7 +193,7 @@ void NDS_IRQHandler(){
 			break;
 			
 			case(IPC_ARM7DEINIT_ARM7FS):{	//ARM9 
-				//todo
+				
 			}
 			break;
 			

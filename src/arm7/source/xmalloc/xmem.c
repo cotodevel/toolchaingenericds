@@ -52,7 +52,7 @@ void XmemInit() {
 		
 		int argBuffer[MAXPRINT7ARGVCOUNT];
 		memset((unsigned char *)&argBuffer[0], 0, sizeof(argBuffer));
-		writeDebugBuffer7("XMEM: Could not allocate %d bytes of main ram for XMEM...", 0, (int)&argBuffer[0]);
+		writeDebugBuffer7("XMEM: Could not allocate %d bytes of main ram for XMEM...", 0, (int*)&argBuffer[0]);
 		while(1==1){
 			IRQVBlankWait();
 		}
@@ -111,7 +111,7 @@ void *Xmalloc(const int size) {
 		
 		int argBuffer[MAXPRINT7ARGVCOUNT];
 		memset((unsigned char *)&argBuffer[0], 0, sizeof(argBuffer));
-		writeDebugBuffer7("XM: Couldnt Find Mem:", 0, (int)&argBuffer[0]);
+		writeDebugBuffer7("XM: Couldnt Find Mem:", 0, (int*)&argBuffer[0]);
 		
 		return NULL;
 	}
