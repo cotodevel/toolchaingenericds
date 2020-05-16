@@ -169,6 +169,7 @@ extern u32 sndCursor;
 //ARM9: Stream Playback handler
 extern void updateSoundContextStreamPlayback();
 extern void flushSoundContext(int soundContextIndex);
+extern bool initSoundStream(char * WAVfilename);
 #endif
 
 extern struct soundSampleContext * getsoundSampleContextByIndex(int index);
