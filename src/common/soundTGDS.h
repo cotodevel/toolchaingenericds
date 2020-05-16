@@ -186,7 +186,6 @@ extern int parseWaveData(FILE * fh);
 extern void setSoundLength(u32 len);
 extern void setSoundFrequency(u32 freq);
 extern void setSoundInterpolation(u32 mult);
-extern void copyChunk();
 extern void setSoundFrequency(u32 freq);
 extern void freeSoundTGDS();
 extern void swapAndSendTGDS(u32 type);
