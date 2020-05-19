@@ -190,12 +190,6 @@ void mallocData9TGDS(int size)
 	soundPlayerCtx->soundSampleCxt[SOUNDSTREAM_R_BUFFER].arm9data = NULL; // temporary
 }
 
-void freeData9TGDS()
-{
-	lBufferSwapped = NULL;
-	rBufferSwapped = NULL;
-}
-
 void swapDataTGDS()
 {
 	struct soundPlayerContext * soundPlayerCtx = (struct soundPlayerContext *)&TGDSIPC->sndPlayerCtx;
@@ -234,14 +228,6 @@ void startSound9(u32 srcFrmt)
 		SendFIFOWords(ARM7COMMAND_START_SOUND, (u32)srcFrmt);
 	}
 	playing = true;
-}
-
-void stopSound(u32 srcFrmt)	//ARM9 impl.
-{
-	if(playing){
-		SendFIFOWords(ARM7COMMAND_STOP_SOUND, srcFrmt);
-	}
-	playing = false;
 }
 
 void setSoundLength(u32 len)
@@ -465,17 +451,6 @@ void wavDecode32Bit()
 	TGDSARM9Free(tmpData);
 }
 
-void freeSoundTGDS()
-{
-	stopSound(TGDSIPC->sndPlayerCtx.sourceFmt);//ARM9
-	freeData9TGDS();
-	if(GlobalSoundStreamFile != NULL){
-		fclose(GlobalSoundStreamFile);
-		GlobalSoundStreamFile = NULL;
-		TGDSIPC->sndPlayerCtx.sourceFmt = SRC_NONE;	
-	}
-}
-
 void initComplexSoundTGDS(u32 srcFmt)
 {	
 	struct soundPlayerContext * soundPlayerCtx = (struct soundPlayerContext *)&TGDSIPC->sndPlayerCtx;
@@ -500,9 +475,21 @@ bool initSoundStream(char * WAVfilename){	//ARM9 Impl.
 	SharedEWRAM0 = (s16*)TGDSARM9Malloc(32*1024);
 	SharedEWRAM1 = (s16*)((u8*)SharedEWRAM0 + 0x4000);
 	
-	freeSoundTGDS();
+	stopSound(TGDSIPC->sndPlayerCtx.sourceFmt);//ARM9
+	lBufferSwapped = NULL;
+	rBufferSwapped = NULL;
 	
-	if(strcmp(ext,".wav") == 0)
+	if(GlobalSoundStreamFile != NULL){
+		fclose(GlobalSoundStreamFile);
+		GlobalSoundStreamFile = NULL;
+		TGDSIPC->sndPlayerCtx.sourceFmt = SRC_NONE;	
+	}
+	
+	if(
+		(strcmp(ext,".wav") == 0)
+		||
+		(strcmp(ext,".ima") == 0)
+	)
 	{
 		// wav file!
 		initComplexSoundTGDS(SRC_WAV); // initialize sound variables
@@ -536,76 +523,93 @@ bool initSoundStream(char * WAVfilename){	//ARM9 Impl.
 			return false;
 		}
 		
-		if(TGDSIPC->sndPlayerCtx.wavDescriptor.wFormatTag != 1)
+		if(TGDSIPC->sndPlayerCtx.wavDescriptor.wFormatTag == 1)
 		{
-			// compression used, hell no to loading this
+			if(TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels > 2)
+			{
+				// more than 2 channels.... uh no!
+				
+				fclose(fp);
+				return false;
+			}
 			
+			
+			if(TGDSIPC->sndPlayerCtx.wavDescriptor.wBitsPerSample <= 8)
+			{
+				wavDecode = wavDecode8Bit;
+			}
+			else if(TGDSIPC->sndPlayerCtx.wavDescriptor.wBitsPerSample <= 16)
+			{
+				wavDecode = wavDecode16Bit;
+			}
+			else if(TGDSIPC->sndPlayerCtx.wavDescriptor.wBitsPerSample <= 24)
+			{
+				wavDecode = wavDecode24Bit;
+			}
+			else if(TGDSIPC->sndPlayerCtx.wavDescriptor.wBitsPerSample <= 32)
+			{
+				wavDecode = wavDecode32Bit;
+			}
+			else
+			{
+				// more than 32bit sound, not supported
+				
+				fclose(fp);
+				return false;		
+			}
+			
+			//rewind
+			fseek(fp, 0, SEEK_SET);
+			int wavStartOffset = parseWaveData(fp);
+			
+			if(wavStartOffset < 0)
+			{
+				// wav block not found
+				fclose(fp);
+				return false;
+			}
+			
+			u32 len = 0;
+			fread(&len, 1, sizeof(len), fp);
+			wavStartOffset+=4;
+			
+			TGDSIPC->sndPlayerCtx.fileSize = len;
+			TGDSIPC->sndPlayerCtx.fileOffset = wavStartOffset;
+			GlobalSoundStreamFile = fp;
+			
+			setSoundInterpolation(1);
+			setSoundFrequency(TGDSIPC->sndPlayerCtx.wavDescriptor.dwSamplesPerSec);
+			
+			setSoundLength(WAV_READ_SIZE);		
+			mallocData9TGDS(WAV_READ_SIZE);
+			
+			wavDecode();
+			startSound9((u32)SRC_WAV);
+			
+			return true;
+		}
+		
+		//Intel / IMA-ADPCM
+		else if((short)TGDSIPC->sndPlayerCtx.wavDescriptor.wFormatTag == (short)WAVE_FORMAT_DVI_ADPCM){			
+			printf("wFormatTag:%d", TGDSIPC->sndPlayerCtx.wavDescriptor.wFormatTag);
+			printf("wChannels:%d", TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels);
+			printf("dwSamplesPerSec:%d", TGDSIPC->sndPlayerCtx.wavDescriptor.dwSamplesPerSec);
+			printf("dwAvgBytesPerSec:%d", TGDSIPC->sndPlayerCtx.wavDescriptor.dwAvgBytesPerSec);
+			printf("wBlockAlign:%d", TGDSIPC->sndPlayerCtx.wavDescriptor.wBlockAlign);
+			printf("wBitsPerSample:%d", TGDSIPC->sndPlayerCtx.wavDescriptor.wBitsPerSample);
+			
+			printf("Extra info size:%d", TGDSIPC->sndPlayerCtx.wavDescriptor.cbSize);
+			
+			printf("iSamp0:%d", TGDSIPC->sndPlayerCtx.wavDescriptor.ADPCMHdr.iSamp0);
+			printf("bStepTableIndex:%d", TGDSIPC->sndPlayerCtx.wavDescriptor.ADPCMHdr.bStepTableIndex);
+			
+			while(1==1){}
+			
+		}
+		else{
 			fclose(fp);
 			return false;
 		}
-		
-		if(TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels > 2)
-		{
-			// more than 2 channels.... uh no!
-			
-			fclose(fp);
-			return false;
-		}
-		
-		
-		if(TGDSIPC->sndPlayerCtx.wavDescriptor.wBitsPerSample <= 8)
-		{
-			wavDecode = wavDecode8Bit;
-		}
-		else if(TGDSIPC->sndPlayerCtx.wavDescriptor.wBitsPerSample <= 16)
-		{
-			wavDecode = wavDecode16Bit;
-		}
-		else if(TGDSIPC->sndPlayerCtx.wavDescriptor.wBitsPerSample <= 24)
-		{
-			wavDecode = wavDecode24Bit;
-		}
-		else if(TGDSIPC->sndPlayerCtx.wavDescriptor.wBitsPerSample <= 32)
-		{
-			wavDecode = wavDecode32Bit;
-		}
-		else
-		{
-			// more than 32bit sound, not supported
-			
-			fclose(fp);
-			return false;		
-		}
-		
-		//rewind
-		fseek(fp, 0, SEEK_SET);
-		int wavStartOffset = parseWaveData(fp);
-		
-		if(wavStartOffset < 0)
-		{
-			// wav block not found
-			fclose(fp);
-			return false;
-		}
-		
-		u32 len = 0;
-		fread(&len, 1, sizeof(len), fp);
-		wavStartOffset+=4;
-		
-		TGDSIPC->sndPlayerCtx.fileSize = len;
-		TGDSIPC->sndPlayerCtx.fileOffset = wavStartOffset;
-		GlobalSoundStreamFile = fp;
-		
-		setSoundInterpolation(1);
-		setSoundFrequency(TGDSIPC->sndPlayerCtx.wavDescriptor.dwSamplesPerSec);
-		
-		setSoundLength(WAV_READ_SIZE);		
-		mallocData9TGDS(WAV_READ_SIZE);
-		
-		wavDecode();
-		startSound9((u32)SRC_WAV);
-		
-		return true;
 	}
 	return false;
 }
@@ -701,28 +705,7 @@ int lastL = 0;
 int lastR = 0;
 
 /////////////////////////////////////////////////////////Interrupt code //////////////////////////////////////////////////////
-void mallocData7TGDS(int size)
-{
-	// clear vram d bank to not have sound leftover
-	int i = 0;
-	
-	for(i=0;i<(size);++i)
-	{
-		strpcmL0[i] = 0;
-	}
-	
-	for(i=0;i<(size);++i)
-	{
-		strpcmR0[i] = 0;
-	}
-}
-
-void freeData7TGDS()
-{	
-	
-}
-
-void SetupSound(u32 srcFrmtInst)
+void setupSound(u32 srcFrmtInst)
 {
 	srcFrmt = srcFrmtInst;
     sndCursor = 0;
@@ -730,8 +713,19 @@ void SetupSound(u32 srcFrmtInst)
 		multRate = 1;
 	}
 	
-	mallocData7TGDS(sampleLen * multRate);
-    
+	// clear vram d bank to not have sound leftover
+	int i = 0;
+	
+	for(i=0;i<(sampleLen * multRate);++i)
+	{
+		strpcmL0[i] = 0;
+	}
+	
+	for(i=0;i<(sampleLen * multRate);++i)
+	{
+		strpcmR0[i] = 0;
+	}
+	
 	//Auxiliary + Hardware Channels used by soundStream playback
 	int ch=0;
 	for(ch=0;ch<4;++ch)
@@ -754,21 +748,6 @@ void SetupSound(u32 srcFrmtInst)
 	REG_IE|=(IRQ_TIMER3);
 }
 
-void StopSound(u32 srcFrmtInst) //ARM7 impl.
-{
-	TIMERXCNT(2) = 0;
-	TIMERXCNT(3) = 0;
-	
-	int ch=0;
-	for(ch=0;ch<4;++ch)
-	{
-		SCHANNEL_CR(ch) = 0;
-	}
-	
-	REG_IE&=~(IRQ_TIMER3);
-	
-	freeData7TGDS();
-}
 /////////////////////////////////////////////////////////Interrupt code end //////////////////////////////////////////////////////
 
 
@@ -784,3 +763,27 @@ void initSoundStream(u32 srcFmt){		//ARM7 Impl.
 
 #endif
 
+
+void stopSound(u32 srcFrmt)
+{
+	#ifdef ARM7
+	TIMERXCNT(2) = 0;
+	TIMERXCNT(3) = 0;
+	
+	int ch=0;
+	for(ch=0;ch<4;++ch)
+	{
+		SCHANNEL_CR(ch) = 0;
+	}
+	
+	REG_IE&=~(IRQ_TIMER3);
+	
+	#endif
+	
+	#ifdef ARM9
+	if(playing){
+		SendFIFOWords(ARM7COMMAND_STOP_SOUND, srcFrmt);
+	}
+	playing = false;
+	#endif
+}

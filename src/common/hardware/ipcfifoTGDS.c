@@ -139,20 +139,20 @@ void HandleFifoNotEmpty(){
 			}
 			break;
 			case ARM7COMMAND_START_SOUND:{
-				if(data0 == (u32)SRC_WAV){
-					SetupSound(data0);
+				if((u32)data0 == (u32)SRC_WAV){
+					setupSound(data0);
 				}
 				else{
-					SetupSoundUser(data0);
+					setupSoundUser(data0);
 				}
 			}
 			break;
 			case ARM7COMMAND_STOP_SOUND:{
-				if(data0 == (u32)SRC_WAV){
-					StopSound(data0);
+				if((u32)data0 == (u32)SRC_WAV){
+					stopSound(data0);
 				}
 				else{
-					StopSoundUser(data0);
+					stopSoundUser(data0);
 				}
 			}
 			break;

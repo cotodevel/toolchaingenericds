@@ -67,6 +67,7 @@ USA
 #define SRC_STREAM_MP3		(int)(12)
 #define SRC_STREAM_OGG		(int)(13)
 #define SRC_STREAM_AAC		(int)(14)
+#define SRC_WAVADPCM		(int)(15)
 
 #define WAV_READ_SIZE 2048
 
@@ -77,19 +78,40 @@ static inline u32 getWavData(void *outLoc, int amount, FILE *fh)
 }
 #endif
 
+//IMA-ADPCM
+typedef struct dvi_adpcmblockheader_tag {
+	int iSamp0;
+	char bStepTableIndex;
+	char bReserved;
+} DVI_ADPCMBLOCKHEADER;
+
 //WAV Descriptor
 typedef struct 
 {
 	char chunkID[4];
 	long chunkSize;
-
+	
+	//-- WAVEFORMAT --//
 	short wFormatTag;
 	unsigned short wChannels;
 	unsigned long dwSamplesPerSec;
 	unsigned long dwAvgBytesPerSec;
 	unsigned short wBlockAlign;
 	unsigned short wBitsPerSample;
+	
+	//-- WAVEFORMATEX --//
+	unsigned short cbSize;	//bytes 16-17  cbSize: Size, in bytes, of extra format information appended to the end of the WAVEFORMATEX structure
+	
+	//-- WAVEFORMATEXTENSIBLE --//
+	DVI_ADPCMBLOCKHEADER ADPCMHdr;	//bytes 18..   extradata [Extended WAV impl]
+	
 } wavFormatChunk __attribute__((aligned (4)));
+
+//Extended Header WAV 
+
+#define WAVE_FORMAT_DVI_ADPCM	(short)(0x0011)					/* Intel Corporation */
+#define WAVE_FORMAT_IMA_ADPCM	(short)(WAVE_FORMAT_DVI_ADPCM)	/* Intel Corporation */
+
 
 //Sound Context
 struct soundSampleContext{
@@ -161,20 +183,20 @@ extern int lastL;
 extern int lastR;
 
 //TGDS
-extern void mallocData7TGDS(int size);
-extern void freeData7TGDS();
-extern void SetupSound(u32 srcFrmtInst);
-extern void StopSound(u32 srcFrmtInst);
+extern void setupSound(u32 srcFrmtInst);
 
 //weak symbols : the implementation of these is project-defined, also abstracted from the hardware IPC FIFO Implementation for easier programming.
-extern __attribute__((weak))	void SetupSoundUser(u32 srcFrmt);
-extern __attribute__((weak))	void StopSoundUser(u32 srcFrmt);
+extern __attribute__((weak))	void setupSoundUser(u32 srcFrmt);
+extern __attribute__((weak))	void stopSoundUser(u32 srcFrmt);
 
 extern u32 sampleLen;
 extern int multRate;
 extern int sndRate;
 extern u32 sndCursor;
 #endif
+
+extern void stopSound(u32 srcFrmt);
+
 
 #ifdef ARM9
 //ARM9: Stream Playback handler
@@ -199,10 +221,8 @@ extern void setSoundLength(u32 len);
 extern void setSoundFrequency(u32 freq);
 extern void setSoundInterpolation(u32 mult);
 extern void setSoundFrequency(u32 freq);
-extern void freeSoundTGDS();
 extern void swapAndSendTGDS(u32 type);
 extern void swapDataTGDS();
-extern void freeData9TGDS();
 extern void mallocData9TGDS(int size);
 #endif
 
@@ -210,7 +230,6 @@ extern void EnableSoundSampleContext(int SndSamplemode);
 extern void DisableSoundSampleContext();
 extern void closeSoundStream();
 extern void startSound9(u32 srcFrmt);
-extern void stopSound(u32 srcFrmt);
 extern void initComplexSoundTGDS(u32 srcFmt);
 
 #ifdef __cplusplus
@@ -245,7 +264,16 @@ static inline void setSwapChannel()
     
 	// Left channel
 	SCHANNEL_SOURCE((sndCursor << 1)) = (uint32)buf;
-	SCHANNEL_CR((sndCursor << 1)) = SCHANNEL_ENABLE | SOUND_ONE_SHOT | SOUND_VOL(0x7F) | SOUND_PAN(0) | SOUND_16BIT;
+	
+	u32 frmt = 0;
+	
+	if(srcFrmt == (u32)SRC_WAVADPCM){
+		frmt = SOUND_FORMAT_ADPCM;
+	}
+	else{
+		frmt = SOUND_16BIT;
+	}
+	SCHANNEL_CR((sndCursor << 1)) = SCHANNEL_ENABLE | SOUND_ONE_SHOT | SOUND_VOL(0x7F) | SOUND_PAN(0) | frmt;
     	
 	if(!sndCursor)
 		buf = strpcmR0;
@@ -254,7 +282,7 @@ static inline void setSwapChannel()
 	
 	// Right channel
 	SCHANNEL_SOURCE((sndCursor << 1) + 1) = (uint32)buf;
-	SCHANNEL_CR((sndCursor << 1) + 1) = SCHANNEL_ENABLE | SOUND_ONE_SHOT | SOUND_VOL(0x7F) | SOUND_PAN(0x3FF) | SOUND_16BIT;
+	SCHANNEL_CR((sndCursor << 1) + 1) = SCHANNEL_ENABLE | SOUND_ONE_SHOT | SOUND_VOL(0x7F) | SOUND_PAN(0x3FF) | frmt;
   
 	sndCursor = 1 - sndCursor;
 }
