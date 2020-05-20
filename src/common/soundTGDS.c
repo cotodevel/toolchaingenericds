@@ -489,8 +489,6 @@ bool initSoundStream(char * WAVfilename){	//ARM9 Impl.
 	
 	if(
 		(strcmp(ext,".wav") == 0)
-		||
-		(strcmp(ext,".ima") == 0)
 	)
 	{
 		// wav file!
@@ -592,23 +590,6 @@ bool initSoundStream(char * WAVfilename){	//ARM9 Impl.
 			return true;
 		}
 		
-		//Intel / IMA-ADPCM
-		else if((short)TGDSIPC->sndPlayerCtx.wavDescriptor.wFormatTag == (short)WAVE_FORMAT_DVI_ADPCM){			
-			printf("wFormatTag:%d", TGDSIPC->sndPlayerCtx.wavDescriptor.wFormatTag);
-			printf("wChannels:%d", TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels);
-			printf("dwSamplesPerSec:%d", TGDSIPC->sndPlayerCtx.wavDescriptor.dwSamplesPerSec);
-			printf("dwAvgBytesPerSec:%d", TGDSIPC->sndPlayerCtx.wavDescriptor.dwAvgBytesPerSec);
-			printf("wBlockAlign:%d", TGDSIPC->sndPlayerCtx.wavDescriptor.wBlockAlign);
-			printf("wBitsPerSample:%d", TGDSIPC->sndPlayerCtx.wavDescriptor.wBitsPerSample);
-			
-			printf("Extra info size:%d", TGDSIPC->sndPlayerCtx.wavDescriptor.cbSize);
-			
-			printf("iSamp0:%d", TGDSIPC->sndPlayerCtx.wavDescriptor.ADPCMHdr.iSamp0);
-			printf("bStepTableIndex:%d", TGDSIPC->sndPlayerCtx.wavDescriptor.ADPCMHdr.bStepTableIndex);
-			
-			while(1==1){}
-			
-		}
 		else{
 			fclose(fp);
 			return false;
