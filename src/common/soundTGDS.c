@@ -262,8 +262,8 @@ int parseWaveData(FILE * fh, u32 u32chunkToSeek){
 	if((u32)u32chunkToSeek == (u32)0x64617461){
 		// First subchunk will always be at byte 12.
 		// (There is no other dependable constant.)
-		fseek(fh, 8, SEEK_CUR);
-		fileOffset+=8;
+		fseek(fh, 12, SEEK_CUR);
+		fileOffset+=12;
 	}
 	
 	for (;;) {
