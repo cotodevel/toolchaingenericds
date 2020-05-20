@@ -245,8 +245,8 @@ void setSoundInterpolation(u32 mult)
 	SendFIFOWords(ARM7COMMAND_SOUND_SETMULT, mult);
 }
 
-//Returns the next offset right after "data". Which is the raw Waveform length (4 bytes) and then the raw Waveform
-int parseWaveData(FILE * fh){
+//WAV Header: Searches for u32chunkToSeek and returns file offset if found.
+int parseWaveData(FILE * fh, u32 u32chunkToSeek){
     u32 bytes[4];
 	int fileOffset = 0;
 	
@@ -269,34 +269,33 @@ int parseWaveData(FILE * fh){
 			return -1;
 		}
 		
+		u8 bytesNonAligned[16];
+		memcpy(bytesNonAligned, (u8*)&bytes[0], sizeof(bytesNonAligned));
+		
+		u8 lastVar0 = 0;
+		u8 lastVar1 = 0;
+		u8 lastVar2 = 0;
+		u8 lastVar3 = 0;
 		int match = 0;
-		//Aligned / not aligned headers. (why would somebody build a non aligned header!!!!)
 		int j = 0;
-		int k = 0;
-		for(j=0; j < sizeof(bytes)/sizeof(u32); j++){
-			u32 word = bytes[j];
-			for(k=0; k < sizeof(u32); k++){
-				u8 var = ((word >> (8*k))&0xff);
-				if((u8)var == (u8)0x61){
-					match++;
-				}
-				else if((u8)var == (u8)0x74){
-					match++;
-				}
-				if((u8)var == (u8)0x61){
-					match++;
-				}
-				if((u8)var == (u8)0x64){
-					match++;
-				}
-				if(match>=4){
-					return (fileOffset+(j*sizeof(u32))+k);
-				}
-				
+		for(j=0; j < sizeof(bytesNonAligned); j++){
+			if(j>0){
+				lastVar0 = bytesNonAligned[j-1];
+			}
+			if(j>1){
+				lastVar1 = bytesNonAligned[j-2];
+			}
+			if(j>2){
+				lastVar2 = bytesNonAligned[j-3];
+			}
+			if(j>3){
+				lastVar3 = bytesNonAligned[j-4];
+			}
+			u32 read = (u32)((lastVar3<<24) | (lastVar2<<16) | (lastVar1<<8) | (lastVar0<<0));
+			if(read == u32chunkToSeek){
+				return (fileOffset+j);
 			}
 		}
-		
-		
 		fileOffset+=16;
 	}
 	return -1;
@@ -560,7 +559,8 @@ bool initSoundStream(char * WAVfilename){	//ARM9 Impl.
 			
 			//rewind
 			fseek(fp, 0, SEEK_SET);
-			int wavStartOffset = parseWaveData(fp);
+			int wavStartOffset = parseWaveData(fp, (u32)(0x64617461));	//Seek for ASCII "data" and return 4 bytes after that: Waveform length (4 bytes), then 
+																		//4 bytes after that the raw Waveform
 			
 			if(wavStartOffset < 0)
 			{
@@ -568,7 +568,7 @@ bool initSoundStream(char * WAVfilename){	//ARM9 Impl.
 				fclose(fp);
 				return false;
 			}
-			
+			fseek(fp, wavStartOffset, SEEK_SET);
 			u32 len = 0;
 			fread(&len, 1, sizeof(len), fp);
 			wavStartOffset+=4;

@@ -216,7 +216,7 @@ extern bool setSoundSampleContext(int sampleRate, u32 * data, u32 bytes, u8 chan
 extern s16 * SharedEWRAM0;	//ptr start = 0
 extern s16 * SharedEWRAM1;	//ptr start = 0 + 0x4000
 
-extern int parseWaveData(FILE * fh);
+extern int parseWaveData(FILE * fh, u32 u32chunkToSeek);
 extern void setSoundLength(u32 len);
 extern void setSoundFrequency(u32 freq);
 extern void setSoundInterpolation(u32 mult);
