@@ -79,11 +79,11 @@ static inline u32 getWavData(void *outLoc, int amount, FILE *fh)
 #endif
 
 //IMA-ADPCM
-typedef struct dvi_adpcmblockheader_tag {
+struct dvi_adpcmblockheader_tag {
 	int iSamp0;
 	char bStepTableIndex;
 	char bReserved;
-} DVI_ADPCMBLOCKHEADER;
+};
 
 //WAV Descriptor
 typedef struct 
@@ -101,9 +101,7 @@ typedef struct
 	
 	//-- WAVEFORMATEX --//
 	unsigned short cbSize;	//bytes 16-17  cbSize: Size, in bytes, of extra format information appended to the end of the WAVEFORMATEX structure
-	
-	//-- WAVEFORMATEXTENSIBLE --//
-	DVI_ADPCMBLOCKHEADER ADPCMHdr;	//bytes 18..   extradata [Extended WAV impl]
+	short wSamplesPerBlock;	//bytes 18..   extradata [Extended WAV impl]
 	
 } wavFormatChunk __attribute__((aligned (4)));
 
