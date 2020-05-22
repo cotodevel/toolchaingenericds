@@ -765,6 +765,7 @@ void setupSound(u32 srcFrmtInst)
 	TIMERXCNT(3) = TIMER_CASCADE | TIMER_IRQ_REQ | TIMER_ENABLE;
 	
 	REG_IE|=(IRQ_TIMER3);
+	TGDSIPC->sndPlayerCtx.soundStreamPause = false;
 }
 
 /////////////////////////////////////////////////////////Interrupt code end //////////////////////////////////////////////////////
@@ -796,7 +797,7 @@ void stopSound(u32 srcFrmt)
 	}
 	
 	REG_IE&=~(IRQ_TIMER3);
-	
+	TGDSIPC->sndPlayerCtx.soundStreamPause = true;
 	#endif
 	
 	#ifdef ARM9

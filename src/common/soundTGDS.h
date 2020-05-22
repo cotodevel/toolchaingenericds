@@ -150,6 +150,7 @@ struct soundPlayerContext{
 	u32 timer;
 	int sourceFmt;
 	int structFDFH;	//TGDS File Descriptor through TGDS FS API, same as ARM9's FILE * GlobalSoundStreamFile;
+	bool soundStreamPause;	//Indicates wether a WAV / IMA-ADPCM / Other stream format is playing
 } __attribute__((aligned (4)));
 
 #ifdef __cplusplus
