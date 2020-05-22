@@ -100,6 +100,10 @@ void initHardware(void) {
 	
 	//Enable TGDS Event handling + Set timeout to turn off screens if idle.
 	setAndEnableSleepModeInSeconds(SLEEPMODE_SECONDS);
+	
+	//TGDS Sound stream: Default volume
+	setVolume(4);
+	
 	#endif
 	
 }

@@ -202,6 +202,13 @@ extern void updateSoundContextStreamPlayback();
 extern __attribute__((weak))    void updateSoundContextStreamPlaybackUser(u32 srcFrmt);
 extern void flushSoundContext(int soundContextIndex);
 extern bool initSoundStream(char * WAVfilename);
+
+//Stream Sound controls
+extern u8 getVolume();
+extern void setVolume(u8 volume);
+extern void volumeUp(int x, int y);
+extern void volumeDown(int x, int y);
+
 #endif
 
 extern struct soundSampleContext * getsoundSampleContextByIndex(int index);

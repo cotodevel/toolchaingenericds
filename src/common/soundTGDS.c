@@ -171,6 +171,37 @@ s16 *lBufferSwapped = NULL;
 s16 *rBufferSwapped = NULL;
 static bool cutOff = false;
 
+u8 getVolume()
+{
+	struct soundPlayerContext * soundPlayerCtx = (struct soundPlayerContext *)&TGDSIPC->sndPlayerCtx;
+	return soundPlayerCtx->volume;
+}
+
+void setVolume(u8 volume)
+{
+	if(volume > 16)
+		volume = 16;
+	
+	struct soundPlayerContext * soundPlayerCtx = (struct soundPlayerContext *)&TGDSIPC->sndPlayerCtx;
+	soundPlayerCtx->volume = volume;
+}
+
+void volumeUp(int x, int y)
+{
+	if(getVolume() < 16)
+	{
+		setVolume(getVolume() + 1);
+	}
+}
+
+void volumeDown(int x, int y)
+{
+	if(getVolume() > 0)
+	{
+		setVolume(getVolume() - 1);
+	}
+}
+
 void setWavDecodeCallback(void (*cb)()){
 	wavDecode = cb;
 }
@@ -773,5 +804,6 @@ void stopSound(u32 srcFrmt)
 		SendFIFOWords(ARM7COMMAND_STOP_SOUND, srcFrmt);
 	}
 	playing = false;
+	stopSoundUser(srcFrmt);
 	#endif
 }
