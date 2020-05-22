@@ -213,6 +213,9 @@ extern FILE * GlobalSoundStreamFile;
 extern bool setSoundSampleContext(int sampleRate, u32 * data, u32 bytes, u8 channel, u8 vol, u8 pan, u8 format);
 extern s16 * SharedEWRAM0;	//ptr start = 0
 extern s16 * SharedEWRAM1;	//ptr start = 0 + 0x4000
+extern s16 *lBufferSwapped;
+extern s16 *rBufferSwapped;
+extern void setWavDecodeCallback(void (*cb)());
 
 extern int parseWaveData(FILE * fh, u32 u32chunkToSeek);
 extern void setSoundLength(u32 len);

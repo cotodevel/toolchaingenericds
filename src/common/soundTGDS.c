@@ -171,6 +171,10 @@ s16 *lBufferSwapped = NULL;
 s16 *rBufferSwapped = NULL;
 static bool cutOff = false;
 
+void setWavDecodeCallback(void (*cb)()){
+	wavDecode = cb;
+}
+
 void mallocData9TGDS(int size)
 {
 	struct soundPlayerContext * soundPlayerCtx = (struct soundPlayerContext *)&TGDSIPC->sndPlayerCtx;
