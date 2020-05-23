@@ -293,12 +293,14 @@ void printarm7DebugBuffer(){
 }
 
 int printf(const char *fmt, ...){
+	coherent_user_range_by_size((uint32)fmt, strlen(fmt)+1);
 	char * stringBuf = (char*)&ConsolePrintfBuf[0];
 	va_list args;
     va_start(args, fmt);
 	//merge any "..." special arguments where sint8 * ftm requires then store in output printf buffer
 	vsnprintf ((sint8*)stringBuf, (int)sizeof(ConsolePrintfBuf), fmt, args);
 	va_end(args);
+	coherent_user_range_by_size((uint32)ConsolePrintfBuf, sizeof(ConsolePrintfBuf));
 	
 	t_GUIZone * zoneInst = getDefaultZoneConsole();
 	bool readAndBlendFromVRAM = false;	//we discard current vram characters here so if we step over the same character in VRAM (through printfCoords), it is discarded.
@@ -318,17 +320,21 @@ int printf(const char *fmt, ...){
 	
 	GUI_drawText(zoneInst, 0, GUI.printfy, color, stringBuf, readAndBlendFromVRAM);
 	GUI.printfy += getFontHeightFromZone(zoneInst);	//skip to next line
+	coherent_user_range_by_size((uint32)0x06200000, 128*1024);
 	return stringSize;
 }
 
 //same as printf but having X, Y coords (relative to char width and height)
-void printfCoords(int x, int y, const char *format, ...){
+void printfCoords(int x, int y, const char *fmt, ...){
+	coherent_user_range_by_size((uint32)fmt, strlen(fmt)+1);
 	char * stringBuf = (char*)&ConsolePrintfBuf[0];
 	va_list args;
-    va_start(args, format);
+    va_start(args, fmt);
 	//merge any "..." special arguments where sint8 * ftm requires then store in output printf buffer
-	vsnprintf ((sint8*)stringBuf, (int)sizeof(ConsolePrintfBuf), format, args);
+	vsnprintf ((sint8*)stringBuf, (int)sizeof(ConsolePrintfBuf), fmt, args);
 	va_end(args);
+	coherent_user_range_by_size((uint32)ConsolePrintfBuf, sizeof(ConsolePrintfBuf));
+	
 	int stringSize = (int)strlen(stringBuf);
 	t_GUIZone * zoneInst = getDefaultZoneConsole();
 	GUI.printfy = y * getFontHeightFromZone(zoneInst);
@@ -337,11 +343,15 @@ void printfCoords(int x, int y, const char *format, ...){
 	int color = 0xff;	//white
 	GUI_drawText(zoneInst, x, GUI.printfy, color, stringBuf, readAndBlendFromVRAM);
 	GUI.printfy += getFontHeightFromZone(zoneInst);
+	coherent_user_range_by_size((uint32)0x06200000, 128*1024);
 }
 
 int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list args){
+	coherent_user_range_by_size((uint32)fmt, strlen(fmt)+1);
 	char * stringBuf = (char*)&ConsolePrintfBuf[0];
 	vsnprintf ((sint8*)stringBuf, (int)sizeof(ConsolePrintfBuf), fmt, args);
+	coherent_user_range_by_size((uint32)ConsolePrintfBuf, sizeof(ConsolePrintfBuf));
+	
 	//if the fprintf points to stdout (unix shell C/C++ source code), redirect to DS printf.
 	if(fp == stdout){
 		int stringSize = (int)strlen(stringBuf);
@@ -350,6 +360,7 @@ int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list args){
 		int color = 0xff;	//white
 		GUI_drawText(zoneInst, 0, GUI.printfy, color, stringBuf, readAndBlendFromVRAM);
 		GUI.printfy += getFontHeightFromZone(zoneInst);
+		coherent_user_range_by_size((uint32)0x06200000, 128*1024);
 		return stringSize;
 	}
 	return fputs (stringBuf, fp);

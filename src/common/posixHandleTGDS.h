@@ -228,7 +228,7 @@ extern int arm7ARGVDebugBuffer[MAXPRINT7ARGVCOUNT];
 
 extern void printarm7DebugBuffer();
 extern int _unlink(const sint8 *path);
-extern void printfCoords(int x, int y, const char *format, ...);
+extern void printfCoords(int x, int y, const char *fmt, ...);
 #endif
 
 extern int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list args);
