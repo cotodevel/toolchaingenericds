@@ -208,17 +208,15 @@ static inline bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, voi
 		#endif
 		#ifdef ARM9
 		void * targetMem = (void *)((int)ARM7DLDIBuf + 0x400000);
-		
 		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-		fifomsg[0] = (uint32)sector;
-		fifomsg[1] = (uint32)numSectors;
-		fifomsg[2] = (uint32)targetMem;
 		fifomsg[7] = (uint32)TGDS_DLDI_ARM7_READ;
-		sendByteIPCIndirect(IPC_SERVE_DLDI7_REQBYIRQ);sendIPCIRQOnly();
+		SendFIFOWordsITCM((uint32)TGDS_DLDI_ARM7_READ, (uint32)sector);
+		SendFIFOWordsITCM((uint32)numSectors, (uint32)targetMem);
 		while(fifomsg[7] == TGDS_DLDI_ARM7_READ){
 			swiDelay(2);
 		}
 		memcpy((uint16_t*)buffer, (uint16_t*)targetMem, (numSectors * 512));
+		return true;
 		#endif	
 	#endif	
 	#ifdef ARM9_DLDI
@@ -242,16 +240,14 @@ static inline bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, co
 		#ifdef ARM9
 		void * targetMem = (void *)((int)ARM7DLDIBuf + 0x400000);
 		memcpy((uint16_t*)targetMem, (uint16_t*)buffer, (numSectors * 512));
-		
 		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-		fifomsg[3] = (uint32)sector;
-		fifomsg[4] = (uint32)numSectors;
-		fifomsg[5] = (uint32)targetMem;
 		fifomsg[8] = (uint32)TGDS_DLDI_ARM7_WRITE;
-		sendByteIPCIndirect(IPC_SERVE_DLDI7_REQBYIRQ);sendIPCIRQOnly();
+		SendFIFOWordsITCM((uint32)TGDS_DLDI_ARM7_WRITE, (uint32)sector);
+		SendFIFOWordsITCM((uint32)numSectors, (uint32)targetMem);
 		while(fifomsg[8] == TGDS_DLDI_ARM7_WRITE){
 			swiDelay(2);
 		}
+		return true;
 		#endif	
 	#endif	
 	#ifdef ARM9_DLDI

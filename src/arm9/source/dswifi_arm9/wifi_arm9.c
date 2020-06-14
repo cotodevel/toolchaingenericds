@@ -1072,7 +1072,7 @@ void Timer_10ms(void) {
 //---------------------------------------------------------------------------------
 void arm9_synctoarm7() { 
 //---------------------------------------------------------------------------------
-	SendFIFOWords(WIFI_SYNC, 0);
+	SendFIFOWordsITCM(WIFI_SYNC, 0);
 }
 
 /*
@@ -1105,7 +1105,7 @@ bool Wifi_InitDefault(bool useFirmwareSettings) {
 	TIMERXDATA(3) = -1310; // 1310 * 256 cycles = ~10ms;
 	TIMERXCNT(3) = 0x00C2; // enable, irq, 1/256 clock
 
-	SendFIFOWords(WIFI_INIT, (uint32)wifi_pass);
+	SendFIFOWordsITCM(WIFI_INIT, (uint32)wifi_pass);
 	
 	while(Wifi_CheckInit()==0) {
 		IRQWait(IRQ_VBLANK);

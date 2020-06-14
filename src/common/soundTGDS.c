@@ -35,7 +35,7 @@ void initSound(){
 	#endif
 	
 	#ifdef ARM9
-	SendFIFOWords(FIFO_INITSOUND, 0);
+	SendFIFOWordsITCM(FIFO_INITSOUND, 0);
 	#endif
 }
 
@@ -53,7 +53,7 @@ void startSound(int sampleRate, const void* data, u32 bytes, u8 channel, u8 vol,
 	
 	u32 packedSnd = (u32)( ((channel&0xff) << 24) | ((vol&0xff) << 16) | ((pan&0xff) << 8) | (format&0xff) );
 	fifomsg[3] = (uint32)packedSnd;
-	SendFIFOWords(FIFO_PLAYSOUND, (uint32)fifomsg);
+	SendFIFOWordsITCM(FIFO_PLAYSOUND, (uint32)fifomsg);
 	#endif
 	
 	#ifdef ARM7
@@ -254,30 +254,30 @@ void swapDataTGDS()
 void swapAndSendTGDS(u32 type)
 {
 	swapDataTGDS();
-	SendFIFOWords(type,0);
+	SendFIFOWordsITCM(type,0);
 }
 
 void startSound9(u32 srcFrmt)
 {	
 	if(!playing){
-		SendFIFOWords(ARM7COMMAND_START_SOUND, (u32)srcFrmt);
+		SendFIFOWordsITCM(ARM7COMMAND_START_SOUND, (u32)srcFrmt);
 	}
 	playing = true;
 }
 
 void setSoundLength(u32 len)
 {
-	SendFIFOWords(ARM7COMMAND_SOUND_SETLEN, len);
+	SendFIFOWordsITCM(ARM7COMMAND_SOUND_SETLEN, len);
 }
 
 void setSoundFrequency(u32 freq)
 {
-	SendFIFOWords(ARM7COMMAND_SOUND_SETRATE, freq);
+	SendFIFOWordsITCM(ARM7COMMAND_SOUND_SETRATE, freq);
 }
 
 void setSoundInterpolation(u32 mult)
 {
-	SendFIFOWords(ARM7COMMAND_SOUND_SETMULT, mult);
+	SendFIFOWordsITCM(ARM7COMMAND_SOUND_SETMULT, mult);
 }
 
 //WAV Header: Searches for u32chunkToSeek and returns file offset if found.
@@ -493,7 +493,7 @@ void initComplexSoundTGDS(u32 srcFmt)
 	struct soundPlayerContext * soundPlayerCtx = (struct soundPlayerContext *)&TGDSIPC->sndPlayerCtx;
 	soundPlayerCtx->volume = 4;
 	soundPlayerCtx->sourceFmt = srcFmt;
-	SendFIFOWords(TGDS_ARM7_INITSTREAMSOUNDCTX, srcFmt);
+	SendFIFOWordsITCM(TGDS_ARM7_INITSTREAMSOUNDCTX, srcFmt);
 }
 
 //Opens a file handle
@@ -695,7 +695,7 @@ void EnableSoundSampleContext(int SndSamplemode){
 	soundSampleContextCurrentMode = SndSamplemode;
 	#endif
 	#ifdef ARM9
-	SendFIFOWords(TGDS_ARM7_ENABLESOUNDSAMPLECTX, (u32)SndSamplemode);
+	SendFIFOWordsITCM(TGDS_ARM7_ENABLESOUNDSAMPLECTX, (u32)SndSamplemode);
 	#endif
 }
 
@@ -704,7 +704,7 @@ void DisableSoundSampleContext(){
 	soundSampleContextCurrentMode = SOUNDSAMPLECONTEXT_SOUND_IDLE;
 	#endif
 	#ifdef ARM9
-	SendFIFOWords(TGDS_ARM7_DISABLESOUNDSAMPLECTX, 0);
+	SendFIFOWordsITCM(TGDS_ARM7_DISABLESOUNDSAMPLECTX, 0);
 	#endif
 }
 
@@ -802,7 +802,7 @@ void stopSound(u32 srcFrmt)
 	
 	#ifdef ARM9
 	if(playing){
-		SendFIFOWords(ARM7COMMAND_STOP_SOUND, srcFrmt);
+		SendFIFOWordsITCM(ARM7COMMAND_STOP_SOUND, srcFrmt);
 	}
 	playing = false;
 	stopSoundUser(srcFrmt);

@@ -47,7 +47,21 @@ USA
 #include "nds_cp15_misc.h"
 #endif
 
+
+//Async FIFO Sender
+#ifdef ARM9
+__attribute__((section(".itcm")))
+#endif
+inline __attribute__((always_inline)) 
+void SendFIFOWordsITCM(uint32 data0, uint32 data1){	//format: arg0: cmd, arg1: value
+	REG_IPC_FIFO_TX = (uint32)data1;	
+	REG_IPC_FIFO_TX = (uint32)data0;	//last message should always be command
+}
+ 
 //IPC
+#ifdef ARM9
+__attribute__((section(".itcm")))
+#endif
 void sendMultipleByteIPC(uint8 inByte0, uint8 inByte1, uint8 inByte2, uint8 inByte3){
 	
 	uint8 * ipcMsg = (uint8 *)&TGDSIPC->ipcMesaggingQueue[0];
@@ -55,18 +69,7 @@ void sendMultipleByteIPC(uint8 inByte0, uint8 inByte1, uint8 inByte2, uint8 inBy
 	ipcMsg[1] = (u8)inByte1;
 	ipcMsg[2] = (u8)inByte2;
 	ipcMsg[3] = (u8)inByte3;
-	sendByteIPCIndirect(IPC_SEND_MULTIPLE_CMDS);sendIPCIRQOnly();
-}
-
-
-//Async FIFO Sender
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
-inline __attribute__((always_inline)) 
-void SendFIFOWords(uint32 data0, uint32 data1){	//format: arg0: cmd, arg1: value
-	REG_IPC_FIFO_TX = (uint32)data1;	
-	REG_IPC_FIFO_TX = (uint32)data0;	//last message should always be command
+	sendByteIPC(IPC_SEND_MULTIPLE_CMDS);
 }
 
 #ifdef ARM9
@@ -86,6 +89,7 @@ void HandleFifoNotEmpty(){
 	while(!(REG_IPC_FIFO_CR & RECV_FIFO_IPC_EMPTY)){
 		data0 = (u32)REG_IPC_FIFO_RX;
 		data1 = (u32)REG_IPC_FIFO_RX;
+		
 		//Execute ToolchainGenericDS FIFO commands
 		switch (data1) {
 			
@@ -423,6 +427,7 @@ void HandleFifoNotEmpty(){
 				enableSleepMode();
 			}
 			break;
+			
 			#endif
 			
 			//ARM9 command handler
@@ -573,7 +578,7 @@ void ReadMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead){
 	fifomsg[1] = (uint32)targetMemory;
 	fifomsg[2] = (uint32)bytesToRead;
 	fifomsg[7] = (uint32)ARM7FS_IOSTATUS_BUSY;
-	sendByteIPCIndirect(IPC_ARM7READMEMORY_REQBYIRQ);sendIPCIRQOnly();
+	sendByteIPC(IPC_ARM7READMEMORY_REQBYIRQ);
 	while((uint32)fifomsg[7] == (uint32)ARM7FS_IOSTATUS_BUSY){
 		swiDelay(2);
 	}
@@ -597,7 +602,7 @@ void SaveMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead){
 	fifomsg[1] = (uint32)targetMemory;
 	fifomsg[2] = (uint32)bytesToRead;
 	fifomsg[7] = (uint32)ARM7FS_IOSTATUS_BUSY;
-	sendByteIPCIndirect(IPC_ARM7SAVEMEMORY_REQBYIRQ);sendIPCIRQOnly();
+	sendByteIPC(IPC_ARM7SAVEMEMORY_REQBYIRQ);
 	while((uint32)fifomsg[7] == (uint32)ARM7FS_IOSTATUS_BUSY){
 		swiDelay(2);
 	}

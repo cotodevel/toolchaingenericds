@@ -1696,7 +1696,7 @@ static void wifiValue32Handler(uint32 value, void* data) {
 
 // callback to allow wifi library to notify arm9
 void arm7_synctoarm9() { 
-	SendFIFOWords(WIFI_SYNC, 0);
+	SendFIFOWordsITCM(WIFI_SYNC, 0);
 }
 
 

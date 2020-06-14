@@ -98,7 +98,7 @@ void NDS_IRQHandler(){
 		#ifdef ARM7
 		//Audio playback handler
 		setSwapChannel();
-		SendFIFOWords(ARM9COMMAND_UPDATE_BUFFER, srcFrmt);
+		SendFIFOWordsITCM(ARM9COMMAND_UPDATE_BUFFER, srcFrmt);
 		#endif
 		#ifdef ARM9
 		//wifi arm9 irq
@@ -107,7 +107,7 @@ void NDS_IRQHandler(){
 		Timer3handlerUser();
 	}
 	if(handledIRQ & IRQ_IPCSYNC){
-		uint8 ipcByte = TGDSIPC->IPCIRQCMD;
+		uint8 ipcByte = receiveByteIPC();
 		switch(ipcByte){
 			//External ARM Core's sendMultipleByteIPC(uint8 inByte0, uint8 inByte1, uint8 inByte2, uint8 inByte3) received bytes:
 			case(IPC_SEND_MULTIPLE_CMDS):{
@@ -177,8 +177,9 @@ void NDS_IRQHandler(){
 			break;
 			
 			#ifdef ARM7_DLDI
-			case(IPC_SERVE_DLDI7_REQBYIRQ):{
-				IPCIRQHandleDLDI();
+			case(IPC_INIT_DLDI7_REQBYIRQ):{
+				//Init DLDI ARM7
+				ARM7DLDIInit();
 			}
 			break;
 			#endif
@@ -222,7 +223,7 @@ void NDS_IRQHandler(){
 	}
 	if(handledIRQ & IRQ_SCREENLID){
 		isArm7ClosedLid = false;
-		SendFIFOWords(FIFO_IRQ_LIDHASOPENED_SIGNAL, 0);
+		SendFIFOWordsITCM(FIFO_IRQ_LIDHASOPENED_SIGNAL, 0);
 		screenLidHasOpenedhandlerUser();
 	}
 	#endif

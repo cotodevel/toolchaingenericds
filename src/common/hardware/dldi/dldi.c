@@ -65,7 +65,6 @@ u8 * ARM7DLDIBuf = NULL;	//Up to 64KB per cluster, should allow 64K and below
 void ARM7DLDIInit(u32 targetDLDI7Address){	//ARM9 Impl.
 	SetBusSLOT1SLOT2ARM7();
 	
-	
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	coherent_user_range_by_size((u32)fifomsg, sizeof(TGDSIPC->fifoMesaggingQueue));	//prevent cache problems
 	memset((u8*)fifomsg, 0, sizeof(TGDSIPC->fifoMesaggingQueue));
@@ -85,6 +84,7 @@ void ARM7DLDIInit(u32 targetDLDI7Address){	//ARM9 Impl.
 		//OK
 	}
 	else{
+		printf("error relocating DLDI code");
 		while(1==1);	//Error
 	}
 	
@@ -92,21 +92,25 @@ void ARM7DLDIInit(u32 targetDLDI7Address){	//ARM9 Impl.
 	setValueSafe(&fifomsg[1], (u32)16*1024);
 	setValueSafe(&fifomsg[2], (u32)targetDLDI7Address);
 	setValueSafe(&fifomsg[7], (u32)TGDS_DLDI_ARM7_STATUS_STAGE0);
+	sendByteIPC(IPC_INIT_DLDI7_REQBYIRQ);
 	
 	while(getValueSafe(&fifomsg[7]) == (u32)TGDS_DLDI_ARM7_STATUS_STAGE0){
-		IRQWait(IRQ_HBLANK);
+		swiDelay(1);
 	}
 	
 	if(getValueSafe(&fifomsg[7]) == 0xFFFF1234){
-		printf("DLDI Init failed.");
+		printf("DLDI7 Init failed.");
 		while(1==1);
+	}
+	else{
+		printf("DLDI7 OK.");
 	}
 	
 	TGDSARM9Free((u8*)relocatedARM7DLDIBinary);
 }
 
 void ARM9DeinitDLDI(){
-	SendFIFOWords(TGDS_DLDI_ARM7_STATUS_DEINIT, (u32)0);
+	SendFIFOWordsITCM(TGDS_DLDI_ARM7_STATUS_DEINIT, (u32)0);
 }
 #endif
 
@@ -114,10 +118,6 @@ void ARM9DeinitDLDI(){
 void ARM7DLDIInit(){	//ARM7 Impl.
 	
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-	while((u32)getValueSafe(&fifomsg[7]) != (u32)TGDS_DLDI_ARM7_STATUS_STAGE0){
-		IRQWait(IRQ_HBLANK);
-	}
-	
 	u32 relocatedARM7DLDIBinary = (u32)getValueSafe(&fifomsg[0]);
 	int DLDISize = (u32)getValueSafe(&fifomsg[1]);
 	u32 targetAddrDLDI7 = (u32)getValueSafe(&fifomsg[2]);
@@ -129,7 +129,7 @@ void ARM7DLDIInit(){	//ARM7 Impl.
 	//Some timeouts
 	int i = 0;
 	while(i < 500){
-		IRQWait(IRQ_HBLANK);
+		swiDelay(3);
 		i++;
 	}
 	

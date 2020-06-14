@@ -130,30 +130,12 @@ USA
 #define ARM7COMMAND_SOUND_SETLEN (uint32)(0xffff03A3)
 #define ARM7COMMAND_SOUND_COPY (uint32)(0xFFFFFF15)
 
-//IPC bits
-#define REG_IPC_FIFO_TX		(*(vuint32*)0x4000188)
-#define REG_IPC_FIFO_RX		(*(vuint32*)0x4100000)
-#define REG_IPC_FIFO_CR		(*(vuint16*)0x4000184)
-
-#define REG_IPC_SYNC	(*(vuint16*)0x04000180)
-#define IPC_SYNC_IRQ_ENABLE		(uint16)(1<<14)
-#define IPC_SYNC_IRQ_REQUEST	(uint16)(1<<13)
-#define IPC_FIFO_SEND_EMPTY		(uint16)(1<<0)
-#define IPC_FIFO_SEND_FULL		(uint16)(1<<1)
-#define IPC_FIFO_SEND_IRQ		(uint16)(1<<2)
-#define IPC_FIFO_SEND_CLEAR		(uint16)(1<<3)
-#define IPC_FIFO_RECV_EMPTY		(uint16)(1<<8)
-#define IPC_FIFO_RECV_FULL		(uint16)(1<<9)
-#define IPC_FIFO_RECV_IRQ		(uint16)(1<<10)
-#define IPC_FIFO_ERROR			(uint16)(1<<14)
-#define IPC_FIFO_ENABLE			(uint16)(1<<15)
-
 //TGDS IPC Command Interrupt Index
 #define IPC_NULL_CMD					(u8)(0)	//NULL cmd is unused by TGDS, fallbacks to TGDS project IPCIRQ Handler
 #define IPC_SEND_MULTIPLE_CMDS			(u8)(1)
-#define IPC_SERVE_DLDI7_REQBYIRQ		(u8)(2)
-#define IPC_ARM7READMEMORY_REQBYIRQ		(u8)(3)
-#define IPC_ARM7SAVEMEMORY_REQBYIRQ		(u8)(4)
+#define IPC_ARM7READMEMORY_REQBYIRQ		(u8)(2)
+#define IPC_ARM7SAVEMEMORY_REQBYIRQ		(u8)(3)
+#define IPC_INIT_DLDI7_REQBYIRQ			(u8)(4)
 #define IPC_TGDSUSER_START_FREE_INDEX	(u8)(5)	//TGDS User Project rely on it
 
 //ARM7 FS IPC Commands
@@ -274,6 +256,7 @@ static inline uint8 receiveByteIPC(){
 static inline uint8 getLanguage(){
 	return (uint8)(((TGDSIPC->lang_flags[1]<<8)|TGDSIPC->lang_flags[0])&language_mask);
 }
+
 #endif
 
 #ifdef __cplusplus
@@ -286,11 +269,11 @@ extern __attribute__((weak))	void HandleFifoEmptyWeakRef(uint32 cmd1,uint32 cmd2
 
 extern void HandleFifoNotEmpty();
 extern void HandleFifoEmpty();
-extern void SendFIFOWords(uint32 data0, uint32 data1);
 
 extern void sendMultipleByteIPC(uint8 inByte0, uint8 inByte1, uint8 inByte2, uint8 inByte3);
 extern void ReadMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead);
 extern void SaveMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead);
+extern void SendFIFOWordsITCM(uint32 data0, uint32 data1);
 
 #ifdef __cplusplus
 }

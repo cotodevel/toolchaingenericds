@@ -178,7 +178,7 @@ void Write8bitAddrExtArm(uint32 address, uint8 value){
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[0] = address;
 	fifomsg[1] = (uint32)value;
-	SendFIFOWords(WRITE_EXTARM_8, (uint32)fifomsg);
+	SendFIFOWordsITCM(WRITE_EXTARM_8, (uint32)fifomsg);
 }
 
 inline __attribute__((always_inline)) 
@@ -187,7 +187,7 @@ void Write16bitAddrExtArm(uint32 address, uint16 value){
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[0] = address;
 	fifomsg[1] = (uint32)value;
-	SendFIFOWords(WRITE_EXTARM_16, (uint32)fifomsg);
+	SendFIFOWordsITCM(WRITE_EXTARM_16, (uint32)fifomsg);
 }
 
 inline __attribute__((always_inline)) 
@@ -196,7 +196,7 @@ void Write32bitAddrExtArm(uint32 address, uint32 value){
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[0] = address;
 	fifomsg[1] = (uint32)value;
-	SendFIFOWords(WRITE_EXTARM_32, (uint32)fifomsg);
+	SendFIFOWordsITCM(WRITE_EXTARM_32, (uint32)fifomsg);
 }
 
 //NDS Memory Map (valid):
@@ -279,7 +279,7 @@ int	setBacklight(int flags){
 		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 		fifomsg[0] = (uint32)FIFO_SCREENPOWER_WRITE;
 		fifomsg[1] = (uint32)(flags);
-		SendFIFOWords(FIFO_POWERMGMT_WRITE, (uint32)fifomsg);
+		SendFIFOWordsITCM(FIFO_POWERMGMT_WRITE, (uint32)fifomsg);
 	#endif
 	return 0;
 }

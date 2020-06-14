@@ -70,7 +70,18 @@ DSTATUS disk_initialize (
 			
 			clrscr();
 			printf("ARM7 DLDI Init! ");
+			
+			clrscr();
+			printf("ARM7 DLDI Init! ");
+			
+			clrscr();
+			printf("ARM7 DLDI Init! ");
+			
+			clrscr();
+			printf("ARM7 DLDI Init! ");
+			
 			u32 targetAddrDLDI7 = (u32)getDLDIARM7Address();
+			printf("ARM7 DLDI Init: %x", targetAddrDLDI7);
 			ARM7DLDIInit(targetAddrDLDI7);
 			printf("ARM7 DLDI Done! ");
 			

@@ -102,7 +102,7 @@ void handleARM7SVC(){
 	//Lid Closing + backlight events (ARM7)
 	if(isArm7ClosedLid == false){
 		if((REG_KEYXY & KEY_HINGE) == KEY_HINGE){
-			SendFIFOWords(FIFO_IRQ_LIDHASCLOSED_SIGNAL, 0);
+			SendFIFOWordsITCM(FIFO_IRQ_LIDHASCLOSED_SIGNAL, 0);
 			screenLidHasClosedhandlerUser();
 			isArm7ClosedLid = true;
 		}
@@ -113,38 +113,6 @@ void handleARM7SVC(){
 		REG_IPC_FIFO_CR = (REG_IPC_FIFO_CR | IPC_FIFO_SEND_CLEAR);	//bit14 FIFO ERROR ACK + Flush Send FIFO
 	}
 }
-
-//ARM7 DLDI implementation
-#ifdef ARM7_DLDI
-void IPCIRQHandleDLDI(){
-	
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-	switch(fifomsg[7]){
-		case((uint32)TGDS_DLDI_ARM7_READ):{
-			struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
-			u32 sector = (u32)fifomsg[0];
-			u32 numSectors = (u32)fifomsg[1];
-			u32 buffer = (u32)fifomsg[2];
-			dldiInterface->ioInterface.readSectors(sector, numSectors, buffer);
-			fifomsg[7] = fifomsg[2] = fifomsg[1] = fifomsg[0] = 0;
-		}
-		break;
-	}
-
-
-	switch(fifomsg[8]){
-		case((uint32)TGDS_DLDI_ARM7_WRITE):{
-			struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
-			u32 sector = (u32)fifomsg[3];
-			u32 numSectors = (u32)fifomsg[4];
-			u32 buffer = (u32)fifomsg[5];
-			dldiInterface->ioInterface.writeSectors(sector, numSectors, buffer);
-			fifomsg[8] = fifomsg[5] = fifomsg[4] = fifomsg[3] = 0;
-		}
-		break;
-	}	
-}
-#endif
 
 #endif
 

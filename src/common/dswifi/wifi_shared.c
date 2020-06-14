@@ -38,6 +38,6 @@ void DeInitWIFI(){
 	sgIP_Hub_RemoveHardwareInterface(wifi_hw);
 	TIMERXDATA(3) = 0;
 	TIMERXCNT(3) = 0;
-	SendFIFOWords(WIFI_DEINIT, 0);
+	SendFIFOWordsITCM(WIFI_DEINIT, 0);
 	#endif
 }

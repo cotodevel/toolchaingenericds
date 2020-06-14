@@ -21,10 +21,32 @@ USA
 #ifndef __soundTGDS_h__
 #define __soundTGDS_h__
 
+#include "typedefsTGDS.h"
+#include "dsregs.h"
+
+//IPC bits
+#define REG_IPC_FIFO_TX		(*(vuint32*)0x4000188)
+#define REG_IPC_FIFO_RX		(*(vuint32*)0x4100000)
+#define REG_IPC_FIFO_CR		(*(vuint16*)0x4000184)
+
+#define REG_IPC_SYNC	(*(vuint16*)0x04000180)
+#define IPC_SYNC_IRQ_ENABLE		(uint16)(1<<14)
+#define IPC_SYNC_IRQ_REQUEST	(uint16)(1<<13)
+#define IPC_FIFO_SEND_EMPTY		(uint16)(1<<0)
+#define IPC_FIFO_SEND_FULL		(uint16)(1<<1)
+#define IPC_FIFO_SEND_IRQ		(uint16)(1<<2)
+#define IPC_FIFO_SEND_CLEAR		(uint16)(1<<3)
+#define IPC_FIFO_RECV_EMPTY		(uint16)(1<<8)
+#define IPC_FIFO_RECV_FULL		(uint16)(1<<9)
+#define IPC_FIFO_RECV_IRQ		(uint16)(1<<10)
+#define IPC_FIFO_ERROR			(uint16)(1<<14)
+#define IPC_FIFO_ENABLE			(uint16)(1<<15)
+
 //Linear sound sample playback: Sound Sample Context cmds (ARM9 -> ARM7)
 #define FIFO_PLAYSOUND	(uint32)(0xffff0203)
 #define FIFO_INITSOUND	(uint32)(0xffff0204)
 #define FIFO_FLUSHSOUNDCONTEXT	(uint32)(0xffff0210)
+
 
 #ifdef ARM9
 #include <stdio.h>
@@ -70,6 +92,13 @@ USA
 #define SRC_WAVADPCM		(int)(15)
 
 #define WAV_READ_SIZE 2048
+
+
+static inline void SendFIFOWords(uint32 data0, uint32 data1){	//format: arg0: cmd, arg1: value
+	REG_IPC_FIFO_TX = (uint32)data1;
+	REG_IPC_FIFO_TX = (uint32)data0;
+}
+
 
 #ifdef ARM9
 static inline u32 getWavData(void *outLoc, int amount, FILE *fh)
@@ -156,8 +185,6 @@ struct soundPlayerContext{
 #ifdef __cplusplus
 extern "C"{
 #endif
-
-extern void SendFIFOWords(uint32 data0, uint32 data1);
 
 //Sound Sample Context: Plays raw sound samples at VBLANK intervals
 extern void startSound(int sampleRate, const void* data, u32 bytes, u8 channel, u8 vol,  u8 pan, u8 format);
@@ -329,7 +356,7 @@ static inline void updateSoundContextSamplePlayback(){
 			//Returns -1 if channel is busy, or channel if idle
 			if( (isFreeSoundChannel(thisChannel) == thisChannel) && (curSoundSampleContext->status == SOUNDSAMPLECONTEXT_PLAYING) ){	//Idle? free context
 				freesoundSampleContext(curSoundSampleContext);
-				SendFIFOWords(FIFO_FLUSHSOUNDCONTEXT, thisChannel);
+				SendFIFOWordsITCM(FIFO_FLUSHSOUNDCONTEXT, thisChannel);
 			}
 			
 			if(SoundTGDSCurChannel > SoundSampleContextChannels){
