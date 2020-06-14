@@ -30,7 +30,6 @@ USA
 #include "typedefsTGDS.h"
 #include "dsregs.h"
 #include "dsregs_asm.h"
-#include "biosTGDS.h"
 #include <stdbool.h>
 #include "spitscTGDS.h"
 #include "usrsettingsTGDS.h"

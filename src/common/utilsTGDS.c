@@ -202,8 +202,6 @@ void Write32bitAddrExtArm(uint32 address, uint32 value){
 //NDS Memory Map (valid):
 //todo: detect valid maps according to MPU settings
 #ifdef ARM9
-__attribute__((section(".itcm")))
-inline __attribute__((always_inline)) 
 bool isValidMap(uint32 addr){
 	if(
 		#ifdef ARM9

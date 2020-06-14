@@ -30,6 +30,7 @@ USA
 
 #include "InterruptsARMCores_h.h"
 #include "ipcfifoTGDS.h"
+#include "biosTGDS.h"
 #include "keypadTGDS.h"
 #include "eventsTGDS.h"
 

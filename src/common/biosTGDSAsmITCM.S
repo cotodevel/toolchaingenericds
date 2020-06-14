@@ -49,7 +49,7 @@
 #endif
 
 .arm
-.code 32
+.align 4
 
 #include "dsregs_asm.h"
 

@@ -96,36 +96,4 @@ void handleARM9InitSVC(){
 
 #ifdef ARM7
 bool isArm7ClosedLid = false;
-inline __attribute__((always_inline)) 
-void handleARM7SVC(){
-	
-	//Lid Closing + backlight events (ARM7)
-	if(isArm7ClosedLid == false){
-		if((REG_KEYXY & KEY_HINGE) == KEY_HINGE){
-			SendFIFOWordsITCM(FIFO_IRQ_LIDHASCLOSED_SIGNAL, 0);
-			screenLidHasClosedhandlerUser();
-			isArm7ClosedLid = true;
-		}
-	}
-	
-	//Handles Sender FIFO overflows
-	if(REG_IPC_FIFO_CR & IPC_FIFO_ERROR){
-		REG_IPC_FIFO_CR = (REG_IPC_FIFO_CR | IPC_FIFO_SEND_CLEAR);	//bit14 FIFO ERROR ACK + Flush Send FIFO
-	}
-}
-
 #endif
-
-#ifdef ARM9
-__attribute__((section(".itcm")))
-inline __attribute__((always_inline)) 
-void handleARM9SVC(){
-	//Handles Sender FIFO overflows
-	if(REG_IPC_FIFO_CR & IPC_FIFO_ERROR){
-		REG_IPC_FIFO_CR = (REG_IPC_FIFO_CR | IPC_FIFO_SEND_CLEAR);	//bit14 FIFO ERROR ACK + Flush Send FIFO
-	}
-}
-
-#endif
-
-

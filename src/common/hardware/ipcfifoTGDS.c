@@ -52,7 +52,6 @@ USA
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
-inline __attribute__((always_inline)) 
 void SendFIFOWordsITCM(uint32 data0, uint32 data1){	//format: arg0: cmd, arg1: value
 	REG_IPC_FIFO_TX = (uint32)data1;	
 	REG_IPC_FIFO_TX = (uint32)data0;	//last message should always be command
@@ -75,7 +74,6 @@ void sendMultipleByteIPC(uint8 inByte0, uint8 inByte1, uint8 inByte2, uint8 inBy
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
-inline __attribute__((always_inline)) 
 void HandleFifoEmpty(){
 	HandleFifoEmptyWeakRef((uint32)0,(uint32)0);
 }
@@ -83,7 +81,6 @@ void HandleFifoEmpty(){
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
-inline __attribute__((always_inline)) 
 void HandleFifoNotEmpty(){
 	volatile uint32 data0 = 0, data1 = 0;
 	while(!(REG_IPC_FIFO_CR & RECV_FIFO_IPC_EMPTY)){
@@ -568,9 +565,6 @@ void HandleFifoNotEmpty(){
 //Allows to read (EWRAM) memory from source ARM Core to destination ARM Core; IRQ Safe and blocking
 //u32 * targetMemory == EWRAM Memory source buffer to copy -FROM- u32 * srcMemory
 //u32 * srcMemory == External ARM Core Base Address
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
 void ReadMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead){
 	dmaFillWord(0, 0, (uint32)targetMemory, (uint32)bytesToRead);
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
@@ -590,9 +584,6 @@ void ReadMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead){
 //Allows to save (EWRAM) memory from source ARM Core to destination ARM Core; IRQ Safe and blocking
 //u32 * targetMemory == EWRAM Memory source buffer to copy -TO- u32 * srcMemory
 //u32 * srcMemory == External ARM Core Base Address
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
 void SaveMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead){
 	#ifdef ARM9
 	coherent_user_range_by_size((uint32)targetMemory, (sint32)bytesToRead);

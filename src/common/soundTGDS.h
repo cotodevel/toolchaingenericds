@@ -356,7 +356,7 @@ static inline void updateSoundContextSamplePlayback(){
 			//Returns -1 if channel is busy, or channel if idle
 			if( (isFreeSoundChannel(thisChannel) == thisChannel) && (curSoundSampleContext->status == SOUNDSAMPLECONTEXT_PLAYING) ){	//Idle? free context
 				freesoundSampleContext(curSoundSampleContext);
-				SendFIFOWordsITCM(FIFO_FLUSHSOUNDCONTEXT, thisChannel);
+				SendFIFOWords(FIFO_FLUSHSOUNDCONTEXT, thisChannel);
 			}
 			
 			if(SoundTGDSCurChannel > SoundSampleContextChannels){

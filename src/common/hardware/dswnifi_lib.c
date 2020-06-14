@@ -641,7 +641,6 @@ struct dsnwifisrvStr * getDSWNIFIStr(){
 	return (struct dsnwifisrvStr *)&dswifiSrv;
 }
 
-__attribute__((section(".itcm")))
 bool TGDSRecvHandler(struct frameBlock * frameBlockRecv){
 	//frameBlockRecv->framebuffer	//Pointer to received Frame
 	//frameBlockRecv->frameSize		//Size of received Frame

@@ -1126,7 +1126,6 @@ bool Wifi_InitDefault(bool useFirmwareSettings) {
 	return true;
 }
 
-__attribute__((section(".itcm")))
 u32 getRandomSeed(){	//updated at vblank/wifi irq intervals. Always enabled by dswnifi design regardless if dswifi_udpnifimode, dswifi_localnifimode or dswifi_idlemode takes place.
 	if(WifiData != NULL){
 		return WifiData->random;

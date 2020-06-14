@@ -23,9 +23,7 @@
 .section .itcm,"ax",%progbits
 #endif
 .arm
-.code 32
-
-#include "dsregs_asm.h"
+.align 4
 
 .global 	IRQWait
 .type   	IRQWait STT_FUNC
@@ -77,7 +75,7 @@ bx lr
 .type   	IRQVBlankWait STT_FUNC
 IRQVBlankWait:
 	push {r0,lr}
-	mov r0,#IRQ_VBLANK
+	mov r0,#(1<<0)	@IRQ_VBLANK
 	bl IRQWait
 	pop {r0,lr}
 bx lr

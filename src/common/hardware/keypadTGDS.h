@@ -36,20 +36,6 @@ struct touchScr {
 	sint16 touchXpx, touchYpx; // TFT x/y pixel (converted)
 };
 
-//Enables / Disables the touchscreen
-static inline void setTouchScreenEnabled(bool status){
-	
-	TGDSIPC->touchScreenEnabled = status;
-}
-
-static inline bool getTouchScreenEnabled(){
-	
-	return (bool)TGDSIPC->touchScreenEnabled;
-}
-
-#endif
-
-
 #ifdef __cplusplus
 extern "C"{
 #endif
@@ -57,8 +43,6 @@ extern "C"{
 extern uint32 global_keys_arm9;
 extern uint32 last_frame_keys_arm9;	//last frame keys before new frame keys
 extern uint32 buffered_keys_arm9;
-
-extern void scanKeys();
 extern uint32 keysPressed();
 extern uint32 keysReleased();
 extern uint32 keysHeld();
@@ -70,3 +54,24 @@ extern void touchScrRead(struct touchScr * touchScrInst);
 }
 #endif
 
+//Enables / Disables the touchscreen
+static inline void setTouchScreenEnabled(bool status){
+	
+	TGDSIPC->touchScreenEnabled = status;
+}
+
+static inline bool getTouchScreenEnabled(){
+	
+	return (bool)TGDSIPC->touchScreenEnabled;
+}
+
+//called on vblank
+static inline void scanKeys(){
+	uint16 buttonsARM7 = TGDSIPC->buttons7;
+	uint32 readKeys = (uint32)(( ((~KEYINPUT)&0x3ff) | (((~buttonsARM7)&3)<<10) | (((~buttonsARM7)<<6) & (KEY_TOUCH|KEY_LID) ))^KEY_LID);
+	last_frame_keys_arm9 = global_keys_arm9;
+	global_keys_arm9 = readKeys | buffered_keys_arm9;
+	buffered_keys_arm9 = 0;
+}
+
+#endif

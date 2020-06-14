@@ -40,6 +40,7 @@ USA
 #define __nds_bios_h__
 
 #include "typedefsTGDS.h"
+#include "ipcfifoTGDS.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -98,6 +99,37 @@ struct LZSSContext {
 //LZSS end
 // CUE Author Code End
 
+#ifdef ARM7
+extern bool isArm7ClosedLid;
+static inline void handleARM7SVC(){
+	//Lid Closing + backlight events (ARM7)
+	if(isArm7ClosedLid == false){
+		if((REG_KEYXY & KEY_HINGE) == KEY_HINGE){
+			SendFIFOWords(FIFO_IRQ_LIDHASCLOSED_SIGNAL, 0);
+			screenLidHasClosedhandlerUser();
+			isArm7ClosedLid = true;
+		}
+	}
+	
+	//Handles Sender FIFO overflows
+	if(REG_IPC_FIFO_CR & IPC_FIFO_ERROR){
+		REG_IPC_FIFO_CR = (REG_IPC_FIFO_CR | IPC_FIFO_SEND_CLEAR);	//bit14 FIFO ERROR ACK + Flush Send FIFO
+	}
+}
+
+#endif
+
+#ifdef ARM9
+static inline void handleARM9SVC(){
+	//Handles Sender FIFO overflows
+	if(REG_IPC_FIFO_CR & IPC_FIFO_ERROR){
+		REG_IPC_FIFO_CR = (REG_IPC_FIFO_CR | IPC_FIFO_SEND_CLEAR);	//bit14 FIFO ERROR ACK + Flush Send FIFO
+	}
+}
+
+#endif
+
+
 #endif
 
 #ifdef __cplusplus
@@ -143,16 +175,6 @@ extern void handleARM7InitSVC();
 
 #ifdef ARM9
 extern void handleARM9InitSVC();
-#endif
-
-//SVCs
-#ifdef ARM7
-extern bool isArm7ClosedLid;
-extern void handleARM7SVC();
-
-#endif
-#ifdef ARM9
-extern void handleARM9SVC();
 #endif
 
 #ifdef __cplusplus
