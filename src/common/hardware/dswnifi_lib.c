@@ -370,10 +370,11 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 						
 						//Server aware
 						if(strncmp((const char *)cmd, (const char *)"srvaware", 8) == 0){
-							char * token_hostguest = (char*)&outSplitBuf[2][0];	//host or guest
-							char * token_extip = (char*)&outSplitBuf[1][0];	//external NDS ip to connect
-							char * cmdRecv = (char*)&outSplitBuf[0][0];	//cmd
-							str_split((char*)incomingbuf, "-", NULL);
+							char * outBuf = (char *)malloc(256*10);
+							char * token_hostguest = (char*)((char*)outBuf + (2*256));	//host or guest
+							char * token_extip = (char*)((char*)outBuf + (1*256));	//external NDS ip to connect
+							char * cmdRecv = (char*)((char*)outBuf + (0*256));	//cmd
+							str_split((char*)incomingbuf, "-", outBuf, 10, 256);
 							int host_mode = strncmp((const char*)token_hostguest, (const char *)"host", 4); 	//host == 0
 							int guest_mode = strncmp((const char*)token_hostguest, (const char *)"guest", 5); 	//guest == 0
 							
@@ -430,7 +431,8 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 									dswifiSrv.dsnwifisrv_stat = ds_netplay_guest_servercheck;
 								}
 								sentReq = false;	//prepare next issuer msg
-							}	
+							}
+							free(outBuf);
 						}
 					}
 					break;

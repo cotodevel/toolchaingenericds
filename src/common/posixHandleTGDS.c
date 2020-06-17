@@ -311,8 +311,9 @@ int printf(const char *fmt, ...){
 	//Separate the TGDS Console font color if exists
 	char cpyBuf[256+1] = {0};
 	strcpy(cpyBuf, stringBuf);
-	char * colorChar = (char*)&outSplitBuf[1][0];
-	int matchCount = str_split((char*)cpyBuf, ">", NULL);
+	char * outBuf = (char *)malloc(256*10);
+	char * colorChar = (char*)((char*)outBuf + (1*256));
+	int matchCount = str_split((char*)cpyBuf, ">", outBuf, 10, 256);
 	if(matchCount > 0){
 		color = atoi(colorChar);
 		stringBuf[strlen(stringBuf) - (strlen(colorChar)+1) ] = '\0';
@@ -321,6 +322,7 @@ int printf(const char *fmt, ...){
 	GUI_drawText(zoneInst, 0, GUI.printfy, color, stringBuf, readAndBlendFromVRAM);
 	GUI.printfy += getFontHeightFromZone(zoneInst);	//skip to next line
 	coherent_user_range_by_size((uint32)0x06200000, 128*1024);
+	free(outBuf);
 	return stringSize;
 }
 
@@ -420,10 +422,11 @@ _ssize_t _write_r ( struct _reent *ptr, int fd, const void *buf, size_t cnt ){
 }
 
 int _open_r ( struct _reent *ptr, const sint8 *file, int flags, int mode ){
-	if(file != NULL){	
+	if(file != NULL){
+		char * outBuf = (char *)malloc(256*10);
 		int i = 0;
-		char * token_rootpath = (char*)&outSplitBuf[0][0];
-		str_split((char*)file, "/", NULL);
+		char * token_rootpath = (char*)((char*)outBuf + (0*256));
+		str_split((char*)file, "/", outBuf, 10, 256);
 		sint8 token_str[MAX_TGDSFILENAME_LENGTH+1] = {0};
 		sint32 countPosixFDescOpen = open_posix_filedescriptor_devices() + 1;
 		/* search for "file:/" in "file:/folder1/folder.../file.test" in dotab_list[].name */
@@ -431,10 +434,12 @@ int _open_r ( struct _reent *ptr, const sint8 *file, int flags, int mode ){
 			if(strlen(token_rootpath) > 0){
 				sprintf((sint8*)token_str,"%s%s",(char*)token_rootpath,"/");	//format properly
 				if (strcmp((sint8*)token_str,devoptab_struct[i]->name) == 0){
+					free(outBuf);
 					return devoptab_struct[i]->open_r( NULL, file, flags, mode ); //returns / allocates a new struct fd index with either DIR or FIL structure allocated
 				}
 			}
 		}
+		free(outBuf);
 	}
 	return -1;
 }

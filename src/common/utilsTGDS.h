@@ -101,12 +101,11 @@ extern sint8 	*FS_getFileName(sint8 *filename);
 extern int		FS_chdir(const sint8 *path);
 
 //splitCustom string by delimiter implementation in C, that does not use malloc/calloc and re-uses callbacks
-extern char * outSplitBuf[TOP_ITEMS_SPLIT][MAX_TGDSFILENAME_LENGTH+1];
 extern int count_substr(const char *str, const char* substr, bool overlap);
 extern void splitCustom(const char *str, char sep, splitCustom_fn fun, char * outBuf, int indexToLeftOut);
 extern void buildPath(const char *str, size_t len, char * outBuf, int indexToLeftOut, char * delim);
 extern int getLastDirFromPath(char * stream, char * haystack, char * outBuf);
-extern int str_split(char * stream, char * haystack, char * outBuf);
+extern int str_split(char * stream, char * haystack, char * outBuf, int itemSize, int blockSize);
 extern int inet_pton(int af, const char *src, void *dst);
 
 //linker script hardware address setup (get map addresses from linker file)
