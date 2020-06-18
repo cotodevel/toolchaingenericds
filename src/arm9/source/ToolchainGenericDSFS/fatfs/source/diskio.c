@@ -115,17 +115,10 @@ DRESULT disk_read (
 	UINT count		/* Number of sectors to read */
 )
 {
-	#ifdef ARM7_DLDI
-	if(pdrv == DLDICART){
-		dldi_handler_read_sectors(sector, count, buff);
+	if(dldi_handler_read_sectors(sector, count, buff) == true){
 		return RES_OK;
 	}
 	return RES_ERROR;
-	#endif
-	
-	#ifdef ARM9_DLDI
-	return ( ((pdrv == DLDICART) && dldi_handler_read_sectors(sector, count, buff) == true) ? RES_OK : RES_ERROR);
-	#endif
 }
 
 
@@ -141,17 +134,10 @@ DRESULT disk_write (
 	UINT count			/* Number of sectors to write */
 )
 {
-	#ifdef ARM7_DLDI
-	if(pdrv == DLDICART){
-		dldi_handler_write_sectors(sector, count, buff);
+	if(dldi_handler_write_sectors(sector, count, buff) == true){
 		return RES_OK;
 	}
 	return RES_ERROR;
-	#endif
-	
-	#ifdef ARM9_DLDI
-	return ( ((pdrv == DLDICART) && dldi_handler_write_sectors(sector, count, buff) == true) ? RES_OK : RES_ERROR);
-	#endif
 }
 
 
