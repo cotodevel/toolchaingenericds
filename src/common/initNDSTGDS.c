@@ -86,8 +86,8 @@ void initHardware(void) {
 	TryToDefragmentMemory();
 	
 	#ifdef ARM9_DLDI
-	//ARM9DLDI
-	setDLDIARM7Address((u32 *)&_dldi_start);
+	//Setup SLOT-1 if ARM9 DLDI
+	setDLDIARM7Address((u32 *)dldiGet());
 	#endif
 	
 	//Allocate various TGDS objects
