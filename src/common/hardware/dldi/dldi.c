@@ -54,78 +54,6 @@ u32 * getDLDIARM7Address(){
 	return DLDIARM7Address;
 }
 
-//This code can't be inlined as it may be added to cached (EWRAM) memory and that breaks ARM7DLDI
-#ifdef ARM9
-//__attribute__((section(".itcm")))
-#endif
-bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer){
-	//ARM7 DLDI implementation
-	#ifdef ARM7_DLDI
-		#ifdef ARM7
-		struct  DLDI_INTERFACE* dldiInterface = (struct DLDI_INTERFACE*)DLDIARM7Address;
-		return dldiInterface->ioInterface.readSectors(sector, numSectors, buffer);
-		#endif
-		#ifdef ARM9
-		void * targetMem = (void *)((int)ARM7DLDIBuf + 0x400000);
-		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-		fifomsg[20] = (uint32)TGDS_DLDI_ARM7_READ;
-		SendFIFOWords((uint32)TGDS_DLDI_ARM7_READ, (uint32)sector);
-		SendFIFOWords((uint32)numSectors, (uint32)targetMem);
-		while(fifomsg[20] == TGDS_DLDI_ARM7_READ){
-			swiDelay(2);
-		}
-		memcpy((uint16_t*)buffer, (uint16_t*)targetMem, (numSectors * 512));
-		return true;
-		#endif	
-	#endif	
-	#ifdef ARM9_DLDI
-		#ifdef ARM7
-		return false;
-		#endif
-		#ifdef ARM9
-		struct  DLDI_INTERFACE* dldiInterface = (struct  DLDI_INTERFACE*)DLDIARM7Address;
-		return dldiInterface->ioInterface.readSectors(sector, numSectors, buffer);
-		#endif
-	#endif
-}
-
-//This code can't be inlined as it may be added to cached (EWRAM) memory and that breaks ARM7DLDI
-#ifdef ARM9
-//__attribute__((section(".itcm")))
-#endif
-bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buffer){
-	//ARM7 DLDI implementation
-	#ifdef ARM7_DLDI
-		#ifdef ARM7
-		struct  DLDI_INTERFACE* dldiInterface = (struct DLDI_INTERFACE*)DLDIARM7Address;
-		return dldiInterface->ioInterface.writeSectors(sector, numSectors, buffer);
-		#endif
-		#ifdef ARM9
-		void * targetMem = (void *)((int)ARM7DLDIBuf + 0x400000);
-		memcpy((uint16_t*)targetMem, (uint16_t*)buffer, (numSectors * 512));
-		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-		fifomsg[24] = (uint32)sector;
-		fifomsg[25] = (uint32)numSectors;
-		fifomsg[26] = (uint32)targetMem;
-		fifomsg[27] = (uint32)TGDS_DLDI_ARM7_WRITE;
-		SendFIFOWords((uint32)TGDS_DLDI_ARM7_WRITE, (uint32)fifomsg);
-		while(fifomsg[27] == TGDS_DLDI_ARM7_WRITE){
-			swiDelay(1);
-		}
-		return true;
-		#endif	
-	#endif	
-	#ifdef ARM9_DLDI
-		#ifdef ARM7
-		return false;
-		#endif
-		#ifdef ARM9
-		struct  DLDI_INTERFACE* dldiInterface = (struct  DLDI_INTERFACE*)DLDIARM7Address;
-		return dldiInterface->ioInterface.writeSectors(sector, numSectors, buffer);
-		#endif
-	#endif
-}
-
 //ARM7 DLDI implementation
 //////////////////////////////////////////////////////////////////////////DLDI ARM7 CODE START////////////////////////////////////////////////////////////////////
 #ifdef ARM7_DLDI
@@ -137,7 +65,6 @@ u8 * ARM7DLDIBuf = NULL;	//Up to 64KB per cluster, should allow 64K and below
 void ARM7DLDIInit(u32 targetDLDI7Address){	//ARM9 Impl.
 	SetBusSLOT1SLOT2ARM7();
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-	coherent_user_range_by_size((u32)fifomsg, sizeof(TGDSIPC->fifoMesaggingQueue));	//prevent cache problems
 	
 	//ARM7DLDI Shared buffer
 	ARM7DLDIBuf = (u8*)TGDSARM9Malloc(DLDI_CLUSTER_SIZE_BYTES);
@@ -162,7 +89,7 @@ void ARM7DLDIInit(u32 targetDLDI7Address){	//ARM9 Impl.
 	setValueSafe(&fifomsg[17], (u32)16*1024);
 	setValueSafe(&fifomsg[18], (u32)targetDLDI7Address);
 	setValueSafe(&fifomsg[19], (u32)TGDS_DLDI_ARM7_STATUS_STAGE0);
-	sendByteIPC(IPC_INIT_DLDI7_REQBYIRQ);
+	sendByteIPC(IPC_INIT_ARM7DLDI_REQBYIRQ);
 	while(getValueSafe(&fifomsg[19]) == (u32)TGDS_DLDI_ARM7_STATUS_STAGE0){
 		swiDelay(1);
 	}
@@ -225,7 +152,77 @@ void ARM7DLDIInit(){	//ARM7 Stub Impl.
 #endif
 #endif
 
+#ifdef ARM9
+__attribute__((section(".itcm")))
+#endif
+bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer){
+	//ARM7 DLDI implementation
+	#ifdef ARM7_DLDI
+		#ifdef ARM7
+		struct  DLDI_INTERFACE* dldiInterface = (struct DLDI_INTERFACE*)DLDIARM7Address;
+		return dldiInterface->ioInterface.readSectors(sector, numSectors, buffer);
+		#endif
+		#ifdef ARM9
+		void * targetMem = (void *)((int)ARM7DLDIBuf + 0x400000);
+		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+		setValueSafe(&fifomsg[20], (uint32)sector);
+		setValueSafe(&fifomsg[21], (uint32)numSectors);
+		setValueSafe(&fifomsg[22], (uint32)targetMem);
+		setValueSafe(&fifomsg[23], (uint32)0xFEFEFEFE);
+		sendByteIPC(IPC_READ_ARM7DLDI_REQBYIRQ);
+		while(getValueSafe(&fifomsg[23]) == (uint32)0xFEFEFEFE){
+			swiDelay(18);
+		}
+		memcpy((uint16_t*)buffer, (uint16_t*)targetMem, (numSectors * 512));
+		return true;
+		#endif	
+	#endif	
+	#ifdef ARM9_DLDI
+		#ifdef ARM7
+		return false;
+		#endif
+		#ifdef ARM9
+		struct  DLDI_INTERFACE* dldiInterface = (struct  DLDI_INTERFACE*)DLDIARM7Address;
+		return dldiInterface->ioInterface.readSectors(sector, numSectors, buffer);
+		#endif
+	#endif
+}
 
+#ifdef ARM9
+__attribute__((section(".itcm")))
+#endif
+bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buffer){
+	//ARM7 DLDI implementation
+	#ifdef ARM7_DLDI
+		#ifdef ARM7
+		struct  DLDI_INTERFACE* dldiInterface = (struct DLDI_INTERFACE*)DLDIARM7Address;
+		return dldiInterface->ioInterface.writeSectors(sector, numSectors, buffer);
+		#endif
+		#ifdef ARM9
+		void * targetMem = (void *)((int)ARM7DLDIBuf + 0x400000);
+		memcpy((uint16_t*)targetMem, (uint16_t*)buffer, (numSectors * 512));
+		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+		setValueSafe(&fifomsg[24], (uint32)sector);
+		setValueSafe(&fifomsg[25], (uint32)numSectors);
+		setValueSafe(&fifomsg[26], (uint32)targetMem);
+		setValueSafe(&fifomsg[27], (uint32)0xFEFEFEFE);
+		sendByteIPC(IPC_WRITE_ARM7DLDI_REQBYIRQ);
+		while(getValueSafe(&fifomsg[27]) == (uint32)0xFEFEFEFE){
+			swiDelay(18);
+		}
+		return true;
+		#endif	
+	#endif	
+	#ifdef ARM9_DLDI
+		#ifdef ARM7
+		return false;
+		#endif
+		#ifdef ARM9
+		struct  DLDI_INTERFACE* dldiInterface = (struct  DLDI_INTERFACE*)DLDIARM7Address;
+		return dldiInterface->ioInterface.writeSectors(sector, numSectors, buffer);
+		#endif
+	#endif
+}
 ///////////////////////////////////////////////////////////////////////////DLDI ARM7 CODE END/////////////////////////////////////////////////////////////////////
 
 static const uint32  DLDI_MAGIC_NUMBER = 0xBF8DA5ED;	

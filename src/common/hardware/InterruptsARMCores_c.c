@@ -157,7 +157,7 @@ void NDS_IRQHandler(){
 				int fileHandleSize = (int)fifomsg[10];
 				int splitBufferSize = (int)fifomsg[11];
 				int curARM7FS_HandleMethod = (int)fifomsg[12];
-				u32 * debugVar = (int)fifomsg[13];
+				u32 * debugVar = (u32*)fifomsg[13];
 				u32 testCase = (u32)fifomsg[14]; 
 				initARM7FS((char*)ARM7FS_ARM9Filename, curARM7FS_HandleMethod);
 				if(testCase == (u32)0xc070c070){
@@ -178,11 +178,40 @@ void NDS_IRQHandler(){
 			break;
 			
 			#ifdef ARM7_DLDI
-			case(IPC_INIT_DLDI7_REQBYIRQ):{
+			case(IPC_INIT_ARM7DLDI_REQBYIRQ):{
 				//Init DLDI ARM7
 				ARM7DLDIInit();
 			}
 			break;
+			
+			case((uint32)IPC_READ_ARM7DLDI_REQBYIRQ):{
+				struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
+				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				uint32 sector = getValueSafe(&fifomsg[20]);
+				uint32 numSectors = getValueSafe(&fifomsg[21]);
+				uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[22]);
+				dldiInterface->ioInterface.readSectors(sector, numSectors, targetMem);
+				setValueSafe(&fifomsg[20], (u32)0);
+				setValueSafe(&fifomsg[21], (u32)0);
+				setValueSafe(&fifomsg[22], (u32)0);
+				setValueSafe(&fifomsg[23], (u32)0);
+			}
+			break;
+			
+			case((uint32)IPC_WRITE_ARM7DLDI_REQBYIRQ):{
+				struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
+				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				uint32 sector = getValueSafe(&fifomsg[24]);
+				uint32 numSectors = getValueSafe(&fifomsg[25]);
+				uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[26]);
+				dldiInterface->ioInterface.writeSectors(sector, numSectors, targetMem);
+				setValueSafe(&fifomsg[24], (u32)0);
+				setValueSafe(&fifomsg[25], (u32)0);
+				setValueSafe(&fifomsg[26], (u32)0);
+				setValueSafe(&fifomsg[27], (u32)0);
+			}
+			break;
+			
 			#endif
 			
 			#endif

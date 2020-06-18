@@ -80,13 +80,6 @@ USA
 #define TGDS_DLDI_ARM7_INIT_OK	(uint32)(0xffff0301)
 #define TGDS_DLDI_ARM7_INIT_ERROR	(uint32)(0xffff0302)
 
-#define TGDS_DLDI_ARM7_READ	(uint32)(0xffff0303)
-	#define TGDS_DLDI_ARM7_STATUS_BUSY_READ	(int)(0xffff0304)	//ARM7 Inits ARM7 DLDI context. Passes the target DLDI address and waits for DLDI to be relocated to such address.
-	#define TGDS_DLDI_ARM7_STATUS_IDLE_READ	(int)(0xffff0305)
-
-#define TGDS_DLDI_ARM7_WRITE	(uint32)(0xffff0306)
-	#define TGDS_DLDI_ARM7_STATUS_BUSY_WRITE	(int)(0xffff0307)	//ARM7 Inits ARM7 DLDI context. Passes the target DLDI address and waits for DLDI to be relocated to such address.
-	#define TGDS_DLDI_ARM7_STATUS_IDLE_WRITE	(int)(0xffff0308)
 #define TGDS_DLDI_ARM7_STATUS_DEINIT	(int)(0xffff0309)
 
 #define SEND_FIFO_IPC_EMPTY	(uint32)(1<<0)	
@@ -137,10 +130,17 @@ USA
 //TGDS IPC Command Interrupt Index
 #define IPC_NULL_CMD					(u8)(0)	//NULL cmd is unused by TGDS, fallbacks to TGDS project IPCIRQ Handler
 #define IPC_SEND_MULTIPLE_CMDS			(u8)(1)
+
+//ARM7 FS
 #define IPC_ARM7READMEMORY_REQBYIRQ		(u8)(2)
 #define IPC_ARM7SAVEMEMORY_REQBYIRQ		(u8)(3)
-#define IPC_INIT_DLDI7_REQBYIRQ			(u8)(4)
-#define IPC_TGDSUSER_START_FREE_INDEX	(u8)(5)	//TGDS User Project rely on it
+
+//ARM7DLDI
+#define IPC_INIT_ARM7DLDI_REQBYIRQ		(u8)(4)
+#define IPC_READ_ARM7DLDI_REQBYIRQ		(u8)(5)
+#define IPC_WRITE_ARM7DLDI_REQBYIRQ		(u8)(6)
+
+#define IPC_TGDSUSER_START_FREE_INDEX	(u8)(7)	//TGDS User Project rely on it
 
 //ARM7 FS IPC Commands
 #define IPC_ARM7INIT_ARM7FS (u8)(0xE)

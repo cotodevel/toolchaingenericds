@@ -154,6 +154,53 @@ static inline addr_t quickFind (const data_t* data, const data_t* search, size_t
 	return -1;
 }
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+extern bool dldi_handler_init();
+extern void dldi_handler_deinit();
+
+//ARM7DLDI:
+//ARM7: ARM7 physical DLDI target location address
+//ARM9: Uses this as a pointer to: ARM7 physical DLDI target location address
+
+//ARM9DLDI:
+//ARM7: NULL ptr
+//ARM9: Global Physical DLDI section (rather than &_dldi_start, since it's discarded at TGDS init)
+extern u32 * getDLDIARM7Address();				//	/
+extern void setDLDIARM7Address(u32 * address);	//	| Must be defined/standardized by the TGDS project at runtime. This way we ensure IWRAM 64K compatibility + DLDI at ARM7
+extern void initDLDIARM7(u32 srcDLDIAddr);		//	/
+
+//ARM7 DLDI implementation
+#ifdef ARM7_DLDI
+	#ifdef ARM9
+	extern void ARM7DLDIInit(u32 targetDLDI7Address);
+	extern void ARM9DeinitDLDI();
+	#endif
+#endif
+
+#ifdef ARM7
+extern void ARM7DLDIInit();
+#endif
+
+//DldiRelocatedAddress == target DLDI relocated address
+//dldiSourceInRam == physical DLDI section having a proper DLDI driver used as donor 
+//dldiOutWriteAddress == new physical DLDI out buffer, except, relocated to a new DldiRelocatedAddress!
+extern bool dldiRelocateLoader(bool clearBSS, u32 DldiRelocatedAddress, u32 dldiSourceInRam, u32 dldiOutWriteAddress);
+//original DLDI code: seeks a DLDI section in binData, and uses current NTR TGDS homebrew's DLDI to relocate it in there
+extern bool dldiPatchLoader(data_t *binData, u32 binSize, u32 physDLDIAddress); 
+
+#ifdef ARM9
+extern bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer);
+extern bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buffer);
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
+
 #ifdef ARM9
 	extern struct DLDI_INTERFACE _dldi_start;
 
@@ -214,50 +261,5 @@ static inline void setisTGDSARM7DLDIEnabled(bool value){
 	#endif
 	TGDSIPC->ARM7DldiEnabled = value;
 }
-#endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-extern bool dldi_handler_init();
-extern void dldi_handler_deinit();
-
-//ARM7DLDI:
-//ARM7: ARM7 physical DLDI target location address
-//ARM9: Uses this as a pointer to: ARM7 physical DLDI target location address
-
-//ARM9DLDI:
-//ARM7: NULL ptr
-//ARM9: Global Physical DLDI section (rather than &_dldi_start, since it's discarded at TGDS init)
-extern u32 * getDLDIARM7Address();				//	/
-extern void setDLDIARM7Address(u32 * address);	//	| Must be defined/standardized by the TGDS project at runtime. This way we ensure IWRAM 64K compatibility + DLDI at ARM7
-extern void initDLDIARM7(u32 srcDLDIAddr);		//	/
-
-//ARM7 DLDI implementation
-#ifdef ARM7_DLDI
-	#ifdef ARM9
-	extern void ARM7DLDIInit(u32 targetDLDI7Address);
-	extern void ARM9DeinitDLDI();
-	#endif
-#endif
-
-#ifdef ARM7
-extern void ARM7DLDIInit();
-#endif
-
-#ifdef ARM9
-extern bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer);
-extern bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buffer);
-#endif
-
-//DldiRelocatedAddress == target DLDI relocated address
-//dldiSourceInRam == physical DLDI section having a proper DLDI driver used as donor 
-//dldiOutWriteAddress == new physical DLDI out buffer, except, relocated to a new DldiRelocatedAddress!
-extern bool dldiRelocateLoader(bool clearBSS, u32 DldiRelocatedAddress, u32 dldiSourceInRam, u32 dldiOutWriteAddress);
-//original DLDI code: seeks a DLDI section in binData, and uses current NTR TGDS homebrew's DLDI to relocate it in there
-extern bool dldiPatchLoader(data_t *binData, u32 binSize, u32 physDLDIAddress); 
-
-#ifdef __cplusplus
-}
 #endif

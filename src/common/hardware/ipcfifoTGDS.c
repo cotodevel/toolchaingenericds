@@ -392,28 +392,6 @@ void HandleFifoNotEmpty(){
 				dldi_handler_deinit();
 			}
 			break;
-
-			case((uint32)TGDS_DLDI_ARM7_READ):{
-				struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
-				u32 sector = (u32)data0;
-				u32 buffer = (u32)REG_IPC_FIFO_RX;
-				u32 numSectors = (u32)REG_IPC_FIFO_RX;
-				dldiInterface->ioInterface.readSectors(sector, numSectors, buffer);
-				TGDSIPC->fifoMesaggingQueue[20] = 0;
-			}
-			break;
-			
-			case((uint32)TGDS_DLDI_ARM7_WRITE):{
-				struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
-				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg
-				u32 sector = (uint32)fifomsg[24];
-				u32 numSectors = (uint32)fifomsg[25];
-				u32 * buffer = (u32*)fifomsg[26];
-				dldiInterface->ioInterface.writeSectors(sector, numSectors, buffer);
-				fifomsg[27] = fifomsg[26] = fifomsg[25] = fifomsg[24] = 0;
-			}
-			break;
-			
 			#endif
 			
 			case TGDS_ARM7_ENABLE_SLEEPMODE_TIMEOUT:{
