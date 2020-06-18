@@ -419,7 +419,7 @@ bool InitDefaultConsole(ConsoleInstance * DefaultSessionConsoleInst){
 	u8 * FBSaveContext = NULL;			//no effect because directFB == true
 	TGDSLCDSwap(disableTSCWhenTGDSConsoleTop, isDirectFramebuffer, SaveConsoleContext, FBSaveContext);
 	
-	initARM7Malloc((u32)0x06000000, (u32)128*1024);	//Since the default console setup allocates ARM7 @ 0x06000000, 128K, initialize a malloc for ARM7. 
+	initARM7Malloc((u32)0x06000000, (u32)112*1024);	//Since the default console setup allocates ARM7 @ 0x06000000, 112K, initialize a malloc for ARM7.  The bottom 16K is DLDI reserved.
 													//Otherwise if custom console, this routine is custom impl.
 	
 	return true;
