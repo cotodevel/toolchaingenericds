@@ -234,20 +234,21 @@ extern u32 * getDLDIARM7Address();				//	/
 extern void setDLDIARM7Address(u32 * address);	//	| Must be defined/standardized by the TGDS project at runtime. This way we ensure IWRAM 64K compatibility + DLDI at ARM7
 extern void initDLDIARM7(u32 srcDLDIAddr);		//	/
 
-
 //ARM7 DLDI implementation
 #ifdef ARM7_DLDI
 	#ifdef ARM9
 	extern void ARM7DLDIInit(u32 targetDLDI7Address);
 	extern void ARM9DeinitDLDI();
 	#endif
-	
-	extern bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer);
-	extern bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buffer);
 #endif
 
 #ifdef ARM7
 extern void ARM7DLDIInit();
+#endif
+
+#ifdef ARM9
+extern bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer);
+extern bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buffer);
 #endif
 
 //DldiRelocatedAddress == target DLDI relocated address
