@@ -764,13 +764,29 @@ bool connectDSWIFIAP(int DSWNIFI_MODE){
 	return false;
 }
 
+//Todo: map ARM7 mem: 96K, just 64K for now
+static u32 ARM7IOAddress = 0x03800000;
+static int ARM7IOSize = (64*1024);
+static u8 * ARM7BufferedAddress = NULL;
+
 bool gdbNdsStart(){
 	dswifiSrv.GDBStubEnable = false;
-	if(connectDSWIFIAP(DSWNIFI_ENTER_WIFIMODE) == true){	//GDB Requires the DS Wifi to enter wifi mode
-		dswifiSrv.GDBStubEnable = true;
-		return true;
+	
+	//Sadly can't map ARM7 mem directly while in GDB session (return 0's), so we preload it before
+	if(ARM7BufferedAddress != NULL){
+		TGDSARM9Free(ARM7BufferedAddress);
 	}
-	return false;
+	ARM7BufferedAddress = TGDSARM9Malloc(ARM7IOSize);
+	ReadMemoryExt((u32*)ARM7IOAddress, (u32 *)ARM7BufferedAddress, ARM7IOSize);
+	if(initGDBMapBuffer(ARM7BufferedAddress, ARM7IOSize, ARM7IOAddress) == true){
+		//ARM7 IO : ARM7IOAddress
+		if(connectDSWIFIAP(DSWNIFI_ENTER_WIFIMODE) == true){	//GDB Requires the DS Wifi to enter wifi mode
+			dswifiSrv.GDBStubEnable = true;
+			return true;
+		}
+	}
+	
+	return false; //ARM7 IO Mapping error or WIFI connection error
 }
 
 int remoteTcpSend(char *data, int len)
@@ -1364,7 +1380,7 @@ void remoteCleanUp()
 }
 
 u32 debuggerReadMemory(u32 addr){
-	if(gdbStubMapMethod == GDBSTUB_METHOD_GDBBUFFER){
+	if((gdbStubMapMethod == GDBSTUB_METHOD_GDBBUFFER) && ( !(addr >= 0x037f8000) && !(addr < 0x03810000) ) ){
 		return (u32)readu32GDBMapBuffer(addr);
 	}
 	else if(gdbStubMapMethod == GDBSTUB_METHOD_GDBFILE){
@@ -1374,11 +1390,15 @@ u32 debuggerReadMemory(u32 addr){
 		coherent_user_range_by_size((uint32)addr, (int)4);
 		return (*(u32*)addr);
 	}
+	//ARM7 IWRAM, can't be read directly, so we preload a copy when NDS Memory GDB
+	if((addr >= 0x037f8000) && (addr < 0x03810000)){
+		return (u32)(readu32GDBMapBuffer(addr));
+	}
 	return (u32)(0xffffffff);
 }
 
 u16 debuggerReadHalfWord(u32 addr){
-	if(gdbStubMapMethod == GDBSTUB_METHOD_GDBBUFFER){
+	if((gdbStubMapMethod == GDBSTUB_METHOD_GDBBUFFER) && ( !(addr >= 0x037f8000) && !(addr < 0x03810000) ) ){
 		return (u16)(readu32GDBMapBuffer(addr)&0xffff);
 	}
 	else if(gdbStubMapMethod == GDBSTUB_METHOD_GDBFILE){
@@ -1388,11 +1408,15 @@ u16 debuggerReadHalfWord(u32 addr){
 		coherent_user_range_by_size((uint32)addr, (int)4);
 		return (*(u16*)addr);
 	}
+	//ARM7 IWRAM, can't be read directly, so we preload a copy when NDS Memory GDB
+	if((addr >= 0x037f8000) && (addr < 0x03810000)){
+		return (u16)(readu32GDBMapBuffer(addr)&0xffff);
+	}
 	return (u16)(0xffff);
 }
 
 u8 debuggerReadByte(u32 addr){
-	if(gdbStubMapMethod == GDBSTUB_METHOD_GDBBUFFER){
+	if((gdbStubMapMethod == GDBSTUB_METHOD_GDBBUFFER) && ( !(addr >= 0x037f8000) && !(addr < 0x03810000) ) ){
 		return (u8)(readu32GDBMapBuffer(addr)&0xff);
 	}
 	else if(gdbStubMapMethod == GDBSTUB_METHOD_GDBFILE){
@@ -1401,6 +1425,10 @@ u8 debuggerReadByte(u32 addr){
 	else if(isValidMap(addr) == true){
 		coherent_user_range_by_size((uint32)addr, (int)4);
 		return (*(u8*)addr);
+	}
+	//ARM7 IWRAM, can't be read directly, so we preload a copy when NDS Memory GDB
+	if((addr >= 0x037f8000) && (addr < 0x03810000)){
+		return (u8)(readu32GDBMapBuffer(addr)&0xff);
 	}
 	return (u8)(0xff);
 }
