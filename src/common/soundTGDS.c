@@ -82,6 +82,37 @@ void startSound(int sampleRate, const void* data, u32 bytes, u8 channel, u8 vol,
 
 
 #ifdef ARM7
+
+
+void mallocData(int size)
+{
+	strpcmL0 = (s16 *)TGDSARM7Malloc(size);
+	strpcmL1 = (s16 *)TGDSARM7Malloc(size);
+	strpcmR0 = (s16 *)TGDSARM7Malloc(size);
+	strpcmR1 = (s16 *)TGDSARM7Malloc(size);
+	
+	// clear vram d bank to not have sound leftover
+	int i = 0;
+	
+	for(i=0;i<(size);++i)
+	{
+		strpcmL0[i] = 0;
+	}
+	
+	for(i=0;i<(size);++i)
+	{
+		strpcmR0[i] = 0;
+	}
+}
+
+void freeData()
+{	
+	TGDSARM7Free((u8*)strpcmL0);
+	TGDSARM7Free((u8*)strpcmL1);
+	TGDSARM7Free((u8*)strpcmR0);
+	TGDSARM7Free((u8*)strpcmR1);
+}
+
 int SoundTGDSCurChannel = 0;
 int soundSampleContextCurrentMode = SOUNDSAMPLECONTEXT_SOUND_IDLE;
 
@@ -777,7 +808,13 @@ void closeSoundStream(){
 
 void initSoundStream(u32 srcFmt){		//ARM7 Impl.
 	SoundPowerON(127);		//volume
-	initSoundStreamUser(srcFmt);
+	if(srcFmt == SRC_WAV){
+		freeData();
+		mallocData(WAV_READ_SIZE*2);
+	}
+	else{
+		initSoundStreamUser(srcFmt);
+	}
 	EnableSoundSampleContext(SOUNDSAMPLECONTEXT_SOUND_STREAMPLAYBACK);
 }
 

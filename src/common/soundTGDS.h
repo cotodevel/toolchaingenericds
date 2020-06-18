@@ -91,7 +91,7 @@ USA
 #define SRC_STREAM_AAC		(int)(14)
 #define SRC_WAVADPCM		(int)(15)
 
-#define WAV_READ_SIZE 2048
+#define WAV_READ_SIZE 4096
 
 
 static inline void SendFIFOWords(uint32 data0, uint32 data1){	//format: arg0: cmd, arg1: value
@@ -236,7 +236,8 @@ extern u8 getVolume();
 extern void setVolume(u8 volume);
 extern void volumeUp(int x, int y);
 extern void volumeDown(int x, int y);
-
+extern void mallocData(int size);
+extern void freeData();
 #endif
 
 extern struct soundSampleContext * getsoundSampleContextByIndex(int index);
