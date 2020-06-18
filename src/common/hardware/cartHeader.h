@@ -21,7 +21,7 @@ USA
 #ifndef __cartheader_h
 #define __cartheader_h
 
-
+//NTR Header
 typedef struct sDSCARTHEADER {
 	uint8 	gametitle[12];	//000h    12    Game Title  (Uppercase ASCII, padded with 00h)
 	uint32	gamecode;	//00Ch    4     Gamecode    (Uppercase ASCII, NTR-<code>)        (0=homebrew)
@@ -45,5 +45,69 @@ typedef struct sDSCARTHEADER {
   //...rest don't care
 }tDSCARTHEADER;
 
+//Libnds ARGV impl.
+#ifdef ARM9
+
+	// argv struct magic number
+	#define ARGV_MAGIC 0x5f617267
+
+	//!	argv structure
+	/*!	\struct __argv
+
+		structure used to set up argc/argv on the DS
+
+	*/
+	struct __argv {
+		int argvMagic;		//!< argv magic number, set to 0x5f617267 ('_arg') if valid 
+		char *commandLine;	//!< base address of command line, set of null terminated strings
+		int length;		//!< total length of command line
+		int argc;		//!< internal use, number of arguments
+		char **argv;		//!< internal use, argv pointer
+	};
+
+	//!	Default location for the libnds argv structure.
+	#define __system_argv		((struct __argv *)0x02FFFE70)
+	#define cmdline 			((char*)(int)0x02FFFE70 + sizeof(struct __argv))
+
+	/* 
+
+	Usage:	
+		char thisArgv[3][MAX_TGDSFILENAME_LENGTH];
+		memset(thisArgv, 0, sizeof(thisArgv));
+		strcpy(&thisArgv[0][0], "toolchaingenericds-template.nds");	//Arg0
+		strcpy(&thisArgv[1][0], "fat:/dir1/dir2/file2.zip");		//Arg1 
+		strcpy(&thisArgv[2][0], "fat:/dir1/dir2/file3.txt");		//Arg2 
+		addARGV(3, (char*)&thisArgv);
+
+	Note:
+		In order to keep compatibility between TGDS and devkitPro environment, 
+		devkitPro argv format is untouched and is used by default. 
+		TGDS binaries parse it into TGDS format internally.
+
+	Implementation:
+		https://bitbucket.org/Coto88/toolchaingenericds-argvtest/
+	*/
+
+	static inline void addARGV(int argc, char *argv){
+		if((argc <= 0) || (argv == NULL)){
+			return;
+		}
+		memset(cmdline, 0, 512);
+		int cmdlineLen = 0;
+		int i= 0;
+		for(i = 0; i < argc; i++){
+			strcpy(cmdline + cmdlineLen, &argv[i*MAX_TGDSFILENAME_LENGTH]);
+			cmdlineLen+= strlen(&argv[i*MAX_TGDSFILENAME_LENGTH]) + 1;
+		}
+
+		__system_argv->argvMagic = ARGV_MAGIC;
+		__system_argv->commandLine = cmdline;
+		__system_argv->length = cmdlineLen;
+		
+		// reserved when ARGV receives into main()
+		//__system_argv->argc = ;
+		//__system_argv->argv = ;
+	}
+	#endif
 
 #endif

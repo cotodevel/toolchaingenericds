@@ -17,11 +17,9 @@
 .arch	armv5te
 .cpu	arm946e-s
 .align 4
-.data 32
+.text
 
 @----------
-.text
-#include "dsregs_asm.h"
 
 @NDS Specific
 #define CONFIG_CPU_DCACHE_SIZE 0x1000
@@ -35,12 +33,6 @@
 #define	CACHE_DLINESIZE	32					/* fixed */
 #define	CACHE_DENTRIES	(CACHE_DSIZE / CACHE_DSEGMENTS / CACHE_DLINESIZE)
 #define	CACHE_DLIMIT	(CACHE_DSIZE * 4)		/* benchmark needed */
-
-.arch	armv5te
-.cpu	arm946e-s
-
-.section    .text
-.arm
 
 /*
 * ARM946E-S is synthesizable to have 0KB to 1MB sized D-Cache,

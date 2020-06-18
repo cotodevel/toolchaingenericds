@@ -42,8 +42,8 @@ USA
 #endif
 
 #define toolchain_generic_version ((char*)"1.5");
-
 #define nds_ewram_mask (get_ewram_size()-1)
+#define argvItems (10)
 
 #endif
 
@@ -133,9 +133,13 @@ extern bool isValidMap(uint32 addr);
 extern void separateExtension(char *str, char *ext);
 #endif
 
-
 extern void RenderTGDSLogoSubEngine(u8 * compressedLZSSBMP, int compressedLZSSBMPSize);
 extern void RenderTGDSLogoMainEngine(u8 * compressedLZSSBMP, int compressedLZSSBMPSize);
+
+//ARGV 
+extern int thisArgc;
+extern char thisArgv[10][256];
+extern void mainARGV();
 
 #ifdef __cplusplus
 }
