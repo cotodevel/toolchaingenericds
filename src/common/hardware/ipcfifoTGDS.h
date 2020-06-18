@@ -70,7 +70,9 @@ USA
 	//power management commands:
 	//screen power write
 	#define FIFO_SCREENPOWER_WRITE	(uint32)(0xffff020D)
-
+	//shut down (NTR) DS unit
+	#define FIFO_SHUTDOWN_DS	(uint32)(0xffff021A)
+	
 //DLDI ARM7
 #define TGDS_DLDI_ARM7_STATUS_INIT	(int)(0xffff0300)
 	#define TGDS_DLDI_ARM7_STATUS_STAGE0	(int)(0xffff1010)	//ARM9 Inits ARM7 DLDI context. Passes the target DLDI address and waits for DLDI to be relocated to such address.

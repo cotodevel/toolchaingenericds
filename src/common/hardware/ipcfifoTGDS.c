@@ -362,6 +362,14 @@ void HandleFifoNotEmpty(){
 						PowerManagementDeviceWrite(POWMAN_WRITE_BIT, (int)PMBitsRead);				
 					}
 					break;
+					
+					//Shutdown NDS hardware
+					case(FIFO_SHUTDOWN_DS):{
+						int PMBitsRead = PowerManagementDeviceRead((int)POWMAN_READ_BIT);
+						PMBitsRead |= (int)(POWMAN_SYSTEM_PWR_BIT);
+						PowerManagementDeviceWrite(POWMAN_WRITE_BIT, (int)PMBitsRead);				
+					}
+					break;
 				}
 				fifomsg[61] = fifomsg[60] = 0;
 			}

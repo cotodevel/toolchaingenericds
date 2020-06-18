@@ -62,6 +62,7 @@ extern "C"{
 #endif
 
 extern size_t ucs2tombs(uint8* dst, const unsigned short* src, size_t len);
+extern void shutdownNDSHardware();
 extern int		setBacklight(int flags);
 //top NDS EWRAM allocated by toolchain for libraries.
 extern uint32 	__lib__end__;		//start free linear memory (malloc starts here)

@@ -257,6 +257,21 @@ bool isValidMap(uint32 addr){
 }
 #endif
 
+//Shuts off the NDS
+void shutdownNDSHardware(){
+	#ifdef ARM7
+		int PMBitsRead = PowerManagementDeviceRead((int)POWMAN_READ_BIT);
+		PMBitsRead |= (int)(POWMAN_SYSTEM_PWR_BIT);
+		PowerManagementDeviceWrite(POWMAN_WRITE_BIT, (int)PMBitsRead);
+	#endif
+	
+	#ifdef ARM9
+		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+		fifomsg[60] = (uint32)FIFO_SHUTDOWN_DS;
+		fifomsg[61] = (uint32)0;
+		SendFIFOWords(FIFO_POWERMGMT_WRITE, (uint32)fifomsg);
+	#endif
+}
 
 //usage:
 //setBacklight(POWMAN_BACKLIGHT_TOP_BIT | POWMAN_BACKLIGHT_BOTTOM_BIT);	//both lit screens
