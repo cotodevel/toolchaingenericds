@@ -27,6 +27,7 @@ USA
 
 #ifdef ARM9
 #include "utilsTGDS.h"
+#include "fatfslayerTGDS.h"
 #endif
 
 void initSound(){
@@ -47,12 +48,11 @@ void startSound(int sampleRate, const void* data, u32 bytes, u8 channel, u8 vol,
 	coherent_user_range_by_size((uint32)fifomsg, sizeof(TGDSIPC->fifoMesaggingQueue));
 	coherent_user_range_by_size((uint32)data, bytes);	//coherent sound buffer if within cached EWRAM
 	
-	fifomsg[0] = (uint32)sampleRate;
-	fifomsg[1] = (uint32)data;
-	fifomsg[2] = (uint32)bytes;
-	
+	fifomsg[50] = (uint32)sampleRate;
+	fifomsg[51] = (uint32)data;
+	fifomsg[52] = (uint32)bytes;
 	u32 packedSnd = (u32)( ((channel&0xff) << 24) | ((vol&0xff) << 16) | ((pan&0xff) << 8) | (format&0xff) );
-	fifomsg[3] = (uint32)packedSnd;
+	fifomsg[53] = (uint32)packedSnd;
 	SendFIFOWordsITCM(FIFO_PLAYSOUND, (uint32)fifomsg);
 	#endif
 	
@@ -285,7 +285,7 @@ void swapDataTGDS()
 void swapAndSendTGDS(u32 type)
 {
 	swapDataTGDS();
-	SendFIFOWordsITCM(type,0);
+	SendFIFOWords(type,0);
 }
 
 void startSound9(u32 srcFrmt)
@@ -336,6 +336,11 @@ int parseWaveData(FILE * fh, u32 u32chunkToSeek){
 		// Read chunk length.
 		if (fread((u8*)&bytes[0], 1, sizeof(bytes), fh) < 0) {
 			return -1;
+		}
+		
+		//Way over the header area, exit
+		if(fileOffset > 96){
+			return -2;
 		}
 		
 		u8 bytesNonAligned[16];
@@ -629,16 +634,25 @@ bool initSoundStream(char * WAVfilename){	//ARM9 Impl.
 			int wavStartOffset = parseWaveData(fp, (u32)(0x64617461));	//Seek for ASCII "data" and return 4 bytes after that: Waveform length (4 bytes), then 
 																		//4 bytes after that the raw Waveform
 			
-			if(wavStartOffset < 0)
+			if(wavStartOffset == -1)
 			{
 				// wav block not found
 				fclose(fp);
 				return false;
 			}
-			fseek(fp, wavStartOffset, SEEK_SET);
+			
 			u32 len = 0;
-			fread(&len, 1, sizeof(len), fp);
-			wavStartOffset+=4;
+			//data section not found, use filesize as size...
+			if(wavStartOffset == -2)
+			{
+				len = FS_getFileSizeFromOpenHandle(fp);
+				wavStartOffset = 96;	//Assume header size: 96 bytes
+			}
+			else{
+				fseek(fp, wavStartOffset, SEEK_SET);
+				fread(&len, 1, sizeof(len), fp);
+				wavStartOffset+=4;
+			}
 			
 			TGDSIPC->sndPlayerCtx.fileSize = len;
 			TGDSIPC->sndPlayerCtx.fileOffset = wavStartOffset;
@@ -789,12 +803,22 @@ void setupSound(u32 srcFrmtInst)
 	lastL = 0;
 	lastR = 0;
 	
-	TIMERXDATA(2) = SOUND_FREQ((sndRate * multRate));
-	TIMERXCNT(2) = TIMER_DIV_1 | TIMER_ENABLE;
-  
-	TIMERXDATA(3) = 0x10000 - (sampleLen * 2 * multRate);
-	TIMERXCNT(3) = TIMER_CASCADE | TIMER_IRQ_REQ | TIMER_ENABLE;
+	if(srcFrmt == SRC_WAV){
+		//wav
+		TIMERXDATA(2) = TIMER_FREQ((sndRate * multRate));
+		TIMERXCNT(2) = TIMER_DIV_1 | TIMER_ENABLE;
+		
+		TIMERXDATA(3) = 0x10000 - (sampleLen * multRate);
+		TIMERXCNT(3) = TIMER_CASCADE | TIMER_IRQ_REQ | TIMER_ENABLE;
 	
+	}
+	else{
+		TIMERXDATA(2) = SOUND_FREQ((sndRate * multRate));
+		TIMERXCNT(2) = TIMER_DIV_1 | TIMER_ENABLE;
+  
+		TIMERXDATA(3) = 0x10000 - (sampleLen * 2 * multRate);
+		TIMERXCNT(3) = TIMER_CASCADE | TIMER_IRQ_REQ | TIMER_ENABLE;
+	}
 	REG_IE|=(IRQ_TIMER3);
 	TGDSIPC->sndPlayerCtx.soundStreamPause = false;
 }

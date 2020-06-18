@@ -95,26 +95,26 @@ void HandleFifoNotEmpty(){
 			// ARM9IO from ARM7
 			case((uint32)WRITE_EXTARM_8):{
 				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg
-				uint32* address = (uint32*)fifomsg[0];
-				uint8 value = (uint8)((uint32)(fifomsg[1]&0xff));
+				uint32* address = (uint32*)fifomsg[54];
+				uint8 value = (uint8)((uint32)(fifomsg[55]&0xff));
 				*(uint8*)address = (uint8)(value);
-				fifomsg[1] = fifomsg[0] = 0;
+				fifomsg[55] = fifomsg[54] = 0;
 			}
 			break;
 			case((uint32)WRITE_EXTARM_16):{
 				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg
-				uint32* address = (uint32*)fifomsg[0];
-				uint16 value = (uint16)((uint32)(fifomsg[1]&0xffff));
+				uint32* address = (uint32*)fifomsg[56];
+				uint16 value = (uint16)((uint32)(fifomsg[57]&0xffff));
 				*(uint16*)address = (uint16)(value);
-				fifomsg[1] = fifomsg[0] = 0;
+				fifomsg[57] = fifomsg[56] = 0;
 			}
 			break;
 			case((uint32)WRITE_EXTARM_32):{
 				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg
-				uint32* address = (uint32*)fifomsg[0];
-				uint32 value = (uint32)fifomsg[1];
+				uint32* address = (uint32*)fifomsg[58];
+				uint32 value = (uint32)fifomsg[59];
 				*(uint32*)address = (uint32)(value);
-				fifomsg[1] = fifomsg[0] = 0;
+				fifomsg[59] = fifomsg[58] = 0;
 			}
 			break;
 			
@@ -264,22 +264,22 @@ void HandleFifoNotEmpty(){
 			
 			case((uint32)TGDS_ARM7_SETUPARM7MALLOC):{
 				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg
-				u32 ARM7MallocStartaddress = (u32)fifomsg[0];
-				u32 memSizeBytes = (uint32)fifomsg[1];
+				u32 ARM7MallocStartaddress = (u32)fifomsg[39];
+				u32 memSizeBytes = (uint32)fifomsg[40];
 				initARM7Malloc(ARM7MallocStartaddress, memSizeBytes);
-				fifomsg[2] = fifomsg[1] = fifomsg[0] = 0;
+				fifomsg[41] = fifomsg[40] = fifomsg[39] = 0;
 			}
 			break;
 			
 			case((uint32)TGDS_ARM7_SETUPARM9MALLOC):{	//ARM7
 				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg
-				u32 ARM9MallocStartaddress = (u32)fifomsg[0];
-				u32 memSizeBytes = (u32)fifomsg[1];
-				bool customAllocator = (bool)fifomsg[2];
+				u32 ARM9MallocStartaddress = (u32)fifomsg[42];
+				u32 memSizeBytes = (u32)fifomsg[43];
+				bool customAllocator = (bool)fifomsg[44];
 				
 				//Do ARM7 related things when initializing TGDS ARM9 Malloc.
 				
-				fifomsg[3] = fifomsg[2] = fifomsg[1] = fifomsg[0] = 0;
+				fifomsg[45] = fifomsg[44] = fifomsg[43] = fifomsg[42] = 0;
 			}
 			break;
 			
@@ -292,14 +292,13 @@ void HandleFifoNotEmpty(){
 			
 			case((uint32)TGDS_ARM7_PRINTF7SETUP):{
 				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg
-				printfBufferShared = (u8*)fifomsg[0];
-				arm7debugBufferShared = (u8*)fifomsg[1];
-				arm7ARGVBufferShared = (int*)fifomsg[2];
-				
+				printfBufferShared = (u8*)fifomsg[46];
+				arm7debugBufferShared = (u8*)fifomsg[47];
+				arm7ARGVBufferShared = (int*)fifomsg[48];
 				//ARM7 print debugger
-				arm7ARGVDebugBufferShared = (int*)fifomsg[3];
+				arm7ARGVDebugBufferShared = (int*)fifomsg[49];
 				
-				fifomsg[3] = fifomsg[2] = fifomsg[1] = fifomsg[0] = 0;
+				fifomsg[49] = fifomsg[48] = fifomsg[47] = fifomsg[46] = 0;
 			}
 			break;
 			
@@ -310,10 +309,10 @@ void HandleFifoNotEmpty(){
 			
 			case((uint32)FIFO_PLAYSOUND):{
 				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg					
-				int sampleRate = (uint32)fifomsg[0];
-				u32* data = (u32*)fifomsg[1];
-				u32 bytes = (uint32)fifomsg[2];
-				u32 packedSnd = (uint32)fifomsg[3];
+				int sampleRate = (uint32)fifomsg[50];
+				u32* data = (u32*)fifomsg[51];
+				u32 bytes = (uint32)fifomsg[52];
+				u32 packedSnd = (uint32)fifomsg[53];
 	
 				u8 channel = (u8)((packedSnd >> 24)&0xff);
 				u8 vol = (u8)((packedSnd >> 16)&0xff);
@@ -332,10 +331,10 @@ void HandleFifoNotEmpty(){
 						startSound(sampleRate, (const void*)data, bytes, chan, vol, pan, format);
 					}
 				}
-				fifomsg[0] = 0;
-				fifomsg[1] = 0;
-				fifomsg[2] = 0;
-				fifomsg[3] = 0;
+				fifomsg[50] = 0;
+				fifomsg[51] = 0;
+				fifomsg[52] = 0;
+				fifomsg[53] = 0;
 			}
 			break;
 			
@@ -352,9 +351,8 @@ void HandleFifoNotEmpty(){
 			case((uint32)FIFO_POWERMGMT_WRITE):{
 				
 				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg
-				uint32 cmd = (uint32)fifomsg[0];
-				uint32 flags = (uint32)fifomsg[1];
-				fifomsg[1] = fifomsg[0] = 0;
+				uint32 cmd = (uint32)fifomsg[60];
+				uint32 flags = (uint32)fifomsg[61];
 				switch(cmd){
 					//screen power write
 					case(FIFO_SCREENPOWER_WRITE):{
@@ -365,7 +363,7 @@ void HandleFifoNotEmpty(){
 					}
 					break;
 				}
-				
+				fifomsg[61] = fifomsg[60] = 0;
 			}
 			break;
 			//arm9 wants to send a WIFI context block address / userdata is always zero here
@@ -386,6 +384,28 @@ void HandleFifoNotEmpty(){
 				dldi_handler_deinit();
 			}
 			break;
+
+			case((uint32)TGDS_DLDI_ARM7_READ):{
+				struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
+				u32 sector = (u32)data0;
+				u32 buffer = (u32)REG_IPC_FIFO_RX;
+				u32 numSectors = (u32)REG_IPC_FIFO_RX;
+				dldiInterface->ioInterface.readSectors(sector, numSectors, buffer);
+				TGDSIPC->fifoMesaggingQueue[20] = 0;
+			}
+			break;
+			
+			case((uint32)TGDS_DLDI_ARM7_WRITE):{
+				struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
+				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg
+				u32 sector = (uint32)fifomsg[24];
+				u32 numSectors = (uint32)fifomsg[25];
+				u32 * buffer = (u32*)fifomsg[26];
+				dldiInterface->ioInterface.writeSectors(sector, numSectors, buffer);
+				fifomsg[27] = fifomsg[26] = fifomsg[25] = fifomsg[24] = 0;
+			}
+			break;
+			
 			#endif
 			
 			case TGDS_ARM7_ENABLE_SLEEPMODE_TIMEOUT:{
@@ -444,12 +464,11 @@ void HandleFifoNotEmpty(){
 			break;
 			
 			//ARM7 FS: read from ARM9 POSIX filehandle to ARM7
-			case(IR_ARM7FS_Read):{
+			case(TGDS_ARM7_ARM7FSREAD):{
 				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg
-				//Index 0 -- 4 used, do not use.
-				u8* readbuf = (u8*)fifomsg[5];
-				int readBufferSize = (int)fifomsg[6];
-				int fileOffset = (int)fifomsg[7];
+				u8* readbuf = (u8*)fifomsg[0];
+				int readBufferSize = (int)fifomsg[1];
+				int fileOffset = (int)fifomsg[2];
 				switch(ARM7FS_HandleMethod){
 					case(TGDS_ARM7FS_FILEHANDLEPOSIX):{
 						int readSoFar = ARM7FS_ReadBuffer_ARM9CallbackPOSIX(readbuf, fileOffset, ARM7FS_TGDSFileDescriptorRead, readBufferSize);	//UpdateDPG_Audio();
@@ -460,22 +479,18 @@ void HandleFifoNotEmpty(){
 					}
 					break;
 				}
-				
 				coherent_user_range_by_size((uint32)readbuf, readBufferSize);
-				fifomsg[7] = fifomsg[6] = fifomsg[5] = 0;
-				setARM7FSIOStatus(ARM7FS_IOSTATUS_IDLE);
+				fifomsg[3] = fifomsg[2] = fifomsg[1] = fifomsg[0] = 0;
 			}
 			break;
 			
 			//ARM7 FS: write from ARM7 to ARM9 POSIX filehandle
-			case(IR_ARM7FS_Save):{
+			case(TGDS_ARM7_ARM7FSWRITE):{
 				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg
-				//Index 0 -- 4 used, do not use.
-				u8* readbuf = (u8*)fifomsg[5];
-				int writeBufferSize = (int)fifomsg[6];
-				int fileOffset = (int)fifomsg[7];
+				u8* readbuf = (u8*)fifomsg[4];
+				int writeBufferSize = (int)fifomsg[5];
+				int fileOffset = (int)fifomsg[6];
 				coherent_user_range_by_size((uint32)readbuf, writeBufferSize);
-				
 				switch(ARM7FS_HandleMethod){
 					case(TGDS_ARM7FS_FILEHANDLEPOSIX):{
 						if(ARM7FS_TGDSFileDescriptorWrite != NULL){
@@ -490,18 +505,16 @@ void HandleFifoNotEmpty(){
 					}
 					break;
 				}
-				
-				fifomsg[7] = fifomsg[6] = fifomsg[5] = 0;
-				setARM7FSIOStatus(ARM7FS_IOSTATUS_IDLE);
+				fifomsg[7] = fifomsg[6] = fifomsg[5] = fifomsg[4] = 0;
 			}
 			break;
 			
 			case((uint32)TGDS_ARM7_PRINTF7):{
 				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg
-				u8 * printfBufferShared = (u8 *)fifomsg[0];		//uint32 * printfBufferShared
-				int * arm7ARGVBufferShared = (int *)fifomsg[1];
-				int argvCount = (int)fifomsg[2];
-				fifomsg[2] = fifomsg[1] = fifomsg[0] = 0;
+				u8 * printfBufferShared = (u8 *)fifomsg[36];		//uint32 * printfBufferShared
+				int * arm7ARGVBufferShared = (int *)fifomsg[37];
+				int argvCount = (int)fifomsg[38];
+				fifomsg[38] = fifomsg[37] = fifomsg[36] = 0;
 				printf7(printfBufferShared, arm7ARGVBufferShared, argvCount);
 			}
 			break;
@@ -568,12 +581,12 @@ void HandleFifoNotEmpty(){
 void ReadMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead){
 	dmaFillWord(0, 0, (uint32)targetMemory, (uint32)bytesToRead);
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-	fifomsg[0] = (uint32)srcMemory;
-	fifomsg[1] = (uint32)targetMemory;
-	fifomsg[2] = (uint32)bytesToRead;
-	fifomsg[7] = (uint32)ARM7FS_IOSTATUS_BUSY;
+	fifomsg[28] = (uint32)srcMemory;
+	fifomsg[29] = (uint32)targetMemory;
+	fifomsg[30] = (uint32)bytesToRead;
+	fifomsg[31] = (uint32)TGDS_ARM7_ARM7FSREAD;
 	sendByteIPC(IPC_ARM7READMEMORY_REQBYIRQ);
-	while((uint32)fifomsg[7] == (uint32)ARM7FS_IOSTATUS_BUSY){
+	while((uint32)fifomsg[31] == (uint32)TGDS_ARM7_ARM7FSREAD){
 		swiDelay(2);
 	}
 	#ifdef ARM9
@@ -589,12 +602,12 @@ void SaveMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead){
 	coherent_user_range_by_size((uint32)targetMemory, (sint32)bytesToRead);
 	#endif
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-	fifomsg[0] = (uint32)srcMemory;
-	fifomsg[1] = (uint32)targetMemory;
-	fifomsg[2] = (uint32)bytesToRead;
-	fifomsg[7] = (uint32)ARM7FS_IOSTATUS_BUSY;
+	fifomsg[32] = (uint32)srcMemory;
+	fifomsg[33] = (uint32)targetMemory;
+	fifomsg[34] = (uint32)bytesToRead;
+	fifomsg[35] = (uint32)TGDS_ARM7_ARM7FSWRITE;
 	sendByteIPC(IPC_ARM7SAVEMEMORY_REQBYIRQ);
-	while((uint32)fifomsg[7] == (uint32)ARM7FS_IOSTATUS_BUSY){
+	while((uint32)fifomsg[35] == (uint32)TGDS_ARM7_ARM7FSWRITE){
 		swiDelay(2);
 	}
 }

@@ -21,6 +21,7 @@ USA
 #ifdef ARM7
 #include "wifi_arm7.h"
 #include "soundTGDS.h"
+#include "ARM7FS.h"
 #endif
 
 #ifdef ARM9
@@ -30,9 +31,9 @@ USA
 
 #include "InterruptsARMCores_h.h"
 #include "ipcfifoTGDS.h"
-#include "biosTGDS.h"
 #include "keypadTGDS.h"
 #include "eventsTGDS.h"
+#include "dldi.h"
 
 void IRQInit(){
 	//fifo setups
@@ -128,23 +129,23 @@ void NDS_IRQHandler(){
 			break;
 			case(IPC_ARM7READMEMORY_REQBYIRQ):{
 				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-				uint32 srcMemory = fifomsg[0];
-				uint32 targetMemory = fifomsg[1];
-				int bytesToRead = (int)fifomsg[2];
+				uint32 srcMemory = fifomsg[28];
+				uint32 targetMemory = fifomsg[29];
+				int bytesToRead = (int)fifomsg[30];
 				memcpy((u8*)targetMemory,(u8*)srcMemory, bytesToRead);
-				fifomsg[7] = fifomsg[2] = fifomsg[1] = fifomsg[0] = (uint32)ARM7FS_IOSTATUS_IDLE;
+				fifomsg[31] = fifomsg[30] = fifomsg[29] = fifomsg[28] = (uint32)0;
 			}
 			break;
 			case(IPC_ARM7SAVEMEMORY_REQBYIRQ):{
 				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-				uint32 srcMemory = fifomsg[0];
-				uint32 targetMemory = fifomsg[1];
-				int bytesToRead = (int)fifomsg[2];
+				uint32 srcMemory = fifomsg[32];
+				uint32 targetMemory = fifomsg[33];
+				int bytesToRead = (int)fifomsg[34];
 				#ifdef ARM9
 				dmaFillWord(0, 0, (uint32)srcMemory, (uint32)bytesToRead);
 				#endif
 				memcpy((u8*)srcMemory, (u8*)targetMemory, bytesToRead);
-				fifomsg[7] = fifomsg[2] = fifomsg[1] = fifomsg[0] = (uint32)ARM7FS_IOSTATUS_IDLE;
+				fifomsg[35] = fifomsg[34] = fifomsg[33] = fifomsg[32] = (uint32)0;
 			}
 			break;
 			#ifdef ARM7
@@ -152,28 +153,27 @@ void NDS_IRQHandler(){
 			case(IPC_ARM7INIT_ARM7FS):{	//ARM7
 				
 				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-				char *  ARM7FS_ARM9Filename = (char *)fifomsg[0];
-				int fileHandleSize = (int)fifomsg[1];
-				int splitBufferSize = (int)fifomsg[2];
-				u32 * debugVar = (int)fifomsg[4];
-				u32 testCase = (u32)fifomsg[5]; 
-				int curARM7FS_HandleMethod = (int)fifomsg[6];
+				char *  ARM7FS_ARM9Filename = (char *)fifomsg[9];
+				int fileHandleSize = (int)fifomsg[10];
+				int splitBufferSize = (int)fifomsg[11];
+				int curARM7FS_HandleMethod = (int)fifomsg[12];
+				u32 * debugVar = (int)fifomsg[13];
+				u32 testCase = (u32)fifomsg[14]; 
 				initARM7FS((char*)ARM7FS_ARM9Filename, curARM7FS_HandleMethod);
 				if(testCase == (u32)0xc070c070){
 					performARM7MP2FSTestCase(ARM7FS_ARM9Filename, splitBufferSize, debugVar);	//ARM7 Setup
 				}
-				fifomsg[5] = fifomsg[4] = fifomsg[3] = fifomsg[2] = fifomsg[1] = fifomsg[0] = 0;
+				fifomsg[15] = fifomsg[14] = fifomsg[13] = fifomsg[12] = fifomsg[11] = fifomsg[10] = fifomsg[9] = 0;
 			}
 			break;
 			
 			case(IPC_ARM7DEINIT_ARM7FS):{	//ARM7
-				
 				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 				
 				//ARM7(FS) de-init
 				deinitARM7FS();
 				
-				fifomsg[0] = 0;
+				fifomsg[8] = 0;
 			}
 			break;
 			

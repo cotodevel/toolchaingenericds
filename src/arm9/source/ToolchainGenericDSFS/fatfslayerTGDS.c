@@ -392,7 +392,7 @@ sint32 getDiskSectorSize(){
 
 char * dldi_tryingInterface(){
 	//DS DLDI
-	struct  DLDI_INTERFACE* dldiInterface = (struct  DLDI_INTERFACE*)DLDIARM7Address;
+	struct  DLDI_INTERFACE* dldiInterface = (struct  DLDI_INTERFACE*)&_dldi_start;	//ARM7DLDI / ARM9DLDI must read from DLDI section
 	return (char *)&dldiInterface->friendlyName[0];
 }
 

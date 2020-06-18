@@ -167,6 +167,7 @@ extern int swiDecompressLZSSVram(void * source, void * destination, uint32 toGet
 //C
 extern void swiFastCopy(uint32 * source, uint32 * dest, int flags);
 extern struct LZSSContext LZS_DecodeFromBuffer(unsigned char *pak_buffer, unsigned int   pak_len);
+extern bool isArm7ClosedLid;
 
 //Init SVCs
 #ifdef ARM7

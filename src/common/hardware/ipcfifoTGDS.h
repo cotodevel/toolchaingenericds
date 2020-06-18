@@ -120,6 +120,9 @@ USA
 #define TGDS_ARM7_DISABLESOUNDSAMPLECTX (uint32)(0xFFFF022F)
 #define TGDS_ARM7_INITSTREAMSOUNDCTX (uint32)(0xFFFF0230)
 
+#define TGDS_ARM7_ARM7FSREAD (u32)(0xffffaaa0)		
+#define TGDS_ARM7_ARM7FSWRITE (u32)(0xffffaab0)		
+
 //SoundStream bits
 #define ARM9COMMAND_UPDATE_BUFFER (uint32)(0xFFFFFF02)
 #define ARM7COMMAND_START_SOUND (uint32)(0xFFFFFF10)
@@ -140,10 +143,6 @@ USA
 //ARM7 FS IPC Commands
 #define IPC_ARM7INIT_ARM7FS (u8)(0xE)
 #define IPC_ARM7DEINIT_ARM7FS (u8)(0xF)
-
-//ARM7 FS IO
-#define ARM7FS_IOSTATUS_IDLE (int)(0)
-#define ARM7FS_IOSTATUS_BUSY (int)(-1)
 
 //ARM7 FS Transaction Status
 #define ARM7FS_TRANSACTIONSTATUS_IDLE (int)(-1)
@@ -195,7 +194,7 @@ typedef struct sIPCSharedTGDS {
 	struct sEXTKEYIN	EXTKEYINInst;
 	
 	//FIFO Mesagging: used when 3+ args sent between ARM cores through FIFO interrupts.
-	uint32 fifoMesaggingQueue[0x10];
+	uint32 fifoMesaggingQueue[0x40];	//64 * 4 Words for various command handling
 	
 	//IPC Mesagging: used when 1+ args sent between ARM Cores through IPC interrupts.
 	u8 ipcMesaggingQueue[0x10];
@@ -272,7 +271,6 @@ extern void HandleFifoEmpty();
 extern void sendMultipleByteIPC(uint8 inByte0, uint8 inByte1, uint8 inByte2, uint8 inByte3);
 extern void ReadMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead);
 extern void SaveMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead);
-extern void SendFIFOWordsITCM(uint32 data0, uint32 data1);
 
 #ifdef __cplusplus
 }

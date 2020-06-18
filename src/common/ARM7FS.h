@@ -29,9 +29,6 @@ USA
 #include "fatfslayerTGDS.h"
 #endif
 
-#define IR_ARM7FS_Read (u32)(0xffffaaa0)		
-#define IR_ARM7FS_Save (u32)(0xffffaab0)		
-
 //TGDS ARM7FS Handle Method: Internal. Set at ARM7 and ARM9
 #define TGDS_ARM7FS_INVALID (int)(-1)
 #define TGDS_ARM7FS_FILEHANDLEPOSIX (int)(1)
@@ -63,23 +60,6 @@ static inline void setARM7FSInitStatus(bool ARM7FSInitStatus){
 	coherent_user_range_by_size((uint32)&TGDSIPC->initStatus, sizeof(TGDSIPC->initStatus));
 	#endif
 	TGDSIPC->initStatus = ARM7FSInitStatus;
-}
-
-//IO
-static inline int getARM7FSIOStatus(){
-	
-	#ifdef ARM9
-	coherent_user_range_by_size((uint32)&TGDSIPC->ARM7FSStatus, sizeof(TGDSIPC->ARM7FSStatus));
-	#endif
-	return TGDSIPC->ARM7FSStatus;
-}
-
-static inline void setARM7FSIOStatus(int ARM7FSStatus){
-	
-	#ifdef ARM9
-	coherent_user_range_by_size((uint32)&TGDSIPC->ARM7FSStatus, sizeof(TGDSIPC->ARM7FSStatus));
-	#endif
-	TGDSIPC->ARM7FSStatus = ARM7FSStatus;
 }
 
 //Global Transaction Status

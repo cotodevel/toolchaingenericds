@@ -176,8 +176,8 @@ inline __attribute__((always_inline))
 void Write8bitAddrExtArm(uint32 address, uint8 value){
 	
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-	fifomsg[0] = address;
-	fifomsg[1] = (uint32)value;
+	fifomsg[54] = address;
+	fifomsg[55] = (uint32)value;
 	SendFIFOWordsITCM(WRITE_EXTARM_8, (uint32)fifomsg);
 }
 
@@ -185,8 +185,8 @@ inline __attribute__((always_inline))
 void Write16bitAddrExtArm(uint32 address, uint16 value){
 	
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-	fifomsg[0] = address;
-	fifomsg[1] = (uint32)value;
+	fifomsg[56] = address;
+	fifomsg[57] = (uint32)value;
 	SendFIFOWordsITCM(WRITE_EXTARM_16, (uint32)fifomsg);
 }
 
@@ -194,8 +194,8 @@ inline __attribute__((always_inline))
 void Write32bitAddrExtArm(uint32 address, uint32 value){
 	
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-	fifomsg[0] = address;
-	fifomsg[1] = (uint32)value;
+	fifomsg[58] = address;
+	fifomsg[59] = (uint32)value;
 	SendFIFOWordsITCM(WRITE_EXTARM_32, (uint32)fifomsg);
 }
 
@@ -273,10 +273,9 @@ int	setBacklight(int flags){
 	#endif
 	
 	#ifdef ARM9
-		
 		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-		fifomsg[0] = (uint32)FIFO_SCREENPOWER_WRITE;
-		fifomsg[1] = (uint32)(flags);
+		fifomsg[60] = (uint32)FIFO_SCREENPOWER_WRITE;
+		fifomsg[61] = (uint32)(flags);
 		SendFIFOWordsITCM(FIFO_POWERMGMT_WRITE, (uint32)fifomsg);
 	#endif
 	return 0;

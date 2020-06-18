@@ -75,9 +75,9 @@ void printf7(char *chr, int argvCount, int * argv){
 		}
 		
 		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-		fifomsg[0] = (uint32)printf7Buf;
-		fifomsg[1] = (uint32)arm7ARGVBufferShared;
-		fifomsg[2] = (uint32)argvCount;
+		fifomsg[36] = (uint32)printf7Buf;
+		fifomsg[37] = (uint32)arm7ARGVBufferShared;
+		fifomsg[38] = (uint32)argvCount;
 		SendFIFOWordsITCM(TGDS_ARM7_PRINTF7, (u32)fifomsg);
 	}
 }
@@ -99,12 +99,6 @@ void writeDebugBuffer7(char *chr, int argvCount, int * argv){
 				arm7ARGVDebugBufferShared[i] = argv[i];
 			}
 		}
-		//
-		//uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-		//fifomsg[0] = (uint32)debugBuf;
-		//fifomsg[1] = (uint32)arm7ARGVBufferShared;
-		//fifomsg[2] = (uint32)argvCount;
-		//SendFIFOWordsITCM(TGDS_ARM7_PRINTF7, (u32)fifomsg);
 	}
 }
 #endif
@@ -139,11 +133,11 @@ void initARM7Malloc(u32 ARM7MallocStartaddress, u32 memSizeBytes){
 void initARM7Malloc(u32 ARM7MallocStartaddress, u32 memSizeBytes){
 	
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-	fifomsg[0] = (uint32)ARM7MallocStartaddress;
-	fifomsg[1] = (uint32)memSizeBytes;
-	fifomsg[2] = (uint32)TGDS_ARM7_SETUPARM7MALLOC;
+	fifomsg[39] = (uint32)ARM7MallocStartaddress;
+	fifomsg[40] = (uint32)memSizeBytes;
+	fifomsg[41] = (uint32)TGDS_ARM7_SETUPARM7MALLOC;
 	SendFIFOWordsITCM(TGDS_ARM7_SETUPARM7MALLOC, (u32)fifomsg);
-	while(fifomsg[2] == TGDS_ARM7_SETUPARM7MALLOC){
+	while(fifomsg[41] == TGDS_ARM7_SETUPARM7MALLOC){
 		swiDelay(2);
 	}
 }
@@ -170,10 +164,10 @@ struct AllocatorInstance CustomAllocatorInstance;
 void initARM9Malloc(u32 ARM9MallocStartaddress, u32 memSizeBytes, u32 * mallocHandler, u32 * callocHandler, u32 * freeHandler, u32 * MallocFreeMemoryHandler, bool customAllocator){
 	
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-	fifomsg[0] = (uint32)ARM9MallocStartaddress;
-	fifomsg[1] = (uint32)memSizeBytes;
-	fifomsg[2] = (uint32)customAllocator;
-	fifomsg[3] = (uint32)TGDS_ARM7_SETUPARM9MALLOC;
+	fifomsg[42] = (uint32)ARM9MallocStartaddress;
+	fifomsg[43] = (uint32)memSizeBytes;
+	fifomsg[44] = (uint32)customAllocator;
+	fifomsg[45] = (uint32)TGDS_ARM7_SETUPARM9MALLOC;
 	setTGDSARM9MallocBaseAddress(ARM9MallocStartaddress);
 	if(customAllocator == true){
 		if(mallocHandler != NULL){
@@ -189,9 +183,8 @@ void initARM9Malloc(u32 ARM9MallocStartaddress, u32 memSizeBytes, u32 * mallocHa
 			TGDSMallocFreeMemory9 = (TGDSARM9MallocFreeMemoryHandler)MallocFreeMemoryHandler;
 		}
 	}
-	
 	SendFIFOWordsITCM(TGDS_ARM7_SETUPARM9MALLOC, (u32)fifomsg);
-	while(fifomsg[3] == TGDS_ARM7_SETUPARM9MALLOC){
+	while(fifomsg[45] == TGDS_ARM7_SETUPARM9MALLOC){
 		swiDelay(2);
 	}
 }
@@ -230,12 +223,11 @@ int arm7ARGVDebugBuffer[MAXPRINT7ARGVCOUNT];
 void printf7Setup(){
 	
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-	fifomsg[0] = (uint32)&printf7Buffer[0];
-	fifomsg[1] = (uint32)&arm7debugBuffer[0];
-	fifomsg[2] = (uint32)&arm7ARGVBuffer[0];
-	
+	fifomsg[46] = (uint32)&printf7Buffer[0];
+	fifomsg[47] = (uint32)&arm7debugBuffer[0];
+	fifomsg[48] = (uint32)&arm7ARGVBuffer[0];
 	//ARM7 print debugger
-	fifomsg[3] = (uint32)&arm7ARGVDebugBuffer[0];
+	fifomsg[49] = (uint32)&arm7ARGVDebugBuffer[0];
 	
 	SendFIFOWordsITCM(TGDS_ARM7_PRINTF7SETUP, (u32)fifomsg);
 }
