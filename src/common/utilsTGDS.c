@@ -785,6 +785,33 @@ void mainARGV(){
 		for (i=0; i<argBugged; i++) {
 			if (thisArgv[i]) {
 				if(strlen(thisArgv[i]) > 8){
+					
+					//Libnds compatibility: If (recv) mainARGV fat:/ change to 0:/
+					char thisARGV[MAX_TGDSFILENAME_LENGTH+1];
+					memset(thisARGV, 0, sizeof(thisARGV));
+					strcpy(thisARGV, thisArgv[i]);
+					
+					if(
+						(thisARGV[0] == 'f')
+						&&
+						(thisARGV[1] == 'a')
+						&&
+						(thisARGV[2] == 't')
+						&&
+						(thisARGV[3] == ':')
+						&&
+						(thisARGV[4] == '/')
+						){
+						char thisARGV2[MAX_TGDSFILENAME_LENGTH+1];
+						memset(thisARGV2, 0, sizeof(thisARGV2));
+						strcpy(thisARGV2, "0:/");
+						strcat(thisARGV2, &thisARGV[5]);
+						
+						//copy back
+						memset(thisArgv[i], 0, 256);
+						strcpy(thisArgv[i], thisARGV2);
+					}
+					
 					argCount++;
 				}
 			}
