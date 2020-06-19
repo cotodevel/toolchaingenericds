@@ -335,6 +335,8 @@ void initTGDS(char * devoptabFSName){
 	}
 	//Set up proper devoptab device mount name.
 	memcpy((uint32*)&devoptab_sdFilesystem.name[0], (uint32*)devoptabFSName, strlen(devoptabFSName));
+	
+	memset((u8*)&dldiFs, 0, sizeof(dldiFs));
 }
 
 static inline __attribute__((always_inline))

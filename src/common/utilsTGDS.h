@@ -91,7 +91,7 @@ extern uint32 get_iwram_end();
 //misc
 extern int		FS_loadFile(sint8 *filename, sint8 *buf, int size);
 extern int		FS_saveFile(sint8 *filename, sint8 *buf, int size,bool force_file_creation);
-extern int		FS_getFileSize(sint8 *filename);
+extern int		FS_getFileSize(char *filename);
 extern void		FS_lock();
 extern void		FS_unlock();
 extern char *	print_ip(uint32 ip, char * bufOut);

@@ -360,6 +360,7 @@ size_t ucs2tombs(uint8* dst, const unsigned short* src, size_t len) {
 #include <sys/lock.h>
 #include <fcntl.h>
 
+__attribute__((optimize("-O0")))
 int	FS_loadFile(sint8 *filename, sint8 *buf, int size)
 {
 	FILE *f;
@@ -387,6 +388,7 @@ int	FS_loadFile(sint8 *filename, sint8 *buf, int size)
 
 //force_file_creation == true: create a savefile regardless. false otherwise
 //returns: written data size
+__attribute__((optimize("-O0")))
 int	FS_saveFile(sint8 *filename, sint8 *buf, int size, bool force_file_creation){
 	FILE * f;
 	char var[16];
@@ -404,16 +406,24 @@ int	FS_saveFile(sint8 *filename, sint8 *buf, int size, bool force_file_creation)
 	return retWritten;
 }
 
-int	FS_getFileSize(sint8 *filename){
-	FILE * f = fopen(filename, "r");
+__attribute__((optimize("-O0")))
+int	FS_getFileSize(char *fnm){
 	int size = -1;
-	if (f != NULL){
-		fseek(f, 0, SEEK_END);
-		size = ftell(f);
-		fseek(f, 0, SEEK_SET);
-		fclose(f);
+	if(fnm != NULL){
+		int structFD = OpenFileFromPathGetStructFD(fnm);
+		if(structFD != structfd_posixInvalidFileDirOrBufferHandle){
+			struct fd *pfd = getStructFD(structFD);
+			size = FS_getFileSizeFromOpenStructFD(pfd);
+			closeFileFromStructFD(structFD);
+		}
+		
+		printf("FS_getFileSize():fnm:%s",fnm);
+		//while(1==1){}
 	}
-	FS_unlock();
+	else{
+		printf("FS_getFileSize():fnm NULL!");
+		while(1==1){}
+	}
 	return size;
 }
 
@@ -421,11 +431,13 @@ int setSoundPower(int flags){
 	return 0;
 }
 
+__attribute__((optimize("-O0")))
 void	FS_lock()
 {
 	
 }
 
+__attribute__((optimize("-O0")))
 void	FS_unlock()
 {
 	
@@ -443,6 +455,7 @@ char * print_ip(uint32 ip, char * bufOut){
 }
 
 //FileSystem utils
+__attribute__((optimize("-O0")))
 sint8 *_FS_getFileExtension(sint8 *filename){
 	static sint8 ext[4];
 	sint8	*ptr = filename;
@@ -463,6 +476,7 @@ sint8 *_FS_getFileExtension(sint8 *filename){
 	return ext;
 }
 
+__attribute__((optimize("-O0")))
 void separateExtension(char *str, char *ext)
 {
 	int x = 0;
@@ -499,8 +513,9 @@ void separateExtension(char *str, char *ext)
 		ext[0] = 0;	
 }
 
+__attribute__((optimize("-O0")))
 sint8 *FS_getFileName(sint8 *filename){
-	static sint8 name[100];
+	static sint8 name[256+1];
 	sint8	*ptr = filename;
 	int		i = 0;
 	ptr = strrchr(ptr, '.');	

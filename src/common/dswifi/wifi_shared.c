@@ -39,5 +39,14 @@ void DeInitWIFI(){
 	TIMERXDATA(3) = 0;
 	TIMERXCNT(3) = 0;
 	SendFIFOWordsITCM(WIFI_DEINIT, 0);
+	
+	if(wifi_connect_point != NULL){
+		free((u8*)wifi_connect_point);
+	}
+	
+	if(WifiData != NULL){
+		free((u8*)WifiData);
+	}
+	
 	#endif
 }

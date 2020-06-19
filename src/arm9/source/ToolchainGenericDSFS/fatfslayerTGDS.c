@@ -38,6 +38,7 @@ struct fd * files = NULL;	//File/Dir MAX handles: OPEN_MAXTGDS
 //if FS_init() init SD equals true: Init success
 //else  FS_init() equals false: Could not init the card SD access 
 int		FS_init(){
+	FS_deinit();
 	int ret = fatfs_init();
 	if (ret == 0){
 		FS_InitStatus = true;
@@ -653,8 +654,7 @@ Call this before exiting back to the GBAMP
 bool return OUT: true if successful.
 -----------------------------------------------------------------*/
 bool FAT_FreeFiles (void){
-	char * devoptabFSName = (char*)"0:/";
-	initTGDS(devoptabFSName);
+	fatfs_init();
 	// Return status of card
 	struct  DLDI_INTERFACE* dldiInterface = (struct DLDI_INTERFACE*)DLDIARM7Address;	
 	return (bool)dldiInterface->ioInterface.isInserted();
@@ -1697,12 +1697,40 @@ int fatfs_init(){
 
 //internal: SD de-init code: requires to call fatfs_init() at least once before.
 int fatfs_deinit(){
+	
+	if(files != NULL){		
+		u8 * fileUncached = (u8 *)files;
+		fileUncached+=0x400000;
+		files = (struct fd *)fileUncached;
+		
+		int fd = 0;
+		/* search in all struct fd instances, close file handle if open*/
+		for (fd = 0; fd < OPEN_MAXTGDS; fd++){	
+			fatfs_close(fd);
+			memset((uint8*)(files + fd), 0, sizeof(struct fd));
+			(files + fd)->isused = (sint32)structfd_isunused;
+			//Internal default invalid value (overriden later)
+			(files + fd)->cur_entry.d_ino = (sint32)structfd_posixInvalidFileDirOrBufferHandle;	//Posix File Descriptor
+			(files + fd)->StructFD = (sint32)structfd_posixInvalidFileDirOrBufferHandle;		//TGDS File Descriptor (struct fd)
+			(files + fd)->StructFDType = FT_NONE;	//struct fd type invalid.
+			(files + fd)->isatty = (sint32)structfd_isattydefault;
+			(files + fd)->descriptor_flags = (sint32)structfd_descriptorflagsdefault;
+			(files + fd)->status_flags = (sint32)structfd_status_flagsdefault;
+			(files + fd)->loc = (sint32)structfd_fildir_offsetdefault;	
+		}
+	}
+	
 	int ret = f_unmount("0:");
 	
 	//ARM7 DLDI implementation
 	#ifdef ARM7_DLDI
 	ARM9DeinitDLDI();
 	#endif
+	
+	//remove TGDS FS file handle context
+	if(files != NULL){
+		free(files);
+	}
 	
 	//ARM9 DLDI impl.
 	#ifdef ARM9_DLDI

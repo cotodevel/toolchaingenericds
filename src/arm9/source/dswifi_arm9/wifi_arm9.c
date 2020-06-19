@@ -1093,6 +1093,10 @@ void wifiValue32Handler(u32 value, void* data) {
 
 bool Wifi_InitDefault(bool useFirmwareSettings) {
 	
+	//These are already freed.
+	wifi_connect_point = (Wifi_AccessPoint*)malloc(sizeof(Wifi_AccessPoint));
+	WifiData = (Wifi_MainStruct *)malloc(sizeof(Wifi_MainStruct));
+	
 	uint32 wifi_pass = Wifi_Init(WIFIINIT_OPTION_USELED|WIFIINIT_OPTION_USEHEAP_96);	//use 96K DSWIFI stack
 	
 	if(!wifi_pass) return false;

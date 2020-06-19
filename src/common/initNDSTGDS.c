@@ -89,11 +89,6 @@ void initHardware(void) {
 	setDLDIARM7Address((u32 *)dldiGet());
 	#endif
 	
-	//Allocate various TGDS objects
-	wifi_connect_point = (Wifi_AccessPoint*)malloc(sizeof(Wifi_AccessPoint));
-	WifiData = (Wifi_MainStruct *)malloc(sizeof(Wifi_MainStruct));
-	files = (struct fd*)malloc(sizeof(struct fd)*OPEN_MAXTGDS);
-	
 	//Enable TSC
 	setTouchScreenEnabled(true);	
 	
