@@ -38,7 +38,6 @@ struct fd * files = NULL;	//File/Dir MAX handles: OPEN_MAXTGDS
 //if FS_init() init SD equals true: Init success
 //else  FS_init() equals false: Could not init the card SD access 
 int		FS_init(){
-	FS_deinit();
 	int ret = fatfs_init();
 	if (ret == 0){
 		FS_InitStatus = true;
@@ -1698,25 +1697,12 @@ int fatfs_init(){
 //internal: SD de-init code: requires to call fatfs_init() at least once before.
 int fatfs_deinit(){
 	
-	if(files != NULL){		
-		u8 * fileUncached = (u8 *)files;
-		fileUncached+=0x400000;
-		files = (struct fd *)fileUncached;
+	if(files != NULL){
 		
 		int fd = 0;
 		/* search in all struct fd instances, close file handle if open*/
 		for (fd = 0; fd < OPEN_MAXTGDS; fd++){	
 			fatfs_close(fd);
-			memset((uint8*)(files + fd), 0, sizeof(struct fd));
-			(files + fd)->isused = (sint32)structfd_isunused;
-			//Internal default invalid value (overriden later)
-			(files + fd)->cur_entry.d_ino = (sint32)structfd_posixInvalidFileDirOrBufferHandle;	//Posix File Descriptor
-			(files + fd)->StructFD = (sint32)structfd_posixInvalidFileDirOrBufferHandle;		//TGDS File Descriptor (struct fd)
-			(files + fd)->StructFDType = FT_NONE;	//struct fd type invalid.
-			(files + fd)->isatty = (sint32)structfd_isattydefault;
-			(files + fd)->descriptor_flags = (sint32)structfd_descriptorflagsdefault;
-			(files + fd)->status_flags = (sint32)structfd_status_flagsdefault;
-			(files + fd)->loc = (sint32)structfd_fildir_offsetdefault;	
 		}
 	}
 	

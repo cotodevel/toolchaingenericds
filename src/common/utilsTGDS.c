@@ -418,11 +418,6 @@ int	FS_getFileSize(char *fnm){
 		}
 		
 		printf("FS_getFileSize():fnm:%s",fnm);
-		//while(1==1){}
-	}
-	else{
-		printf("FS_getFileSize():fnm NULL!");
-		while(1==1){}
 	}
 	return size;
 }
