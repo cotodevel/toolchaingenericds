@@ -96,40 +96,51 @@ typedef struct sDSCARTHEADER {
 		int cmdlineLen = 0;
 		int i= 0;
 		for(i = 0; i < argc; i++){
-			
 			//Libnds compatibility: If (send) addARGV 0:/ change to fat:/
 			char thisARGV[MAX_TGDSFILENAME_LENGTH+1];
 			memset(thisARGV, 0, sizeof(thisARGV));
 			strcpy(thisARGV, &argv[i*MAX_TGDSFILENAME_LENGTH]);
-			
-			if(
-				(thisARGV[0] == '0')
-				&&
-				(thisARGV[1] == ':')
-				&&
-				(thisARGV[2] == '/')
-				){
-				char thisARGV2[MAX_TGDSFILENAME_LENGTH+1];
-				memset(thisARGV2, 0, sizeof(thisARGV2));
-				strcpy(thisARGV2, "fat:/");
-				strcat(thisARGV2, &thisARGV[3]);	//1+last
+			if(strlen(thisARGV) <= 3){
 				
-				//copy back
-				memset(&argv[i*MAX_TGDSFILENAME_LENGTH], 0, 256);
-				strcpy(&argv[i*MAX_TGDSFILENAME_LENGTH], thisARGV2);
 			}
-			
-			strcpy(cmdline + cmdlineLen, &argv[i*MAX_TGDSFILENAME_LENGTH]);
-			cmdlineLen+= strlen(&argv[i*MAX_TGDSFILENAME_LENGTH]) + 1;
+			else{
+				if(
+					(thisARGV[0] == '0')
+					&&
+					(thisARGV[1] == ':')
+					&&
+					(thisARGV[2] == '/')
+					){
+					char thisARGV2[MAX_TGDSFILENAME_LENGTH+1];
+					memset(thisARGV2, 0, sizeof(thisARGV2));
+					strcpy(thisARGV2, "fat:/");
+					strcat(thisARGV2, &thisARGV[3]);	//1+last
+					
+					//copy back
+					memset(&argv[i*MAX_TGDSFILENAME_LENGTH], 0, 256);
+					strcpy(&argv[i*MAX_TGDSFILENAME_LENGTH], thisARGV2);
+				}
+				
+				strcpy(cmdline + cmdlineLen, &argv[i*MAX_TGDSFILENAME_LENGTH]);
+				cmdlineLen+= strlen(&argv[i*MAX_TGDSFILENAME_LENGTH]) + 1;
+			}
 		}
-
-		__system_argv->argvMagic = ARGV_MAGIC;
-		__system_argv->commandLine = cmdline;
-		__system_argv->length = cmdlineLen;
 		
-		// reserved when ARGV receives into main()
-		//__system_argv->argc = ;
-		//__system_argv->argv = ;
+		if(strlen(cmdline) <= 3){
+			strcpy(cmdline,"");
+			__system_argv->argvMagic = ARGV_MAGIC;
+			__system_argv->commandLine = cmdline;
+			__system_argv->length = 0;
+		}
+		else{
+			__system_argv->argvMagic = ARGV_MAGIC;
+			__system_argv->commandLine = cmdline;
+			__system_argv->length = cmdlineLen;
+			
+			// reserved when ARGV receives into main()
+			//__system_argv->argc = ;
+			//__system_argv->argv = ;
+		}
 	}
 	#endif
 
