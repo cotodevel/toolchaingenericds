@@ -161,8 +161,10 @@ void initHardware(u8 DSHardware) {
 	//Read DHCP settings (in order)
 	LoadFirmwareSettingsFromFlash();
 	
+	//Hardware ARM7 Init
 	u8 DSHardwareReadFromFlash = TGDSIPC->DSFWHEADERInst.stub[0x1d];
 	resetMemory_ARMCores(DSHardwareReadFromFlash);
+	IRQInit(DSHardwareReadFromFlash);
 	
 	//Init SoundSampleContext
 	initSoundSampleContext();
@@ -171,7 +173,9 @@ void initHardware(u8 DSHardware) {
 	
 	#ifdef ARM9
 	
+	//Hardware ARM9 Init
 	resetMemory_ARMCores(DSHardware);
+	IRQInit(DSHardware);
 	
 	//Library init code
 	

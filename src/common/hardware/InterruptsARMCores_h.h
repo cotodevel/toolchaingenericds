@@ -53,8 +53,6 @@ extern __attribute__((weak))	void Timer3handlerUser();
 extern __attribute__((weak))	void screenLidHasOpenedhandlerUser();
 extern __attribute__((weak))	void screenLidHasClosedhandlerUser();
 extern __attribute__((weak))	void IpcSynchandlerUser(uint8 ipcByte);
-
-
 //weak symbols end
 
 extern uint32 getIRQs();
@@ -65,7 +63,7 @@ extern void QueueIrq(uint32 IRQ);
 extern void NDS_IRQHandler();
 extern void IRQWait(uint32 irqstowait);
 extern void IRQVBlankWait();
-extern void IRQInit();
+extern void IRQInit(u8 DSHardware);
 
 #ifdef __cplusplus
 }

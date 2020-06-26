@@ -35,29 +35,52 @@ USA
 #include "eventsTGDS.h"
 #include "dldi.h"
 
-void IRQInit(){
-	//fifo setups
-	REG_IME = 0;
-	REG_IPC_SYNC = (1 << 14);	//14    R/W  Enable IRQ from remote CPU  (0=Disable, 1=Enable)
-    REG_IPC_FIFO_CR = IPC_FIFO_SEND_CLEAR | RECV_FIFO_IPC_IRQ  | FIFO_IPC_ENABLE;
-	
-	//Set up PPU IRQ: HBLANK/VBLANK/VCOUNT
-    REG_DISPSTAT = (DISP_HBLANK_IRQ | DISP_VBLANK_IRQ | DISP_YTRIGGER_IRQ);
-	
-	//Set up PPU IRQ Vertical Line
-	setVCountIRQLine(TGDS_VCOUNT_LINE_INTERRUPT);
-	
-	#ifdef ARM7
-	REG_IE = IRQ_TIMER1 | IRQ_HBLANK | IRQ_VBLANK | IRQ_VCOUNT | IRQ_IPCSYNC | IRQ_RECVFIFO_NOT_EMPTY | IRQ_SCREENLID;
-	#endif
-	
-	#ifdef ARM9
-	REG_IE = IRQ_HBLANK| IRQ_VBLANK | IRQ_VCOUNT | IRQ_IPCSYNC | IRQ_RECVFIFO_NOT_EMPTY ;
-	#endif
-	
-	INTERRUPT_VECTOR = (uint32)&NDS_IRQHandler;
-	REG_IF = REG_IF;
-	REG_IME = 1;
+void IRQInit(u8 DSHardware){
+	//NTR
+	if(
+		(DSHardware == 0xFF)
+		||
+		(DSHardware == 0x20)
+		||
+		(DSHardware == 0x43)
+		||
+		(DSHardware == 0x63)
+	){
+		//FIFO IRQ Init
+		REG_IME = 0;
+		REG_IPC_SYNC = (1 << 14);	//14    R/W  Enable IRQ from remote CPU  (0=Disable, 1=Enable)
+		REG_IPC_FIFO_CR = IPC_FIFO_SEND_CLEAR | RECV_FIFO_IPC_IRQ  | FIFO_IPC_ENABLE;
+		
+		//Set up PPU IRQ: HBLANK/VBLANK/VCOUNT
+		REG_DISPSTAT = (DISP_HBLANK_IRQ | DISP_VBLANK_IRQ | DISP_YTRIGGER_IRQ);
+		
+		//Set up PPU IRQ Vertical Line
+		setVCountIRQLine(TGDS_VCOUNT_LINE_INTERRUPT);
+		
+		#ifdef ARM7
+		REG_IE = IRQ_TIMER1 | IRQ_HBLANK | IRQ_VBLANK | IRQ_VCOUNT | IRQ_IPCSYNC | IRQ_RECVFIFO_NOT_EMPTY | IRQ_SCREENLID;
+		#endif
+		
+		#ifdef ARM9
+		REG_IE = IRQ_HBLANK| IRQ_VBLANK | IRQ_VCOUNT | IRQ_IPCSYNC | IRQ_RECVFIFO_NOT_EMPTY ;
+		#endif
+		
+		INTERRUPT_VECTOR = (uint32)&NDS_IRQHandler;
+		REG_IF = REG_IF;
+		REG_IME = 1;
+	}
+	//TWL 
+	else if(DSHardware == 0x57){
+		  
+		#ifdef ARM7
+		//TWL ARM7 IRQ Init code goes here...
+		#endif
+		
+		#ifdef ARM9
+		//TWL ARM9 IRQ Init code goes here...
+		#endif
+		
+	}
 }
 
 //Software bios irq more or less emulated. (replaces default NDS bios for some parts)
