@@ -151,7 +151,14 @@ USA
 #define ARM7FS_TRANSACTIONSTATUS_BUSY (int)(0)
 
 typedef struct sIPCSharedTGDS {
-    uint16 buttons7;  			// X, Y, /PENIRQ buttons
+    
+	//NDS Header: Set up by ARM9 on boot.
+	struct sDSCARTHEADER DSHeader;
+	
+	//Load firmware from FLASH
+	struct sDSFWHEADER DSFWHEADERInst;
+	
+	uint16 buttons7;  			// X, Y, /PENIRQ buttons
     uint16 KEYINPUT7;			//REG_KEYINPUT ARM7
 	uint16 touchX,   touchY;   // raw x/y TSC SPI
 	sint16 touchXpx, touchYpx; // TFT x/y pixel (converted)
@@ -164,7 +171,6 @@ typedef struct sIPCSharedTGDS {
 	ulong ndsRTCSeconds; //DateTime in epoch time (seconds) starting from January 1, 1970 (midnight UTC/GMT)
 	uint8	dayOfWeek;	//Updated when the above inst is updated
 	
-	uint8 consoletype;
 	/*
 	Language and Flags (Entry 064h)
 	Bit
@@ -184,10 +190,6 @@ typedef struct sIPCSharedTGDS {
 	The Health and Safety message is skipped if Bit9=1, or if one or more of the following bits is zero: Bits 10,11,13,14,15. However, as soon as entering the bootmenu, the Penalty-Prompt occurs.
 	*/
 	uint8 nickname_schar8[0x20];	//converted from UTF-16 to char*
-	uint8 lang_flags[0x2];
-	
-	//NDS Header: Set up by ARM9 on boot.
-	struct sDSCARTHEADER DSHeader;
 	
 	uint32 WRAM_CR_ISSET;	//0 when ARM7 boots / 1 by ARM9 when its done
 	
@@ -251,10 +253,6 @@ static inline void sendByteIPC(uint8 inByte){
 
 static inline uint8 receiveByteIPC(){
 	return (REG_IPC_SYNC&0xf);
-}
-
-static inline uint8 getLanguage(){
-	return (uint8)(((TGDSIPC->lang_flags[1]<<8)|TGDSIPC->lang_flags[0])&language_mask);
 }
 
 #endif

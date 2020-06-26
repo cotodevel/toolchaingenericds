@@ -32,14 +32,13 @@ USA
 #include "spifwTGDS.h"
 
 void LoadFirmwareSettingsFromFlash(){
+	memset((uint8*)&TGDSIPC->DSFWHEADERInst, 0, sizeof(TGDSIPC->DSFWHEADERInst));
 	
-	//Load firmware from FLASH
-	struct sDSFWHEADER DSFWHEADERInst;
 	
-	readFirmwareSPI((uint32)0x20, (uint8*)&DSFWHEADERInst.usersettings_offset[0], 0x2);	//020h 2    User Settings Offset (div8) (usually last 200h flash bytes)
+	readFirmwareSPI((uint32)0, (uint8*)&TGDSIPC->DSFWHEADERInst.stub[0], sizeof(TGDSIPC->DSFWHEADERInst.stub));	//020h 2    User Settings Offset (div8) (usually last 200h flash bytes)
 	
 	//Get User Settings : Offset (div8) accounted
-	uint32 usersetting_offset0 = (DSFWHEADERInst.usersettings_offset[1]<<8) | DSFWHEADERInst.usersettings_offset[0];
+	uint32 usersetting_offset0 = (TGDSIPC->DSFWHEADERInst.stub[0x21]<<8) | TGDSIPC->DSFWHEADERInst.stub[0x20];
 	usersetting_offset0 = (usersetting_offset0 * 8);
 	
 	uint32 usersetting_offset1 = usersetting_offset0 + (sint32)DS_FW_USERSETTINGS_SIZE;
@@ -70,17 +69,19 @@ void LoadFirmwareSettingsFromFlash(){
 	else{
 		//Proceed, but invalid NVRAM settings
 	}
-	
 }
 
 void ParseFWSettings(uint32 usersetting_offset){
+	memset((uint8*)&TGDSIPC->DSFWSETTINGSInst, 0, sizeof(TGDSIPC->DSFWSETTINGSInst));
+	readFirmwareSPI((uint32)usersetting_offset, (uint8*)&TGDSIPC->DSFWSETTINGSInst, sizeof(TGDSIPC->DSFWSETTINGSInst));
 	
-	readFirmwareSPI((uint32)usersetting_offset, (uint8*)&TGDSIPC->DSFWSETTINGSInst, sizeof(struct sDSFWSETTINGS));
-	readFirmwareSPI((uint32)usersetting_offset+0x01D, (uint8*)&TGDSIPC->consoletype, sizeof(TGDSIPC->consoletype));
 	ucs2tombs((uint8*)&TGDSIPC->nickname_schar8[0],(unsigned short*)&TGDSIPC->DSFWSETTINGSInst.nickname_utf16[0],32);
 	int nicknameLength = (int)(TGDSIPC->DSFWSETTINGSInst.nickname_length_chars[0] | TGDSIPC->DSFWSETTINGSInst.nickname_length_chars[1] << 8);
-	TGDSIPC->nickname_schar8[nicknameLength] = '\0'; 
-	readFirmwareSPI((uint32)usersetting_offset+0x64, (uint8*)&TGDSIPC->lang_flags[0], 0x2);
+	TGDSIPC->nickname_schar8[nicknameLength] = '\0';
 }
 
 #endif
+
+uint8 getLanguage(){
+	return (uint8)( (TGDSIPC->DSFWSETTINGSInst.fw_language[0])&language_mask);
+}

@@ -45,6 +45,7 @@ void readFirmwareSPI(uint32 address, uint8 * destination, uint32 size){
 	// Read the data
 	for(offset=0;offset<size;offset++) {
 		destination[offset] = RWSPICNT(0);
+		swiDelay(1);
 	}
 	
 	//Set Chip Select HIGH to finish the command
