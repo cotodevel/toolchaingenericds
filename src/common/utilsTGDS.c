@@ -416,8 +416,6 @@ int	FS_getFileSize(char *fnm){
 			size = FS_getFileSizeFromOpenStructFD(pfd);
 			closeFileFromStructFD(structFD);
 		}
-		
-		printf("FS_getFileSize():fnm:%s",fnm);
 	}
 	return size;
 }
