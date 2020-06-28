@@ -73,6 +73,9 @@ Features:
 	- TGDS Sound API: Mono / Stereo WAV 8-bit signed -- 16-bit signed -- 24-bit signed -- 32-bit signed sound streaming support + sound samples (sound samples should load onto memory, play them then be deallocated). 
 	- TGDS Events: Allow to set several events (like screen power off, keypress or sound play samples, etc depending on scripted files). WIP: Add record event methods.
 	- WIP: 3D Support
+	- DLDI RAMDISK Support. DLDI in emulator environment.
+		Notes:
+		DLDI RAMDisk: Download http://memory.dataram.com/products-and-services/software/ramdisk#freeware, mount a RAMDisk, copy files to it. Then use Desmume, choose Slot-2 (Gba slot) -> GBA Cartridge, choose the RAMDisk!. Launch emulator, TGDS Project now works with DLDI (32MB @ 0x08000000)!
 
 The environment uses GCC 4.9.2 to build Newlib 2.1 for Nintendo DS, and ToolchainGenericDS.
 
