@@ -152,3 +152,7 @@ ifeq ($(SOURCE_MAKEFILE9),default)
 endif
 	-@rm -fr $(EXECUTABLE_FNAME)
 	-@rm -fr	$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
+
+commitChanges:
+	-@git commit -a	-m '$(COMMITMSG)'
+	-@git push origin HEAD
