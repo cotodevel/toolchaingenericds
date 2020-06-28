@@ -20,19 +20,29 @@
 //zalloc / zfree (zlib) default function prototypes look like:
 //void * 	zalloc (void *opaque, unsigned items, unsigned size)
 //void 		zfree (void *opaque, void *ptr)
-int funzipstdio(FILE *in, FILE *out){
+int funzipstdio(char * inFname, char * outFname){
+	
 	int encrypted;
 	ush n;
 	uch h[LOCHDR];                // first local header (GZPHDR < LOCHDR)
 	int g = 0;                    // true if gzip format
 	unsigned int method = 0;      // initialized here to shut up gcc warning
 	int size = -1;
-
+	u8 fname[256+1];
+	memset(fname, 0, sizeof(fname));
+	
+	FILE *in=fopen(inFname, "r");
+	if(!in){
+		return -1;
+	}
+	
 	//info-zip's funzip stuff
 	n = fgetc(in);  n |= fgetc(in) << 8;
 	if (n == ZIPMAG){
-		if (fread((char *)h, 1, LOCHDR, in) != LOCHDR || SH(h) != LOCREM)
+		if (fread((char *)h, 1, LOCHDR, in) != LOCHDR || SH(h) != LOCREM){
 			err("invalid zipfile");
+		}
+
 		switch (method = SH(h + LOCHOW)) {
 			case STORED:
 			case DEFLATED:
@@ -41,9 +51,14 @@ int funzipstdio(FILE *in, FILE *out){
 				err("first entry not deflated or stored");
 				break;
 		}
-		for (n = SH(h + LOCFIL); n--; ) g = fgetc(in);
-		for (n = SH(h + LOCEXT); n--; ) g = fgetc(in);
-		g = 0;
+		int offst = 0;
+		for (n = SH(h + LOCFIL); n--; ){ 
+			g = fgetc(in);
+			fname[offst] = g;
+			offst++;
+		}
+		for (n = SH(h + LOCEXT); n--; ){ g = fgetc(in); }
+		fname[offst] = g = 0;
 		size = LG(h+LOCSIZ);
 		encrypted = h[LOCFLG] & CRPFLG;
 	}
@@ -79,6 +94,27 @@ int funzipstdio(FILE *in, FILE *out){
 	if (encrypted){
 		err("encrypted zip unsupported");
 	}
+	
+	//Generate full dir path for output: internal ZIP name
+	strncpy(outFname, fname, strlen(fname)+1);
+	u8 newOutFname[256+1];
+	memset(newOutFname, 0, sizeof(newOutFname));
+	int lastDir = (strlen(inFname) - strlen(outFname));
+	if(lastDir > 0){
+		strncpy(newOutFname, inFname, lastDir);
+	}
+	//identical name or error 
+	else{
+		strncpy(newOutFname, inFname, strlen(inFname));
+	}
+	strcat(newOutFname, outFname);
+	strcpy(outFname, newOutFname);
+	FILE *out=fopen(outFname,"w+");
+	if(!out){
+		fclose(in);
+		return -1;
+	}
+	
 	//decompress
 	if (g || h[LOCHOW]){ //deflate
 		Bytef *ibuffer, *obuffer;
@@ -149,30 +185,18 @@ int funzipstdio(FILE *in, FILE *out){
 		while (size--) {
 			int c = fgetc(in);fputc(c,out);
 		}
-	}
-
+	}	
+	fclose(in);
+	fclose(out);
 	//should check CRC32 but...
 	return 0;
 }
 
 
-//UserCode: (char*)"path1ToFileZipped", (char*)"path2ToNewFileCreatedUnzipped"
+//UserCode: (char*)"path1ToFileZipped", (char*)Must be an EMPTY char[MAX_TGDSFILENAME_LENGTH+1] as it stores the Zipped internal filename.
 int load_gz(char *fname, char *newtempfname)
 {
-	return do_decompression_ewramstack(fname, newtempfname);	//use EWRAM as STACK
-}
-
-int do_decompression(char *inname, char *outname){
-	FILE *in=fopen(inname,"r");
-	if(!in)return -1;
-	FILE *out=fopen(outname,"w+");
-	if(!out){fclose(in);return -1;}
-	int ret = funzipstdio(in,out);
-	
-	fclose(in);
-	fclose(out);
-	
-	return ret;
+	return funzipstdio(fname, newtempfname);
 }
 
 u8* xenoTGDSARM9Malloc(int size){
