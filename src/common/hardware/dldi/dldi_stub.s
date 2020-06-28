@@ -31,7 +31,7 @@ _dldi_start:
 @---------------------------------------------------------------------------------
 @ Text identifier - can be anything up to 47 chars + terminating null -- 16 bytes
 	.align	4
-	.asciz "Default (No interface)"
+	.asciz "TGDS RAMDISK DLDI Driver @0x08000000 32MB"
 
 @---------------------------------------------------------------------------------
 @ Offsets to important sections within the data	-- 32 bytes
@@ -55,19 +55,6 @@ _dldi_start:
 	.word	_DLDI_writeSectors		@ 
 	.word	_DLDI_clearStatus		@ 
 	.word	_DLDI_shutdown			@ 
-	
-@---------------------------------------------------------------------------------
-
-_DLDI_startup:
-_DLDI_isInserted:
-_DLDI_readSectors:
-_DLDI_writeSectors:
-_DLDI_clearStatus:
-_DLDI_shutdown:
-	mov		r0, #0x00				@ Return false for every function
-	bx		lr
-
-
 
 @---------------------------------------------------------------------------------
 	.align

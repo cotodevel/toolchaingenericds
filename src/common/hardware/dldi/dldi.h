@@ -196,6 +196,14 @@ extern bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buff
 extern bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buffer);
 #endif
 
+//Coto: RAM Disk DLDI Implementation. DLDI RW Works (32MB @ 0x08000000) in emulators now!
+extern bool _DLDI_isInserted(void);
+extern bool _DLDI_clearStatus(void);
+extern bool _DLDI_shutdown(void);
+extern bool _DLDI_startup(void);
+extern bool _DLDI_readSectors(uint32 sector, uint32 sectorCount, uint8* buffer);
+extern bool _DLDI_writeSectors(uint32 sector, uint32 sectorCount, const uint8* buffer);
+
 #ifdef __cplusplus
 }
 #endif

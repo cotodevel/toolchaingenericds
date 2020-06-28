@@ -463,3 +463,53 @@ bool dldiPatchLoader(data_t *binData, u32 binSize, u32 physDLDIAddress)
 
 	return true;
 }
+
+/////////////////////////////////////////////////// RAM Disk DLDI Implementation ////////////////////////////////////////////
+
+bool _DLDI_isInserted(void)
+{
+	return true;	//Always True
+}
+
+bool _DLDI_clearStatus(void)
+{
+    return true;	//Always True
+}
+
+bool _DLDI_shutdown(void)
+{
+    return true;	//Always True
+}
+
+bool _DLDI_startup(void)
+{
+    return true;	//Always True
+} 
+
+bool _DLDI_writeSectors(uint32 sector, uint32 sectorCount, const uint8* buffer)
+{
+	int sectorSize = 512;
+	int curSector = 0;
+	while(sectorCount > 0)
+	{
+        memcpy(((u8*)0x08000000 + ((sector+curSector)*sectorSize)), (buffer + (curSector*sectorSize)), sectorSize);
+		curSector++;
+		--sectorCount;
+	}
+    return true;
+}
+
+bool _DLDI_readSectors(uint32 sector, uint32 sectorCount, uint8* buffer)
+{
+	int sectorSize = 512;
+	int curSector = 0;
+	while(sectorCount > 0)
+	{
+        memcpy(buffer + (curSector*sectorSize), ((u8*)0x08000000 + ((sector+curSector)*sectorSize)), sectorSize);
+		curSector++;
+		--sectorCount;
+	}
+    return true;
+}
+
+//////////////////////////////////////////////// RAM Disk DLDI Implementation End ///////////////////////////////////////////
