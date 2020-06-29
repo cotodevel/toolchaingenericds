@@ -357,16 +357,20 @@ bool dldiPatchLoader(data_t *binData, u32 binSize, u32 physDLDIAddress)
 
 	data_t *pDH;
 	data_t *pAH;
-
 	size_t dldiFileSize = 0;
-	
 	pDH = (data_t*)physDLDIAddress;
+	//DS DLDI
+	struct  DLDI_INTERFACE* dldiInterface = (struct  DLDI_INTERFACE*)pDH;
 	
 	if (*((u32*)(pDH + DO_ioType)) == DEVICE_TYPE_DLDI) 
 	{
 		#ifdef ARM9
 		printf("DLDI section not found in NTR binary. ");
 		#endif
+	}
+	//TGDS DLDI RAMDISK? No need to patch because the offsets are outside the DLDI stub and kept in TGDS NDS Binary anyway to be reused later
+	if(strncmp((char *)&dldiInterface->friendlyName[0], "TGDS RAMDISK", 12) == 0){
+		return false;
 	}
 	else{
 		#ifdef ARM9
