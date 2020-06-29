@@ -55,6 +55,29 @@ USA
 
 #define		BITMASK_SPI_DATA	0xff
 
+//Card SPI
+#define CARD_COMMAND   ((vu8*)0x040001A8)
+#define REG_ROMCTRL		(*(vu32*)0x040001A4)
+#define REG_AUXSPICNT	(*(vu16*)0x040001A0)
+#define REG_AUXSPICNTH	(*(vu8*)0x040001A1)
+#define REG_AUXSPIDATA	(*(vu8*)0x040001A2)
+
+#define CARD_DATA_RD   (*(vu32*)0x04100010)
+
+#define CARD_1B0       (*(vu32*)0x040001B0)
+#define CARD_1B4       (*(vu32*)0x040001B4)
+#define CARD_1B8       (*(vu16*)0x040001B8)
+#define CARD_1BA       (*(vu16*)0x040001BA)
+
+
+#define CARD_CR1_ENABLE  0x80  // in byte 1, i.e. 0x8000
+#define CARD_CR1_IRQ     0x40  // in byte 1, i.e. 0x4000
+
+// 3 bits in b10..b8 indicate something
+// read bits
+#define CARD_BUSY         (1<<31)           // when reading, still expecting incomming data?
+#define CARD_DATA_READY   (1<<23)           // when reading, CARD_DATA_RD or CARD_DATA has another word of data and is good to go
+
 #endif
 
 #ifdef __cplusplus
