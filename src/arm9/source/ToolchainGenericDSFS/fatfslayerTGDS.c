@@ -1311,7 +1311,7 @@ off_t fatfs_lseek(int structFDIndex, off_t offset, int whence){	//(FileDescripto
 				if(offset < 0){
 					offset = 0;
 				}
-				if(offset >= topFile){
+				if(offset > (topFile - 1)){
 					offset = (topFile - 1);	//offset starts from 0 so -1 here
 				}
 				pos = offset;
@@ -1321,12 +1321,12 @@ off_t fatfs_lseek(int structFDIndex, off_t offset, int whence){	//(FileDescripto
 			//<<SEEK_CUR>>---<[offset]> is relative to the current file position.
 			//<[offset]> can meaningfully be either positive or negative.
 			case(SEEK_CUR):{
-				pos = f_tell(filp);
+				pos = pfd->loc;
 				pos += offset;
 				if((int)pos < 0){
 					pos = 0;
 				}
-				if(pos >= topFile){
+				if(pos >= (topFile - 1)){
 					pos = (topFile - 1);	//offset starts from 0 so -1 here
 				}
 				validArg = true;
@@ -1337,6 +1337,13 @@ off_t fatfs_lseek(int structFDIndex, off_t offset, int whence){	//(FileDescripto
 			//of the file) or negative.
 			case(SEEK_END):{
 				pos = topFile;				//file end is fileSize
+				pos += offset;
+				if(pos < 0){
+					pos = 0;
+				}
+				if(pos > topFile){
+					pos = topFile;
+				}
 				validArg = true;
 			}
 			break;	
