@@ -413,6 +413,15 @@ struct FileClass * FAT_FindNextFile(char* filename, struct FileClassList * lst){
 	return getNextFile(filename, lst);
 }
 
+u8 FAT_GetFileAttributesFromFileClass(struct FileClass * fileInst){
+	u8	libfatAttributes = 0;
+	FILINFO finfo; 
+	if(getFileFILINFOfromFileClass(fileInst, &finfo) == true){
+		libfatAttributes = (uint8)fatfs2libfatAttrib((int)finfo.fattrib);
+	}
+	return libfatAttributes;
+}
+
 u8 FAT_GetFileAttributes(struct FileClassList * lst){
 	u8	libfatAttributes = 0;
 	int curFileDirEntry = lst->CurrentFileDirEntry;

@@ -48,8 +48,6 @@ USA
 
 //These must be invalid values so false positives do not arise in lookup functions
 //FileList specific (internal retCode)
-
-//these must be invalid values so false positives do not arise in lookup functions
 #define structfd_posixInvalidFileDirOrBufferHandle	(sint32)(-1)	//used by fatfs_xxx layer, FAT_xxx layer (libfat wrapper), cluster functions. Marks a TGDS FileHandle as invalid (TGDS FileHandle: structFD index file descriptor)
 #define structfd_posixExcludedFileDirOrBufferHandle	(sint32)(-2)	//used by fatfs_xxx layer, FAT_xxx layer (libfat wrapper), cluster functions. Marks a TGDS FileHandle as excluded and unused by TGDS FS API (TGDS FileHandle: structFD index file descriptor)
 
@@ -58,7 +56,7 @@ USA
 #define structfd_posixInvalidFileHandleOffset	(sint32)(-1)	//internal offset currently held by the struct fd which exposes to POSIX API
 #define structfd_FileClassListInvalidEntry		(sint32)(-1)	//TGDS FS API -> Directory Iterator (FileClass): Invalid Entry within a FileClassList
 
-//libfat attributes so gccnewlibnano_to_fatfs is compatible with libfat homebrew
+//Libfat attributes to add compatibility with it
 #ifndef ATTRIB_ARCH
 #define ATTRIB_ARCH	(int)(0x20)			// Archive
 #define ATTRIB_DIR	(int)(0x10)			// Directory
@@ -69,7 +67,7 @@ USA
 #define ATTRIB_RO	(int)(0x01)			// Read only
 #endif
 
-//up to N items to be listed by TGDS High level API functions
+//Up to N items to be listed by TGDS High level API functions
 #define FileClassItems (int)(300)
 
 //Directory Separator used by TGDS FS
@@ -179,6 +177,7 @@ extern char * dldi_tryingInterface();
 /////////////////////////////////////////Libfat wrapper layer. Call these as if you were calling libfat code./////////////////////////////////////////
 extern struct FileClass * FAT_FindFirstFile(char* filename, struct FileClassList * lst, int startFromGivenIndex);
 extern struct FileClass * 	FAT_FindNextFile(char* filename, struct FileClassList * lst);
+extern u8 	FAT_GetFileAttributesFromFileClass(struct FileClass * fileInst);
 extern u8 	FAT_GetFileAttributes(struct FileClassList * lst);
 extern u8 	FAT_SetFileAttributes(const char* filename, u8 attributes, u8 mask);
 extern bool readFileNameFromFileClassIndex(char* filename_out, struct FileClass * FileClassInst);
