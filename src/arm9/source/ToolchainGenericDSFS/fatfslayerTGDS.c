@@ -66,6 +66,50 @@ sint8 * getfatfsPath(sint8 * filename){
 	return (sint8*)&charbuf[0];
 }
 
+//Extracts the Current Working Directory out of a full FatFS filepath: 
+//char * filepath = "0://dir1/dir2/dir3/somefile.ext";
+//char outDir[256+1] = {0};
+//getDirFromFilePath(filepath, (char*)&outDir[0]);
+//printf("getDirFromFilePath():%s", outDir);
+
+void getDirFromFilePath(char * filePath, char* outDirectory){
+    char tempDir[256+1] = {0};
+    strcpy(tempDir, filePath);
+    int offset = 0;
+    int len = strlen(tempDir)+1;
+    //Remove leading "0:/"
+    char chr = tempDir[offset];
+    while(
+        (chr == '0')
+        ||
+        (chr == ':')
+        ||
+        (chr == '/')
+    )
+    {
+        offset++;
+        if(offset < (len-1)){
+            chr = tempDir[offset];
+        }
+    }
+    strncpy(outDirectory, (char*)&tempDir[offset], len - offset);
+    outDirectory[len - offset + 1] = '\0';
+    
+    //Remove last filename and extension
+    int offsetEnd = len - offset + 1;
+    chr = tempDir[offsetEnd];
+    while(
+        (chr != '/')
+    )
+    {
+        offsetEnd--;
+        if(offsetEnd >= 0){
+            chr = tempDir[offsetEnd];
+        }
+    }
+    
+    outDirectory[len - offsetEnd + 1] = '\0';
+}
 
 //these two work together (usually)
 int OpenFileFromPathGetStructFD(char * fullPath){

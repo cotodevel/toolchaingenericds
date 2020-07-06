@@ -141,6 +141,7 @@ extern int		FS_init();
 extern int		FS_deinit();
 extern sint8 charbuf[MAX_TGDSFILENAME_LENGTH+1];
 extern sint8 * getfatfsPath(sint8 * filename);
+extern void getDirFromFilePath(char * filePath, char* outDirectory);
 extern int FileExists(char * filename);
 extern int rename(const sint8 *oldpathfile, const sint8 *newpathfile);
 extern int fsync(int fd);
