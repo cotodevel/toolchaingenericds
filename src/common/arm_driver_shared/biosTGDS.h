@@ -105,7 +105,7 @@ static inline void handleARM7SVC(){
 	//Lid Closing + backlight events (ARM7)
 	if(isArm7ClosedLid == false){
 		if((REG_KEYXY & KEY_HINGE) == KEY_HINGE){
-			SendFIFOWords(FIFO_IRQ_LIDHASCLOSED_SIGNAL, 0);
+			SendFIFOWordsITCM(FIFO_IRQ_LIDHASCLOSED_SIGNAL, 0);
 			screenLidHasClosedhandlerUser();
 			isArm7ClosedLid = true;
 		}
@@ -167,7 +167,6 @@ extern int swiDecompressLZSSVram(void * source, void * destination, uint32 toGet
 //C
 extern void swiFastCopy(uint32 * source, uint32 * dest, int flags);
 extern struct LZSSContext LZS_DecodeFromBuffer(unsigned char *pak_buffer, unsigned int   pak_len);
-extern bool isArm7ClosedLid;
 
 //Init SVCs
 #ifdef ARM7

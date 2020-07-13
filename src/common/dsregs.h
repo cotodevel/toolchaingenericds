@@ -105,7 +105,7 @@ USA
 #define		DISPCNT2	(*((uint32 volatile *) 0x04001000))
 #define		DISPSTAT2	(*((uint16 volatile *) 0x04001004))
 
-//sound
+//Sound. ARM9 / ARM7 can issue these commands
 #define SOUND_VOL(n)	(n)
 #define SOUND_FREQ(n)	((-0x1000000 / (n)))
 #define SOUND_ENABLE	(1<<15)
@@ -251,6 +251,19 @@ USA
 #define SPRITE_GFX			((uint16*)0x6400000)	
 #define SPRITE_GFX_SUB		((uint16*)0x6600000)
 
+#define VRAM_0        ((uint16*)0x6000000)
+//#define VRAM          ((uint16*)0x6800000)
+
+#define VRAM_A        ((uint16*)0x6800000)
+#define VRAM_B        ((uint16*)0x6820000)
+#define VRAM_C        ((uint16*)0x6840000)
+#define VRAM_D        ((uint16*)0x6860000)
+#define VRAM_E        ((uint16*)0x6880000)
+#define VRAM_F        ((uint16*)0x6890000)
+#define VRAM_G        ((uint16*)0x6894000)
+#define VRAM_H        ((uint16*)0x6898000)
+#define VRAM_I        ((uint16*)0x68A0000)
+
 #define OAM           ((uint16*)0x07000000)
 #define OAM_SUB       ((uint16*)0x07000400)
 
@@ -271,17 +284,22 @@ USA
 #define VRAM_H_CR		(*(vuint8*)0x04000248)
 #define VRAM_I_CR		(*(vuint8*)0x04000249)
 
+#define VRAM_ENABLE		(1<<7)
+#define VRAM_OFFSET(n)	((n)<<3)
+
 #define REG_BG1VOFS BG1VOFS
 #define REG_BG2VOFS BG2VOFS
 #define REG_BG3VOFS BG3VOFS
 
-//use POWERMAN_ARM9 | POWER_XXXX to write to ARM9 regs directly.
-#define POWER_MATRIX	(1<<2) | POWERMAN_ARM9
-#define	POWER_3D_CORE	(1<<3) | POWERMAN_ARM9
-//#define POWER_LCD		(1<<0) | POWERMAN_ARM9	//remove and instead use setBacklight per LCD to turn on / off. according to gbatek
-#define POWER_2D_A		(1<<1) | POWERMAN_ARM9
-#define POWER_2D_B		(1<<9) | POWERMAN_ARM9
-#define	POWER_SWAP_LCDS	(1<<15)| POWERMAN_ARM9
+
+	//use POWERMAN_ARM9 | POWER_XXXX to write to ARM9 regs directly.
+	#define POWER_MATRIX	(1<<2) | POWERMAN_ARM9
+	#define	POWER_3D_CORE	(1<<3) | POWERMAN_ARM9
+	//#define POWER_LCD		(1<<0) | POWERMAN_ARM9	//remove and instead use setBacklight per LCD to turn on / off. according to gbatek
+	#define POWER_2D_A		(1<<1) | POWERMAN_ARM9
+	#define POWER_2D_B		(1<<9) | POWERMAN_ARM9
+	#define	POWER_SWAP_LCDS	(1<<15)| POWERMAN_ARM9
+
 
 #define BG_32x32    (0 << 14)
 #define BG_64x32    (1 << 14)
@@ -318,6 +336,16 @@ USA
 #define BG_COLOR_256		(0x80)
 #define BG_COLOR_16			(0x00)
 
+
+#define BACKGROUND           (*((bg_attribute *)0x04000008))
+#define BG_OFFSET ((bg_scroll *)(0x04000010))
+
+#define BG_MAP_RAM(base)		((uint16*)(((base)*0x800) + 0x06000000))
+#define BG_TILE_RAM(base)		((uint16*)(((base)*0x4000) + 0x06000000))
+#define BG_BMP_RAM(base)		((uint16*)(((base)*0x4000) + 0x06000000))
+
+#define CHAR_BASE_BLOCK(n)			(((n)*0x4000)+ 0x06000000)
+#define SCREEN_BASE_BLOCK(n)		(((n)*0x800) + 0x06000000)
 #define	BGCTRL			( (vuint16*)0x4000008)
 #define	REG_BGOFFSETS	( (vuint16*)0x4000010)
 #define	REG_BG0VOFS		(*(vuint16*)0x4000012)
@@ -504,11 +532,10 @@ USA
 //////////////////////////////////////////////////////////////////////////
 // ARM7 specific registers
 #ifdef ARM7
+#define	POWERCNT7		(*((uint16 volatile *) 0x04000304))
 #define REG_KEYXY 		(*(vuint16*)0x04000136)
-#define	POWERCNT7	(*((uint16 volatile *) 0x04000304))
-
 #define REG_SOUNDCNT 	(*(vuint16*)0x4000500)
-#define SOUND_CR			REG_SOUNDCNT
+#define SOUND_CR		REG_SOUNDCNT
 #define SCHANNEL_CR(n)				(*(vuint32*)(0x04000400 + ((n)<<4)))
 #define SCHANNEL_VOL(n)				(*(vuint8*)(0x04000400 + ((n)<<4)))
 #define SCHANNEL_PAN(n)				(*(vuint8*)(0x04000402 + ((n)<<4)))
@@ -516,7 +543,6 @@ USA
 #define SCHANNEL_TIMER(n)			(*(vuint16*)(0x04000408 + ((n)<<4)))
 #define SCHANNEL_REPEAT_POINT(n)	(*(vuint16*)(0x0400040A + ((n)<<4)))
 #define SCHANNEL_LENGTH(n)			(*(vuint32*)(0x0400040C + ((n)<<4)))
-
 
 //touch
 #define TSC_MEASURE_TEMP1    0x84
@@ -547,10 +573,6 @@ USA
 #define PM_AMP_ON			(int)(1)	//sound amp on
 #define PM_AMP_OFF			(int)(0)	//Turns the sound amp off
 
-#define GAIN_20           0
-#define GAIN_40           1
-#define GAIN_80           2
-#define GAIN_160          3
 
 //sound
 #define REG_SOUNDCNT		(*(vuint16*)0x4000500)	//#define SOUND_CR          (*(vuint16*)0x04000500)
@@ -564,12 +586,13 @@ USA
 #define SOUND51C          (*(vuint16*)0x0400051C)
 #define	PM_SOUND_AMP		(1<<0)
 #define	PM_SOUND_MUTE		(1<<1)
-
 //LED
 #define PM_LED_CONTROL(m)  ((m)<<4)
 
 #endif
 //ARM7 END
+
+
 
 // End of file!
 #endif

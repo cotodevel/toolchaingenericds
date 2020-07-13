@@ -25,10 +25,10 @@ USA
 #include "InterruptsARMCores_h.h"
 #include "utilsTGDS.h"
 #include "timerTGDS.h"
-#include "dldi.h"
 #include "dmaTGDS.h"
 #include "eventsTGDS.h"
 #include "ARM7FS.h"
+#include "posixHandleTGDS.h"
 
 #ifdef ARM7
 #include <string.h>
@@ -36,7 +36,6 @@ USA
 #include "spifwTGDS.h"
 #include "powerTGDS.h"
 #include "soundTGDS.h"
-#include "posixHandleTGDS.h"
 #endif
 
 #ifdef ARM9
@@ -45,8 +44,42 @@ USA
 #include "dsregs_asm.h"
 #include "wifi_arm9.h"
 #include "nds_cp15_misc.h"
+#include "dldi.h"
+#include "consoleTGDS.h"
 #endif
 
+void Write8bitAddrExtArm(uint32 address, uint8 value){
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	fifomsg[54] = address;
+	fifomsg[55] = (uint32)value;
+	SendFIFOWordsITCM(WRITE_EXTARM_8, (uint32)fifomsg);
+}
+
+void Write16bitAddrExtArm(uint32 address, uint16 value){
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	fifomsg[56] = address;
+	fifomsg[57] = (uint32)value;
+	SendFIFOWordsITCM(WRITE_EXTARM_16, (uint32)fifomsg);
+}
+
+void Write32bitAddrExtArm(uint32 address, uint32 value){
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	fifomsg[58] = address;
+	fifomsg[59] = (uint32)value;
+	SendFIFOWordsITCM(WRITE_EXTARM_32, (uint32)fifomsg);
+}
+
+//Hardware IPC struct packed 
+#ifdef ARM9
+__attribute__((section(".itcm")))
+#endif
+struct sIPCSharedTGDS* getsIPCSharedTGDS(){
+	struct sIPCSharedTGDS* getsIPCSharedTGDSInst = (__attribute__((aligned (4))) struct sIPCSharedTGDS*)0x027FF000;
+	return getsIPCSharedTGDSInst;
+}
 
 //Async FIFO Sender
 #ifdef ARM9
@@ -56,20 +89,7 @@ void SendFIFOWordsITCM(uint32 data0, uint32 data1){	//format: arg0: cmd, arg1: v
 	REG_IPC_FIFO_TX = (uint32)data1;	
 	REG_IPC_FIFO_TX = (uint32)data0;	//last message should always be command
 }
- 
-//IPC
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
-void sendMultipleByteIPC(uint8 inByte0, uint8 inByte1, uint8 inByte2, uint8 inByte3){
-	
-	uint8 * ipcMsg = (uint8 *)&TGDSIPC->ipcMesaggingQueue[0];
-	ipcMsg[0] = (u8)inByte0;
-	ipcMsg[1] = (u8)inByte1;
-	ipcMsg[2] = (u8)inByte2;
-	ipcMsg[3] = (u8)inByte3;
-	sendByteIPC(IPC_SEND_MULTIPLE_CMDS);
-}
+
 
 #ifdef ARM9
 __attribute__((section(".itcm")))
@@ -174,6 +194,7 @@ void HandleFifoNotEmpty(){
 				}
 				
 				u32 i;
+				struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 				struct soundPlayerContext * soundPlayerCtx = (struct soundPlayerContext *)&TGDSIPC->sndPlayerCtx;
 				int vMul = soundPlayerCtx->volume;
 				int lSample = 0;
@@ -245,7 +266,6 @@ void HandleFifoNotEmpty(){
 					}	
 					break;
 				}
-				VblankUser();
 			}
 			break;
 			case((uint32)TGDS_ARM7_ENABLESOUNDSAMPLECTX):{
@@ -262,22 +282,15 @@ void HandleFifoNotEmpty(){
 			}
 			break;
 			
-			case((uint32)TGDS_ARM7_SETUPARM7MALLOC):{
-				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg
-				u32 ARM7MallocStartaddress = (u32)fifomsg[39];
-				u32 memSizeBytes = (uint32)fifomsg[40];
-				initARM7Malloc(ARM7MallocStartaddress, memSizeBytes);
-				fifomsg[41] = fifomsg[40] = fifomsg[39] = 0;
-			}
-			break;
+			//fifomsg[41] = fifomsg[40] = fifomsg[39]; freed. Available for upcoming stuff
 			
-			case((uint32)TGDS_ARM7_SETUPARM9MALLOC):{	//ARM7
+			case((uint32)TGDS_ARM7_SETUPARMCoresMALLOC):{	//ARM7
 				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg
-				u32 ARM9MallocStartaddress = (u32)fifomsg[42];
-				u32 memSizeBytes = (u32)fifomsg[43];
+				u32 ARM7MallocStartaddress = (u32)fifomsg[42];
+				u32 ARM7MallocSize = (u32)fifomsg[43];
 				bool customAllocator = (bool)fifomsg[44];
 				
-				//Do ARM7 related things when initializing TGDS ARM9 Malloc.
+				initARM7Malloc(ARM7MallocStartaddress, ARM7MallocSize);
 				
 				fifomsg[45] = fifomsg[44] = fifomsg[43] = fifomsg[42] = 0;
 			}
@@ -444,11 +457,6 @@ void HandleFifoNotEmpty(){
 			}
 			break;
 			
-			case((uint32)TGDS_ARM7_SETUPARM9MALLOC):{	//ARM9 impl.
-				
-			}
-			break;
-			
 			//ARM7 FS: read from ARM9 POSIX filehandle to ARM7
 			case(TGDS_ARM7_ARM7FSREAD):{
 				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg
@@ -566,6 +574,7 @@ void HandleFifoNotEmpty(){
 //u32 * srcMemory == External ARM Core Base Address
 void ReadMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead){
 	dmaFillWord(0, 0, (uint32)targetMemory, (uint32)bytesToRead);
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[28] = (uint32)srcMemory;
 	fifomsg[29] = (uint32)targetMemory;
@@ -587,6 +596,7 @@ void SaveMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead){
 	#ifdef ARM9
 	coherent_user_range_by_size((uint32)targetMemory, (sint32)bytesToRead);
 	#endif
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[32] = (uint32)srcMemory;
 	fifomsg[33] = (uint32)targetMemory;

@@ -25,6 +25,8 @@ USA
 #include "dsregs.h"
 #include "keypadTGDS.h"
 #include "InterruptsARMCores_h.h"
+#include "limitsTGDS.h"
+#include "fatfslayerTGDS.h"
 
 static inline void parseDirNameTGDS(char * dirName){
 	int dirlen = strlen(dirName);

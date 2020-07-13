@@ -1,22 +1,58 @@
-#include "dldi.h"
-#include "typedefsTGDS.h"
-#include "dmaTGDS.h"
-#include "global_settings.h"
-#include "busTGDS.h"
-#include "ipcfifoTGDS.h"
-#include "posixHandleTGDS.h"
-
-#include <string.h>
-
 #ifdef ARM9
-#include "nds_cp15_misc.h"
-#endif
 
-// Global:
+#include <stdio.h>
+#include <string.h>
+#include "dsregs.h"
+#include "dldi.h"
+#include "dmaTGDS.h"
+#include "busTGDS.h"
 
+const uint32  DLDI_MAGIC_NUMBER = 
+	0xBF8DA5ED;	
+	
 // Stored backwards to prevent it being picked up by DLDI patchers
-const char DLDI_MAGIC_STRING_BACKWARDS [DLDI_MAGIC_STRING_LEN] =
+const sint8 DLDI_MAGIC_STRING_BACKWARDS [DLDI_MAGIC_STRING_LEN] =
 	{'\0', 'm', 'h', 's', 'i', 'h', 'C', ' '} ;
+
+
+
+const DLDI_INTERFACE* io_dldi_data = &_io_dldi_stub;
+
+const struct DISC_INTERFACE_STRUCT* dldiGetInternal (void) {
+	if (_io_dldi_stub.ioInterface.features & FEATURE_SLOT_GBA) {
+		SetBusSLOT1ARM7SLOT2ARM9();
+	}
+	if (_io_dldi_stub.ioInterface.features & FEATURE_SLOT_NDS) {
+		SetBusSLOT1ARM9SLOT2ARM7();
+	}
+	
+	return &dldiGet()->ioInterface;
+}
+
+struct DLDI_INTERFACE* dldiGet(void) {
+	if (_io_dldi_stub.ioInterface.features & FEATURE_SLOT_GBA) {
+		SetBusSLOT1ARM7SLOT2ARM9();
+	}
+	if (_io_dldi_stub.ioInterface.features & FEATURE_SLOT_NDS) {
+		SetBusSLOT1ARM9SLOT2ARM7();
+	}
+	return &_io_dldi_stub;
+}
+
+
+//DLDI bits (must extend from ARM7DLDI later)
+//ARM9DLDI:
+//ARM7: NULL ptr
+//ARM9: Global Physical DLDI section (rather than &_dldi_start, since it's discarded at TGDS init)
+u32 * DLDIARM7Address = NULL;
+
+void setDLDIARM7Address(u32 * address){
+	DLDIARM7Address = address;
+}
+
+u32 * getDLDIARM7Address(){
+	return DLDIARM7Address;
+}
 
 bool dldi_handler_init(){
 	bool status = false;
@@ -37,124 +73,56 @@ void dldi_handler_deinit(){
 	dldiInit->ioInterface.shutdown();
 }
 
-//ARM7DLDI:
-//ARM7: ARM7 physical DLDI target location address
-//ARM9: Uses this as a pointer to: ARM7 physical DLDI target location address
+/////////////////////////////////////////////////// RAM Disk DLDI Implementation ////////////////////////////////////////////
 
-//ARM9DLDI:
-//ARM7: NULL ptr
-//ARM9: Global Physical DLDI section (rather than &_dldi_start, since it's discarded at TGDS init)
-u32 * DLDIARM7Address = NULL;
-
-void setDLDIARM7Address(u32 * address){
-	DLDIARM7Address = address;
+bool _DLDI_isInserted(void)
+{
+	return true;	//Always True
 }
 
-u32 * getDLDIARM7Address(){
-	return DLDIARM7Address;
+bool _DLDI_clearStatus(void)
+{
+    return true;	//Always True
 }
 
-//ARM7 DLDI implementation
-//////////////////////////////////////////////////////////////////////////DLDI ARM7 CODE START////////////////////////////////////////////////////////////////////
-#ifdef ARM7_DLDI
-
-//ARM9 only allowed to init TGDS DLDI @ ARM7
-#ifdef ARM9
-u8 * ARM7DLDIBuf = NULL;	//Up to 64KB per cluster, should allow 64K and below 
-
-void ARM7DLDIInit(u32 targetDLDI7Address){	//ARM9 Impl.
-	SetBusSLOT1SLOT2ARM7();
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-	
-	//ARM7DLDI Shared buffer
-	ARM7DLDIBuf = (u8*)TGDSARM9Malloc(DLDI_CLUSTER_SIZE_BYTES);
-	
-	//Perform relocation, and pass the DLDI context to ARM7 Init code
-	u8* relocatedARM7DLDIBinary = (u8*)TGDSARM9Malloc(16*1024);
-	
-	//DldiRelocatedAddress == target DLDI relocated address
-	//dldiSourceInRam == physical DLDI section having a proper DLDI driver used as donor 
-	//dldiOutWriteAddress == new physical DLDI out buffer, except, relocated to a new DldiRelocatedAddress!
-	bool clearBSS = false;
-	bool status = dldiRelocateLoader(clearBSS, targetDLDI7Address, (u32)&_dldi_start, (u32)( (u32)(relocatedARM7DLDIBinary) | 0x400000));
-	if(status == true){
-		//OK
-	}
-	else{
-		printf("error relocating DLDI code");
-		while(1==1);	//Error
-	}
-	
-	setValueSafe(&fifomsg[16], (u32)relocatedARM7DLDIBinary);
-	setValueSafe(&fifomsg[17], (u32)16*1024);
-	setValueSafe(&fifomsg[18], (u32)targetDLDI7Address);
-	setValueSafe(&fifomsg[19], (u32)TGDS_DLDI_ARM7_STATUS_STAGE0);
-	sendByteIPC(IPC_INIT_ARM7DLDI_REQBYIRQ);
-	while(getValueSafe(&fifomsg[19]) == (u32)TGDS_DLDI_ARM7_STATUS_STAGE0){
-		swiDelay(1);
-	}
-	
-	if(getValueSafe(&fifomsg[19]) == 0xFFFF1234){
-		printf("DLDI7 Init failed.");
-		while(1==1);
-	}
-	else{
-		printf("DLDI7 OK.");
-	}
-	
-	TGDSARM9Free((u8*)relocatedARM7DLDIBinary);
+bool _DLDI_shutdown(void)
+{
+    return true;	//Always True
 }
 
-void ARM9DeinitDLDI(){
-	SendFIFOWordsITCM(TGDS_DLDI_ARM7_STATUS_DEINIT, (u32)0);
-}
-#endif
+bool _DLDI_startup(void)
+{
+    return true;	//Always True
+} 
 
-#ifdef ARM7
-void ARM7DLDIInit(){	//ARM7 Impl.
-	
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-	u32 relocatedARM7DLDIBinary = (u32)getValueSafe(&fifomsg[16]);
-	int DLDISize = (u32)getValueSafe(&fifomsg[17]);
-	u32 targetAddrDLDI7 = (u32)getValueSafe(&fifomsg[18]);
-	setDLDIARM7Address((u32*)targetAddrDLDI7);
-	
-	//DLDI code was relocated: Stage 1
-	memcpy((u8*)targetAddrDLDI7, (u8*)relocatedARM7DLDIBinary, DLDISize);
-	
-	//Some timeouts
-	int i = 0;
-	while(i < 500){
-		swiDelay(3);
-		i++;
+bool _DLDI_writeSectors(uint32 sector, uint32 sectorCount, const uint8* buffer)
+{
+	int sectorSize = 512;
+	int curSector = 0;
+	while(sectorCount > 0)
+	{
+        memcpy(((u8*)0x08000000 + ((sector+curSector)*sectorSize)), (buffer + (curSector*sectorSize)), sectorSize);
+		curSector++;
+		--sectorCount;
 	}
-	
-	//Init DLDI
-	if(dldi_handler_init() == true){	//Init DLDI: ARM7 version
-		setisTGDSARM7DLDIEnabled(true);
-		setValueSafe(&fifomsg[19], (uint32)0);	//Done? Free ARM9
-	}
-	else{
-		setisTGDSARM7DLDIEnabled(false);
-		setValueSafe(&fifomsg[19], (uint32)0xFFFF1234);
-		while(1);
-	}
+    return true;
 }
-#endif
 
-#endif	//ARM7_DLDI
-
-#ifdef ARM9_DLDI
-#ifdef ARM7
-void ARM7DLDIInit(){	//ARM7 Stub Impl.
-	setisTGDSARM7DLDIEnabled(false);
+bool _DLDI_readSectors(uint32 sector, uint32 sectorCount, uint8* buffer)
+{
+	int sectorSize = 512;
+	int curSector = 0;
+	while(sectorCount > 0)
+	{
+        memcpy(buffer + (curSector*sectorSize), ((u8*)0x08000000 + ((sector+curSector)*sectorSize)), sectorSize);
+		curSector++;
+		--sectorCount;
+	}
+    return true;
 }
-#endif
-#endif
 
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
+//////////////////////////////////////////////// RAM Disk DLDI Implementation End ///////////////////////////////////////////
+
 bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer){
 	//ARM7 DLDI implementation
 	#ifdef ARM7_DLDI
@@ -164,7 +132,7 @@ bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer){
 		#endif
 		#ifdef ARM9
 		void * targetMem = (void *)((int)ARM7DLDIBuf + 0x400000);
-		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+		uint32 * fifomsg = (uint32 *)&getsIPCSharedTGDS()->fifoMesaggingQueue[0];
 		setValueSafe(&fifomsg[20], (uint32)sector);
 		setValueSafe(&fifomsg[21], (uint32)numSectors);
 		setValueSafe(&fifomsg[22], (uint32)targetMem);
@@ -188,9 +156,6 @@ bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer){
 	#endif
 }
 
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
 bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buffer){
 	//ARM7 DLDI implementation
 	#ifdef ARM7_DLDI
@@ -201,7 +166,7 @@ bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buff
 		#ifdef ARM9
 		void * targetMem = (void *)((int)ARM7DLDIBuf + 0x400000);
 		memcpy((uint16_t*)targetMem, (uint16_t*)buffer, (numSectors * 512));
-		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+		uint32 * fifomsg = (uint32 *)&getsIPCSharedTGDS()->fifoMesaggingQueue[0];
 		setValueSafe(&fifomsg[24], (uint32)sector);
 		setValueSafe(&fifomsg[25], (uint32)numSectors);
 		setValueSafe(&fifomsg[26], (uint32)targetMem);
@@ -223,11 +188,70 @@ bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buff
 		#endif
 	#endif
 }
-///////////////////////////////////////////////////////////////////////////DLDI ARM7 CODE END/////////////////////////////////////////////////////////////////////
+#endif
 
-static const uint32  DLDI_MAGIC_NUMBER = 0xBF8DA5ED;	
+
 static const data_t dldiMagicString[12] = "\xED\xA5\x8D\xBF Chishm";	// Normal DLDI file
 static const data_t dldiMagicLoaderString[12] = "\xEE\xA5\x8D\xBF Chishm";	// Different to a normal DLDI file
+
+enum DldiOffsets {
+	DO_magicString = 0x00,			// "\xED\xA5\x8D\xBF Chishm"
+	DO_magicToken = 0x00,			// 0xBF8DA5ED
+	DO_magicShortString = 0x04,		// " Chishm"
+	DO_version = 0x0C,
+	DO_driverSize = 0x0D,
+	DO_fixSections = 0x0E,
+	DO_allocatedSpace = 0x0F,
+
+	DO_friendlyName = 0x10,
+
+	DO_text_start = 0x40,			// Data start
+	DO_data_end = 0x44,				// Data end
+	DO_glue_start = 0x48,			// Interworking glue start	-- Needs address fixing
+	DO_glue_end = 0x4C,				// Interworking glue end
+	DO_got_start = 0x50,			// GOT start					-- Needs address fixing
+	DO_got_end = 0x54,				// GOT end
+	DO_bss_start = 0x58,			// bss start					-- Needs setting to zero
+	DO_bss_end = 0x5C,				// bss end
+
+	// IO_INTERFACE data
+	DO_ioType = 0x60,
+	DO_features = 0x64,
+	DO_startup = 0x68,	
+	DO_isInserted = 0x6C,	
+	DO_readSectors = 0x70,	
+	DO_writeSectors = 0x74,
+	DO_clearStatus = 0x78,
+	DO_shutdown = 0x7C,
+	DO_code = 0x80
+};
+
+static inline addr_t readAddr (data_t *mem, addr_t offset) {
+	return ((addr_t*)mem)[offset/sizeof(addr_t)];
+}
+
+static inline void writeAddr (data_t *mem, addr_t offset, addr_t value) {
+	((addr_t*)mem)[offset/sizeof(addr_t)] = value;
+}
+
+static inline addr_t quickFind (const data_t* data, const data_t* search, size_t dataLen, size_t searchLen) {
+	const int* dataChunk = (const int*) data;
+	int searchChunk = ((const int*)search)[0];
+	addr_t i;
+	addr_t dataChunkEnd = (addr_t)(dataLen / sizeof(int));
+
+	for ( i = 0; i < dataChunkEnd; i++) {
+		if (dataChunk[i] == searchChunk) {
+			if ((i*sizeof(int) + searchLen) > dataLen) {
+				return -1;
+			}
+			if (memcmp (&data[i*sizeof(int)], search, searchLen) == 0) {
+				return i*sizeof(int);
+			}
+		}
+	}
+	return -1;
+}
 
 //DldiRelocatedAddress == target DLDI relocated address
 //dldiSourceInRam == physical DLDI section having a proper DLDI driver used as donor 
@@ -467,53 +491,3 @@ bool dldiPatchLoader(data_t *binData, u32 binSize, u32 physDLDIAddress)
 
 	return true;
 }
-
-/////////////////////////////////////////////////// RAM Disk DLDI Implementation ////////////////////////////////////////////
-
-bool _DLDI_isInserted(void)
-{
-	return true;	//Always True
-}
-
-bool _DLDI_clearStatus(void)
-{
-    return true;	//Always True
-}
-
-bool _DLDI_shutdown(void)
-{
-    return true;	//Always True
-}
-
-bool _DLDI_startup(void)
-{
-    return true;	//Always True
-} 
-
-bool _DLDI_writeSectors(uint32 sector, uint32 sectorCount, const uint8* buffer)
-{
-	int sectorSize = 512;
-	int curSector = 0;
-	while(sectorCount > 0)
-	{
-        memcpy(((u8*)0x08000000 + ((sector+curSector)*sectorSize)), (buffer + (curSector*sectorSize)), sectorSize);
-		curSector++;
-		--sectorCount;
-	}
-    return true;
-}
-
-bool _DLDI_readSectors(uint32 sector, uint32 sectorCount, uint8* buffer)
-{
-	int sectorSize = 512;
-	int curSector = 0;
-	while(sectorCount > 0)
-	{
-        memcpy(buffer + (curSector*sectorSize), ((u8*)0x08000000 + ((sector+curSector)*sectorSize)), sectorSize);
-		curSector++;
-		--sectorCount;
-	}
-    return true;
-}
-
-//////////////////////////////////////////////// RAM Disk DLDI Implementation End ///////////////////////////////////////////

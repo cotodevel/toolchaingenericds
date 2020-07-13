@@ -21,6 +21,12 @@ USA
 #ifndef __cartheader_h
 #define __cartheader_h
 
+#ifdef ARM9
+
+#include "limitsTGDS.h"
+
+#endif
+
 //NTR Header
 typedef struct sDSCARTHEADER {
 	uint8 	gametitle[12];	//000h    12    Game Title  (Uppercase ASCII, padded with 00h)

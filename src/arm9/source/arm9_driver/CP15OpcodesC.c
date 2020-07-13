@@ -17,8 +17,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 USA
 
 */
-
-#include "utilsTGDS.h"
+#include "posixHandleTGDS.h"
 #include "dsregs.h"
 #include "dsregs_asm.h"
 #include "nds_cp15_misc.h"

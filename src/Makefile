@@ -16,7 +16,7 @@
 #USA
 #
 
-#TGDS1.5 compatible Makefile
+#TGDS1.6 compatible Makefile
 
 #ToolchainGenericDS specific: Use Makefiles from either TGDS, or custom
 export SOURCE_MAKEFILE7 = custom
@@ -51,13 +51,11 @@ export DIRS_ARM7_SRC = source/	\
 			source/xmalloc/	\
 			source/TGDSARM7Logger/	\
 			../common/	\
+			../common/arm_driver_shared/	\
 			../common/dswifi/	\
 			../common/hardware/	\
-			../common/hardware/dldi/	\
-			../common/dswifi/netinet/	\
-			../common/dswifi/sys/	\
 			../templateCode/source/	\
-			../templateCode/data/arm7/	\
+			../templateCode/data/		\
 			data/	\
 			build/	\
 			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
@@ -66,16 +64,16 @@ export DIRS_ARM7_HEADER = source/	\
 			source/dswifi_arm7/	\
 			source/xmalloc/	\
 			source/TGDSARM7Logger/	\
-			../common/templateCode/source	\
-			../common/templateCode/data		\
+			include/	\
+			../include/	\
+			../include/netinet/	\
+			../include/sys/	\
 			../common/	\
+			../common/arm_driver_shared/	\
 			../common/dswifi/	\
 			../common/hardware/	\
-			../common/hardware/dldi/	\
-			../common/dswifi/netinet/	\
-			../common/dswifi/sys/	\
 			../templateCode/source/	\
-			../templateCode/data/arm7/	\
+			../templateCode/data/		\
 			data/	\
 			build/	\
 			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
@@ -83,47 +81,56 @@ export DIRS_ARM7_HEADER = source/	\
 #####################################################ARM9#####################################################
 
 export DIRS_ARM9_SRC = source/	\
-			source/console/	\
-			source/console/gui_draw/source/	\
-			source/ToolchainGenericDSFS/	\
-			source/ToolchainGenericDSFS/fatfs/source/	\
-			source/zlib/	\
-			source/zip/	\
-			source/keyboard/	\
+			source/arm9_driver/	\
+			source/arm9_driver/console/	\
+			source/arm9_driver/console/gui_draw/	\
+			source/arm9_driver/ToolchainGenericDSFS/	\
+			source/arm9_driver/ToolchainGenericDSFS/fatfs/source/	\
+			source/arm9_driver/zlib/	\
+			source/arm9_driver/zip/	\
+			source/arm9_driver/keyboard/	\
 			source/dswifi_arm9/	\
 			source/wnifilib/	\
+			../include/	\
 			../common/	\
+			../common/arm_driver_shared/	\
 			../common/dswifi/	\
-			../common/hardware/	\
-			../common/hardware/dldi/	\
 			../common/dswifi/netinet/	\
 			../common/dswifi/sys/	\
+			../common/hardware/	\
+			../common/hardware/dldi/	\
 			../templateCode/source/	\
-			../templateCode/data/arm9/	\
+			../templateCode/data/		\
 			data/	\
-			build/
+			build/	\
+			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
 			
 export DIRS_ARM9_HEADER = source/	\
-			source/console/	\
-			source/console/gui_draw/include/	\
-			source/ToolchainGenericDSFS/	\
-			source/ToolchainGenericDSFS/fatfs/source/	\
-			source/zlib/	\
-			source/zip/	\
-			source/keyboard/	\
+			source/arm9_driver/	\
+			source/arm9_driver/console/	\
+			source/arm9_driver/console/gui_draw/	\
+			source/arm9_driver/ToolchainGenericDSFS/	\
+			source/arm9_driver/ToolchainGenericDSFS/fatfs/source/	\
+			source/arm9_driver/zlib/	\
+			source/arm9_driver/zip/	\
+			source/arm9_driver/keyboard/	\
 			source/dswifi_arm9/	\
 			source/wnifilib/	\
+			../include/	\
 			../common/	\
+			../common/arm_driver_shared/	\
 			../common/dswifi/	\
-			../common/hardware/	\
-			../common/hardware/dldi/	\
+			../common/dswifi/	\
 			../common/dswifi/netinet/	\
 			../common/dswifi/sys/	\
+			../common/hardware/	\
 			../templateCode/source/	\
-			../templateCode/data/arm9/	\
+			../templateCode/data/		\
+			../common/hardware/dldi/	\
 			data/	\
-			build/	
-
+			build/	\
+			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
+			
 # Build Target(s)	(both processors here)
 all: compilelib
 

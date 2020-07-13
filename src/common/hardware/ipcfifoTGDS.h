@@ -21,8 +21,8 @@ USA
 //TGDS IPC Version: 1.3
 
 //IPC FIFO Description: 
-//		TGDSIPC 		= 	Access to TGDS internal IPC FIFO structure. 		(ipcfifoTGDS.h)
-//		TGDSUSERIPC		=	Access to TGDS Project (User) IPC FIFO structure	(ipcfifoTGDSUser.h)
+//		getsIPCSharedTGDS() 		= 	Access to TGDS internal IPC FIFO structure. 		(ipcfifoTGDS.h)
+//		getsIPCSharedTGDSSpecific()		=	Access to TGDS Project (User) IPC FIFO structure	(ipcfifoTGDSUser.h)
 
 #ifndef __ipcfifoTGDS_h__
 #define __ipcfifoTGDS_h__
@@ -39,6 +39,7 @@ USA
 #include "soundTGDS.h"
 #include "global_settings.h"
 #include "cartHeader.h"
+#include "posixHandleTGDS.h"
 
 #ifdef ARM9
 #include "nds_cp15_misc.h"
@@ -108,8 +109,7 @@ USA
 #define TGDS_ARM7_PRINTF7SETUP (uint32)(0xFFFF0228)
 #define TGDS_ARM7_PRINTF7 (uint32)(0xFFFF0229)
 #define TGDS_ARM7_SETUPEXCEPTIONHANDLER (uint32)(0xFFFF022A)
-#define TGDS_ARM7_SETUPARM7MALLOC (uint32)(0xFFFF022B)
-#define TGDS_ARM7_SETUPARM9MALLOC (uint32)(0xFFFF022C)
+#define TGDS_ARM7_SETUPARMCoresMALLOC (uint32)(0xFFFF022C)
 #define TGDS_ARM7_DETECTTURNOFFCONSOLE (uint32)(0xFFFF022D)
 #define TGDS_ARM7_ENABLESOUNDSAMPLECTX (uint32)(0xFFFF022E)
 #define TGDS_ARM7_DISABLESOUNDSAMPLECTX (uint32)(0xFFFF022F)
@@ -193,10 +193,6 @@ typedef struct sIPCSharedTGDS {
 	
 	uint32 WRAM_CR_ISSET;	//0 when ARM7 boots / 1 by ARM9 when its done
 	
-	//DS Firmware	Settings default set
-	struct sDSFWSETTINGS DSFWSETTINGSInst;
-	struct sEXTKEYIN	EXTKEYINInst;
-	
 	//FIFO Mesagging: used when 3+ args sent between ARM cores through FIFO interrupts.
 	uint32 fifoMesaggingQueue[0x40];	//64 * 4 Words for various command handling
 	
@@ -211,9 +207,6 @@ typedef struct sIPCSharedTGDS {
 	
 	//args through ARM7 print debugger
 	int argvCount;
-	
-	//IPC IRQ CMD
-	u8 IPCIRQCMD;
 	
 	//ARM7 Filesystem
 	bool initStatus;
@@ -231,16 +224,20 @@ typedef struct sIPCSharedTGDS {
 	//Sound Stream ctx
 	struct soundPlayerContext sndPlayerCtx;
 	
+	//DS Firmware	Settings default set
+	struct sDSFWSETTINGS DSFWSETTINGSInst;
+	struct sEXTKEYIN	EXTKEYINInst;
+	
 } IPCSharedTGDS	__attribute__((aligned (4)));
 
 //Shared Work     027FF000h 4KB    -     -    -    R/W
-#define TGDSIPC ((IPCSharedTGDS volatile *)(0x027FF000))
-#define TGDSIPCSize (int)(sizeof(struct sIPCSharedTGDS))
 
-//Hardware IPC IRQ, faster
-static inline void sendByteIPCIndirect(u8 ipcByte){
-	TGDSIPC->IPCIRQCMD = ipcByte;
+static inline uint32 getUserIPCAddress(){
+	return (uint32)(0x027FF000+sizeof(struct sIPCSharedTGDS));
 }
+
+#define TGDSIPCSize (int)(sizeof(struct sIPCSharedTGDS))
+#define IPCRegionSize	(sint32)(4*1024)
 
 static inline void sendIPCIRQOnly(){
 	REG_IPC_SYNC|=IPC_SYNC_IRQ_REQUEST;
@@ -268,9 +265,14 @@ extern __attribute__((weak))	void HandleFifoEmptyWeakRef(uint32 cmd1,uint32 cmd2
 extern void HandleFifoNotEmpty();
 extern void HandleFifoEmpty();
 
-extern void sendMultipleByteIPC(uint8 inByte0, uint8 inByte1, uint8 inByte2, uint8 inByte3);
 extern void ReadMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead);
 extern void SaveMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead);
+
+extern void Write32bitAddrExtArm(uint32 address, uint32 value);
+extern void Write16bitAddrExtArm(uint32 address, uint16 value);
+extern void Write8bitAddrExtArm(uint32 address, uint8 value);
+extern struct sIPCSharedTGDS* getsIPCSharedTGDS();
+extern void SendFIFOWordsITCM(uint32 data0, uint32 data1);
 
 #ifdef __cplusplus
 }

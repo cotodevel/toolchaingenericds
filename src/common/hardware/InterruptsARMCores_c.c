@@ -21,7 +21,6 @@ USA
 #ifdef ARM7
 #include "wifi_arm7.h"
 #include "soundTGDS.h"
-#include "ARM7FS.h"
 #endif
 
 #ifdef ARM9
@@ -31,11 +30,14 @@ USA
 
 #include "InterruptsARMCores_h.h"
 #include "ipcfifoTGDS.h"
-#include "keypadTGDS.h"
+#include "linkerTGDS.h"
 #include "eventsTGDS.h"
-#include "dldi.h"
+#include "biosTGDS.h"
+#include "ARM7FS.h"
+#include "dmaTGDS.h"
 
 void IRQInit(u8 DSHardware){
+	
 	//NTR
 	if(
 		(DSHardware == 0xFF)
@@ -48,6 +50,17 @@ void IRQInit(u8 DSHardware){
 	){
 		//FIFO IRQ Init
 		REG_IME = 0;
+		
+		int i = 0;
+		for(i = 0; i <32 ; i++){
+			if((REG_IF & (1 << i)) == (1 << i)){
+				REG_IF = (1 << i);
+			}
+		}
+		
+		REG_IE = 0;
+		
+		//FIFO IRQ Init
 		REG_IPC_SYNC = (1 << 14);	//14    R/W  Enable IRQ from remote CPU  (0=Disable, 1=Enable)
 		REG_IPC_FIFO_CR = IPC_FIFO_SEND_CLEAR | RECV_FIFO_IPC_IRQ  | FIFO_IPC_ENABLE;
 		
@@ -57,16 +70,19 @@ void IRQInit(u8 DSHardware){
 		//Set up PPU IRQ Vertical Line
 		setVCountIRQLine(TGDS_VCOUNT_LINE_INTERRUPT);
 		
+		volatile uint32 interrupts_to_wait_armX = 0;
+		
 		#ifdef ARM7
-		REG_IE = IRQ_TIMER1 | IRQ_HBLANK | IRQ_VBLANK | IRQ_VCOUNT | IRQ_IPCSYNC | IRQ_RECVFIFO_NOT_EMPTY | IRQ_SCREENLID;
+		interrupts_to_wait_armX = IRQ_TIMER1 | IRQ_HBLANK | IRQ_VBLANK | IRQ_VCOUNT | IRQ_IPCSYNC | IRQ_RECVFIFO_NOT_EMPTY | IRQ_SCREENLID;
 		#endif
 		
 		#ifdef ARM9
-		REG_IE = IRQ_HBLANK| IRQ_VBLANK | IRQ_VCOUNT | IRQ_IPCSYNC | IRQ_RECVFIFO_NOT_EMPTY ;
+		interrupts_to_wait_armX = IRQ_HBLANK| IRQ_VBLANK | IRQ_VCOUNT | IRQ_IPCSYNC | IRQ_RECVFIFO_NOT_EMPTY;
 		#endif
 		
+		REG_IE = interrupts_to_wait_armX; 
+		
 		INTERRUPT_VECTOR = (uint32)&NDS_IRQHandler;
-		REG_IF = REG_IF;
 		REG_IME = 1;
 	}
 	//TWL 
@@ -79,47 +95,35 @@ void IRQInit(u8 DSHardware){
 		#ifdef ARM9
 		//TWL ARM9 IRQ Init code goes here...
 		#endif
-		
 	}
 }
+
+
 
 //Software bios irq more or less emulated. (replaces default NDS bios for some parts)
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
 void NDS_IRQHandler(){
-	u32 handledIRQ = (REG_IF | SWI_CHECKBITS) & REG_IE;
-	if(handledIRQ & IRQ_HBLANK){
-		HblankUser();
-	}
-	if(handledIRQ & IRQ_VBLANK){
-		#ifdef ARM7
-		doSPIARM7IO();
-		Wifi_Update();
-		#endif
-		#ifdef ARM9
-		//handles DS-DS Comms
-		sint32 currentDSWNIFIMode = doMULTIDaemonStage1();
-		#endif
-		VblankUser();
-	}
-	if(handledIRQ & IRQ_VCOUNT){
-		#ifdef ARM7
-		TGDSEventHandler();
-		updateSoundContextSamplePlayback();
-		#endif
-		VcounterUser();
-	}
-	if(handledIRQ & IRQ_TIMER0){
+	volatile uint32 REG_IE_SET = (volatile uint32)((REG_IF & REG_IE) | SWI_CHECKBITS);
+	
+	////			Common
+	if(REG_IE_SET & IRQ_TIMER0){
 		Timer0handlerUser();
+		REG_IF = IRQ_TIMER0;
 	}
-	if(handledIRQ & IRQ_TIMER1){
+	
+	if(REG_IE_SET & IRQ_TIMER1){
 		Timer1handlerUser();
+		REG_IF = IRQ_TIMER1;
 	}
-	if(handledIRQ & IRQ_TIMER2){
+	
+	if(REG_IE_SET & IRQ_TIMER2){
 		Timer2handlerUser();
+		REG_IF = IRQ_TIMER2;
 	}
-	if(handledIRQ & IRQ_TIMER3){
+	
+	if(REG_IE_SET & IRQ_TIMER3){
 		#ifdef ARM7
 		//Audio playback handler
 		setSwapChannel();
@@ -130,27 +134,52 @@ void NDS_IRQHandler(){
 		Timer_10ms();
 		#endif
 		Timer3handlerUser();
+		REG_IF = IRQ_TIMER3;
 	}
-	if(handledIRQ & IRQ_IPCSYNC){
+	
+	if(REG_IE_SET & IRQ_HBLANK){
+		HblankUser();
+		REG_IF = IRQ_HBLANK;
+	}
+	
+	if(REG_IE_SET & IRQ_VBLANK){
+		#ifdef ARM7
+		Wifi_Update();
+		#endif
+		
+		#ifdef ARM9
+		//handles DS-DS Comms
+		sint32 currentDSWNIFIMode = doMULTIDaemonStage1();
+		#endif
+		VblankUser();
+		REG_IF = IRQ_VBLANK;
+	}
+	
+	if(REG_IE_SET & IRQ_VCOUNT){
+		#ifdef ARM7
+		doSPIARM7IO();
+		TGDSEventHandler();
+		updateSoundContextSamplePlayback();
+		#endif
+		VcounterUser();
+		REG_IF = IRQ_VCOUNT;
+	}
+	
+	if(REG_IE_SET & IRQ_SENDFIFO_EMPTY){
+		HandleFifoEmpty();
+		REG_IF = IRQ_SENDFIFO_EMPTY;
+	}
+	
+	if(REG_IE_SET & IRQ_RECVFIFO_NOT_EMPTY){
+		HandleFifoNotEmpty();
+		REG_IF=IRQ_RECVFIFO_NOT_EMPTY;
+	}
+	
+	if(REG_IE_SET & IRQ_IPCSYNC){
 		uint8 ipcByte = receiveByteIPC();
 		switch(ipcByte){
-			//External ARM Core's sendMultipleByteIPC(uint8 inByte0, uint8 inByte1, uint8 inByte2, uint8 inByte3) received bytes:
-			case(IPC_SEND_MULTIPLE_CMDS):{
-				
-				uint8 * ipcMsg = (uint8 *)&TGDSIPC->ipcMesaggingQueue[0];
-				#ifdef ARM9
-				coherent_user_range_by_size((uint32)ipcMsg, sizeof(TGDSIPC->ipcMesaggingQueue));
-				#endif
-				uint8 inByte0 = (u8)ipcMsg[0];
-				uint8 inByte1 = (u8)ipcMsg[1];
-				uint8 inByte2 = (u8)ipcMsg[2];
-				uint8 inByte3 = (u8)ipcMsg[3];
-				
-				//Do stuff.
-				ipcMsg[3] = ipcMsg[2] = ipcMsg[1] = ipcMsg[0] = 0;
-			}
-			break;
 			case(IPC_ARM7READMEMORY_REQBYIRQ):{
+				struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 				uint32 srcMemory = fifomsg[28];
 				uint32 targetMemory = fifomsg[29];
@@ -160,6 +189,7 @@ void NDS_IRQHandler(){
 			}
 			break;
 			case(IPC_ARM7SAVEMEMORY_REQBYIRQ):{
+				struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 				uint32 srcMemory = fifomsg[32];
 				uint32 targetMemory = fifomsg[33];
@@ -174,7 +204,7 @@ void NDS_IRQHandler(){
 			#ifdef ARM7
 			//ARM7 FS Init
 			case(IPC_ARM7INIT_ARM7FS):{	//ARM7
-				
+				struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 				char *  ARM7FS_ARM9Filename = (char *)fifomsg[9];
 				int fileHandleSize = (int)fifomsg[10];
@@ -191,6 +221,7 @@ void NDS_IRQHandler(){
 			break;
 			
 			case(IPC_ARM7DEINIT_ARM7FS):{	//ARM7
+				struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 				
 				//ARM7(FS) de-init
@@ -258,30 +289,33 @@ void NDS_IRQHandler(){
 			}
 			break;
 		}
-		
+		REG_IF=IRQ_IPCSYNC;
 	}
-	if(handledIRQ & IRQ_SENDFIFO_EMPTY){
-		HandleFifoEmpty();
-	}
-	if(handledIRQ & IRQ_RECVFIFO_NOT_EMPTY){
-		HandleFifoNotEmpty();
-	}
+	
 	#ifdef ARM7
 	//arm7 wifi irq
-	if(handledIRQ & IRQ_WIFI){
+	if(REG_IE_SET & IRQ_WIFI){
 		Wifi_Interrupt();
+		REG_IF = IRQ_WIFI;
 	}
-	if(handledIRQ & IRQ_RTCLOCK){
-		
+	
+	//clock //could cause freezes
+	if(REG_IE_SET & IRQ_RTCLOCK){
+		REG_IF = IRQ_RTCLOCK;
 	}
-	if(handledIRQ & IRQ_SCREENLID){
+	
+	if(REG_IE_SET & IRQ_SCREENLID){
 		isArm7ClosedLid = false;
 		SendFIFOWordsITCM(FIFO_IRQ_LIDHASOPENED_SIGNAL, 0);
 		screenLidHasOpenedhandlerUser();
+		REG_IF = IRQ_SCREENLID;
 	}
 	#endif
-	REG_IF = handledIRQ;
+	
+	//Update BIOS flags
+	SWI_CHECKBITS = REG_IF;
 }
+
 
 void EnableIrq(uint32 IRQ){
 	REG_IE	|=	IRQ;
@@ -289,16 +323,4 @@ void EnableIrq(uint32 IRQ){
 
 void DisableIrq(uint32 IRQ){
 	REG_IE	&=	~(IRQ);
-}
-
-void RemoveQueuedIrq(uint32 IRQ){
-	if(REG_IF & IRQ){
-		REG_IF|=IRQ;
-	}
-}
-
-void QueueIrq(uint32 IRQ){
-	if(!(REG_IF & IRQ)){
-		REG_IF|=IRQ;
-	}
 }

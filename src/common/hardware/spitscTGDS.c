@@ -30,9 +30,9 @@ USA
 
 
 //Source http://problemkaputt.de/gbatek.htm
-inline __attribute__((always_inline)) 
 void doSPIARM7IO(){
-	struct sEXTKEYIN * sEXTKEYINInst = (struct sEXTKEYIN *)&TGDSIPC->EXTKEYINInst;
+	struct sIPCSharedTGDS * sIPCSharedTGDSInst = getsIPCSharedTGDS();
+	struct sEXTKEYIN * sEXTKEYINInst = (struct sEXTKEYIN *)&sIPCSharedTGDSInst->EXTKEYINInst;
 	
 	//Read is pen down
 	sEXTKEYINInst->PenDown = penIRQread();
@@ -62,16 +62,16 @@ void doSPIARM7IO(){
 	}
 	
 	//NDS Format ARM7 XY/PENIRQ/HINGE buttons
-	TGDSIPC->buttons7 = REG_KEYXY;
+	sIPCSharedTGDSInst->buttons7 = REG_KEYXY;
 	
 	//REG_KEYINPUT ARM7 
-	TGDSIPC->KEYINPUT7	=	(uint16)REG_KEYINPUT;
+	sIPCSharedTGDSInst->KEYINPUT7	=	(uint16)REG_KEYINPUT;
 	
 	//Do touchscreen process
 	XYReadPos();
 	
 	//read clock
-	TGDSIPC->ndsRTCSeconds = nds_get_time7();
+	sIPCSharedTGDSInst->ndsRTCSeconds = nds_get_time7();
 	
 	//Handle Sleep-wakeup events
 	uint16 buttonsARM7 = REG_KEYXY;
@@ -100,7 +100,8 @@ bool penIRQread(){
 	#endif
 	
 	#ifdef ARM9
-	return (TGDSIPC->EXTKEYINInst.PenDown);
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
+	return (bool)(TGDSIPC->EXTKEYINInst.PenDown);
 	#endif
 }
 
@@ -111,7 +112,7 @@ static int LastTSCPosY = 0;
 
 //Internal
 void XYReadPos(){
-	
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	if(TGDSIPC->EXTKEYINInst.PenDown == true){
 		//Set Chip Select LOW to invoke the command & Transmit the instruction byte: TSC CNT Differential Mode: X Raw TSC 
 		REG_SPI_CR = BIT_SPICNT_ENABLE | BIT_SPICNT_BYTETRANSFER | BIT_SPICNT_CSHOLDENABLE | BIT_SPICNT_TSCCNT | BIT_SPICLK_2MHZ;
@@ -179,7 +180,7 @@ void XYReadPos(){
 //External 
 //relies on doSPIARM7IO() XY Readings
 void XYReadScrPos(struct XYTscPos * StouchScrPosInst){
-    
+    struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
     StouchScrPosInst->rawx =   TGDSIPC->touchX;
     StouchScrPosInst->rawy =   TGDSIPC->touchY;
     

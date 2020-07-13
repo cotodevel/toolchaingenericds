@@ -20,8 +20,7 @@ USA
 #include "videoTGDS.h"
 #include "consoleTGDS.h"
 #include "dmaTGDS.h"
-
-#ifdef ARM9
+#include "posixHandleTGDS.h"
 
 //power
 void SWAP_LCDS(){
@@ -38,6 +37,9 @@ void SET_MAIN_BOTTOM_LCD() {
 
 //VRAM 
 //see console.c for setting up a default console, or use a project specific console
+
+vramSetup vramSetupDefaultConsole;
+vramSetup vramSetupCustomConsole;
 
 void SETDISPCNT_MAIN(uint32 mode)  
 { 
@@ -110,23 +112,103 @@ void DISABLE_BG_SUB(int bg) {
 	REG_DISPCNT_SUB &= ~(1 << (8 + bg));
 }
 
+bool VRAM_SETUP(vramSetup * vramSetupInst){
+		
+		if(vramSetupInst->vramBankSetupInst[VRAM_A_INDEX].enabled == true){
+			VRAMBLOCK_SETBANK_A(vramSetupInst->vramBankSetupInst[VRAM_A_INDEX].vrambankCR);
+		}
+		if(vramSetupInst->vramBankSetupInst[VRAM_B_INDEX].enabled == true){
+			VRAMBLOCK_SETBANK_B(vramSetupInst->vramBankSetupInst[VRAM_B_INDEX].vrambankCR);
+		}
+		if(vramSetupInst->vramBankSetupInst[VRAM_C_INDEX].enabled == true){
+			VRAMBLOCK_SETBANK_C(vramSetupInst->vramBankSetupInst[VRAM_C_INDEX].vrambankCR);
+		}
+		if(vramSetupInst->vramBankSetupInst[VRAM_D_INDEX].enabled == true){
+			VRAMBLOCK_SETBANK_D(vramSetupInst->vramBankSetupInst[VRAM_D_INDEX].vrambankCR);
+		}
+		if(vramSetupInst->vramBankSetupInst[VRAM_E_INDEX].enabled == true){
+			VRAMBLOCK_SETBANK_E(vramSetupInst->vramBankSetupInst[VRAM_E_INDEX].vrambankCR);
+		}
+		if(vramSetupInst->vramBankSetupInst[VRAM_F_INDEX].enabled == true){
+			VRAMBLOCK_SETBANK_F(vramSetupInst->vramBankSetupInst[VRAM_F_INDEX].vrambankCR);
+		}
+		if(vramSetupInst->vramBankSetupInst[VRAM_G_INDEX].enabled == true){
+			VRAMBLOCK_SETBANK_G(vramSetupInst->vramBankSetupInst[VRAM_G_INDEX].vrambankCR);
+		}
+		if(vramSetupInst->vramBankSetupInst[VRAM_H_INDEX].enabled == true){
+			VRAMBLOCK_SETBANK_H(vramSetupInst->vramBankSetupInst[VRAM_H_INDEX].vrambankCR);
+		}
+		if(vramSetupInst->vramBankSetupInst[VRAM_I_INDEX].enabled == true){
+			VRAMBLOCK_SETBANK_I(vramSetupInst->vramBankSetupInst[VRAM_I_INDEX].vrambankCR);
+		}
+		
+		return true; 
+}
 
 //Generic console (uses VRAM block C,VRAM block D for ARM7), SUB Engine.
 
+//1) VRAM Layout
+vramSetup * DEFAULT_CONSOLE_VRAMSETUP(){
+	vramSetup * vramSetupDefault = (vramSetup *)&vramSetupDefaultConsole;
+	memset((u8*)vramSetupDefault, 0, sizeof(vramSetup));
+	
+	vramSetupDefault->vramBankSetupInst[VRAM_C_INDEX].vrambankCR = VRAM_C_0x06200000_ENGINE_B_BG;
+	vramSetupDefault->vramBankSetupInst[VRAM_C_INDEX].enabled = true;
+	
+	// Some memory for ARM7 (128 Ko!)
+	//vramSetBankD(VRAM_D_ARM7_0x06000000);
+	vramSetupDefault->vramBankSetupInst[VRAM_D_INDEX].vrambankCR = VRAM_D_0x06000000_ARM7;
+	vramSetupDefault->vramBankSetupInst[VRAM_D_INDEX].enabled = true;
+	
+	return vramSetupDefault;
+}
 
-//Enables the NDS BMP RGB 15bit format for Engine_B at 0x06200000
-void initFBModeSubEngine0x06200000(){
-	SETDISPCNT_SUB(MODE_3_2D | DISPLAY_BG3_ACTIVE);
+//2) Uses subEngine: VRAM Layout -> Console Setup
+bool InitDefaultConsole(){
+	DefaultSessionConsole = (ConsoleInstance *)(&DefaultConsole);
 	
-	// Don't scale bg3 (set its affine transformation matrix to [[1,0],[0,1]])
+	//Set subEngine as TGDS Console
+	GUI.consoleAtTopScreen = false;
+	SetEngineConsole(subEngine,DefaultSessionConsole);
+	
+	//Set subEngine properties
+	DefaultSessionConsole->ConsoleEngineStatus.ENGINE_DISPCNT	=	(uint32)(MODE_5_2D | DISPLAY_BG3_ACTIVE );
+	
+	// BG3: FrameBuffer : 64(TILE:4) - 128 Kb
+	DefaultSessionConsole->ConsoleEngineStatus.EngineBGS[3].BGNUM = 3;
+	DefaultSessionConsole->ConsoleEngineStatus.EngineBGS[3].REGBGCNT = BG_BMP_BASE(4) | BG_BMP8_256x256 | BG_PRIORITY_1;
+	
+	GUI.DSFrameBuffer = (uint16 *)BG_BMP_RAM_SUB(4);
+	
+	REG_BG3X_SUB = 0;
+	REG_BG3Y_SUB = 0;
 	REG_BG3PA_SUB = 1 << 8;
-	REG_BG3PD_SUB= 1 << 8;
+	REG_BG3PB_SUB = 0;
+	REG_BG3PC_SUB = 0;
+	REG_BG3PD_SUB = 1 << 8;
 	
-	#define BG_256x256       (1<<14)
-	#define BG_15BITCOLOR    (1<<7)
-	#define BG_CBB1          (1<<2)
+	GUI.Palette = &BG_PALETTE_SUB[0];
+	GUI.Palette[0] = 	RGB8(0,0,0);			//Back-ground tile color / Black
+	GUI.Palette[1] =	RGB8(255, 255, 255); 	//White
+	GUI.Palette[2] =  	RGB8(150, 75, 0); 		//Brown
+	GUI.Palette[3] =  	RGB8(255, 127, 0); 		//Orange
+	GUI.Palette[4] = 	RGB8(255, 0, 255); 		//Magenta
+	GUI.Palette[5] = 	RGB8(0, 255, 255); 		//Cyan
+	GUI.Palette[6] = 	RGB8(255, 255, 0); 		//Yellow
+	GUI.Palette[7] = 	RGB8(0, 0, 255); 		//Blue
+	GUI.Palette[8] = 	RGB8(0, 255, 0); 		//Green
+	GUI.Palette[9] = 	RGB8(255, 0, 0); 		//Red
+	GUI.Palette[0xa] = 	RGB8(128, 128, 128); 	//Grey
+	GUI.Palette[0xb] = 	RGB8(240, 240, 240);	//Light-Grey
 	
-	REG_BG3CNT_SUB = BG_256x256 | BG_15BITCOLOR | BG_CBB1;	
+	//Fill the Pallette
+	int i = 0;
+	for(i=0;i < (256 - 0xb); i++){
+		GUI.Palette[i + 0xc] = GUI.Palette[TGDSPrintfColor_White];
+	}
+	
+	InitializeConsole(DefaultSessionConsole);
+	return true;
 }
 
 static u32 mainDISPCNTsaved = 0;
@@ -195,7 +277,7 @@ void setOrientation(int orientation, bool mainEngine){
 				REG_BG3PD = 1 << 8;
 				REG_BG3X = 0;
 				REG_BG3Y = 0;
-				TGDSIPC->screenOrientationMainEngine = orientation;
+				getsIPCSharedTGDS()->screenOrientationMainEngine = orientation;
 			}
 			else{
 				REG_BG3PA_SUB = 1 << 8;
@@ -204,7 +286,7 @@ void setOrientation(int orientation, bool mainEngine){
 				REG_BG3PD_SUB = 1 << 8;
 				REG_BG3X_SUB = 0;
 				REG_BG3Y_SUB = 0;
-				TGDSIPC->screenOrientationSubEngine = orientation;
+				getsIPCSharedTGDS()->screenOrientationSubEngine = orientation;
 			}
 		}	
 		break;
@@ -216,7 +298,7 @@ void setOrientation(int orientation, bool mainEngine){
 				REG_BG3PD = 0;
 				REG_BG3X = 191 << 8;
 				REG_BG3Y = 0;
-				TGDSIPC->screenOrientationMainEngine = orientation;
+				getsIPCSharedTGDS()->screenOrientationMainEngine = orientation;
 			}
 			else{
 				REG_BG3PA_SUB = 0;
@@ -225,7 +307,7 @@ void setOrientation(int orientation, bool mainEngine){
 				REG_BG3PD_SUB = 0;
 				REG_BG3X_SUB = 191 << 8;
 				REG_BG3Y_SUB = 0;
-				TGDSIPC->screenOrientationSubEngine = orientation;
+				getsIPCSharedTGDS()->screenOrientationSubEngine = orientation;
 			}
 		}
 		break;
@@ -237,7 +319,7 @@ void setOrientation(int orientation, bool mainEngine){
 				REG_BG3PD = -1 << 8;
 				REG_BG3X = 255 << 8;
 				REG_BG3Y = 191 << 8;
-				TGDSIPC->screenOrientationMainEngine = orientation;
+				getsIPCSharedTGDS()->screenOrientationMainEngine = orientation;
 			}
 			else{
 				REG_BG3PA_SUB = -1 << 8;
@@ -246,7 +328,7 @@ void setOrientation(int orientation, bool mainEngine){
 				REG_BG3PD_SUB = -1 << 8;
 				REG_BG3X_SUB = 255 << 8;
 				REG_BG3Y_SUB = 191 << 8;
-				TGDSIPC->screenOrientationSubEngine = orientation;
+				getsIPCSharedTGDS()->screenOrientationSubEngine = orientation;
 			}
 		}
 		break;
@@ -258,7 +340,7 @@ void setOrientation(int orientation, bool mainEngine){
 				REG_BG3PD = 0;
 				REG_BG3X = 0;
 				REG_BG3Y = 255 << 8;
-				TGDSIPC->screenOrientationMainEngine = orientation;
+				getsIPCSharedTGDS()->screenOrientationMainEngine = orientation;
 			}
 			else{
 				REG_BG3PA_SUB = 0;
@@ -267,12 +349,9 @@ void setOrientation(int orientation, bool mainEngine){
 				REG_BG3PD_SUB = 0;
 				REG_BG3X_SUB = 0;
 				REG_BG3Y_SUB = 255 << 8;
-				TGDSIPC->screenOrientationSubEngine = orientation;
+				getsIPCSharedTGDS()->screenOrientationSubEngine = orientation;
 			}
 		}
 		break;
 	}
 }
-
-#endif
-

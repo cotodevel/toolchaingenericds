@@ -23,6 +23,8 @@ USA
 
 #include "exceptionTGDS.h"
 
+#define nds_ewram_mask (get_ewram_size()-1)
+
 //Interrupt Routines
 #ifdef ARM7
 
@@ -57,16 +59,49 @@ USA
 extern "C" {
 #endif
 
-//access to vectors from LD map
+
+extern uint32 	__lib__end__;		//vma_idtcm_start
+extern uint32 	__vma_stub_end__;	//vma_idtcm_end
+
 #ifdef ARM9
+//CP15 MPU 
+extern void MPUSet();
+
 extern 	vuint32	_arm9_irqhandler;
 extern	vuint32	_arm9_irqcheckbits;
+
+extern uint32 	_ewram_start;
+extern uint32	_ewram_end;
+
+extern uint32 	_dtcm_start;
+extern uint32 	_dtcm_end;
+
+extern uint32 	_gba_start;
+extern uint32 	_gba_end;
+//todo: read from gba cart or something
+
+extern uint32	_gbawram_start;
+extern uint32	_gbawram_end;
+
+extern uint32 	_itcm_start;
+extern uint32 	_itcm_end;
+
+extern uint32 	_vector_start;
+extern uint32 	_vector_end;
+
+
 #endif
 
 #ifdef ARM7
+
+extern uint32 _iwram_start;
+extern uint32 _iwram_end;
+
 extern 	vuint32	_arm7_irqhandler;
 extern	vuint32	_arm7_irqcheckbits;
 #endif
+
+
 
 #ifdef __cplusplus
 }

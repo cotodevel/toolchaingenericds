@@ -255,7 +255,7 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 					bool disableTSCWhenTGDSConsoleTop = false;
 					u8* currentVRAMContext = (u8*)TGDSARM9Malloc(128*1024);
 					bool SaveConsoleContext = true; //Save Console context
-					TGDSLCDSwap(disableTSCWhenTGDSConsoleTop, isDirectFramebuffer, SaveConsoleContext, currentVRAMContext);
+					//TGDSLCDSwap(disableTSCWhenTGDSConsoleTop, isDirectFramebuffer, SaveConsoleContext, currentVRAMContext);
 					printf("Connecting to UDP TGDS Server Companion: ");
 					printf("Write down the IP then <Enter>, or tap <ESC> to quit. ");
 					
@@ -281,7 +281,7 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 						}
 					}
 					SaveConsoleContext = false; //Restore Console context
-					TGDSLCDSwap(disableTSCWhenTGDSConsoleTop, isDirectFramebuffer, SaveConsoleContext, currentVRAMContext);
+					//TGDSLCDSwap(disableTSCWhenTGDSConsoleTop, isDirectFramebuffer, SaveConsoleContext, currentVRAMContext);
 					TGDSARM9Free(currentVRAMContext);
 					if(validIPv4 == false){					
 						printf("Invalid IP address");

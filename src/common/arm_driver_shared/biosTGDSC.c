@@ -23,28 +23,32 @@ USA
 /////////////////////////////////////////////////// Shared BIOS ARM7/9 /////////////////////////////////////////////////////////////////
 #include "biosTGDS.h"
 #include "global_settings.h"
-#include "dldi.h"
 #include "dmaTGDS.h"
 #include "InterruptsARMCores_h.h"
 #include "posixHandleTGDS.h"
+
+#ifdef ARM9
+#include "dldi.h"
+#endif
 
 //NDS BIOS Routines C code
 
 //problem kaputt docs say DS uses a rounded 4 byte copy, be it a fillvalue to dest or direct copy from src to dest, by size.
 //Dont optimize as vram is 16 or 32bit, optimization can end up in 8bit writes.
 //writes either a COPY_FIXED_SOURCE value = [r0], or plain copy from source to destination
+__attribute__((optimize("O0")))
 void swiFastCopy(uint32 * source, uint32 * dest, int flags){
-	#ifdef ARM9
-	coherent_user_range_by_size((uint32)source, (int)((flags<<2)&0x1fffff));
-	coherent_user_range_by_size((uint32)dest, (int)((flags<<2)&0x1fffff));
-	#endif
-	
+	int i = 0;
 	if(flags & COPY_FIXED_SOURCE){
-		dmaFillWord(3, (uint32)(*(uint32*)source),(uint32)dest, (uint32)(((flags<<2)&0x1fffff)));
+		uint32 value = *(uint32*)source;
+		for(i = 0; i < (int)((flags<<2)&0x1fffff)/4; i++){
+			dest[i] = value;
+		}
 	}
-	else //if(flags & COPY_SRCDEST_DMA)	//if not, just perform src to dest DMA copy
-	{
-		dmaTransferWord(3, (uint32)source, (uint32)dest, (uint32) (((flags<<2)&0x1fffff)) );
+	else{
+		for(i = 0; i < (int)((flags<<2)&0x1fffff)/4; i++){
+			dest[i] = source[i];
+		}
 	}
 }
 

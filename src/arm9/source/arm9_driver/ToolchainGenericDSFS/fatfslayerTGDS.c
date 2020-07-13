@@ -21,7 +21,6 @@ USA
 
 #include "fatfslayerTGDS.h"
 #include "dldi.h"
-#include "fileBrowse.h"	//generic template functions from TGDS: maintain 1 source, whose changes are globally accepted by all TGDS Projects.
 
 //fatfs
 FATFS dldiFs;

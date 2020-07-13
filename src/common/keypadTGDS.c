@@ -31,40 +31,35 @@ USA
 #include "consoleTGDS.h"
 #endif
 
-#ifdef ARM9
-__attribute__((section(".dtcm")))
-#endif
 uint32 global_keys_arm9;
-
-#ifdef ARM9
-__attribute__((section(".dtcm")))
-#endif
+uint32 last_frame_keys_arm9;
 uint32 buffered_keys_arm9;
 
+void scanKeys(){
+	uint16 buttonsARM7 = getsIPCSharedTGDS()->buttons7;
+	uint32 readKeys = (uint32)(( ((~KEYINPUT)&0x3ff) | (((~buttonsARM7)&3)<<10) | (((~buttonsARM7)<<6) & (KEY_TOUCH|KEY_LID) ))^KEY_LID);
+	last_frame_keys_arm9 = global_keys_arm9;
+	global_keys_arm9 = readKeys | buffered_keys_arm9;
+	buffered_keys_arm9 = 0;
+}
 
-#ifdef ARM9
-__attribute__((section(".dtcm")))
-#endif
-uint32 last_frame_keys_arm9;
-
-
-inline void setKeys(u32 keys){
+void setKeys(u32 keys){
 	buffered_keys_arm9 |= keys;
 }
 
-inline uint32 keysPressed(){
+uint32 keysPressed(){
 	return global_keys_arm9;	//there is no other way. Required by CoreEmu
 }
 
-inline uint32 keysReleased(){
+uint32 keysReleased(){
 	return (uint32)((~keysPressed()) & last_frame_keys_arm9);
 }
 
-inline uint32 keysHeld(){
+uint32 keysHeld(){
 	return (uint32)(global_keys_arm9 & last_frame_keys_arm9);
 }
 
-inline uint32 keysRepeated(){
+uint32 keysRepeated(){
 	return (uint32)( keysPressed() | last_frame_keys_arm9);
 }
 
@@ -72,11 +67,12 @@ inline uint32 keysRepeated(){
 //struct touchScr touchScrStruct;
 //touchScrRead(&touchScrStruct);
 //read values..
-inline void touchScrRead(struct touchScr * touchScrInst){
-	touchScrInst->buttons7	=	TGDSIPC->buttons7;			// X, Y, /PENIRQ buttons
-	touchScrInst->touchX	=	TGDSIPC->touchX;
-	touchScrInst->touchY	=	TGDSIPC->touchY;				// raw x/y TSC SPI
-	touchScrInst->touchXpx	=	TGDSIPC->touchXpx;
-	touchScrInst->touchYpx	=	TGDSIPC->touchYpx;			// TFT x/y pixel (converted)
-	touchScrInst->KEYINPUT7	=	TGDSIPC->KEYINPUT7;			// TFT x/y pixel (converted)
+void touchScrRead(struct touchScr * touchScrInst){
+	struct sIPCSharedTGDS * sIPCSharedTGDSInst = getsIPCSharedTGDS();
+	touchScrInst->buttons7	=	sIPCSharedTGDSInst->buttons7;			// X, Y, /PENIRQ buttons
+	touchScrInst->touchX	=	sIPCSharedTGDSInst->touchX;
+	touchScrInst->touchY	=	sIPCSharedTGDSInst->touchY;				// raw x/y TSC SPI
+	touchScrInst->touchXpx	=	sIPCSharedTGDSInst->touchXpx;
+	touchScrInst->touchYpx	=	sIPCSharedTGDSInst->touchYpx;			// TFT x/y pixel (converted)
+	touchScrInst->KEYINPUT7	=	sIPCSharedTGDSInst->KEYINPUT7;			// TFT x/y pixel (converted)
 }

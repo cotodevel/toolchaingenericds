@@ -21,15 +21,14 @@ unsigned int XMEMTOTALSIZE = (128*1024);
 unsigned short XMEM_BLOCKSIZE = 128;
 
 // Number of blocks to create (mem/bs)
-#define XMEM_BLOCKCOUNT (XMEMTOTALSIZE/XMEM_BLOCKSIZE)
+unsigned int XMEM_BLOCKCOUNT = 0;
 
 // Size of Table in bytes
-#define XMEM_TABLESIZE XMEM_BLOCKCOUNT
+unsigned int XMEM_TABLESIZE = 0;
 
 #define XMEM_STARTBLOCK 0x01
 #define XMEM_ENDBLOCK 0x02
 #define XMEM_USEDBLOCK 0x04
-
 
 unsigned char *xmem_table;
 //XMEM_BLOCK *xmem_blocks;
@@ -42,9 +41,15 @@ void XmemSetup(unsigned int size, unsigned short blocks) {
 
 void XmemInit() {
 	// init XMEM
-	//	void *XT;
+	memset((u8*)getTGDSARM7MallocBaseAddress(), 0, ARM7MallocTop);
 	
-	//XT =  malloc(1024*1024);
+	//Must be generated here
+	// Number of blocks to create (mem/bs)
+	XMEM_BLOCKCOUNT = (ARM7MallocTop/XMEM_BLOCKSIZE);
+
+	// Size of Table in bytes
+	XMEM_TABLESIZE = XMEM_BLOCKCOUNT;
+	
 	xmem_table = (unsigned char *)getTGDSARM7MallocBaseAddress();	
 	xmem_blocks = (unsigned char *)((u8*)getTGDSARM7MallocBaseAddress() + XMEM_TABLESIZE);	//XMEM_BLOCKSIZE*XMEM_BLOCKCOUNT should not exceed the end of getTGDSARM7MallocBaseAddress()
 	
@@ -52,7 +57,8 @@ void XmemInit() {
 		
 		int argBuffer[MAXPRINT7ARGVCOUNT];
 		memset((unsigned char *)&argBuffer[0], 0, sizeof(argBuffer));
-		writeDebugBuffer7("XMEM: Could not allocate %d bytes of main ram for XMEM...", 0, (int*)&argBuffer[0]);
+		argBuffer[0] = XMEMTOTALSIZE;
+		printf7("XMEM: Could not allocate of main ram for XMEM", 1, (int*)&argBuffer[0]);
 		while(1==1){
 			IRQVBlankWait();
 		}
@@ -111,7 +117,10 @@ void *Xmalloc(const int size) {
 		
 		int argBuffer[MAXPRINT7ARGVCOUNT];
 		memset((unsigned char *)&argBuffer[0], 0, sizeof(argBuffer));
-		writeDebugBuffer7("XM: Couldnt Find Mem:", 0, (int*)&argBuffer[0]);
+		argBuffer[0] = size;
+		argBuffer[1] = XMEM_FreeMem();
+		argBuffer[2] = getTGDSARM7MallocBaseAddress();
+		writeDebugBuffer7("XM: Couldnt Find Mem:", 3, (int*)&argBuffer[0]);
 		
 		return NULL;
 	}

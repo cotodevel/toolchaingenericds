@@ -30,9 +30,6 @@ USA
 #include <string.h>
 #include "biosTGDS.h"
 
-#ifdef ARM9
-#include "nds_cp15_misc.h"
-#endif
 
 //Clock: 
 
@@ -109,9 +106,9 @@ ulong get_nds_seconds(uchar *time)
 	tmInst.tm_mon  = time[1];
 	tmInst.tm_year = time[0] + 2000;	
 	//tmInst.tzoff = -1;
+
+	memcpy((uint8*)&getsIPCSharedTGDS()->tmInst, (uint8*)&tmInst, sizeof(tmInst));
 	
-	
-	memcpy((uint8*)&TGDSIPC->tmInst, (uint8*)&tmInst, sizeof(tmInst));
 	return tm2sec(&tmInst);	
 }
 
@@ -265,30 +262,28 @@ void sec2tm(ulong secs, struct tm *tmInst)
 #endif
 
 //Shared:
-struct tm * getTime(){
-	
-	return(struct tm *)(&TGDSIPC->tmInst);
-}
 
 ulong getNDSRTCInSeconds(){
-	
-	return(ulong)(TGDSIPC->ndsRTCSeconds);
+	return(ulong)(getsIPCSharedTGDS()->ndsRTCSeconds);
+}
+
+
+struct tm * getTime(){
+	return(struct tm *)(&getsIPCSharedTGDS()->tmInst);
 }
 
 uint8 TGDSgetDayOfWeek(){
-	
 	#ifdef ARM9
 	//Prevent Cache problems.
-	coherent_user_range_by_size((uint32)TGDSIPC, sizeof(struct sIPCSharedTGDS));
+	coherent_user_range_by_size((uint32)getsIPCSharedTGDS(), sizeof(struct sIPCSharedTGDS));
 	#endif
-	return (uint8)TGDSIPC->dayOfWeek;
+	return (uint8)getsIPCSharedTGDS()->dayOfWeek;
 }
 
 void TGDSsetDayOfWeek(uint8 DayOfWeek){
-	
 	#ifdef ARM9
 	//Prevent Cache problems.
-	coherent_user_range_by_size((uint32)TGDSIPC, sizeof(struct sIPCSharedTGDS));
+	coherent_user_range_by_size((uint32)getsIPCSharedTGDS(), sizeof(struct sIPCSharedTGDS));
 	#endif
-	TGDSIPC->dayOfWeek = DayOfWeek;
+	getsIPCSharedTGDS()->dayOfWeek = DayOfWeek;
 }

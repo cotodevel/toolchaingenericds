@@ -55,6 +55,13 @@ extern unsigned int XMEM_FreeMem(void);
 
 extern unsigned int XMEMTOTALSIZE;
 
+// Number of blocks to create (mem/bs)
+extern unsigned int XMEM_BLOCKCOUNT;
+
+// Size of Table in bytes
+extern unsigned int XMEM_TABLESIZE;
+
+
 #ifdef __cplusplus
 }
 #endif

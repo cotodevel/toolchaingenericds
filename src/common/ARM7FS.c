@@ -22,7 +22,7 @@ USA
 #include "ipcfifoTGDS.h"
 #include "typedefsTGDS.h"
 #include "dmaTGDS.h"
-#include "dldi.h"
+//#include "dldi.h"
 #include "posixHandleTGDS.h"
 
 #ifdef ARM7
@@ -43,7 +43,7 @@ int ARM7FS_HandleMethod = 0;
 #ifdef ARM7
 int ARM7FS_GetFileSize(void)
 {
-	
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	return(TGDSIPC->IR_filesize);
 }
 
@@ -55,6 +55,7 @@ int ARM7FS_BufferReadByIRQ(void *OutBuffer, int fileOffset, int readBufferSize){
 	if(fileOffset <= 0){
 		fileOffset = 0;
 	}
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[0] = (uint32)TGDSIPC->IR_readbuf;
 	fifomsg[1] = (uint32)readBufferSize;
@@ -77,6 +78,7 @@ int ARM7FS_BufferSaveByIRQ(void *InBuffer, int fileOffset, int writeBufferSize){
 	if(writeBufferSize <= 0){
 		return 0;
 	}
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	if(fileOffset <= 0){
 		fileOffset = 0;
 	}
@@ -106,6 +108,7 @@ void performARM7MP2FSTestCase(char * ARM7fsfname, int ARM7BuffSize, u32 * writte
 	
 	//ARM7 MP2 FS test case start
 	u8* buffer =(u8*)TGDSARM7Malloc(ARM7BuffSize);
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	TGDSIPC->IR_readbufsize = ARM7BuffSize;
 	int filesize = TGDSIPC->IR_filesize;
 	
@@ -151,7 +154,7 @@ void deinitARM7FS(){
 	#endif
 	
 	#ifdef ARM9
-	
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	TGDSIPC->IR_readbufsize=0;
 	TGDSIPC->IR_ReadOffset = 0;
 	TGDSIPC->IR_WrittenOffset = 0;
@@ -215,7 +218,7 @@ bool initARM7FSPOSIX(char * inFilename, char * outFilename, int splitBufferSize,
 		return false;
 	}
 	deinitARM7FS();
-	
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	TGDSIPC->IR_readbufsize=0;
 	TGDSIPC->IR_readbuf=0;
 	//setup vars
@@ -275,6 +278,7 @@ bool initARM7FSTGDSFileHandle(struct fd * TGDSFileHandleIn, struct fd * TGDSFile
 		return false;
 	}
 	
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	TGDSIPC->IR_readbuf=(u32*)TGDSARM9Malloc(splitBufferSize);	//Must be EWRAM because then ARM7 can receive it into ARM7's 0x06000000 through DMA (hardware ring buffer)
 	if((u32*)TGDSIPC->IR_readbuf == (u32*)NULL){
 		deinitARM7FS();
@@ -318,7 +322,7 @@ void closeARM7FS(){
 void performARM7MP2FSTestCasePOSIX(char * inFilename, char * outFilename, int splitBufferSize, u32 * debugVar){	//ARM9 Impl.
 	deinitARM7FS();
 	printf("performARM7MP2FSTestCasePOSIX() Test Case: start!");
-	
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	TGDSIPC->IR_readbufsize=0;
 	TGDSIPC->IR_readbuf=0;
 	//setup vars
@@ -389,6 +393,7 @@ void performARM7MP2FSTestCaseTGDSFileDescriptor(struct fd * TGDSFileHandleIn, st
 		deinitARM7FS();
 		return false;
 	}
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	TGDSIPC->IR_readbuf=(u32*)TGDSARM9Malloc(splitBufferSize);	//Must be EWRAM because then ARM7 can receive it into ARM7's 0x06000000 through DMA (hardware ring buffer)
 	if((u32*)TGDSIPC->IR_readbuf == (u32*)NULL){
 		deinitARM7FS();

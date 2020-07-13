@@ -44,6 +44,7 @@ void initSound(){
 void startSound(int sampleRate, const void* data, u32 bytes, u8 channel, u8 vol,  u8 pan, u8 format)
 {
 	#ifdef ARM9
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	coherent_user_range_by_size((uint32)fifomsg, sizeof(TGDSIPC->fifoMesaggingQueue));
 	coherent_user_range_by_size((uint32)data, bytes);	//coherent sound buffer if within cached EWRAM
@@ -84,7 +85,7 @@ void startSound(int sampleRate, const void* data, u32 bytes, u8 channel, u8 vol,
 #ifdef ARM7
 
 
-void mallocData(int size)
+void mallocData7TGDS(int size)
 {
 	strpcmL0 = (s16 *)TGDSARM7Malloc(size);
 	strpcmL1 = (s16 *)TGDSARM7Malloc(size);
@@ -105,7 +106,7 @@ void mallocData(int size)
 	}
 }
 
-void freeData()
+void freeData7TGDS()
 {	
 	TGDSARM7Free((u8*)strpcmL0);
 	TGDSARM7Free((u8*)strpcmL1);
@@ -131,6 +132,7 @@ struct soundSampleContext * getsoundSampleContextByIndex(int index){
 		return NULL;
 	}
 	
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	return(struct soundSampleContext *)&TGDSIPC->soundContextShared.soundSampleCxt[index];
 }
 
@@ -204,15 +206,18 @@ static bool cutOff = false;
 
 u8 getVolume()
 {
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	struct soundPlayerContext * soundPlayerCtx = (struct soundPlayerContext *)&TGDSIPC->sndPlayerCtx;
 	return soundPlayerCtx->volume;
 }
 
 void setVolume(u8 volume)
 {
-	if(volume > 16)
+	if(volume > 16){
 		volume = 16;
+	}
 	
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	struct soundPlayerContext * soundPlayerCtx = (struct soundPlayerContext *)&TGDSIPC->sndPlayerCtx;
 	soundPlayerCtx->volume = volume;
 }
@@ -239,6 +244,7 @@ void setWavDecodeCallback(void (*cb)()){
 
 void mallocData9TGDS(int size)
 {
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	struct soundPlayerContext * soundPlayerCtx = (struct soundPlayerContext *)&TGDSIPC->sndPlayerCtx;
 	SwapSoundStreamBuffers = 0;
 	
@@ -258,6 +264,7 @@ void mallocData9TGDS(int size)
 
 void swapDataTGDS()
 {
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	struct soundPlayerContext * soundPlayerCtx = (struct soundPlayerContext *)&TGDSIPC->sndPlayerCtx;
 	
 	SwapSoundStreamBuffers = 1 - SwapSoundStreamBuffers;
@@ -378,6 +385,7 @@ int parseWaveData(FILE * fh, u32 u32chunkToSeek){
 void wavDecode8Bit()
 {
 	// 8bit wav file
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	u8 *s8Data = (u8 *)TGDSARM9Malloc(WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels);
 	int rSize = getWavData(s8Data, (WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels), GlobalSoundStreamFile);
 	if(rSize < (WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels))
@@ -413,6 +421,7 @@ void wavDecode8Bit()
 void wavDecode16Bit()
 {
 	// 16bit wav file
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	s16 *tmpData = (s16 *)TGDSARM9Malloc(WAV_READ_SIZE * 2 * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels);
 	int rSize = getWavData(tmpData, (WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels * 2), GlobalSoundStreamFile);
 	if(rSize < (WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels * 2))
@@ -447,6 +456,7 @@ void wavDecode16Bit()
 void wavDecode24Bit()
 {
 	// 24bit wav file
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	u8 *tmpData = (u8 *)TGDSARM9Malloc(WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels * 3);
 	int rSize = getWavData(tmpData, (WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels * 3), GlobalSoundStreamFile);
 	if(rSize < (WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels * 3))
@@ -493,6 +503,7 @@ void wavDecode24Bit()
 void wavDecode32Bit()
 {
 	// 32bit wav file
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	s16 *tmpData = (s16 *)TGDSARM9Malloc(WAV_READ_SIZE * 4 * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels);	
 	int rSize = getWavData(tmpData, (WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels * 4), GlobalSoundStreamFile);
 	if(rSize < (WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels * 4))
@@ -526,6 +537,7 @@ void wavDecode32Bit()
 
 void initComplexSoundTGDS(u32 srcFmt)
 {	
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	struct soundPlayerContext * soundPlayerCtx = (struct soundPlayerContext *)&TGDSIPC->sndPlayerCtx;
 	soundPlayerCtx->volume = 4;
 	soundPlayerCtx->sourceFmt = srcFmt;
@@ -548,6 +560,7 @@ bool initSoundStream(char * WAVfilename){	//ARM9 Impl.
 	SharedEWRAM0 = (s16*)TGDSARM9Malloc(32*1024);
 	SharedEWRAM1 = (s16*)((u8*)SharedEWRAM0 + 0x4000);
 	
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	stopSound(TGDSIPC->sndPlayerCtx.sourceFmt);//ARM9
 	lBufferSwapped = NULL;
 	rBufferSwapped = NULL;
@@ -687,6 +700,7 @@ void updateSoundContextStreamPlayback(u32 srcFrmt){
 			if(lBufferSwapped == NULL || rBufferSwapped == NULL)
 			{
 				// file is done
+				struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 				stopSound(TGDSIPC->sndPlayerCtx.sourceFmt); //ARM9
 				return;
 			}
@@ -701,6 +715,7 @@ void updateSoundContextStreamPlayback(u32 srcFrmt){
 			}	
 			swapAndSendTGDS(ARM7COMMAND_SOUND_COPY);
 			wavDecode();
+			struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 			TGDSIPC->sndPlayerCtx.fileOffset = ftell(GlobalSoundStreamFile);
 		}
 		break;
@@ -820,6 +835,7 @@ void setupSound(u32 srcFrmtInst)
 		TIMERXCNT(3) = TIMER_CASCADE | TIMER_IRQ_REQ | TIMER_ENABLE;
 	}
 	REG_IE|=(IRQ_TIMER3);
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	TGDSIPC->sndPlayerCtx.soundStreamPause = false;
 }
 
@@ -833,8 +849,8 @@ void closeSoundStream(){
 void initSoundStream(u32 srcFmt){		//ARM7 Impl.
 	SoundPowerON(127);		//volume
 	if(srcFmt == SRC_WAV){
-		freeData();
-		mallocData(WAV_READ_SIZE*2);
+		freeData7TGDS();
+		mallocData7TGDS(WAV_READ_SIZE*2);
 	}
 	else{
 		initSoundStreamUser(srcFmt);
@@ -858,6 +874,7 @@ void stopSound(u32 srcFrmt)
 	}
 	
 	REG_IE&=~(IRQ_TIMER3);
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	TGDSIPC->sndPlayerCtx.soundStreamPause = true;
 	#endif
 	

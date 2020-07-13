@@ -51,7 +51,8 @@ USA
 #include "typedefsTGDS.h"
 #include "dsregs.h"
 #include "nds_cp15_misc.h"
-#include "ipcfifoTGDS.h"
+#include "limitsTGDS.h"
+
 #endif
 
 #define MAXPRINT7ARGVCOUNT (int)(20)
@@ -92,6 +93,13 @@ typedef u32 (*TGDSARM9MallocFreeMemoryHandler)();
 
 struct AllocatorInstance
 {
+	bool customMalloc;
+	
+	//ARM7 Malloc settings
+	u32 ARM7MallocStartAddress;
+	int ARM7MallocSize;
+	
+	//ARM9 Malloc settings
 	TGDSARM9MallocHandler 			CustomTGDSMalloc9;
 	TGDSARM9CallocHandler 			CustomTGDSCalloc9;
 	TGDSARM9FreeHandler				CustomTGDSFree9;
@@ -109,7 +117,7 @@ extern int getMaxRam();
 //TGDS Malloc implementation, before using them requires a call from ARM9: void initARM7Malloc(u32 ARM7MallocStartaddress, u32 memSizeBytes)
 extern bool customMallocARM9;
 //weak symbols : the implementation of this is project-defined
-extern  __attribute__((weak))	struct AllocatorInstance * getProjectSpecificMemoryAllocatorSetup();
+extern  __attribute__((weak))	struct AllocatorInstance * getProjectSpecificMemoryAllocatorSetup(u32 ARM7MallocStartAddress, int ARM7MallocSize, bool isCustomTGDSMalloc);
 
 extern struct AllocatorInstance CustomAllocatorInstance;
 extern TGDSARM9MallocHandler 			TGDSMalloc9;
@@ -120,7 +128,11 @@ extern TGDSARM9MallocFreeMemoryHandler	TGDSMallocFreeMemory9;
 extern u32 ARM9MallocBaseAddress;
 extern void setTGDSARM9MallocBaseAddress(u32 address);
 extern u32 getTGDSARM9MallocBaseAddress();
-extern void initARM9Malloc(u32 ARM9MallocStartaddress, u32 memSizeBytes, u32 * mallocHandler, u32 * callocHandler, u32 * freeHandler, u32 * MallocFreeMemoryHandler, bool customAllocator);
+extern void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize, //ARM7
+								
+								u32 ARM9MallocStartaddress, u32 ARM9MallocSize, u32 * mallocHandler, //ARM9
+								u32 * callocHandler, u32 * freeHandler, u32 * MallocFreeMemoryHandler, 
+								bool customAllocator);
 
 #ifdef __cplusplus
 }
@@ -186,6 +198,7 @@ extern "C"{
 #ifdef ARM7
 //ARM7 Malloc
 extern u32 ARM7MallocBaseAddress;
+extern u32 ARM7MallocTop;
 extern void setTGDSARM7MallocBaseAddress(u32 address);
 extern u32 getTGDSARM7MallocBaseAddress();
 
@@ -201,7 +214,7 @@ extern int * arm7ARGVDebugBufferShared;
 #endif
 
 //Shared ARM7 Malloc
-extern void initARM7Malloc(u32 ARM7MallocStartaddress, u32 memSizeBytes);
+extern void initARM7Malloc(u32 ARM7MallocStartaddress, u32 ARM7MallocSize);
 
 #ifdef ARM9
 extern void setTGDSMemoryAllocator(struct AllocatorInstance * TGDSMemoryAllocator);
@@ -229,6 +242,20 @@ extern int arm7ARGVDebugBuffer[MAXPRINT7ARGVCOUNT];
 extern void printarm7DebugBuffer();
 extern int _unlink(const sint8 *path);
 extern void printfCoords(int x, int y, const char *fmt, ...);
+
+extern void * _sbrk (int size);
+extern void * _sbrk_r (struct _reent * reent, int size);
+
+extern uint32 get_ewram_start();
+extern sint32 get_ewram_size();
+extern uint32 	get_dtcm_start();
+extern sint32 	get_dtcm_size();
+
+extern uint32 	get_itcm_start();
+extern sint32 	get_itcm_size();
+
+//NDS Memory Map
+extern bool isValidMap(uint32 addr);
 #endif
 
 extern int _vfprintf_r(struct _reent * reent, FILE *fp,const sint8 *fmt, va_list args);
@@ -269,6 +296,10 @@ extern char *fgets_tgds(char *s, int n, int fd);
 extern int feof_tgds(int fd);
 extern int ferror_tgds(int fd);
 extern void TryToDefragmentMemory();
+
+//newlib
+extern uint32 get_lma_libend();		//linear memory top
+extern uint32 get_lma_wramend();	//(ewram end - linear memory top ) = malloc free memory
 
 #ifdef __cplusplus
 }

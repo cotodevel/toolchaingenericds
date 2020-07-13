@@ -21,16 +21,12 @@ USA
 #ifndef __console_toolchain_h__
 #define __console_toolchain_h__
 
+#include <stdbool.h>
+#include "posixHandleTGDS.h"
 #include "typedefsTGDS.h"
 #include "dsregs.h"
-#include <stdbool.h>
-#include "utilsTGDS.h"
-#include "fatfslayerTGDS.h"
 #include "ipcfifoTGDS.h"
-#include "videoTGDS.h"
 #include "spifwTGDS.h"
-#include "keypadTGDS.h"
-#include "dmaTGDS.h"
 
 #define ENABLE_3D    (1<<3)
 #define DISPLAY_ENABLE_SHIFT 8
@@ -62,7 +58,6 @@ USA
 #define BG_BMP_RAM_SUB(base)	((uint16*)(((base)*0x4000) + 0x06200000))
 #define SCREEN_BASE_BLOCK_SUB(n)	(((n)*0x800) + 0x06200000)
 #define CHAR_BASE_BLOCK_SUB(n)		(((n)*0x4000)+ 0x06200000)
-
 #define	BGCTRL_SUB				( (vuint16*)0x4001008)
 #define	REG_BG0CNT_SUB		(*(vuint16*)0x4001008)
 #define	REG_BG1CNT_SUB		(*(vuint16*)0x400100A)
@@ -99,7 +94,23 @@ USA
 #define	REG_BG3X_SUB		(*(vsint32*)0x4001038)
 #define	REG_BG3Y_SUB		(*(vsint32*)0x400103C)
 
-#define TGDS_CONSOLE_HANDLES (int)(4)
+// TGDS GUI Colors
+
+#define TGDSPrintfColor_PalleteBase			0
+#define TGDSPrintfColor_BackGroundColor		(u8)(TGDSPrintfColor_PalleteBase+0)
+#define TGDSPrintfColor_Black		(u8)(TGDSPrintfColor_PalleteBase+0)
+#define TGDSPrintfColor_White		(u8)(TGDSPrintfColor_PalleteBase+1)
+#define TGDSPrintfColor_Brown		(u8)(TGDSPrintfColor_PalleteBase+2)
+#define TGDSPrintfColor_Orange		(u8)(TGDSPrintfColor_PalleteBase+3)
+#define TGDSPrintfColor_Magenta		(u8)(TGDSPrintfColor_PalleteBase+4)
+#define TGDSPrintfColor_Cyan		(u8)(TGDSPrintfColor_PalleteBase+5)
+#define TGDSPrintfColor_Yellow		(u8)(TGDSPrintfColor_PalleteBase+6)
+#define TGDSPrintfColor_Blue		(u8)(TGDSPrintfColor_PalleteBase+7)
+#define TGDSPrintfColor_Green		(u8)(TGDSPrintfColor_PalleteBase+8)
+#define TGDSPrintfColor_Red		(u8)(TGDSPrintfColor_PalleteBase+9)
+#define TGDSPrintfColor_Grey		(u8)(TGDSPrintfColor_PalleteBase+10)
+#define TGDSPrintfColor_LightGrey		(u8)(TGDSPrintfColor_PalleteBase+11)
+
 
 //Console uses 2D. used by REG_DISPCNT / REG_DISPCNT_SUB
 typedef enum {
@@ -133,13 +144,12 @@ typedef enum {
 	subEngine = (0x0<<0)
 } PPUEngine;
 
-//each is a Console Instance.
+//each is a Console Instance. The idea is to re-use SnemulDS console render so we are not limited to a single background - tile format, but takeover an engine as whole for rendering.
 typedef struct ConsoleInstance
 {
 	PPUEngine ppuMainEngine;
-	uint16* VideoBuffer;
+	uint16* gfx;
 	EngineStatus ConsoleEngineStatus;
-	vramSetup thisVRAMSetupConsole;
 }ConsoleInstance;
 
 //font
@@ -172,94 +182,21 @@ typedef struct
     t_GUIGlyph **glyphs;
 } t_GUIFont;
 
-// TGDS GUI Colors
-
-#define TGDSPrintfColor_PalleteBase			0
-#define TGDSPrintfColor_BackGroundColor		(u8)(TGDSPrintfColor_PalleteBase+0)
-#define TGDSPrintfColor_Black		(u8)(TGDSPrintfColor_PalleteBase+0)
-#define TGDSPrintfColor_White		(u8)(TGDSPrintfColor_PalleteBase+1)
-#define TGDSPrintfColor_Brown		(u8)(TGDSPrintfColor_PalleteBase+2)
-#define TGDSPrintfColor_Orange		(u8)(TGDSPrintfColor_PalleteBase+3)
-#define TGDSPrintfColor_Magenta		(u8)(TGDSPrintfColor_PalleteBase+4)
-#define TGDSPrintfColor_Cyan		(u8)(TGDSPrintfColor_PalleteBase+5)
-#define TGDSPrintfColor_Yellow		(u8)(TGDSPrintfColor_PalleteBase+6)
-#define TGDSPrintfColor_Blue		(u8)(TGDSPrintfColor_PalleteBase+7)
-#define TGDSPrintfColor_Green		(u8)(TGDSPrintfColor_PalleteBase+8)
-#define TGDSPrintfColor_Red		(u8)(TGDSPrintfColor_PalleteBase+9)
-#define TGDSPrintfColor_Grey		(u8)(TGDSPrintfColor_PalleteBase+10)
-#define TGDSPrintfColor_LightGrey		(u8)(TGDSPrintfColor_PalleteBase+11)
-
-//GUI defs
-#define GUI_EVENT			1
-#define GUI_DRAW			2
-#define GUI_COMMAND			3
-
-#define GUI_EVENT_STYLUS	100
-#define GUI_EVENT_BUTTON	101
-
-#define GUI_EVENT_ENTERZONE	110
-#define GUI_EVENT_LEAVEZONE	111
-#define	GUI_EVENT_FOCUS		112
-#define	GUI_EVENT_UNFOCUS	113
-
-#define	EVENT_STYLUS_PRESSED 	1000
-#define	EVENT_STYLUS_RELEASED	1001
-#define	EVENT_STYLUS_DRAGGED 	1002
-
-#define	EVENT_BUTTON_ANY	 	2000
-#define	EVENT_BUTTON_PRESSED	2001
-#define	EVENT_BUTTON_RELEASED	2002
-#define	EVENT_BUTTON_HELD	 	2003
-
-#define IMG_IN_MEMORY	0
-#define IMG_IN_VRAM		1
-#define IMG_NOLOAD		2
-
-#define GUI_TEXT_ALIGN_CENTER	0
-#define GUI_TEXT_ALIGN_LEFT		1
-#define GUI_TEXT_ALIGN_RIGHT	2
-
-#define GUI_ST_PRESSED			1
-#define GUI_ST_SELECTED			2
-#define GUI_ST_FOCUSED			4
-#define GUI_ST_HIDDEN			8
-#define GUI_ST_DISABLED			16
-
-#define GUI_HANDLE_JOYPAD		1
-
-#define GUI_PARAM(a) (void *)(a)
-#define GUI_PARAM2(a, b) (void *)((((uint16)(a)) << 16) | ((uint16)(b)))
-#define GUI_PARAM3(s, n, c) (void *)((s) | ((n) << 16) | ((c) << 24))
-
-#define _STR(x) GUI.string[x]
-
 typedef struct
 {
-	int x;
-	int y;
+	uint16	width;
+	uint8	height;
+	uint8	flags;
 	
-	int	dx;
-	int dy;
-} t_GUIStylusEvent;
+	void	*data;
+} t_GUIImage;
 
 typedef struct
 {
-	uint32	buttons;
-	uint32  pressed;
-	uint32	repeated;
-	uint32	released;
-} t_GUIJoypadEvent;
-
-typedef struct
-{
-	int	event;
-	union
-	{
-		t_GUIStylusEvent stl;
-		t_GUIJoypadEvent joy;
-	};
-		
-} t_GUIEvent;
+	int			nb;
+	int			cnt;
+	t_GUIImage	*img[];
+} t_GUIImgList;
 
 typedef struct s_GUIZone t_GUIZone;
 typedef int (*t_GUIHandler)(t_GUIZone *zone, int message, int param, void *arg);
@@ -283,22 +220,6 @@ struct s_GUIZone
 
 typedef struct
 {
-	uint16	width;
-	uint8	height;
-	uint8	flags;
-	
-	void	*data;
-} t_GUIImage;
-
-typedef struct
-{
-	int			nb;
-	int			cnt;
-	t_GUIImage	*img[];
-} t_GUIImgList;
-
-typedef struct
-{
 	int			nb_zones;
 	int			curs;
 	int			stylus_zone;
@@ -309,10 +230,8 @@ typedef struct
 	uint16		last_focus; // Number of focusable zones 
 	uint16		incr_focus; // Increment factor for joypad focus
 	
-	t_GUIZone	zones[];
+	t_GUIZone	zones[100];
 } t_GUIScreen;
-
-
 
 typedef struct
 {
@@ -341,85 +260,88 @@ typedef struct
 	
 } t_GUI;
 
-typedef struct
-{
-	t_GUIScreen	*scr;
-	int			msg;
-	int 		param;
-	void		*arg;
-} t_GUIMessage;
+// GUI Colors
 
-#include "typedefsTGDS.h"
-#include "consoleTGDS.h"
+#define GUI_PAL			216
+//#define GUI_BLACK		0
+#define GUI_BLACK		(GUI_PAL+0)
+#define GUI_DARKGREY2	(GUI_PAL+1)
+#define GUI_DARKGREY	(GUI_PAL+2)
+#define GUI_GREY		(GUI_PAL+3)
 
-#define IDS_INITIALIZATION	0
-#define IDS_FS_FAILED		1
-#define IDS_FS_SUCCESS		2
+#define GUI_DARKRED		(GUI_PAL+4)
+#define GUI_RED			(GUI_PAL+5)
+#define GUI_LIGHTRED	(GUI_PAL+6)
+
+#define GUI_DARKGREEN	(GUI_PAL+12)
+#define GUI_GREEN		(GUI_PAL+13)
+#define GUI_LIGHTGREEN	(GUI_PAL+14)
+
+#define GUI_DARKBLUE	(GUI_PAL+8)
+#define GUI_BLUE		(GUI_PAL+9)
+#define GUI_LIGHTBLUE	(GUI_PAL+10)
+
+#define GUI_DARKYELLOW	(GUI_PAL+17)
+#define GUI_YELLOW		(GUI_PAL+18)
+#define GUI_LIGHTYELLOW	(GUI_PAL+19)
+
+#define GUI_LIGHTGREY	(GUI_WHITE-2)
+#define GUI_LIGHTGREY2	(GUI_WHITE-1)
+#define GUI_WHITE		255
+
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern bool globalTGDSCustomConsole;
-extern char ConsolePrintfBuf[MAX_TGDSFILENAME_LENGTH+1];
 extern	t_GUI	GUI;
-extern ConsoleInstance ConsoleHandle[TGDS_CONSOLE_HANDLES];
-extern ConsoleInstance * CurrentConsole;
+
+extern ConsoleInstance DefaultConsole;	//default console
+extern ConsoleInstance CustomConsole;	//project specific
+extern ConsoleInstance * DefaultSessionConsole;
 
 //weak symbols : the implementation of this is project-defined
-extern __attribute__((weak))	bool InitProjectSpecificConsole(ConsoleInstance * ConsoleInstanceInst);
+extern __attribute__((weak))	bool InitProjectSpecificConsole();
 
+extern bool InitializeConsole(ConsoleInstance * ConsoleInst);
 extern void UpdateConsoleSettings(ConsoleInstance * ConsoleInst);
 extern void SetEngineConsole(PPUEngine engine,ConsoleInstance * ConsoleInst);
-extern void consoleClr(ConsoleInstance * ConsoleInst);
+extern void consoleClear(ConsoleInstance * ConsoleInst);
 extern t_GUIFont katakana_12_font;
 
 extern void	GUI_console_printf(int cx, int cy, sint8 *fmt, ...);
-extern void	GUI_align_printf(int flags, sint8 *fmt, ...);
 extern void GUI_printf(sint8 *fmt, ...);
-extern void GUI_printf2(int cx, int cy, sint8 *fmt, ...);
 extern void	GUI_clearScreen(int color);
 extern void	GUI_clear();
+extern volatile sint8 ConsolePrintfBuf[256+1];
 
 //font 
+extern t_GUIFont trebuchet_9_font;
 extern t_GUIFont smallfont_7_font;
 
 extern void _glyph_loadline_8(uint8 *dst, uint8 *data, int pos, int size, uint8 *pal);
 extern void _glyph_loadline_2(uint8 *dst, uint8 *data, int pos, int size, uint8 *pal);
 extern void _glyph_loadline_1(uint8 *dst, uint8 *data, int pos, int size, uint8 *pal);
 
-extern int 	GUI_drawVChar(t_GUIZone *zone, t_GUIFont *font, uint16 x, uint16 y, int col, uint8 text, bool readAndBlendFromVRAM);
+extern int GUI_drawVChar(t_GUIZone *zone, t_GUIFont *font, uint16 x, uint16 y, int col, uint8 text, bool readAndBlendFromVRAM);
 extern uint8 g_katana_jisx0201_conv[];
-extern int 	GUI_drawText(t_GUIZone *zone, uint16 x, uint16 y, int col, sint8 *text,bool readAndBlendFromVRAM);
+extern int 	GUI_drawText(t_GUIZone *zone, uint16 x, uint16 y, int col, sint8 *text, bool readAndBlendFromVRAM);
 extern int 	GUI_getStrWidth(t_GUIZone *zone, sint8 *text);
 extern int 	GUI_getFontHeight(t_GUIZone *zone);
 extern int	GUI_getZoneTextHeight(t_GUIZone *zone);
 extern int 	GUI_drawAlignText(t_GUIZone *zone, int flags, int y, int col, sint8 *text);
 extern void clrscr();
-extern void	GUI_init(bool isTGDSCustomConsole);
+extern bool globalTGDSCustomConsole;
+extern void	GUI_init(bool project_specific_console);
 
-extern t_GUIZone DefaultZone;
-extern t_GUIZone * getDefaultZoneConsole();
-extern int getFontHeightFromZone(t_GUIZone * ZoneInst);
-extern bool VRAM_SETUP(ConsoleInstance * currentConsoleInstance);
-
-//weak symbols : the implementation of this is project-defined
-extern  __attribute__((weak))	ConsoleInstance * getProjectSpecificVRAMSetup();
-
-//Default console VRAM layout setup
-//1) VRAM Layout
-extern ConsoleInstance * DEFAULT_CONSOLE_VRAMSETUP();
-//2) Uses subEngine: VRAM Layout -> Console Setup
-extern bool InitDefaultConsole(ConsoleInstance * DefaultSessionConsoleInst);
-
-extern void swapTGDSConsoleBetweenPPUEngines(u8 * currentVRAMContext);
 extern void restoreTGDSConsoleFromSwapEngines(u8 * currentVRAMContext);
+extern void swapTGDSConsoleBetweenPPUEngines(u8 * currentVRAMContext);
+extern void TGDSLCDSwap(bool disableTSCWhenTGDSConsoleTop, bool isDirectFramebuffer, bool SaveConsoleContext, u8 * currentVRAMContext);
+
 
 #ifdef __cplusplus
 }
 #endif
-
-
 
 static inline void detectAndTurnOffConsole(){
 	//Read the console location register and shut down
@@ -442,6 +364,8 @@ static inline void ToggleOnOffConsoleBacklight(){
 	}
 }
 
-extern void TGDSLCDSwap(bool disableTSCWhenTGDSConsoleTop, bool isDirectFramebuffer, bool SaveConsoleContext, u8 * currentVRAMContext);
+//todo: extern void TGDSLCDSwap(bool disableTSCWhenTGDSConsoleTop, bool isDirectFramebuffer, bool SaveConsoleContext, u8 * currentVRAMContext);
+
 
 #endif
+

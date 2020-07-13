@@ -32,6 +32,7 @@ USA
 #include "spifwTGDS.h"
 
 void LoadFirmwareSettingsFromFlash(){
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	memset((uint8*)&TGDSIPC->DSFWHEADERInst, 0, sizeof(TGDSIPC->DSFWHEADERInst));
 	
 	
@@ -72,6 +73,7 @@ void LoadFirmwareSettingsFromFlash(){
 }
 
 void ParseFWSettings(uint32 usersetting_offset){
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	memset((uint8*)&TGDSIPC->DSFWSETTINGSInst, 0, sizeof(TGDSIPC->DSFWSETTINGSInst));
 	readFirmwareSPI((uint32)usersetting_offset, (uint8*)&TGDSIPC->DSFWSETTINGSInst, sizeof(TGDSIPC->DSFWSETTINGSInst));
 	
@@ -83,5 +85,6 @@ void ParseFWSettings(uint32 usersetting_offset){
 #endif
 
 uint8 getLanguage(){
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	return (uint8)( (TGDSIPC->DSFWSETTINGSInst.fw_language[0])&language_mask);
 }

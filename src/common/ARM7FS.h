@@ -47,7 +47,7 @@ typedef int (*ARM7FS_close_ARM9CallbackTGDSFD)(struct fd *);
 #endif
 
 static inline bool getARM7FSInitStatus(){
-	
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	#ifdef ARM9
 	coherent_user_range_by_size((uint32)&TGDSIPC->initStatus, sizeof(TGDSIPC->initStatus));
 	#endif
@@ -55,7 +55,7 @@ static inline bool getARM7FSInitStatus(){
 }
 
 static inline void setARM7FSInitStatus(bool ARM7FSInitStatus){
-	
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	#ifdef ARM9
 	coherent_user_range_by_size((uint32)&TGDSIPC->initStatus, sizeof(TGDSIPC->initStatus));
 	#endif
@@ -64,7 +64,7 @@ static inline void setARM7FSInitStatus(bool ARM7FSInitStatus){
 
 //Global Transaction Status
 static inline int getARM7FSTransactionStatus(){
-	
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	#ifdef ARM9
 	coherent_user_range_by_size((uint32)&TGDSIPC->ARM7FSTransactionStatus, sizeof(TGDSIPC->ARM7FSTransactionStatus));
 	#endif
@@ -72,7 +72,7 @@ static inline int getARM7FSTransactionStatus(){
 }
 
 static inline void setARM7FSTransactionStatus(int ARM7FSTransactionStatus){
-	
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	#ifdef ARM9
 	coherent_user_range_by_size((uint32)&TGDSIPC->ARM7FSTransactionStatus, sizeof(TGDSIPC->ARM7FSTransactionStatus));
 	#endif

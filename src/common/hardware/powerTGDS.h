@@ -39,7 +39,6 @@ extern void powerOFF(uint32 values);
 extern void SoundPowerON(u8 volume); //aka : enableSound()
 #endif
 
-
 #ifdef __cplusplus
 }
 #endif

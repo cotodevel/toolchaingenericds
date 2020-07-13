@@ -32,35 +32,19 @@ USA
 #include "biosTGDS.h"
 #include "videoTGDS.h"
 #include "ipcfifoTGDS.h"
-#include "posixHandleTGDS.h"
+#include "keypadTGDS.h"
 
-bool globalTGDSCustomConsole = false;
-
-char ConsolePrintfBuf[MAX_TGDSFILENAME_LENGTH+1];
-
-ConsoleInstance ConsoleHandle[TGDS_CONSOLE_HANDLES];
-ConsoleInstance * CurrentConsole = NULL;	//Current Console running globally.
-
-//Console layout
-//Default Console at Index 0 	Used when ---->	bool isTGDSCustomConsole = true;
-												//GUI_init(isTGDSCustomConsole);
-//Custom Console #1 at Index 1+ 	Used when ---->	bool 	isTGDSCustomConsole = false;
-												//GUI_init(isTGDSCustomConsole);
-		//Keyboard (or any other Console save/restore event):
-		//Custom Console #2 at Index 2+: Saves/Restores old Engine context
+bool globalTGDSCustomConsole=false;
 t_GUI GUI;
-t_GUIZone DefaultZone;
+volatile sint8	ConsolePrintfBuf[256+1];
+ConsoleInstance DefaultConsole;		//generic console
+ConsoleInstance CustomConsole;		//project specific console
+ConsoleInstance * DefaultSessionConsole;	//Default Console Instance Chosen
 
-t_GUIZone * getDefaultZoneConsole(){
-	DefaultZone.x1 = 0; DefaultZone.y1 = 0; DefaultZone.x2 = 256; DefaultZone.y2 = 192;
-	DefaultZone.font = &smallfont_7_font;
-	return (t_GUIZone *)&DefaultZone;
+bool InitializeConsole(ConsoleInstance * ConsoleInst){	
+	UpdateConsoleSettings(ConsoleInst);	
+	return true;
 }
-
-int getFontHeightFromZone(t_GUIZone * ZoneInst){
-	return GUI_getFontHeight(ZoneInst);
-}
-
 
 void UpdateConsoleSettings(ConsoleInstance * ConsoleInst){
 	//setup DISPCNT
@@ -75,10 +59,10 @@ void UpdateConsoleSettings(ConsoleInstance * ConsoleInst){
 	for(i = 0; i < (int)backgroundsPerEngine; i++){
 	
 		if(ConsoleInst->ppuMainEngine == mainEngine){	
-			REG_BGXCNT(i) = ConsoleInst->ConsoleEngineStatus.EngineBGS[i].REGBGCNT;
+			REG_BGXCNT(i) = DefaultSessionConsole->ConsoleEngineStatus.EngineBGS[i].REGBGCNT;
 		}
 		else if(ConsoleInst->ppuMainEngine == subEngine){
-			REG_BGXCNT_SUB(i) = ConsoleInst->ConsoleEngineStatus.EngineBGS[i].REGBGCNT;
+			REG_BGXCNT_SUB(i) = DefaultSessionConsole->ConsoleEngineStatus.EngineBGS[i].REGBGCNT;
 		}
 	}
 }
@@ -87,8 +71,8 @@ void SetEngineConsole(PPUEngine engine,ConsoleInstance * ConsoleInst){
 	ConsoleInst->ppuMainEngine = engine;
 }
 
-void consoleClr(ConsoleInstance * ConsoleInst){
-	GUI_clear();
+void consoleClear(ConsoleInstance * ConsoleInst){
+	GUI_clearScreen(0);
 }
 
 //used by gui_printf
@@ -272,7 +256,6 @@ int GUI_drawText(t_GUIZone *zone, uint16 x, uint16 y, int col, sint8 *text, bool
     return w - font->space;
 }
 
-
 //used by gui_printf
 int GUI_getFontHeight(t_GUIZone *zone)
 {
@@ -280,12 +263,28 @@ int GUI_getFontHeight(t_GUIZone *zone)
 }
 
 //used by gui_printf
+void		GUI_printf(sint8 *fmt, ...)
+{	
+	va_list args;
+	va_start (args, fmt);
+	vsnprintf ((sint8*)ConsolePrintfBuf, 64, fmt, args);
+	va_end (args);
+	
+    // FIXME
+    bool readAndBlendFromVRAM = false;	//we discard current vram characters here so if we step over the same character in VRAM (through printfCoords), it is discarded.
+	t_GUIZone zone;
+    zone.x1 = 0; zone.y1 = 0; zone.x2 = 256; zone.y2 = 192;
+    zone.font = &smallfont_7_font;
+	int color = 0xff;	//white
+    GUI_drawText(&zone, 0, GUI.printfy, color, (sint8*)ConsolePrintfBuf, readAndBlendFromVRAM);
+    GUI.printfy += GUI_getFontHeight(&zone);
+}
+
 void	GUI_clear()
 {
 	//flush buffers
-	char * printfBuf = (char*)&ConsolePrintfBuf[0];
-	memset ((uint8*)printfBuf, 0, sizeof(ConsolePrintfBuf));
-	GUI_clearScreen(0);
+	memset ((uint32 *)&ConsolePrintfBuf[0], 0, sizeof(ConsolePrintfBuf));
+	consoleClear(DefaultSessionConsole);
 	GUI.printfy = 0;
 }
 
@@ -293,136 +292,67 @@ void clrscr(){
 	GUI_clear();
 }
 
-//isTGDSCustomConsole == true : you must provide an InitProjectSpecificConsole()
-//isTGDSCustomConsole == false : default console for printf
+int		GUI_getZoneTextHeight(t_GUIZone *zone)
+{
+	return (zone->y2 - zone->y1) / (GUI_getFontHeight(zone)+1);
+}
+
+int GUI_getStrWidth(t_GUIZone *zone, sint8 *text)
+{
+	t_GUIFont   *font = zone->font;
+	int			in_katakana = 0;
+    int 		i, w;
+
+    for (i=0, w=0; i < strlen(text); i++)
+    {
+    	if (text[i] == 0x0e)
+    	{
+    		in_katakana = 1;
+    		continue;
+    	}
+    	if (text[i] == 0x0f)
+    	{
+    		in_katakana = 0;
+    		continue;
+    	}
+    	
+    	if (in_katakana)
+    	{
+    		if (text[i] < 0x26 || text[i] > 0x5f)
+    			continue;
+    		sint8 c = g_katana_jisx0201_conv[text[i]-0x26];
+    		w += katakana_12_font.glyphs[c - katakana_12_font.offset]->width + font->space;
+    	}
+    	else
+    	{
+    		if (text[i] - font->offset >= 0 && font->glyphs[text[i] - font->offset] != NULL)
+    		{
+    			w += font->glyphs[text[i] - font->offset]->width + font->space;
+    		}
+    		else
+    			w += font->space;
+    	}
+    }
+
+    return w - font->space;
+}
+
+
+//project_specific_console == true : you must provide an InitProjectSpecificConsole() (like SnemulDS does)
+//project_specific_console == false : default console for GUI_printf
 //see gui_console_connector.c (project specific implementation)
-void	GUI_init(bool isTGDSCustomConsole){
-	ConsoleInstance * CurConsole = NULL;
-	if(isTGDSCustomConsole == true){
-		CurConsole = getProjectSpecificVRAMSetup();
-		VRAM_SETUP(CurConsole);
-		InitProjectSpecificConsole(CurConsole);
+void	GUI_init(bool project_specific_console)
+{
+	if(project_specific_console == true){
+		VRAM_SETUP(getProjectSpecificVRAMSetup());
+		InitProjectSpecificConsole();
 	}
 	else{
-		CurConsole = DEFAULT_CONSOLE_VRAMSETUP();
-		VRAM_SETUP(CurConsole);
-		InitDefaultConsole(CurConsole);
-		while (!(*((vuint8*)0x04000243) & (VRAM_D_0x06000000_ARM7)));	//Default TGDS console uses VRAM_D_0x06000000_ARM7 when allocating ARM7 mem + console code, wait for ARM7 until it's done.
+		VRAM_SETUP(DEFAULT_CONSOLE_VRAMSETUP());
+		InitDefaultConsole();
 	}
-	globalTGDSCustomConsole = isTGDSCustomConsole;
-	CurrentConsole = CurConsole;
+	
 	GUI.printfy = 0;
-	GUI.consoleAtTopScreen = false; //ignore, setting actually applied per TGDS Project (gui_console_connector.c -> Console Implementation bits)
-}
-
-bool VRAM_SETUP(ConsoleInstance * currentConsoleInstance){
-	vramSetup * vramSetupInst = (vramSetup *)&currentConsoleInstance->thisVRAMSetupConsole;
-	if(vramSetupInst->vramBankSetupInst[VRAM_A_INDEX].enabled == true){
-		VRAMBLOCK_SETBANK_A(vramSetupInst->vramBankSetupInst[VRAM_A_INDEX].vrambankCR);
-	}
-	if(vramSetupInst->vramBankSetupInst[VRAM_B_INDEX].enabled == true){
-		VRAMBLOCK_SETBANK_B(vramSetupInst->vramBankSetupInst[VRAM_B_INDEX].vrambankCR);
-	}
-	if(vramSetupInst->vramBankSetupInst[VRAM_C_INDEX].enabled == true){
-		VRAMBLOCK_SETBANK_C(vramSetupInst->vramBankSetupInst[VRAM_C_INDEX].vrambankCR);
-	}
-	if(vramSetupInst->vramBankSetupInst[VRAM_D_INDEX].enabled == true){
-		VRAMBLOCK_SETBANK_D(vramSetupInst->vramBankSetupInst[VRAM_D_INDEX].vrambankCR);
-	}
-	if(vramSetupInst->vramBankSetupInst[VRAM_E_INDEX].enabled == true){
-		VRAMBLOCK_SETBANK_E(vramSetupInst->vramBankSetupInst[VRAM_E_INDEX].vrambankCR);
-	}
-	if(vramSetupInst->vramBankSetupInst[VRAM_F_INDEX].enabled == true){
-		VRAMBLOCK_SETBANK_F(vramSetupInst->vramBankSetupInst[VRAM_F_INDEX].vrambankCR);
-	}
-	if(vramSetupInst->vramBankSetupInst[VRAM_G_INDEX].enabled == true){
-		VRAMBLOCK_SETBANK_G(vramSetupInst->vramBankSetupInst[VRAM_G_INDEX].vrambankCR);
-	}
-	if(vramSetupInst->vramBankSetupInst[VRAM_H_INDEX].enabled == true){
-		VRAMBLOCK_SETBANK_H(vramSetupInst->vramBankSetupInst[VRAM_H_INDEX].vrambankCR);
-	}
-	if(vramSetupInst->vramBankSetupInst[VRAM_I_INDEX].enabled == true){
-		VRAMBLOCK_SETBANK_I(vramSetupInst->vramBankSetupInst[VRAM_I_INDEX].vrambankCR);
-	}
-	return true; 
-}
-
-//1) VRAM Layout
-ConsoleInstance * DEFAULT_CONSOLE_VRAMSETUP(){
-	ConsoleInstance * CustomSessionConsoleInst = (ConsoleInstance *)(&ConsoleHandle[0]);
-	memset (CustomSessionConsoleInst, 0, sizeof(ConsoleInstance));
-	vramSetup * vramSetupInst = (vramSetup *)&CustomSessionConsoleInst->thisVRAMSetupConsole;
-	
-	REG_DISPCNT	=	(uint32)(MODE_0_2D | DISPLAY_BG0_ACTIVE | DISPLAY_BG1_ACTIVE | DISPLAY_BG2_ACTIVE | DISPLAY_BG3_ACTIVE );	//Raw BMP Mode for main engine
-	
-	//LCDC + Text Mode 0
-	vramSetupInst->vramBankSetupInst[VRAM_A_INDEX].vrambankCR = VRAM_A_LCDC_MODE;	//6800000h-681FFFFh 
-	vramSetupInst->vramBankSetupInst[VRAM_A_INDEX].enabled = true;
-	
-	vramSetupInst->vramBankSetupInst[VRAM_B_INDEX].vrambankCR = VRAM_B_LCDC_MODE;	//6820000h-683FFFFh
-	vramSetupInst->vramBankSetupInst[VRAM_B_INDEX].enabled = true;
-	
-	vramSetupInst->vramBankSetupInst[VRAM_C_INDEX].vrambankCR = VRAM_C_0x06200000_ENGINE_B_BG;	//SUB Engine: Console here
-	vramSetupInst->vramBankSetupInst[VRAM_C_INDEX].enabled = true;
-	
-	vramSetupInst->vramBankSetupInst[VRAM_D_INDEX].vrambankCR = VRAM_D_0x06000000_ARM7;	//ARM7 128K @ 0x06000000
-	vramSetupInst->vramBankSetupInst[VRAM_D_INDEX].enabled = true;
-	
-	return CustomSessionConsoleInst;
-}
-
-//2) Uses subEngine: VRAM Layout -> Console Setup
-bool InitDefaultConsole(ConsoleInstance * DefaultSessionConsoleInst){
-	
-	//Set subEngine
-	SetEngineConsole(subEngine,DefaultSessionConsoleInst);
-	
-	//Set subEngine properties
-	DefaultSessionConsoleInst->ConsoleEngineStatus.ENGINE_DISPCNT	=	(uint32)(MODE_5_2D | DISPLAY_BG0_ACTIVE | DISPLAY_BG1_ACTIVE | DISPLAY_BG2_ACTIVE | DISPLAY_BG3_ACTIVE );
-	
-	// BG3: FrameBuffer : 64(TILE:4) - 128 Kb
-	DefaultSessionConsoleInst->ConsoleEngineStatus.EngineBGS[3].BGNUM = 3;
-	DefaultSessionConsoleInst->ConsoleEngineStatus.EngineBGS[3].REGBGCNT = BG_BMP_BASE(4) | BG_BMP8_256x256 | BG_PRIORITY_1;
-	DefaultSessionConsoleInst->VideoBuffer = GUI.DSFrameBuffer = (uint16 *)BG_BMP_RAM_SUB(4);
-	
-	GUI.Palette = &BG_PALETTE_SUB[0];
-	GUI.Palette[0] = 	RGB8(0,0,0);			//Back-ground tile color / Black
-	GUI.Palette[1] =	RGB8(255, 255, 255); 	//White
-	GUI.Palette[2] =  	RGB8(150, 75, 0); 		//Brown
-	GUI.Palette[3] =  	RGB8(255, 127, 0); 		//Orange
-	GUI.Palette[4] = 	RGB8(255, 0, 255); 		//Magenta
-	GUI.Palette[5] = 	RGB8(0, 255, 255); 		//Cyan
-	GUI.Palette[6] = 	RGB8(255, 255, 0); 		//Yellow
-	GUI.Palette[7] = 	RGB8(0, 0, 255); 		//Blue
-	GUI.Palette[8] = 	RGB8(0, 255, 0); 		//Green
-	GUI.Palette[9] = 	RGB8(255, 0, 0); 		//Red
-	GUI.Palette[0xa] = 	RGB8(128, 128, 128); 	//Grey
-	GUI.Palette[0xb] = 	RGB8(240, 240, 240);	//Light-Grey
-	
-	//Fill the Pallette
-	int i = 0;
-	for(i=0;i < (256 - 0xb); i++){
-		GUI.Palette[i + 0xc] = GUI.Palette[TGDSPrintfColor_White];
-	}
-	
-	UpdateConsoleSettings(DefaultSessionConsoleInst);
-	
-	bool mainEngine = true;
-	setOrientation(ORIENTATION_0, mainEngine);
-	mainEngine = false;
-	setOrientation(ORIENTATION_0, mainEngine);
-	
-	//Console at top screen, bottom is 3D + Touch
-	bool isDirectFramebuffer = true;
-	bool disableTSCWhenTGDSConsoleTop = false;
-	bool SaveConsoleContext = false;	//no effect because directFB == true
-	u8 * FBSaveContext = NULL;			//no effect because directFB == true
-	TGDSLCDSwap(disableTSCWhenTGDSConsoleTop, isDirectFramebuffer, SaveConsoleContext, FBSaveContext);
-	
-	initARM7Malloc((u32)0x06000000, (u32)112*1024);	//Since the default console setup allocates ARM7 @ 0x06000000, 112K, initialize a malloc for ARM7.  The bottom 16K is DLDI reserved.
-													//Otherwise if custom console, this routine is custom impl.
-	
-	return true;
 }
 
 //Moves the TGDS Console between Top and Bottom screen and update the console location register 
@@ -445,59 +375,74 @@ void TGDSLCDSwap(bool disableTSCWhenTGDSConsoleTop, bool isDirectFramebuffer, bo
 	else{
 		if(SaveConsoleContext == true){
 			swapTGDSConsoleBetweenPPUEngines(currentVRAMContext);	//Proper impl.
+			
+			//Saving Console Context: Detect if Console is at bottom or top, and move it top always
+			if(GUI.consoleAtTopScreen == false){
+				GUI.consoleAtTopScreen = true;
+				SWAP_LCDS();
+			}
 		}
 		else{
 			restoreTGDSConsoleFromSwapEngines(currentVRAMContext);	//Proper impl.
+		
+			//Restoring Console Context: Detect if Console is at bottom or top, and move it top always
+			if(GUI.consoleAtTopScreen == true){
+				GUI.consoleAtTopScreen = false;
+				SWAP_LCDS();
+			}
 		}
 	}
 }
+
+
+static uint16 * savedDSFrameBuffer = NULL;
 
 //based from video console settings at toolchaingenericds-keyboard-example
 void swapTGDSConsoleBetweenPPUEngines(u8 * currentVRAMContext){
 	//Only when default console is in use, then use CustomConsole as a current console render
 	if(globalTGDSCustomConsole == false){
-		ConsoleInstance * DefaultSessionConsoleInst = (ConsoleInstance *)(&ConsoleHandle[0]);
-		ConsoleInstance * CustomSessionConsoleInst = (ConsoleInstance *)(&ConsoleHandle[1]);
-		ConsoleInstance * OldEngineContextInst = (ConsoleInstance *)(&ConsoleHandle[2]);
-		memset(OldEngineContextInst, 0, sizeof(sizeof(ConsoleInstance)));
+		ConsoleInstance * DefaultSessionConsoleInst = (ConsoleInstance *)(&DefaultConsole);
+		vramSetup * vramSetupDefault = (vramSetup *)&vramSetupDefaultConsole;
+		
+		vramSetup * vramSetupCustom = (vramSetup *)&vramSetupCustomConsole;
+		memset((u8*)vramSetupCustom, 0, sizeof(vramSetup));
+		
+		ConsoleInstance * CustomSessionConsoleInst = (ConsoleInstance *)(&CustomConsole);
+		memset(CustomSessionConsoleInst, 0, sizeof(sizeof(ConsoleInstance)));
 		
 		//Save Old Engine context: 0x06000000
-		SetEngineConsole(mainEngine,OldEngineContextInst);
-		OldEngineContextInst->ConsoleEngineStatus.ENGINE_DISPCNT = REG_DISPCNT;
+		CustomSessionConsoleInst->ConsoleEngineStatus.ENGINE_DISPCNT = REG_DISPCNT;
 		
-		OldEngineContextInst->ConsoleEngineStatus.EngineBGS[0].BGNUM = 0;
-		OldEngineContextInst->ConsoleEngineStatus.EngineBGS[0].REGBGCNT = REG_BGXCNT(0);
+		CustomSessionConsoleInst->ConsoleEngineStatus.EngineBGS[0].BGNUM = 0;
+		CustomSessionConsoleInst->ConsoleEngineStatus.EngineBGS[0].REGBGCNT = REG_BGXCNT(0);
 		
-		OldEngineContextInst->ConsoleEngineStatus.EngineBGS[1].BGNUM = 1;
-		OldEngineContextInst->ConsoleEngineStatus.EngineBGS[1].REGBGCNT = REG_BGXCNT(1);
+		CustomSessionConsoleInst->ConsoleEngineStatus.EngineBGS[1].BGNUM = 1;
+		CustomSessionConsoleInst->ConsoleEngineStatus.EngineBGS[1].REGBGCNT = REG_BGXCNT(1);
 		
-		OldEngineContextInst->ConsoleEngineStatus.EngineBGS[2].BGNUM = 2;
-		OldEngineContextInst->ConsoleEngineStatus.EngineBGS[2].REGBGCNT = REG_BGXCNT(2);
+		CustomSessionConsoleInst->ConsoleEngineStatus.EngineBGS[2].BGNUM = 2;
+		CustomSessionConsoleInst->ConsoleEngineStatus.EngineBGS[2].REGBGCNT = REG_BGXCNT(2);
 		
-		OldEngineContextInst->ConsoleEngineStatus.EngineBGS[3].BGNUM = 3;
-		OldEngineContextInst->ConsoleEngineStatus.EngineBGS[3].REGBGCNT = REG_BGXCNT(3);
-		OldEngineContextInst->thisVRAMSetupConsole = DefaultSessionConsoleInst->thisVRAMSetupConsole;
+		CustomSessionConsoleInst->ConsoleEngineStatus.EngineBGS[3].BGNUM = 3;
+		CustomSessionConsoleInst->ConsoleEngineStatus.EngineBGS[3].REGBGCNT = REG_BGXCNT(3);
 		
 		coherent_user_range_by_size((uint32)0x06000000, 128*1024);
+		coherent_user_range_by_size((uint32)currentVRAMContext, 128*1024);
 		dmaTransferHalfWord(0, (uint32)0x06000000, (uint32)currentVRAMContext, (uint32)(128*1024));
 		
-		
 		//Perform Console swap
-		memcpy ((uint8*)CustomSessionConsoleInst, (uint8*)DefaultSessionConsoleInst, sizeof(vramSetup));
-		vramSetup * vramSetupInst = (vramSetup *)&CustomSessionConsoleInst->thisVRAMSetupConsole;
+		memcpy ((uint8*)vramSetupCustom, (uint8*)vramSetupDefault, sizeof(vramSetup));
 		
-		uint16 * DSFramebufferOri = GUI.DSFrameBuffer;
-		DefaultSessionConsoleInst->VideoBuffer = DSFramebufferOri;
-		CustomSessionConsoleInst->VideoBuffer = GUI.DSFrameBuffer = (uint16 *)BG_BMP_RAM(4);	//0x06000000
+		savedDSFrameBuffer = GUI.DSFrameBuffer;
+		GUI.DSFrameBuffer = (uint16 *)BG_BMP_RAM(4);	//0x06000000
 		
-		vramSetupInst->vramBankSetupInst[VRAM_A_INDEX].vrambankCR = VRAM_A_0x06000000_ENGINE_A_BG;	//console here
-		vramSetupInst->vramBankSetupInst[VRAM_A_INDEX].enabled = true;
+		vramSetupCustom->vramBankSetupInst[VRAM_A_INDEX].vrambankCR = VRAM_A_0x06000000_ENGINE_A_BG;	//console here
+		vramSetupCustom->vramBankSetupInst[VRAM_A_INDEX].enabled = true;
 		
-		vramSetupInst->vramBankSetupInst[VRAM_C_INDEX].vrambankCR = VRAM_C_0x06200000_ENGINE_B_BG;	//keyboard
-		vramSetupInst->vramBankSetupInst[VRAM_C_INDEX].enabled = true;
+		vramSetupCustom->vramBankSetupInst[VRAM_C_INDEX].vrambankCR = VRAM_C_0x06200000_ENGINE_B_BG;	//keyboard
+		vramSetupCustom->vramBankSetupInst[VRAM_C_INDEX].enabled = true;
 		
 		//Set mainEngine
-		SetEngineConsole(mainEngine,CustomSessionConsoleInst);
+		SetEngineConsole(mainEngine, CustomSessionConsoleInst);
 		
 		//Set mainEngine properties
 		CustomSessionConsoleInst->ConsoleEngineStatus.ENGINE_DISPCNT	=	(uint32)(MODE_5_2D | DISPLAY_BG3_ACTIVE );
@@ -505,8 +450,6 @@ void swapTGDSConsoleBetweenPPUEngines(u8 * currentVRAMContext){
 		// BG3: FrameBuffer : 64(TILE:4) - 128 Kb
 		CustomSessionConsoleInst->ConsoleEngineStatus.EngineBGS[3].BGNUM = 3;
 		CustomSessionConsoleInst->ConsoleEngineStatus.EngineBGS[3].REGBGCNT = BG_BMP_BASE(4) | BG_BMP8_256x256 | BG_PRIORITY_1;
-		
-		VRAM_SETUP(CustomSessionConsoleInst);
 		
 		bool mainEngine = true;
 		setOrientation(ORIENTATION_0, mainEngine);
@@ -531,6 +474,9 @@ void swapTGDSConsoleBetweenPPUEngines(u8 * currentVRAMContext){
 			BG_PALETTE[i + 0xc] = newPallete[TGDSPrintfColor_White];
 		}
 		
+		//Change VRAM before working with it
+		VRAM_SETUP(vramSetupCustom);
+		
 		//copy Console
 		coherent_user_range_by_size((uint32)0x06200000, 128*1024);
 		dmaTransferHalfWord(0, (uint32)0x06200000, (uint32)0x06000000,(uint32)(128*1024));
@@ -539,7 +485,6 @@ void swapTGDSConsoleBetweenPPUEngines(u8 * currentVRAMContext){
 		dmaFillHalfWord(0, 0, (uint32)0x06200000, (uint32)(128*1024));
 		
 		UpdateConsoleSettings(CustomSessionConsoleInst);	//Console Top
-		
 		
 		bool isDirectFramebuffer = true;
 		bool disableTSCWhenTGDSConsoleTop = true;
@@ -550,35 +495,28 @@ void swapTGDSConsoleBetweenPPUEngines(u8 * currentVRAMContext){
 	}
 	else{	//todo: same swap video logic, but using ConsoleInstance CustomConsole
 		
-	}
-	
-	
+	}	
 }
 
 void restoreTGDSConsoleFromSwapEngines(u8 * currentVRAMContext){
 
 	//Only when default console is in use, restore DefaultConsole context
 	if(globalTGDSCustomConsole == false){
-		//Restore Console
-		ConsoleInstance * DefaultSessionConsoleInst = (ConsoleInstance *)(&ConsoleHandle[0]);
-		ConsoleInstance * OldEngineContextInst = (ConsoleInstance *)(&ConsoleHandle[2]);
 		
-		//Set current Engine
-		InitDefaultConsole(DefaultSessionConsoleInst);
+		ConsoleInstance * OldEngineContextInst = (ConsoleInstance *)(&CustomConsole);
 		
 		//Restore (new -> current) console
-		coherent_user_range_by_size((uint32)0x06800000, 128*1024);
+		coherent_user_range_by_size((uint32)0x06000000, 128*1024);
 		dmaTransferHalfWord(0, (uint32)0x06000000, (uint32)0x06200000,(uint32)(128*1024));
 		
-		//Restore Engine ctx
-		REG_DISPCNT = OldEngineContextInst->ConsoleEngineStatus.ENGINE_DISPCNT;
-		REG_BGXCNT(0) = OldEngineContextInst->ConsoleEngineStatus.EngineBGS[0].REGBGCNT;
-		REG_BGXCNT(1) = OldEngineContextInst->ConsoleEngineStatus.EngineBGS[1].REGBGCNT;
-		REG_BGXCNT(2) = OldEngineContextInst->ConsoleEngineStatus.EngineBGS[2].REGBGCNT;
-		REG_BGXCNT(3) = OldEngineContextInst->ConsoleEngineStatus.EngineBGS[3].REGBGCNT;
+		//Restore TGDS Console's current VRAM Layout
+		InitDefaultConsole();
+		GUI.DSFrameBuffer = savedDSFrameBuffer;
+		
 		initFBModeMainEngine0x06000000();
 		coherent_user_range_by_size((uint32)currentVRAMContext, 128*1024);
 		dmaTransferHalfWord(0, (uint32)currentVRAMContext, (uint32)0x06000000, (uint32)(128*1024));
+		
 	}
 	else{	//todo: same swap video logic, but using ConsoleInstance CustomConsole
 		

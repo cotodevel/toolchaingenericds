@@ -58,9 +58,7 @@ extern __attribute__((weak))	void IpcSynchandlerUser(uint8 ipcByte);
 extern uint32 getIRQs();
 extern void EnableIrq(uint32 IRQ);
 extern void DisableIrq(uint32 IRQ);
-extern void RemoveQueuedIrq(uint32 IRQ);
-extern void QueueIrq(uint32 IRQ); 
-extern void NDS_IRQHandler();
+extern void NDS_IRQHandler();	//Actual Interrupt Handler
 extern void IRQWait(uint32 irqstowait);
 extern void IRQVBlankWait();
 extern void IRQInit(u8 DSHardware);

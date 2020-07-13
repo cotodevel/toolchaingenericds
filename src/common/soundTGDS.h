@@ -236,8 +236,8 @@ extern u8 getVolume();
 extern void setVolume(u8 volume);
 extern void volumeUp(int x, int y);
 extern void volumeDown(int x, int y);
-extern void mallocData(int size);
-extern void freeData();
+extern void mallocData7TGDS(int size);
+extern void freeData7TGDS();
 #endif
 
 extern struct soundSampleContext * getsoundSampleContextByIndex(int index);
