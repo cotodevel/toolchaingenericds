@@ -28,7 +28,6 @@ USA
 //Use another for MPU settings : vectors @0xffff0000
 T_mpuSetting mpuSetting[2];
 
-
 uint32 EWRAMCached(uint32 address){
 	uint32 bottom_mem = (address & nds_ewram_mask);
 	return (uint32)(get_ewram_start() | bottom_mem);
@@ -39,10 +38,7 @@ uint32 EWRAMUncached(uint32 address){
 	return (uint32)(((uint32)get_ewram_start() | (uint32)get_ewram_size()) | bottom_mem);
 }
 
-
-//these functions allow to change the NDS system MPU settings as whole, preventing you to keep track of each custom MPU setting.
-// it is recomended that you use those functions for dealing with slower processes. For faster processes, just use the CP15 functions directly.
-
+//These functions allow to change the NDS system MPU settings as whole, preventing you to keep track of each custom MPU setting.
 void updateMPUSetting(T_mpuSetting * mpuSetting_inst){
 	
 	//Disable only DCACHE & ICACHE / mpu
@@ -90,27 +86,28 @@ void updateMPUSetting(T_mpuSetting * mpuSetting_inst){
 	
 }
 
+//The default TGDS MPU Region Settings
 #ifdef EXCEPTION_VECTORS_0xffff0000
 //Sets default MPU Settings to use anytime. Uses vectors @ 0xffff0000.
 //Region0: IO 
 //Region1: SYSTEM ROM
-//Region2: ALT VECTORS
+//Region2: ALT VECTORS + 0x03000000 shared wram
 //Region3: GBA Cart
 //Region4: ITCM
 //Region5: DTCM
-//Region6: EWRAM Uncached
-//Region7:
+//Region6: EWRAM Uncached + three times mirrored
+//Region7: EWRAM Cached and no mirrors
 void set0xFFFF0000FastMPUSettings(){
 	
-	mpuSetting[VECTORS_0xFFFF0000_MPU].inst_regionSetting[0].regionsettings = (uint32)( PAGE_64M | 0x04000000 | 1);
+	mpuSetting[VECTORS_0xFFFF0000_MPU].inst_regionSetting[0].regionsettings = (uint32)( PAGE_64M | 0x04000000 | 1); //allow to reach 0x04000000 ~ 0x07ffffff
 	mpuSetting[VECTORS_0xFFFF0000_MPU].inst_regionSetting[1].regionsettings = (uint32)( PAGE_64K | 0xFFFF0000 | 1);
-	mpuSetting[VECTORS_0xFFFF0000_MPU].inst_regionSetting[2].regionsettings = (uint32)( PAGE_4K | 0x00000000 | 1);
-	mpuSetting[VECTORS_0xFFFF0000_MPU].inst_regionSetting[3].regionsettings = (uint32)( PAGE_128M | 0x08000000 | 1);
+	mpuSetting[VECTORS_0xFFFF0000_MPU].inst_regionSetting[2].regionsettings = (uint32)( PAGE_64M | 0x00000000 | 1);	//allow to reach 0x03000000 @ ARM9 if WRAM set
+	mpuSetting[VECTORS_0xFFFF0000_MPU].inst_regionSetting[3].regionsettings = (uint32)( PAGE_128M | 0x08000000 | 1);	//allow to reach 0x08000000 ~ 0x0fffffff (gba map if slot-2 is available)
 	mpuSetting[VECTORS_0xFFFF0000_MPU].inst_regionSetting[4].regionsettings = (uint32)((uint32)(&_itcm_start) | PAGE_32K | 1);
 	mpuSetting[VECTORS_0xFFFF0000_MPU].inst_regionSetting[5].regionsettings = (uint32)((uint32)(&_dtcm_start) | PAGE_16K | 1);
 	mpuSetting[VECTORS_0xFFFF0000_MPU].inst_regionSetting[6].regionsettings = (uint32)( PAGE_16M 	| 0x02400000 | 1);
 	mpuSetting[VECTORS_0xFFFF0000_MPU].inst_regionSetting[7].regionsettings = (uint32)( PAGE_4M 	| 0x02000000 | 1);
-	mpuSetting[VECTORS_0xFFFF0000_MPU].WriteBufferAvailabilityForRegions = 0b11110000; //EWRAM, DTCM, ITCM
+	mpuSetting[VECTORS_0xFFFF0000_MPU].WriteBufferAvailabilityForRegions = 0b11110011; //EWRAM, DTCM, ITCM
 	
 	mpuSetting[VECTORS_0xFFFF0000_MPU].DCacheAvailabilityForRegions = 0b10000000;	//DTCM & ITCM
 	mpuSetting[VECTORS_0xFFFF0000_MPU].ICacheAvailabilityForRegions = 0b10000000;	//DTCM & ITCM
