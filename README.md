@@ -1,6 +1,6 @@
 ![ToolchainGenericDS](img/TGDS-Logo.png)
 
-This is the ToolchainGenericDS 1.5 library for NintendoDS:
+This is the ToolchainGenericDS 1.6 library for NintendoDS:
 
 [Building the devkit]:
 - Recompile Newlib 2.1 for Nintendo DS (mandatory, not on this guide). See: https://bitbucket.org/Coto88/newlib-nds
@@ -76,6 +76,42 @@ Features:
 	- DLDI RAMDISK Support. DLDI in emulator environment.
 		Notes:
 		DLDI RAMDisk: Download http://memory.dataram.com/products-and-services/software/ramdisk#freeware, mount a RAMDisk, copy files to it. Then use Desmume, choose Slot-2 (Gba slot) -> GBA Cartridge, choose the RAMDisk!. Launch emulator, TGDS Project now works with DLDI (32MB @ 0x08000000)!
+
+Changelog:
+
+TGDS 1.6:
+- Improved hardware IRQs, improved compatibility with nearly 99% of cards, loaders, emulators, etc. TGDS really works now.
+- Removed experimental ARM7 DLDI support because it needed a stable codebase first. This was mostly for DSi support. If someone else is willing to give proper DSi support, I can add such methods back.
+- ARM9 payload lzss compression, TGDS Binaries should be about ~40% smaller, and when TGDS project runs, it is decompressed realtime.
+
+TGDS 1.5:
+- Added Custom memory allocators. Allows to set a custom memory allocator to ARM7 and ARM9 NDS ARM Core
+- Added keyboard support, WAV sound streaming, sound effects playback, Event signaling (which allows to map keys, timeouts, sounds, etc)
+- Added ARM7 Filesystem, allows to open a file handle from ARM9 and read/write to it... through interrupts! which takes very little power and is efficient.
+- Thousands of micro updates which improve compatibility with legacy NDS homebrew
+- Experimental ARM7 DLDI support
+
+TGDS 1.4:
+- Improved stability on some cards still broken on 60% of them
+- Improved DSWNIFI / TGDS hardware driver support
+- Added ToolchainGenericDS Filesystem driver
+
+TGDS 1.3:
+Rewrote TGDS hardware drivers / Malloc partially working
+- Added DSWNIFI
+- ZLIB (Deflate) support
+
+TGDS 1.2:
+- Rewrote TGDS hardware drivers
+
+TGDS 1.1:
+Implemented DLDI driver / Basic Console rendering support
+
+TGDS 1.0:
+- First release, very unstable NDS support.
+- Makefiles / linkers / and newlib-nds support through a GPL v2 license
+- Adds a template system, where TGDS projects hook to a standard TGDS codebase. Improves scalability from the start.
+
 
 The environment uses GCC 4.9.2 to build Newlib 2.1 for Nintendo DS, and ToolchainGenericDS.
 
