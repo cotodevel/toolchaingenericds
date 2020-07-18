@@ -810,7 +810,7 @@ void setupSound(u32 srcFrmtInst)
 	for(ch=0;ch<4;++ch)
 	{
 		SCHANNEL_CR(ch) = 0;
-		SCHANNEL_TIMER(ch) = SOUND_FREQ((sndRate * multRate));
+		SCHANNEL_TIMER(ch) = SOUND_FREQ(sndRate * multRate);
 		SCHANNEL_LENGTH(ch) = (sampleLen * multRate) >> 1;
 		SCHANNEL_REPEAT_POINT(ch) = 0;
 	}
@@ -820,18 +820,18 @@ void setupSound(u32 srcFrmtInst)
 	
 	if(srcFrmt == SRC_WAV){
 		//wav
-		TIMERXDATA(2) = TIMER_FREQ((sndRate * multRate));
+		TIMERXDATA(2) = TIMER_FREQ(sndRate * multRate);
 		TIMERXCNT(2) = TIMER_DIV_1 | TIMER_ENABLE;
 		
-		TIMERXDATA(3) = 0x10000 - (sampleLen * multRate);
+		TIMERXDATA(3) = 0x100000 - (sampleLen * multRate);
 		TIMERXCNT(3) = TIMER_CASCADE | TIMER_IRQ_REQ | TIMER_ENABLE;
 	
 	}
 	else{
-		TIMERXDATA(2) = SOUND_FREQ((sndRate * multRate));
+		TIMERXDATA(2) = TIMER_FREQ(sndRate * multRate);
 		TIMERXCNT(2) = TIMER_DIV_1 | TIMER_ENABLE;
   
-		TIMERXDATA(3) = 0x10000 - (sampleLen * 2 * multRate);
+		TIMERXDATA(3) = 0x100000 - (sampleLen * 2 * multRate);
 		TIMERXCNT(3) = TIMER_CASCADE | TIMER_IRQ_REQ | TIMER_ENABLE;
 	}
 	REG_IE|=(IRQ_TIMER3);
