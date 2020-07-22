@@ -117,6 +117,7 @@ USA
 
 #define TGDS_ARM7_ARM7FSREAD (u32)(0xffffaaa0)		
 #define TGDS_ARM7_ARM7FSWRITE (u32)(0xffffaab0)		
+#define TGDS_ARM7_READFLASHMEM (u32)(0xffffaac0)		
 
 //SoundStream bits
 #define ARM9COMMAND_UPDATE_BUFFER (uint32)(0xFFFFFF02)
@@ -139,8 +140,9 @@ USA
 #define IPC_INIT_ARM7DLDI_REQBYIRQ		(u8)(4)
 #define IPC_READ_ARM7DLDI_REQBYIRQ		(u8)(5)
 #define IPC_WRITE_ARM7DLDI_REQBYIRQ		(u8)(6)
+#define IPC_READ_FIRMWARE_REQBYIRQ		(u8)(7)
 
-#define IPC_TGDSUSER_START_FREE_INDEX	(u8)(7)	//TGDS User Project rely on it
+#define IPC_TGDSUSER_START_FREE_INDEX	(u8)(8)	//TGDS User Project rely on it
 
 //ARM7 FS IPC Commands
 #define IPC_ARM7INIT_ARM7FS (u8)(0xE)
@@ -267,6 +269,7 @@ extern void HandleFifoEmpty();
 
 extern void ReadMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead);
 extern void SaveMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead);
+extern void ReadFirmwareARM7Ext(u32 * srcMemory);
 
 extern void Write32bitAddrExtArm(uint32 address, uint32 value);
 extern void Write16bitAddrExtArm(uint32 address, uint16 value);

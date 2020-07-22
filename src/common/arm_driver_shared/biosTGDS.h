@@ -48,12 +48,6 @@ USA
 
 #define swiDelay1ms (sint32)(8388)
 
-struct DecompressionStream {
-	int (*getSize)(uint8 * source, uint16 * dest, uint32 r2);
-	int (*getResult)(uint8 * source); // can be NULL
-	uint8 (*readByte)(uint8 * source);
-};
-
 // CUE Author Code Start
 
 //LZSS
@@ -129,7 +123,6 @@ static inline void handleARM9SVC(){
 
 #endif
 
-
 #endif
 
 #ifdef __cplusplus
@@ -138,7 +131,6 @@ extern "C"{
 
 //NDS7/9 Bios 
 //ARM ASM NDS9 Bios (useful when vectors @ 0xffff0000 and manual processor vectors handling is required)
-
 extern void swiDelay(uint32 delayvalue);
 extern uint16 swiCRC16(uint16 crc, void * data, uint32 size);
 extern void swiSleep(uint32 delayvalue);
@@ -161,11 +153,6 @@ extern void swiSetHaltCR(uint32 data);
 extern void swiChangeSoundBias(int enabled, int delay);	//same as void swiChangeSndBias(int enable, int delayvalue);
 #endif
 
-extern void swiDecompressLZSSWram(void * source, void * destination);
-extern int swiDecompressLZSSVram(void * source, void * destination, uint32 toGetSize, struct DecompressionStream * stream);
-
-//C
-extern void swiFastCopy(uint32 * source, uint32 * dest, int flags);
 extern struct LZSSContext LZS_DecodeFromBuffer(unsigned char *pak_buffer, unsigned int   pak_len);
 
 //Init SVCs
