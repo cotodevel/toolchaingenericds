@@ -18,7 +18,7 @@ USA
 
 //TGDS IPC Version: 1.3
 
-//Coto: Use them as you want , just make sure you read WELL the descriptions below.
+//Coto: Use them as you want, just make sure you read WELL the descriptions below.
 
 #include "global_settings.h"
 #include "ipcfifoTGDS.h"
@@ -29,6 +29,7 @@ USA
 #include "eventsTGDS.h"
 #include "ARM7FS.h"
 #include "posixHandleTGDS.h"
+#include "biosTGDS.h"
 
 #ifdef ARM7
 #include <string.h>
