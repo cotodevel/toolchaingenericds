@@ -154,6 +154,8 @@ extern void swiChangeSoundBias(int enabled, int delay);	//same as void swiChange
 #endif
 
 extern struct LZSSContext LZS_DecodeFromBuffer(unsigned char *pak_buffer, unsigned int   pak_len);
+extern void swiDecompressLZSSWram(void * source, void * destination);
+extern void swiFastCopy(uint32 * source, uint32 * dest, int flags);
 
 //Init SVCs
 #ifdef ARM7
