@@ -1,0 +1,1 @@
+TGDS arm9/ folder copies the LZSS compressed ARM9 binary here
