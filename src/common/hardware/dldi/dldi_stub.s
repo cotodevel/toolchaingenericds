@@ -1,7 +1,7 @@
 @ARM7 DLDI is custom implemented
 
 #ifdef ARM9
-
+.section    .dldiSection, "awx", %progbits
 @---------------------------------------------------------------------------------
 	.align	4
 	.arm
