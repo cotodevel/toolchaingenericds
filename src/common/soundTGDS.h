@@ -135,7 +135,7 @@ typedef struct
 } wavFormatChunk __attribute__((aligned (4)));
 
 //Extended Header WAV 
-
+#define WAVE_FORMAT_RAW_PCM		(short)(0x0001)
 #define WAVE_FORMAT_DVI_ADPCM	(short)(0x0011)					/* Intel Corporation */
 #define WAVE_FORMAT_IMA_ADPCM	(short)(WAVE_FORMAT_DVI_ADPCM)	/* Intel Corporation */
 
@@ -229,7 +229,7 @@ extern void stopSound(u32 srcFrmt);
 extern void updateSoundContextStreamPlayback();
 extern __attribute__((weak))    void updateSoundContextStreamPlaybackUser(u32 srcFrmt);
 extern void flushSoundContext(int soundContextIndex);
-extern bool initSoundStream(char * WAVfilename);
+extern int initSoundStream(char * WAVfilename);
 
 //Stream Sound controls
 extern u8 getVolume();

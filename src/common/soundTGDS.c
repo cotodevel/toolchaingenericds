@@ -544,8 +544,8 @@ void initComplexSoundTGDS(u32 srcFmt)
 	SendFIFOWordsITCM(TGDS_ARM7_INITSTREAMSOUNDCTX, srcFmt);
 }
 
-//Opens a file handle
-bool initSoundStream(char * WAVfilename){	//ARM9 Impl.
+//Opens a .WAV file (or returns the detected header), otherwise returns SRC_NONE
+int initSoundStream(char * WAVfilename){	//ARM9 Impl.
 	char tmpName[256+1] = {0};
 	char ext[256+1] = {0};
 	strcpy(tmpName, WAVfilename);	
@@ -561,134 +561,127 @@ bool initSoundStream(char * WAVfilename){	//ARM9 Impl.
 	SharedEWRAM1 = (s16*)((u8*)SharedEWRAM0 + 0x4000);
 	
 	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-	stopSound(TGDSIPC->sndPlayerCtx.sourceFmt);//ARM9
+	if(TGDSIPC->sndPlayerCtx.sourceFmt != SRC_NONE){
+		stopSound(TGDSIPC->sndPlayerCtx.sourceFmt);//ARM9
+	}
+	TGDSIPC->sndPlayerCtx.sourceFmt = SRC_NONE;	
 	lBufferSwapped = NULL;
 	rBufferSwapped = NULL;
 	
 	if(GlobalSoundStreamFile != NULL){
 		fclose(GlobalSoundStreamFile);
 		GlobalSoundStreamFile = NULL;
-		TGDSIPC->sndPlayerCtx.sourceFmt = SRC_NONE;	
 	}
 	
-	if(
-		(strcmp(ext,".wav") == 0)
-	)
+	char header[13];
+	FILE *fp = fopen(WAVfilename, "r");
+	fread(header, 1, 12, fp);
+	
+	header[12] = 0;
+	header[4] = ' ';
+	header[5] = ' ';
+	header[6] = ' ';
+	header[7] = ' ';
+	
+	if(strcmp(header, "RIFF    WAVE") != 0)
 	{
+		// Wrong header
+		fclose(fp);
+		return SRC_NONE;
+	}		
+	
+	fread((char*)&TGDSIPC->sndPlayerCtx.wavDescriptor, 1, sizeof(wavFormatChunk), fp);
+	if(strncmp((char*)&TGDSIPC->sndPlayerCtx.wavDescriptor.chunkID[0], "fmt ", 4) != 0)
+	{
+		// Wrong chunk at beginning
+		fclose(fp);
+		return SRC_NONE;
+	}
+	
+	//RAW PCM
+	if(TGDSIPC->sndPlayerCtx.wavDescriptor.wFormatTag == WAVE_FORMAT_RAW_PCM)
+	{
+		if(TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels > 2)
+		{
+			// More than 2 channels.... uh no!
+			fclose(fp);
+			return SRC_NONE;
+		}
+		
+		if(TGDSIPC->sndPlayerCtx.wavDescriptor.wBitsPerSample <= 8)
+		{
+			wavDecode = wavDecode8Bit;
+		}
+		else if(TGDSIPC->sndPlayerCtx.wavDescriptor.wBitsPerSample <= 16)
+		{
+			wavDecode = wavDecode16Bit;
+		}
+		else if(TGDSIPC->sndPlayerCtx.wavDescriptor.wBitsPerSample <= 24)
+		{
+			wavDecode = wavDecode24Bit;
+		}
+		else if(TGDSIPC->sndPlayerCtx.wavDescriptor.wBitsPerSample <= 32)
+		{
+			wavDecode = wavDecode32Bit;
+		}
+		else
+		{
+			// more than 32bit sound, not supported
+			fclose(fp);
+			return SRC_NONE;		
+		}
+		
+		//rewind
+		fseek(fp, 0, SEEK_SET);
+		int wavStartOffset = parseWaveData(fp, (u32)(0x64617461));	//Seek for ASCII "data" and return 4 bytes after that: Waveform length (4 bytes), then 
+																	//4 bytes after that the raw Waveform
+		
+		if(wavStartOffset == -1)
+		{
+			// wav block not found
+			fclose(fp);
+			return SRC_NONE;
+		}
+		
 		// wav file!
 		initComplexSoundTGDS(SRC_WAV); // initialize sound variables
 		TGDSIPC->sndPlayerCtx.fileOffset = 0;
 		
-		char header[13];
-		FILE *fp = fopen(WAVfilename, "r");
-		fread(header, 1, 12, fp);
-		
-		header[12] = 0;
-		header[4] = ' ';
-		header[5] = ' ';
-		header[6] = ' ';
-		header[7] = ' ';
-		
-		if(strcmp(header, "RIFF    WAVE") != 0)
+		u32 len = 0;
+		//data section not found, use filesize as size...
+		if(wavStartOffset == -2)
 		{
-			// wrong header
-			
-			fclose(fp);
-			return false;
-		}		
-		
-		fread((char*)&TGDSIPC->sndPlayerCtx.wavDescriptor, 1, sizeof(wavFormatChunk), fp);
-		
-		if(strncmp((char*)&TGDSIPC->sndPlayerCtx.wavDescriptor.chunkID[0], "fmt ", 4) != 0)
-		{
-			// wrong chunk at beginning
-			
-			fclose(fp);
-			return false;
+			len = FS_getFileSizeFromOpenHandle(fp);
+			wavStartOffset = 96;	//Assume header size: 96 bytes
 		}
-		
-		if(TGDSIPC->sndPlayerCtx.wavDescriptor.wFormatTag == 1)
-		{
-			if(TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels > 2)
-			{
-				// more than 2 channels.... uh no!
-				
-				fclose(fp);
-				return false;
-			}
-			
-			
-			if(TGDSIPC->sndPlayerCtx.wavDescriptor.wBitsPerSample <= 8)
-			{
-				wavDecode = wavDecode8Bit;
-			}
-			else if(TGDSIPC->sndPlayerCtx.wavDescriptor.wBitsPerSample <= 16)
-			{
-				wavDecode = wavDecode16Bit;
-			}
-			else if(TGDSIPC->sndPlayerCtx.wavDescriptor.wBitsPerSample <= 24)
-			{
-				wavDecode = wavDecode24Bit;
-			}
-			else if(TGDSIPC->sndPlayerCtx.wavDescriptor.wBitsPerSample <= 32)
-			{
-				wavDecode = wavDecode32Bit;
-			}
-			else
-			{
-				// more than 32bit sound, not supported
-				
-				fclose(fp);
-				return false;		
-			}
-			
-			//rewind
-			fseek(fp, 0, SEEK_SET);
-			int wavStartOffset = parseWaveData(fp, (u32)(0x64617461));	//Seek for ASCII "data" and return 4 bytes after that: Waveform length (4 bytes), then 
-																		//4 bytes after that the raw Waveform
-			
-			if(wavStartOffset == -1)
-			{
-				// wav block not found
-				fclose(fp);
-				return false;
-			}
-			
-			u32 len = 0;
-			//data section not found, use filesize as size...
-			if(wavStartOffset == -2)
-			{
-				len = FS_getFileSizeFromOpenHandle(fp);
-				wavStartOffset = 96;	//Assume header size: 96 bytes
-			}
-			else{
-				fseek(fp, wavStartOffset, SEEK_SET);
-				fread(&len, 1, sizeof(len), fp);
-				wavStartOffset+=4;
-			}
-			
-			TGDSIPC->sndPlayerCtx.fileSize = len;
-			TGDSIPC->sndPlayerCtx.fileOffset = wavStartOffset;
-			GlobalSoundStreamFile = fp;
-			
-			setSoundInterpolation(1);
-			setSoundFrequency(TGDSIPC->sndPlayerCtx.wavDescriptor.dwSamplesPerSec);
-			
-			setSoundLength(WAV_READ_SIZE);		
-			mallocData9TGDS(WAV_READ_SIZE);
-			
-			wavDecode();
-			startSound9((u32)SRC_WAV);
-			
-			return true;
-		}
-		
 		else{
-			fclose(fp);
-			return false;
+			fseek(fp, wavStartOffset, SEEK_SET);
+			fread(&len, 1, sizeof(len), fp);
+			wavStartOffset+=4;
 		}
+		
+		TGDSIPC->sndPlayerCtx.fileSize = len;
+		TGDSIPC->sndPlayerCtx.fileOffset = wavStartOffset;
+		GlobalSoundStreamFile = fp;
+		
+		setSoundInterpolation(1);
+		setSoundFrequency(TGDSIPC->sndPlayerCtx.wavDescriptor.dwSamplesPerSec);
+		
+		setSoundLength(WAV_READ_SIZE);		
+		mallocData9TGDS(WAV_READ_SIZE);
+		
+		wavDecode();
+		startSound9((u32)SRC_WAV);
+		
+		return SRC_WAV;
 	}
-	return false;
+	if(TGDSIPC->sndPlayerCtx.wavDescriptor.wFormatTag == WAVE_FORMAT_IMA_ADPCM){
+		fclose(fp);
+		return SRC_WAVADPCM;
+	}
+	
+	fclose(fp);
+	return SRC_NONE;
 }
 
 //ARM9: Stream Playback handler
@@ -884,5 +877,6 @@ void stopSound(u32 srcFrmt)
 	}
 	playing = false;
 	stopSoundUser(srcFrmt);
+	swiDelay(1100);
 	#endif
 }
