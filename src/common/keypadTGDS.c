@@ -35,34 +35,6 @@ uint32 global_keys_arm9;
 uint32 last_frame_keys_arm9;
 uint32 buffered_keys_arm9;
 
-void scanKeys(){
-	uint16 buttonsARM7 = getsIPCSharedTGDS()->buttons7;
-	uint32 readKeys = (uint32)(( ((~KEYINPUT)&0x3ff) | (((~buttonsARM7)&3)<<10) | (((~buttonsARM7)<<6) & (KEY_TOUCH|KEY_LID) ))^KEY_LID);
-	last_frame_keys_arm9 = global_keys_arm9;
-	global_keys_arm9 = readKeys | buffered_keys_arm9;
-	buffered_keys_arm9 = 0;
-}
-
-void setKeys(u32 keys){
-	buffered_keys_arm9 |= keys;
-}
-
-uint32 keysPressed(){
-	return global_keys_arm9;	//there is no other way. Required by CoreEmu
-}
-
-uint32 keysReleased(){
-	return (uint32)((~keysPressed()) & last_frame_keys_arm9);
-}
-
-uint32 keysHeld(){
-	return (uint32)(global_keys_arm9 & last_frame_keys_arm9);
-}
-
-uint32 keysRepeated(){
-	return (uint32)( keysPressed() | last_frame_keys_arm9);
-}
-
 //usage:
 //struct touchScr touchScrStruct;
 //touchScrRead(&touchScrStruct);

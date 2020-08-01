@@ -43,17 +43,38 @@ extern "C"{
 extern uint32 buffered_keys_arm9;
 extern uint32 global_keys_arm9;
 extern uint32 last_frame_keys_arm9;	//last frame keys before new frame keys
-extern void scanKeys();
-extern uint32 keysPressed();
-extern uint32 keysReleased();
-extern uint32 keysHeld();
-extern uint32 keysRepeated();
-extern void setKeys(u32 keys);
 extern void touchScrRead(struct touchScr * touchScrInst);
 #ifdef __cplusplus
 }
 #endif
 
+static inline void scanKeys(){
+	uint16 buttonsARM7 = ((struct sIPCSharedTGDS*)0x027FF000)->buttons7;
+	uint32 readKeys = (uint32)(( ((~KEYINPUT)&0x3ff) | (((~buttonsARM7)&3)<<10) | (((~buttonsARM7)<<6) & (KEY_TOUCH|KEY_LID) ))^KEY_LID);
+	last_frame_keys_arm9 = global_keys_arm9;
+	global_keys_arm9 = readKeys | buffered_keys_arm9;
+	buffered_keys_arm9 = 0;
+}
+
+static inline void setKeys(u32 keys){
+	buffered_keys_arm9 |= keys;
+}
+
+static inline uint32 keysPressed(){
+	return global_keys_arm9;	//there is no other way. Required by CoreEmu
+}
+
+static inline uint32 keysReleased(){
+	return (uint32)((~keysPressed()) & last_frame_keys_arm9);
+}
+
+static inline uint32 keysHeld(){
+	return (uint32)(global_keys_arm9 & last_frame_keys_arm9);
+}
+
+static inline uint32 keysRepeated(){
+	return (uint32)( keysPressed() | last_frame_keys_arm9);
+}
 
 //Enables / Disables the touchscreen
 static inline void setTouchScreenEnabled(bool status){
