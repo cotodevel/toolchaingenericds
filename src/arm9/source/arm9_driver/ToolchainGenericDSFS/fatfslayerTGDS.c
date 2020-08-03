@@ -73,6 +73,8 @@ sint8 * getfatfsPath(sint8 * filename){
 
 void getDirFromFilePath(char * filePath, char* outDirectory){
     char tempDir[256+1] = {0};
+	char outPath[256+1] = {0};
+	
     strcpy(tempDir, filePath);
     int offset = 0;
     int len = strlen(tempDir)+1;
@@ -92,22 +94,19 @@ void getDirFromFilePath(char * filePath, char* outDirectory){
         }
     }
     strncpy(outDirectory, (char*)&tempDir[offset], len - offset);
-    outDirectory[len - offset + 1] = '\0';
     
     //Remove last filename and extension
-    int offsetEnd = len - offset + 1;
-    chr = tempDir[offsetEnd];
+    chr = outDirectory[len];
+	
+	int ofst = 0;
     while(
         (chr != '/')
     )
     {
-        offsetEnd--;
-        if(offsetEnd >= 0){
-            chr = tempDir[offsetEnd];
-        }
-    }
-    
-    outDirectory[len - offsetEnd + 1] = '\0';
+		outDirectory[len] = '\0';
+		len--;
+		chr = outDirectory[len];
+	}
 }
 
 //these two work together (usually)
