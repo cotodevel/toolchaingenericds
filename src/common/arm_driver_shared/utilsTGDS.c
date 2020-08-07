@@ -479,7 +479,21 @@ int getLastDirFromPath(char * stream, char * haystack, char * outBuf){
     topval = strlen(outBuf); 
     if(outBuf[topval-1] == '/'){
         outBuf[topval-1] = '\0';
-    }
+		
+		//count how many slashes there are, if zero, force dir to be "/"
+		int count = 0;
+		int iter = topval-1;
+		while(iter >= 0){
+			if(outBuf[iter] == '/'){
+				count++;
+			}
+			iter--;
+		}
+		if(count == 0){
+			topval = 1;
+			outBuf[topval] = '\0';
+		}
+	}
 	//edge case: the only directory was the leading / and was just removed, if so restore item
     if(topval == 1){
         outBuf[topval-1] = '/';
