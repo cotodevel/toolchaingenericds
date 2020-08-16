@@ -194,7 +194,7 @@ struct soundSampleContext * getFreeSoundSampleContext(){
 // sound out
 void (*wavDecode)() = NULL;
 static bool sndPaused = false;
-FILE * GlobalSoundStreamFile = NULL;
+struct fd * GlobalSoundStreamStructFD = NULL;
 static bool playing = false;
 s16 * SharedEWRAM0 = NULL;	//ptr start = 0
 s16 * SharedEWRAM1 = NULL;	//ptr start = 0 + 0x4000
@@ -319,15 +319,20 @@ void setSoundInterpolation(u32 mult)
 }
 
 //WAV Header: Searches for u32chunkToSeek and returns file offset if found.
-int parseWaveData(FILE * fh, u32 u32chunkToSeek){
+int parseWaveData(struct fd * fdinst, u32 u32chunkToSeek){
     u32 bytes[4];
 	int fileOffset = 0;
 	
 	// Read first 4 bytes.
 	// (Should be RIFF descriptor.)
-	if (fread((u8*)&bytes[0], 1, 4, fh) < 0) {
+	//if (fread((u8*)&bytes[0], 1, 4, fh) < 0) {
+	//	return -1;
+	//}
+	int read = fatfs_read(fdinst->cur_entry.d_ino, (u8*)&bytes[0], 4); //fread(&len, 1, sizeof(len), fp);
+	if(read < 0){
 		return -1;
 	}
+	fdinst->loc += (read); fatfs_lseek(fdinst->cur_entry.d_ino, fdinst->loc, SEEK_SET);
 	
 	fileOffset+=4;
 	
@@ -335,15 +340,20 @@ int parseWaveData(FILE * fh, u32 u32chunkToSeek){
 	if((u32)u32chunkToSeek == (u32)0x64617461){
 		// First subchunk will always be at byte 12.
 		// (There is no other dependable constant.)
-		fseek(fh, 12, SEEK_CUR);
+		fdinst->loc += (12); fatfs_lseek(fdinst->cur_entry.d_ino, fdinst->loc, SEEK_SET); //fseek(fh, 12, SEEK_CUR);
 		fileOffset+=12;
 	}
 	
 	for (;;) {
 		// Read chunk length.
-		if (fread((u8*)&bytes[0], 1, sizeof(bytes), fh) < 0) {
+		//if (fread((u8*)&bytes[0], 1, sizeof(bytes), fh) < 0) {
+		//	return -1;
+		//}
+		read = fatfs_read(fdinst->cur_entry.d_ino, (u8*)&bytes[0], sizeof(bytes)); //fread(&len, 1, sizeof(len), fp);
+		if(read < 0){
 			return -1;
 		}
+		fdinst->loc += (read); fatfs_lseek(fdinst->cur_entry.d_ino, fdinst->loc, SEEK_SET);
 		
 		//Way over the header area, exit
 		if(fileOffset > 96){
@@ -387,7 +397,7 @@ void wavDecode8Bit()
 	// 8bit wav file
 	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	u8 *s8Data = (u8 *)TGDSARM9Malloc(WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels);
-	int rSize = getWavData(s8Data, (WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels), GlobalSoundStreamFile);
+	int rSize = getWavData(s8Data, (WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels), GlobalSoundStreamStructFD);
 	if(rSize < (WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels))
 	{
 		cutOff = true;
@@ -423,7 +433,7 @@ void wavDecode16Bit()
 	// 16bit wav file
 	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	s16 *tmpData = (s16 *)TGDSARM9Malloc(WAV_READ_SIZE * 2 * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels);
-	int rSize = getWavData(tmpData, (WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels * 2), GlobalSoundStreamFile);
+	int rSize = getWavData(tmpData, (WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels * 2), GlobalSoundStreamStructFD);
 	if(rSize < (WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels * 2))
 	{
 		cutOff = true;
@@ -458,7 +468,7 @@ void wavDecode24Bit()
 	// 24bit wav file
 	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	u8 *tmpData = (u8 *)TGDSARM9Malloc(WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels * 3);
-	int rSize = getWavData(tmpData, (WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels * 3), GlobalSoundStreamFile);
+	int rSize = getWavData(tmpData, (WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels * 3), GlobalSoundStreamStructFD);
 	if(rSize < (WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels * 3))
 	{
 		cutOff = true;
@@ -505,7 +515,7 @@ void wavDecode32Bit()
 	// 32bit wav file
 	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	s16 *tmpData = (s16 *)TGDSARM9Malloc(WAV_READ_SIZE * 4 * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels);	
-	int rSize = getWavData(tmpData, (WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels * 4), GlobalSoundStreamFile);
+	int rSize = getWavData(tmpData, (WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels * 4), GlobalSoundStreamStructFD);
 	if(rSize < (WAV_READ_SIZE * TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels * 4))
 	{
 		cutOff = true;
@@ -530,8 +540,7 @@ void wavDecode32Bit()
 			lBufferSwapped[i] = tmpData[(i << 1) + 1];
 			rBufferSwapped[i] = lBufferSwapped[i];
 		}
-	}
-	
+	}	
 	TGDSARM9Free(tmpData);
 }
 
@@ -545,18 +554,22 @@ void initComplexSoundTGDS(u32 srcFmt)
 }
 
 //Opens a .WAV file (or returns the detected header), otherwise returns SRC_NONE
-int initSoundStream(char * WAVfilename){	//ARM9 Impl.
-	char tmpName[256+1] = {0};
-	char ext[256+1] = {0};
-	strcpy(tmpName, WAVfilename);	
-	separateExtension(tmpName, ext);
-	strlwr(ext);
-	
+int initSoundStream(char * WAVfilename){
+	FILE *fp = fopen(WAVfilename, "r");
+	int StructFD = fileno(fp);
+	struct fd *tgdsfd = getStructFD(StructFD);
+	return initSoundStreamFromStructFD(tgdsfd);
+}
+
+int initSoundStreamFromStructFD(struct fd * _FileHandleAudio){	//ARM9 Impl.
 	if(SharedEWRAM0 != NULL){
 		TGDSARM9Free(SharedEWRAM0);
 		SharedEWRAM1 = NULL;
 	}
 	
+	GlobalSoundStreamStructFD = _FileHandleAudio;	//Global StructDS handle -> WAV stream
+	
+	//Global StructDS handle -> WAV stream
 	SharedEWRAM0 = (s16*)TGDSARM9Malloc(32*1024);
 	SharedEWRAM1 = (s16*)((u8*)SharedEWRAM0 + 0x4000);
 	
@@ -568,14 +581,10 @@ int initSoundStream(char * WAVfilename){	//ARM9 Impl.
 	lBufferSwapped = NULL;
 	rBufferSwapped = NULL;
 	
-	if(GlobalSoundStreamFile != NULL){
-		fclose(GlobalSoundStreamFile);
-		GlobalSoundStreamFile = NULL;
-	}
-	
 	char header[13];
-	FILE *fp = fopen(WAVfilename, "r");
-	fread(header, 1, 12, fp);
+	GlobalSoundStreamStructFD->loc = 0; fatfs_lseek(GlobalSoundStreamStructFD->cur_entry.d_ino, GlobalSoundStreamStructFD->loc, SEEK_SET);
+	int read = fatfs_read(GlobalSoundStreamStructFD->cur_entry.d_ino, &header[0], 12);
+	GlobalSoundStreamStructFD->loc += (read); fatfs_lseek(GlobalSoundStreamStructFD->cur_entry.d_ino, GlobalSoundStreamStructFD->loc, SEEK_SET);
 	
 	header[12] = 0;
 	header[4] = ' ';
@@ -586,15 +595,18 @@ int initSoundStream(char * WAVfilename){	//ARM9 Impl.
 	if(strcmp(header, "RIFF    WAVE") != 0)
 	{
 		// Wrong header
-		fclose(fp);
+		fatfs_close(GlobalSoundStreamStructFD->cur_entry.d_ino);
 		return SRC_NONE;
 	}		
 	
-	fread((char*)&TGDSIPC->sndPlayerCtx.wavDescriptor, 1, sizeof(wavFormatChunk), fp);
-	if(strncmp((char*)&TGDSIPC->sndPlayerCtx.wavDescriptor.chunkID[0], "fmt ", 4) != 0)
+	//fread((char*)&TGDSIPC->sndPlayerCtx.wavDescriptor, 1, sizeof(wavFormatChunk), fp);
+	read = fatfs_read(GlobalSoundStreamStructFD->cur_entry.d_ino, (char*)&TGDSIPC->sndPlayerCtx.wavDescriptor, sizeof(wavFormatChunk)); 
+	GlobalSoundStreamStructFD->loc += (read); fatfs_lseek(GlobalSoundStreamStructFD->cur_entry.d_ino, GlobalSoundStreamStructFD->loc, SEEK_SET);
+	
+	if(strncmp((char*)&TGDSIPC->sndPlayerCtx.wavDescriptor.chunkID[0], "fmt ", 4) != 0)	
 	{
 		// Wrong chunk at beginning
-		fclose(fp);
+		fatfs_close(GlobalSoundStreamStructFD->cur_entry.d_ino);
 		return SRC_NONE;
 	}
 	
@@ -604,7 +616,7 @@ int initSoundStream(char * WAVfilename){	//ARM9 Impl.
 		if(TGDSIPC->sndPlayerCtx.wavDescriptor.wChannels > 2)
 		{
 			// More than 2 channels.... uh no!
-			fclose(fp);
+			fatfs_close(GlobalSoundStreamStructFD->cur_entry.d_ino);
 			return SRC_NONE;
 		}
 		
@@ -627,19 +639,19 @@ int initSoundStream(char * WAVfilename){	//ARM9 Impl.
 		else
 		{
 			// more than 32bit sound, not supported
-			fclose(fp);
+			fatfs_close(GlobalSoundStreamStructFD->cur_entry.d_ino);
 			return SRC_NONE;		
 		}
 		
 		//rewind
-		fseek(fp, 0, SEEK_SET);
-		int wavStartOffset = parseWaveData(fp, (u32)(0x64617461));	//Seek for ASCII "data" and return 4 bytes after that: Waveform length (4 bytes), then 
+		GlobalSoundStreamStructFD->loc = 0; fatfs_lseek(GlobalSoundStreamStructFD->cur_entry.d_ino, GlobalSoundStreamStructFD->loc, SEEK_SET);
+		int wavStartOffset = parseWaveData(GlobalSoundStreamStructFD, (u32)(0x64617461));	//Seek for ASCII "data" and return 4 bytes after that: Waveform length (4 bytes), then 
 																	//4 bytes after that the raw Waveform
 		
 		if(wavStartOffset == -1)
 		{
 			// wav block not found
-			fclose(fp);
+			fatfs_close(GlobalSoundStreamStructFD->cur_entry.d_ino);
 			return SRC_NONE;
 		}
 		
@@ -651,18 +663,18 @@ int initSoundStream(char * WAVfilename){	//ARM9 Impl.
 		//data section not found, use filesize as size...
 		if(wavStartOffset == -2)
 		{
-			len = FS_getFileSizeFromOpenHandle(fp);
+			len = FS_getFileSizeFromOpenStructFD(GlobalSoundStreamStructFD);
 			wavStartOffset = 96;	//Assume header size: 96 bytes
 		}
 		else{
-			fseek(fp, wavStartOffset, SEEK_SET);
-			fread(&len, 1, sizeof(len), fp);
+			GlobalSoundStreamStructFD->loc = wavStartOffset; fatfs_lseek(GlobalSoundStreamStructFD->cur_entry.d_ino, GlobalSoundStreamStructFD->loc, SEEK_SET);
+			read = fatfs_read(GlobalSoundStreamStructFD->cur_entry.d_ino, (u8*)&len, sizeof(len)); //fread(&len, 1, sizeof(len), fp);
+			GlobalSoundStreamStructFD->loc += (read); fatfs_lseek(GlobalSoundStreamStructFD->cur_entry.d_ino, GlobalSoundStreamStructFD->loc, SEEK_SET);
 			wavStartOffset+=4;
 		}
 		
 		TGDSIPC->sndPlayerCtx.fileSize = len;
 		TGDSIPC->sndPlayerCtx.fileOffset = wavStartOffset;
-		GlobalSoundStreamFile = fp;
 		
 		setSoundInterpolation(1);
 		setSoundFrequency(TGDSIPC->sndPlayerCtx.wavDescriptor.dwSamplesPerSec);
@@ -676,11 +688,11 @@ int initSoundStream(char * WAVfilename){	//ARM9 Impl.
 		return SRC_WAV;
 	}
 	if(TGDSIPC->sndPlayerCtx.wavDescriptor.wFormatTag == WAVE_FORMAT_IMA_ADPCM){
-		fclose(fp);
+		//If ADPCM do not close the file handle because it was initialized earlier
 		return SRC_WAVADPCM;
 	}
 	
-	fclose(fp);
+	fatfs_close(GlobalSoundStreamStructFD->cur_entry.d_ino);
 	return SRC_NONE;
 }
 
@@ -709,7 +721,7 @@ void updateSoundContextStreamPlayback(u32 srcFrmt){
 			swapAndSendTGDS(ARM7COMMAND_SOUND_COPY);
 			wavDecode();
 			struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-			TGDSIPC->sndPlayerCtx.fileOffset = ftell(GlobalSoundStreamFile);
+			TGDSIPC->sndPlayerCtx.fileOffset = fatfs_ftell(GlobalSoundStreamStructFD);
 		}
 		break;
 		default:{
@@ -834,7 +846,6 @@ void setupSound(u32 srcFrmtInst)
 
 /////////////////////////////////////////////////////////Interrupt code end //////////////////////////////////////////////////////
 
-
 void closeSoundStream(){
 	
 }
@@ -852,7 +863,6 @@ void initSoundStream(u32 srcFmt){		//ARM7 Impl.
 }
 
 #endif
-
 
 void stopSound(u32 srcFrmt)
 {

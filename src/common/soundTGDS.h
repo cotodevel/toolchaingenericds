@@ -24,6 +24,10 @@ USA
 #include "typedefsTGDS.h"
 #include "dsregs.h"
 
+#ifdef ARM9
+#include "fatfslayerTGDS.h"
+#endif
+
 //IPC bits
 #define REG_IPC_FIFO_TX		(*(vuint32*)0x4000188)
 #define REG_IPC_FIFO_RX		(*(vuint32*)0x4100000)
@@ -93,17 +97,17 @@ USA
 
 #define WAV_READ_SIZE 4096
 
-
 static inline void SendFIFOWords(uint32 data0, uint32 data1){	//format: arg0: cmd, arg1: value
 	REG_IPC_FIFO_TX = (uint32)data1;
 	REG_IPC_FIFO_TX = (uint32)data0;
 }
 
-
 #ifdef ARM9
-static inline u32 getWavData(void *outLoc, int amount, FILE *fh)
+static inline u32 getWavData(u8 *outLoc, int amount, struct fd *SoundStreamStructFD)
 {
-	return fread(outLoc, 1, amount, fh);
+	int read = fatfs_read(SoundStreamStructFD->cur_entry.d_ino, outLoc, amount);
+	SoundStreamStructFD->loc += (read); fatfs_lseek(SoundStreamStructFD->cur_entry.d_ino, SoundStreamStructFD->loc, SEEK_SET);
+	return read;
 }
 #endif
 
@@ -138,7 +142,6 @@ typedef struct
 #define WAVE_FORMAT_RAW_PCM		(short)(0x0001)
 #define WAVE_FORMAT_DVI_ADPCM	(short)(0x0011)					/* Intel Corporation */
 #define WAVE_FORMAT_IMA_ADPCM	(short)(WAVE_FORMAT_DVI_ADPCM)	/* Intel Corporation */
-
 
 //Sound Context
 struct soundSampleContext{
@@ -178,7 +181,6 @@ struct soundPlayerContext{
 	u32 cr;
 	u32 timer;
 	int sourceFmt;
-	int structFDFH;	//TGDS File Descriptor through TGDS FS API, same as ARM9's FILE * GlobalSoundStreamFile;
 	bool soundStreamPause;	//Indicates wether a WAV / IMA-ADPCM / Other stream format is playing
 } __attribute__((aligned (4)));
 
@@ -220,16 +222,13 @@ extern int multRate;
 extern int sndRate;
 extern u32 sndCursor;
 #endif
-
 extern void stopSound(u32 srcFrmt);
-
 
 #ifdef ARM9
 //ARM9: Stream Playback handler
 extern void updateSoundContextStreamPlayback();
 extern __attribute__((weak))    void updateSoundContextStreamPlaybackUser(u32 srcFrmt);
 extern void flushSoundContext(int soundContextIndex);
-extern int initSoundStream(char * WAVfilename);
 
 //Stream Sound controls
 extern u8 getVolume();
@@ -245,7 +244,11 @@ extern bool freesoundSampleContext(struct soundSampleContext * sampleInst);	//fr
 extern struct soundSampleContext * getFreeSoundSampleContext();				//obtains a free soundSampleContext, if any
 
 #ifdef ARM9
-extern FILE * GlobalSoundStreamFile;
+
+extern int initSoundStream(char * WAVfilename);
+extern int initSoundStreamFromStructFD(struct fd * _FileHandleAudio);
+extern struct fd * GlobalSoundStreamStructFD;
+
 extern bool setSoundSampleContext(int sampleRate, u32 * data, u32 bytes, u8 channel, u8 vol, u8 pan, u8 format);
 extern s16 * SharedEWRAM0;	//ptr start = 0
 extern s16 * SharedEWRAM1;	//ptr start = 0 + 0x4000
@@ -253,7 +256,7 @@ extern s16 *lBufferSwapped;
 extern s16 *rBufferSwapped;
 extern void setWavDecodeCallback(void (*cb)());
 
-extern int parseWaveData(FILE * fh, u32 u32chunkToSeek);
+extern int parseWaveData(struct fd * fdinst, u32 u32chunkToSeek);
 extern void setSoundLength(u32 len);
 extern void setSoundFrequency(u32 freq);
 extern void setSoundInterpolation(u32 mult);
