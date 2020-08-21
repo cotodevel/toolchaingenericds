@@ -3,6 +3,7 @@
 #ifdef ARM9
 
 @---------------------------------------------------------------------------------
+    .section    .dldiSection, "awx", %progbits
 	.align	4
 	.arm
 	.global _io_dldi_stub
