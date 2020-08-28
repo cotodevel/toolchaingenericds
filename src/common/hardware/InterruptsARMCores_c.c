@@ -26,6 +26,7 @@ USA
 #ifdef ARM9
 #include "wifi_arm9.h"
 #include "dswnifi_lib.h"
+#include "nds_cp15_misc.h"
 #endif
 
 #include "InterruptsARMCores_h.h"
@@ -84,6 +85,11 @@ void IRQInit(u8 DSHardware){
 		
 		INTERRUPT_VECTOR = (uint32)&NDS_IRQHandler;
 		REG_IME = 1;
+		
+		#ifdef ARM9
+		//DrainWrite
+		DrainWriteBuffer();
+		#endif
 	}
 	//TWL 
 	else if(DSHardware == 0x57){
