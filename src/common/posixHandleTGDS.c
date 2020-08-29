@@ -277,7 +277,7 @@ void initARM7Malloc(u32 ARM7MallocStartaddress, u32 ARM7MallocSize){	//ARM7 Impl
 	xmemsize = xmemsize - (xmemsize/XMEM_BS) - 1024;
 	xmemsize = xmemsize - (xmemsize%1024);
 	XmemSetup(xmemsize, XMEM_BS);
-	XmemInit();
+	XmemInit(ARM7MallocStartaddress, ARM7MallocSize);
 }
 
 #endif

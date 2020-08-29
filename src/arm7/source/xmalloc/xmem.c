@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-
+#include "typedefsTGDS.h"
 #include "xmem.h"
 #include "posixHandleTGDS.h"
 #include "InterruptsARMCores_h.h"
@@ -39,19 +39,19 @@ void XmemSetup(unsigned int size, unsigned short blocks) {
 	XMEM_BLOCKSIZE = blocks;
 }
 
-void XmemInit() {
+void XmemInit(unsigned int mallocLinearMemoryStart, unsigned int mallocLinearMemorySize) {
 	// init XMEM
-	memset((u8*)getTGDSARM7MallocBaseAddress(), 0, ARM7MallocTop);
+	memset((u8*)mallocLinearMemoryStart, 0, mallocLinearMemorySize);
 	
 	//Must be generated here
 	// Number of blocks to create (mem/bs)
-	XMEM_BLOCKCOUNT = (ARM7MallocTop/XMEM_BLOCKSIZE);
+	XMEM_BLOCKCOUNT = (mallocLinearMemorySize/XMEM_BLOCKSIZE);
 
 	// Size of Table in bytes
 	XMEM_TABLESIZE = XMEM_BLOCKCOUNT;
 	
-	xmem_table = (unsigned char *)getTGDSARM7MallocBaseAddress();	
-	xmem_blocks = (unsigned char *)((u8*)getTGDSARM7MallocBaseAddress() + XMEM_TABLESIZE);	//XMEM_BLOCKSIZE*XMEM_BLOCKCOUNT should not exceed the end of getTGDSARM7MallocBaseAddress()
+	xmem_table = (unsigned char *)mallocLinearMemoryStart;	
+	xmem_blocks = (unsigned char *)((u8*)mallocLinearMemoryStart + XMEM_TABLESIZE);	//Size: (XMEM_BLOCKSIZE*XMEM_BLOCKCOUNT). Should not exceed the end of getTGDSARM7MallocBaseAddress()
 	
 	if ((xmem_table == NULL) || (xmem_blocks == NULL)) {
 		
