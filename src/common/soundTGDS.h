@@ -168,7 +168,6 @@ struct soundPlayerContext{
 	
 	//FS properties
 	int fileSize;	//u32 len;	u32 dataLen;
-	int fileOffset;	//u32 loc;	u32 dataOffset;
 	
 	//Wav
 	wavFormatChunk wavDescriptor;
@@ -343,32 +342,46 @@ static inline int getSoundSampleContextEnabledStatus(){
 
 //ARM7: Sample Playback handler
 static inline void updateSoundContextSamplePlayback(){
+	bool playSample = false;
 	switch(getSoundSampleContextEnabledStatus()){
+		//Samples
 		case(SOUNDSAMPLECONTEXT_SOUND_SAMPLEPLAYBACK):
-		case(SOUNDSAMPLECONTEXT_SOUND_STREAMPLAYBACK):
 		{
-			//VBLANK intervals: Look out for assigned channels, playing.
-			struct soundSampleContext * curSoundSampleContext = getsoundSampleContextByIndex(SoundTGDSCurChannel);
-			int thisChannel = curSoundSampleContext->channel;
-			
-			//Returns -1 if channel is busy, or channel if idle
-			if( (isFreeSoundChannel(thisChannel) == thisChannel) && (curSoundSampleContext->status == SOUNDSAMPLECONTEXT_PENDING) ){	//Play sample?
-				startSound(curSoundSampleContext->sampleRate, curSoundSampleContext->arm9data, curSoundSampleContext->bytes, thisChannel, curSoundSampleContext->vol,  curSoundSampleContext->pan, curSoundSampleContext->format);
-				curSoundSampleContext->status = SOUNDSAMPLECONTEXT_PLAYING;
+			playSample = true;
+		}
+		break;
+		
+		case(SOUNDSAMPLECONTEXT_SOUND_STREAMPLAYBACK):{
+			//Only play sound samples when SRC_WAV or SRC_ADPCM streams
+			if(srcFrmt == SRC_WAV){
+				playSample = true;
 			}
-			
-			//Returns -1 if channel is busy, or channel if idle
-			if( (isFreeSoundChannel(thisChannel) == thisChannel) && (curSoundSampleContext->status == SOUNDSAMPLECONTEXT_PLAYING) ){	//Idle? free context
-				freesoundSampleContext(curSoundSampleContext);
-				SendFIFOWords(FIFO_FLUSHSOUNDCONTEXT, thisChannel);
-			}
-			
-			if(SoundTGDSCurChannel > SoundSampleContextChannels){
-				SoundTGDSCurChannel = 0;
-			}
-			else{
-				SoundTGDSCurChannel++;
-			}
+		}
+		break;
+	}
+	
+	if(playSample == true){
+		//VBLANK intervals: Look out for assigned channels, playing.
+		struct soundSampleContext * curSoundSampleContext = getsoundSampleContextByIndex(SoundTGDSCurChannel);
+		int thisChannel = curSoundSampleContext->channel;
+		
+		//Returns -1 if channel is busy, or channel if idle
+		if( (isFreeSoundChannel(thisChannel) == thisChannel) && (curSoundSampleContext->status == SOUNDSAMPLECONTEXT_PENDING) ){	//Play sample?
+			startSound(curSoundSampleContext->sampleRate, curSoundSampleContext->arm9data, curSoundSampleContext->bytes, thisChannel, curSoundSampleContext->vol,  curSoundSampleContext->pan, curSoundSampleContext->format);
+			curSoundSampleContext->status = SOUNDSAMPLECONTEXT_PLAYING;
+		}
+		
+		//Returns -1 if channel is busy, or channel if idle
+		if( (isFreeSoundChannel(thisChannel) == thisChannel) && (curSoundSampleContext->status == SOUNDSAMPLECONTEXT_PLAYING) ){	//Idle? free context
+			freesoundSampleContext(curSoundSampleContext);
+			SendFIFOWords(FIFO_FLUSHSOUNDCONTEXT, thisChannel);
+		}
+		
+		if(SoundTGDSCurChannel > SoundSampleContextChannels){
+			SoundTGDSCurChannel = 0;
+		}
+		else{
+			SoundTGDSCurChannel++;
 		}
 	}
 }

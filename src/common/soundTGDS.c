@@ -657,7 +657,7 @@ int initSoundStreamFromStructFD(struct fd * _FileHandleAudio){	//ARM9 Impl.
 		
 		// wav file!
 		initComplexSoundTGDS(SRC_WAV); // initialize sound variables
-		TGDSIPC->sndPlayerCtx.fileOffset = 0;
+		GlobalSoundStreamStructFD->loc = 0;
 		
 		u32 len = 0;
 		//data section not found, use filesize as size...
@@ -674,7 +674,7 @@ int initSoundStreamFromStructFD(struct fd * _FileHandleAudio){	//ARM9 Impl.
 		}
 		
 		TGDSIPC->sndPlayerCtx.fileSize = len;
-		TGDSIPC->sndPlayerCtx.fileOffset = wavStartOffset;
+		GlobalSoundStreamStructFD->loc = wavStartOffset;
 		
 		setSoundInterpolation(1);
 		setSoundFrequency(TGDSIPC->sndPlayerCtx.wavDescriptor.dwSamplesPerSec);
@@ -721,7 +721,6 @@ void updateSoundContextStreamPlayback(u32 srcFrmt){
 			swapAndSendTGDS(ARM7COMMAND_SOUND_COPY);
 			wavDecode();
 			struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-			TGDSIPC->sndPlayerCtx.fileOffset = fatfs_ftell(GlobalSoundStreamStructFD);
 		}
 		break;
 		default:{
