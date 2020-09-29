@@ -524,8 +524,16 @@ int fork(){
 void _exit (int status){
 	
 	//todo: add some exception handlers to notify ARM cores program has ran	
+	
+	clrscr();
+	printf("----");
+	printf("----");
+	printf("----");
+	printf("----");
 	printf("TGDS APP Halt: Error Status: %d", status);
-	while(1);
+	while(1==1){
+		IRQVBlankWait();
+	}
 }
 
 int _kill (pid_t pid, int sig){
