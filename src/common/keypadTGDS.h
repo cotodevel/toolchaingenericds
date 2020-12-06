@@ -78,13 +78,11 @@ static inline uint32 keysRepeated(){
 
 //Enables / Disables the touchscreen
 static inline void setTouchScreenEnabled(bool status){
-	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-	TGDSIPC->touchScreenEnabled = status;
+	getsIPCSharedTGDS()->touchScreenEnabled = status;
 }
 
 static inline bool getTouchScreenEnabled(){
-	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-	return (bool)TGDSIPC->touchScreenEnabled;
+	return (bool)getsIPCSharedTGDS()->touchScreenEnabled;
 }
 
 

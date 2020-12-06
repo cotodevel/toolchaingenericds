@@ -100,8 +100,8 @@ bool penIRQread(){
 	#endif
 	
 	#ifdef ARM9
-	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-	return (bool)(TGDSIPC->EXTKEYINInst.PenDown);
+	struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
+	return (bool)(sharedTGDSInterProc->EXTKEYINInst.PenDown);
 	#endif
 }
 
@@ -112,8 +112,8 @@ static int LastTSCPosY = 0;
 
 //Internal
 void XYReadPos(){
-	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-	if(TGDSIPC->EXTKEYINInst.PenDown == true){
+	struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
+	if(sharedTGDSInterProc->EXTKEYINInst.PenDown == true){
 		//Set Chip Select LOW to invoke the command & Transmit the instruction byte: TSC CNT Differential Mode: X Raw TSC 
 		REG_SPI_CR = BIT_SPICNT_ENABLE | BIT_SPICNT_BYTETRANSFER | BIT_SPICNT_CSHOLDENABLE | BIT_SPICNT_TSCCNT | BIT_SPICLK_2MHZ;
 		RWSPICNT(BIT_TSCCNT_START_CTRL|BIT_TSCCNT_POWDOWN_MODE_SEL_DIFFERENTIAL| BIT_TSCCNT_REFSEL_DIFFERENTIAL | BIT_TSCCNT_CONVMODE_12bit | BIT_TSCCNT_TOUCHXPOS);
@@ -141,7 +141,7 @@ void XYReadPos(){
 		//scr.x = (adc.x-adc.x1) * (scr.x2-scr.x1) / (adc.x2-adc.x1) + (scr.x1-1)
 		//scr.y = (adc.y-adc.y1) * (scr.y2-scr.y1) / (adc.y2-adc.y1) + (scr.y1-1)
 		
-		struct sDSFWSETTINGS * DSFWSettingsInst = (struct sDSFWSETTINGS *)&TGDSIPC->DSFWSETTINGSInst;
+		struct sDSFWSETTINGS * DSFWSettingsInst = (struct sDSFWSETTINGS *)&sharedTGDSInterProc->DSFWSETTINGSInst;
 		
 		uint16 adc_x1 = (((DSFWSettingsInst->tsc_adcposx1y112bit[1] << 8) & 0x0f00)) | DSFWSettingsInst->tsc_adcposx1y112bit[0];
 		uint16 adc_y1 = (((DSFWSettingsInst->tsc_adcposx1y112bit[3] << 8) & 0x0f00)) | DSFWSettingsInst->tsc_adcposx1y112bit[2];
@@ -158,19 +158,19 @@ void XYReadPos(){
 		sint32 scrx = (read_raw_x-adc_x1) * (scr_x2-scr_x1) / (adc_x2-adc_x1) + (scr_x1-1);
 		sint32 scry = (read_raw_y-adc_y1) * (scr_y2-scr_y1) / (adc_y2-adc_y1) + (scr_y1-1);
 		
-		TGDSIPC->touchX    = read_raw_x;
-		TGDSIPC->touchXpx = scrx;
-		TGDSIPC->touchY    = read_raw_y;
-		TGDSIPC->touchYpx = scry;
+		sharedTGDSInterProc->touchX    = read_raw_x;
+		sharedTGDSInterProc->touchXpx = scrx;
+		sharedTGDSInterProc->touchY    = read_raw_y;
+		sharedTGDSInterProc->touchYpx = scry;
 		
 		LastTSCPosX = scrx;
 		LastTSCPosY = scry;
 	}
 	else{
-		TGDSIPC->touchY    = 0;
-		TGDSIPC->touchYpx = 0;
-		TGDSIPC->touchX    = 0;
-		TGDSIPC->touchXpx = 0;
+		sharedTGDSInterProc->touchY    = 0;
+		sharedTGDSInterProc->touchYpx = 0;
+		sharedTGDSInterProc->touchX    = 0;
+		sharedTGDSInterProc->touchXpx = 0;
 		LastTSCPosX = 0;
 		LastTSCPosY = 0;	
 	}
@@ -180,15 +180,15 @@ void XYReadPos(){
 //External 
 //relies on doSPIARM7IO() XY Readings
 void XYReadScrPos(struct XYTscPos * StouchScrPosInst){
-    struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-    StouchScrPosInst->rawx =   TGDSIPC->touchX;
-    StouchScrPosInst->rawy =   TGDSIPC->touchY;
+    struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
+    StouchScrPosInst->rawx =   sharedTGDSInterProc->touchX;
+    StouchScrPosInst->rawy =   sharedTGDSInterProc->touchY;
     
     //TFT x/y pixel
-    StouchScrPosInst->px   =   TGDSIPC->touchXpx;
-    StouchScrPosInst->py   =   TGDSIPC->touchYpx;
+    StouchScrPosInst->px   =   sharedTGDSInterProc->touchXpx;
+    StouchScrPosInst->py   =   sharedTGDSInterProc->touchYpx;
     
-    StouchScrPosInst->z1   =   TGDSIPC->touchZ1;
-    StouchScrPosInst->z2   =   TGDSIPC->touchZ2;
+    StouchScrPosInst->z1   =   sharedTGDSInterProc->touchZ1;
+    StouchScrPosInst->z2   =   sharedTGDSInterProc->touchZ2;
 	
 }

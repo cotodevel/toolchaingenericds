@@ -47,36 +47,36 @@ typedef int (*ARM7FS_close_ARM9CallbackTGDSFD)(struct fd *);
 #endif
 
 static inline bool getARM7FSInitStatus(){
-	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
+	struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
 	#ifdef ARM9
-	coherent_user_range_by_size((uint32)&TGDSIPC->initStatus, sizeof(TGDSIPC->initStatus));
+	coherent_user_range_by_size((uint32)&sharedTGDSInterProc->initStatus, sizeof(sharedTGDSInterProc->initStatus));
 	#endif
-	return TGDSIPC->initStatus;
+	return sharedTGDSInterProc->initStatus;
 }
 
 static inline void setARM7FSInitStatus(bool ARM7FSInitStatus){
-	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
+	struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
 	#ifdef ARM9
-	coherent_user_range_by_size((uint32)&TGDSIPC->initStatus, sizeof(TGDSIPC->initStatus));
+	coherent_user_range_by_size((uint32)&sharedTGDSInterProc->initStatus, sizeof(sharedTGDSInterProc->initStatus));
 	#endif
-	TGDSIPC->initStatus = ARM7FSInitStatus;
+	sharedTGDSInterProc->initStatus = ARM7FSInitStatus;
 }
 
 //Global Transaction Status
 static inline int getARM7FSTransactionStatus(){
-	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
+	struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
 	#ifdef ARM9
-	coherent_user_range_by_size((uint32)&TGDSIPC->ARM7FSTransactionStatus, sizeof(TGDSIPC->ARM7FSTransactionStatus));
+	coherent_user_range_by_size((uint32)&sharedTGDSInterProc->ARM7FSTransactionStatus, sizeof(sharedTGDSInterProc->ARM7FSTransactionStatus));
 	#endif
-	return TGDSIPC->ARM7FSTransactionStatus;
+	return sharedTGDSInterProc->ARM7FSTransactionStatus;
 }
 
 static inline void setARM7FSTransactionStatus(int ARM7FSTransactionStatus){
-	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
+	struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
 	#ifdef ARM9
-	coherent_user_range_by_size((uint32)&TGDSIPC->ARM7FSTransactionStatus, sizeof(TGDSIPC->ARM7FSTransactionStatus));
+	coherent_user_range_by_size((uint32)&sharedTGDSInterProc->ARM7FSTransactionStatus, sizeof(sharedTGDSInterProc->ARM7FSTransactionStatus));
 	#endif
-	TGDSIPC->ARM7FSTransactionStatus = ARM7FSTransactionStatus;
+	sharedTGDSInterProc->ARM7FSTransactionStatus = ARM7FSTransactionStatus;
 }
 
 #endif

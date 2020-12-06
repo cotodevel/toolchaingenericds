@@ -173,14 +173,27 @@ struct soundPlayerContext{
 	wavFormatChunk wavDescriptor;
 	
 	//Playback properties
-	s16 *interlaced;
+	int sourceFmt;
 	int channels;
+	
+	s16 *interlaced;
 	int psgChannel;
 	u8 volume;
 	u32 cr;
 	u32 timer;
-	int sourceFmt;
 	bool soundStreamPause;	//Indicates wether a WAV / IMA-ADPCM / Other stream format is playing
+	
+	#ifdef ARM9
+	int bufLoc;			//used by internal audio decoders
+	FILE *filePointer;	//used by internal audio decoders
+	int bits;			//used by internal audio decoders
+	u32 len;			//used by internal audio decoders
+	u32 loc;			//used by internal audio decoders
+	u32 dataOffset;		//used by internal audio decoders
+	u32 dataLen;		//used by internal audio decoders
+	int mp3SampleRate;	//used by internal audio decoders
+	#endif
+	
 } __attribute__((aligned (4)));
 
 #ifdef __cplusplus

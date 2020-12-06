@@ -43,8 +43,7 @@ int ARM7FS_HandleMethod = 0;
 #ifdef ARM7
 int ARM7FS_GetFileSize(void)
 {
-	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-	return(TGDSIPC->IR_filesize);
+	return(getsIPCSharedTGDS()->IR_filesize);
 }
 
 //If void *OutBuffer is NULL, the internal buffer is refilled from the current read file handle
@@ -55,9 +54,9 @@ int ARM7FS_BufferReadByIRQ(void *OutBuffer, int fileOffset, int readBufferSize){
 	if(fileOffset <= 0){
 		fileOffset = 0;
 	}
-	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-	fifomsg[0] = (uint32)TGDSIPC->IR_readbuf;
+	struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
+	uint32 * fifomsg = (uint32 *)&sharedTGDSInterProc->fifoMesaggingQueue[0];
+	fifomsg[0] = (uint32)sharedTGDSInterProc->IR_readbuf;
 	fifomsg[1] = (uint32)readBufferSize;
 	fifomsg[2] = (uint32)fileOffset;
 	fifomsg[3] = (uint32)TGDS_ARM7_ARM7FSREAD;
@@ -68,7 +67,7 @@ int ARM7FS_BufferReadByIRQ(void *OutBuffer, int fileOffset, int readBufferSize){
 		swiDelay(1);
 	}
 	if(OutBuffer != NULL){
-		dmaTransferWord(0, (u32)((u8*)TGDSIPC->IR_readbuf), (uint32)OutBuffer, (uint32) readBufferSize);	//dmaTransferHalfWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count)
+		dmaTransferWord(0, (u32)((u8*)sharedTGDSInterProc->IR_readbuf), (uint32)OutBuffer, (uint32) readBufferSize);	//dmaTransferHalfWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count)
 	}
 	return readBufferSize;
 }
@@ -78,15 +77,15 @@ int ARM7FS_BufferSaveByIRQ(void *InBuffer, int fileOffset, int writeBufferSize){
 	if(writeBufferSize <= 0){
 		return 0;
 	}
-	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
+	struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
 	if(fileOffset <= 0){
 		fileOffset = 0;
 	}
 	if(InBuffer != NULL){
-		dmaTransferWord(0, (uint32)InBuffer, (u32)TGDSIPC->IR_readbuf, (uint32)writeBufferSize);	//dmaTransferHalfWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count)
+		dmaTransferWord(0, (uint32)InBuffer, (u32)sharedTGDSInterProc->IR_readbuf, (uint32)writeBufferSize);	//dmaTransferHalfWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count)
 	}
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-	fifomsg[4] = (uint32)TGDSIPC->IR_readbuf;
+	uint32 * fifomsg = (uint32 *)&sharedTGDSInterProc->fifoMesaggingQueue[0];
+	fifomsg[4] = (uint32)sharedTGDSInterProc->IR_readbuf;
 	fifomsg[5] = (uint32)writeBufferSize;
 	fifomsg[6] = (uint32)fileOffset;
 	fifomsg[7] = (uint32)TGDS_ARM7_ARM7FSWRITE;
@@ -105,19 +104,18 @@ void performARM7MP2FSTestCase(char * ARM7fsfname, int ARM7BuffSize, u32 * writte
 		swiDelay(1);
 	}
 	
-	
 	//ARM7 MP2 FS test case start
 	u8* buffer =(u8*)TGDSARM7Malloc(ARM7BuffSize);
-	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-	TGDSIPC->IR_readbufsize = ARM7BuffSize;
-	int filesize = TGDSIPC->IR_filesize;
+	struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
+	sharedTGDSInterProc->IR_readbufsize = ARM7BuffSize;
+	int filesize = sharedTGDSInterProc->IR_filesize;
 	
 	int i = 0;
 	int fileOffst = 0;
 	for(i = 0; i < filesize/ARM7BuffSize; i++){
 		dmaFillHalfWord(0, 0, (u32)buffer, ARM7BuffSize);	//clear buffer to prevent false positive
 		ARM7FS_BufferReadByIRQ(buffer, fileOffst, ARM7BuffSize);
-		dmaFillHalfWord(0, 0, (u32)TGDSIPC->IR_readbuf, ARM7BuffSize);	//clear buffer to prevent false positive
+		dmaFillHalfWord(0, 0, (u32)sharedTGDSInterProc->IR_readbuf, ARM7BuffSize);	//clear buffer to prevent false positive
 		ARM7FS_BufferSaveByIRQ(buffer, fileOffst, ARM7BuffSize);
 		fileOffst+= (ARM7BuffSize);
 	}
@@ -128,12 +126,12 @@ void performARM7MP2FSTestCase(char * ARM7fsfname, int ARM7BuffSize, u32 * writte
 		left = filesize - fileOffst;	
 		dmaFillHalfWord(0, 0, (u32)buffer, left);	//clear buffer to prevent false positive
 		ARM7FS_BufferReadByIRQ(buffer, fileOffst, left);
-		dmaFillHalfWord(0, 0, (u32)TGDSIPC->IR_readbuf, left);	//clear buffer to prevent false positive
+		dmaFillHalfWord(0, 0, (u32)sharedTGDSInterProc->IR_readbuf, left);	//clear buffer to prevent false positive
 		ARM7FS_BufferSaveByIRQ(buffer, fileOffst, left);
 		fileOffst+=(left);
 	}
 	
-	*writtenDebug = (u32)(TGDSIPC->IR_readbuf);
+	*writtenDebug = (u32)(sharedTGDSInterProc->IR_readbuf);
 	TGDSARM7Free(buffer);
 	
 	//end testcase
@@ -154,17 +152,17 @@ void deinitARM7FS(){
 	#endif
 	
 	#ifdef ARM9
-	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-	TGDSIPC->IR_readbufsize=0;
-	TGDSIPC->IR_ReadOffset = 0;
-	TGDSIPC->IR_WrittenOffset = 0;
-	TGDSIPC->IR_filesize = 0;
+	struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
+	sharedTGDSInterProc->IR_readbufsize=0;
+	sharedTGDSInterProc->IR_ReadOffset = 0;
+	sharedTGDSInterProc->IR_WrittenOffset = 0;
+	sharedTGDSInterProc->IR_filesize = 0;
 	
-	u8 * sharedBuffer = (u8 *)TGDSIPC->IR_readbuf;
+	u8 * sharedBuffer = (u8 *)sharedTGDSInterProc->IR_readbuf;
 	if(sharedBuffer != NULL){
 		TGDSARM9Free(sharedBuffer);
 	}
-	TGDSIPC->IR_readbuf=0;
+	sharedTGDSInterProc->IR_readbuf=0;
 	switch(ARM7FS_HandleMethod){
 		case(TGDS_ARM7FS_FILEHANDLEPOSIX):{
 			if(ARM7FS_FileHandleRead != NULL){
@@ -197,7 +195,7 @@ void deinitARM7FS(){
 	setARM7FSTransactionStatus(ARM7FS_TRANSACTIONSTATUS_BUSY);
 	
 	//Wait for ARM7FS de-init.
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	uint32 * fifomsg = (uint32 *)&sharedTGDSInterProc->fifoMesaggingQueue[0];
 	fifomsg[8] = (u32)IPC_ARM7DEINIT_ARM7FS;
 	sendByteIPC(IPC_ARM7DEINIT_ARM7FS);
 	while(fifomsg[8] == (u32)IPC_ARM7DEINIT_ARM7FS){
@@ -218,11 +216,11 @@ bool initARM7FSPOSIX(char * inFilename, char * outFilename, int splitBufferSize,
 		return false;
 	}
 	deinitARM7FS();
-	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-	TGDSIPC->IR_readbufsize=0;
-	TGDSIPC->IR_readbuf=0;
+	struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
+	sharedTGDSInterProc->IR_readbufsize=0;
+	sharedTGDSInterProc->IR_readbuf=0;
 	//setup vars
-	TGDSIPC->IR_readbuf=(u32*)TGDSARM9Malloc(splitBufferSize);	//Must be EWRAM because then ARM7 can receive it into ARM7's 0x06000000 through DMA (hardware ring buffer)
+	sharedTGDSInterProc->IR_readbuf=(u32*)TGDSARM9Malloc(splitBufferSize);	//Must be EWRAM because then ARM7 can receive it into ARM7's 0x06000000 through DMA (hardware ring buffer)
 	ARM7FS_FileHandleRead = fopen(inFilename, "r");
 	
 	if(outFilename != NULL){
@@ -235,9 +233,9 @@ bool initARM7FSPOSIX(char * inFilename, char * outFilename, int splitBufferSize,
 	int fdindexRead = fileno(ARM7FS_FileHandleRead);
 	ARM7FS_TGDSFileDescriptorRead = getStructFD(fdindexRead);
 	
-	TGDSIPC->IR_ReadOffset = 0;
-	TGDSIPC->IR_WrittenOffset = 0;
-	TGDSIPC->IR_filesize = FS_getFileSizeFromOpenHandle(ARM7FS_FileHandleRead);
+	sharedTGDSInterProc->IR_ReadOffset = 0;
+	sharedTGDSInterProc->IR_WrittenOffset = 0;
+	sharedTGDSInterProc->IR_filesize = FS_getFileSizeFromOpenHandle(ARM7FS_FileHandleRead);
 	
 	if(ARM7FS_FileHandleRead != NULL){
 	}
@@ -246,9 +244,9 @@ bool initARM7FSPOSIX(char * inFilename, char * outFilename, int splitBufferSize,
 		while(1==1){}
 	}
 	setARM7FSTransactionStatus(ARM7FS_TRANSACTIONSTATUS_BUSY);
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	uint32 * fifomsg = (uint32 *)&sharedTGDSInterProc->fifoMesaggingQueue[0];
 	fifomsg[9] = (u32)inFilename;
-	fifomsg[10] = (uint32)TGDSIPC->IR_filesize;
+	fifomsg[10] = (uint32)sharedTGDSInterProc->IR_filesize;
 	fifomsg[11] = (uint32)splitBufferSize;
 	fifomsg[12] = (uint32)ARM7FS_HandleMethod;
 	fifomsg[13] = (uint32)debugVar;
@@ -278,9 +276,9 @@ bool initARM7FSTGDSFileHandle(struct fd * TGDSFileHandleIn, struct fd * TGDSFile
 		return false;
 	}
 	
-	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-	TGDSIPC->IR_readbuf=(u32*)TGDSARM9Malloc(splitBufferSize);	//Must be EWRAM because then ARM7 can receive it into ARM7's 0x06000000 through DMA (hardware ring buffer)
-	if((u32*)TGDSIPC->IR_readbuf == (u32*)NULL){
+	struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
+	sharedTGDSInterProc->IR_readbuf=(u32*)TGDSARM9Malloc(splitBufferSize);	//Must be EWRAM because then ARM7 can receive it into ARM7's 0x06000000 through DMA (hardware ring buffer)
+	if((u32*)sharedTGDSInterProc->IR_readbuf == (u32*)NULL){
 		deinitARM7FS();
 		return false;
 	}
@@ -288,9 +286,9 @@ bool initARM7FSTGDSFileHandle(struct fd * TGDSFileHandleIn, struct fd * TGDSFile
 	ARM7FS_HandleMethod = TGDS_ARM7FS_TGDSFILEDESCRIPTOR;	//ARM9
 	ARM7FS_TGDSFileDescriptorRead = TGDSFileHandleIn;
 	ARM7FS_TGDSFileDescriptorWrite = TGDSFileHandleOut;
-	TGDSIPC->IR_ReadOffset = 0;
-	TGDSIPC->IR_WrittenOffset = 0;
-	TGDSIPC->IR_filesize = FS_getFileSizeFromOpenStructFD(TGDSFileHandleIn);
+	sharedTGDSInterProc->IR_ReadOffset = 0;
+	sharedTGDSInterProc->IR_WrittenOffset = 0;
+	sharedTGDSInterProc->IR_filesize = FS_getFileSizeFromOpenStructFD(TGDSFileHandleIn);
 	
 	ARM7FS_ReadBuffer_ARM9TGDSFD = (ARM7FS_ReadBuffer_ARM9CallbackTGDSFD)ARM7FS_ReadBuffer_ARM9ImplementationTGDSFDCall;
 	if(ARM7FS_TGDSFileDescriptorWrite != NULL){
@@ -299,9 +297,9 @@ bool initARM7FSTGDSFileHandle(struct fd * TGDSFileHandleIn, struct fd * TGDSFile
 	ARM7FS_close_ARM9TGDSFD = (ARM7FS_close_ARM9CallbackTGDSFD)ARM7FS_close_ARM9ImplementationTGDSFDCall;
 	
 	setARM7FSTransactionStatus(ARM7FS_TRANSACTIONSTATUS_BUSY);
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	uint32 * fifomsg = (uint32 *)&sharedTGDSInterProc->fifoMesaggingQueue[0];
 	fifomsg[9] = (u32)&TGDSFileHandleARM7FSName[0];
-	fifomsg[10] = (uint32)TGDSIPC->IR_filesize;
+	fifomsg[10] = (uint32)sharedTGDSInterProc->IR_filesize;
 	fifomsg[11] = (uint32)splitBufferSize;
 	fifomsg[12] = (uint32)ARM7FS_HandleMethod;
 	fifomsg[13] = (uint32)debugVar;
@@ -322,11 +320,11 @@ void closeARM7FS(){
 void performARM7MP2FSTestCasePOSIX(char * inFilename, char * outFilename, int splitBufferSize, u32 * debugVar){	//ARM9 Impl.
 	deinitARM7FS();
 	printf("performARM7MP2FSTestCasePOSIX() Test Case: start!");
-	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-	TGDSIPC->IR_readbufsize=0;
-	TGDSIPC->IR_readbuf=0;
+	struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
+	sharedTGDSInterProc->IR_readbufsize=0;
+	sharedTGDSInterProc->IR_readbuf=0;
 	//setup vars
-	TGDSIPC->IR_readbuf=(u32*)TGDSARM9Malloc(splitBufferSize);	//Must be EWRAM because then ARM7 can receive it into ARM7's 0x06000000 through DMA (hardware ring buffer)
+	sharedTGDSInterProc->IR_readbuf=(u32*)TGDSARM9Malloc(splitBufferSize);	//Must be EWRAM because then ARM7 can receive it into ARM7's 0x06000000 through DMA (hardware ring buffer)
 	ARM7FS_FileHandleRead = fopen(inFilename, "r");
 	ARM7FS_FileHandleWrite = fopen(outFilename, "w+");
 	
@@ -337,9 +335,9 @@ void performARM7MP2FSTestCasePOSIX(char * inFilename, char * outFilename, int sp
 	int fdindexWrite = fileno(ARM7FS_FileHandleWrite);
 	ARM7FS_TGDSFileDescriptorWrite = getStructFD(fdindexWrite);
 	
-	TGDSIPC->IR_ReadOffset = 0;
-	TGDSIPC->IR_WrittenOffset = 0;
-	TGDSIPC->IR_filesize = FS_getFileSizeFromOpenHandle(ARM7FS_FileHandleRead);
+	sharedTGDSInterProc->IR_ReadOffset = 0;
+	sharedTGDSInterProc->IR_WrittenOffset = 0;
+	sharedTGDSInterProc->IR_filesize = FS_getFileSizeFromOpenHandle(ARM7FS_FileHandleRead);
 	
 	if((ARM7FS_FileHandleRead != NULL) && (ARM7FS_FileHandleWrite != NULL)){
 		
@@ -351,9 +349,9 @@ void performARM7MP2FSTestCasePOSIX(char * inFilename, char * outFilename, int sp
 	
 	//ARM7 FS test case start.
 	setARM7FSTransactionStatus(ARM7FS_TRANSACTIONSTATUS_BUSY);
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	uint32 * fifomsg = (uint32 *)&sharedTGDSInterProc->fifoMesaggingQueue[0];
 	fifomsg[9] = (u32)inFilename;
-	fifomsg[10] = (uint32)TGDSIPC->IR_filesize;
+	fifomsg[10] = (uint32)sharedTGDSInterProc->IR_filesize;
 	fifomsg[11] = (uint32)splitBufferSize;
 	fifomsg[12] = (uint32)ARM7FS_HandleMethod;
 	fifomsg[13] = (uint32)debugVar;
@@ -374,7 +372,7 @@ void performARM7MP2FSTestCasePOSIX(char * inFilename, char * outFilename, int sp
 	
 	fclose(ARM7FS_FileHandleRead);
 	fclose(ARM7FS_FileHandleWrite);
-	TGDSARM9Free((u8*)TGDSIPC->IR_readbuf);
+	TGDSARM9Free((u8*)sharedTGDSInterProc->IR_readbuf);
 	printf("performARM7MP2FSTestCasePOSIX() Test Case: end!");
 }
 
@@ -393,9 +391,9 @@ void performARM7MP2FSTestCaseTGDSFileDescriptor(struct fd * TGDSFileHandleIn, st
 		deinitARM7FS();
 		return false;
 	}
-	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-	TGDSIPC->IR_readbuf=(u32*)TGDSARM9Malloc(splitBufferSize);	//Must be EWRAM because then ARM7 can receive it into ARM7's 0x06000000 through DMA (hardware ring buffer)
-	if((u32*)TGDSIPC->IR_readbuf == (u32*)NULL){
+	struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
+	sharedTGDSInterProc->IR_readbuf=(u32*)TGDSARM9Malloc(splitBufferSize);	//Must be EWRAM because then ARM7 can receive it into ARM7's 0x06000000 through DMA (hardware ring buffer)
+	if((u32*)sharedTGDSInterProc->IR_readbuf == (u32*)NULL){
 		deinitARM7FS();
 		return false;
 	}
@@ -403,9 +401,9 @@ void performARM7MP2FSTestCaseTGDSFileDescriptor(struct fd * TGDSFileHandleIn, st
 	ARM7FS_HandleMethod = TGDS_ARM7FS_TGDSFILEDESCRIPTOR;	//ARM9
 	ARM7FS_TGDSFileDescriptorRead = TGDSFileHandleIn;
 	ARM7FS_TGDSFileDescriptorWrite = TGDSFileHandleOut;
-	TGDSIPC->IR_ReadOffset = 0;
-	TGDSIPC->IR_WrittenOffset = 0;
-	TGDSIPC->IR_filesize = FS_getFileSizeFromOpenStructFD(TGDSFileHandleIn);
+	sharedTGDSInterProc->IR_ReadOffset = 0;
+	sharedTGDSInterProc->IR_WrittenOffset = 0;
+	sharedTGDSInterProc->IR_filesize = FS_getFileSizeFromOpenStructFD(TGDSFileHandleIn);
 	
 	ARM7FS_ReadBuffer_ARM9TGDSFD = (ARM7FS_ReadBuffer_ARM9CallbackTGDSFD)ARM7FS_ReadBuffer_ARM9ImplementationTGDSFDCall;
 	ARM7FS_SaveBuffer_ARM9TGDSFD = (ARM7FS_SaveBuffer_ARM9CallbackTGDSFD)ARM7FS_WriteBuffer_ARM9ImplementationTGDSFDCall;
@@ -413,9 +411,9 @@ void performARM7MP2FSTestCaseTGDSFileDescriptor(struct fd * TGDSFileHandleIn, st
 	
 	//ARM7 FS test case start.
 	setARM7FSTransactionStatus(ARM7FS_TRANSACTIONSTATUS_BUSY);
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	uint32 * fifomsg = (uint32 *)&sharedTGDSInterProc->fifoMesaggingQueue[0];
 	fifomsg[9] = (u32)&TGDSFileHandleARM7FSName[0];
-	fifomsg[10] = (uint32)TGDSIPC->IR_filesize;
+	fifomsg[10] = (uint32)sharedTGDSInterProc->IR_filesize;
 	fifomsg[11] = (uint32)splitBufferSize;
 	fifomsg[12] = (uint32)ARM7FS_HandleMethod;
 	fifomsg[13] = (uint32)debugVar;
@@ -436,7 +434,7 @@ void performARM7MP2FSTestCaseTGDSFileDescriptor(struct fd * TGDSFileHandleIn, st
 	
 	ARM7FS_close_ARM9TGDSFD(TGDSFileHandleIn);
 	ARM7FS_close_ARM9TGDSFD(TGDSFileHandleOut);
-	TGDSARM9Free((u8*)TGDSIPC->IR_readbuf);
+	TGDSARM9Free((u8*)sharedTGDSInterProc->IR_readbuf);
 	printf("performARM7MP2FSTestCaseTGDSFileDescriptor()");
 	printf("Test Case: end!");
 }

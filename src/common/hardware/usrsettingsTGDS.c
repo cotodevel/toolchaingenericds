@@ -32,14 +32,14 @@ USA
 #include "spifwTGDS.h"
 
 void LoadFirmwareSettingsFromFlash(){
-	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-	memset((uint8*)&TGDSIPC->DSFWHEADERInst, 0, sizeof(TGDSIPC->DSFWHEADERInst));
+	struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
+	memset((uint8*)&sharedTGDSInterProc->DSFWHEADERInst, 0, sizeof(sharedTGDSInterProc->DSFWHEADERInst));
 	
 	
-	readFirmwareSPI((uint32)0, (uint8*)&TGDSIPC->DSFWHEADERInst.stub[0], sizeof(TGDSIPC->DSFWHEADERInst.stub));	//020h 2    User Settings Offset (div8) (usually last 200h flash bytes)
+	readFirmwareSPI((uint32)0, (uint8*)&sharedTGDSInterProc->DSFWHEADERInst.stub[0], sizeof(sharedTGDSInterProc->DSFWHEADERInst.stub));	//020h 2    User Settings Offset (div8) (usually last 200h flash bytes)
 	
 	//Get User Settings : Offset (div8) accounted
-	uint32 usersetting_offset0 = (TGDSIPC->DSFWHEADERInst.stub[0x21]<<8) | TGDSIPC->DSFWHEADERInst.stub[0x20];
+	uint32 usersetting_offset0 = (sharedTGDSInterProc->DSFWHEADERInst.stub[0x21]<<8) | sharedTGDSInterProc->DSFWHEADERInst.stub[0x20];
 	usersetting_offset0 = (usersetting_offset0 * 8);
 	
 	uint32 usersetting_offset1 = usersetting_offset0 + (sint32)DS_FW_USERSETTINGS_SIZE;
@@ -73,18 +73,18 @@ void LoadFirmwareSettingsFromFlash(){
 }
 
 void ParseFWSettings(uint32 usersetting_offset){
-	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-	memset((uint8*)&TGDSIPC->DSFWSETTINGSInst, 0, sizeof(TGDSIPC->DSFWSETTINGSInst));
-	readFirmwareSPI((uint32)usersetting_offset, (uint8*)&TGDSIPC->DSFWSETTINGSInst, sizeof(TGDSIPC->DSFWSETTINGSInst));
+	struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
+	memset((uint8*)&sharedTGDSInterProc->DSFWSETTINGSInst, 0, sizeof(sharedTGDSInterProc->DSFWSETTINGSInst));
+	readFirmwareSPI((uint32)usersetting_offset, (uint8*)&sharedTGDSInterProc->DSFWSETTINGSInst, sizeof(sharedTGDSInterProc->DSFWSETTINGSInst));
 	
-	ucs2tombs((uint8*)&TGDSIPC->nickname_schar8[0],(unsigned short*)&TGDSIPC->DSFWSETTINGSInst.nickname_utf16[0],32);
-	int nicknameLength = (int)(TGDSIPC->DSFWSETTINGSInst.nickname_length_chars[0] | TGDSIPC->DSFWSETTINGSInst.nickname_length_chars[1] << 8);
-	TGDSIPC->nickname_schar8[nicknameLength] = '\0';
+	ucs2tombs((uint8*)&sharedTGDSInterProc->nickname_schar8[0],(unsigned short*)&sharedTGDSInterProc->DSFWSETTINGSInst.nickname_utf16[0],32);
+	int nicknameLength = (int)(sharedTGDSInterProc->DSFWSETTINGSInst.nickname_length_chars[0] | sharedTGDSInterProc->DSFWSETTINGSInst.nickname_length_chars[1] << 8);
+	sharedTGDSInterProc->nickname_schar8[nicknameLength] = '\0';
 }
 
 #endif
 
 uint8 getLanguage(){
-	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-	return (uint8)( (TGDSIPC->DSFWSETTINGSInst.fw_language[0])&language_mask);
+	struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
+	return (uint8)( (sharedTGDSInterProc->DSFWSETTINGSInst.fw_language[0])&language_mask);
 }

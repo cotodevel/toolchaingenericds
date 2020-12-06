@@ -50,24 +50,24 @@ USA
 #endif
 
 void Write8bitAddrExtArm(uint32 address, uint8 value){
-	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
+	uint32 * fifomsg = (uint32 *)&sharedTGDSInterProc->fifoMesaggingQueue[0];
 	fifomsg[54] = address;
 	fifomsg[55] = (uint32)value;
 	SendFIFOWordsITCM(WRITE_EXTARM_8, (uint32)fifomsg);
 }
 
 void Write16bitAddrExtArm(uint32 address, uint16 value){
-	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
+	uint32 * fifomsg = (uint32 *)&sharedTGDSInterProc->fifoMesaggingQueue[0];
 	fifomsg[56] = address;
 	fifomsg[57] = (uint32)value;
 	SendFIFOWordsITCM(WRITE_EXTARM_16, (uint32)fifomsg);
 }
 
 void Write32bitAddrExtArm(uint32 address, uint32 value){
-	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
+	uint32 * fifomsg = (uint32 *)&sharedTGDSInterProc->fifoMesaggingQueue[0];
 	fifomsg[58] = address;
 	fifomsg[59] = (uint32)value;
 	SendFIFOWordsITCM(WRITE_EXTARM_32, (uint32)fifomsg);
@@ -195,8 +195,8 @@ void HandleFifoNotEmpty(){
 				}
 				
 				u32 i;
-				struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-				struct soundPlayerContext * soundPlayerCtx = (struct soundPlayerContext *)&TGDSIPC->sndPlayerCtx;
+				struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
+				struct soundPlayerContext * soundPlayerCtx = (struct soundPlayerContext *)&sharedTGDSInterProc->sndPlayerCtx;
 				int vMul = soundPlayerCtx->volume;
 				int lSample = 0;
 				int rSample = 0;
@@ -575,8 +575,8 @@ void HandleFifoNotEmpty(){
 //u32 * srcMemory == External ARM Core Base Address
 void ReadMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead){
 	dmaFillWord(0, 0, (uint32)targetMemory, (uint32)bytesToRead);
-	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
+	uint32 * fifomsg = (uint32 *)&sharedTGDSInterProc->fifoMesaggingQueue[0];
 	fifomsg[28] = (uint32)srcMemory;
 	fifomsg[29] = (uint32)targetMemory;
 	fifomsg[30] = (uint32)bytesToRead;
@@ -597,8 +597,8 @@ void SaveMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead){
 	#ifdef ARM9
 	coherent_user_range_by_size((uint32)targetMemory, (sint32)bytesToRead);
 	#endif
-	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
+	uint32 * fifomsg = (uint32 *)&sharedTGDSInterProc->fifoMesaggingQueue[0];
 	fifomsg[32] = (uint32)srcMemory;
 	fifomsg[33] = (uint32)targetMemory;
 	fifomsg[34] = (uint32)bytesToRead;
@@ -613,8 +613,8 @@ void SaveMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead){
 
 void ReadFirmwareARM7Ext(u32 * srcMemory){	//512 bytes src always
 	memset(srcMemory, 0, (uint32)512);
-	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
+	uint32 * fifomsg = (uint32 *)&sharedTGDSInterProc->fifoMesaggingQueue[0];
 	fifomsg[28] = (uint32)srcMemory;
 	//fifomsg[29] = (uint32)targetMemory;
 	//fifomsg[30] = (uint32)bytesToRead;

@@ -149,14 +149,14 @@ void initHardware(u8 DSHardware) {
 //---------------------------------------------------------------------------------
 	#ifdef ARM7
 	//Init Shared Address Region and get NDS Heade
-	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-	memcpy((u8*)&TGDSIPC->DSHeader,(u8*)0x027FFE00, sizeof(TGDSIPC->DSHeader));
+	struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
+	memcpy((u8*)&sharedTGDSInterProc->DSHeader,(u8*)0x027FFE00, sizeof(sharedTGDSInterProc->DSHeader));
 	
 	//Read DHCP settings (in order)
 	LoadFirmwareSettingsFromFlash();
 	
 	//Hardware ARM7 Init
-	u8 DSHardwareReadFromFlash = TGDSIPC->DSFWHEADERInst.stub[0x1d];
+	u8 DSHardwareReadFromFlash = sharedTGDSInterProc->DSFWHEADERInst.stub[0x1d];
 	resetMemory_ARMCores(DSHardwareReadFromFlash);
 	IRQInit(DSHardwareReadFromFlash);
 	

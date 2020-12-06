@@ -185,8 +185,8 @@ void NDS_IRQHandler(){
 		uint8 ipcByte = receiveByteIPC();
 		switch(ipcByte){
 			case(IPC_ARM7READMEMORY_REQBYIRQ):{
-				struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
+				uint32 * fifomsg = (uint32 *)&sharedTGDSInterProc->fifoMesaggingQueue[0];
 				uint32 srcMemory = fifomsg[28];
 				uint32 targetMemory = fifomsg[29];
 				int bytesToRead = (int)fifomsg[30];
@@ -195,8 +195,8 @@ void NDS_IRQHandler(){
 			}
 			break;
 			case(IPC_ARM7SAVEMEMORY_REQBYIRQ):{
-				struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
+				uint32 * fifomsg = (uint32 *)&sharedTGDSInterProc->fifoMesaggingQueue[0];
 				uint32 srcMemory = fifomsg[32];
 				uint32 targetMemory = fifomsg[33];
 				int bytesToRead = (int)fifomsg[34];
@@ -210,15 +210,15 @@ void NDS_IRQHandler(){
 			#ifdef ARM7
 			
 			case(IPC_READ_FIRMWARE_REQBYIRQ):{
-				struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
+				uint32 * fifomsg = (uint32 *)&sharedTGDSInterProc->fifoMesaggingQueue[0];
 				uint32 srcMemory = fifomsg[28];
 				//uint32 targetMemory = fifomsg[29];
 				//int bytesToRead = (int)fifomsg[30];
 				
 				//Read DHCP settings (in order)
 				LoadFirmwareSettingsFromFlash();
-				memcpy((u8*)srcMemory, (u8*)&TGDSIPC->DSFWHEADERInst.stub[0], sizeof(TGDSIPC->DSFWHEADERInst.stub));	//512 bytes
+				memcpy((u8*)srcMemory, (u8*)&sharedTGDSInterProc->DSFWHEADERInst.stub[0], sizeof(sharedTGDSInterProc->DSFWHEADERInst.stub));	//512 bytes
 				
 				fifomsg[31] = fifomsg[30] = fifomsg[29] = fifomsg[28] = (uint32)0;
 			}
@@ -226,8 +226,8 @@ void NDS_IRQHandler(){
 			
 			//ARM7 FS Init
 			case(IPC_ARM7INIT_ARM7FS):{	//ARM7
-				struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
+				uint32 * fifomsg = (uint32 *)&sharedTGDSInterProc->fifoMesaggingQueue[0];
 				char *  ARM7FS_ARM9Filename = (char *)fifomsg[9];
 				int fileHandleSize = (int)fifomsg[10];
 				int splitBufferSize = (int)fifomsg[11];
@@ -243,8 +243,8 @@ void NDS_IRQHandler(){
 			break;
 			
 			case(IPC_ARM7DEINIT_ARM7FS):{	//ARM7
-				struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
+				uint32 * fifomsg = (uint32 *)&sharedTGDSInterProc->fifoMesaggingQueue[0];
 				
 				//ARM7(FS) de-init
 				deinitARM7FS();
@@ -262,7 +262,7 @@ void NDS_IRQHandler(){
 			
 			case((uint32)IPC_READ_ARM7DLDI_REQBYIRQ):{
 				struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				uint32 * fifomsg = (uint32 *)&sharedTGDSInterProc->fifoMesaggingQueue[0];
 				uint32 sector = getValueSafe(&fifomsg[20]);
 				uint32 numSectors = getValueSafe(&fifomsg[21]);
 				uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[22]);
@@ -276,7 +276,7 @@ void NDS_IRQHandler(){
 			
 			case((uint32)IPC_WRITE_ARM7DLDI_REQBYIRQ):{
 				struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				uint32 * fifomsg = (uint32 *)&sharedTGDSInterProc->fifoMesaggingQueue[0];
 				uint32 sector = getValueSafe(&fifomsg[24]);
 				uint32 numSectors = getValueSafe(&fifomsg[25]);
 				uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[26]);
