@@ -1111,7 +1111,7 @@ bool Wifi_InitDefault(bool useFirmwareSettings) {
 	SendFIFOWords(WIFI_INIT, (uint32)wifi_pass);
 	
 	while(Wifi_CheckInit()==0) {
-		IRQWait(IRQ_VBLANK);
+		swiDelay(1);
 	}
 
 	if(useFirmwareSettings) {  
@@ -1122,7 +1122,7 @@ bool Wifi_InitDefault(bool useFirmwareSettings) {
 		while(wifiStatus != ASSOCSTATUS_ASSOCIATED) {
 			wifiStatus = Wifi_AssocStatus(); // check status
 			if(wifiStatus == ASSOCSTATUS_CANNOTCONNECT) return false;
-			IRQWait(IRQ_VBLANK);
+			swiDelay(1);
 		}  
 	}
 	

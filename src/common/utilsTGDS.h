@@ -45,6 +45,8 @@ USA
 
 #define nds_ewram_mask (get_ewram_size()-1)
 
+#define argvItems (10)
+
 #endif
 
 //IPC specific: Shared Work     027FF000h 4KB    -     -    -    R/W
@@ -132,11 +134,15 @@ extern uint32 	_vector_end;
 
 //NDS Memory Map
 extern bool isValidMap(uint32 addr);
-
 #endif
-
-
 extern void RenderTGDSLogoSubEngine(u8 * compressedLZSSBMP, int compressedLZSSBMPSize);
+
+#ifdef ARM9
+//ARGV 
+extern int thisArgc;
+extern char thisArgv[argvItems][MAX_TGDSFILENAME_LENGTH];
+extern void mainARGV();
+#endif
 
 #ifdef __cplusplus
 }

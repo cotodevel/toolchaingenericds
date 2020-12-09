@@ -31,6 +31,7 @@ USA
 #include <errno.h>
 #include <stddef.h>
 #include "reent.h"	//sbrk
+#include "cartHeader.h"	//sbrk
 
 #ifdef ARM9
 #include "dswnifi_lib.h"
@@ -693,4 +694,72 @@ void RenderTGDSLogoSubEngine(u8 * compressedLZSSBMP, int compressedLZSSBMPSize){
 	//used? discard
 	free(LZSSCtx.bufferSource);
 }
+
+char thisArgv[argvItems][MAX_TGDSFILENAME_LENGTH];
+int thisArgc=0;
+
+void mainARGV(){
+	if(__system_argv->length > 0){
+		//get string count (argc) from commandLine
+		int argCount=0;
+		int internalOffset = 0;
+		int i = 0;
+		for(i = 0; i < __system_argv->length; i++){
+			if(__system_argv->commandLine[i] == '\0'){
+				thisArgv[argCount][internalOffset] = '\0';
+				argCount++;
+				internalOffset=0;
+			}
+			else{
+				thisArgv[argCount][internalOffset] = __system_argv->commandLine[i];
+				internalOffset++;
+			}
+		}
+		
+		//Actually re-count Args, because garbage may be in ARGV code causing false positives
+		int argBugged = argCount;
+		argCount = 0;
+		for (i=0; i<argBugged; i++) {
+			if (thisArgv[i]) {
+				if(strlen(thisArgv[i]) > 8){
+					
+					//Libnds compatibility: If (recv) mainARGV fat:/ change to 0:/
+					char thisARGV[MAX_TGDSFILENAME_LENGTH+1];
+					memset(thisARGV, 0, sizeof(thisARGV));
+					strcpy(thisARGV, thisArgv[i]);
+					
+					if(
+						(thisARGV[0] == 'f')
+						&&
+						(thisARGV[1] == 'a')
+						&&
+						(thisARGV[2] == 't')
+						&&
+						(thisARGV[3] == ':')
+						&&
+						(thisARGV[4] == '/')
+						){
+						char thisARGV2[MAX_TGDSFILENAME_LENGTH+1];
+						memset(thisARGV2, 0, sizeof(thisARGV2));
+						strcpy(thisARGV2, "0:/");
+						strcat(thisARGV2, &thisARGV[5]);
+						
+						//copy back
+						memset(thisArgv[i], 0, 256);
+						strcpy(thisArgv[i], thisARGV2);
+					}
+					
+					argCount++;
+				}
+			}
+		}
+		
+		thisArgc = argCount;
+	}
+	else{
+		thisArgc = 0;
+	}
+	main(thisArgc,  &thisArgv[0][0]);
+}
+
 #endif
