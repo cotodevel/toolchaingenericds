@@ -40,6 +40,7 @@ USA
 #define __nds_bios_h__
 
 #include "typedefsTGDS.h"
+#include "ipcfifoTGDS.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -98,6 +99,37 @@ struct LZSSContext {
 //LZSS end
 // CUE Author Code End
 
+#ifdef ARM7
+extern bool isArm7ClosedLid;
+static inline void handleARM7SVC(){
+	//Lid Closing + backlight events (ARM7)
+	if(isArm7ClosedLid == false){
+		if((REG_KEYXY & KEY_HINGE) == KEY_HINGE){
+			SendFIFOWords(FIFO_IRQ_LIDHASCLOSED_SIGNAL, 0);
+			screenLidHasClosedhandlerUser();
+			isArm7ClosedLid = true;
+		}
+	}
+	
+	//Handles Sender FIFO overflows
+	if(REG_IPC_FIFO_CR & IPC_FIFO_ERROR){
+		REG_IPC_FIFO_CR = (REG_IPC_FIFO_CR | IPC_FIFO_SEND_CLEAR);	//bit14 FIFO ERROR ACK + Flush Send FIFO
+	}
+}
+
+#endif
+
+#ifdef ARM9
+static inline void handleARM9SVC(){
+	//Handles Sender FIFO overflows
+	if(REG_IPC_FIFO_CR & IPC_FIFO_ERROR){
+		REG_IPC_FIFO_CR = (REG_IPC_FIFO_CR | IPC_FIFO_SEND_CLEAR);	//bit14 FIFO ERROR ACK + Flush Send FIFO
+	}
+}
+
+#endif
+
+
 #endif
 
 #ifdef __cplusplus
@@ -117,6 +149,7 @@ extern void swiDivMod(int numerator, int divisor, int * result, int * remainder)
 extern void swiCopy(const void * source, void * dest, int flags);
 extern int swiSqrt(int value);
 extern void swiSoftReset(void);
+extern void swiSoftResetByAddress(u32 address);
 
 //NDS7 Bios 
 #ifdef ARM7
@@ -133,18 +166,15 @@ extern int swiDecompressLZSSVram(void * source, void * destination, uint32 toGet
 
 //C
 extern void swiFastCopy(uint32 * source, uint32 * dest, int flags);
-
-
 extern struct LZSSContext LZS_DecodeFromBuffer(unsigned char *pak_buffer, unsigned int   pak_len);
 
-
-//SVCs
+//Init SVCs
 #ifdef ARM7
-extern bool isArm7ClosedLid;
-extern void handleARM7SVC();
+extern void handleARM7InitSVC();
 #endif
+
 #ifdef ARM9
-extern void handleARM9SVC();
+extern void handleARM9InitSVC();
 #endif
 
 #ifdef __cplusplus

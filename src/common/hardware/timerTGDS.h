@@ -26,7 +26,7 @@ USA
 #include "dsregs_asm.h"
 
 #define TIMERXDATA(timerindx)     (*(vuint16*)(0x04000100|(timerindx<<2)))
-#define TIMERXCNT(timerindx)     (*(vuint16*)(0x04000102|(timerindx<<2)))	//aka TIMER_CR(x)
+#define TIMERXCNT(timerindx)     (*(vuint16*)(0x04000102|(timerindx<<2)))
 
 #ifdef GBA
 #define BUS_CLOCK (33513982/2)

@@ -18,7 +18,7 @@ USA
 
 */
 
-//DSWNifi Library 1.4 (update: 3/11/2019)	(dd/mm/yyyy)
+//DSWNifi Library 1.4 (update: 2/18/2020)	(mm/dd/yyyy)
 
 #ifndef __dswnifi_lib_h__
 #define __dswnifi_lib_h__
@@ -43,7 +43,7 @@ USA
 #include "fatfslayerTGDS.h"
 #include "wifi_arm9.h"
 
-//GDB Server
+//GDB Server. Shared for GDBFile and GDBBuffer map modes.
 #define minGDBMapFileAddress	(uint32)(0x00000000)
 #define maxGDBMapFileAddress	(uint32)(0xF0000000)
 
@@ -85,7 +85,8 @@ USA
 #define ds_netplay_guest (sint32)(13)
 
 //Standard Frame Size
-#define frameDSsize (sint32)((256)+sizeof(volatile uint16))	//256 bytes
+#define frameDSsize (sint32)((512)+sizeof(volatile uint16))	//512 bytes
+#define frameDSBufferSize (sint32)(256 + 104)	//remaining struct dsnwifisrvStr size within a frameDSsize
 
 //remoteStubMain retcodes
 #define remoteStubMainWIFINotConnected (sint32)(-1)	
@@ -130,6 +131,20 @@ struct client_http_handler{
     bool wifi_enabled;
 };
 
+//Note: Each Sender command requires an user-defined implementation in 2 sides:
+
+//Synchronous Bi-directional NIFI commands (here, trigger)
+//dswnifi.c in TGDS-project (action, reply)
+
+//Sender command
+#define NIFI_SENDER_TOTAL_CONNECTED_DS (u32)(0xffff4440)
+#define NIFI_SENDER_SEND_BINARY (u32)(0xffff4442)
+
+//Ack command (reply to Sender command)
+#define NIFI_ACK_TOTAL_CONNECTED_DS (u32)(0xffff4441)
+#define NIFI_ACK_SEND_BINARY (u32)(0xffff4443)
+#define NIFI_ACK_SEND_BINARY_FINISH (u32)(0xffff4445)
+
 //LOCAL/IDLE/GDB/UDP
 struct dsnwifisrvStr {
 	struct client_http_handler client_http_handler_context;	//Handles UDP DSWNIFI
@@ -138,7 +153,17 @@ struct dsnwifisrvStr {
 	sint32 	dsnwifisrv_stat;	//MULTI: inter DS Connect status: ds_multi_notrunning / ds_searching_for_multi / (ds_multiplay): ds_netplay_host ds_netplay_guest
 	bool dswifi_setup;	//false: not setup / true: setup already	//used by getWIFISetup() / setWIFISetup()
 	bool incoming_packet;	//when any of the above methods received a packet == true / no == false
-	bool GDBStubEnable;	
+	bool GDBStubEnable;
+	
+	//Session bits
+	int DSIndexInNetwork;
+	u32 nifiCommand;
+	
+	//Send Binary bits
+	int frameIndex;		//	/NIFI SEND BINARY only
+	int BinarySize;		//	/
+	
+	u8 sharedBuffer[frameDSBufferSize];
 };
 
 //returned by HandleSendUserspace. Converts the user buffer and size into a struct the ToolchainGenericDS library understands.
@@ -147,46 +172,16 @@ struct frameBlock{
 	sint32	frameSize;
 };
 
-//Handles DSWNIFI service
-extern struct dsnwifisrvStr dswifiSrv;
-  
-//GDB Stub part
-#define debuggerWriteMemory(addr, value) \
-  *(u32*)addr = (value)
-
-#define debuggerWriteHalfWord(addr, value) \
-  *(u16*)addr = (value)
-
-#define debuggerWriteByte(addr, value) \
-  *(u8*)addr = (value)
-
-#define InternalRAM ((u8*)0x03000000)
-#define WorkRAM ((u8*)0x02000000)
-
-struct gdbStubMapFile {
-	int GDBMapFileSize;
-	FILE * GDBFileHandle;
-};
-#endif //ARM9 end
-
-#endif
-
-
 #ifdef __cplusplus
 extern "C"{
 #endif
 
 // Shared
 
-// ARM7
-#ifdef ARM7
+//Handles DSWNIFI service
+extern struct dsnwifisrvStr dswifiSrv;
 
-#endif
-
-// ARM9
 #ifdef ARM9
-
-//These calls are implemented in TGDS layer
 
 //NIFI Part
 //DSWNIFI: NIFI
@@ -194,20 +189,13 @@ extern void Handler(int packetID, int readlength);
 extern void initNiFi();
 
 //DSWNIFI: nifi buffer IO
-extern volatile uint8	 data[4096];		//data[32] + is recv TX'd frame nfdata[128]
-extern volatile uint8	 nfdata[128];	//sender frame, recv as data[4096]
+extern volatile uint8	 data[4096];
 
 //TCP UDP DSWNIFI Part
 extern int Wifi_RawTxFrame_WIFI(sint32 datalen, uint8 * data);
 extern int Wifi_RawTxFrame_NIFI(sint32 datalen, uint16 rate, uint16 * data);
 
 extern bool switch_dswnifi_mode(sint32 mode);
-extern void setMULTIMode(sint32 flag);	//idle(dswifi_idlemode) / raw packet(dswifi_localnifimode) / UDP nifi(dswifi_udpnifimode) / TCP wifi(dswifi_wifimode)
-extern sint32 getMULTIMode();			//idle(dswifi_idlemode) / raw packet(dswifi_localnifimode) / UDP nifi(dswifi_udpnifimode) / TCP wifi(dswifi_wifimode)
-extern bool getWIFISetup();
-extern void setWIFISetup(bool flag);
-extern void setConnectionStatus(sint32 flag);
-extern sint32	getConnectionStatus();
 extern struct frameBlock * FrameSenderUser;	//if !NULL, then must sendFrame. HandleSendUserspace(); generates this one
 
 //the process that runs on vblank and ensures DS - DS Comms
@@ -226,18 +214,13 @@ extern sint8 server_ip[MAX_TGDSFILENAME_LENGTH+1];
 extern bool isValidIpAddress(char *ipAddress);
 
 //Send a frame to the other connected DS
-//example: 
-//if(!FrameSenderUser){
-//				FrameSenderUser = HandleSendUserspace((uint8*)nfdata,sizeof(nfdata)-sizeof(volatile uint16));	//make room for crc16 frame
-//}
 extern struct frameBlock * HandleSendUserspace(uint8 * databuf_src, int bufsize);
 
 //userCode must override, provide these functions.
 
 //As long you define this ReceiveHandler, everytime the outter connected DS to this DS sends a packet, it will be received here.
-extern __attribute__((weak))	void HandleRecvUserspace(struct frameBlock * frameBlockRecv);	//called by receiveDSWNIFIFrame(); when a frame is valid
-//implementation defined. can map a buffer/shared object between DS or keymaps
-extern __attribute__((weak))	bool do_multi(struct frameBlock * frameBlockRecv);
+extern bool TGDSRecvHandler(struct frameBlock * frameBlockRecv);	//called by receiveDSWNIFIFrame(); when a frame is valid. TGDS layer. //Returns: Current DSWnifi mode
+extern __attribute__((weak))	bool TGDSRecvHandlerUser(struct frameBlock * frameBlockRecv, int DSWnifiMode);	//called by TGDSRecvHandler when cmd is User implemented. TGDS User layer
 
 //Callback that runs upon setting DSWNIFI mode to dswifi_localnifimode
 extern __attribute__((weak))	void OnDSWIFIlocalnifiEnable();
@@ -296,19 +279,21 @@ extern u8 debuggerReadByte(u32 addr);
 extern u16 debuggerReadHalfWord(u32 addr);
 extern u32 debuggerReadMemory(u32 addr);
 
+//GDBMap: File impl.
 extern uint32 GDBMapFileAddress;
 extern void setCurrentRelocatableGDBFileAddress(uint32 addrInput);
 extern uint32 getCurrentRelocatableGDBFileAddress();
 extern struct gdbStubMapFile globalGdbStubMapFile;
-extern bool isValidGDBMapFile;
-extern void setValidGDBMapFile(bool ValidGDBMapFile);
-extern bool getValidGDBMapFile();
 extern struct gdbStubMapFile * getGDBMapFile();
 extern bool initGDBMapFile(char * filename, uint32 newRelocatableAddr);
 extern void closeGDBMapFile();
 extern uint32 readu32GDBMapFile(uint32 address);
 extern void resetGDBSession();
 
+//DSWNIFI synchronous commands
+extern int getTotalConnectedDSinNetwork();
+extern int SendDSBinary(u8 * binBuffer, int binSize);
+extern int ReceiveDSBinary(u8 * inBuffer, int * inBinSize);
 
 //Example : 
 //	These methods are used to Connect asynchronously to a server.
@@ -370,4 +355,69 @@ extern int openServerSyncConn(int SyncPort, struct sockaddr_in * sain);
 
 #ifdef __cplusplus
 }
+#endif
+
+static inline void setMULTIMode(sint32 flag){
+	dswifiSrv.dsnwifisrv_mode = (sint32)flag;
+}
+
+static inline sint32 getMULTIMode(){
+	return (sint32)dswifiSrv.dsnwifisrv_mode;
+}
+
+static inline bool getWIFISetup(){
+	return (bool)dswifiSrv.dswifi_setup;
+}
+
+static inline void setWIFISetup(bool flag){
+	dswifiSrv.dswifi_setup = (bool)flag;
+}
+
+static inline void setConnectionStatus(sint32 flag){
+	dswifiSrv.connectionStatus = (sint32)flag;
+}
+
+static inline sint32 getConnectionStatus(){
+	return (sint32)dswifiSrv.connectionStatus;
+}
+
+
+//GDB Stub part
+#define debuggerWriteMemory(addr, value) \
+  *(u32*)addr = (value)
+
+#define debuggerWriteHalfWord(addr, value) \
+  *(u16*)addr = (value)
+
+#define debuggerWriteByte(addr, value) \
+  *(u8*)addr = (value)
+
+#define InternalRAM ((u8*)0x03000000)
+#define WorkRAM ((u8*)0x02000000)
+
+struct gdbStubMapFile {
+	int GDBMapFileSize;
+	FILE * GDBFileHandle;
+};
+
+//GDBMap: Buffer impl.
+struct gdbStubMapBuffer {
+	u8 * bufferStart;
+	int GDBMapBufferSize;
+};
+
+#define GDBSTUB_METHOD_DEFAULT (int)(-1)
+#define GDBSTUB_METHOD_GDBFILE (int)(1)
+#define GDBSTUB_METHOD_GDBBUFFER (int)(2)
+
+extern int gdbStubMapMethod;
+extern struct gdbStubMapBuffer globalGdbStubMapBuffer;
+extern struct gdbStubMapBuffer * getGDBMapBuffer();
+
+extern bool initGDBMapBuffer(u32 * bufferStart, int GDBMapBufferSize, uint32 newRelocatableAddr);
+extern void closeGDBMapBuffer();
+extern uint32 readu32GDBMapBuffer(uint32 address);
+
+#endif //ARM9 end
+
 #endif

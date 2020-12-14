@@ -145,11 +145,12 @@ void initKeyboard()
 char processKeyboard(char* str, unsigned int max, unsigned int echo, int strYoffset)
 {
 	scanKeys();
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	
 	int keysHld = keysPressed();
 	//get the map
 	uint16 *map = (uint16 *) SCREEN_BASE_BLOCK_SUB(29); 
-
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 
+	
     if(PEN_DOWN && !g_MouseDown)
 	{
 		g_dx = TGDSIPC->touchXpx;	//touchXY.px;

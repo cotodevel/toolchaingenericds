@@ -32,14 +32,14 @@ USA
 #include "spifwTGDS.h"
 
 void LoadFirmwareSettingsFromFlash(){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	memset((uint8*)&TGDSIPC->DSFWHEADERInst, 0, sizeof(TGDSIPC->DSFWHEADERInst));
 	
-	//Load firmware from FLASH
-	struct sDSFWHEADER DSFWHEADERInst;
 	
-	readFirmwareSPI((uint32)0x20, (uint8*)&DSFWHEADERInst.usersettings_offset[0], 0x2);	//020h 2    User Settings Offset (div8) (usually last 200h flash bytes)
+	readFirmwareSPI((uint32)0, (uint8*)&TGDSIPC->DSFWHEADERInst.stub[0], sizeof(TGDSIPC->DSFWHEADERInst.stub));	//020h 2    User Settings Offset (div8) (usually last 200h flash bytes)
 	
 	//Get User Settings : Offset (div8) accounted
-	uint32 usersetting_offset0 = (DSFWHEADERInst.usersettings_offset[1]<<8) | DSFWHEADERInst.usersettings_offset[0];
+	uint32 usersetting_offset0 = (TGDSIPC->DSFWHEADERInst.stub[0x21]<<8) | TGDSIPC->DSFWHEADERInst.stub[0x20];
 	usersetting_offset0 = (usersetting_offset0 * 8);
 	
 	uint32 usersetting_offset1 = usersetting_offset0 + (sint32)DS_FW_USERSETTINGS_SIZE;
@@ -62,47 +62,29 @@ void LoadFirmwareSettingsFromFlash(){
 	//Slot0 Valid
 	if(crcslot0 == crcreadUserSet0){
 		ParseFWSettings(usersetting_offset0);
-		setFWSettingsstatus(true);
 	}
 	//Slot1 Valid
 	else if(crcslot1 == crcreadUserSet1){
 		ParseFWSettings(usersetting_offset1);
-		setFWSettingsstatus(true);
 	}
-	
+	else{
+		//Proceed, but invalid NVRAM settings
+	}
 }
 
 void ParseFWSettings(uint32 usersetting_offset){
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	readFirmwareSPI((uint32)usersetting_offset, (uint8*)&TGDSIPC->DSFWSETTINGSInst, sizeof(struct sDSFWSETTINGS));
-	readFirmwareSPI((uint32)usersetting_offset+0x01D, (uint8*)&TGDSIPC->consoletype, sizeof(TGDSIPC->consoletype));
+	memset((uint8*)&TGDSIPC->DSFWSETTINGSInst, 0, sizeof(TGDSIPC->DSFWSETTINGSInst));
+	readFirmwareSPI((uint32)usersetting_offset, (uint8*)&TGDSIPC->DSFWSETTINGSInst, sizeof(TGDSIPC->DSFWSETTINGSInst));
+	
 	ucs2tombs((uint8*)&TGDSIPC->nickname_schar8[0],(unsigned short*)&TGDSIPC->DSFWSETTINGSInst.nickname_utf16[0],32);
-	readFirmwareSPI((uint32)usersetting_offset+0x64, (uint8*)&TGDSIPC->lang_flags[0], 0x2);
+	int nicknameLength = (int)(TGDSIPC->DSFWSETTINGSInst.nickname_length_chars[0] | TGDSIPC->DSFWSETTINGSInst.nickname_length_chars[1] << 8);
+	TGDSIPC->nickname_schar8[nicknameLength] = '\0';
 }
 
 #endif
 
-//DS when accessing shared region through Indirect function methods works fine. Where as direct access is undefined reads
 uint8 getLanguage(){
-	while(getFWSettingsstatus() == false){}
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	return (uint8)(((TGDSIPC->lang_flags[1]<<8)|TGDSIPC->lang_flags[0])&language_mask);
-}
-
-bool getFWSettingsstatus(){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	#ifdef ARM9
-	//Prevent Cache problems.
-	coherent_user_range_by_size((uint32)TGDSIPC, sizeof(struct sIPCSharedTGDS));
-	#endif
-	return (bool)TGDSIPC->valid_dsfwsettings;
-}
-
-void setFWSettingsstatus(bool status){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	#ifdef ARM9
-	//Prevent Cache problems.
-	coherent_user_range_by_size((uint32)TGDSIPC, sizeof(struct sIPCSharedTGDS));
-	#endif
-	TGDSIPC->valid_dsfwsettings = status;
+	return (uint8)( (TGDSIPC->DSFWSETTINGSInst.fw_language[0])&language_mask);
 }

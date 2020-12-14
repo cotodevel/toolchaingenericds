@@ -27,6 +27,12 @@ USA
 #include "linkerTGDS.h"
 #include "ipcfifoTGDS.h"
 
+static inline void setVCountIRQLine(int VCountIRQ){
+	REG_DISPSTAT = (u16)((REG_DISPSTAT & ~(0xFF<<8)) | ((VCountIRQ & 0xFF)<<8));
+}
+
+#define TGDS_VCOUNT_LINE_INTERRUPT (int)(159)
+
 #endif
 #ifdef __cplusplus
 extern "C"{
@@ -46,21 +52,16 @@ extern __attribute__((weak))	void Timer2handlerUser();
 extern __attribute__((weak))	void Timer3handlerUser();
 extern __attribute__((weak))	void screenLidHasOpenedhandlerUser();
 extern __attribute__((weak))	void screenLidHasClosedhandlerUser();
-extern __attribute__((weak))	void IpcSynchandlerUser();
-
-
-extern __attribute__((weak))	int main(int _argc, sint8 **_argv);
+extern __attribute__((weak))	void IpcSynchandlerUser(uint8 ipcByte);
 //weak symbols end
 
 extern uint32 getIRQs();
 extern void EnableIrq(uint32 IRQ);
 extern void DisableIrq(uint32 IRQ);
-extern void RemoveQueuedIrq(uint32 IRQ);
-extern void QueueIrq(uint32 IRQ); 
-extern void NDS_IRQHandler();
+extern void NDS_IRQHandler();	//Actual Interrupt Handler
 extern void IRQWait(uint32 irqstowait);
 extern void IRQVBlankWait();
-extern void IRQInit();
+extern void IRQInit(u8 DSHardware);
 
 #ifdef __cplusplus
 }

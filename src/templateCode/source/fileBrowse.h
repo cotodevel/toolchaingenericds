@@ -24,6 +24,9 @@ USA
 #include "typedefsTGDS.h"
 #include "dsregs.h"
 #include "keypadTGDS.h"
+#include "InterruptsARMCores_h.h"
+#include "limitsTGDS.h"
+#include "fatfslayerTGDS.h"
 
 static inline void parseDirNameTGDS(char * dirName){
 	int dirlen = strlen(dirName);
@@ -139,14 +142,14 @@ static inline bool ShowBrowser(char * Path, char * outBuf){
 		filStub.curIndexInsideFileClassList = 0;
 		filStub.parentFileClassList = fileClassListCtx;
 	}
-	char fname[MAX_TGDSFILENAME_LENGTH+1];
-	strcpy(fname, Path);
+	char curPath[MAX_TGDSFILENAME_LENGTH+1];
+	strcpy(curPath, Path);
 	setFileClassObj(0, (struct FileClass *)&filStub, fileClassListCtx);
 	
 	int j = 1;
 	int startFromIndex = 1;
 	struct FileClass * fileClassInst = NULL;
-	fileClassInst = FAT_FindFirstFile(fname, fileClassListCtx, startFromIndex);
+	fileClassInst = FAT_FindFirstFile(curPath, fileClassListCtx, startFromIndex);
 	while(fileClassInst != NULL){
 		//directory?
 		if(fileClassInst->type == FT_DIR){
@@ -164,7 +167,7 @@ static inline bool ShowBrowser(char * Path, char * outBuf){
 		}
 		
 		//more file/dir objects?
-		fileClassInst = FAT_FindNextFile(fname, fileClassListCtx);
+		fileClassInst = FAT_FindNextFile(curPath, fileClassListCtx);
 	}
 	
 	//actual file lister
@@ -325,7 +328,7 @@ static inline bool ShowBrowser(char * Path, char * outBuf){
 	//enter a dir
 	if(reloadDirA == true){
 		//Enter to dir in Directory Iterator CWD
-		enterDir((char*)newDir);
+		enterDir((char*)newDir, Path);
 		
 		//Free TGDS Dir API context
 		freeFileList(fileClassListCtx);
@@ -335,7 +338,7 @@ static inline bool ShowBrowser(char * Path, char * outBuf){
 	//leave a dir
 	if(reloadDirB == true){
 		//Rewind to preceding dir in Directory Iterator CWD
-		leaveDir(getTGDSCurrentWorkingDirectory());
+		leaveDir(Path);
 		//Free TGDS Dir API context
 		freeFileList(fileClassListCtx);
 		return true;

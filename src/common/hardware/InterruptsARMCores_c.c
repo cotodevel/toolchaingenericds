@@ -31,28 +31,64 @@ USA
 #include "InterruptsARMCores_h.h"
 #include "ipcfifoTGDS.h"
 #include "linkerTGDS.h"
-#include "keypadTGDS.h"
+#include "eventsTGDS.h"
+#include "biosTGDS.h"
+#include "ARM7FS.h"
+#include "dmaTGDS.h"
 
-void IRQInit(){
-	//fifo setups
-	REG_IME = 0;
-	REG_IPC_SYNC = (1 << 14);	//14    R/W  Enable IRQ from remote CPU  (0=Disable, 1=Enable)
-    REG_IPC_FIFO_CR = IPC_FIFO_SEND_CLEAR | RECV_FIFO_IPC_IRQ  | FIFO_IPC_ENABLE;
+void IRQInit(u8 DSHardware){
 	
-	//set up ppu: do irq on hblank/vblank/vcount/and vcount line is 159
-    REG_DISPSTAT = REG_DISPSTAT | DISP_HBLANK_IRQ | DISP_VBLANK_IRQ | (DISP_YTRIGGER_IRQ | (VCOUNT_LINE_INTERRUPT << 15));
-	
-	#ifdef ARM7
-	REG_IE = IRQ_TIMER1 | IRQ_HBLANK | IRQ_VBLANK | IRQ_VCOUNT | IRQ_IPCSYNC | IRQ_RECVFIFO_NOT_EMPTY | IRQ_SCREENLID;
-	#endif
-	
-	#ifdef ARM9
-	REG_IE = IRQ_HBLANK| IRQ_VBLANK | IRQ_VCOUNT | IRQ_IPCSYNC | IRQ_RECVFIFO_NOT_EMPTY ;
-	#endif
-	
-	INTERRUPT_VECTOR = (uint32)&NDS_IRQHandler;
-	REG_IF = REG_IF;
-	REG_IME = 1;
+	//NTR
+	if(
+		(DSHardware == 0xFF)
+		||
+		(DSHardware == 0x20)
+		||
+		(DSHardware == 0x43)
+		||
+		(DSHardware == 0x63)
+	){
+		//FIFO IRQ Init
+		REG_IF = REG_IF;
+		REG_IE = 0;
+		REG_IME = 0;
+		
+		//FIFO IRQ Init
+		REG_IPC_SYNC = (1 << 14);	//14    R/W  Enable IRQ from remote CPU  (0=Disable, 1=Enable)
+		REG_IPC_FIFO_CR = IPC_FIFO_SEND_CLEAR | RECV_FIFO_IPC_IRQ  | FIFO_IPC_ENABLE;
+		
+		//Set up PPU IRQ: HBLANK/VBLANK/VCOUNT
+		REG_DISPSTAT = (DISP_HBLANK_IRQ | DISP_VBLANK_IRQ | DISP_YTRIGGER_IRQ);
+		
+		//Set up PPU IRQ Vertical Line
+		setVCountIRQLine(TGDS_VCOUNT_LINE_INTERRUPT);
+		
+		volatile uint32 interrupts_to_wait_armX = 0;
+		
+		#ifdef ARM7
+		interrupts_to_wait_armX = IRQ_TIMER1 | IRQ_HBLANK | IRQ_VBLANK | IRQ_VCOUNT | IRQ_IPCSYNC | IRQ_RECVFIFO_NOT_EMPTY | IRQ_SCREENLID;
+		#endif
+		
+		#ifdef ARM9
+		interrupts_to_wait_armX = IRQ_HBLANK| IRQ_VBLANK | IRQ_VCOUNT | IRQ_IPCSYNC | IRQ_RECVFIFO_NOT_EMPTY;
+		#endif
+		
+		REG_IE = interrupts_to_wait_armX; 
+		
+		INTERRUPT_VECTOR = (uint32)&NDS_IRQHandler;
+		REG_IME = 1;
+	}
+	//TWL 
+	else if(DSHardware == 0x57){
+		  
+		#ifdef ARM7
+		//TWL ARM7 IRQ Init code goes here...
+		#endif
+		
+		#ifdef ARM9
+		//TWL ARM9 IRQ Init code goes here...
+		#endif
+	}
 }
 
 
@@ -66,11 +102,13 @@ void NDS_IRQHandler(){
 	if(handledIRQ & IRQ_HBLANK){
 		HblankUser();
 	}
+	//vblank on ARM7 may be best for tasks NOT required while audio playback takes place
 	if(handledIRQ & IRQ_VBLANK){
 		#ifdef ARM7
 		doSPIARM7IO();
 		Wifi_Update();
-		updateSoundContext();
+		TGDSEventHandler();
+		updateSoundContextSamplePlayback();
 		#endif
 		#ifdef ARM9
 		//handles DS-DS Comms
@@ -97,20 +135,142 @@ void NDS_IRQHandler(){
 		#endif
 		Timer3handlerUser();
 	}
-	if(handledIRQ & IRQ_IPCSYNC){
-		IpcSynchandlerUser();
-	}
+	
 	if(handledIRQ & IRQ_SENDFIFO_EMPTY){
 		HandleFifoEmpty();
 	}
 	if(handledIRQ & IRQ_RECVFIFO_NOT_EMPTY){
 		HandleFifoNotEmpty();
 	}
+	
+	if(handledIRQ & IRQ_IPCSYNC){
+		uint8 ipcByte = receiveByteIPC();
+		switch(ipcByte){
+			case(IPC_ARM7READMEMORY_REQBYIRQ):{
+				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				uint32 srcMemory = fifomsg[28];
+				uint32 targetMemory = fifomsg[29];
+				int bytesToRead = (int)fifomsg[30];
+				memcpy((u8*)targetMemory,(u8*)srcMemory, bytesToRead);
+				fifomsg[31] = fifomsg[30] = fifomsg[29] = fifomsg[28] = (uint32)0;
+			}
+			break;
+			case(IPC_ARM7SAVEMEMORY_REQBYIRQ):{
+				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				uint32 srcMemory = fifomsg[32];
+				uint32 targetMemory = fifomsg[33];
+				int bytesToRead = (int)fifomsg[34];
+				#ifdef ARM9
+				dmaFillWord(0, 0, (uint32)srcMemory, (uint32)bytesToRead);
+				#endif
+				memcpy((u8*)srcMemory, (u8*)targetMemory, bytesToRead);
+				fifomsg[35] = fifomsg[34] = fifomsg[33] = fifomsg[32] = (uint32)0;
+			}
+			break;
+			#ifdef ARM7
+			//ARM7 FS Init
+			case(IPC_ARM7INIT_ARM7FS):{	//ARM7
+				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				char *  ARM7FS_ARM9Filename = (char *)fifomsg[9];
+				int fileHandleSize = (int)fifomsg[10];
+				int splitBufferSize = (int)fifomsg[11];
+				int curARM7FS_HandleMethod = (int)fifomsg[12];
+				u32 * debugVar = (u32*)fifomsg[13];
+				u32 testCase = (u32)fifomsg[14]; 
+				initARM7FS((char*)ARM7FS_ARM9Filename, curARM7FS_HandleMethod);
+				if(testCase == (u32)0xc070c070){
+					performARM7MP2FSTestCase(ARM7FS_ARM9Filename, splitBufferSize, debugVar);	//ARM7 Setup
+				}
+				fifomsg[15] = fifomsg[14] = fifomsg[13] = fifomsg[12] = fifomsg[11] = fifomsg[10] = fifomsg[9] = 0;
+			}
+			break;
+			
+			case(IPC_ARM7DEINIT_ARM7FS):{	//ARM7
+				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				
+				//ARM7(FS) de-init
+				deinitARM7FS();
+				
+				fifomsg[8] = 0;
+			}
+			break;
+			
+			#ifdef ARM7_DLDI
+			case(IPC_INIT_ARM7DLDI_REQBYIRQ):{
+				//Init DLDI ARM7
+				ARM7DLDIInit();
+			}
+			break;
+			
+			case((uint32)IPC_READ_ARM7DLDI_REQBYIRQ):{
+				struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
+				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				uint32 sector = getValueSafe(&fifomsg[20]);
+				uint32 numSectors = getValueSafe(&fifomsg[21]);
+				uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[22]);
+				dldiInterface->ioInterface.readSectors(sector, numSectors, targetMem);
+				setValueSafe(&fifomsg[20], (u32)0);
+				setValueSafe(&fifomsg[21], (u32)0);
+				setValueSafe(&fifomsg[22], (u32)0);
+				setValueSafe(&fifomsg[23], (u32)0);
+			}
+			break;
+			
+			case((uint32)IPC_WRITE_ARM7DLDI_REQBYIRQ):{
+				struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
+				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				uint32 sector = getValueSafe(&fifomsg[24]);
+				uint32 numSectors = getValueSafe(&fifomsg[25]);
+				uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[26]);
+				dldiInterface->ioInterface.writeSectors(sector, numSectors, targetMem);
+				setValueSafe(&fifomsg[24], (u32)0);
+				setValueSafe(&fifomsg[25], (u32)0);
+				setValueSafe(&fifomsg[26], (u32)0);
+				setValueSafe(&fifomsg[27], (u32)0);
+			}
+			break;
+			
+			#endif
+			
+			#endif
+			
+			#ifdef ARM9
+			case (IPC_ARM7INIT_ARM7FS):	//ARM9 
+			{
+				
+			}
+			break;
+			
+			case(IPC_ARM7DEINIT_ARM7FS):{	//ARM9 
+				
+			}
+			break;
+			
+			#endif
+			
+			default:{
+				IpcSynchandlerUser(ipcByte);//ipcByte should be the byte you sent from external ARM Core through sendByteIPC(ipcByte);
+			}
+			break;
+		}
+	}
+
 	#ifdef ARM7
 	//arm7 wifi irq
 	if(handledIRQ & IRQ_WIFI){
 		Wifi_Interrupt();
 	}
+	
+	if(handledIRQ & IRQ_SCREENLID){
+		isArm7ClosedLid = false;
+		SendFIFOWords(FIFO_IRQ_LIDHASOPENED_SIGNAL, 0);
+		screenLidHasOpenedhandlerUser();
+	}
+
 	if(handledIRQ & IRQ_RTCLOCK){
 		
 	}
@@ -128,16 +288,4 @@ void EnableIrq(uint32 IRQ){
 
 void DisableIrq(uint32 IRQ){
 	REG_IE	&=	~(IRQ);
-}
-
-void RemoveQueuedIrq(uint32 IRQ){
-	if(REG_IF & IRQ){
-		REG_IF|=IRQ;
-	}
-}
-
-void QueueIrq(uint32 IRQ){
-	if(!(REG_IF & IRQ)){
-		REG_IF|=IRQ;
-	}
 }

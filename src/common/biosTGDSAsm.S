@@ -49,7 +49,7 @@
 #endif
 
 .arm
-.code 32
+.align 4
 
 #include "dsregs_asm.h"
 
@@ -196,6 +196,32 @@ REG_IME = 0;
 
 	ldr	r0,[r0]
 	bx	r0
+
+@void swiSoftResetByAddress(u32 address);
+.global 	swiSoftResetByAddress
+.type   	swiSoftResetByAddress STT_FUNC
+swiSoftResetByAddress:
+	mov r4, r0
+	#ifdef ARM9
+	.arch	armv5te
+	.cpu	arm946e-s
+	ldr	r1, =0x00002078			@ disable TCM and protection unit
+	mcr	p15, 0, r1, c1, c0
+	
+	@ Disable cache
+	mov	r0, #0
+	mcr	p15, 0, r0, c7, c5, 0		@ Instruction cache
+	mcr	p15, 0, r0, c7, c6, 0		@ Data cache
+	#endif
+	
+	@Enter SYS Mode, irqs disabled
+	mrs r0, cpsr
+	bic r0, r0, #(0x1F)
+	orr r0, r0, #(0x1F)
+	msr	cpsr, r0
+	
+	msr	spsr, r0
+	bx	r4
 
 
 @void swiDecompressLZSSWram(void * source, void * destination);

@@ -32,9 +32,20 @@ void DeInitWIFI(){
 	Wifi_DisableWifi();
 	DisableIrq(IRQ_TIMER3);
 	Wifi_SetSyncHandler(NULL);
+	if(WifiData != NULL){
+		memset(WifiData, 0, sizeof(Wifi_MainStruct));
+	}
 	sgIP_Hub_RemoveHardwareInterface(wifi_hw);
 	TIMERXDATA(3) = 0;
 	TIMERXCNT(3) = 0;
 	SendFIFOWords(WIFI_DEINIT, 0);
+	
+	if(wifi_connect_point != NULL){
+		free((u8*)wifi_connect_point);
+	}
+	
+	if(WifiData != NULL){
+		free((u8*)WifiData);
+	}
 	#endif
 }

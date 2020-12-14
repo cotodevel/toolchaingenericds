@@ -38,9 +38,11 @@ USA
 #include "InterruptsARMCores_h.h"
 #include "global_settings.h"
 #include "keypadTGDS.h"
+#include "posixHandleTGDS.h"
 
 #ifdef ARM9
 #include "dswnifi_lib.h"
+#include "nds_cp15_misc.h"
 #endif
 
 void setupDefaultExceptionHandler(){
@@ -58,11 +60,12 @@ void setupDefaultExceptionHandler(){
 	#ifdef EXCEPTION_VECTORS_0xffff0000
 	
 	#ifdef ARM7
-	//*(uint32*)0x0380FFDC = (uint32)&sysexit;
+	*(uint32*)0x0380FFDC = (uint32)DebugException;
 	#endif
 	
 	#ifdef ARM9
 	*(uint32*)0x02FFFD9C = (uint32)DebugException;
+	SendFIFOWords(TGDS_ARM7_SETUPEXCEPTIONHANDLER, (u32)&exceptionArmRegs[0]);
 	#endif
 	
 	#endif
@@ -72,22 +75,35 @@ void setupDefaultExceptionHandler(){
 //setupCustomExceptionHandler(&HandlerFunction);
 uint32 CustomHandler = 0;
 void setupCustomExceptionHandler(uint32 * Handler){
+	CustomHandler = (uint32)(uint32 *)Handler;
+	
+	#ifdef ARM7
+	*(uint32*)0x0380FFDC = (uint32)CustomDebugException;
+	#endif
 	
 	#ifdef ARM9
-	CustomHandler = (uint32)(uint32 *)Handler;
 	*(uint32*)0x02FFFD9C = (uint32)CustomDebugException;
 	#endif
 }
 
-//Exception Sources
+#ifdef ARM7
+uint8 * exceptionArmRegsShared = NULL;
+#endif
 
-//prefetch/data abort
+#ifdef ARM9
 uint32 exceptionArmRegs[0x20];
+#endif
+
 
 //crt0 wrong exit
 //__attribute__((section(".itcm"))) //cant be at ITCM
 void exception_sysexit(){
 	#ifdef ARM7
+	
+	int argBuffer[MAXPRINT7ARGVCOUNT];
+	memset((unsigned char *)&argBuffer[0], 0, sizeof(argBuffer));
+	writeDebugBuffer7("TGDS ARM7.bin Exception: Unexpected main() exit. ", 0, (int*)&argBuffer[0]);
+	
 	SendFIFOWords(EXCEPTION_ARM7, unexpectedsysexit_7);
 	while(1){
 		IRQWait(IRQ_VBLANK);
@@ -99,32 +115,60 @@ void exception_sysexit(){
 	#endif
 }
 
-#ifdef ARM9
-
-//data abort
 //__attribute__((section(".itcm")))	//cant be at ITCM
-void exception_data_abort(){
-	exception_handler((uint32)dataabort_9);
+void generalARMExceptionHandler(){
+	#ifdef ARM7
+	
+	int argBuffer[MAXPRINT7ARGVCOUNT];
+	memset((unsigned char *)&argBuffer[0], 0, sizeof(argBuffer));
+	writeDebugBuffer7("TGDS ARM7.bin Exception: Hardware Exception.", 0, (int*)&argBuffer[0]);
+	
+	SendFIFOWords(EXCEPTION_ARM7, generalARM7Exception);
+	while(1==1){
+		IRQVBlankWait();
+	}
+	#endif
+	#ifdef ARM9
+	exception_handler((uint32)generalARM9Exception);
+	#endif
 }
 
+#ifdef ARM9
 static bool GDBSession;
 
 //__attribute__((section(".itcm"))) //cant be at ITCM
 void exception_handler(uint32 arg){
 	GUI_clear();
-	
+	printf(" -- ");
 	if(arg == (uint32)unexpectedsysexit_9){
-		printf("sysexit segfault! ARM9: out of NDS main scope...");
+		printf("ARM9 Exception:Unexpected main() exit.");
+		while(1==1){
+			IRQVBlankWait();
+		}
 	}
 	
 	else if(arg == (uint32)unexpectedsysexit_7){
-		printf("sysexit segfault! ARM7: out of NDS main scope...");
+		printf("ARM7 Exception:Unexpected main() exit.");
+		while(1==1){
+			IRQVBlankWait();
+		}
 	}
 	
-	else if(arg == dataabort_9){
-		printf("          ");
-		printf("ARM9: DATA ABORT. ");
-		uint32 * debugVector = (uint32 *)&exceptionArmRegs[0];
+	else{
+		if(arg == (uint32)generalARM7Exception){
+			printf("ARM7: Hardware Exception. ");
+			printf("ARM7 Debug Vector: ");
+			coherent_user_range_by_size((uint32)&exceptionArmRegs[0], sizeof(exceptionArmRegs));
+		}
+		else if(arg == (uint32)generalARM9Exception){
+			printf("ARM9: Hardware Exception. ");
+			printf("ARM9 Debug Vector: ");
+		}
+		else{
+			printf("?????????: Unhandled Exception.");
+		}
+		
+		uint32 * debugVector = (uint32 *)&exceptionArmRegs[0]; //Shared buffer ARM7 / ARM9
 		uint32 pc_abort = (uint32)exceptionArmRegs[0xf];
 		
 		if((debugVector[0xe] & 0x1f) == 0x17){
@@ -132,7 +176,6 @@ void exception_handler(uint32 arg){
 		}
 		
 		//add support for GDB session.
-		
 		printf("R0[%x] R1[%X] R2[%X] ",debugVector[0],debugVector[1],debugVector[2]);
 		printf("R3[%x] R4[%X] R5[%X] ",debugVector[3],debugVector[4],debugVector[5]);
 		printf("R6[%x] R7[%X] R8[%X] ",debugVector[6],debugVector[7],debugVector[8]);

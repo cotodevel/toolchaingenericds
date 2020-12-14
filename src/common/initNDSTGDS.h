@@ -23,6 +23,14 @@ USA
 
 #include "typedefsTGDS.h"
 #include "dsregs.h"
+#include "dmaTGDS.h"
+#include "timerTGDS.h"
+#include <string.h>
+#include <stdio.h>
+
+#ifdef ARM9
+#include "videoTGDS.h"
+#endif
 
 #endif
 
@@ -30,8 +38,8 @@ USA
 extern "C"{
 #endif
 
-extern void resetMemory_ARMCores();
-extern void initHardware(void);
+extern void initHardware(u8 DSHardware);
+extern void resetMemory_ARMCores(u8 DSHardware);
 
 #ifdef __cplusplus
 }

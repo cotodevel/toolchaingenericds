@@ -30,9 +30,6 @@ USA
 #include <string.h>
 #include "biosTGDS.h"
 
-#ifdef ARM9
-#include "nds_cp15_misc.h"
-#endif
 
 //Clock: 
 
@@ -265,14 +262,16 @@ void sec2tm(ulong secs, struct tm *tmInst)
 #endif
 
 //Shared:
-struct tm * getTime(){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	return(struct tm *)(&TGDSIPC->tmInst);
-}
 
 ulong getNDSRTCInSeconds(){
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	return(ulong)(TGDSIPC->ndsRTCSeconds);
+}
+
+
+struct tm * getTime(){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	return(struct tm *)(&TGDSIPC->tmInst);
 }
 
 uint8 TGDSgetDayOfWeek(){

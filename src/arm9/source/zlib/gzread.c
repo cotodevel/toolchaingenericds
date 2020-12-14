@@ -111,13 +111,13 @@ local int gz_head(state)
     /* allocate read buffers and inflate memory */
     if (state->size == 0) {
         /* allocate buffers */
-        state->in = malloc(state->want);
-        state->out = malloc(state->want << 1);
+        state->in = TGDSARM9Malloc(state->want);
+        state->out = TGDSARM9Malloc(state->want << 1);
         if (state->in == NULL || state->out == NULL) {
             if (state->out != NULL)
-                free(state->out);
+                TGDSARM9Free(state->out);
             if (state->in != NULL)
-                free(state->in);
+                TGDSARM9Free(state->in);
             gz_error(state, Z_MEM_ERROR, "out of memory");
             return -1;
         }
@@ -130,8 +130,8 @@ local int gz_head(state)
         state->strm.avail_in = 0;
         state->strm.next_in = Z_NULL;
         if (inflateInit2(&(state->strm), -15) != Z_OK) {    /* raw inflate */
-            free(state->out);
-            free(state->in);
+            TGDSARM9Free(state->out);
+            TGDSARM9Free(state->in);
             state->size = 0;
             gz_error(state, Z_MEM_ERROR, "out of memory");
             return -1;
@@ -642,12 +642,12 @@ int ZEXPORT gzclose_r(file)
     /* free memory and close file */
     if (state->size) {
         inflateEnd(&(state->strm));
-        free(state->out);
-        free(state->in);
+        TGDSARM9Free(state->out);
+        TGDSARM9Free(state->in);
     }
     gz_error(state, Z_OK, NULL);
-    free(state->path);
+    TGDSARM9Free(state->path);
     ret = close(state->fd);
-    free(state);
+    TGDSARM9Free(state);
     return ret ? Z_ERRNO : Z_OK;
 }

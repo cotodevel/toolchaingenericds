@@ -16,7 +16,7 @@
 #USA
 #
 
-#TGDS1.5 compatible Makefile
+#TGDS1.6 compatible Makefile
 
 #ToolchainGenericDS specific: Use Makefiles from either TGDS, or custom
 export SOURCE_MAKEFILE7 = custom
@@ -48,28 +48,30 @@ export TARGET_LIBRARY_LIBNAME_9	=	l$(TARGET_LIBRARY_NAME_9)
 #the correct format is : ../include/sys/ otherwise recursive folders break in later bash scripts
 export DIRS_ARM7_SRC = source/	\
 			source/dswifi_arm7/	\
+			source/xmalloc/	\
+			source/TGDSARM7Logger/	\
 			../common/	\
 			../common/dswifi/	\
 			../common/hardware/	\
-			../common/dswifi/netinet/	\
-			../common/dswifi/sys/	\
-			../templateCode/source	\
-			../templateCode/data		\
+			../templateCode/source/	\
+			../templateCode/data/arm7/		\
 			data/	\
 			build/	\
 			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
 			
 export DIRS_ARM7_HEADER = source/	\
 			source/dswifi_arm7/	\
-			../common/templateCode/source	\
-			../common/templateCode/data		\
+			source/xmalloc/	\
+			source/TGDSARM7Logger/	\
+			include/	\
+			../include/	\
+			../include/netinet/	\
+			../include/sys/	\
 			../common/	\
 			../common/dswifi/	\
 			../common/hardware/	\
-			../common/dswifi/netinet/	\
-			../common/dswifi/sys/	\
-			../templateCode/source	\
-			../templateCode/data		\
+			../templateCode/source/	\
+			../templateCode/data/arm7/		\
 			data/	\
 			build/	\
 			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
@@ -78,7 +80,7 @@ export DIRS_ARM7_HEADER = source/	\
 
 export DIRS_ARM9_SRC = source/	\
 			source/console/	\
-			source/console/gui_draw/source/	\
+			source/console/gui_draw/	\
 			source/fatfs-newlib-nano-layer/	\
 			source/fatfs-newlib-nano-layer/dldi/	\
 			source/fatfs-newlib-nano-layer/fatfs/source/	\
@@ -87,19 +89,21 @@ export DIRS_ARM9_SRC = source/	\
 			source/keyboard/	\
 			source/dswifi_arm9/	\
 			source/wnifilib/	\
+			../include/	\
 			../common/	\
 			../common/dswifi/	\
-			../common/hardware/	\
 			../common/dswifi/netinet/	\
 			../common/dswifi/sys/	\
-			../templateCode/source	\
-			../templateCode/data		\
+			../common/hardware/	\
+			../templateCode/source/	\
+			../templateCode/data/arm9/		\
 			data/	\
-			build/
+			build/	\
+			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
 			
 export DIRS_ARM9_HEADER = source/	\
 			source/console/	\
-			source/console/gui_draw/include/	\
+			source/console/gui_draw/	\
 			source/fatfs-newlib-nano-layer/	\
 			source/fatfs-newlib-nano-layer/dldi/	\
 			source/fatfs-newlib-nano-layer/fatfs/source/	\
@@ -108,16 +112,18 @@ export DIRS_ARM9_HEADER = source/	\
 			source/keyboard/	\
 			source/dswifi_arm9/	\
 			source/wnifilib/	\
+			../include/	\
 			../common/	\
 			../common/dswifi/	\
-			../common/hardware/	\
 			../common/dswifi/netinet/	\
 			../common/dswifi/sys/	\
-			../templateCode/source	\
-			../templateCode/data		\
+			../common/hardware/	\
+			../templateCode/source/	\
+			../templateCode/data/arm9/		\
 			data/	\
-			build/	
-
+			build/	\
+			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
+			
 # Build Target(s)	(both processors here)
 all: compilelib
 
@@ -146,3 +152,7 @@ ifeq ($(SOURCE_MAKEFILE9),default)
 endif
 	-@rm -fr $(EXECUTABLE_FNAME)
 	-@rm -fr	$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
+
+commitChanges:
+	-@git commit -a	-m '$(COMMITMSG)'
+	-@git push origin HEAD

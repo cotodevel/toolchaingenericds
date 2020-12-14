@@ -4,6 +4,7 @@
  */
 
 #include "gzguts.h"
+#include "posixHandleTGDS.h"
 
 #if defined(_LARGEFILE64_SOURCE) && _LFS64_LARGEFILE-0
 #  define LSEEK lseek64
@@ -92,7 +93,7 @@ local gzFile gz_open(path, fd, mode)
     gz_statep state;
 
     /* allocate gzFile structure to return */
-    state = malloc(sizeof(gz_state));
+    state = TGDSARM9Malloc(sizeof(gz_state));
     if (state == NULL)
         return NULL;
     state->size = 0;            /* no buffers allocated yet */
@@ -120,7 +121,7 @@ local gzFile gz_open(path, fd, mode)
                 break;
 #endif
             case '+':       /* can't read and write at the same time */
-                free(state);
+                TGDSARM9Free(state);
                 return NULL;
             case 'b':       /* ignore -- will request binary anyway */
                 break;
@@ -143,14 +144,14 @@ local gzFile gz_open(path, fd, mode)
 
     /* must provide an "r", "w", or "a" */
     if (state->mode == GZ_NONE) {
-        free(state);
+        TGDSARM9Free(state);
         return NULL;
     }
 
     /* save the path name for error messages */
-    state->path = malloc(strlen(path) + 1);
+    state->path = TGDSARM9Malloc(strlen(path) + 1);
     if (state->path == NULL) {
-        free(state);
+        TGDSARM9Free(state);
         return NULL;
     }
     strcpy(state->path, path);
@@ -172,8 +173,8 @@ local gzFile gz_open(path, fd, mode)
                         O_APPEND))),
             0666);
     if (state->fd == -1) {
-        free(state->path);
-        free(state);
+        TGDSARM9Free(state->path);
+        TGDSARM9Free(state);
         return NULL;
     }
     if (state->mode == GZ_APPEND)
@@ -216,11 +217,11 @@ gzFile ZEXPORT gzdopen(fd, mode)
     char *path;         /* identifier for error messages */
     gzFile gz;
 
-    if (fd == -1 || (path = malloc(7 + 3 * sizeof(int))) == NULL)
+    if (fd == -1 || (path = TGDSARM9Malloc(7 + 3 * sizeof(int))) == NULL)
         return NULL;
     sprintf(path, "<fd:%d>", fd);   /* for debugging */
     gz = gz_open(path, fd, mode);
-    free(path);
+    TGDSARM9Free(path);
     return gz;
 }
 
@@ -490,7 +491,7 @@ void ZLIB_INTERNAL gz_error(state, err, msg)
     /* free previously allocated message and clear */
     if (state->msg != NULL) {
         if (state->err != Z_MEM_ERROR)
-            free(state->msg);
+            TGDSARM9Free(state->msg);
         state->msg = NULL;
     }
 
@@ -506,7 +507,7 @@ void ZLIB_INTERNAL gz_error(state, err, msg)
     }
 
     /* construct error message with path */
-    if ((state->msg = malloc(strlen(state->path) + strlen(msg) + 3)) == NULL) {
+    if ((state->msg = TGDSARM9Malloc(strlen(state->path) + strlen(msg) + 3)) == NULL) {
         state->err = Z_MEM_ERROR;
         state->msg = (char *)"out of memory";
         return;

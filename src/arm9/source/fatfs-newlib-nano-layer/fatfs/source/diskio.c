@@ -10,6 +10,7 @@
 #include "diskio.h"		/* FatFs lower layer API */
 #include "dldi.h"
 #include <stdbool.h>
+#include "global_settings.h"
 
 /* Definitions of physical drive number for each media */
 //#define SDCARD        0
@@ -17,7 +18,6 @@
 #define DLDICART        0
 
 //coto: support for dldi driver (:
-
 
 /*-----------------------------------------------------------------------*/
 /* Get Drive Status                                                      */
@@ -65,15 +65,37 @@ DSTATUS disk_initialize (
 		
 		//DS
 		if(pdrv == DLDICART){
-			
 			//DS DLDI
-			struct DLDI_INTERFACE* dldiInit = dldiGet();	//ensures SLOT-1 / SLOT-2 is mapped to ARM9 now
-			if( (!dldiInit->ioInterface.startup()) || (!dldiInit->ioInterface.isInserted()) ){
-				ret = STA_NOINIT;
-			}
-			else{
+			#ifdef ARM7_DLDI
+			
+			clrscr();
+			printf("ARM7 DLDI Init! ");
+			
+			clrscr();
+			printf("ARM7 DLDI Init! ");
+			
+			clrscr();
+			printf("ARM7 DLDI Init! ");
+			
+			clrscr();
+			printf("ARM7 DLDI Init! ");
+			
+			u32 targetAddrDLDI7 = (u32)getDLDIARM7Address();
+			printf("ARM7 DLDI Init: %x", targetAddrDLDI7);
+			ARM7DLDIInit(targetAddrDLDI7);
+			printf("ARM7 DLDI Done! ");
+			
+			ret = 0;	//init OK!
+			#endif
+			
+			#ifdef ARM9_DLDI
+			if(dldi_handler_init() == true){	//Init DLDI: ARM9 version
 				ret = 0;	//init OK!
 			}
+			else{
+				ret = STA_NOINIT;
+			}
+			#endif
 			
 		}
 		
@@ -93,7 +115,10 @@ DRESULT disk_read (
 	UINT count		/* Number of sectors to read */
 )
 {
-	return ( ((pdrv == DLDICART) && _dldi_start.ioInterface.readSectors(sector, count, buff) == true) ? RES_OK : RES_ERROR);
+	if(dldi_handler_read_sectors(sector, count, buff) == true){
+		return RES_OK;
+	}
+	return RES_ERROR;
 }
 
 
@@ -109,7 +134,10 @@ DRESULT disk_write (
 	UINT count			/* Number of sectors to write */
 )
 {
-	return ( ((pdrv == DLDICART) && _dldi_start.ioInterface.writeSectors(sector, count, buff) == true) ? RES_OK : RES_ERROR);
+	if(dldi_handler_write_sectors(sector, count, buff) == true){
+		return RES_OK;
+	}
+	return RES_ERROR;
 }
 
 

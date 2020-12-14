@@ -32,26 +32,133 @@ USA
 #include "powerTGDS.h"
 #include "ipcfifoTGDS.h"
 #include "soundTGDS.h"
+#include "global_settings.h"
+#include "eventsTGDS.h"
+#include "posixHandleTGDS.h"
+#include "keypadTGDS.h"
 
 #ifdef ARM9
 #include "devoptab_devices.h"
 #include "videoTGDS.h"
+#include "wifi_arm9.h"
+#include "fatfslayerTGDS.h"
+#include "dldi.h"
 #endif
 
-void initHardware(void) {
-//---------------------------------------------------------------------------------
-	//Reset Both Cores
-	resetMemory_ARMCores();
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+void resetMemory_ARMCores(u8 DSHardware){
 	
+	//cmp r0, #0xFF		@DS Phat
+	//beq FirmwareARM7OK
+	//cmp r0, #0x20		@DS Lite
+	//beq FirmwareARM7OK
+	//cmp r0, #0x57		@DSi
+	//beq FirmwareARM7OK
+	//cmp r0, #0x43		@iQueDS
+	//beq FirmwareARM7OK
+	//cmp r0, #0x63		@iQueDS Lite
+	
+	//NTR
+	if(
+		(DSHardware == 0xFF)
+		||
+		(DSHardware == 0x20)
+		||
+		(DSHardware == 0x43)
+		||
+		(DSHardware == 0x63)
+	){
+		//while(REG_VCOUNT!=191){}
+	 	register int i;
+	    //clear out ARM9 DMA channels
+		for (i=0; i<4; i++) {
+			DMAXCNT(i) = 0;
+			DMAXSAD(i) = 0;
+			DMAXDAD(i) = 0;
+			TIMERXCNT(i) = 0;
+			TIMERXDATA(i) = 0;
+		}
+	
+		#ifdef ARM9
+		VRAM_CR = 0x80808080;
+		VRAM_E_CR = 0x80;
+		VRAM_F_CR = 0x80;
+		VRAM_G_CR = 0x80;
+		VRAM_H_CR = 0x80;
+		VRAM_I_CR = 0x80;
+	
+		// clear vram
+		uint16 * vram = (uint16 *)0x06800000;
+		memset(vram, 0, 656 * 1024);
+	
+		// clear video palette
+		memset(BG_PALETTE, 0, 2048 );	//BG_PALETTE[0] = RGB15(1,1,1);
+		memset(BG_PALETTE_SUB, 0, 2048 );	//BG_PALETTE[0] = RGB15(1,1,1);
+	
+		// clear video object attribution memory
+		memset(OAM, 0, 2048 );	//BG_PALETTE[0] = RGB15(1,1,1);
+		memset(OAM_SUB, 0, 2048 );	//BG_PALETTE[0] = RGB15(1,1,1);
+	
+		// clear video object data memory
+		memset(SPRITE_GFX, 0, 128 * 1024 );	//BG_PALETTE[0] = RGB15(1,1,1);
+		memset(SPRITE_GFX_SUB, 0, 128 * 1024 );	//BG_PALETTE[0] = RGB15(1,1,1);
+	
+		// clear main display registers
+		memset((void*)0x04000000, 0, 0x6c );	//BG_PALETTE[0] = RGB15(1,1,1);
+	
+		// clear sub display registers
+		memset((void*)0x04001000, 0, 0x6c );	//BG_PALETTE[0] = RGB15(1,1,1);
+	
+		// clear maths registers
+		memset((void*)0x04000280, 0, 0x40 );	//BG_PALETTE[0] = RGB15(1,1,1);
+	
+		REG_DISPSTAT = 0;
+		SETDISPCNT_MAIN(0);
+		SETDISPCNT_SUB(0);
+		VRAM_A_CR = 0;
+		VRAM_B_CR = 0;
+		VRAM_C_CR = 0;
+		VRAM_D_CR = 0;
+		VRAM_E_CR = 0;
+		VRAM_F_CR = 0;
+		VRAM_G_CR = 0;
+		VRAM_H_CR = 0;
+		VRAM_I_CR = 0;
+		VRAM_CR   = 0x03000000;
+		REG_POWERCNT  = 0x820F;
+    
+		//set WORKRAM 32K to ARM9 by default
+		WRAM_CR = WRAM_32KARM9_0KARM7;
+		#endif
+	}
+	
+	//TWL 
+	else if(DSHardware == 0x57){
+		  
+		#ifdef ARM7
+		//TWL Hardware ARM7 Init code goes here...
+		#endif
+		
+		#ifdef ARM9
+		//TWL Hardware ARM9 Init code goes here...
+		#endif
+		
+	}
+}
+
+void initHardware(u8 DSHardware) {
+//---------------------------------------------------------------------------------
 	#ifdef ARM7
-	//Init Shared Address Region
-	memset((uint32*)TGDSIPC, 0, TGDSIPCSize);
+	//Init Shared Address Region and get NDS Heade
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	memcpy((u8*)&TGDSIPC->DSHeader,(u8*)0x027FFE00, sizeof(TGDSIPC->DSHeader));
 	
 	//Read DHCP settings (in order)
 	LoadFirmwareSettingsFromFlash();
-	TGDSIPC->arm7startaddress = get_iwram_start();
-	TGDSIPC->arm7endaddress = (uint32)(get_iwram_start() + get_iwram_size());
+	
+	//Hardware ARM7 Init
+	u8 DSHardwareReadFromFlash = TGDSIPC->DSFWHEADERInst.stub[0x1d];
+	resetMemory_ARMCores(DSHardwareReadFromFlash);
+	IRQInit(DSHardwareReadFromFlash);
 	
 	//Init SoundSampleContext
 	initSoundSampleContext();
@@ -59,14 +166,10 @@ void initHardware(void) {
 	#endif
 	
 	#ifdef ARM9
-	powerON(POWER_2D_A | POWER_2D_B | POWER_SWAP_LCDS);
-	setBacklight(POWMAN_BACKLIGHT_TOP_BIT|POWMAN_BACKLIGHT_BOTTOM_BIT);
-	setupDefaultExceptionHandler();
 	
-	//PPU Engines Default
-	SETDISPCNT_MAIN(0); 
-	SETDISPCNT_SUB(0);
-	REG_BG0CNT = REG_BG1CNT = REG_BG2CNT = REG_BG3CNT = 0;
+	//Hardware ARM9 Init
+	resetMemory_ARMCores(DSHardware);
+	IRQInit(DSHardware);
 	
 	//Library init code
 	
@@ -76,76 +179,23 @@ void initHardware(void) {
 	setbuf(stdout, NULL);	//iprintf directs to DS Framebuffer (printf already does that)
 	//setbuf(stderr, NULL);
 	
-	initTGDSDevoptab();
+	printf7Setup();
+	TryToDefragmentMemory();
 	
-	TGDSIPC->arm9startaddress = get_ewram_start();
-	TGDSIPC->arm9endaddress = (uint32)(get_ewram_start() + get_ewram_size());
+	#ifdef ARM9_DLDI
+	//Setup SLOT-1 if ARM9 DLDI
+	setDLDIARM7Address((u32 *)dldiGet());
 	#endif
 	
-}
-
-void resetMemory_ARMCores()
-{
-	//while(REG_VCOUNT!=191){}
- 	register int i;
-    //clear out ARM9 DMA channels
-	for (i=0; i<4; i++) {
-		DMAXCNT(i) = 0;
-		DMAXSAD(i) = 0;
-		DMAXDAD(i) = 0;
-		TIMERXCNT(i) = 0;
-		TIMERXDATA(i) = 0;
-	}
+	//Enable TSC
+	setTouchScreenEnabled(true);	
 	
-	#ifdef ARM9
-	VRAM_CR = 0x80808080;
-	VRAM_E_CR = 0x80;
-	VRAM_F_CR = 0x80;
-	VRAM_G_CR = 0x80;
-	VRAM_H_CR = 0x80;
-	VRAM_I_CR = 0x80;
+	//Enable TGDS Event handling + Set timeout to turn off screens if idle.
+	setAndEnableSleepModeInSeconds(SLEEPMODE_SECONDS);
 	
-	// clear vram
-	uint16 * vram = (uint16 *)0x06800000;
-	memset(vram, 0, 656 * 1024);
+	//TGDS Sound stream: Default volume
+	setVolume(4);
 	
-	// clear video palette
-	memset(BG_PALETTE, 0, 2048 );	//BG_PALETTE[0] = RGB15(1,1,1);
-	memset(BG_PALETTE_SUB, 0, 2048 );	//BG_PALETTE[0] = RGB15(1,1,1);
-	
-	// clear video object attribution memory
-	memset(OAM, 0, 2048 );	//BG_PALETTE[0] = RGB15(1,1,1);
-	memset(OAM_SUB, 0, 2048 );	//BG_PALETTE[0] = RGB15(1,1,1);
-	
-	// clear video object data memory
-	memset(SPRITE_GFX, 0, 128 * 1024 );	//BG_PALETTE[0] = RGB15(1,1,1);
-	memset(SPRITE_GFX_SUB, 0, 128 * 1024 );	//BG_PALETTE[0] = RGB15(1,1,1);
-	
-	// clear main display registers
-	memset((void*)0x04000000, 0, 0x6c );	//BG_PALETTE[0] = RGB15(1,1,1);
-	
-	// clear sub display registers
-	memset((void*)0x04001000, 0, 0x6c );	//BG_PALETTE[0] = RGB15(1,1,1);
-	
-	// clear maths registers
-	memset((void*)0x04000280, 0, 0x40 );	//BG_PALETTE[0] = RGB15(1,1,1);
-	
-	REG_DISPSTAT = 0;
-	SETDISPCNT_MAIN(0);
-	SETDISPCNT_SUB(0);
-	VRAM_A_CR = 0;
-	VRAM_B_CR = 0;
-	VRAM_C_CR = 0;
-	VRAM_D_CR = 0;
-	VRAM_E_CR = 0;
-	VRAM_F_CR = 0;
-	VRAM_G_CR = 0;
-	VRAM_H_CR = 0;
-	VRAM_I_CR = 0;
-	VRAM_CR   = 0x03000000;
-	REG_POWERCNT  = 0x820F;
 	#endif
 	
-	//set WORKRAM 32K to ARM9 by default
-	WRAM_CR = WRAM_32KARM9_0KARM7;
 }

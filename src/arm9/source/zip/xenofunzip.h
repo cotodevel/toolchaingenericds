@@ -95,15 +95,11 @@ typedef unsigned char  uch;
 extern "C"{
 #endif
 
-//wrappers for memory blocks required by xenofunzip library
-extern void xfree(void *opaque, void *address);
-extern void* xcalloc(void *opaque, unsigned items, unsigned size);
-extern int funzipstdio(FILE *in, FILE *out);
-extern int do_decompression(char *inname, char *outname);
-extern int do_decompression_ewramstack(char *inname, char *outname);	//Coto: use this to use EWRAM as giant stack by default for decompressing giant .zip / .gz files
-
 //UserCode: (char*)"path1ToFileZipped","path2ToFileToCreateUnzipped"
 extern int load_gz(char *fname, char *newtempfname);
+extern int funzipstdio(char * inFname, char * outFname);
+extern u8* xenoTGDSARM9Malloc(int size);
+extern void xenoTGDSARM9Free(void *ptr);
 
 #ifdef __cplusplus
 }

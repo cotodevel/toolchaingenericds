@@ -23,7 +23,9 @@ USA
 #ifndef __nds_global_settings_h__
 #define __nds_global_settings_h__
 
-//These settings affect both ARM7 and ARM9, pick one of them, not TWO of them.
+//These settings will enable certain features to either ARM7 or ARM9. Make sure to select just one.
+//Changing them requires the whole TGDS to be recompiled, and linked against the TGDS project.
+
 //#define EXCEPTION_VECTORS_0x00000000
 #define EXCEPTION_VECTORS_0xffff0000
 
@@ -31,9 +33,14 @@ USA
 #error "Please provide either EXCEPTION_VECTORS_0xffff0000 or EXCEPTION_VECTORS_0x00000000"
 #endif
 
-#ifdef ARM7
-//uncomment for arm7 printf support.
-//#define DEBUGPRINTF7
+//ARM7: DLDI Code runs from ARM7 (experimental)
+//ARM9: DLDI Code runs from ARM9 (breaks DSi compatibility! But stable)
+//#define ARM7_DLDI
+#define ARM9_DLDI
+
+#if defined(ARM7_DLDI) && defined(ARM9_DLDI)
+#error "DLDI is either ARM7 or ARM9 only."
 #endif
+
 
 #endif

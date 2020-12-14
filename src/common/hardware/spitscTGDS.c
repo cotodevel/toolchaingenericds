@@ -25,6 +25,7 @@ USA
 #ifdef ARM7
 #include "spiTGDS.h"
 #include "clockTGDS.h"
+#include "eventsTGDS.h"
 
 //Source http://problemkaputt.de/gbatek.htm
 inline __attribute__((always_inline)) 
@@ -63,13 +64,26 @@ void doSPIARM7IO(){
 	sIPCSharedTGDSInst->buttons7 = REG_KEYXY;
 	
 	//REG_KEYINPUT ARM7 
-	sIPCSharedTGDSInst->KEYINPUT7	=	(uint16)REG_KEYINPUT; 
+	sIPCSharedTGDSInst->KEYINPUT7	=	(uint16)REG_KEYINPUT;
 	
 	//Do touchscreen process
 	XYReadPos();
 	
 	//read clock
 	sIPCSharedTGDSInst->ndsRTCSeconds = nds_get_time7();
+	
+	//Should be done upon ARM9 request
+	/*
+	//Handle Sleep-wakeup events
+	uint16 buttonsARM7 = REG_KEYXY;
+	uint32 readKeys = (uint32)(( ((~KEYINPUT)&0x3ff) | (((~buttonsARM7)&3)<<10) | (((~buttonsARM7)<<6) & (KEY_TOUCH|KEY_LID) ))^KEY_LID);
+	if(sleepModeEnabled == true){
+		if (readKeys & (KEY_LEFT | KEY_RIGHT | KEY_UP | KEY_DOWN | KEY_A | KEY_B | KEY_X | KEY_Y | KEY_L | KEY_R | KEY_TOUCH | KEY_SELECT | KEY_START)){
+			TurnOnScreens();
+		}
+	}
+	*/
+
 }
 #endif
 
@@ -163,7 +177,7 @@ void XYReadPos(){
 #endif
 //External 
 //relies on doSPIARM7IO() XY Readings
-void XYReadScrPos(XYTscPos * StouchScrPosInst){
+void XYReadScrPos(struct XYTscPos * StouchScrPosInst){
     struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
     StouchScrPosInst->rawx =   TGDSIPC->touchX;
     StouchScrPosInst->rawy =   TGDSIPC->touchY;

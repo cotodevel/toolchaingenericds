@@ -29,25 +29,9 @@ USA
 /* Firmware Header */
 //Firmware Header (00000h-001FFh)
 
-#define DS_FW_HEADER_ADDRESS (uint32)(0x00000000)
-#define DS_FW_HEADER_SIZE (sint32)(0x0200)
 
 struct sDSFWHEADER {
   //Addr Size Expl.
-  uint8	romaddrarm9guicode[2];	//000h 2    part3 romaddr/8 (arm9 gui code) (LZ/huffman compression)
-  uint8	romaddrarm7wificode[2];	//002h 2    part4 romaddr/8 (arm7 wifi code) (LZ/huffman compression)
-  uint8	crc16arm97guiwificode[2];	//004h 2    part3/4 CRC16 arm9/7 gui/wifi code
-  uint8	crc16arm97bootcode[2];	//006h 2    part1/2 CRC16 arm9/7 boot code
-  uint8	firmwareidentifier[4];	//008h 4    firmware identifier (usually nintendo "MAC",nn) (or nocash "XBOO") the 4th byte (nn) occassionally changes in different versions
-  uint8	arm9bootcode[2];	//00Ch 2    part1 arm9 boot code romaddr/2^(2+shift1) (LZSS compressed)
-  uint8	arm9bootcode0x02800000[2];	//00Eh 2    part1 arm9 boot code 2800000h-ramaddr/2^(2+shift2)
-  uint8	arm7bootcode[2];	//010h 2    part2 arm7 boot code romaddr/2^(2+shift3) (LZSS compressed)
-  uint8	arm7bootcode0x03810000[2];	//012h 2    part2 arm7 boot code 3810000h-ramaddr/2^(2+shift4)
-  uint8	shiftammount[2];	//014h 2    shift amounts, bit0-2=shift1, bit3-5=shift2, bit6-8=shift3, bit9-11=shift4, bit12-15=firmware_chipsize/128K
-  uint8	datagfxromaddr[2];	//016h 2    part5 data/gfx romaddr/8 (LZ/huffman compression)
-  uint8	key1encrypted[8];//018h 8    Optional KEY1-encrypted "enPngOFF"=Cartridge KEY2 Disable (feature isn't used in any consoles, instead contains timestamp)
-  uint8	firmwareversiontimestamp[5];	//018h 5    Firmware version built timestamp (BCD minute,hour,day,month,year)
-  uint8	consoletype;	//01Dh 1    Console type
   //            FFh=Nintendo DS
   //            20h=Nintendo DS-lite
   //            57h=Nintendo DSi
@@ -62,16 +46,12 @@ struct sDSFWHEADER {
   //            Bit5   seems to be DS-Lite related
   //            Bit6   indicates presence of "extended" user settings (DSi/iQue)
   //            Bit7   zero
-  uint8	unk1[2];	//01Eh 2    Unused (FFh-filled)
-  uint8	usersettings_offset[2];	//020h 2    User Settings Offset (div8) (usually last 200h flash bytes)
-  uint8 unk2[2];	//022h 2    Unknown (7EC0h or 0B51h)
-  uint8	unk3[2];	//024h 2    Unknown (7E40h or 0DB3h)
-  uint8	crc16datagfx[2];	//026h 2    part5 CRC16 data/gfx
-  uint8	unk4[2];	//028h 2    unused (FFh-filled)
   //02Ah-1FFh Wifi Calibration Data ignored
-  uint8	stub[206+256];
-  
+  uint8	stub[512];
 };	//must match DS_FW_HEADER_SIZE
+
+#define DS_FW_HEADER_ADDRESS (uint32)(0x00000000)
+#define DS_FW_HEADER_SIZE (sint32)(sizeof(struct sDSFWHEADER))
 
 //DS Firmware Wifi Internet Access Points
 
@@ -128,8 +108,8 @@ struct sDSFWSETTINGS {
 	uint8	birthday_day;	//004h  1   Birthday day   (1..31) (Binary, non-BCD)
 	uint8	unused1;	//005h  1   Not used (zero)
 	uint8	nickname_utf16[20];	//006h  20  Nickname string in UTF-16 format
-	uint8	nickname_length_chars[2];	//01Ah  2   Nickname length in characters    (0..10)
-	uint8	message_utf16[52];	//01Ch  52  Message string in UTF-16 format
+	uint8	nickname_length_chars[2];	//01Ah  2   Nickname length in characters    (0..10)	-> to int (signed 32 bit): int nicknameLength = (int)(TGDSIPC->DSFWSETTINGSInst.nickname_length_chars[0] | TGDSIPC->DSFWSETTINGSInst.nickname_length_chars[1] << 8);
+ 	uint8	message_utf16[52];	//01Ch  52  Message string in UTF-16 format
 	uint8	message_length_chars[2];	//050h  2   Message length in characters     (0..26)
 	uint8	alarm_hour;	//052h  1   Alarm hour     (0..23) (Binary, non-BCD)
 	uint8	alarm_minute;	//053h  1   Alarm minute   (0..59) (Binary, non-BCD)
@@ -194,10 +174,9 @@ extern "C"{
 extern void LoadFirmwareSettingsFromFlash();
 #endif
 
-extern uint8 getLanguage();
-extern bool getFWSettingsstatus();
-extern void setFWSettingsstatus(bool status);
 extern void ParseFWSettings(uint32 usersetting_offset);
+extern uint8 getLanguage();
+
 #ifdef __cplusplus
 }
 #endif

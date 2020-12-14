@@ -18,13 +18,12 @@ USA
 
 */
 
-#ifndef __nds_dma_h__
-#define __nds_dma_h__
+#ifndef __dmaTGDS_h__
+#define __dmaTGDS_h__
 
 #include "typedefsTGDS.h"
 #include "dsregs.h"
 #include "dsregs_asm.h"
-
 
 #define		DMAINCR_DEST	(uint32)(0<<(16+5))	//aka DMA_DST_INC
 #define		DMADECR_DEST	(uint32)(1<<(16+5))
@@ -72,16 +71,36 @@ USA
 #define DMAXFILL(dmaindx)      (*(vuint32*)(0x040000E0+(dmaindx*0x4)))
 #endif
 
+//DMA:
+static inline void dmaFill(sint32 dmachannel,uint32 value, uint32 dest, uint32 mode){
+#ifdef ARM7	
+	DMAXSAD(dmachannel) = (uint32)&value;
+#endif
+
+#ifdef ARM9
+	DMAXFILL(dmachannel) = (vuint32)value;
+	DMAXSAD(dmachannel) = (uint32)&DMAXFILL(dmachannel);
+#endif
+	DMAXDAD(dmachannel) = (uint32)dest;
+	DMAXCNT(dmachannel) = mode;
+	while(DMAXCNT(dmachannel) & DMAENABLED);
+}
+
+static inline void dmaTransfer(sint32 dmachannel, uint32 source, uint32 dest, uint32 mode){	
+	DMAXSAD(dmachannel)= source;
+	DMAXDAD(dmachannel)= dest;
+	DMAXCNT(dmachannel)= mode;	
+	while(DMAXCNT(dmachannel) & DMAENABLED);
+}
+
 #endif
 
 #ifdef __cplusplus
 extern "C"{
 #endif
 
-extern void dmaFill(sint32 dmachannel,uint32 value, uint32 dest, uint32 mode);
 extern void dmaFillWord(sint32 dmachannel,uint32 value, uint32 dest, uint32 word_count);
 extern void dmaFillHalfWord(sint32 dmachannel,uint32 value, uint32 dest, uint32 word_count);
-extern void dmaTransfer(sint32 dmachannel, uint32 source, uint32 dest, uint32 mode);
 extern void dmaTransferHalfWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count);
 extern void dmaTransferWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count);
 

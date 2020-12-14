@@ -24,20 +24,22 @@ USA
 #include "ipcfifoTGDS.h"
 #include "linkerTGDS.h"
 #include "CPUARMTGDS.h"
+#include "xmem.h"
+#include "posixHandleTGDS.h"
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-uint32 globalVRAMStackStartPtr;
+uint32 globalVRAMStackStartPtr=0;
 uint32 allocVRAMStacks(){
-	globalVRAMStackStartPtr = (uint32)malloc(1024 * 8);	
+	globalVRAMStackStartPtr = (uint32)TGDSARM7Malloc(1024 * 8);	
 	return globalVRAMStackStartPtr;
 }
 
 
 void deallocVRAMStacks(){
-	free((uint32*)globalVRAMStackStartPtr);
+	TGDSARM7Free((uint32*)globalVRAMStackStartPtr);
 }
 
 #endif

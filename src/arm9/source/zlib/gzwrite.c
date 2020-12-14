@@ -19,13 +19,13 @@ local int gz_init(state)
     z_streamp strm = &(state->strm);
 
     /* allocate input and output buffers */
-    state->in = malloc(state->want);
-    state->out = malloc(state->want);
+    state->in = TGDSARM9Malloc(state->want);
+    state->out = TGDSARM9Malloc(state->want);
     if (state->in == NULL || state->out == NULL) {
         if (state->out != NULL)
-            free(state->out);
+            TGDSARM9Free(state->out);
         if (state->in != NULL)
-            free(state->in);
+            TGDSARM9Free(state->in);
         gz_error(state, Z_MEM_ERROR, "out of memory");
         return -1;
     }
@@ -37,7 +37,7 @@ local int gz_init(state)
     ret = deflateInit2(strm, state->level, Z_DEFLATED,
                        15 + 16, 8, state->strategy);
     if (ret != Z_OK) {
-        free(state->in);
+        TGDSARM9Free(state->in);
         gz_error(state, Z_MEM_ERROR, "out of memory");
         return -1;
     }
@@ -521,11 +521,11 @@ int ZEXPORT gzclose_w(file)
     /* flush, free memory, and close file */
     ret += gz_comp(state, Z_FINISH);
     (void)deflateEnd(&(state->strm));
-    free(state->out);
-    free(state->in);
+    TGDSARM9Free(state->out);
+    TGDSARM9Free(state->in);
     gz_error(state, Z_OK, NULL);
-    free(state->path);
+    TGDSARM9Free(state->path);
     ret += close(state->fd);
-    free(state);
+    TGDSARM9Free(state);
     return ret ? Z_ERRNO : Z_OK;
 }

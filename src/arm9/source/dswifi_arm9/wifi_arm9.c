@@ -54,8 +54,6 @@ SOFTWARE.
 sgIP_Hub_HWInterface * wifi_hw = NULL;
 volatile Wifi_MainStruct * WifiData = NULL;
 
-volatile Wifi_MainStruct Wifi_Data_Struct;
-
 const char * ASSOCSTATUS_STRINGS[] = {
 	"ASSOCSTATUS_DISCONNECTED",		// not *trying* to connect
 	"ASSOCSTATUS_SEARCHING",		// data given does not completely specify an AP, looking for AP that matches the data.
@@ -480,7 +478,7 @@ int Wifi_FindMatchingAP(int numaps, Wifi_AccessPoint * apdata, Wifi_AccessPoint 
 }
 
 int wifi_connect_state = 0; // -1==error, 0==searching, 1==associating, 2==dhcp'ing, 3==done, 4=searching wfc data
-Wifi_AccessPoint wifi_connect_point;
+Wifi_AccessPoint * wifi_connect_point = NULL;
 
 int Wifi_ConnectAP(Wifi_AccessPoint * apdata, int wepmode, int wepkeyid, u8 * wepkey) {
 	if(WifiData){
@@ -520,7 +518,7 @@ int Wifi_ConnectAP(Wifi_AccessPoint * apdata, int wepmode, int wepkeyid, u8 * we
 			wifi_connect_state=1;
 		} else {
 			WifiData->reqMode=WIFIMODE_SCAN;		
-			wifi_connect_point = *apdata;
+			memcpy((u8*)wifi_connect_point, (u8*)apdata, sizeof(Wifi_AccessPoint));
 		}
 	}
 	return 0;
@@ -570,7 +568,7 @@ int Wifi_AssocStatus() {
 				{ 
 					int i;
 					Wifi_AccessPoint ap;
-					i=Wifi_FindMatchingAP(1,&wifi_connect_point,&ap);
+					i=Wifi_FindMatchingAP(1, wifi_connect_point, &ap);
 					if(i==0) {
 						Wifi_CopyMacAddr(WifiData->bssid9, ap.bssid);
 						Wifi_CopyMacAddr(WifiData->apmac9, ap.bssid);
@@ -849,9 +847,8 @@ void Wifi_Timer(int num_ms) {
 #endif
 
 unsigned long Wifi_Init(int initflags) {
-	coherent_user_range_by_size((uint32)&Wifi_Data_Struct,sizeof(Wifi_Data_Struct));
-	erasemem((void*)&Wifi_Data_Struct,sizeof(Wifi_Data_Struct));
-	WifiData = (Wifi_MainStruct *) EWRAMUncached((uint32)&Wifi_Data_Struct); // should prevent the cache from eating us alive.	//safe
+	WifiData = (Wifi_MainStruct *) EWRAMUncached((uint32)WifiData); // should prevent the cache from eating us alive.	//safe
+	erasemem((void*)WifiData, sizeof(Wifi_MainStruct));
 	
 #ifdef WIFI_USE_TCP_SGIP
     switch(initflags & WIFIINIT_OPTION_HEAPMASK) {
@@ -1095,6 +1092,10 @@ void wifiValue32Handler(u32 value, void* data) {
 
 
 bool Wifi_InitDefault(bool useFirmwareSettings) {
+	
+	//These are already freed.
+	wifi_connect_point = (Wifi_AccessPoint*)malloc(sizeof(Wifi_AccessPoint));
+	WifiData = (Wifi_MainStruct *)malloc(sizeof(Wifi_MainStruct));
 	
 	uint32 wifi_pass = Wifi_Init(WIFIINIT_OPTION_USELED|WIFIINIT_OPTION_USEHEAP_96);	//use 96K DSWIFI stack
 	

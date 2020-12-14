@@ -105,7 +105,7 @@ USA
 #define		DISPCNT2	(*((uint32 volatile *) 0x04001000))
 #define		DISPSTAT2	(*((uint16 volatile *) 0x04001004))
 
-//sound
+//Sound. ARM9 / ARM7 can issue these commands
 #define SOUND_VOL(n)	(n)
 #define SOUND_FREQ(n)	((-0x1000000 / (n)))
 #define SOUND_ENABLE	(1<<15)
@@ -271,6 +271,9 @@ USA
 #define VRAM_H_CR		(*(vuint8*)0x04000248)
 #define VRAM_I_CR		(*(vuint8*)0x04000249)
 
+#define VRAM_ENABLE		(1<<7)
+#define VRAM_OFFSET(n)	((n)<<3)
+
 #define REG_BG1VOFS BG1VOFS
 #define REG_BG2VOFS BG2VOFS
 #define REG_BG3VOFS BG3VOFS
@@ -318,6 +321,17 @@ USA
 #define BG_COLOR_256		(0x80)
 #define BG_COLOR_16			(0x00)
 
+
+#define BACKGROUND           (*((bg_attribute *)0x04000008))
+#define BG_OFFSET ((bg_scroll *)(0x04000010))
+
+//0x06000000
+#define BG_MAP_RAM(base)		((uint16*)(((base)*0x800) + 0x06000000))
+#define BG_TILE_RAM(base)		((uint16*)(((base)*0x4000) + 0x06000000))
+#define BG_BMP_RAM(base)		((uint16*)(((base)*0x4000) + 0x06000000))
+
+#define CHAR_BASE_BLOCK(n)			(((n)*0x4000)+ 0x06000000)
+#define SCREEN_BASE_BLOCK(n)		(((n)*0x800) + 0x06000000)
 #define	BGCTRL			( (vuint16*)0x4000008)
 #define	REG_BGOFFSETS	( (vuint16*)0x4000010)
 #define	REG_BG0VOFS		(*(vuint16*)0x4000012)
@@ -505,10 +519,10 @@ USA
 // ARM7 specific registers
 #ifdef ARM7
 #define REG_KEYXY 		(*(vuint16*)0x04000136)
-#define	POWERCNT7	(*((uint16 volatile *) 0x04000304))
+#define	POWERCNT7		(*((uint16 volatile *) 0x04000304))
 
 #define REG_SOUNDCNT 	(*(vuint16*)0x4000500)
-#define SOUND_CR			REG_SOUNDCNT
+#define SOUND_CR		REG_SOUNDCNT
 #define SCHANNEL_CR(n)				(*(vuint32*)(0x04000400 + ((n)<<4)))
 #define SCHANNEL_VOL(n)				(*(vuint8*)(0x04000400 + ((n)<<4)))
 #define SCHANNEL_PAN(n)				(*(vuint8*)(0x04000402 + ((n)<<4)))
@@ -516,7 +530,6 @@ USA
 #define SCHANNEL_TIMER(n)			(*(vuint16*)(0x04000408 + ((n)<<4)))
 #define SCHANNEL_REPEAT_POINT(n)	(*(vuint16*)(0x0400040A + ((n)<<4)))
 #define SCHANNEL_LENGTH(n)			(*(vuint32*)(0x0400040C + ((n)<<4)))
-
 
 //touch
 #define TSC_MEASURE_TEMP1    0x84
@@ -547,10 +560,6 @@ USA
 #define PM_AMP_ON			(int)(1)	//sound amp on
 #define PM_AMP_OFF			(int)(0)	//Turns the sound amp off
 
-#define GAIN_20           0
-#define GAIN_40           1
-#define GAIN_80           2
-#define GAIN_160          3
 
 //sound
 #define REG_SOUNDCNT		(*(vuint16*)0x4000500)	//#define SOUND_CR          (*(vuint16*)0x04000500)

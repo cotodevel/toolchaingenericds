@@ -26,6 +26,7 @@ USA
 #include "typedefsTGDS.h"
 #include "dsregs.h"
 #include "dsregs_asm.h"
+#include "ipcfifoTGDS.h"
 
 //TouchScreen 
 struct touchScr {
@@ -35,13 +36,11 @@ struct touchScr {
 	sint16 touchXpx, touchYpx; // TFT x/y pixel (converted)
 };
 
-#endif
-
-
 #ifdef __cplusplus
 extern "C"{
 #endif
 
+extern uint32 buffered_keys_arm9;
 extern uint32 global_keys_arm9;
 extern uint32 last_frame_keys_arm9;	//last frame keys before new frame keys
 extern void scanKeys();
@@ -49,9 +48,23 @@ extern uint32 keysPressed();
 extern uint32 keysReleased();
 extern uint32 keysHeld();
 extern uint32 keysRepeated();
-
+extern void setKeys(u32 keys);
 extern void touchScrRead(struct touchScr * touchScrInst);
 #ifdef __cplusplus
 }
 #endif
 
+
+//Enables / Disables the touchscreen
+static inline void setTouchScreenEnabled(bool status){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	TGDSIPC->touchScreenEnabled = status;
+}
+
+static inline bool getTouchScreenEnabled(){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	return (bool)TGDSIPC->touchScreenEnabled;
+}
+
+
+#endif

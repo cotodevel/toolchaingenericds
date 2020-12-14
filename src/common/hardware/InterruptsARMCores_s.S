@@ -23,10 +23,9 @@
 .section .itcm,"ax",%progbits
 #endif
 .arm
-.code 32
+.align 4
 
 #include "dsregs_asm.h"
-
 .global 	IRQWait
 .type   	IRQWait STT_FUNC
 IRQWait:

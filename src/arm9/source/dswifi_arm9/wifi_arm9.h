@@ -80,7 +80,6 @@ extern "C" {
 #endif
 
 extern volatile Wifi_MainStruct * WifiData;
-extern volatile Wifi_MainStruct Wifi_Data_Struct;
 
 extern WifiSyncHandler synchandler;
 extern void Wifi_CopyMacAddr(volatile void * dest, volatile void * src);
@@ -131,6 +130,8 @@ extern sgIP_Hub_HWInterface * wifi_hw;
 extern bool WNifi_InitSafeDefault(int DSWNIFI_MODE);
 
 extern u32 getRandomSeed();
+
+extern Wifi_AccessPoint * wifi_connect_point;
 
 #ifdef __cplusplus
 }
