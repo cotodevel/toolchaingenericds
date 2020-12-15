@@ -37,7 +37,7 @@ extern "C" {
 extern void XmemSetup(unsigned int size, unsigned short blocks);
 
 // starts the XMEM system
-extern void XmemInit();
+extern void XmemInit(unsigned int mallocLinearMemoryStart, unsigned int mallocLinearMemorySize);
 
 // allocate ram from XMEM ram
 // NULL if error/insufficient
