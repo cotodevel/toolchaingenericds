@@ -1338,8 +1338,7 @@ int fatfs_open(const sint8 *pathname, int flags){
 	}
 	return structFDIndex;
 }
-
-// ret: structfd_posixInvalidFileDirHandle if invalid posixFDStruct
+// ret: structfd_posixInvalidFileDirOrBufferHandle if invalid posixFDStruct
 //		else if POSIX retcodes (if an error happened)
 //		else return new offset position (offset + current file position (internal)) in file handle
 off_t fatfs_lseek(int structFDIndex, off_t offset, int whence){	//(FileDescriptor :struct fd index)
@@ -1390,6 +1389,13 @@ off_t fatfs_lseek(int structFDIndex, off_t offset, int whence){	//(FileDescripto
 			//of the file) or negative.
 			case(SEEK_END):{
 				pos = topFile;				//file end is fileSize
+				pos += offset;
+				if(pos < 0){
+					pos = 0;
+				}
+				if(pos >= topFile){
+					pos = topFile;
+				}
 				validArg = true;
 			}
 			break;	
