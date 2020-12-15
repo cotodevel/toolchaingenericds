@@ -279,12 +279,12 @@ USA
 #define REG_BG3VOFS BG3VOFS
 
 //use POWERMAN_ARM9 | POWER_XXXX to write to ARM9 regs directly.
-#define POWER_MATRIX	(1<<2) | POWERMAN_ARM9
-#define	POWER_3D_CORE	(1<<3) | POWERMAN_ARM9
-//#define POWER_LCD		(1<<0) | POWERMAN_ARM9	//remove and instead use setBacklight per LCD to turn on / off. according to gbatek
-#define POWER_2D_A		(1<<1) | POWERMAN_ARM9
-#define POWER_2D_B		(1<<9) | POWERMAN_ARM9
-#define	POWER_SWAP_LCDS	(1<<15)| POWERMAN_ARM9
+	#define POWER_MATRIX	((1<<2) | POWERMAN_ARM9)
+	#define	POWER_3D_CORE	((1<<3) | POWERMAN_ARM9)
+	//#define POWER_LCD		((1<<0) | POWERMAN_ARM9)	//remove and instead use setBacklight per LCD to turn on / off. according to gbatek
+	#define POWER_2D_A		((1<<1) | POWERMAN_ARM9)
+	#define POWER_2D_B		((1<<9) | POWERMAN_ARM9)
+	#define	POWER_SWAP_LCDS	((1<<15)| POWERMAN_ARM9)
 
 #define BG_32x32    (0 << 14)
 #define BG_64x32    (1 << 14)
