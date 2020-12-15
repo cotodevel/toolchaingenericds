@@ -127,6 +127,34 @@ struct fd {
 	//filehandle -> fileSize;	//use f_size(filPtr)
 };
 
+//This should be implemented in newlib, but it's not exposed 
+static inline int charPosixToFlagPosix(char * flags){
+	int flagsPosix = 0;
+	if(strcmp(flags, "r") == 0){
+		flagsPosix |= O_RDONLY;
+	}
+	
+	if(strcmp(flags, "rb") == 0){
+		flagsPosix |= O_RDONLY;
+	}
+	
+	if(strcmp(flags, "r+") == 0){
+		flagsPosix |= O_RDWR;
+	}
+	
+	if(strcmp(flags, "w") == 0){
+		flagsPosix |= (O_CREAT|O_WRONLY);
+	}
+	
+	if(strcmp(flags, "wb") == 0){
+		flagsPosix |= (O_CREAT|O_WRONLY);
+	}
+	
+	if(strcmp(flags, "w+") == 0){
+		flagsPosix |= (O_CREAT|O_RDWR);
+	}
+	return flagsPosix;
+}
 
 #ifdef __cplusplus
 extern "C" {
@@ -213,9 +241,10 @@ extern bool TGDSFS_detectUnicode(struct fd *pfd);
 ////////////////////////////////////////////////////////////////////////////INTERNAL CODE START/////////////////////////////////////////////////////////////////////////////////////
 extern int fatfs_init();
 extern int fatfs_deinit();
-extern int fatfs_write (int fd, sint8 *ptr, int len);
-extern int fatfs_read (int fd, sint8 *ptr, int len);
+extern int fatfs_write (int fd, u8 *ptr, int len);
+extern int fatfs_read (int fd, u8 *ptr, int len);
 extern int fatfs_close (int fd);
+extern long fatfs_ftell(struct fd * fdinst);
 extern int fatfs_fsize (int structFDIndex);
 extern void fillPosixStatStruct(const FILINFO *fno, struct stat *out);
 extern BYTE posixToFatfsAttrib(int flags);
@@ -223,12 +252,13 @@ extern int fatfsToPosixAttrib(BYTE flags);
 extern int fresultToErrno(FRESULT result);	/* POSIX ERROR Handling */
 extern void initStructFDHandle(struct fd *pfd, int flags, const FILINFO *fno, int structFD, int StructFDType);
 
+extern int fatfs_open_fileIntoTargetStructFD(const sint8 *pathname, char * posixFlags, int * tgdsfd);	//Copies newly alloced struct fd / Creates duplicate filehandles when opening a new file
 extern int fatfs_open_file(const sint8 *pathname, int flags, const FILINFO *fno);	//(FRESULT is the file properties that must be copied to stat st)/ returns an internal index struct fd allocated
 extern int fatfs_open_dir(const sint8 *pathname, int flags, const FILINFO *fno);	//(FRESULT is the file properties that must be copied to stat st)/ returns an internal index struct fd allocated
 extern int fatfs_open_file_or_dir(const sint8 *pathname, int flags);	//returns an internal index struct fd allocated
 extern DWORD get_fattime (void);
 extern int fatfs_open(const sint8 *pathname, int flags);
-extern off_t fatfs_lseek(int fd, off_t offset, int whence );
+extern off_t fatfs_lseek(int fd, off_t offset, int whence);
 extern int fatfs_unlink(const sint8 *path);
 extern int fatfs_link(const sint8 *path1, const sint8 *path2);
 extern int fatfs_rename(const sint8 *oldpathfile, const sint8 *newpathfile);
