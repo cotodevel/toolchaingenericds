@@ -167,9 +167,15 @@ void initHardware(u8 DSHardware) {
 	
 	#ifdef ARM9
 	
+	//Disable mpu
+	CP15ControlRegisterDisable(CR_M);
+	
 	//Hardware ARM9 Init
 	resetMemory_ARMCores(DSHardware);
 	IRQInit(DSHardware);
+	
+	//Enable mpu
+	CP15ControlRegisterEnable(CR_M);
 	
 	//Library init code
 	

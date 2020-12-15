@@ -26,6 +26,7 @@ USA
 #ifdef ARM9
 #include "wifi_arm9.h"
 #include "dswnifi_lib.h"
+#include "nds_cp15_misc.h"
 #endif
 
 #include "InterruptsARMCores_h.h"
@@ -52,6 +53,11 @@ void IRQInit(u8 DSHardware){
 		REG_IF = REG_IF;
 		REG_IE = 0;
 		REG_IME = 0;
+		
+		#ifdef ARM9
+		//DrainWrite
+		DrainWriteBuffer();
+		#endif
 		
 		//FIFO IRQ Init
 		REG_IPC_SYNC = (1 << 14);	//14    R/W  Enable IRQ from remote CPU  (0=Disable, 1=Enable)
