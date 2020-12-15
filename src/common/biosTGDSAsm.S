@@ -107,13 +107,6 @@ swiDivMod:
 	str	r1, [r3]
 	bx	lr
 
-@void swiCopy(const void * source, void * dest, int flags);
-.global 	swiCopy
-.type   	swiCopy STT_FUNC
-swiCopy:
-	swi	0xB0000
-	bx	lr
-
 @int swiSqrt(int value);
 .global 	swiSqrt
 .type   	swiSqrt STT_FUNC
@@ -231,10 +224,10 @@ swiDecompressLZSSWram:
 	swi	0x110000
 	bx	lr
 
-@int swiDecompressLZSSVram(void * source, void * destination, uint32 toGetSize, TDecompressionStream * stream);
-.global 	swiDecompressLZSSVram
-.type   	swiDecompressLZSSVram STT_FUNC
-swiDecompressLZSSVram:
+@int swiDecompressLZSSVramByCallback(void * source, void * destination, uint32 toGetSize, struct DecompressionStream * stream);
+.global 	swiDecompressLZSSVramByCallback
+.type   	swiDecompressLZSSVramByCallback STT_FUNC
+swiDecompressLZSSVramByCallback:
 	swi	0x120000
 	bx	lr
 

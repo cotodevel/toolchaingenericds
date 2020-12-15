@@ -603,3 +603,17 @@ void SaveMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead){
 		swiDelay(2);
 	}
 }
+
+void ReadFirmwareARM7Ext(u32 * srcMemory){	//512 bytes src always
+	memset(srcMemory, 0, (uint32)512);
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	fifomsg[28] = (uint32)srcMemory;
+	//fifomsg[29] = (uint32)targetMemory;
+	//fifomsg[30] = (uint32)bytesToRead;
+	fifomsg[31] = (uint32)TGDS_ARM7_READFLASHMEM;
+	sendByteIPC(IPC_READ_FIRMWARE_REQBYIRQ);
+	while((uint32)fifomsg[31] == (uint32)TGDS_ARM7_READFLASHMEM){
+		swiDelay(2);
+	}
+}
