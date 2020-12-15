@@ -28,6 +28,7 @@ USA
 #include "eventsTGDS.h"
 #include "ARM7FS.h"
 #include "posixHandleTGDS.h"
+#include "biosTGDS.h"
 
 #ifdef ARM7
 #include <string.h>
