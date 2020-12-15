@@ -607,7 +607,7 @@ void SaveMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead){
 
 void ReadFirmwareARM7Ext(u32 * srcMemory){	//512 bytes src always
 	memset(srcMemory, 0, (uint32)512);
-	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[28] = (uint32)srcMemory;
 	//fifomsg[29] = (uint32)targetMemory;

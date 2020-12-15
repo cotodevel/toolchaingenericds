@@ -172,7 +172,7 @@ void NDS_IRQHandler(){
 			#ifdef ARM7
 			
 			case(IPC_READ_FIRMWARE_REQBYIRQ):{
-				struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
+				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 				uint32 srcMemory = fifomsg[28];
 				//uint32 targetMemory = fifomsg[29];
