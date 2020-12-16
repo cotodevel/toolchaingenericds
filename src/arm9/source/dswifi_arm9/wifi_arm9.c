@@ -1072,7 +1072,7 @@ void Timer_10ms(void) {
 //---------------------------------------------------------------------------------
 void arm9_synctoarm7() { 
 //---------------------------------------------------------------------------------
-	SendFIFOWordsITCM(WIFI_SYNC, 0);
+	SendFIFOWords(WIFI_SYNC, 0);
 }
 
 /*
@@ -1109,10 +1109,10 @@ bool Wifi_InitDefault(bool useFirmwareSettings) {
 	TIMERXDATA(3) = -1310; // 1310 * 256 cycles = ~10ms;
 	TIMERXCNT(3) = 0x00C2; // enable, irq, 1/256 clock
 
-	SendFIFOWordsITCM(WIFI_INIT, (uint32)wifi_pass);
+	SendFIFOWords(WIFI_INIT, (uint32)wifi_pass);
 	
 	while(Wifi_CheckInit()==0) {
-		IRQWait(IRQ_VBLANK);
+		swiDelay(1);
 	}
 
 	if(useFirmwareSettings) {  
@@ -1123,13 +1123,14 @@ bool Wifi_InitDefault(bool useFirmwareSettings) {
 		while(wifiStatus != ASSOCSTATUS_ASSOCIATED) {
 			wifiStatus = Wifi_AssocStatus(); // check status
 			if(wifiStatus == ASSOCSTATUS_CANNOTCONNECT) return false;
-			IRQWait(IRQ_VBLANK);
+			swiDelay(1);
 		}  
 	}
 	
 	return true;
 }
 
+__attribute__((section(".itcm")))
 u32 getRandomSeed(){	//updated at vblank/wifi irq intervals. Always enabled by dswnifi design regardless if dswifi_udpnifimode, dswifi_localnifimode or dswifi_idlemode takes place.
 	if(WifiData != NULL){
 		return WifiData->random;

@@ -46,6 +46,16 @@ USA
 #define IPC_FIFO_ERROR			(uint16)(1<<14)
 #define IPC_FIFO_ENABLE			(uint16)(1<<15)
 
+#define ARM9COMMAND_UPDATE_BUFFER (uint32)(0xFFFFFF02)
+#define ARM7COMMAND_START_SOUND (uint32)(0xFFFFFF10)
+#define ARM7COMMAND_STOP_SOUND (uint32)(0xFFFFFF11)
+#define ARM7COMMAND_SOUND_SETMULT (uint32)(0xFFFFFF12)
+#define ARM7COMMAND_SOUND_SETRATE (uint32)(0xFFFFFF13)
+#define ARM7COMMAND_SOUND_SETLEN (uint32)(0xFFFFFF14)
+#define ARM7COMMAND_SOUND_COPY (uint32)(0xFFFFFF15)
+#define ARM7COMMAND_SOUND_DEINTERLACE (uint32)(0xFFFFFF16)
+#define ARM7COMMAND_PSG_COMMAND (uint32)(0xFFFFFF23)
+
 //Linear sound sample playback: Sound Sample Context cmds (ARM9 -> ARM7)
 #define FIFO_PLAYSOUND	(uint32)(0xffff0203)
 #define FIFO_INITSOUND	(uint32)(0xffff0204)
@@ -94,22 +104,14 @@ USA
 #define SRC_STREAM_OGG		(int)(13)
 #define SRC_STREAM_AAC		(int)(14)
 #define SRC_WAVADPCM		(int)(15)
-
 #define WAV_READ_SIZE 4096
 
-static inline void SendFIFOWords(uint32 data0, uint32 data1){	//format: arg0: cmd, arg1: value
-	REG_IPC_FIFO_TX = (uint32)data1;
-	REG_IPC_FIFO_TX = (uint32)data0;
-}
+#define VRAM_D		((s16*)0x06000000)
+#define SIWRAM		((s16*)0x037F8000)
 
-#ifdef ARM9
-static inline u32 getWavData(u8 *outLoc, int amount, struct fd *SoundStreamStructFD)
-{
-	int read = fatfs_read(SoundStreamStructFD->cur_entry.d_ino, outLoc, amount);
-	SoundStreamStructFD->loc += (read); fatfs_lseek(SoundStreamStructFD->cur_entry.d_ino, SoundStreamStructFD->loc, SEEK_SET);
-	return read;
-}
-#endif
+#define REG_SIWRAMCNT (*(vu8*)0x04000247)
+#define SIWRAM0 ((s16 *)0x037F8000)
+#define SIWRAM1 ((s16 *)0x037FC000)
 
 //IMA-ADPCM
 struct dvi_adpcmblockheader_tag {
@@ -161,47 +163,83 @@ struct soundSampleContextList{
 	struct soundSampleContext soundSampleCxt[SoundSampleContextChannels];	//Each channel used as a hardware channel
 }__attribute__((aligned (4)));
 
+//Soundstream
+#define BIT(n) (1 << (n))
+typedef struct
+{
+	s16 *arm9L;
+	s16 *arm9R;
+	
+	s16 *interlaced;
+	int channels;
+	u8 volume;
+	
+	u32 tX;
+	u32 tY;
+	
+	int psgChannel;
+	u32 cr;
+	u32 timer;
+} SoundRegion;
+
+//ARM7: PTR to EWRAM
+//ARM9: EWRAM (can't be Shared Memory cause sound clicks)
 //SoundStream;TGDS format: Runs synchronously in ARM9 decoder thread
 struct soundPlayerContext{
 	//Decoder properties
 	struct soundSampleContext soundSampleCxt[SoundSampleContextChannels];	//Each channel used as sample stream context, which means a single channel here can fill n hardware channels
 	
-	//FS properties
-	int fileSize;	//u32 len;	u32 dataLen;
-	
-	//Wav
-	wavFormatChunk wavDescriptor;
-	
-	//Playback properties
-	int sourceFmt;
-	int channels;
-	
-	s16 *interlaced;
-	int psgChannel;
-	u8 volume;
-	u32 cr;
-	u32 timer;
-	bool soundStreamPause;	//Indicates wether a WAV / IMA-ADPCM / Other stream format is playing
-	
 	#ifdef ARM9
-	int bufLoc;			//used by internal audio decoders
-	FILE *filePointer;	//used by internal audio decoders
-	int bits;			//used by internal audio decoders
-	u32 len;			//used by internal audio decoders
-	u32 loc;			//used by internal audio decoders
-	u32 dataOffset;		//used by internal audio decoders
-	u32 dataLen;		//used by internal audio decoders
-	int mp3SampleRate;	//used by internal audio decoders
+	bool soundStreamPause;	//Indicates wether a WAV / IMA-ADPCM / Other stream format is playing
+	int sourceFmt;
+	int bufLoc;
+	int channels;
+	FILE *filePointer;
+	struct fd* filePointerStructFD;	//TGDS FS handle of the above FILE* . a.k.a: GlobalSoundStreamStructFD
+	int bits;
+	u32 len;
+	u32 loc;
+	u32 dataOffset;
+	u32 dataLen;
+	int mp3SampleRate;
 	#endif
 	
 } __attribute__((aligned (4)));
+
+#ifdef ARM7
+
+static inline void TIMER1Handler()
+{	
+	setSwapChannel();
+	SendFIFOWords(ARM9COMMAND_UPDATE_BUFFER, 0);
+}
+
+extern s16 *strpcmL0;
+extern s16 *strpcmL1;
+extern s16 *strpcmR0;
+extern s16 *strpcmR1;
+extern int lastL;
+extern int lastR;
+extern int multRate;
+extern int pollCount; //start with a read
+extern u32 sndCursor;
+extern u32 micBufLoc;
+extern u32 sampleLen;
+extern int sndRate;
+extern void mallocData(int size);
+extern void freeData();
+extern void setSwapChannel();
+extern void SetupSound();
+extern void StopSound();
+
+#endif
 
 #ifdef __cplusplus
 extern "C"{
 #endif
 
 //Sound Sample Context: Plays raw sound samples at VBLANK intervals
-extern void startSound(int sampleRate, const void* data, u32 bytes, u8 channel, u8 vol,  u8 pan, u8 format);
+extern void startSoundSample(int sampleRate, const void* data, u32 bytes, u8 channel, u8 vol,  u8 pan, u8 format);
 extern void initSound();
 
 #ifdef ARM7
@@ -209,46 +247,26 @@ extern int soundSampleContextCurrentMode;
 extern void initSoundSampleContext();
 extern void initSoundStream(u32 srcFmt);
 extern int SoundTGDSCurChannel;
-
-//weak symbols : the implementation of these is project-defined, also abstracted from the hardware IPC FIFO Implementation for easier programming.
-extern __attribute__((weak))	void initSoundStreamUser(u32 srcFmt);
-
-extern u32 srcFrmt;
-extern s16 *strpcmL0;
-extern s16 *strpcmL1;
-extern s16 *strpcmR0;
-extern s16 *strpcmR1;
-
-extern int lastL;
-extern int lastR;
-
-//TGDS
-extern void setupSound(u32 srcFrmtInst);
-
-//weak symbols : the implementation of these is project-defined, also abstracted from the hardware IPC FIFO Implementation for easier programming.
-extern __attribute__((weak))	void setupSoundUser(u32 srcFrmt);
-extern __attribute__((weak))	void stopSoundUser(u32 srcFrmt);
-
-extern u32 sampleLen;
-extern int multRate;
-extern int sndRate;
-extern u32 sndCursor;
 #endif
-extern void stopSound(u32 srcFrmt);
 
 #ifdef ARM9
-//ARM9: Stream Playback handler
-extern void updateSoundContextStreamPlayback();
-extern __attribute__((weak))    void updateSoundContextStreamPlaybackUser(u32 srcFrmt);
+//weak symbols : the implementation of these is project-defined, also abstracted from the hardware IPC FIFO Implementation for easier programming.
+extern __attribute__((weak))    void updateStreamCustomDecoder(u32 srcFrmt);
+extern __attribute__((weak))    void freeSoundCustomDecoder(u32 srcFrmt);
 extern void flushSoundContext(int soundContextIndex);
+extern __attribute__((weak))    void closeSoundUser();
 
 //Stream Sound controls
+extern void closeSound();
+extern void initComplexSound();
+extern void setSoundInterrupt();
+extern void setSoundFrequency(u32 freq);
+extern void setSoundLength(u32 len);
 extern u8 getVolume();
 extern void setVolume(u8 volume);
 extern void volumeUp(int x, int y);
 extern void volumeDown(int x, int y);
-extern void mallocData7TGDS(int size);
-extern void freeData7TGDS();
+extern bool soundLoaded;
 #endif
 
 extern struct soundSampleContext * getsoundSampleContextByIndex(int index);
@@ -256,16 +274,9 @@ extern bool freesoundSampleContext(struct soundSampleContext * sampleInst);	//fr
 extern struct soundSampleContext * getFreeSoundSampleContext();				//obtains a free soundSampleContext, if any
 
 #ifdef ARM9
-
-extern int initSoundStream(char * WAVfilename);
-extern int initSoundStreamFromStructFD(struct fd * _FileHandleAudio);
-extern struct fd * GlobalSoundStreamStructFD;
-
+extern int initSoundStream(char * audioStreamFilename);
+extern int initSoundStreamFromStructFD(struct fd * _FileHandleAudio, char * ext);
 extern bool setSoundSampleContext(int sampleRate, u32 * data, u32 bytes, u8 channel, u8 vol, u8 pan, u8 format);
-extern s16 * SharedEWRAM0;	//ptr start = 0
-extern s16 * SharedEWRAM1;	//ptr start = 0 + 0x4000
-extern s16 *lBufferSwapped;
-extern s16 *rBufferSwapped;
 extern void setWavDecodeCallback(void (*cb)());
 
 extern int parseWaveData(struct fd * fdinst, u32 u32chunkToSeek);
@@ -273,16 +284,52 @@ extern void setSoundLength(u32 len);
 extern void setSoundFrequency(u32 freq);
 extern void setSoundInterpolation(u32 mult);
 extern void setSoundFrequency(u32 freq);
-extern void swapAndSendTGDS(u32 type);
-extern void swapDataTGDS();
-extern void mallocData9TGDS(int size);
+
+extern bool updateRequested;
+extern struct soundPlayerContext soundData;
+extern bool soundLoaded;
+extern bool canSend;
+
+extern int bufCursor;
+extern int bytesLeft;
+extern s16 *bytesLeftBuf;
+extern int maxBytes;
+
+extern bool cutOff;
+extern bool sndPaused;
+extern bool playing;
+extern bool seekSpecial;
+extern bool updateRequested;
+extern int sndLen;
+extern int seekUpdate;
+
+// sound out
+extern s16 *lBuffer;
+extern s16 *rBuffer;
+
+// wav
+extern bool memoryLoad;
+extern char *memoryContents;
+extern u32 memoryPos;
+extern u32 memorySize;
+extern void (*wavDecode)();
+// alternate malloc stuff
+extern int m_SIWRAM;
+extern int m_size;
+
+extern void wavDecode8Bit();
+extern void wavDecode16Bit();
+extern void wavDecode24Bit();
+extern void wavDecode32Bit();
+extern void updateStream();
+extern void freeSound();
+extern void setWavDecodeCallback(void (*cb)());
+extern void startSound9();
+
 #endif
 
 extern void EnableSoundSampleContext(int SndSamplemode);
 extern void DisableSoundSampleContext();
-extern void closeSoundStream();
-extern void startSound9(u32 srcFrmt);
-extern void initComplexSoundTGDS(u32 srcFmt);
 
 #ifdef __cplusplus
 }
@@ -305,39 +352,6 @@ static inline s32 isFreeSoundChannel(u8 chan){
 	return -1;
 }
 
-static inline void setSwapChannel()
-{
-	s16 *buf;
-  
-	if(!sndCursor)
-		buf = strpcmL0;
-	else
-		buf = strpcmL1;
-    
-	// Left channel
-	SCHANNEL_SOURCE((sndCursor << 1)) = (uint32)buf;
-	
-	u32 frmt = 0;
-	
-	if(srcFrmt == (u32)SRC_WAVADPCM){
-		frmt = SOUND_FORMAT_ADPCM;
-	}
-	else{
-		frmt = SOUND_16BIT;
-	}
-	SCHANNEL_CR((sndCursor << 1)) = SCHANNEL_ENABLE | SOUND_ONE_SHOT | SOUND_VOL(0x7F) | SOUND_PAN(0) | frmt;
-    	
-	if(!sndCursor)
-		buf = strpcmR0;
-	else
-		buf = strpcmR1;
-	
-	// Right channel
-	SCHANNEL_SOURCE((sndCursor << 1) + 1) = (uint32)buf;
-	SCHANNEL_CR((sndCursor << 1) + 1) = SCHANNEL_ENABLE | SOUND_ONE_SHOT | SOUND_VOL(0x7F) | SOUND_PAN(0x3FF) | frmt;
-  
-	sndCursor = 1 - sndCursor;
-}
 
 static inline s16 checkClipping(int data)
 {
@@ -365,10 +379,12 @@ static inline void updateSoundContextSamplePlayback(){
 		break;
 		
 		case(SOUNDSAMPLECONTEXT_SOUND_STREAMPLAYBACK):{
-			//Only play sound samples when SRC_WAV or SRC_ADPCM streams
-			if(srcFrmt == SRC_WAV){
+			//Only play sound samples when SRC_WAV or SRC_WAVADPCM streams
+			/*	//todo
+			if(soundData.sourceFmt == SRC_WAV){
 				playSample = true;
 			}
+			*/
 		}
 		break;
 	}
@@ -380,7 +396,7 @@ static inline void updateSoundContextSamplePlayback(){
 		
 		//Returns -1 if channel is busy, or channel if idle
 		if( (isFreeSoundChannel(thisChannel) == thisChannel) && (curSoundSampleContext->status == SOUNDSAMPLECONTEXT_PENDING) ){	//Play sample?
-			startSound(curSoundSampleContext->sampleRate, curSoundSampleContext->arm9data, curSoundSampleContext->bytes, thisChannel, curSoundSampleContext->vol,  curSoundSampleContext->pan, curSoundSampleContext->format);
+			startSoundSample(curSoundSampleContext->sampleRate, curSoundSampleContext->arm9data, curSoundSampleContext->bytes, thisChannel, curSoundSampleContext->vol,  curSoundSampleContext->pan, curSoundSampleContext->format);
 			curSoundSampleContext->status = SOUNDSAMPLECONTEXT_PLAYING;
 		}
 		

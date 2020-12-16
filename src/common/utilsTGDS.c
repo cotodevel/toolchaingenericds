@@ -749,11 +749,11 @@ void shutdownNDSHardware(){
 	#endif
 	
 	#ifdef ARM9
-		struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
-		uint32 * fifomsg = (uint32 *)&sharedTGDSInterProc->fifoMesaggingQueue[0];
+		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 		fifomsg[60] = (uint32)FIFO_SHUTDOWN_DS;
 		fifomsg[61] = (uint32)0;
-		SendFIFOWordsITCM(FIFO_POWERMGMT_WRITE, (uint32)fifomsg);
+		SendFIFOWords(FIFO_POWERMGMT_WRITE, (uint32)fifomsg);
 	#endif
 }
 
@@ -772,11 +772,11 @@ int	setBacklight(int flags){
 	#endif
 	
 	#ifdef ARM9
-		struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
-		uint32 * fifomsg = (uint32 *)&sharedTGDSInterProc->fifoMesaggingQueue[0];
+		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 		fifomsg[60] = (uint32)FIFO_SCREENPOWER_WRITE;
 		fifomsg[61] = (uint32)(flags);
-		SendFIFOWordsITCM(FIFO_POWERMGMT_WRITE, (uint32)fifomsg);
+		SendFIFOWords(FIFO_POWERMGMT_WRITE, (uint32)fifomsg);
 	#endif
 	return 0;
 }

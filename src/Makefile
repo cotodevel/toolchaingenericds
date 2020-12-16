@@ -51,11 +51,10 @@ export DIRS_ARM7_SRC = source/	\
 			source/xmalloc/	\
 			source/TGDSARM7Logger/	\
 			../common/	\
-			../common/arm_driver_shared/	\
 			../common/dswifi/	\
 			../common/hardware/	\
 			../templateCode/source/	\
-			../templateCode/data/		\
+			../templateCode/data/arm7/		\
 			data/	\
 			build/	\
 			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
@@ -69,11 +68,10 @@ export DIRS_ARM7_HEADER = source/	\
 			../include/netinet/	\
 			../include/sys/	\
 			../common/	\
-			../common/arm_driver_shared/	\
 			../common/dswifi/	\
 			../common/hardware/	\
 			../templateCode/source/	\
-			../templateCode/data/		\
+			../templateCode/data/arm7/		\
 			data/	\
 			build/	\
 			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
@@ -81,52 +79,47 @@ export DIRS_ARM7_HEADER = source/	\
 #####################################################ARM9#####################################################
 
 export DIRS_ARM9_SRC = source/	\
-			source/arm9_driver/	\
-			source/arm9_driver/console/	\
-			source/arm9_driver/console/gui_draw/	\
-			source/arm9_driver/ToolchainGenericDSFS/	\
-			source/arm9_driver/ToolchainGenericDSFS/fatfs/source/	\
-			source/arm9_driver/zlib/	\
-			source/arm9_driver/zip/	\
-			source/arm9_driver/keyboard/	\
+			source/console/	\
+			source/console/gui_draw/	\
+			source/fatfs-newlib-nano-layer/	\
+			source/fatfs-newlib-nano-layer/dldi/	\
+			source/fatfs-newlib-nano-layer/fatfs/source/	\
+			source/zlib/	\
+			source/zip/	\
+			source/keyboard/	\
 			source/dswifi_arm9/	\
 			source/wnifilib/	\
 			../include/	\
 			../common/	\
-			../common/arm_driver_shared/	\
 			../common/dswifi/	\
 			../common/dswifi/netinet/	\
 			../common/dswifi/sys/	\
 			../common/hardware/	\
-			../common/hardware/dldi/	\
 			../templateCode/source/	\
-			../templateCode/data/		\
+			../templateCode/data/arm9/		\
 			data/	\
 			build/	\
 			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
 			
 export DIRS_ARM9_HEADER = source/	\
-			source/arm9_driver/	\
-			source/arm9_driver/console/	\
-			source/arm9_driver/console/gui_draw/	\
-			source/arm9_driver/ToolchainGenericDSFS/	\
-			source/arm9_driver/ToolchainGenericDSFS/fatfs/source/	\
-			source/arm9_driver/zlib/	\
-			source/arm9_driver/zip/	\
-			source/arm9_driver/keyboard/	\
+			source/console/	\
+			source/console/gui_draw/	\
+			source/fatfs-newlib-nano-layer/	\
+			source/fatfs-newlib-nano-layer/dldi/	\
+			source/fatfs-newlib-nano-layer/fatfs/source/	\
+			source/zlib/	\
+			source/zip/	\
+			source/keyboard/	\
 			source/dswifi_arm9/	\
 			source/wnifilib/	\
 			../include/	\
 			../common/	\
-			../common/arm_driver_shared/	\
-			../common/dswifi/	\
 			../common/dswifi/	\
 			../common/dswifi/netinet/	\
 			../common/dswifi/sys/	\
 			../common/hardware/	\
 			../templateCode/source/	\
-			../templateCode/data/		\
-			../common/hardware/dldi/	\
+			../templateCode/data/arm9/		\
 			data/	\
 			build/	\
 			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/

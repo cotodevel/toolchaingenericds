@@ -189,7 +189,7 @@ Writing IF acts as 0=No change, 1=Acknowledge (clears that bit).
 #define IRQ_SLOT1_DATATRANSFER_COMPLETE	(1<<19)
 #define IRQ_SLOT1_IREQ_MC	(1<<20)		//raised only by ds hardware embedded on cart
 #define IRQ_GEOMETRYCMD_FIFO	(1<<21)
-#define IRQ_SCREENLID	(1<<22)
+#define IRQ_SCREENLID	(1<<22)	//IRQ_LID
 #define IRQ_SPI_BUS	(1<<23)
 #define IRQ_WIFI	(1<<24)
 

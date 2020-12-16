@@ -226,20 +226,21 @@ void printf7(char *chr, int argvCount, int * argv){
 				arm7ARGVBufferShared[i] = argv[i];
 			}
 		}
-		
-		uint32 * fifomsg = (uint32 *)&getsIPCSharedTGDS()->fifoMesaggingQueue[0];
+		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 
+		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 		fifomsg[36] = (uint32)printf7Buf;
 		fifomsg[37] = (uint32)arm7ARGVBufferShared;
 		fifomsg[38] = (uint32)argvCount;
-		SendFIFOWordsITCM(TGDS_ARM7_PRINTF7, (u32)fifomsg);
+		SendFIFOWords(TGDS_ARM7_PRINTF7, (u32)fifomsg);
 	}
 }
 
 void writeDebugBuffer7(char *chr, int argvCount, int * argv){
 	u8* debugBuf = arm7debugBufferShared;
 	if(debugBuf != NULL){
-		 //Actually used here because the ARM7 Debug buffer can be read asynchronously
-		getsIPCSharedTGDS()->argvCount = argvCount;
+		//Actually used here because the ARM7 Debug buffer can be read asynchronously
+		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+		TGDSIPC->argvCount = argvCount;
 		
 		int strSize = strlen(chr)+1;
 		memset(debugBuf, 0, 256+1);	//MAX_TGDSFILENAME_LENGTH
@@ -306,8 +307,8 @@ void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,									
 						u32 ARM9MallocStartaddress, u32 ARM9MallocSize, u32 * mallocHandler, u32 * callocHandler, //ARM9
 						u32 * freeHandler, u32 * MallocFreeMemoryHandler, bool customAllocator
 ){
-	
-	uint32 * fifomsg = (uint32 *)&getsIPCSharedTGDS()->fifoMesaggingQueue[0];
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[42] = (uint32)ARM7MallocStartAddress;
 	fifomsg[43] = (uint32)ARM7MallocSize;
 	fifomsg[44] = (uint32)customAllocator;
@@ -327,7 +328,7 @@ void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,									
 			TGDSMallocFreeMemory9 = (TGDSARM9MallocFreeMemoryHandler)MallocFreeMemoryHandler;
 		}
 	}
-	SendFIFOWordsITCM(TGDS_ARM7_SETUPARMCoresMALLOC, (u32)fifomsg);	//ARM7 Setup
+	SendFIFOWords(TGDS_ARM7_SETUPARMCoresMALLOC, (u32)fifomsg);	//ARM7 Setup
 	while(fifomsg[45] == TGDS_ARM7_SETUPARMCoresMALLOC){
 		swiDelay(2);
 	}
@@ -365,15 +366,15 @@ int arm7ARGVBuffer[MAXPRINT7ARGVCOUNT];
 int arm7ARGVDebugBuffer[MAXPRINT7ARGVCOUNT];
 
 void printf7Setup(){
-	
-	uint32 * fifomsg = (uint32 *)&getsIPCSharedTGDS()->fifoMesaggingQueue[0];
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[46] = (uint32)&printf7Buffer[0];
 	fifomsg[47] = (uint32)&arm7debugBuffer[0];
 	fifomsg[48] = (uint32)&arm7ARGVBuffer[0];
 	//ARM7 print debugger
 	fifomsg[49] = (uint32)&arm7ARGVDebugBuffer[0];
 	
-	SendFIFOWordsITCM(TGDS_ARM7_PRINTF7SETUP, (u32)fifomsg);
+	SendFIFOWords(TGDS_ARM7_PRINTF7SETUP, (u32)fifomsg);
 }
 
 void printf7(u8 * printfBufferShared, int * arm7ARGVBufferShared, int argvCount){
@@ -404,9 +405,10 @@ void printarm7DebugBuffer(){
 	
 	coherent_user_range_by_size((uint32)arm7debugBufferShared, sizeof(arm7debugBuffer));
 	coherent_user_range_by_size((uint32)arm7ARGVBufferShared, sizeof(int) * MAXPRINT7ARGVCOUNT);
-	coherent_user_range_by_size((uint32)&getsIPCSharedTGDS()->argvCount, sizeof(int));
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	coherent_user_range_by_size((uint32)&TGDSIPC->argvCount, sizeof(int));
 	
-	int argvCount = getsIPCSharedTGDS()->argvCount;
+	int argvCount = TGDSIPC->argvCount;
 	
 	char argChar[MAX_TGDSFILENAME_LENGTH+1];
 	memset(argChar, 0, sizeof(argChar)); //Big note!!!! All buffers (strings, binary, etc) must be initialized like this! Otherwise you will get undefined behaviour!!

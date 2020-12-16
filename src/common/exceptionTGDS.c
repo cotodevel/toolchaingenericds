@@ -65,7 +65,7 @@ void setupDefaultExceptionHandler(){
 	
 	#ifdef ARM9
 	*(uint32*)0x02FFFD9C = (uint32)DebugException;
-	SendFIFOWordsITCM(TGDS_ARM7_SETUPEXCEPTIONHANDLER, (u32)&exceptionArmRegs[0]);
+	SendFIFOWords(TGDS_ARM7_SETUPEXCEPTIONHANDLER, (u32)&exceptionArmRegs[0]);
 	#endif
 	
 	#endif
@@ -104,7 +104,7 @@ void exception_sysexit(){
 	memset((unsigned char *)&argBuffer[0], 0, sizeof(argBuffer));
 	writeDebugBuffer7("TGDS ARM7.bin Exception: Unexpected main() exit. ", 0, (int*)&argBuffer[0]);
 	
-	SendFIFOWordsITCM(EXCEPTION_ARM7, unexpectedsysexit_7);
+	SendFIFOWords(EXCEPTION_ARM7, unexpectedsysexit_7);
 	while(1){
 		IRQWait(IRQ_VBLANK);
 	}
@@ -123,7 +123,7 @@ void generalARMExceptionHandler(){
 	memset((unsigned char *)&argBuffer[0], 0, sizeof(argBuffer));
 	writeDebugBuffer7("TGDS ARM7.bin Exception: Hardware Exception.", 0, (int*)&argBuffer[0]);
 	
-	SendFIFOWordsITCM(EXCEPTION_ARM7, generalARM7Exception);
+	SendFIFOWords(EXCEPTION_ARM7, generalARM7Exception);
 	while(1==1){
 		IRQVBlankWait();
 	}

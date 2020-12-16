@@ -51,7 +51,7 @@ void enableTGDSEventHandling(){
 	eventsTGDSActive = true;
 	#endif
 	#ifdef ARM9
-	SendFIFOWordsITCM(TGDS_ARM7_ENABLE_EVENT_HANDLING, 0);
+	SendFIFOWords(TGDS_ARM7_ENABLE_EVENT_HANDLING, 0);
 	#endif
 }
 
@@ -60,7 +60,7 @@ void TGDSSetEvent(int newEvent){
 	TGDSEvent = newEvent;
 	#endif
 	#ifdef ARM9
-	SendFIFOWordsITCM(TGDS_ARM7_SET_EVENT_HANDLING, (u32)newEvent);
+	SendFIFOWords(TGDS_ARM7_SET_EVENT_HANDLING, (u32)newEvent);
 	#endif
 }
 
@@ -69,7 +69,7 @@ void disableTGDSEventHandling(){
 	eventsTGDSActive = false;
 	#endif
 	#ifdef ARM9
-	SendFIFOWordsITCM(TGDS_ARM7_DISABLE_EVENT_HANDLING, 0);
+	SendFIFOWords(TGDS_ARM7_DISABLE_EVENT_HANDLING, 0);
 	#endif
 }
 
@@ -79,7 +79,7 @@ void setTurnOffScreensTimeout(int secondsBeforeEventTrigger){
 	sleepModeTimeout = secondsBeforeEventTrigger;
 	#endif
 	#ifdef ARM9
-	SendFIFOWordsITCM(TGDS_ARM7_ENABLE_SLEEPMODE_TIMEOUT, (u32)secondsBeforeEventTrigger);
+	SendFIFOWords(TGDS_ARM7_ENABLE_SLEEPMODE_TIMEOUT, (u32)secondsBeforeEventTrigger);
 	#endif
 }
 
@@ -92,7 +92,7 @@ void TurnOnScreens(){
 	#endif
 	
 	#ifdef ARM9
-	SendFIFOWordsITCM(TGDS_ARM7_TURNON_BACKLIGHT, 0);
+	SendFIFOWords(TGDS_ARM7_TURNON_BACKLIGHT, 0);
 	#endif
 }
 
@@ -103,7 +103,7 @@ void TurnOffScreens(){
 	#endif
 	
 	#ifdef ARM9
-	SendFIFOWordsITCM(TGDS_ARM7_TURNOFF_BACKLIGHT, 0);
+	SendFIFOWords(TGDS_ARM7_TURNOFF_BACKLIGHT, 0);
 	#endif
 }
 
@@ -122,7 +122,7 @@ void enableSleepMode(){
 	sleepModeEnabled = true;
 	#endif
 	#ifdef ARM9
-	SendFIFOWordsITCM(TGDS_ARM7_ENABLE_SLEEPMODE, 0);
+	SendFIFOWords(TGDS_ARM7_ENABLE_SLEEPMODE, 0);
 	#endif
 }
 
@@ -133,6 +133,6 @@ void disableSleepMode(){
 	TurnOnScreens();
 	#endif
 	#ifdef ARM9
-	SendFIFOWordsITCM(TGDS_ARM7_DISABLE_SLEEPMODE, 0);
+	SendFIFOWords(TGDS_ARM7_DISABLE_SLEEPMODE, 0);
 	#endif
 }

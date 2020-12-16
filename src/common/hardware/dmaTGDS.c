@@ -31,10 +31,6 @@ void dmaTransferHalfWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 w
 	dmaTransfer(dmachannel, source, dest, (DMAINCR_SRC | DMAINCR_DEST | DMA16BIT | DMASTART_INMEDIATE | DMAENABLED | (word_count>>1)));
 }
 
-void dmaTransferHalfWordAsync(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count){
-	dmaTransferAsync(dmachannel, source, dest, (DMAINCR_SRC | DMAINCR_DEST | DMA16BIT | DMASTART_INMEDIATE | DMAENABLED | (word_count>>1)));
-}
-
 void dmaTransferWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count){
 	dmaTransfer(dmachannel, source, dest, (DMAINCR_SRC | DMAINCR_DEST | DMA32BIT | DMASTART_INMEDIATE | DMAENABLED | (word_count>>2)));
 }

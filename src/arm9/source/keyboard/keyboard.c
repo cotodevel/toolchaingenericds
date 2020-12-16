@@ -149,25 +149,26 @@ char processKeyboard(char* str, unsigned int max, unsigned int echo, int strYoff
 	int keysHld = keysPressed();
 	//get the map
 	uint16 *map = (uint16 *) SCREEN_BASE_BLOCK_SUB(29); 
-
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 
+	
     if(PEN_DOWN && !g_MouseDown)
 	{
-		g_dx = getsIPCSharedTGDS()->touchXpx;	//touchXY.px;
-		g_dy = getsIPCSharedTGDS()->touchYpx;	//touchXY.py;
+		g_dx = TGDSIPC->touchXpx;	//touchXY.px;
+		g_dy = TGDSIPC->touchYpx;	//touchXY.py;
 		g_MouseDown = true;
     } 
 	else if(PEN_DOWN && g_MouseDown)
 	{
 		int i, j;
 		
-		i = getsIPCSharedTGDS()->touchXpx;	//touchXY.px;
-		j = getsIPCSharedTGDS()->touchYpx;	//touchXY.py;
+		i = TGDSIPC->touchXpx;	//touchXY.px;
+		j = TGDSIPC->touchYpx;	//touchXY.py;
 
 #ifdef USE_CUSTOM_PEN_JUMP_DETECTION_CODE
 		int z1, z2;
 		
-		z1 = getsIPCSharedTGDS()->touchZ1;	//IPC->touchZ1;
-		z2 = getsIPCSharedTGDS()->touchZ2;	//IPC->touchZ2;
+		z1 = TGDSIPC->touchZ1;	//IPC->touchZ1;
+		z2 = TGDSIPC->touchZ2;	//IPC->touchZ2;
 	
 		// This is checking z registers are not zero for pen jumping
 		if(z1!=0 && z2!=0)

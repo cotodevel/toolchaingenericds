@@ -107,7 +107,6 @@ swiDivMod:
 	str	r1, [r3]
 	bx	lr
 
-
 @int swiSqrt(int value);
 .global 	swiSqrt
 .type   	swiSqrt STT_FUNC

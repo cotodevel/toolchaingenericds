@@ -18,7 +18,6 @@ USA
 
 //TGDS IPC Version: 1.3
 
-//Coto: Use them as you want, just make sure you read WELL the descriptions below.
 
 #include "global_settings.h"
 #include "ipcfifoTGDS.h"
@@ -50,51 +49,43 @@ USA
 #endif
 
 void Write8bitAddrExtArm(uint32 address, uint8 value){
-	struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
-	uint32 * fifomsg = (uint32 *)&sharedTGDSInterProc->fifoMesaggingQueue[0];
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[54] = address;
 	fifomsg[55] = (uint32)value;
-	SendFIFOWordsITCM(WRITE_EXTARM_8, (uint32)fifomsg);
+	SendFIFOWords(WRITE_EXTARM_8, (uint32)fifomsg);
 }
 
 void Write16bitAddrExtArm(uint32 address, uint16 value){
-	struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
-	uint32 * fifomsg = (uint32 *)&sharedTGDSInterProc->fifoMesaggingQueue[0];
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[56] = address;
 	fifomsg[57] = (uint32)value;
-	SendFIFOWordsITCM(WRITE_EXTARM_16, (uint32)fifomsg);
+	SendFIFOWords(WRITE_EXTARM_16, (uint32)fifomsg);
 }
 
 void Write32bitAddrExtArm(uint32 address, uint32 value){
-	struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
-	uint32 * fifomsg = (uint32 *)&sharedTGDSInterProc->fifoMesaggingQueue[0];
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[58] = address;
 	fifomsg[59] = (uint32)value;
-	SendFIFOWordsITCM(WRITE_EXTARM_32, (uint32)fifomsg);
-}
-
-//Hardware IPC struct packed 
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
-struct sIPCSharedTGDS* getsIPCSharedTGDS(){
-	struct sIPCSharedTGDS* getsIPCSharedTGDSInst = (__attribute__((aligned (4))) struct sIPCSharedTGDS*)0x027FF000;
-	return getsIPCSharedTGDSInst;
+	SendFIFOWords(WRITE_EXTARM_32, (uint32)fifomsg);
 }
 
 //Async FIFO Sender
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
-void SendFIFOWordsITCM(uint32 data0, uint32 data1){	//format: arg0: cmd, arg1: value
+inline __attribute__((always_inline))
+void SendFIFOWords(uint32 data0, uint32 data1){	//format: arg0: cmd, arg1: value
 	REG_IPC_FIFO_TX = (uint32)data1;	
 	REG_IPC_FIFO_TX = (uint32)data0;	//last message should always be command
 }
 
-
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
+inline __attribute__((always_inline))
 void HandleFifoEmpty(){
 	HandleFifoEmptyWeakRef((uint32)0,(uint32)0);
 }
@@ -102,15 +93,15 @@ void HandleFifoEmpty(){
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
+inline __attribute__((always_inline))
 void HandleFifoNotEmpty(){
 	volatile uint32 data0 = 0, data1 = 0;
 	while(!(REG_IPC_FIFO_CR & RECV_FIFO_IPC_EMPTY)){
 		data0 = (u32)REG_IPC_FIFO_RX;
 		data1 = (u32)REG_IPC_FIFO_RX;
 		
-		//Execute ToolchainGenericDS FIFO commands
+		//Process IPC FIFO commands
 		switch (data1) {
-			
 			// ARM7IO from ARM9
 			//	||
 			// ARM9IO from ARM7
@@ -146,36 +137,24 @@ void HandleFifoNotEmpty(){
 			
 			//ARM7 command handler
 			#ifdef ARM7
-			
-			//Sound Player Context / Mic
-			case ARM7COMMAND_SOUND_SETLEN:{
-				sampleLen = (data0);
-			}
-			break;
-			case ARM7COMMAND_SOUND_SETRATE:{
-				sndRate = (data0);
-			}
-			break;
-			case ARM7COMMAND_SOUND_SETMULT:{
-				multRate = (data0);
-			}
-			break;
 			case ARM7COMMAND_START_SOUND:{
-				if((u32)data0 == (u32)SRC_WAV){
-					setupSound(data0);
-				}
-				else{
-					setupSoundUser(data0);
-				}
+				SetupSound();
 			}
 			break;
 			case ARM7COMMAND_STOP_SOUND:{
-				if((u32)data0 == (u32)SRC_WAV){
-					stopSound(data0);
-				}
-				else{
-					stopSoundUser(data0);
-				}
+				StopSound();
+			}
+			break;
+			case ARM7COMMAND_SOUND_SETRATE:{
+				sndRate = data0;
+			}
+			break;
+			case ARM7COMMAND_SOUND_SETLEN:{
+				sampleLen = data0;
+			}
+			break;
+			case ARM7COMMAND_SOUND_SETMULT:{
+				multRate = data0;
 			}
 			break;
 			case ARM7COMMAND_SOUND_COPY:
@@ -195,13 +174,12 @@ void HandleFifoNotEmpty(){
 				}
 				
 				u32 i;
-				struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
-				struct soundPlayerContext * soundPlayerCtx = (struct soundPlayerContext *)&sharedTGDSInterProc->sndPlayerCtx;
-				int vMul = soundPlayerCtx->volume;
+				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 
+				int vMul = TGDSIPC->soundIPC.volume;
 				int lSample = 0;
 				int rSample = 0;
-				s16 *arm9LBuf = soundPlayerCtx->soundSampleCxt[SOUNDSTREAM_L_BUFFER].arm9data;
-				s16 *arm9RBuf = soundPlayerCtx->soundSampleCxt[SOUNDSTREAM_R_BUFFER].arm9data;
+				s16 *arm9LBuf = TGDSIPC->soundIPC.arm9L;
+				s16 *arm9RBuf = TGDSIPC->soundIPC.arm9R;
 				
 				switch(multRate)
 				{
@@ -267,8 +245,141 @@ void HandleFifoNotEmpty(){
 					}	
 					break;
 				}
+				VblankUser();
 			}
 			break;
+			case ARM7COMMAND_SOUND_DEINTERLACE:
+			{
+				s16 *lbuf = NULL;
+				s16 *rbuf = NULL;
+				
+				if(!sndCursor)
+				{
+					lbuf = strpcmL0;
+					rbuf = strpcmR0;
+				}
+				else
+				{
+					lbuf = strpcmL1;
+					rbuf = strpcmR1;
+				}
+				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 	
+				s16 *iSrc = TGDSIPC->soundIPC.interlaced;
+				u32 i = 0;
+				int vMul = TGDSIPC->soundIPC.volume;
+				int lSample = 0;
+				int rSample = 0;
+				
+				switch(multRate)
+				{
+					case 1:{
+						if(TGDSIPC->soundIPC.channels == 2)
+						{
+							for(i=0;i<sampleLen;++i)
+							{					
+								lSample = *iSrc++;
+								rSample = *iSrc++;
+								
+								*lbuf++ = checkClipping((lSample * vMul) >> 2);
+								*rbuf++ = checkClipping((rSample * vMul) >> 2);
+							}
+						}
+						else
+						{
+							for(i=0;i<sampleLen;++i)
+							{					
+								lSample = *iSrc++;
+								
+								lSample = checkClipping((lSample * vMul) >> 2);
+								
+								*lbuf++ = lSample;
+								*rbuf++ = lSample;
+							}
+						}
+					}	
+					break;
+					case 2:{
+						for(i=0;i<sampleLen;++i)
+						{					
+							if(TGDSIPC->soundIPC.channels == 2)
+							{
+								lSample = *iSrc++;
+								rSample = *iSrc++;
+							}
+							else
+							{
+								lSample = *iSrc++;
+								rSample = lSample;
+							}
+							
+							lSample = ((lSample * vMul) >> 2);
+							rSample = ((rSample * vMul) >> 2);
+							
+							int midLSample = (lastL + lSample) >> 1;
+							int midRSample = (lastR + rSample) >> 1;
+							
+							lbuf[(i << 1)] = checkClipping(midLSample);
+							rbuf[(i << 1)] = checkClipping(midRSample);
+							lbuf[(i << 1) + 1] = checkClipping(lSample);
+							rbuf[(i << 1) + 1] = checkClipping(rSample);
+							
+							lastL = lSample;
+							lastR = rSample;							
+						}
+					}	
+					break;
+					case 4:{
+						for(i=0;i<sampleLen;++i)
+						{				
+							if(TGDSIPC->soundIPC.channels == 2)
+							{
+								lSample = *iSrc++;
+								rSample = *iSrc++;
+							}
+							else
+							{
+								lSample = *iSrc++;
+								rSample = lSample;
+							}
+							
+							lSample = ((lSample * vMul) >> 2);
+							rSample = ((rSample * vMul) >> 2);
+							
+							int midLSample = (lastL + lSample) >> 1;
+							int midRSample = (lastR + rSample) >> 1;
+							
+							int firstLSample = (lastL + midLSample) >> 1;
+							int firstRSample = (lastR + midRSample) >> 1;
+							
+							int secondLSample = (midLSample + lSample) >> 1;
+							int secondRSample = (midRSample + rSample) >> 1;
+							
+							lbuf[(i << 2)] = checkClipping(firstLSample);
+							rbuf[(i << 2)] = checkClipping(firstRSample);
+							lbuf[(i << 2) + 1] = checkClipping(midLSample);
+							rbuf[(i << 2) + 1] = checkClipping(midRSample);
+							lbuf[(i << 2) + 2] = checkClipping(secondLSample);
+							rbuf[(i << 2) + 2] = checkClipping(secondRSample);
+							lbuf[(i << 2) + 3] = checkClipping(lSample);
+							rbuf[(i << 2) + 3] = checkClipping(rSample);							
+							
+							lastL = lSample;
+							lastR = rSample;							
+						}
+					}	
+					break;
+				}
+				VblankUser();
+			}
+			break;
+			case ARM7COMMAND_PSG_COMMAND:
+			{
+				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 	
+				SCHANNEL_CR(TGDSIPC->soundIPC.psgChannel) = TGDSIPC->soundIPC.cr;
+				SCHANNEL_TIMER(TGDSIPC->soundIPC.psgChannel) = TGDSIPC->soundIPC.timer;
+			}
+			break;
+			
 			case((uint32)TGDS_ARM7_ENABLESOUNDSAMPLECTX):{
 				EnableSoundSampleContext((int)data0);
 			}
@@ -279,7 +390,7 @@ void HandleFifoNotEmpty(){
 			break;
 			
 			case((uint32)TGDS_ARM7_INITSTREAMSOUNDCTX):{
-				initSoundStream(data0);
+				//initSoundStream(data0);
 			}
 			break;
 			
@@ -336,13 +447,13 @@ void HandleFifoNotEmpty(){
 				//Try to play the sample through the specified channel
 				s32 chan = isFreeSoundChannel(channel);
 				if(chan != -1){ //means free channel / or channel is not auto (-1)
-					startSound(sampleRate, (const void*)data, bytes, chan, vol, pan, format);
+					startSoundSample(sampleRate, (const void*)data, bytes, chan, vol, pan, format);
 				}
 				//Otherwise, use a random alloc'd channel
 				else{
 					chan = getFreeSoundChannel();
 					if (chan >= 0){
-						startSound(sampleRate, (const void*)data, bytes, chan, vol, pan, format);
+						startSoundSample(sampleRate, (const void*)data, bytes, chan, vol, pan, format);
 					}
 				}
 				fifomsg[50] = 0;
@@ -450,7 +561,32 @@ void HandleFifoNotEmpty(){
 			//ARM9 command handler
 			#ifdef ARM9
 			case ARM9COMMAND_UPDATE_BUFFER:{
-				updateSoundContextStreamPlayback((u32)data0);
+				updateRequested = true;
+					
+				// check for formats that can handle not being on an interrupt (better stability)
+				// (these formats are generally decoded faster)
+				switch(soundData.sourceFmt)
+				{
+					case SRC_MP3:
+						// mono sounds are slower than stereo for some reason
+						// so we force them to update faster
+						if(soundData.channels != 1)
+							return;
+						
+						break;
+					case SRC_WAV:
+					case SRC_FLAC:
+					case SRC_STREAM_MP3:
+					case SRC_STREAM_AAC:
+					case SRC_SID:
+						// these will be played next time it hits in the main screen
+						// theres like 4938598345 of the updatestream checks in the 
+						// main code
+						return;
+				}
+				
+				// call immediately if the format needs it
+				updateStream();
 			}	
 			break;
 			case((uint32)TGDS_ARM7_DETECTTURNOFFCONSOLE):{
@@ -575,8 +711,8 @@ void HandleFifoNotEmpty(){
 //u32 * srcMemory == External ARM Core Base Address
 void ReadMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead){
 	dmaFillWord(0, 0, (uint32)targetMemory, (uint32)bytesToRead);
-	struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
-	uint32 * fifomsg = (uint32 *)&sharedTGDSInterProc->fifoMesaggingQueue[0];
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[28] = (uint32)srcMemory;
 	fifomsg[29] = (uint32)targetMemory;
 	fifomsg[30] = (uint32)bytesToRead;
@@ -597,8 +733,8 @@ void SaveMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead){
 	#ifdef ARM9
 	coherent_user_range_by_size((uint32)targetMemory, (sint32)bytesToRead);
 	#endif
-	struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
-	uint32 * fifomsg = (uint32 *)&sharedTGDSInterProc->fifoMesaggingQueue[0];
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[32] = (uint32)srcMemory;
 	fifomsg[33] = (uint32)targetMemory;
 	fifomsg[34] = (uint32)bytesToRead;
@@ -609,12 +745,10 @@ void SaveMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead){
 	}
 }
 
-
-
 void ReadFirmwareARM7Ext(u32 * srcMemory){	//512 bytes src always
 	memset(srcMemory, 0, (uint32)512);
-	struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
-	uint32 * fifomsg = (uint32 *)&sharedTGDSInterProc->fifoMesaggingQueue[0];
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[28] = (uint32)srcMemory;
 	//fifomsg[29] = (uint32)targetMemory;
 	//fifomsg[30] = (uint32)bytesToRead;

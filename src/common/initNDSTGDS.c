@@ -149,20 +149,16 @@ void initHardware(u8 DSHardware) {
 //---------------------------------------------------------------------------------
 	#ifdef ARM7
 	//Init Shared Address Region and get NDS Heade
-	struct sIPCSharedTGDS * sharedTGDSInterProc = getsIPCSharedTGDS();
-	memcpy((u8*)&sharedTGDSInterProc->DSHeader,(u8*)0x027FFE00, sizeof(sharedTGDSInterProc->DSHeader));
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	memcpy((u8*)&TGDSIPC->DSHeader,(u8*)0x027FFE00, sizeof(TGDSIPC->DSHeader));
 	
 	//Read DHCP settings (in order)
 	LoadFirmwareSettingsFromFlash();
 	
 	//Hardware ARM7 Init
-	u8 DSHardwareReadFromFlash = sharedTGDSInterProc->DSFWHEADERInst.stub[0x1d];
+	u8 DSHardwareReadFromFlash = TGDSIPC->DSFWHEADERInst.stub[0x1d];
 	resetMemory_ARMCores(DSHardwareReadFromFlash);
 	IRQInit(DSHardwareReadFromFlash);
-	
-	//Init SoundSampleContext
-	initSoundSampleContext();
-	initSound();
 	#endif
 	
 	#ifdef ARM9
@@ -198,9 +194,6 @@ void initHardware(u8 DSHardware) {
 	
 	//Enable TGDS Event handling + Set timeout to turn off screens if idle.
 	setAndEnableSleepModeInSeconds(SLEEPMODE_SECONDS);
-	
-	//TGDS Sound stream: Default volume
-	setVolume(4);
 	
 	#endif
 	

@@ -49,7 +49,8 @@ extern void touchScrRead(struct touchScr * touchScrInst);
 #endif
 
 static inline void scanKeys(){
-	uint16 buttonsARM7 = ((struct sIPCSharedTGDS*)0x027FF000)->buttons7;
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint16 buttonsARM7 = TGDSIPC->buttons7;
 	uint32 readKeys = (uint32)(( ((~KEYINPUT)&0x3ff) | (((~buttonsARM7)&3)<<10) | (((~buttonsARM7)<<6) & (KEY_TOUCH|KEY_LID) ))^KEY_LID);
 	last_frame_keys_arm9 = global_keys_arm9;
 	global_keys_arm9 = readKeys | buffered_keys_arm9;
@@ -78,11 +79,13 @@ static inline uint32 keysRepeated(){
 
 //Enables / Disables the touchscreen
 static inline void setTouchScreenEnabled(bool status){
-	getsIPCSharedTGDS()->touchScreenEnabled = status;
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	TGDSIPC->touchScreenEnabled = status;
 }
 
 static inline bool getTouchScreenEnabled(){
-	return (bool)getsIPCSharedTGDS()->touchScreenEnabled;
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	return (bool)TGDSIPC->touchScreenEnabled;
 }
 
 

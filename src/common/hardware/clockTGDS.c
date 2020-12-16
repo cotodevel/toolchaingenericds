@@ -106,9 +106,9 @@ ulong get_nds_seconds(uchar *time)
 	tmInst.tm_mon  = time[1];
 	tmInst.tm_year = time[0] + 2000;	
 	//tmInst.tzoff = -1;
-
-	memcpy((uint8*)&getsIPCSharedTGDS()->tmInst, (uint8*)&tmInst, sizeof(tmInst));
 	
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	memcpy((uint8*)&TGDSIPC->tmInst, (uint8*)&tmInst, sizeof(tmInst));
 	return tm2sec(&tmInst);	
 }
 
@@ -264,26 +264,30 @@ void sec2tm(ulong secs, struct tm *tmInst)
 //Shared:
 
 ulong getNDSRTCInSeconds(){
-	return(ulong)(getsIPCSharedTGDS()->ndsRTCSeconds);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	return(ulong)(TGDSIPC->ndsRTCSeconds);
 }
 
 
 struct tm * getTime(){
-	return(struct tm *)(&getsIPCSharedTGDS()->tmInst);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	return(struct tm *)(&TGDSIPC->tmInst);
 }
 
 uint8 TGDSgetDayOfWeek(){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	#ifdef ARM9
 	//Prevent Cache problems.
-	coherent_user_range_by_size((uint32)getsIPCSharedTGDS(), sizeof(struct sIPCSharedTGDS));
+	coherent_user_range_by_size((uint32)TGDSIPC, sizeof(struct sIPCSharedTGDS));
 	#endif
-	return (uint8)getsIPCSharedTGDS()->dayOfWeek;
+	return (uint8)TGDSIPC->dayOfWeek;
 }
 
 void TGDSsetDayOfWeek(uint8 DayOfWeek){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	#ifdef ARM9
 	//Prevent Cache problems.
-	coherent_user_range_by_size((uint32)getsIPCSharedTGDS(), sizeof(struct sIPCSharedTGDS));
+	coherent_user_range_by_size((uint32)TGDSIPC, sizeof(struct sIPCSharedTGDS));
 	#endif
-	getsIPCSharedTGDS()->dayOfWeek = DayOfWeek;
+	TGDSIPC->dayOfWeek = DayOfWeek;
 }

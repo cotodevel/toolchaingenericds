@@ -93,12 +93,6 @@ static inline void dmaTransfer(sint32 dmachannel, uint32 source, uint32 dest, ui
 	while(DMAXCNT(dmachannel) & DMAENABLED);
 }
 
-static inline void dmaTransferAsync(sint32 dmachannel, uint32 source, uint32 dest, uint32 mode){	
-	DMAXSAD(dmachannel)= source;
-	DMAXDAD(dmachannel)= dest;
-	DMAXCNT(dmachannel)= mode;	
-}
-
 #endif
 
 #ifdef __cplusplus
@@ -108,7 +102,6 @@ extern "C"{
 extern void dmaFillWord(sint32 dmachannel,uint32 value, uint32 dest, uint32 word_count);
 extern void dmaFillHalfWord(sint32 dmachannel,uint32 value, uint32 dest, uint32 word_count);
 extern void dmaTransferHalfWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count);
-extern void dmaTransferHalfWordAsync(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count);
 extern void dmaTransferWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count);
 
 #ifdef __cplusplus

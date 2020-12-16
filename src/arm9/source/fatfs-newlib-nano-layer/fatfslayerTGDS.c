@@ -1466,7 +1466,7 @@ off_t fatfs_lseek(int structFDIndex, off_t offset, int whence){	//(FileDescripto
 			//<<SEEK_CUR>>---<[offset]> is relative to the current file position.
 			//<[offset]> can meaningfully be either positive or negative.
 			case(SEEK_CUR):{
-				pos = pfd->loc;
+				pos = f_tell(filp);
 				pos += offset;
 				if((int)pos < 0){
 					pos = 0;

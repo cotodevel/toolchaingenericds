@@ -132,7 +132,8 @@ bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer){
 		#endif
 		#ifdef ARM9
 		void * targetMem = (void *)((int)ARM7DLDIBuf + 0x400000);
-		uint32 * fifomsg = (uint32 *)&getsIPCSharedTGDS()->fifoMesaggingQueue[0];
+		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 		setValueSafe(&fifomsg[20], (uint32)sector);
 		setValueSafe(&fifomsg[21], (uint32)numSectors);
 		setValueSafe(&fifomsg[22], (uint32)targetMem);
@@ -166,7 +167,8 @@ bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buff
 		#ifdef ARM9
 		void * targetMem = (void *)((int)ARM7DLDIBuf + 0x400000);
 		memcpy((uint16_t*)targetMem, (uint16_t*)buffer, (numSectors * 512));
-		uint32 * fifomsg = (uint32 *)&getsIPCSharedTGDS()->fifoMesaggingQueue[0];
+		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 		setValueSafe(&fifomsg[24], (uint32)sector);
 		setValueSafe(&fifomsg[25], (uint32)numSectors);
 		setValueSafe(&fifomsg[26], (uint32)targetMem);

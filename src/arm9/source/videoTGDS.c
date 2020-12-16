@@ -268,6 +268,7 @@ void renderFBMode3Engine(u16 * srcBuf, u16 * targetBuf, int srcWidth, int srcHei
 //Screen Rotation registers
 void setOrientation(int orientation, bool mainEngine){
 	
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 
 	switch(orientation){
 		case ORIENTATION_0:{
 			if(mainEngine == true){
@@ -277,7 +278,7 @@ void setOrientation(int orientation, bool mainEngine){
 				REG_BG3PD = 1 << 8;
 				REG_BG3X = 0;
 				REG_BG3Y = 0;
-				getsIPCSharedTGDS()->screenOrientationMainEngine = orientation;
+				TGDSIPC->screenOrientationMainEngine = orientation;
 			}
 			else{
 				REG_BG3PA_SUB = 1 << 8;
@@ -286,7 +287,7 @@ void setOrientation(int orientation, bool mainEngine){
 				REG_BG3PD_SUB = 1 << 8;
 				REG_BG3X_SUB = 0;
 				REG_BG3Y_SUB = 0;
-				getsIPCSharedTGDS()->screenOrientationSubEngine = orientation;
+				TGDSIPC->screenOrientationSubEngine = orientation;
 			}
 		}	
 		break;
@@ -298,7 +299,7 @@ void setOrientation(int orientation, bool mainEngine){
 				REG_BG3PD = 0;
 				REG_BG3X = 191 << 8;
 				REG_BG3Y = 0;
-				getsIPCSharedTGDS()->screenOrientationMainEngine = orientation;
+				TGDSIPC->screenOrientationMainEngine = orientation;
 			}
 			else{
 				REG_BG3PA_SUB = 0;
@@ -307,7 +308,7 @@ void setOrientation(int orientation, bool mainEngine){
 				REG_BG3PD_SUB = 0;
 				REG_BG3X_SUB = 191 << 8;
 				REG_BG3Y_SUB = 0;
-				getsIPCSharedTGDS()->screenOrientationSubEngine = orientation;
+				TGDSIPC->screenOrientationSubEngine = orientation;
 			}
 		}
 		break;
@@ -319,7 +320,7 @@ void setOrientation(int orientation, bool mainEngine){
 				REG_BG3PD = -1 << 8;
 				REG_BG3X = 255 << 8;
 				REG_BG3Y = 191 << 8;
-				getsIPCSharedTGDS()->screenOrientationMainEngine = orientation;
+				TGDSIPC->screenOrientationMainEngine = orientation;
 			}
 			else{
 				REG_BG3PA_SUB = -1 << 8;
@@ -328,7 +329,7 @@ void setOrientation(int orientation, bool mainEngine){
 				REG_BG3PD_SUB = -1 << 8;
 				REG_BG3X_SUB = 255 << 8;
 				REG_BG3Y_SUB = 191 << 8;
-				getsIPCSharedTGDS()->screenOrientationSubEngine = orientation;
+				TGDSIPC->screenOrientationSubEngine = orientation;
 			}
 		}
 		break;
@@ -340,7 +341,7 @@ void setOrientation(int orientation, bool mainEngine){
 				REG_BG3PD = 0;
 				REG_BG3X = 0;
 				REG_BG3Y = 255 << 8;
-				getsIPCSharedTGDS()->screenOrientationMainEngine = orientation;
+				TGDSIPC->screenOrientationMainEngine = orientation;
 			}
 			else{
 				REG_BG3PA_SUB = 0;
@@ -349,7 +350,7 @@ void setOrientation(int orientation, bool mainEngine){
 				REG_BG3PD_SUB = 0;
 				REG_BG3X_SUB = 0;
 				REG_BG3Y_SUB = 255 << 8;
-				getsIPCSharedTGDS()->screenOrientationSubEngine = orientation;
+				TGDSIPC->screenOrientationSubEngine = orientation;
 			}
 		}
 		break;

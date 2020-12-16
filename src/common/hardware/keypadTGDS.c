@@ -40,7 +40,7 @@ uint32 buffered_keys_arm9;
 //touchScrRead(&touchScrStruct);
 //read values..
 void touchScrRead(struct touchScr * touchScrInst){
-	struct sIPCSharedTGDS * sIPCSharedTGDSInst = getsIPCSharedTGDS();
+	struct sIPCSharedTGDS * sIPCSharedTGDSInst = TGDSIPCStartAddress;
 	touchScrInst->buttons7	=	sIPCSharedTGDSInst->buttons7;			// X, Y, /PENIRQ buttons
 	touchScrInst->touchX	=	sIPCSharedTGDSInst->touchX;
 	touchScrInst->touchY	=	sIPCSharedTGDSInst->touchY;				// raw x/y TSC SPI

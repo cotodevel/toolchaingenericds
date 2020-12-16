@@ -21,8 +21,8 @@ USA
 //TGDS IPC Version: 1.3
 
 //IPC FIFO Description: 
-//		getsIPCSharedTGDS() 		= 	Access to TGDS internal IPC FIFO structure. 		(ipcfifoTGDS.h)
-//		getsIPCSharedTGDSSpecific()		=	Access to TGDS Project (User) IPC FIFO structure	(ipcfifoTGDSUser.h)
+//		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 														// Access to TGDS internal IPC FIFO structure. 		(ipcfifoTGDS.h)
+//		struct sIPCSharedTGDSSpecific * TGDSUSERIPC = (struct sIPCSharedTGDSSpecific *)TGDSIPCUserStartAddress;		// Access to TGDS Project (User) IPC FIFO structure	(ipcfifoTGDSUser.h)
 
 #ifndef __ipcfifoTGDS_h__
 #define __ipcfifoTGDS_h__
@@ -90,7 +90,6 @@ USA
 #define RECV_FIFO_IPC_EMPTY	(uint32)(1<<8)	
 #define RECV_FIFO_IPC_FULL	(uint32)(1<<9)	
 #define RECV_FIFO_IPC_IRQ	(uint32)(1<<10)	
-
 #define FIFO_IPC_ERROR	(uint32)(1<<14)	
 #define FIFO_IPC_ENABLE	(uint32)(1<<15)
 
@@ -119,15 +118,6 @@ USA
 #define TGDS_ARM7_ARM7FSWRITE (u32)(0xffffaab0)		
 #define TGDS_ARM7_READFLASHMEM (u32)(0xffffaac0)		
 
-//SoundStream bits
-#define ARM9COMMAND_UPDATE_BUFFER (uint32)(0xFFFFFF02)
-#define ARM7COMMAND_START_SOUND (uint32)(0xFFFFFF10)
-#define ARM7COMMAND_STOP_SOUND (uint32)(0xFFFFFF11)
-#define ARM7COMMAND_SOUND_SETMULT (uint32)(0xffff03A1)
-#define ARM7COMMAND_SOUND_SETRATE (uint32)(0xffff03A2)
-#define ARM7COMMAND_SOUND_SETLEN (uint32)(0xffff03A3)
-#define ARM7COMMAND_SOUND_COPY (uint32)(0xFFFFFF15)
-
 //TGDS IPC Command Interrupt Index
 #define IPC_NULL_CMD					(u8)(0)	//NULL cmd is unused by TGDS, fallbacks to TGDS project IPCIRQ Handler
 #define IPC_SEND_MULTIPLE_CMDS			(u8)(1)
@@ -141,7 +131,6 @@ USA
 #define IPC_READ_ARM7DLDI_REQBYIRQ		(u8)(5)
 #define IPC_WRITE_ARM7DLDI_REQBYIRQ		(u8)(6)
 #define IPC_READ_FIRMWARE_REQBYIRQ		(u8)(7)
-
 #define IPC_TGDSUSER_START_FREE_INDEX	(u8)(8)	//TGDS User Project rely on it
 
 //ARM7 FS IPC Commands
@@ -223,22 +212,19 @@ typedef struct sIPCSharedTGDS {
 	int IR_ReadOffset;
 	int IR_WrittenOffset;
 	
-	//Sound Stream ctx
-	struct soundPlayerContext sndPlayerCtx;
-	
 	//DS Firmware	Settings default set
 	struct sDSFWSETTINGS DSFWSETTINGSInst;
 	struct sEXTKEYIN	EXTKEYINInst;
 	
+	//Soundstream
+	SoundRegion soundIPC;
+	
 } IPCSharedTGDS	__attribute__((aligned (4)));
 
 //Shared Work     027FF000h 4KB    -     -    -    R/W
-
-static inline uint32 getUserIPCAddress(){
-	return (uint32)(0x027FF000+sizeof(struct sIPCSharedTGDS));
-}
-
+#define TGDSIPCStartAddress (__attribute__((aligned (4))) struct sIPCSharedTGDS*)(0x027FF000)
 #define TGDSIPCSize (int)(sizeof(struct sIPCSharedTGDS))
+#define TGDSIPCUserStartAddress (u32)( ((u32)TGDSIPCStartAddress) + TGDSIPCSize)	//u32 because it`s unknown at this point. TGDS project will override it to specific USER IPC struct. Known as GetUserIPCAddress()
 #define IPCRegionSize	(sint32)(4*1024)
 
 static inline void sendIPCIRQOnly(){
@@ -266,6 +252,7 @@ extern __attribute__((weak))	void HandleFifoEmptyWeakRef(uint32 cmd1,uint32 cmd2
 
 extern void HandleFifoNotEmpty();
 extern void HandleFifoEmpty();
+extern void SendFIFOWords(uint32 data0, uint32 data1);
 
 extern void ReadMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead);
 extern void SaveMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead);
@@ -274,8 +261,6 @@ extern void ReadFirmwareARM7Ext(u32 * srcMemory);
 extern void Write32bitAddrExtArm(uint32 address, uint32 value);
 extern void Write16bitAddrExtArm(uint32 address, uint16 value);
 extern void Write8bitAddrExtArm(uint32 address, uint8 value);
-extern struct sIPCSharedTGDS* getsIPCSharedTGDS();
-extern void SendFIFOWordsITCM(uint32 data0, uint32 data1);
 
 #ifdef __cplusplus
 }
