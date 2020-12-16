@@ -20,7 +20,6 @@ USA
 
 #ifdef ARM7
 #include "wifi_arm7.h"
-#include "soundTGDS.h"
 #endif
 
 #ifdef ARM9
@@ -36,6 +35,7 @@ USA
 #include "biosTGDS.h"
 #include "ARM7FS.h"
 #include "dmaTGDS.h"
+#include "soundTGDS.h"
 
 void IRQInit(u8 DSHardware){
 	
@@ -129,6 +129,9 @@ void NDS_IRQHandler(){
 		Timer0handlerUser();
 	}
 	if(handledIRQ & IRQ_TIMER1){
+		#ifdef ARM7
+		TIMER1Handler();	//Audio playback handler
+		#endif
 		Timer1handlerUser();
 	}
 	if(handledIRQ & IRQ_TIMER2){

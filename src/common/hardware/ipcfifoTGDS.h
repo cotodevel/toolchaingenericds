@@ -90,7 +90,6 @@ USA
 #define RECV_FIFO_IPC_EMPTY	(uint32)(1<<8)	
 #define RECV_FIFO_IPC_FULL	(uint32)(1<<9)	
 #define RECV_FIFO_IPC_IRQ	(uint32)(1<<10)	
-
 #define FIFO_IPC_ERROR	(uint32)(1<<14)	
 #define FIFO_IPC_ENABLE	(uint32)(1<<15)
 
@@ -118,17 +117,6 @@ USA
 #define TGDS_ARM7_ARM7FSREAD (u32)(0xffffaaa0)		
 #define TGDS_ARM7_ARM7FSWRITE (u32)(0xffffaab0)		
 #define TGDS_ARM7_READFLASHMEM (u32)(0xffffaac0)		
-
-/*
-//SoundStream bits
-#define ARM9COMMAND_UPDATE_BUFFER (uint32)(0xFFFFFF02)
-#define ARM7COMMAND_START_SOUND (uint32)(0xFFFFFF10)
-#define ARM7COMMAND_STOP_SOUND (uint32)(0xFFFFFF11)
-#define ARM7COMMAND_SOUND_SETMULT (uint32)(0xffff03A1)
-#define ARM7COMMAND_SOUND_SETRATE (uint32)(0xffff03A2)
-#define ARM7COMMAND_SOUND_SETLEN (uint32)(0xffff03A3)
-#define ARM7COMMAND_SOUND_COPY (uint32)(0xFFFFFF15)
-*/
 
 //TGDS IPC Command Interrupt Index
 #define IPC_NULL_CMD					(u8)(0)	//NULL cmd is unused by TGDS, fallbacks to TGDS project IPCIRQ Handler
@@ -224,12 +212,12 @@ typedef struct sIPCSharedTGDS {
 	int IR_ReadOffset;
 	int IR_WrittenOffset;
 	
-	//Sound Stream ctx
-	//struct soundPlayerContext sndPlayerCtx;
-	
 	//DS Firmware	Settings default set
 	struct sDSFWSETTINGS DSFWSETTINGSInst;
 	struct sEXTKEYIN	EXTKEYINInst;
+	
+	//Soundstream
+	SoundRegion soundIPC;
 	
 } IPCSharedTGDS	__attribute__((aligned (4)));
 

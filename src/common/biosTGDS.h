@@ -119,6 +119,8 @@ static inline void handleARM9SVC(){
 	if(REG_IPC_FIFO_CR & IPC_FIFO_ERROR){
 		REG_IPC_FIFO_CR = (REG_IPC_FIFO_CR | IPC_FIFO_SEND_CLEAR);	//bit14 FIFO ERROR ACK + Flush Send FIFO
 	}
+	//Audio playback here....
+	updateStream();	//runs once
 }
 
 #endif

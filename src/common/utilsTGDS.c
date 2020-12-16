@@ -701,7 +701,6 @@ void mainARGV(){
 	main(thisArgc,  &thisArgv[0][0]);
 }
 
-/*
 __attribute__((optimize("-O0")))
 void separateExtension(char *str, char *ext)
 {
@@ -738,7 +737,6 @@ void separateExtension(char *str, char *ext)
 	else
 		ext[0] = 0;	
 }
-*/
 
 #endif
 

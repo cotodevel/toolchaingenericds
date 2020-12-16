@@ -137,38 +137,24 @@ void HandleFifoNotEmpty(){
 			
 			//ARM7 command handler
 			#ifdef ARM7
-			
-			//todo: once tgds-audioplayer irqs work correctly.
-			/*
-			//Sound Player Context / Mic
-			case ARM7COMMAND_SOUND_SETLEN:{
-				sampleLen = (data0);
-			}
-			break;
-			case ARM7COMMAND_SOUND_SETRATE:{
-				sndRate = (data0);
-			}
-			break;
-			case ARM7COMMAND_SOUND_SETMULT:{
-				multRate = (data0);
-			}
-			break;
 			case ARM7COMMAND_START_SOUND:{
-				if((u32)data0 == (u32)SRC_WAV){
-					setupSound(data0);
-				}
-				else{
-					setupSoundUser(data0);
-				}
+				SetupSound();
 			}
 			break;
 			case ARM7COMMAND_STOP_SOUND:{
-				if((u32)data0 == (u32)SRC_WAV){
-					stopSound(data0);
-				}
-				else{
-					stopSoundUser(data0);
-				}
+				StopSound();
+			}
+			break;
+			case ARM7COMMAND_SOUND_SETRATE:{
+				sndRate = data0;
+			}
+			break;
+			case ARM7COMMAND_SOUND_SETLEN:{
+				sampleLen = data0;
+			}
+			break;
+			case ARM7COMMAND_SOUND_SETMULT:{
+				multRate = data0;
 			}
 			break;
 			case ARM7COMMAND_SOUND_COPY:
@@ -188,13 +174,12 @@ void HandleFifoNotEmpty(){
 				}
 				
 				u32 i;
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				struct soundPlayerContext * soundPlayerCtx = (struct soundPlayerContext *)&TGDSIPC->sndPlayerCtx;
-				int vMul = soundPlayerCtx->volume;
+				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 
+				int vMul = TGDSIPC->soundIPC.volume;
 				int lSample = 0;
 				int rSample = 0;
-				s16 *arm9LBuf = soundPlayerCtx->soundSampleCxt[SOUNDSTREAM_L_BUFFER].arm9data;
-				s16 *arm9RBuf = soundPlayerCtx->soundSampleCxt[SOUNDSTREAM_R_BUFFER].arm9data;
+				s16 *arm9LBuf = TGDSIPC->soundIPC.arm9L;
+				s16 *arm9RBuf = TGDSIPC->soundIPC.arm9R;
 				
 				switch(multRate)
 				{
@@ -260,9 +245,141 @@ void HandleFifoNotEmpty(){
 					}	
 					break;
 				}
+				VblankUser();
 			}
 			break;
-			*/
+			case ARM7COMMAND_SOUND_DEINTERLACE:
+			{
+				s16 *lbuf = NULL;
+				s16 *rbuf = NULL;
+				
+				if(!sndCursor)
+				{
+					lbuf = strpcmL0;
+					rbuf = strpcmR0;
+				}
+				else
+				{
+					lbuf = strpcmL1;
+					rbuf = strpcmR1;
+				}
+				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 	
+				s16 *iSrc = TGDSIPC->soundIPC.interlaced;
+				u32 i = 0;
+				int vMul = TGDSIPC->soundIPC.volume;
+				int lSample = 0;
+				int rSample = 0;
+				
+				switch(multRate)
+				{
+					case 1:{
+						if(TGDSIPC->soundIPC.channels == 2)
+						{
+							for(i=0;i<sampleLen;++i)
+							{					
+								lSample = *iSrc++;
+								rSample = *iSrc++;
+								
+								*lbuf++ = checkClipping((lSample * vMul) >> 2);
+								*rbuf++ = checkClipping((rSample * vMul) >> 2);
+							}
+						}
+						else
+						{
+							for(i=0;i<sampleLen;++i)
+							{					
+								lSample = *iSrc++;
+								
+								lSample = checkClipping((lSample * vMul) >> 2);
+								
+								*lbuf++ = lSample;
+								*rbuf++ = lSample;
+							}
+						}
+					}	
+					break;
+					case 2:{
+						for(i=0;i<sampleLen;++i)
+						{					
+							if(TGDSIPC->soundIPC.channels == 2)
+							{
+								lSample = *iSrc++;
+								rSample = *iSrc++;
+							}
+							else
+							{
+								lSample = *iSrc++;
+								rSample = lSample;
+							}
+							
+							lSample = ((lSample * vMul) >> 2);
+							rSample = ((rSample * vMul) >> 2);
+							
+							int midLSample = (lastL + lSample) >> 1;
+							int midRSample = (lastR + rSample) >> 1;
+							
+							lbuf[(i << 1)] = checkClipping(midLSample);
+							rbuf[(i << 1)] = checkClipping(midRSample);
+							lbuf[(i << 1) + 1] = checkClipping(lSample);
+							rbuf[(i << 1) + 1] = checkClipping(rSample);
+							
+							lastL = lSample;
+							lastR = rSample;							
+						}
+					}	
+					break;
+					case 4:{
+						for(i=0;i<sampleLen;++i)
+						{				
+							if(TGDSIPC->soundIPC.channels == 2)
+							{
+								lSample = *iSrc++;
+								rSample = *iSrc++;
+							}
+							else
+							{
+								lSample = *iSrc++;
+								rSample = lSample;
+							}
+							
+							lSample = ((lSample * vMul) >> 2);
+							rSample = ((rSample * vMul) >> 2);
+							
+							int midLSample = (lastL + lSample) >> 1;
+							int midRSample = (lastR + rSample) >> 1;
+							
+							int firstLSample = (lastL + midLSample) >> 1;
+							int firstRSample = (lastR + midRSample) >> 1;
+							
+							int secondLSample = (midLSample + lSample) >> 1;
+							int secondRSample = (midRSample + rSample) >> 1;
+							
+							lbuf[(i << 2)] = checkClipping(firstLSample);
+							rbuf[(i << 2)] = checkClipping(firstRSample);
+							lbuf[(i << 2) + 1] = checkClipping(midLSample);
+							rbuf[(i << 2) + 1] = checkClipping(midRSample);
+							lbuf[(i << 2) + 2] = checkClipping(secondLSample);
+							rbuf[(i << 2) + 2] = checkClipping(secondRSample);
+							lbuf[(i << 2) + 3] = checkClipping(lSample);
+							rbuf[(i << 2) + 3] = checkClipping(rSample);							
+							
+							lastL = lSample;
+							lastR = rSample;							
+						}
+					}	
+					break;
+				}
+				VblankUser();
+			}
+			break;
+			case ARM7COMMAND_PSG_COMMAND:
+			{
+				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 	
+				SCHANNEL_CR(TGDSIPC->soundIPC.psgChannel) = TGDSIPC->soundIPC.cr;
+				SCHANNEL_TIMER(TGDSIPC->soundIPC.psgChannel) = TGDSIPC->soundIPC.timer;
+			}
+			break;
+			
 			case((uint32)TGDS_ARM7_ENABLESOUNDSAMPLECTX):{
 				EnableSoundSampleContext((int)data0);
 			}
@@ -443,12 +560,35 @@ void HandleFifoNotEmpty(){
 			
 			//ARM9 command handler
 			#ifdef ARM9
-			/*
 			case ARM9COMMAND_UPDATE_BUFFER:{
-				updateSoundContextStreamPlayback((u32)data0);
+				updateRequested = true;
+					
+				// check for formats that can handle not being on an interrupt (better stability)
+				// (these formats are generally decoded faster)
+				switch(soundData.sourceFmt)
+				{
+					case SRC_MP3:
+						// mono sounds are slower than stereo for some reason
+						// so we force them to update faster
+						if(soundData.channels != 1)
+							return;
+						
+						break;
+					case SRC_WAV:
+					case SRC_FLAC:
+					case SRC_STREAM_MP3:
+					case SRC_STREAM_AAC:
+					case SRC_SID:
+						// these will be played next time it hits in the main screen
+						// theres like 4938598345 of the updatestream checks in the 
+						// main code
+						return;
+				}
+				
+				// call immediately if the format needs it
+				updateStream();
 			}	
 			break;
-			*/
 			case((uint32)TGDS_ARM7_DETECTTURNOFFCONSOLE):{
 				detectAndTurnOffConsole();
 			}
