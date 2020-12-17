@@ -81,9 +81,9 @@ export DIRS_ARM7_HEADER = source/	\
 export DIRS_ARM9_SRC = source/	\
 			source/console/	\
 			source/console/gui_draw/	\
-			source/fatfs-newlib-nano-layer/	\
-			source/fatfs-newlib-nano-layer/dldi/	\
-			source/fatfs-newlib-nano-layer/fatfs/source/	\
+			source/ToolchainGenericDSFS/	\
+			source/ToolchainGenericDSFS/dldi/	\
+			source/ToolchainGenericDSFS/fatfs/source/	\
 			source/zlib/	\
 			source/zip/	\
 			source/keyboard/	\
@@ -104,9 +104,9 @@ export DIRS_ARM9_SRC = source/	\
 export DIRS_ARM9_HEADER = source/	\
 			source/console/	\
 			source/console/gui_draw/	\
-			source/fatfs-newlib-nano-layer/	\
-			source/fatfs-newlib-nano-layer/dldi/	\
-			source/fatfs-newlib-nano-layer/fatfs/source/	\
+			source/ToolchainGenericDSFS/	\
+			source/ToolchainGenericDSFS/dldi/	\
+			source/ToolchainGenericDSFS/fatfs/source/	\
 			source/zlib/	\
 			source/zip/	\
 			source/keyboard/	\
