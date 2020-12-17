@@ -159,6 +159,11 @@ void initHardware(u8 DSHardware) {
 	u8 DSHardwareReadFromFlash = TGDSIPC->DSFWHEADERInst.stub[0x1d];
 	resetMemory_ARMCores(DSHardwareReadFromFlash);
 	IRQInit(DSHardwareReadFromFlash);
+	
+	//Init SoundSampleContext
+	initSoundSampleContext();
+	initSound();
+	
 	#endif
 	
 	#ifdef ARM9
