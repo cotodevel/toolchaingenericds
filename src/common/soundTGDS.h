@@ -208,12 +208,6 @@ struct soundPlayerContext{
 
 #ifdef ARM7
 
-static inline void TIMER1Handler()
-{	
-	setSwapChannel();
-	SendFIFOWords(ARM9COMMAND_UPDATE_BUFFER, 0);
-}
-
 extern s16 *strpcmL0;
 extern s16 *strpcmL1;
 extern s16 *strpcmR0;
@@ -226,11 +220,25 @@ extern u32 sndCursor;
 extern u32 micBufLoc;
 extern u32 sampleLen;
 extern int sndRate;
-extern void mallocData(int size);
 extern void freeData();
 extern void setSwapChannel();
-extern void SetupSound();
-extern void StopSound();
+
+#ifdef __cplusplus
+extern "C"{
+#endif
+
+extern void setupSound();
+extern void SendFIFOWords(uint32 data0, uint32 data1);
+
+#ifdef __cplusplus
+}
+#endif
+
+static inline void TIMER1Handler()
+{	
+	setSwapChannel();
+	SendFIFOWords(ARM9COMMAND_UPDATE_BUFFER, 0);
+}
 
 #endif
 
@@ -241,6 +249,8 @@ extern "C"{
 //Sound Sample Context: Plays raw sound samples at VBLANK intervals
 extern void startSoundSample(int sampleRate, const void* data, u32 bytes, u8 channel, u8 vol,  u8 pan, u8 format);
 extern void initSound();
+extern void stopSound();
+extern void mallocData(int size);
 
 #ifdef ARM7
 extern int soundSampleContextCurrentMode;
@@ -267,6 +277,10 @@ extern void setVolume(u8 volume);
 extern void volumeUp(int x, int y);
 extern void volumeDown(int x, int y);
 extern bool soundLoaded;
+extern char *strlwr(char *str);
+extern void swapAndSend(u32 type);
+extern int getSoundLength();
+
 #endif
 
 extern struct soundSampleContext * getsoundSampleContextByIndex(int index);
@@ -325,6 +339,14 @@ extern void updateStream();
 extern void freeSound();
 extern void setWavDecodeCallback(void (*cb)());
 extern void startSound9();
+
+//Usercode: Opens a .WAV or IMA-ADPCM (Intel) file and begins to stream it.
+//Returns: the stream format.
+extern int playSoundStream(char * audioStreamFilename);
+
+//Usercode: Stops an audiostream playback.
+//Returns: true if successfully halted, false if no audiostream available.
+extern bool stopSoundStream(struct fd * tgdsStructFD1, struct fd * tgdsStructFD2, int * internalCodecType);
 
 #endif
 

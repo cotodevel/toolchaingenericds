@@ -46,14 +46,16 @@ OBJDIR 	=	./$(BUILD)
 VPATH 	=	$(DIR_SRC)
 OBJPROG = 	$(addprefix $(OBJDIR)/, $(TARGET_LIBRARY_FILE_9))
 
-all: $(OBJDIR)|$(OBJPROG)
+all: $(OBJDIR)|forceDelete	$(OBJPROG)
 #all: debug
+
+forceDelete:
+	-@rm -fr ./$(BUILD)/$(TARGET_LIBRARY_FILE_9)	$(TARGET_LIBRARY_PATH)/$(TARGET_LIBRARY_FILE_9)	$(TARGET_LIBRARY_HEADERS_9)
 
 #Check $(OBJDIR) if not exists: create it
 $(OBJDIR):
 	@echo "Folder $(OBJDIR) does not exist. Creating"
 	mkdir -p $@
-
 #rule for reading *.bin in /data folder, converts to .C source code, which then gets compiled as object so it can be linked later
 $(OBJDIR)/%.o : %.bin
 	-@echo 'trying to convert .BIN ($<) -> .C output: ${@:.o=.c} : arrayName: $(subst build/,,${@:.o=})'

@@ -29,6 +29,10 @@ USA
 #include "utilsTGDS.h"
 #include "fatfslayerTGDS.h"
 #include "videoTGDS.h"
+#include "cstream_fs.h"
+#include "ima_adpcm.h"
+#include "biosTGDS.h"
+
 #endif
 
 void initSound(){
@@ -267,7 +271,7 @@ void setSwapChannel()
 	sndCursor = 1 - sndCursor;
 }
 
-void SetupSound(){    
+void setupSound(){    
 	//Init SoundSampleContext
 	initSoundSampleContext();
 	initSound();
@@ -305,7 +309,7 @@ void SetupSound(){
 	lastR = 0;
 }
 
-void StopSound() {
+void stopSound() {
 	//irqSet(IRQ_TIMER1, 0);
 	TIMERXCNT(0) = 0;
 	TIMERXCNT(1) = 0;
@@ -392,7 +396,7 @@ void swapData()
 	
 	switch(m_SIWRAM)
 	{
-		case 0:
+		case 0:{
 			lBuffer = SIWRAM0;
 			rBuffer = SIWRAM0 + m_size;
 			
@@ -401,18 +405,19 @@ void swapData()
 			TGDSIPC->soundIPC.arm9L = SIWRAM1;
 			TGDSIPC->soundIPC.arm9R = SIWRAM1 + m_size;
 			TGDSIPC->soundIPC.interlaced = SIWRAM1;
-			break;
-		case 1:
+		}
+		break;
+		case 1:{
 			lBuffer = SIWRAM1;
 			rBuffer = SIWRAM1 + m_size;
 			
 			REG_SIWRAMCNT = 1; // bank 0 to arm7, bank 1 to arm9
-			
+			struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 	
 			TGDSIPC->soundIPC.arm9L = SIWRAM0;
 			TGDSIPC->soundIPC.arm9R = SIWRAM0 + m_size;
 			TGDSIPC->soundIPC.interlaced = SIWRAM0;
-			
-			break;
+		}	
+		break;
 	}
 }
 
@@ -500,7 +505,6 @@ void setSoundInterrupt()
 void initComplexSound(){
 	soundData.sourceFmt = SRC_NONE;
 	soundData.filePointer = NULL;
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 	
 	setVolume(4);	//Default volume
 	
 	VRAMBLOCK_SETBANK_D(VRAM_D_0x06000000_ARM7);	//give arm7 vram bank d (extend +128K RAM)
@@ -880,8 +884,52 @@ int parseWaveData(struct fd * fdinst, u32 u32chunkToSeek){
 	return -1;
 }
 
+//Usercode: Opens a .WAV or IMA-ADPCM (Intel) file and begins to stream it.
+//Returns: the stream format.
+int playSoundStream(char * audioStreamFilename){
+	int physFh1 = -1;
+	int physFh2 = -1;
+	if(openDualTGDSFileHandleFromFile(audioStreamFilename, &physFh1, &physFh2) == true){
+		//OK
+		struct fd * _FileHandleVideo = getStructFD(physFh1);
+		struct fd * _FileHandleAudio = getStructFD(physFh2);
+		int internalCodecType = initSoundStreamFromStructFD(_FileHandleAudio, ".wav");
+		if(internalCodecType == SRC_WAVADPCM){
+			bool loop_audio = false;
+			bool automatic_updates = false;
+			if(player.play(_FileHandleAudio, loop_audio, automatic_updates) == 0){
+				//ADPCM Playback!
+			}
+		}
+		else if(internalCodecType == SRC_WAV){
+			//WAV Playback!
+		}
+		return internalCodecType;
+	}
+	return SRC_NONE;
+}
 
-//Opens a .WAV file (or returns the detected header), otherwise returns SRC_NONE
+//Usercode: Stops an audiostream playback.
+//Returns: true if successfully halted, false if no audiostream available.
+bool stopSoundStream(struct fd * tgdsStructFD1, struct fd * tgdsStructFD2, int * internalCodecType){
+	bool ret = false;
+	if(*internalCodecType == SRC_WAVADPCM){
+		player.stop();
+		*internalCodecType = SRC_NONE;
+		ret = true;
+	}
+	else if(*internalCodecType == SRC_WAV){		
+		closeSound(); 
+		*internalCodecType = SRC_NONE;
+		ret = true;
+	}
+	swiDelay(888);
+	closeDualTGDSFileHandleFromFile(tgdsStructFD1, tgdsStructFD2);
+	swiDelay(1);
+	return ret;
+}
+
+//Internal: Opens a .WAV file (or returns the detected header), otherwise returns SRC_NONE
 int initSoundStream(char * audioStreamFilename){
 	char tmpName[256];
 	char ext[256];
@@ -955,7 +1003,7 @@ int initSoundStreamFromStructFD(struct fd * _FileHandleAudio, char * ext){	//ARM
 		wavFormatChunk headerChunk;
 		char header[13];
 		soundData.filePointerStructFD->loc = 0; fatfs_lseek(soundData.filePointerStructFD->cur_entry.d_ino, soundData.filePointerStructFD->loc, SEEK_SET);
-		int read = fatfs_read(soundData.filePointerStructFD->cur_entry.d_ino, &header[0], 12);
+		int read = fatfs_read(soundData.filePointerStructFD->cur_entry.d_ino, (u8*)&header[0], 12);
 		soundData.filePointerStructFD->loc += (read); fatfs_lseek(soundData.filePointerStructFD->cur_entry.d_ino, soundData.filePointerStructFD->loc, SEEK_SET);
 		
 		header[12] = 0;
@@ -972,7 +1020,7 @@ int initSoundStreamFromStructFD(struct fd * _FileHandleAudio, char * ext){	//ARM
 		}
 		
 		//fread((char*)&headerChunk, 1, sizeof(wavFormatChunk), fp);
-		read = fatfs_read(soundData.filePointerStructFD->cur_entry.d_ino, (char*)&headerChunk, sizeof(wavFormatChunk)); 
+		read = fatfs_read(soundData.filePointerStructFD->cur_entry.d_ino, (u8*)&headerChunk, sizeof(wavFormatChunk)); 
 		soundData.filePointerStructFD->loc += (read); fatfs_lseek(soundData.filePointerStructFD->cur_entry.d_ino, soundData.filePointerStructFD->loc, SEEK_SET);
 		
 		if(strncmp((char*)&headerChunk.chunkID[0], "fmt ", 4) != 0)	

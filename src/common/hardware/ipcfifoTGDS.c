@@ -138,11 +138,11 @@ void HandleFifoNotEmpty(){
 			//ARM7 command handler
 			#ifdef ARM7
 			case ARM7COMMAND_START_SOUND:{
-				SetupSound();
+				setupSound();
 			}
 			break;
 			case ARM7COMMAND_STOP_SOUND:{
-				StopSound();
+				stopSound();
 			}
 			break;
 			case ARM7COMMAND_SOUND_SETRATE:{

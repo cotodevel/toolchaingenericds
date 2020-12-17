@@ -46,9 +46,12 @@ OBJDIR 	=	./$(BUILD)
 VPATH 	=	$(DIR_SRC)
 OBJPROG =	$(addprefix $(OBJDIR)/, $(TARGET_LIBRARY_FILE_7))
 
-all: $(OBJDIR)|$(OBJPROG)
+all: $(OBJDIR)|forceDelete	$(OBJPROG)
 #all: debug
 
+forceDelete:
+	-@rm -fr ./$(BUILD)/$(TARGET_LIBRARY_FILE_7)	$(TARGET_LIBRARY_PATH)/$(TARGET_LIBRARY_FILE_7)	$(TARGET_LIBRARY_HEADERS_7)
+	
 #Check $(OBJDIR) if not exists: create it
 $(OBJDIR):
 	@echo "Folder $(OBJDIR) does not exist. Creating"

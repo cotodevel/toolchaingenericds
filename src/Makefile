@@ -89,6 +89,7 @@ export DIRS_ARM9_SRC = source/	\
 			source/keyboard/	\
 			source/dswifi_arm9/	\
 			source/wnifilib/	\
+			source/imadecoder/	\
 			../include/	\
 			../common/	\
 			../common/dswifi/	\
@@ -112,6 +113,7 @@ export DIRS_ARM9_HEADER = source/	\
 			source/keyboard/	\
 			source/dswifi_arm9/	\
 			source/wnifilib/	\
+			source/imadecoder/	\
 			../include/	\
 			../common/	\
 			../common/dswifi/	\

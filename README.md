@@ -46,6 +46,9 @@ Thanks to:
 - TricksterGuy: https://github.com/TricksterGuy/nin10kit (tool to convert ToolchainGenericDS Logo into DS BMP format)
 - freelogodesign.org (ToolchainGenericDS Logo)
 - Juglak's XMEM part of libriyo (malloc implementation)
+- ADPCM Decoder/ Audio Streamer Authors: DiscoStew
+https://forum.gbadev.org/viewtopic.php?f=18&t=16289
+
 
 ---------------------------------------------
 
