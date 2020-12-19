@@ -322,7 +322,9 @@ void IMA_Adpcm_Stream::close() {
 		delete pCStreamFS; pCStreamFS=NULL;
 	}
 	//Audio stop here....
-	closeSound();
+	if(closeCb!=NULL){
+		closeCb();
+	}
 }
 
 void IMA_Adpcm_Stream::capture_frame()
@@ -401,7 +403,7 @@ IMA_Adpcm_Player::IMA_Adpcm_Player() {
 	active=false;
 }
 
-int IMA_Adpcm_Player::play( struct fd *fdInst, bool loop_audio, bool automatic_updates, int buffer_length ) {	
+int IMA_Adpcm_Player::play( struct fd *fdInst, bool loop_audio, bool automatic_updates, int buffer_length, closeSoundHandle closeHandle) {	
 	active = false;
 	stop();
 	active_player = this;
@@ -413,6 +415,7 @@ int IMA_Adpcm_Player::play( struct fd *fdInst, bool loop_audio, bool automatic_u
 		return result;
 	}
 	
+	strm->closeCb = closeHandle;
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	paused = false;
 	active=true;

@@ -884,20 +884,20 @@ int parseWaveData(struct fd * fdinst, u32 u32chunkToSeek){
 	return -1;
 }
 
-//Usercode: Opens a .WAV or IMA-ADPCM (Intel) file and begins to stream it.
+//Usercode: Opens a .WAV or IMA-ADPCM (Intel) file and begins to stream it. Copies the file handles 
 //Returns: the stream format.
-int playSoundStream(char * audioStreamFilename){
+int playSoundStream(char * audioStreamFilename, struct fd * _FileHandleVideo, struct fd * _FileHandleAudio){
 	int physFh1 = -1;
 	int physFh2 = -1;
 	if(openDualTGDSFileHandleFromFile(audioStreamFilename, &physFh1, &physFh2) == true){
 		//OK
-		struct fd * _FileHandleVideo = getStructFD(physFh1);
-		struct fd * _FileHandleAudio = getStructFD(physFh2);
+		_FileHandleVideo = getStructFD(physFh1);
+		_FileHandleAudio = getStructFD(physFh2);
 		int internalCodecType = initSoundStreamFromStructFD(_FileHandleAudio, ".wav");
 		if(internalCodecType == SRC_WAVADPCM){
 			bool loop_audio = false;
 			bool automatic_updates = false;
-			if(player.play(_FileHandleAudio, loop_audio, automatic_updates) == 0){
+			if(player.play(_FileHandleAudio, loop_audio, automatic_updates, ADPCM_SIZE, stopSoundStreamUser) == 0){
 				//ADPCM Playback!
 			}
 		}
@@ -909,24 +909,21 @@ int playSoundStream(char * audioStreamFilename){
 	return SRC_NONE;
 }
 
-//Usercode: Stops an audiostream playback.
+//Checkout a Specific TGDS Project implementing a default close audio stream (supporting audio stream that is)
+//bool stopSoundStreamUser(){
+	//...
+//}
+
+//Internal: Stops an audiostream playback.
 //Returns: true if successfully halted, false if no audiostream available.
 bool stopSoundStream(struct fd * tgdsStructFD1, struct fd * tgdsStructFD2, int * internalCodecType){
-	bool ret = false;
-	if(*internalCodecType == SRC_WAVADPCM){
-		player.stop();
-		*internalCodecType = SRC_NONE;
-		ret = true;
-	}
-	else if(*internalCodecType == SRC_WAV){		
-		closeSound(); 
-		*internalCodecType = SRC_NONE;
-		ret = true;
-	}
+	closeSound(); 
+	*internalCodecType = SRC_NONE;
+	
 	swiDelay(888);
 	closeDualTGDSFileHandleFromFile(tgdsStructFD1, tgdsStructFD2);
 	swiDelay(1);
-	return ret;
+	return true;
 }
 
 //Internal: Opens a .WAV file (or returns the detected header), otherwise returns SRC_NONE

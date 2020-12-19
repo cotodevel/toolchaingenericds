@@ -265,6 +265,7 @@ extern __attribute__((weak))    void updateStreamCustomDecoder(u32 srcFrmt);
 extern __attribute__((weak))    void freeSoundCustomDecoder(u32 srcFrmt);
 extern void flushSoundContext(int soundContextIndex);
 extern __attribute__((weak))    void closeSoundUser();
+extern __attribute__((weak))    bool stopSoundStreamUser();	//abstracts an user class when closing an WAV/IMAADPCM stream (because the audio stream context is TGDS Project specific)
 
 //Stream Sound controls
 extern void closeSound();
@@ -337,12 +338,11 @@ extern void wavDecode24Bit();
 extern void wavDecode32Bit();
 extern void updateStream();
 extern void freeSound();
-extern void setWavDecodeCallback(void (*cb)());
 extern void startSound9();
 
 //Usercode: Opens a .WAV or IMA-ADPCM (Intel) file and begins to stream it.
 //Returns: the stream format.
-extern int playSoundStream(char * audioStreamFilename);
+extern int playSoundStream(char * audioStreamFilename, struct fd * _FileHandleVideo, struct fd * _FileHandleAudio);
 
 //Usercode: Stops an audiostream playback.
 //Returns: true if successfully halted, false if no audiostream available.

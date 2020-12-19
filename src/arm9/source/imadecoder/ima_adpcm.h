@@ -4,8 +4,10 @@
 #include <stdio.h>
 #include "cstream_fs.h"
 #include "soundTGDS.h"
+#include "fatfslayerTGDS.h"
 
 #define ADPCM_SIZE (int)(2048)		//TGDS IMA-ADPCM buffer size
+typedef bool (*closeSoundHandle)();	//ret: true = closed sound stream. false = couldn't close sound stream
 
 enum
 {
@@ -100,6 +102,7 @@ public:
 	int get_channels();
 	int get_sampling_rate();
 	int get_mm_format();
+	closeSoundHandle closeCb;
 };
 
 //**********************************************************************************************
@@ -116,7 +119,7 @@ class IMA_Adpcm_Player {
 public:
 	wavFormatChunk headerChunk;
 	IMA_Adpcm_Player();
-	int play( struct fd * dsinst, bool loop_audio, bool automatic_updates, int buffer_length = ADPCM_SIZE );
+	int play( struct fd *fdInst, bool loop_audio, bool automatic_updates, int buffer_length = ADPCM_SIZE, closeSoundHandle = NULL);
 	void pause();
 	void resume();
 	void stop();
