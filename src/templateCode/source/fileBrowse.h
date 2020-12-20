@@ -195,7 +195,7 @@ static inline bool ShowBrowser(char * Path, char * outBuf){
 		
 		while(itemRead < itemsToLoad ){		
 			if(getFileClassFromList(itemRead+curjoffset, fileClassListCtx)->type == FT_DIR){
-				printfCoords(0, itemRead, "--- %s%s",getFileClassFromList(itemRead+curjoffset, fileClassListCtx)->fd_namefullPath,"<dir>");
+				printfCoords(0, itemRead, "--- %s >%d",getFileClassFromList(itemRead+curjoffset, fileClassListCtx)->fd_namefullPath, TGDSPrintfColor_Yellow);
 			}
 			else{
 				printfCoords(0, itemRead, "--- %s",getFileClassFromList(itemRead+curjoffset, fileClassListCtx)->fd_namefullPath);
