@@ -200,6 +200,10 @@ void initHardware(u8 DSHardware) {
 	//Enable TGDS Event handling + Set timeout to turn off screens if idle.
 	setAndEnableSleepModeInSeconds(SLEEPMODE_SECONDS);
 	
+	//Disable it because handling ARM7 events take extra CPU power we don't really need to use.
+	disableSleepMode();
+	
+	
 	#endif
 	
 }
