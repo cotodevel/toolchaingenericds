@@ -469,16 +469,32 @@ void printfCoords(int x, int y, const char *fmt, ...){
 	vsnprintf ((sint8*)ConsolePrintfBuf, 64, fmt, args);
 	va_end (args);
 	
-    // FIXME
+	// FIXME
     bool readAndBlendFromVRAM = false;	//we discard current vram characters here so if we step over the same character in VRAM (through printfCoords), it is discarded.
 	t_GUIZone zone;
     zone.x1 = 0; zone.y1 = 0; zone.x2 = 256; zone.y2 = 192;
     zone.font = &smallfont_7_font;
 	GUI.printfy = y * GUI_getFontHeight(&zone);
 	x = x * zone.font->height;
-	int color = 0xff;	//white
-	GUI_drawText(&zone, x, GUI.printfy, color, (sint8*)ConsolePrintfBuf, readAndBlendFromVRAM);
-	GUI.printfy += GUI_getFontHeight(&zone);
+	int color = (int)TGDSPrintfColor_LightGrey;	//default color
+	int stringSize = (int)strlen(ConsolePrintfBuf);
+	
+	//Separate the TGDS Console font color if exists
+	char cpyBuf[256+1] = {0};
+	strcpy(cpyBuf, ConsolePrintfBuf);
+	char * outBuf = (char *)malloc(256*10);
+	char * colorChar = (char*)((char*)outBuf + (1*256));
+	int matchCount = str_split((char*)cpyBuf, ">", outBuf, 10, 256);
+	if(matchCount > 0){
+		color = atoi(colorChar);
+		ConsolePrintfBuf[strlen(ConsolePrintfBuf) - (strlen(colorChar)+1) ] = '\0';
+	}
+	
+    GUI_drawText(&zone, x, GUI.printfy, color, (sint8*)ConsolePrintfBuf, readAndBlendFromVRAM);
+    GUI.printfy += GUI_getFontHeight(&zone);
+	free(outBuf);
+	return strlen(ConsolePrintfBuf)+1;
+	
 	coherent_user_range_by_size((uint32)0x06200000, 128*1024);
 }
 
