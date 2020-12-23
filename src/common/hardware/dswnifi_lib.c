@@ -152,6 +152,7 @@ struct frameBlock * receiveDSWNIFIFrame(uint8 * databuf_src, int frameSizeRecv){
 //if NIFI: returns true always
 //if GDBSTUB: connect OK: true, otherwise false.
 bool switch_dswnifi_mode(sint32 mode){
+	swiDelay(12000);
 	//save last DSWnifiMode
 	if(mode != LastDSWnifiMode){
 		LastDSWnifiMode = mode;

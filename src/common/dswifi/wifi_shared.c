@@ -48,4 +48,5 @@ void DeInitWIFI(){
 		free((u8*)WifiData);
 	}
 	#endif
+	swiDelay(8888);
 }
