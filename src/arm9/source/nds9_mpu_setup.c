@@ -44,12 +44,11 @@ uint32 EWRAMUncached(uint32 address){
 // it is recomended that you use those functions for dealing with slower processes. For faster processes, just use the CP15 functions directly.
 
 void updateMPUSetting(T_mpuSetting * mpuSetting_inst){
+	//DrainWrite
+	DrainWriteBuffer();
 	
 	//Disable only DCACHE & ICACHE / mpu
 	CP15ControlRegisterDisable((CR_I | CR_C | CR_M));
-	
-	//DrainWrite
-	DrainWriteBuffer();
 	
 	//reset caches
 	flush_icache_all();

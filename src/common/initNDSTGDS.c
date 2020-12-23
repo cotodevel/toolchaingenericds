@@ -147,6 +147,7 @@ void resetMemory_ARMCores(u8 DSHardware){
 
 void initHardware(u8 DSHardware) {
 //---------------------------------------------------------------------------------
+	swiDelay(15000);
 	#ifdef ARM7
 	//Init Shared Address Region and get NDS Heade
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
