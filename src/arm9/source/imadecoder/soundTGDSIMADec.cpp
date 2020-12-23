@@ -29,6 +29,7 @@ USA
 #include "soundTGDSIMADec.h"
 #include "ima_adpcm.h"
 
+__attribute__((section(".itcm")))
 void IMAADPCMDecode(){
 	s16 *tmpData = (s16 *)TGDSARM9Malloc(ADPCMchunksize * 2 * ADPCMchannels);	//ADPCM uses 1 src as decoding frame, and 2nd src as scratchpad
 	if(active_player->i_stream_request(ADPCMchunksize, tmpData, WAV_FORMAT_IMA_ADPCM) != 1){

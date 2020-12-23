@@ -330,37 +330,73 @@ void stopSound() {
  
 #ifdef ARM9
 //Handles current file playback status
+__attribute__((section(".dtcm")))
 bool soundLoaded = false;
 
+__attribute__((section(".dtcm")))
 bool canSend = false;
+
+__attribute__((section(".dtcm")))
 struct soundPlayerContext soundData;
 
+__attribute__((section(".dtcm")))
 int bufCursor;
+
+__attribute__((section(".dtcm")))
 int bytesLeft = 0;
+
+__attribute__((section(".dtcm")))
 s16 *bytesLeftBuf = NULL;
+
+__attribute__((section(".dtcm")))
 int maxBytes = 0;
 
+__attribute__((section(".dtcm")))
 bool cutOff = false;
+
+__attribute__((section(".dtcm")))
 bool sndPaused = false;
+
+__attribute__((section(".dtcm")))
 bool playing = false;
+
+__attribute__((section(".dtcm")))
 bool seekSpecial = false;
+
+__attribute__((section(".dtcm")))
 bool updateRequested = false;
+
+__attribute__((section(".dtcm")))
 int sndLen = 0;
+
+__attribute__((section(".dtcm")))
 int seekUpdate = -1;
 
 // sound out
+__attribute__((section(".dtcm")))
 s16 *lBuffer = NULL;
+__attribute__((section(".dtcm")))
 s16 *rBuffer = NULL;
 
 // wav
+__attribute__((section(".dtcm")))
 bool memoryLoad = false;
+
+__attribute__((section(".dtcm")))
 char *memoryContents = NULL;
+
+__attribute__((section(".dtcm")))
 u32 memoryPos = 0;
+
+__attribute__((section(".dtcm")))
 u32 memorySize = 0;
 
+__attribute__((section(".dtcm")))
 void (*wavDecode)() = NULL;
 // alternate malloc stuff
+__attribute__((section(".dtcm")))
 int m_SIWRAM = 0;
+__attribute__((section(".dtcm")))
 int m_size = 0;
 
 void mallocData(int size)
@@ -637,6 +673,7 @@ u32 getWavData(void *outLoc, int amount, FILE *fh)
 	}
 }
 
+__attribute__((section(".itcm")))
 void wavDecode8Bit()
 {
 	// 8bit wav file
@@ -679,6 +716,7 @@ void wavDecode8Bit()
 	TGDSARM9Free(s8Data);
 }
 
+__attribute__((section(".itcm")))
 void wavDecode16Bit()
 {
 	// 16bit wav file
@@ -718,6 +756,7 @@ void wavDecode16Bit()
 	TGDSARM9Free(tmpData);
 }
 
+__attribute__((section(".itcm")))
 void wavDecode24Bit()
 {
 	// 24bit wav file
@@ -771,6 +810,7 @@ void wavDecode24Bit()
 	TGDSARM9Free(oldPointer);
 }
 
+__attribute__((section(".itcm")))
 void wavDecode32Bit()
 {
 	// 32bit wav file
