@@ -105,28 +105,6 @@ extern void Wifi_SetChannel(int channel);
 //  Returns: the current number of APs that are known about and tracked internally
 extern int Wifi_GetNumAP();
 
-// Wifi_GetAPData: Grabs data from internal structures for user code (always succeeds)
-//  int apnum:					the 0-based index of the access point record to fetch
-//  Wifi_AccessPoint * apdata:	Pointer to the location where the retrieved data should be stored
-extern int Wifi_GetAPData(int apnum, Wifi_AccessPoint * apdata);
-
-// Wifi_FindMatchingAP: determines whether various APs exist in the local area. You provide a
-//   list of APs, and it will return the index of the first one in the list that can be found
-//   in the internal list of APs that are being tracked
-//  int numaps:					number of records in the list
-//  Wifi_AccessPoint * apdata:	pointer to an array of structures with information about the APs to find
-//  Wifi_AccessPoint * match_dest:	OPTIONAL pointer to a record to receive the matching AP record.
-//  Returns:					-1 for none found, or a positive/zero integer index into the array
-extern int Wifi_FindMatchingAP(int numaps, Wifi_AccessPoint * apdata, Wifi_AccessPoint * match_dest);
-
-// Wifi_ConnectAP: Connect to an access point
-//  Wifi_AccessPoint * apdata:	basic data on the AP
-//  int wepmode:				indicates whether wep is used, and what kind
-//  int wepkeyid:				indicates which wep key ID to use for transmitting
-//  unsigned char * wepkey:		the wep key, to be used in all 4 key slots (should make this more flexible in the future)
-//  Returns:					0 for ok, -1 for error with input data
-extern int Wifi_ConnectAP(Wifi_AccessPoint * apdata, int wepmode, int wepkeyid, unsigned char * wepkey);
-
 // Wifi_AutoConnect: Connect to an access point specified by the WFC data in the firmware
 extern void Wifi_AutoConnect();
 
