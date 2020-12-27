@@ -31,6 +31,10 @@ SOFTWARE.
 #error Wifi is only accessible from the ARM7
 #endif
 
+#define LED_LONGBLINK	1
+#define LED_SHORTBLINK	3
+#define LED_ON			0
+
 
 // keepalive updated in the update handler, which should be called in vblank
 // keepalive set for 2 minutes.
@@ -63,9 +67,6 @@ SOFTWARE.
 #define W_RFSIODATA1	(*((volatile u16 *)(0x0480017E)))
 #define W_RFSIOBUSY		(*((volatile u16 *)(0x04800180)))
 
-#define LED_LONGBLINK	1
-#define LED_SHORTBLINK	3
-#define LED_ON			0
 
 #include "wifi_shared.h"
 
@@ -80,7 +81,6 @@ extern "C" {
 
 extern volatile Wifi_MainStruct * WifiData;
 
-extern uint16 arm7q[1024];
 extern void Read_Flash(int address, char * destination, int length);
 extern char FlashData[512];
 extern void InitFlashData();

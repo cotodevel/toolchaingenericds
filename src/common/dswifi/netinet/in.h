@@ -43,8 +43,6 @@ struct sockaddr_in {
 	struct in_addr		sin_addr;
 	unsigned char		sin_zero[8];
 };
-#endif
-
 
 #ifdef __cplusplus
 extern "C" {
@@ -57,4 +55,7 @@ extern "C" {
 
 #ifdef __cplusplus
 };
+#endif
+
+
 #endif

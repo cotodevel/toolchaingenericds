@@ -66,15 +66,16 @@ const char * ASSOCSTATUS_STRINGS[] = {
 
 
 void sgIP_IntrWaitEvent() {
-	/*
+ //  __asm( ".ARM\n swi 0x060000\n" );
 	int i,j;
 	j=0;
 	for(i=0;i<20000;i++) {
 		j+=i;
-	}*/
-	swiDelay( 839 ); // 100 us delay
+	}
 }
 
+void * sgIP_malloc(int size) __attribute__((weak));
+void sgIP_free(void * ptr) __attribute__((weak));
 
 //////////////////////////////////////////////////////////////////////////
 // wifi heap allocator system
@@ -224,7 +225,6 @@ void ethhdr_print(char f, void * d) {
 	char buffer[33];
 	int i;
 	int t,c;
-	(void)buffer;
 	buffer[0]=f;
 	buffer[1]=':';
 	buffer[14]=' ';
@@ -423,12 +423,12 @@ int Wifi_GetNumAP() {
 }
 
 int Wifi_GetAPData(int apnum, Wifi_AccessPoint * apdata) {
-	int j=0;
+	int j = 0;
 	if(!apdata) return WIFI_RETURN_PARAMERROR;
 	
 	if(WifiData){
 		if(WifiData->aplist[apnum].flags&WFLAG_APDATA_ACTIVE) {
-			while(Spinlock_Acquire(WifiData->aplist[apnum])!=SPINLOCK_OK)
+			while(Spinlock_Acquire(WifiData->aplist[apnum])!=SPINLOCK_OK);
 			{
 				// additionally calculate average RSSI here
 				WifiData->aplist[apnum].rssi=0;
@@ -538,24 +538,24 @@ static
 void sgIP_DNS_Record_Localhost()
 {
 	if(wifi_hw){
-		sgIP_DNS_Record *rec;
-		const unsigned char * resdata_c = (unsigned char *)&(wifi_hw->ipaddr);
-		rec = sgIP_DNS_GetUnusedRecord();
-		rec->flags=SGIP_DNS_FLAG_ACTIVE | SGIP_DNS_FLAG_BUSY;
-		
-		rec->addrlen    = 4;
-		rec->numalias   = 1;
-		gethostname(rec->aliases[0], 256);
-		gethostname(rec->name, 256);
-		rec->numaddr    = 1;
-		rec->addrdata[0] = resdata_c[0];
-		rec->addrdata[1] = resdata_c[1];
-		rec->addrdata[2] = resdata_c[2];
-		rec->addrdata[3] = resdata_c[3];
-		rec->addrclass = AF_INET;
-		rec->TTL = 0;
+	    sgIP_DNS_Record *rec;
+	    const unsigned char * resdata_c = (unsigned char *)&(wifi_hw->ipaddr);
+	    rec = sgIP_DNS_GetUnusedRecord();
+	    rec->flags=SGIP_DNS_FLAG_ACTIVE | SGIP_DNS_FLAG_BUSY;
+    
+	    rec->addrlen    = 4;
+	    rec->numalias   = 1;
+	    gethostname(rec->aliases[0], 256);
+	    gethostname(rec->name, 256);
+	    rec->numaddr    = 1;
+	    rec->addrdata[0] = resdata_c[0];
+	    rec->addrdata[1] = resdata_c[1];
+	    rec->addrdata[2] = resdata_c[2];
+	    rec->addrdata[3] = resdata_c[3];
+	    rec->addrclass = AF_INET;
+	    rec->TTL = 0;
 
-		rec->flags=SGIP_DNS_FLAG_ACTIVE | SGIP_DNS_FLAG_BUSY|SGIP_DNS_FLAG_RESOLVED;
+	    rec->flags=SGIP_DNS_FLAG_ACTIVE | SGIP_DNS_FLAG_BUSY|SGIP_DNS_FLAG_RESOLVED;
 	}
 }
 
@@ -838,7 +838,6 @@ int Wifi_Interface_Init(sgIP_Hub_HWInterface * hw) {
 	return 0;
 }
 
-inline __attribute__((always_inline))
 void Wifi_Timer(int num_ms) {
 	Wifi_Update();
 	sgIP_Timer(num_ms);
@@ -882,7 +881,7 @@ int Wifi_CheckInit() {
 	return ((WifiData->flags7 & WFLAG_ARM7_ACTIVE) && (WifiData->flags9 & WFLAG_ARM9_ARM7READY));
 }
 
-inline __attribute__((always_inline))
+
 void Wifi_Update() {
 	int cnt;
 	int base, base2, len, fulllen;
@@ -937,7 +936,7 @@ void Wifi_Update() {
 					mb = sgIP_memblock_allocHW(14,len-8-hdrlen);
 					if(mb) {
 						if(base2>=(WIFI_RXBUFFER_SIZE/2)) base2-=(WIFI_RXBUFFER_SIZE/2);
-						Wifi_RxRawReadPacket(base2,(len-8-hdrlen)&(~1),((u16 *)mb->datastart)+7);
+						Wifi_RxRawReadPacket(base2,(len-8-hdrlen)&(~1),((u16 *)mb->datastart)+7); // Todo: Improve this to read correctly  in the case that the packet buffer is fragmented
 						if(len&1) ((u8 *)mb->datastart)[len+14-1-8-hdrlen]=Wifi_RxReadOffset(base2,((len-8-hdrlen)/2))&255;
 						Wifi_CopyMacAddr(mb->datastart,framehdr+8); // copy dest
 						if(Wifi_RxReadOffset(base,6)&0x0200) { // from DS set?
@@ -1047,7 +1046,6 @@ u32 Wifi_GetStats(int statnum) {
 // sync functions
 
 //---------------------------------------------------------------------------------
-inline __attribute__((always_inline))
 void Wifi_Sync() {
 //---------------------------------------------------------------------------------
 	int oldIE = REG_IE;
@@ -1062,10 +1060,9 @@ void Wifi_Sync() {
 
 // wifi timer function, to update internals of sgIP
 //---------------------------------------------------------------------------------
-inline __attribute__((always_inline))
-void Timer_10ms(void) {
+void Timer_50ms(void) {
 //---------------------------------------------------------------------------------
-	Wifi_Timer(10);
+	Wifi_Timer(50);
 }
 
 // notification function to send fifo message to arm7
@@ -1106,7 +1103,7 @@ bool Wifi_InitDefault(bool useFirmwareSettings) {
 	Wifi_SetSyncHandler(arm9_synctoarm7); // tell wifi lib to use our handler to notify arm7
 
 	// set timer3
-	TIMERXDATA(3) = -1310; // 1310 * 256 cycles = ~10ms;
+	TIMERXDATA(3) = -6553; // 6553.1 * 256 cycles = ~50ms;
 	TIMERXCNT(3) = 0x00C2; // enable, irq, 1/256 clock
 
 	SendFIFOWords(WIFI_INIT, (uint32)wifi_pass);
@@ -1120,10 +1117,11 @@ bool Wifi_InitDefault(bool useFirmwareSettings) {
 
 		Wifi_AutoConnect(); // request connect
 
-		while(wifiStatus != ASSOCSTATUS_ASSOCIATED) {
+		while(true) {
 			wifiStatus = Wifi_AssocStatus(); // check status
+            if(wifiStatus == ASSOCSTATUS_ASSOCIATED) break;
 			if(wifiStatus == ASSOCSTATUS_CANNOTCONNECT) return false;
-			swiDelay(900);
+			swiDelay(888);
 		}  
 	}
 	

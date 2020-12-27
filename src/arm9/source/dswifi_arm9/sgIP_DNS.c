@@ -137,6 +137,7 @@ int sgIP_DNS_isipaddress(const char * name, unsigned long * ipdest) {
 
 sgIP_DNS_Record * sgIP_DNS_FindDNSRecord(const char * name) {
    int i,j,k,n,c,c2;
+   SGIP_INTR_PROTECT();
    for(i=0;i<SGIP_DNS_MAXRECORDSCACHE;i++) {
       if((dnsrecords[i].flags&(SGIP_DNS_FLAG_ACTIVE|SGIP_DNS_FLAG_RESOLVED)) == (SGIP_DNS_FLAG_ACTIVE|SGIP_DNS_FLAG_RESOLVED)) {
          for(j=0;j<dnsrecords[i].numalias;j++) {
@@ -154,19 +155,23 @@ sgIP_DNS_Record * sgIP_DNS_FindDNSRecord(const char * name) {
             }
             if(name[n] || dnsrecords[i].aliases[j][n]) k=0;
             if(k) {
+               SGIP_INTR_UNPROTECT();
                return dnsrecords+i;
             }
          }
       }
    }
 
+   SGIP_INTR_UNPROTECT();
    return 0;
 }
 
 sgIP_DNS_Record * sgIP_DNS_GetUnusedRecord() {
    int i,j,minttl;
+   SGIP_INTR_PROTECT();
    for(i=0;i<SGIP_DNS_MAXRECORDSCACHE;i++) {
       if(!(dnsrecords[i].flags&SGIP_DNS_FLAG_ACTIVE))  {
+         SGIP_INTR_UNPROTECT();
          return dnsrecords+i;
       }
    }
@@ -178,6 +183,7 @@ sgIP_DNS_Record * sgIP_DNS_GetUnusedRecord() {
       }
    }
    dnsrecords[j].flags=0;
+   SGIP_INTR_UNPROTECT();
    return dnsrecords+j;
 }
 
@@ -309,9 +315,11 @@ sgIP_DNS_Hostent * sgIP_DNS_gethostbyname(const char * name) {
    unsigned long serverip;
    struct sockaddr_in sain;
    unsigned long IP;
+   SGIP_INTR_PROTECT();
 
    // is name an IP address?
    if(sgIP_DNS_isipaddress(name,&IP)) {
+      SGIP_INTR_UNPROTECT();
       return sgIP_DNS_GenerateHostentIP(IP);
    }
 
@@ -319,6 +327,7 @@ sgIP_DNS_Hostent * sgIP_DNS_gethostbyname(const char * name) {
    rec=sgIP_DNS_FindDNSRecord(name);
    if(rec) {
       he=sgIP_DNS_GenerateHostent(rec);
+      SGIP_INTR_UNPROTECT();
       return he;
    }
 
@@ -347,6 +356,9 @@ dns_listenonly:
             if(i!=-1) break;
             dtime=sgIP_timems-query_time_start;
             if(dtime>SGIP_DNS_TIMEOUTMS) break;
+            SGIP_INTR_UNPROTECT();
+            SGIP_WAITEVENT();
+            SGIP_INTR_REPROTECT();
          } while(1);
 
          if(i==-1) { // no reply, retry
@@ -354,6 +366,8 @@ dns_listenonly:
             if(retries>=SGIP_DNS_MAXRETRY) { // maybe try another server? for now just quit.
                closesocket(dns_sock);
                dns_sock=-1;
+               SGIP_INTR_UNPROTECT();
+
                return NULL;
             }
             continue; // send again
@@ -380,6 +394,8 @@ dns_listenonly:
             {
                closesocket(dns_sock);
                dns_sock=-1;
+               SGIP_INTR_UNPROTECT();
+
                return NULL;
             }
            
@@ -437,11 +453,13 @@ dns_listenonly:
       closesocket(dns_sock);
       dns_sock=-1;
    } else {
+      SGIP_INTR_UNPROTECT();
       return NULL;
    }
 
    // received response, return data
    he=sgIP_DNS_GenerateHostent(rec);
+   SGIP_INTR_UNPROTECT();
    return he;
 }
 

@@ -44,6 +44,7 @@ void * pool_link;
 sgIP_memblock * sgIP_memblock_getunused() {
 	int i;
 	sgIP_memblock * mb;
+	SGIP_INTR_PROTECT();
 	if(memblock_poolfree) { // we still have free memblocks!
 		mb=memblock_poolfree;
 		memblock_poolfree=mb->next;
@@ -53,6 +54,7 @@ sgIP_memblock * sgIP_memblock_getunused() {
 		mb = 0; // eventually alloc new blocks, but for now just stop.
 	}
 
+	SGIP_INTR_UNPROTECT();
 	return mb;
 }
 #endif  //SGIP_MEMBLOCK_DYNAMIC_MALLOC_ALL
@@ -114,8 +116,8 @@ sgIP_memblock * sgIP_memblock_allocHW(int headersize, int packetsize) {
 				return 0;
 			}
 			tmb->next=t;
-			t->totallength=mb->totallength;
-			t->datastart=mb->reserved; // no header on blocks after the first.
+			t->totallength=tmb->totallength;
+			t->datastart=t->reserved; // no header on blocks after the first.
 			t->next=0;
 			t->thislength=SGIP_MEMBLOCK_INTERNALSIZE;
 			if(t->thislength+totlen>=mb->totallength) {
@@ -142,6 +144,7 @@ sgIP_memblock * sgIP_memblock_alloc(int packetsize) {
 void sgIP_memblock_free(sgIP_memblock * mb) {
    sgIP_memblock * f;
 
+   SGIP_INTR_PROTECT();
    while(mb) {
       mb->totallength=0;
       mb->thislength=0;
@@ -151,6 +154,7 @@ void sgIP_memblock_free(sgIP_memblock * mb) {
       sgIP_free(f);
    }
 
+   SGIP_INTR_UNPROTECT();
 }
 
 #else //SGIP_MEMBLOCK_DYNAMIC_MALLOC_ALL
@@ -158,6 +162,7 @@ void sgIP_memblock_free(sgIP_memblock * mb) {
 void sgIP_memblock_free(sgIP_memblock * mb) {
 	sgIP_memblock * f;
 
+	SGIP_INTR_PROTECT();
 	while(mb) {
 		mb->totallength=0;
 		mb->thislength=0;
@@ -171,6 +176,7 @@ void sgIP_memblock_free(sgIP_memblock * mb) {
 	}
 //	SGIP_DEBUG_MESSAGE(("memblock_free: %i free, %i used",numfree,numused));
 
+	SGIP_INTR_UNPROTECT();
 
 }
 
@@ -189,21 +195,20 @@ void sgIP_memblock_exposeheader(sgIP_memblock * mb, int change) {
 	}
 }
 void sgIP_memblock_trimsize(sgIP_memblock * mb, int newsize) {
-	int lentot;
-	if(mb) {
-		mb->totallength=newsize;
-		lentot=0;
+	int lentot=0;
+    if(mb){
 		while(mb) {
-			lentot+=mb->thislength;
-			if(lentot>newsize) {
-				mb->thislength-=(lentot-newsize);
-				if(mb->next) sgIP_memblock_free(mb->next);
-				mb->next=0;
-				return;
-			} else {
-				mb=mb->next;
-			}
-		}
+	        mb->totallength=newsize;
+	        lentot+=mb->thislength;
+	        if(lentot>newsize) {
+	            mb->thislength-=(lentot-newsize);
+	            if(mb->next) sgIP_memblock_free(mb->next);
+	            mb->next=0;
+	            return;
+	        } else {
+	            mb=mb->next;
+	        }
+	    }
 	}
 }
 
@@ -221,7 +226,7 @@ int sgIP_memblock_IPChecksum(sgIP_memblock * mb, int startbyte, int chksum_lengt
 			offset+=2;
 			chksum_length-=2;
 		}
-      chksum_temp= (chksum_temp&0xFFFF) +(chksum_temp>>16);
+        chksum_temp= (chksum_temp&0xFFFF) +(chksum_temp>>16);
 		if(startbyte+offset<mb->thislength && chksum_length>0) {
 			chksum_temp+= ((unsigned char *)mb->datastart)[startbyte+offset];
 			if(chksum_length==1) break;
@@ -236,9 +241,16 @@ int sgIP_memblock_IPChecksum(sgIP_memblock * mb, int startbyte, int chksum_lengt
 			offset++;
 			chksum_length--;
 		}
+        else
+        {
+			offset=0;
+			startbyte=0;
+			mb=mb->next;
+			if(!mb) break;
+        }
 	}
-   chksum_temp= (chksum_temp&0xFFFF) +(chksum_temp>>16);
-   chksum_temp= (chksum_temp&0xFFFF) +(chksum_temp>>16);
+    chksum_temp= (chksum_temp&0xFFFF) +(chksum_temp>>16);
+    chksum_temp= (chksum_temp&0xFFFF) +(chksum_temp>>16);
 	return chksum_temp;
 }
 int sgIP_memblock_CopyToLinear(sgIP_memblock * mb, void * dest_buf, int startbyte, int copy_length) {

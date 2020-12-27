@@ -124,7 +124,7 @@ SOFTWARE.
 #define SGIP_TCP_TRANSMITBUFFERLENGTH			8192
 
 // SGIP_TCPOOBBUFFERLENGTH: The size (in bytes) of the receive OOB data FIFO in a TCP connection
-#define SGIP_TCP_OOBBUFFERLENGTH				2048
+#define SGIP_TCP_OOBBUFFERLENGTH				256
 
 // SGIP_ARP_MAXENTRIES: The maximum number of cached ARP entries - this is defined staticly
 //  because it's somewhat impractical to dynamicly allocate memory for such a small structure
@@ -236,24 +236,20 @@ extern "C" {
 #ifdef __cplusplus
 };
 #endif
-/*
 #define SGIP_INTR_PROTECT() \
 	int tIME; \
-	tIME=enterSafeInterrupts()
+	tIME=enterCriticalSection()
 #define SGIP_INTR_REPROTECT() \
-	tIME=enterSafeInterrupts()
+	tIME=enterCriticalSection()
 #define SGIP_INTR_UNPROTECT() \
-	leaveSafeInterrupts()
+	leaveCriticalSection(tIME)
 #define SGIP_WAITEVENT() \
    sgIP_IntrWaitEvent()
-*/
 #else // !SGIP_INTERRUPT_THREADING_MODEL
-/*
 #define SGIP_INTR_PROTECT()
 #define SGIP_INTR_REPROTECT()
 #define SGIP_INTR_UNPROTECT()
 #define SGIP_WAITEVENT();
-*/
 #endif // SGIP_INTERRUPT_THREADING_MODEL
 
 #ifdef SGIP_DEBUG

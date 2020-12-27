@@ -1,6 +1,6 @@
 // DS Wifi interface code
 // Copyright (C) 2005-2006 Stephen Stair - sgstair@akkit.org - http://www.akkit.org
-// spinlockTGDS.h - code for spinlocking for basic wifi structure memory protection
+// spinlock.h - code for spinlocking for basic wifi structure memory protection
 /****************************************************************************** 
 DSWifi Lib and test materials are licenced under the MIT open source licence:
 Copyright (c) 2005-2006 Stephen Stair

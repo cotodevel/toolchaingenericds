@@ -64,7 +64,7 @@ extern void Wifi_Update();
 //   battery life.
 //  unsigned long WifiData: You must pass the 32bit value returned by the call to
 //                           Wifi_Init on the ARM9.
-extern void Wifi_Init(uint32 WifiData);
+extern void Wifi_Init(unsigned long WifiData);
 
 // Wifi_Deinit: In the case that it is necessary, this function cuts power to
 //   the wifi system.  After this the wifi will be unusable until Wifi_Init is

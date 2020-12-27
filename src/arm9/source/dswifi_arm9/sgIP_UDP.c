@@ -88,6 +88,7 @@ int sgIP_UDP_ReceivePacket(sgIP_memblock * mb, unsigned long srcip, unsigned lon
 	}
 	sgIP_Record_UDP * rec;
 	sgIP_memblock *tmb;
+	SGIP_INTR_PROTECT();
 	rec=udprecords;
 
 	while(rec) {
@@ -96,6 +97,7 @@ int sgIP_UDP_ReceivePacket(sgIP_memblock * mb, unsigned long srcip, unsigned lon
 	}
 	if(!rec) { // no matching records
 		sgIP_memblock_free(mb);
+		SGIP_INTR_UNPROTECT();
 		return 0;
 	}
 	// we have a record and a packet for it; add some data to the record and stuff it into the record queue.
@@ -113,6 +115,7 @@ int sgIP_UDP_ReceivePacket(sgIP_memblock * mb, unsigned long srcip, unsigned lon
 	// ok, data added to queue - yay!
 	// that means... we're done.
 
+	SGIP_INTR_UNPROTECT();
 	return 0;
 }
 
@@ -127,6 +130,7 @@ int sgIP_UDP_SendPacket(sgIP_Record_UDP * rec, const char * data, int datalen, u
 	if(!mb) return SGIP_ERROR(ENOMEM);
 	sgIP_memblock_exposeheader(mb,-sgIP_IP_RequiredHeaderSize()); // hide IP header space for later
 
+	SGIP_INTR_PROTECT();
 	unsigned long srcip = sgIP_IP_GetLocalBindAddr(rec->srcip,destip);
 	sgIP_Header_UDP * udp = (sgIP_Header_UDP *) mb->datastart;
 	udp->srcport=rec->srcport;
@@ -140,10 +144,12 @@ int sgIP_UDP_SendPacket(sgIP_Record_UDP * rec, const char * data, int datalen, u
 	udp->checksum=sgIP_UDP_CalcChecksum(mb,srcip,destip,mb->totallength);
 	sgIP_IP_SendViaIP(mb,17,srcip,destip);
 
+	SGIP_INTR_UNPROTECT();
 	return datalen;
 }
 
 sgIP_Record_UDP * sgIP_UDP_AllocRecord() {
+	SGIP_INTR_PROTECT();
 	sgIP_Record_UDP * rec;
 	rec = (sgIP_Record_UDP *)sgIP_malloc(sizeof(sgIP_Record_UDP));
 	if(rec) {
@@ -157,10 +163,12 @@ sgIP_Record_UDP * sgIP_UDP_AllocRecord() {
 		rec->next=udprecords;
 		udprecords=rec;
 	}
+	SGIP_INTR_UNPROTECT();
 	return rec;
 }
 void sgIP_UDP_FreeRecord(sgIP_Record_UDP * rec) {
 	if(!rec) return;
+	SGIP_INTR_PROTECT();
 	sgIP_Record_UDP * t;
 	// incoming queue is all clumped together as a single memblock, so, time to free it all in one call :)
 	if(rec->incoming_queue) sgIP_memblock_free(rec->incoming_queue); // woohoo!
@@ -179,32 +187,33 @@ void sgIP_UDP_FreeRecord(sgIP_Record_UDP * rec) {
 	}
 	sgIP_free(rec);
 
+	SGIP_INTR_UNPROTECT();
 }
 
 int sgIP_UDP_Bind(sgIP_Record_UDP * rec, int srcport, unsigned long srcip) {
 	if(!rec) return SGIP_ERROR(EINVAL);
+	SGIP_INTR_PROTECT();
 	if(rec->state!=SGIP_UDP_STATE_UNUSED) {
 		rec->srcip=srcip;
 		rec->srcport=srcport;
 		if(rec->state==SGIP_UDP_STATE_UNBOUND) rec->state=SGIP_UDP_STATE_BOUND;
 	}
+	SGIP_INTR_UNPROTECT();
 	return 0;
 }
 
 int sgIP_UDP_RecvFrom(sgIP_Record_UDP * rec, char * destbuf, int buflength, int flags, unsigned long * sender_ip, unsigned short * sender_port) {
 	if( (wifi_hw == NULL) || !rec || !destbuf || !sender_ip || !sender_port || buflength==0) return SGIP_ERROR(EINVAL);
-	
-	if(rec->incoming_queue==NULL) { 
+	SGIP_INTR_PROTECT();
+	if(rec->incoming_queue==0) { 
+		SGIP_INTR_UNPROTECT();
 		return SGIP_ERROR(EWOULDBLOCK);
 	}
 	int packetlen=rec->incoming_queue->totallength-12;
 	if(packetlen>buflength) {
+		SGIP_INTR_UNPROTECT();
 		return SGIP_ERROR(EMSGSIZE);
 	}
-	if(rec->incoming_queue->datastart == NULL){
-		return SGIP_ERROR(EINVAL);
-	}
-	
 	sgIP_memblock * mb;
 	*sender_ip=*((unsigned long *)rec->incoming_queue->datastart);
 	*sender_port=((unsigned short *)rec->incoming_queue->datastart)[2];
@@ -216,9 +225,7 @@ int sgIP_UDP_RecvFrom(sgIP_Record_UDP * rec, char * destbuf, int buflength, int 
 	while(totlen>0 && rec->incoming_queue) {
 		totlen-=rec->incoming_queue->thislength;
 		for(i=first;i<rec->incoming_queue->thislength;i++) {
-			if(rec->incoming_queue->thislength < buflength){
-				destbuf[buf_start+i-first]=rec->incoming_queue->datastart[i];
-			}
+			destbuf[buf_start+i-first]=rec->incoming_queue->datastart[i];
 		}
 		buf_start+=rec->incoming_queue->thislength-first;
 		first=0;
@@ -229,6 +236,7 @@ int sgIP_UDP_RecvFrom(sgIP_Record_UDP * rec, char * destbuf, int buflength, int 
 	}
 	if(!(rec->incoming_queue)) rec->incoming_queue_end=0;
 	
+	SGIP_INTR_UNPROTECT();
 	return buf_start;
 }
 

@@ -37,6 +37,7 @@ SOFTWARE.
 
 
 
+// default option is to use 128k heap
 #define WIFIINIT_OPTION_USEHEAP_64     (int)(0x00000000)
 #define WIFIINIT_OPTION_USEHEAP_96     (int)(0x10000000)
 #define WIFIINIT_OPTION_USEHEAP_128    (int)(0x20000000)
@@ -59,12 +60,14 @@ extern "C" {
 
 #endif
 
+// user code uses members of the WIFIGETDATA structure in calling Wifi_GetData to retreive miscellaneous odd information
 enum WIFIGETDATA {
 	WIFIGETDATA_MACADDRESS,			// MACADDRESS: returns data in the buffer, requires at least 6 bytes
 	WIFIGETDATA_NUMWFCAPS,			// NUM WFC APS: returns number between 0 and 3, doesn't use buffer.
 
 	MAX_WIFIGETDATA
 };
+
 
 // Wifi Packet Handler function: (int packetID, int packetlength) - packetID is only valid while the called function is executing.
 // call Wifi_RxRawReadPacket while in the packet handler function, to retreive the data to a local buffer.
@@ -125,7 +128,7 @@ extern u32 Wifi_GetIP();
 extern uint32 Wifi_TxBufferWordsAvailable();
 extern void Wifi_TxBufferWrite(sint32 start, sint32 len, uint16 * data);
 
-extern void Timer_10ms(void);
+extern void Timer_50ms(void);
 extern sgIP_Hub_HWInterface * wifi_hw;
 extern bool WNifi_InitSafeDefault(int DSWNIFI_MODE);
 

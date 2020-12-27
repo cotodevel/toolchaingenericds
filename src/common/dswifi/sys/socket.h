@@ -101,8 +101,6 @@ struct sockaddr {
 	char				sa_data[14];
 };
 
-typedef unsigned int socklen_t;
-
 #ifndef ntohs
 #define ntohs(num) htons(num)
 #define ntohl(num) htonl(num)
