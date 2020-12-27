@@ -82,6 +82,9 @@ Features:
 
 Changelog:
 
+TGDS 1.62:
+- Restored dswifi 0.4.0 sources. Fixes synchronous socket connections. TGDS now supports async/sync socket operations.
+
 TGDS 1.61:
 - Fixed IRQs and audio playback. Audio hears nicely now, no sound clicking anymore!
 
