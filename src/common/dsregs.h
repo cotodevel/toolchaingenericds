@@ -358,39 +358,6 @@ USA
 #define TILE_FLIP_H 	(1<<10)
 #define TILE_FLIP_V 	(1<<11)
 
-
-#define BgType_Text8bpp (0)
-#define BgType_Text4bpp (1)
-#define BgType_Rotation (2)
-#define BgType_ExRotation (3)
-#define BgType_Bmp8 (4)
-#define BgType_Bmp16 (5)
-#define BgSize_R_128x128 	(0 << 14)
-#define BgSize_R_256x256  	(1 << 14)
-#define BgSize_R_512x512 	(2 << 14)
-#define BgSize_R_1024x1024 	(3 << 14)
-
-#define BgSize_T_256x256 	(0 << 14) | (1 << 16)
-#define BgSize_T_512x256 	(1 << 14) | (1 << 16)
-#define BgSize_T_256x512 	(2 << 14) | (1 << 16)
-#define BgSize_T_512x512 	(3 << 14) | (1 << 16)
-
-#define BgSize_ER_128x128 	(0 << 14) | (2 << 16)
-#define BgSize_ER_256x256 	(1 << 14) | (2 << 16)
-#define BgSize_ER_512x512 	(2 << 14) | (2 << 16)
-#define BgSize_ER_1024x1024 	(3 << 14) | (2 << 16)
-
-#define BgSize_B8_128x128 		((0 << 14) | (1<<7) | (3 << 16))
-#define BgSize_B8_256x256 		((1 << 14) | (1<<7) | (3 << 16))
-#define BgSize_B8_512x256 		((2 << 14) | (1<<7) | (3 << 16))
-#define BgSize_B8_512x512 		((3 << 14) | (1<<7) | (3 << 16))
-#define BgSize_B8_1024x512 		(1 << 14) | (3 << 16)
-#define BgSize_B8_512x1024 		(0) | (3 << 16)
-
-#define BgSize_B16_128x128 		((0 << 14) | (1<<7) | (1<<2) | (4 << 16))
-#define BgSize_B16_256x256 		((1 << 14) | (1<<7) | (1<<2) | (4 << 16))
-#define BgSize_B16_512x256 		((2 << 14) | (1<<7) | (1<<2) | (4 << 16))
-#define BgSize_B16_512x512 		((3 << 14) | (1<<7) | (1<<2) | (4 << 16))
  
 #define REG_MASTER_BRIGHT     (*(vuint16*)0x0400006C)
 #define REG_MASTER_BRIGHT_SUB (*(vuint16*)0x0400106C)
