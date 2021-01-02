@@ -28,14 +28,6 @@ USA
 #include "dsregs_asm.h"
 #include "ipcfifoTGDS.h"
 
-//TouchScreen 
-struct touchScr {
-    uint16 buttons7;  			// X, Y, /PENIRQ buttons
-	uint16 KEYINPUT7;			//REG_KEYINPUT ARM7
-	uint16 touchX,   touchY;   // raw x/y TSC SPI
-	sint16 touchXpx, touchYpx; // TFT x/y pixel (converted)
-};
-
 #ifdef __cplusplus
 extern "C"{
 #endif
@@ -43,14 +35,14 @@ extern "C"{
 extern uint32 buffered_keys_arm9;
 extern uint32 global_keys_arm9;
 extern uint32 last_frame_keys_arm9;	//last frame keys before new frame keys
-extern void touchScrRead(struct touchScr * touchScrInst);
+
 #ifdef __cplusplus
 }
 #endif
 
 static inline void scanKeys(){
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint16 buttonsARM7 = TGDSIPC->buttons7;
+	uint16 buttonsARM7 = TGDSIPC->ARM7REG_KEYXY;
 	uint32 readKeys = (uint32)(( ((~KEYINPUT)&0x3ff) | (((~buttonsARM7)&3)<<10) | (((~buttonsARM7)<<6) & (KEY_TOUCH|KEY_LID) ))^KEY_LID);
 	last_frame_keys_arm9 = global_keys_arm9;
 	global_keys_arm9 = readKeys | buffered_keys_arm9;

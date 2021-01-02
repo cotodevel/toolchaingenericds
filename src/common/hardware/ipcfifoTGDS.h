@@ -149,9 +149,7 @@ typedef struct sIPCSharedTGDS {
 	//Load firmware from FLASH
 	struct sDSFWHEADER DSFWHEADERInst;
 	
-	uint16 buttons7;  			// X, Y, /PENIRQ buttons
-    uint16 KEYINPUT7;			//REG_KEYINPUT ARM7
-	uint16 touchX,   touchY;   // raw x/y TSC SPI
+	uint16 rawx,   rawy;   // raw x/y TSC SPI
 	sint16 touchXpx, touchYpx; // TFT x/y pixel (converted)
 	
 	sint16 touchZ1,  touchZ2;  // TSC x-panel measurements
@@ -214,7 +212,9 @@ typedef struct sIPCSharedTGDS {
 	
 	//DS Firmware	Settings default set
 	struct sDSFWSETTINGS DSFWSETTINGSInst;
-	struct sEXTKEYIN	EXTKEYINInst;
+	
+	u16 ARM7REG_KEYXY;	//uint16 buttons7;  // X, Y, /PENIRQ buttons
+    u16 ARM7REG_KEYINPUT; //uint16 KEYINPUT7;			//REG_KEYINPUT ARM7
 	
 	//Soundstream
 	SoundRegion soundIPC;
@@ -227,6 +227,16 @@ typedef struct sIPCSharedTGDS {
 #define TGDSIPCUserStartAddress (u32)( ((u32)TGDSIPCStartAddress) + TGDSIPCSize)	//u32 because it`s unknown at this point. TGDS project will override it to specific USER IPC struct. Known as GetUserIPCAddress()
 #define IPCRegionSize	(sint32)(4*1024)
 
+//TouchScreen
+struct XYTscPos{
+	uint16	rawx; 
+	uint16	rawy; 
+	uint16	touchXpx;   
+	uint16	touchYpx;
+	uint16	z1;   
+	uint16	z2;
+};
+
 static inline void sendIPCIRQOnly(){
 	REG_IPC_SYNC|=IPC_SYNC_IRQ_REQUEST;
 }
@@ -238,6 +248,19 @@ static inline void sendByteIPC(uint8 inByte){
 
 static inline uint8 receiveByteIPC(){
 	return (REG_IPC_SYNC&0xf);
+}
+
+static inline void XYReadScrPos(struct XYTscPos * StouchScrPosInst){
+    struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+    StouchScrPosInst->rawx =   TGDSIPC->rawx;
+    StouchScrPosInst->rawy =   TGDSIPC->rawy;
+    
+    //TFT x/y pixel
+    StouchScrPosInst->touchXpx  =   TGDSIPC->touchXpx;
+    StouchScrPosInst->touchYpx  =   TGDSIPC->touchYpx;
+    
+    StouchScrPosInst->z1   =   TGDSIPC->touchZ1;
+    StouchScrPosInst->z2   =   TGDSIPC->touchZ2;
 }
 
 #endif

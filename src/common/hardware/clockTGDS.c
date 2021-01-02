@@ -113,8 +113,7 @@ ulong get_nds_seconds(uchar *time)
 }
 
 
-ulong nds_get_time7(void)
-{
+ulong nds_get_time7(void){
 	uchar cmd;
 	uchar time[8];
 
@@ -125,7 +124,6 @@ ulong nds_get_time7(void)
 	rtcTransaction(&cmd, 1, &(time[0]), 1);
 	
 	return get_nds_seconds(&(time[1]));
-
 }
 
 void nds_set_time7(ulong secs){

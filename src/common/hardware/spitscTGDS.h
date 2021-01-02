@@ -24,16 +24,6 @@ USA
 #include "typedefsTGDS.h"
 #include <stdbool.h>
 
-//TouchScreen
-struct XYTscPos{
-	uint16	rawx; 
-	uint16	rawy; 
-	uint16	px;   
-	uint16	py;
-	uint16	z1;   
-	uint16	z2;
-};
-
 //XY / PenIRQ
 #define KEY_XARM7 (1<<0)
 #define KEY_YARM7 (1<<1)
@@ -48,14 +38,6 @@ struct XYTscPos{
 //  7      Hinge/folded (0=Open, 1=Closed)
 //  2,4,5  Unknown / set
 //  8..15  Unknown / zero
-  
-struct sEXTKEYIN{
-	bool butX;	//true pressed/ false not
-	bool butY;	//true pressed/ false not
-	bool debugButton;	//ignored
-	bool PenDown;	//true pressed	/ false not
-	bool	hinge_folded;	//true folded / false open
-} ;
 
 //40001C0 | BIT_SPICLK_2MHZ | BIT_SPICNT_TSCCNT
 
@@ -104,14 +86,9 @@ extern "C"{
 #endif
 
 #ifdef ARM7
-void doSPIARM7IO();
+extern void doSPIARM7IO();	//Internal: ARM7 Only. Requires to be called on interrupts
 #endif
 
-//Shared
-extern bool penIRQread();	//return true if TSC is touched, false if not
-
-extern void XYReadScrPos(struct XYTscPos * StouchScrPosInst);	//User exposed
-extern void XYReadPos();	//Internal, requires to be called on interrupts
 #ifdef __cplusplus
 }
 #endif
