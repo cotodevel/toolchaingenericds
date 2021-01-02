@@ -34,10 +34,6 @@ static int LastTSCPosY = 0;
 void doSPIARM7IO(){
 	struct sIPCSharedTGDS * sIPCSharedTGDSInst = (struct sIPCSharedTGDS *)TGDSIPCStartAddress;
 	
-	//ARM7 Keypad has access to X/Y/Hinge/Pen down bits
-	sIPCSharedTGDSInst->ARM7REG_KEYXY	=	(uint16)REG_KEYXY;
-	sIPCSharedTGDSInst->ARM7REG_KEYINPUT=	(uint16)REG_KEYINPUT;
-	
 	//Handle Touchscreen
 	if(!(REG_KEYXY & KEY_PENIRQARM7)){
 		//Set Chip Select LOW to invoke the command & Transmit the instruction byte: TSC CNT Differential Mode: X Raw TSC 

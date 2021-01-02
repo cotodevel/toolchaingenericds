@@ -123,6 +123,12 @@ void NDS_IRQHandler(){
 		VblankUser();
 	}
 	if(handledIRQ & IRQ_VCOUNT){
+		#ifdef ARM7
+		struct sIPCSharedTGDS * sIPCSharedTGDSInst = (struct sIPCSharedTGDS *)TGDSIPCStartAddress;
+		//ARM7 Keypad has access to X/Y/Hinge/Pen down bits
+		sIPCSharedTGDSInst->ARM7REG_KEYXY	=	(uint16)REG_KEYXY;
+		sIPCSharedTGDSInst->ARM7REG_KEYINPUT=	(uint16)REG_KEYINPUT;
+		#endif
 		VcounterUser();
 	}
 	if(handledIRQ & IRQ_TIMER0){
@@ -296,9 +302,6 @@ void NDS_IRQHandler(){
 		screenLidHasOpenedhandlerUser();
 	}
 
-	if(handledIRQ & IRQ_RTCLOCK){
-		
-	}
 	if(handledIRQ & IRQ_SCREENLID){
 		SendFIFOWords(FIFO_IRQ_LIDHASOPENED_SIGNAL, 0);
 		screenLidHasOpenedhandlerUser();
