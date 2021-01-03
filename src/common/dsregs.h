@@ -120,7 +120,7 @@ USA
 #define SOUND_PAN(n)	((n) << 16)
 #define SCHANNEL_ENABLE (1<<31)
 
-#define REG_KEYINPUT (*(uint16*)0x04000132)
+#define	REG_KEYINPUT	(*(vuint16*)0x04000130)
 
 //use POWERMAN_ARM9 | POWER_XXXX to write to ARM9 regs directly.
 #define POWERMAN_ARM9		(uint16)(1<<16)

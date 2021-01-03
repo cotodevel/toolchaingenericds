@@ -122,7 +122,7 @@ static inline void removeLastPath2(char * inPath, char * outPath){
 
 static inline bool ShowBrowser(char * Path, char * outBuf){
 	scanKeys();
-	while((keysPressed() & KEY_START) || (keysPressed() & KEY_A) || (keysPressed() & KEY_B)){
+	while((keysDown() & KEY_START) || (keysDown() & KEY_A) || (keysDown() & KEY_B)){
 		scanKeys();
 		IRQWait(IRQ_VBLANK);
 	}
@@ -204,12 +204,12 @@ static inline bool ShowBrowser(char * Path, char * outBuf){
 		}
 		
 		scanKeys();
-		pressed = keysPressed();
+		pressed = keysDown();
 		if (pressed&KEY_DOWN && (j < (itemsToLoad - 1) ) ){
 			j++;
 			while(pressed&KEY_DOWN){
 				scanKeys();
-				pressed = keysPressed();
+				pressed = keysDown();
 				IRQWait(IRQ_VBLANK);
 			}
 		}
@@ -225,10 +225,10 @@ static inline bool ShowBrowser(char * Path, char * outBuf){
 			j = 1;
 			
 			scanKeys();
-			pressed = keysPressed();
+			pressed = keysDown();
 			while(pressed&KEY_DOWN){
 				scanKeys();
-				pressed = keysPressed();
+				pressed = keysDown();
 				IRQWait(IRQ_VBLANK);
 			}
 		}
@@ -244,10 +244,10 @@ static inline bool ShowBrowser(char * Path, char * outBuf){
 			j = 1;
 			
 			scanKeys();
-			pressed = keysPressed();
+			pressed = keysDown();
 			while(pressed&KEY_LEFT){
 				scanKeys();
-				pressed = keysPressed();
+				pressed = keysDown();
 				IRQWait(IRQ_VBLANK);
 			}
 		}
@@ -263,10 +263,10 @@ static inline bool ShowBrowser(char * Path, char * outBuf){
 			j = 1;
 			
 			scanKeys();
-			pressed = keysPressed();
+			pressed = keysDown();
 			while(pressed&KEY_RIGHT){
 				scanKeys();
-				pressed = keysPressed();
+				pressed = keysDown();
 				IRQWait(IRQ_VBLANK);
 			}
 		}
@@ -275,7 +275,7 @@ static inline bool ShowBrowser(char * Path, char * outBuf){
 			j--;
 			while(pressed&KEY_UP){
 				scanKeys();
-				pressed = keysPressed();
+				pressed = keysDown();
 				IRQWait(IRQ_VBLANK);
 			}
 		}
@@ -290,10 +290,10 @@ static inline bool ShowBrowser(char * Path, char * outBuf){
 			j = 1;
 			
 			scanKeys();
-			pressed = keysPressed();
+			pressed = keysDown();
 			while(pressed&KEY_UP){
 				scanKeys();
-				pressed = keysPressed();
+				pressed = keysDown();
 				IRQWait(IRQ_VBLANK);
 			}
 		}

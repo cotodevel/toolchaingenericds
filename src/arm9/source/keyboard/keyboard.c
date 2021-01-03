@@ -146,7 +146,7 @@ char processKeyboard(char* str, unsigned int max, unsigned int echo, int strYoff
 {
 	scanKeys();
 	
-	int keysHld = keysPressed();
+	int keysHld = keysDown();
 	//get the map
 	uint16 *map = (uint16 *) SCREEN_BASE_BLOCK_SUB(29); 
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 
