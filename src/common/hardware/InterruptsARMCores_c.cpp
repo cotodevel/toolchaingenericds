@@ -97,8 +97,7 @@ void IRQInit(u8 DSHardware){
 	}
 }
 
-
-
+static bool penDown = false;
 //Software bios irq more or less emulated. (replaces default NDS bios for some parts)
 #ifdef ARM9
 __attribute__((section(".itcm")))
@@ -126,8 +125,51 @@ void NDS_IRQHandler(){
 		#ifdef ARM7
 		struct sIPCSharedTGDS * sIPCSharedTGDSInst = (struct sIPCSharedTGDS *)TGDSIPCStartAddress;
 		//ARM7 Keypad has access to X/Y/Hinge/Pen down bits
-		sIPCSharedTGDSInst->ARM7REG_KEYXY	=	(uint16)REG_KEYXY;
-		sIPCSharedTGDSInst->ARM7REG_KEYINPUT=	(uint16)REG_KEYINPUT;
+		sIPCSharedTGDSInst->ARM7REG_KEYINPUT = (uint16)REG_KEYINPUT;
+		
+		u16 keys= REG_KEYXY;	
+		if(keys & KEY_TOUCH){
+			penDown = false;
+		}
+		else{	
+			//reset state
+			sIPCSharedTGDSInst->rawy    = 0;
+			sIPCSharedTGDSInst->touchYpx = 0;
+			sIPCSharedTGDSInst->rawx    = 0;
+			sIPCSharedTGDSInst->touchXpx = 0;
+			sIPCSharedTGDSInst->touchZ1 = 0;
+			sIPCSharedTGDSInst->touchZ2 = 0;
+			
+			if(penDown){
+				keys |= KEY_TOUCH;	//tsc event must be before coord handling to give priority over touch events
+				
+				touchPosition tempPos = {0};
+				touchReadXY(&tempPos);
+				
+				if(tempPos.rawx && tempPos.rawy){
+					sIPCSharedTGDSInst->rawy    = tempPos.rawy;
+					sIPCSharedTGDSInst->touchYpx = tempPos.py;
+					sIPCSharedTGDSInst->rawx    = tempPos.rawx;
+					sIPCSharedTGDSInst->touchXpx = tempPos.px;
+					sIPCSharedTGDSInst->touchZ1 = tempPos.z1;
+					sIPCSharedTGDSInst->touchZ2 = tempPos.z2;
+				}
+				else{
+					penDown = false;
+				}
+				
+			}
+			else{
+				penDown = true;
+			}
+			
+			//handle re-click
+			if( !(((uint16)REG_KEYINPUT) & KEY_TOUCH) ){
+				penDown = true;
+			}
+		}
+		
+		sIPCSharedTGDSInst->ARM7REG_KEYXY	= keys;
 		#endif
 		VcounterUser();
 	}
