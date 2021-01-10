@@ -237,6 +237,11 @@ struct XYTscPos{
 	uint16	z2;
 };
 
+struct xyCoord{
+	uint16 x;
+	uint16 y;
+};
+
 static inline void sendIPCIRQOnly(){
 	REG_IPC_SYNC|=IPC_SYNC_IRQ_REQUEST;
 }
@@ -250,19 +255,6 @@ static inline uint8 receiveByteIPC(){
 	return (REG_IPC_SYNC&0xf);
 }
 
-static inline void XYReadScrPos(struct XYTscPos * StouchScrPosInst){
-    struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-    StouchScrPosInst->rawx =   TGDSIPC->rawx;
-    StouchScrPosInst->rawy =   TGDSIPC->rawy;
-    
-    //TFT x/y pixel
-    StouchScrPosInst->touchXpx  =   TGDSIPC->touchXpx;
-    StouchScrPosInst->touchYpx  =   TGDSIPC->touchYpx;
-    
-    StouchScrPosInst->z1   =   TGDSIPC->touchZ1;
-    StouchScrPosInst->z2   =   TGDSIPC->touchZ2;
-}
-
 #endif
 
 #ifdef __cplusplus
@@ -273,6 +265,12 @@ extern "C"{
 extern __attribute__((weak))	void HandleFifoNotEmptyWeakRef(uint32 cmd1,uint32 cmd2);
 extern __attribute__((weak))	void HandleFifoEmptyWeakRef(uint32 cmd1,uint32 cmd2);
 
+#ifdef ARM7
+extern void XYReadScrPos(struct XYTscPos * StouchScrPosInst);	//TSC Impl.
+extern struct xyCoord readTSC();
+#endif
+
+extern void XYReadScrPosUser(struct XYTscPos * StouchScrPosInst);	//User impl.
 extern void HandleFifoNotEmpty();
 extern void HandleFifoEmpty();
 extern void SendFIFOWords(uint32 data0, uint32 data1);

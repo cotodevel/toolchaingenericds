@@ -33,7 +33,9 @@ USA
 #ifdef ARM7
 #include <string.h>
 #include "wifi_arm7.h"
+#include "spiTGDS.h"
 #include "spifwTGDS.h"
+#include "spitscTGDS.h"
 #include "powerTGDS.h"
 #include "soundTGDS.h"
 #endif
@@ -702,6 +704,100 @@ void HandleFifoNotEmpty(){
 		}
 		HandleFifoNotEmptyWeakRef(data1, data0);	//this one follows: cmd, value order
 	}
+}
+
+#ifdef ARM7
+static int LastTSCPosX = 0;
+static int LastTSCPosY = 0;
+
+__attribute__ ((noinline))
+struct xyCoord readTSC(){
+	struct xyCoord tscCoords;
+	//Handle Touchscreen
+	//Set Chip Select LOW to invoke the command & Transmit the instruction byte: TSC CNT Differential Mode: X Raw TSC 
+	REG_SPI_CR = BIT_SPICNT_ENABLE | BIT_SPICNT_BYTETRANSFER | BIT_SPICNT_CSHOLDENABLE | BIT_SPICNT_TSCCNT | BIT_SPICLK_1MHZ;
+	volatile uint8 resultx4to0 = RWSPICNT(BIT_TSCCNT_START_CTRL|BIT_TSCCNT_POWDOWN_MODE_SEL_DIFFERENTIAL| BIT_TSCCNT_REFSEL_DIFFERENTIAL | BIT_TSCCNT_CONVMODE_12bit | BIT_TSCCNT_TOUCHXPOS);
+	volatile uint8 resultx11to5 = RWSPICNT(0);	//0-11-10-9-8-7-6-5
+	volatile uint16 read_raw_x = ((resultx11to5 & 0x7F) << 5) | (resultx4to0 & 0x1F);
+	SPICSHIGH();
+	swiDelay(111);
+	//Set Chip Select LOW to invoke the command & Transmit the instruction byte: TSC CNT Differential Mode: Y Raw TSC 
+	REG_SPI_CR = BIT_SPICNT_ENABLE | BIT_SPICNT_BYTETRANSFER | BIT_SPICNT_CSHOLDENABLE | BIT_SPICNT_TSCCNT | BIT_SPICLK_1MHZ;
+	volatile uint8 resulty4to0 = RWSPICNT(BIT_TSCCNT_START_CTRL|BIT_TSCCNT_POWDOWN_MODE_SEL_DIFFERENTIAL| BIT_TSCCNT_REFSEL_DIFFERENTIAL | BIT_TSCCNT_CONVMODE_12bit | BIT_TSCCNT_TOUCHYPOS);
+	volatile uint8 resulty11to5 = RWSPICNT(0);	//4-3-2-1-0-0-0-0
+	volatile uint16 read_raw_y = ((resulty11to5 & 0x7F) << 5) | (resulty4to0 & 0x1F);
+	SPICSHIGH();
+	swiDelay(111);
+	tscCoords.x = read_raw_x;
+	tscCoords.y = read_raw_y;
+	return tscCoords;
+}
+
+__attribute__ ((noinline))
+void XYReadScrPos(struct XYTscPos * StouchScrPosInst){
+	
+	uint16 read_raw_x = 0;
+	uint16 read_raw_y = 0;
+	
+	struct xyCoord coord = readTSC();		
+	read_raw_x = coord.x;
+	read_raw_y = coord.y;
+	
+	//Touchscreen Position (pixel TFT X Y Coordinates conversion)
+	//Read the X and Y positions in 12bit differential mode, then convert the touchscreen values (adc) to screen/pixel positions (scr), as such:
+	//scr.x = (adc.x-adc.x1) * (scr.x2-scr.x1) / (adc.x2-adc.x1) + (scr.x1-1)
+	//scr.y = (adc.y-adc.y1) * (scr.y2-scr.y1) / (adc.y2-adc.y1) + (scr.y1-1)
+	struct sIPCSharedTGDS * sIPCSharedTGDSInst = (struct sIPCSharedTGDS *)TGDSIPCStartAddress;
+	struct sDSFWSETTINGS * DSFWSettingsInst = (struct sDSFWSETTINGS *)&sIPCSharedTGDSInst->DSFWSETTINGSInst;
+	
+	uint16 adc_x1 = (((DSFWSettingsInst->tsc_adcposx1y112bit[1] << 8) & 0x0f00)) | DSFWSettingsInst->tsc_adcposx1y112bit[0];
+	uint16 adc_y1 = (((DSFWSettingsInst->tsc_adcposx1y112bit[3] << 8) & 0x0f00)) | DSFWSettingsInst->tsc_adcposx1y112bit[2];
+	
+	uint8 scr_x1  = (DSFWSettingsInst->tsc_tsccalx1y18bit[0]);
+	uint8 scr_y1  = (DSFWSettingsInst->tsc_tsccalx1y18bit[1]);
+	
+	uint16 adc_x2 = (((DSFWSettingsInst->tsc_adcposx2y212bit[1]<<8) & 0x0f00)) | DSFWSettingsInst->tsc_adcposx2y212bit[0];
+	uint16 adc_y2 = (((DSFWSettingsInst->tsc_adcposx2y212bit[3]<<8) & 0x0f00)) | DSFWSettingsInst->tsc_adcposx2y212bit[2];
+	
+	uint8 scr_x2  = (DSFWSettingsInst->tsc_tsccalx2y28bit[0]);
+	uint8 scr_y2  = (DSFWSettingsInst->tsc_tsccalx2y28bit[1]);
+	
+	sint32 scrx = (read_raw_x-adc_x1) * (scr_x2-scr_x1) / (adc_x2-adc_x1) + (scr_x1-1);
+	sint32 scry = (read_raw_y-adc_y1) * (scr_y2-scr_y1) / (adc_y2-adc_y1) + (scr_y1-1);
+	
+	if(scrx > 256){
+		scrx = 256;
+	}
+	
+	if(scry > 192){
+		scry = 192;
+	}
+	
+	//TFT x/y pixel
+	StouchScrPosInst->rawx    = read_raw_x;
+	StouchScrPosInst->touchXpx = scrx;
+	StouchScrPosInst->rawy    = read_raw_y;
+	StouchScrPosInst->touchYpx = scry;
+	
+	LastTSCPosX = scrx;
+	LastTSCPosY = scry;
+	
+	//todo? maybe we don't need them for UI controls
+	StouchScrPosInst->z1   =   0;
+	StouchScrPosInst->z2   =   0;
+}
+
+#endif
+
+//Requires VCOUNT irq calls
+void XYReadScrPosUser(struct XYTscPos * StouchScrPosInst){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 	
+	StouchScrPosInst->rawx    = TGDSIPC->rawx;
+	StouchScrPosInst->touchXpx = TGDSIPC->touchXpx;
+	StouchScrPosInst->rawy    = TGDSIPC->rawy;
+	StouchScrPosInst->touchYpx = TGDSIPC->touchYpx;
+	StouchScrPosInst->z1   =   TGDSIPC->touchZ1;
+	StouchScrPosInst->z2   =   TGDSIPC->touchZ2;
 }
 
 //Note: u32* srcMemory must be in EWRAM in both cases
