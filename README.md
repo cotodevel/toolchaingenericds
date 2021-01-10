@@ -1,6 +1,6 @@
 ![ToolchainGenericDS](img/TGDS-Logo.png)
 
-This is the ToolchainGenericDS 1.61 library for NintendoDS:
+This is the ToolchainGenericDS 1.62 library for NintendoDS:
 
 [Building the devkit]:
 - Recompile Newlib 2.1 for Nintendo DS (mandatory, not on this guide). See: https://bitbucket.org/Coto88/newlib-nds

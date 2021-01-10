@@ -1,0 +1,1627 @@
+Change Log
+----------
+
+  V0.99.3
+  
+  - Fixes:
+    - WoopsiString::compareTo() no longer inlined (fixes SF bug 3017420).
+    - Moved unused FixedWidthFontBase class into extras directory.
+    - Moved putSDLPixel() and getSDLPixel() into FrameBuffer class from
+      woopsifuncs files.
+    - Added copy() to all bitmap classes.
+    - Replaced call to woopsiDmaCopy() in Graphics::copy() with call to copy()
+      method of bitmap class.
+    - Graphics::drawEllipse() automatically calls drawCircle() if both radii are
+      equal.
+    - Graphics::drawFilledEllipse() automatically calls drawFilledCircle() if
+      both radii are the same.
+    - Graphics::drawCircle() and drawFilledCircle() are protected.
+    - Graphics::drawLine() automatically calls drawVertLine() or drawHorizLine()
+      if lines can be optimised.
+    - Graphics::drawVertLine() and drawHorizLine() are protected.
+    - Removed GraphicsPort::drawCircle(), drawFilledCircle(), drawHorizLine()
+      and drawVertLine().
+    - Fixed TinyFont (broken in last release).
+    - Moved woopsiRGB() macro from woopsifuncs.h to graphics.h.
+    - Moved woopsiDmaFill() and woopsiDmaCopy() into new dmafuncs files.
+    - PackedFont1 clips correctly.
+    - Gadget collision detection uses routines in Rect class.
+    - All GraphicsPort routines use Rect class.
+    - Rect::hasDimensions() returns false for negative sizes.
+    - Rect::getIntersect() and getAddition() work correctly for negative sizes.
+    - Removed Rect::fromDimensions().
+    - Rect::fromCoordinates returns a rect rather than a pointer to a rect.
+    - Tidied up SDL pad updating in woopsifuncs.c.
+    - Removed woopsiLidClosed() from woopsifuncs.c.
+    - Added dmafuncs.h to woopsiheaders.h.
+
+  - New Features:
+    - Added Rect::contains().
+    - Added Rect::copyTo().
+
+  V0.99.2 (20100720)
+  
+  - Fixes:
+    - Replaced clipping code in Gadget::clipRectToHierarchy() with call to new
+      Rect functions.
+    - PackedFont16::renderChar() aborts correctly if there is nothing to render
+      (Lakedaemon).
+    - Bitmap::getData(x, y) no longer declared inline (Lakedaemon).
+    - Renamed gunsuh15.bmp and gunsuhche15.bmp to gungsuh15.bmp and
+      gungsuhche15.bmp respectively.
+    - Deleted CourierMono as it was an exact duplicate of Courier.
+    - Converted most fonts to PackedFont1.
+    - Converted GlyphFont to PackedFont16 (manually altered class to force
+      fixed-width).
+    - Removed Font and MonoFont classes (PackedFont classes are faster and more
+      efficient).
+    - bmp2font upgraded to latest version - no longer creates gigantic arrays in
+      PackedFont1 fonts; removed support for Font and MonoFont classes.
+
+  - New Features:
+    - Added getPath() to FileRequester and FileListBox.
+    - Converted Rect struct to class.
+    - Added Gadget::getRelativeX() and getRelativeY().
+    - Replaced x, y, width and height members of Gadget class with a Rect.
+
+  V0.99.1 (20100524)
+  
+  - Fixes:
+    - Rewrote SliderVertical and SliderHorizontal again to improve accuracy.
+    - Removed jumpGrip() from all slider gagdets.
+    - Added setValueWithBitshift() to all slider gadgets.
+    - Added getMinimumStep() to SliderVertical and SliderHorizontal.
+    - Removed getValuesPerPixel() from all slider gadgets.
+
+  V0.99 (20100520)
+  
+  - Fixes:
+    - ProgressBar text greyed out when disabled.
+    - SliderVertical and SliderHorizontal ignore double clicks by default.
+    - SliderVertical and SliderHorizontal only fire value changed event if value
+      has really changed.
+    - SliderVertical and SliderHorizontal getValue() methods are considerably
+      more efficient.
+    - Added libfreetype.a file to libs/libfreetype/lib folder.
+
+  - New features:
+    - Added progressbar test.
+    - Added slidervertical test.
+    - Added sliderhorizontal test.
+    - Added scrollbarvertical test.
+    - Added scrollbarhorizontal test.
+    - Added superbitmap test.
+    - Bumped version number to indicate feature completeness.
+
+  V0.47 (20100510)
+  
+  - Fixes:
+    - Removed Woopsi::startup() call from template.
+    - Fixed bug in Gadget::checkCollision(x,y,width,height).
+    - Renamed CalendarDayButton to StickyButton.
+    - WoopsiKey inherits from StickyButton instead of Button.
+    - ScrollableBase no longer contains implemented methods or data; all moved
+      to ScrollingPanel.
+    - Child gadgets of ScrollingPanel no longer get drawn to wrong screen if
+      scrolled out of top of panel; Gadget::getPhysicalScreenNumber() is more
+      intelligent.
+    - Graphics::scroll() returns correctly-sized rects in revealed rects array.
+    - Replaced WindowBorderBottom, WindowBorderTop and WindowBorderSide classes
+      with more elaborate drawing code in AmigaWindow class.
+    - Replaced ScreenTitle class with more elaborate drawing code in AmigaScreen
+      class.
+    - Made ScrollableBase a base class of ScrollingTextBox; implemented all pure
+      virtual functions.
+    - ScrollingListBox raises value changed, action, click, release, release
+      outside and double-click events correctly.
+    - RadioButtonGroup raises value click, release, release outside and
+      double-click events correctly.
+
+  - New Features:
+    - Added x and y parameters to Gadget::stopDragging().
+    - Added drop event (drag-and-drop).
+    - Added Gadget::isBeingDragged().
+    - Added PipeDream demo.
+    - Built with devkitARM r30.
+    - Added ScrollbarPanel gadget.
+    - Added ColourPicker gadget (contributed by Mark Adamson).
+    - Added ColourPicker test.
+    - Added ScrollingPanel::isContentScrolled() and setContentScrolled() to
+      allow DMA copying of panel contents to be disabled if not needed.
+
+  V0.46 (20100308)
+  
+  - First beta release.
+  
+  - Fixes:
+    - MultiLineTextBox jumps to bottom of text correctly when required to do so.
+    - MultiLineTextBox extensively refactored.
+    - MultiLineTextBox top-aligns when text exceeds size of gadget.
+    - MultiLineTextBox alignment options all work.
+    - Removed ScrollingPanel::clipToClientRect().
+    - Made Woopsi::startup() pure virtual; no longer needs to be called as the
+      first instruction in user override.
+    - Woopsi::startup() and Woopsi::shutdown() are protected, not public.
+    - Deleted helloworld_alternative example.
+    - Switched various string methods from using u32 to s32 types.
+  
+  - New Features:
+    - Cursor jumps to click point when MultiLineTextBox is clicked.
+    - D-pad up/down move cursor up/down in MultiLineTextBox.
+    - MultiLineTextBox shows keyboard when double-clicked.
+    - MultiLineTextBox scrolls to follow cursor when moved with the d-pad.
+    - TextBox and MultiLineTextBox keyboard popup can be enabled/disabled using
+      enableKeyboardPopup() and disableKeyboardPopup().
+    - Built with devkitARM r28.
+    - Added TextBoxBase interface to ensure that all TextBox-style classes
+      implement the same methods.
+    - Added SliderBase interface to ensure that all Slider-style classes
+      implement the same methods.
+    - Added ListBoxBase interface to ensure that all ListBox-style classes
+      implement the same methods.
+    - Progress bar optionally shows percentage completed.
+
+  V0.45 (20100219)
+  
+  - Fixes:
+    - Fixed error when subclassing MultiLineTextBox.
+    - Fixed keyboard secondary repeat timer - now uses correct time.
+    - Delete key deletes character in front of cursor in MultiLineTextBox, not
+      character at end of text.
+    - Moved raiseScrollEvent() out of ScrollingPanel and into
+      GadgetEventHandlerList.
+    - Removed parameters from GadgetEventHandlerList::raiseActionEvent().
+    - Renamed Gadget::setDragging() to Gadget::startDragging().
+    - Decorations cannot receive focus.
+    - Increased accuracy of slider calculations from 8-bit fractions to 16-bit
+      fractions.
+    - Requester resize implemented.
+    - Alert resize implemented.
+    - FileRequester resize implemented.
+    - Made various Gadget method non-virtual to prevent overriding.
+    - Gadget::resize() limits to parent dimensions correctly.
+    - Window drags correctly if it belongs to a gadget other than the screen.
+    - MultiLineTextBox resizing works correctly.
+    - Moved skins and bitmaploader examples and the bonus folder to a new
+      "extras" top-level repository.  They will no longer be included in the
+      main distro.
+    - Moved documentation folder into new extras directory.
+    - Fixed FileListBox resizing and initial child gadget dimensions.
+    - Removed Gadget::clear().
+    - Removed Gadget::clear(clipRect).
+    - Removed Gadget::newInternalGraphicsPort(isForeground).
+    - GraphicsPort no longer tries to delete null pointer if clipRect is not
+      initialised.
+    - Replaced Gadget::draw(rect) with Gadget::drawContents(port) and
+      Gadget::drawBorder(port).
+    - Fixed WoopsiString::remove(start, length).
+    - Removed AmigaWindow::getBorderSize().
+    - Removed Screen::getBorderSize().
+    - Removed TextBox::getBorderSize().
+    - Made Gadget::getClientRect() non-virtual.
+    - Gadget::getClientRect() uses new GadgetBorderSize struct to calculate size
+      of client rect.
+    - Removed Screen::getTitleHeight().
+    - Removed AmigaWindow::getTitleHeight().
+    - AnimButton, BitmapButton, CycleButton, ContextMenu, ListBox
+      RadioButtonGroup, Label and Calendar use new GadgetBorderSize struct to
+      calculate preferred dimensions.
+    - Removed Gadget::getBackgroundRegions().
+    - Removed redundant style initialisation from Woopsi class.
+    - Swapped Gadget::_style from pointer instantiation to standard
+      instantiation.
+    - Removed Woopsi::closeChild(), shelveChild(), release(), drag(), click(),
+      shiftClick() and shelve().
+    - Made Gadget::closeChild(), shelveChild(), release(), drag(), click() and
+      shiftClick() non-virtual.
+    - Renamed Woopsi::click() to handleClick().
+    - Renamed Woopsi::shiftClick() to handleShiftClick().
+    - Tidied up Gadget::shelve() and Gadget::shelveChild().
+    - Refactored various methods in Gadget class to use guards instead of nested
+      if statements.
+    - Gadget::closeChild() and Gadget::shelveChild() no longer cause focus to
+      jump around if the child does not have focus.
+    - Gadget::click(), Gadget::shiftClick() and Gadget::doubleClick() only
+      respond to clicks that occur within portions of themselves that are not
+      obscured by gadgets higher in the hierarchy than their children (prevents
+      context menus bleeding through from a lower screen/window to a higher
+      screen/window).
+    - Refactored Woopsi::handleKeys() into handleKeys() and handleKey().
+    - Removed _padding variable from Label, Requester, FileRequester, Alert and
+      MultiLineTextBox classes; switched to using border sizes instead.
+    - Tidied up CycleButton, BitmapButton, AnimButton, Button and TextBox
+      drawing methods.
+    - WoopsiKeyboard no longer inherits from AmigaWindow for greater
+      flexibility.
+    - Added two blank screens to Woopsi gadget to ensure that background always
+      draws correctly.
+    - Increased scrollbar width in ScrollingTextBox and ScrollingListBox.
+    - Increased minimum size of slider grips.
+    - Removed GraphicsPort::clear().
+    - GraphicsPort does not query Gadget for its x/y co-ordinates.
+    - GraphicsPort does not query Gadget for its enabled/disabled state.
+    - Removed GraphicsPort::drawBevelledRect() method that relied on gadget
+      state.
+    - Removed Gadget::OutlineType enum and related usage.
+    - Removed drawing from Woopsi::eraseRect() - new background screens make it
+      unnecessary.
+    - Removed drawing from Woopsi entirely for same reason.
+    - Deleted GraphicsUnclipped class.
+    - GraphicsPort is a wrapper around a Graphics object instead of a subclass.
+    - GraphicsPort drawing commands all accept values which are relative to
+      itself.
+    - GraphicsPort::getClipRect() returns a rect relative to the GraphicsPort.
+    - Screen::onDrag() uses woopsiApplication's GraphicsPort instead of its own.
+    - MultiLineTextBox rendering problems when padding (now bordersize) greater
+      than 2 fixed.
+    - MultiLineTextBox top vertical alignment works correctly.
+
+  - New Features:
+    - Added goToParent() and goToRoot() to FilePath class.
+    - Added FreeType support.
+    - Added FreeType to template makefile.
+    - Added keyboard_textbox example.
+    - TextBox inherits from KeyboardEventHandler, so it can be connected
+      directly to a keyboard object without the need for an intermediary.
+    - Added fire example.
+    - MultiLineTextBox inherits from KeyboardEventHandler, so it can be
+      connected directly to a keyboard object without the need for an
+      intermediary.
+    - Added TextBox::removeText() methods.
+    - GadgetEventHandlerList::raiseScrollEvent() receives distance scrolled as
+      parameters.
+    - Added stub methods to remove the need to override critical Woopsi methods:
+      - onClick()
+      - onRelease()
+      - onReleaseOutside()
+      - onDoubleClick()
+      - onShiftClick()
+      - onDrag()
+      - onDragStart()
+      - onDragStop()
+      - onKeyPress()
+      - onKeyRepeat()
+      - onKeyRelease()
+      - onFocus()
+      - onBlur()
+      - onLidOpen()
+      - onLidClose()
+      - onEnable()
+      - onDisable()
+      - onResize()
+    - Swapped to using stub overrides in all gadgets.
+    - Added ListBox::isDoubleClick().
+    - Removed setDragging() from Gadget::click(); should be called by onClick()
+      in subclasses if required.
+    - Added canReceiveFocus flag to Gadget::Flags struct.
+    - Added canReceiveFocus() method to Gadget class.
+    - Split Gadget::release() into release() and stopDragging() methods.
+    - Added AmigaWindow::resizeTitleBarToFit().
+    - Added Gadget::getGlyphFont() and Gadget::setGlyphFont().
+    - Added AmigaWindow::redrawBorder().
+    - Expanded ScrollingTextBox functionality to match MultiLineTextBox.
+    - Removed shiftClickChildren concept from Gadget class; shift clicks are
+      only captured by a gadget if it defines any context menu items, so clicks
+      automatically get directed to the most relevant gadget.
+    - Added alert test.
+    - Added requester test.
+    - Added filerequester test.
+    - Added freetype example.
+    - Added GadgetBorderSize struct to contain sizes of the four borders around
+      a gadget.
+    - Added Gadget::checkCollisionWithForegroundRects().
+    - Added XOR drawing routines that accept a colour to XOR against.
+    - Added WoopsiKeyboardScreen.
+    - Double-clicking a textbox gadget causes the WoopsiKeyboardScreen to pop
+      into the bottom display.
+    - TextBox only draws cursor when it has focus.
+    - TextBox redraws when it loses focus.
+    - Added Gadget::setBorderSize().
+    - Added WoopsiKey::setStuckDown() to control border type.
+    - Added CalendarDayButton gadget.
+    - Graphics class implements clipping and no longer inherits from
+      GraphicsUnclipped.
+    - Added cliprect to the bitmapdrawing demo.
+    - Graphics class includes scroll() and drawBevelledRect() methods.
+    - Graphics::floodFill() is clipped.
+
+  V0.44 (20100124)
+  
+  - Fixes:
+    - Moved fatInitDefault() SDL function into woopsifuncs.cpp (Quirky).
+    - ScrollingPanel::raiseScrollEvent() only fires if events are enabled.
+    - Gadget::raisesEvents() retrieves its value from the GadgetEventHandlerList
+      object.
+    - Gadget::setRaisesEvents() alters the GadgetEventHandlerList object.
+    - Removed the raisesEvents flag from the Gadget class.
+    - Bmp2Font produces working Font classes.
+    - Deleted badly-converted fonts:
+      - Latha;
+      - Lucida10;
+      - Roman 10;
+      - Trebuchet8.
+    - FileRequester no longer has transparent regions.
+    - FileRequester sorts correctly.
+    - FileRequester does not attempt to draw when drawing is disabled.
+    - FilePath uses WoopsiString::lastIndexOf() to change to parse path string.
+    - Dragging a screen that isn't the top screen so that it is not visible no
+      longer causes a crash.
+    - Removed glyphs from NewTopaz and Topaz fonts.
+    - Changed NewTopaz font to PackedFont1 from PackedFont16.
+    - Changed Topaz font to MonoFont from Font.
+    - Fixed memory leak when enumerating directories in FileListBox.
+    - FileListBox shows dummy file list when in SDL mode.
+    - Graphical corruption in GraphicsPort::clipScroll() fixed.
+    - Fixed FileRequester layout.
+    - Replaced magic number double click time with define in woopsifuncs.cpp.
+    - TestPanel class in scrolltest example draws its border correctly.
+    - Fixed a crash in GraphicsPort::drawText() when trying to draw text outside
+      the clipRect with a PackedFont1 font; should provide a minor speedup.
+    - ScrollingPanel draws its border correctly.
+    - Removed Text::getLinePointer().
+    - MultiLineTextBox::drawCursor() uses a StringIterator to locate the cursor
+      position.
+    - MultiLineTextBox::drawCursor() does not read past the end of the string
+      when the cursor is positioned beyond the string.
+    - Text::wrap() does not perform an invalid comparison between line index and
+      char index when truncating the line positions array.
+    - Text::wrap() correctly appends the string end position in all scenarios.
+    - Text::wrap() always assumes text height is at least one row.
+    - Text::getLineContainingCharIndex() returns the correct value if the
+      character is in the last row.
+    - WoopsiString::insert() explicitly calls its own setText() and append()
+      methods to prevent the Text class from wrapping twice.
+    - Added WoopsiString::encodeCodePoint().
+    - PackedFontBase::isCharBlank() returns correct value if character not
+      present in font (fixes horizontal alignment in MulitLineTextBox).
+    - Key repeat values stored in defines.h.
+    - FileListBox does not show "." directory.
+    - Minor optimisation when building the FileListBox contents.
+    - Split Label::calculateTextPosition() split into horizontal and vertical
+      methods.
+    - TextBox switches to left-aligned automatically if contents exceeds size
+      of box.
+    - Fixed memory leak and logic problems when deleting gadgets.
+    
+  - New Features:
+    - Added FontBase::getCharHeight().
+    - WoopsiString supports UTF-8 (Lakedaemon).
+    - Split glyphs into separate GlyphFont.
+    - GadgetStyle includes a glyph font.
+    - All gadgets converted to use WoopsiStrings instead of raw chars/char
+      arrays, meaning they support UTF-8.
+    - Various changes in Text class to support UTF-8.
+    - Changed parameters to GraphicsUnclipped::drawText() (and subclasses).
+    - Added StringIterator class, for efficient iteration over a UTF-8 string.
+    - Removed dependence on WoopsiString::getCharArray().
+    - Promoted FileRequester gadget from bonus folder to main library.
+    - libfat enabled by default in test projects and template.
+    - Added WoopsiString::lastIndexOf().
+    - Added WoopsiString::subString().
+    - Added WoopsiString::indexOf().
+    - TextBox implements key repeats when left or right d-pad is held down;
+      cursor moves repeatedly until end of string reached or d-pad released.
+    - MultiLineTextBox implements key repeats when left or right d-pad is held
+      down; cursor moves repeatedly until end of string reached or d-pad
+      released.
+    - Textbox contents scrolls horizontally as cursor is moved.
+    - Added key repeat event handling to the entire system.
+	
+  V0.43 (20091223)
+  
+  - Fixes:
+    - ListBox draws correctly when dragged (clipping problem from 0.41).
+    - Multiple fixes to the PackedFont set of classes.
+    - bmp2font checks the default Windows location for grit.
+    - bmp2font adds fonts to the WoopsiUI namespace.
+    - bmp2font follows #ifdef/#endif guard style.
+    - bmp2font uses more appropriate casing for filenames, etc.
+    - CycleButton redraws correctly when released if it contains no options.
+    - Label and subclasses recalculate their text position and redraw when their
+      fonts are changed.
+    - TextBox does not attempt to move cursor when clicked if it contains no
+      text.
+    - TextBox cursor moves correctly when clicked if a PackedFont font is used.
+    - Template project no longer references Gadget::Rect.
+    - MultiLineTextBox redraws and adjusts text position when font is changed.
+    - ListBox does not attempt to draw item -1 in list.
+    - PackedFontBase::isCharBlank() returns the correct value.
+    - Renamed DefaultStyle class to GadgetStyle.
+    - Instance of GadgetStyle created at Woopsi startup instead of using static
+      properties of DefaultStyle class.
+    - Removed systemFont global; relying on defaultGadgetStyle instead.
+    - Removed tinyFont global; Debug class now creates its own instance.
+    - TinyFont follows class pattern used by Jeff's PackedFonts.
+    - Graphics::floodFill() no longer gets stuck in an infinite loop.
+    - Moved logos out of demo data folder and into new logos folder in bmp.
+    - Removed unused bitmaps from demo.
+    - Added missing FileListBox class.
+    - ScrollbarHorizontal passes font object (via style) to Gadget constructor
+      correctly.
+    - BitmapWrapper::getData(x, y) no longer causes a compiler warning.
+    - Removed PAGfx binary from demo.
+    - Removed zombie.c file from demo and replaced with bmp2bitmap-generated
+      class.
+    - Removed bittest files from demo and replaced with bmp2bitmap-generated
+      classes.
+    - Removed all_gfx file from demo.
+    - Uses stack instead of heap for converting chars to strings.
+  
+  - New Features:
+    - Added packedfonts example.
+    - Added dozens of packed fonts.
+    - Replaced font pointer in gadget constructors with a pointer to a
+      GadgetStyle object.
+    - Changed default font to NewTopaz.
+    - Added old system font under the name Topaz using the same class pattern as
+      the TinyFont.
+    - Added defaultstyle example.
+    - Built with devkitARM r27 and libnds 1.4.0.
+    - Replaced FontBitPacker with bmp2font, a .NET app that can convert a BMP to
+      any of Woopsi's 4 font formats.
+    - Added bmp2bitmap, a .NET app that will convert a BMP to a Woopsi
+      BitmapWrapper class.
+    - Added font2bmp, a .NET app that will produce a BMP from a Windows font.
+    - Added font2font, a .NET app that will convert a Windows font directly to
+      a Woopsi font class.
+    - Added new GadgetEventHandlerList class and moved event raising code into
+      it from the Gadget class.
+    - Duplicate gadget event handlers cannot be added to a gadget.
+    - Added build and deploy batch files for libwoopsi.
+    - Tests all build against libwoopsi instead of the raw Woopsi source.
+    - Most examples build against libwoopsi instead of the raw Woopsi source.
+
+  V0.42 (20091205)
+
+  - Fixes:
+    - ListData::swapItems() no longer raises a data changed event.
+    - ListData::sort() raises a data changed event.
+    - Woopsi class does not attempt to retrieve system font before it is
+      initialised.
+    - ListBox canvas height no longer includes extra pixel.
+    - ListBox raises an action event when double-clicked.
+    - ListBox ignores double-clicks that occur across multiple items.
+    - Removed unused Gadget::_doubleClickTime member.
+    - ListBox redraws every time data changes.
+    - Double-click only counted as such if the gadget already has focus (ie.
+      must be the same gadget clicked twice).
+    - ListBox::draw() calculates top and bottom visible options correctly, and
+      does not overwrite options at the top of the list with those from the
+      bottom.
+    - ListBox automatically scrolls when items are removed from the ListData
+      object to ensure it does not display past the end of the canvas.
+  
+  - New Features:
+    - Split ListData class into ListData and ListDataItem classes for greater
+      flexibility.
+    - Minor improvements to the ListBox's use of the ListData class.
+    - Altered ListData::quickSort() and added compareTo() method to ListDataItem
+      to allow custom ordering of ListDataItem subclasses.
+    - ScrollingBase adds support for specifying planes on which scrolling can
+      occur.
+    - ScrollingPanel implements ScrollingBase's allow/disallow scroll plane
+      features to prevent scrolling on certain planes.
+    - ListBox does not allow horizontal scrolling.
+    - Added windowless example project.
+    - Added Gadget::isDoubleClick() to check for double-clicks.
+    - Combined various colour members in Gadget class into GadgetColours struct.
+    - Merged TextWriter into GraphicsXXX classes and removed original class.
+    - Added FileListDataItem class to store data for file requester.
+    - FileRequester uses new compareTo() functionality for substantial speed
+      increase and lower memory usage.
+    - FileRequester displays "Loading..." message whilst directories are
+      enumerated.
+    - Split ListDataItem into ListDataItem and ListBoxDataItem classes for
+      greater flexibility.
+    - Split FileRequester into FileListBox and FileRequester classes for
+      greater flexibility.
+    - CycleButton uses the ListData class to store its data - options can now
+      be selected, removed, sorted, etc.
+    - ListBox::getPreferredDimensions() bases width on size of text in options.
+    - ContextMenu used a ListBox to store/view its data.
+    - ContextMenu includes getPreferredDimensions() method.
+    - ContextMenu sends ListDataItem objects with event arguments instead of
+      ContextMenuItem objects.
+    - Deleted ContextMenuItem class.
+    - Added WoopsiString::copyToCharArray().
+
+  V0.41 (20091124)
+  
+  - Fixes:
+    - Removed Gadget::unregisterChildrenFromVBL() declaration from gadget.h as
+      the function does not exist.
+    - Graphics::dim() draws to correct dimensions.
+    - GraphicsPort::dim() clips properly.
+    - BitmapButton::getPreferredDimensions() returns the correct size.
+    - AnimButton::getPreferredDimensions() returns the correct size.
+    - Anim button animation continues playing correctly when clicked if
+      disabled.
+    - ListBox::getPreferredDimensions() returns the correct size.
+    - ListBox::draw() clips more effectively.
+    - Removed getEditableData() bodge from bitmap classes; all interaction with
+      bitmap data happens through bitmap methods.
+    - Moved IK bitmaps out of demo folder/NDS into animbutton test.
+    - ScrollingListBox::getPreferredDimensions() returns the correct size.
+    - SliderHorizontal and SliderVertical produce correct values when they are
+      showing a range of values large enough for the grip to be artificially
+      enlarged.
+    - Scrollbar buttons scroll by amount based on max/min values and height of
+      slider rather than arbitrary value.
+    - Removed ScrollbarVertical and ScrollbarHorizontal setButtonScrollAmount().
+    - AnimButton animations pause when the button is disabled.
+    - DMA copying function uses DMA for RAM->VRAM copies.
+  
+  - New Features:
+    - SDL framebuffer code merged into FrameBuffer class.
+    - Added label test.
+    - Added button test.
+    - Added DOS batch files to build examples and tests.
+    - Added grayScale() function to GraphicsUnclipped, Graphics and
+      GraphicsPort.
+    - BitmapButton greys out when disabled.
+    - Added bitmapbutton test.
+    - Added drawBitmapGreyScale() function to GraphicsUnclipped, Graphics and
+      GraphicsPort.
+    - AnimButton greys out when disabled.
+    - Added animbutton test.
+    - Added listbox test.
+    - ListBox greys out when disabled.
+    - Added scrollinglistbox test.
+
+  V0.40 (20091115)
+  
+  - First alpha release.
+  
+  - Fixes:
+    - PALib support removed.
+    - Pointer to selected day button in calendar resets to NULL when new month
+      selected; prevents day button incorrectly popping up if same button is
+      clicked in new month.
+    - Calendar::getPreferredSize() returns valid values.
+    - Label text is greyed out when disabled.
+    - Huge speed increase in Calendar::resize().
+    - Calendar's child controls correctly fill entire available space.
+    - Calendar correctly selects date if new day is the same as old day but in
+      a different month.
+    - Gadget drag event only raised if stylus is actually moved whilst dragging
+      mode active.
+    - ScrollingPanel drag and scroll events only raised if stylus is actually
+      moved whilst dragging mode active.
+    - MultiLineTextBox greys out text when disabled.
+    - MultiLineTextBox::removeText() correctly repositions cursor.
+    - TextBox greys out text when disabled.
+    - Scrolltest compiles correctly.
+    - SimpleScreen and SimpleWindow helper gadgets removed.
+    - Renamed LinkedList to WoopsiLinkedList and LinkedListIterator to
+      WoopsiLinkedListIterator to avoid type clashing with LinkedList in devkit.
+    - Tidied up woopsifuncs.h.
+    - SuperBitmap::getBitmap() returns a pointer to the Bitmap object instead of
+      the Bitmap object's raw pixel data.
+    - Moved skinned gadgets out of main library and into bonus folder.
+    - Removed fatInitDefault() stub method for SDL out of individual .cpp files
+      and into nds.h.
+    - dimmedscreen.h includes woopsi.h.
+    - Graphics::drawBitmap() clips correctly if bitmap destination co-ords are
+      greater than the size of the destination bitmap.
+    - GraphicsPort::drawPixel() clips correctly.
+    - GraphicsPort::drawXORPixel() clips correctly.
+    - Replaced DMA_Force and DMA_Copy with woopsiDmaForce() and woopsiDmaCopy()
+      to fix ancient problems with DMA not seeing latest RAM state.
+  
+  - New Features:
+    - Calendar test added.
+    - MultiLineTextBox test added.
+    - TextBox test added.
+    - Added an overload to GraphicsPort to print a length of a string in a
+      specific colour.
+    - Restructured directories into traditional library layout.
+    - Upgraded main project to VC++ 2008.
+    - Added libwoopsi.a to SVN.
+    - Added template example that uses libwoopsi.
+    - Reorganised demo code into new demo directory.
+    - BitmapIO class can load 16-bit BMP images with any pixel encoding.
+    - BitmapIO class can load V3, V4 and V5 DIB headers.
+    - BitmapLoader example illustrates loading of most supported BMP types.
+    - Added skinned gadget example.
+    - Added SkinIO class to bonus folder - loads skins from disk.
+    - Added BitmapBase class to define basic interface for a bitmap.
+    - Added BitmapWrapper to enable included (not loaded) bitmap data to be used
+      as a read-only Bitmap object.
+    - Moved drawing code out of Bitmap class into new Graphics class.
+    - Added MutableBitmapBase class to define basic interface for an editable
+      bitmap.
+    - Added FrameBuffer class to wrap framebuffer inside a bitmap class.
+    - All references to DrawBg array now work with frameBuffer array.
+    - Added GraphicsUnclipped to perform raw unclipped bitmap drawing.
+    - GraphicsPort inherits from GraphicsUnclipped in order to reduce code
+      repetition.
+    - Font system uses new Bitmap object hierarchy.
+    - System fonts available as global objects.
+    - Rewritten clipping routine in Font and MonoFont.
+    - Reorganised VC++ project with more filters.
+    - Rect struct moved out of Gadget class and into separate header.
+    - SuperBitmap no longer includes drawing functions; instead it exposes a
+      non-const pointer to its bitmap and a non-const pointer to a Graphics
+      object that can draw to the bitmap.
+    - Added bitmapdrawing example.
+    - Added gadgetdrawing example.
+    - Added blit() and blitFill() methods to Bitmap and FrameBuffer, and
+      signatures to MutableBitmapBase.
+    - Added getData(x, y) method to all bitmap classes.
+
+  V0.39 (20091024)
+  
+  - Fixes:
+    - Removed framebuffer-hitting code from DimmedScreen gadget and replaced
+      with call to GraphicsPort::dim().
+    - ListBox removes itself from its ListData object when deleted.
+    - Keyboard example shows cursor.
+    - Moved DimmedScreen into woopsi folder as an official gadget.
+    - CycleButton::getPreferredDimensions() populates rect with correct values.
+    - Const fixed Gadget::getRefcon().
+    - Gadget::disable() and Gadget::enable() redraw the gadget by default.
+    - Fixed clipRectToHierarchy() bug introduced in switch to non-recursive
+      function in last release.
+    - RadioButtonGroup redraws when resized.
+    - RadioButtonGroup returns correct dimensions from getPreferredDimensions().
+    - Updated copyright notice in defines.h.
+    - Bitmap::getPixel() works correctly for large bitmaps.
+    - Bitmap::drawBitmap() flushes mem correctly for DMA copy.
+    - Gadget::show() clears rect cache of sibling gadgets with a lower z-index
+      to ensure that they do not draw over the top of the newly-shown gadget.
+    - A disabled gadget that overlaps another now intercepts clicks correctly,
+      no longer allowing them to fall through to the gadget below.
+  
+  - New Features:
+    - TextBox and MultiLineTextBox cursor moves when d-pad left/right are
+      pressed and gadget has focus.
+    - Added tests folder:
+      - CycleButton test;
+      - RadioButtonGroup test.
+    - Added BinaryFile class to bonus folder.
+    - Added BitmapIO class to bonus folder - load/save BMP files using libfat.
+    - Added BitmapLoader example.
+    - Added SuperBitmap::drawBitmap() overload to handle Bitmap objects.
+  
+  V0.38 (20090428)
+  
+  - Fixes:
+     - Removed PALib dependency from filerequester example.
+     - FileRequester gadget fixed for devKitARM r24 (Quirky).
+     - ListBox redraws correctly when an option is selected in single selection
+       mode.
+     - Fixed crash in SliderVertical when trying to set value if max and min
+       values are the same (Quirky).
+     - Fixed crash in SliderHorizontal when trying to set value if max and min
+       values are the same.
+     - Fixed FileRequester crash when path has trailing slash (Quirky).
+     - Fixed double-click in SDL (Quirky).
+     - FileRequester fixed for SDL (Quirky).
+     - SDL path fixes (Quirky).
+     - Escape key to quit in SDL mode (Quirky).
+     - WindowBorderTop and SkinnedWindowBorderTop no longer have pointers to
+       freed memory if window title changes (Quirky).
+     - ScreenTitle and SkinnedScreenTitle no longer have pointers to freed
+       memory if screen title changes (Quirky).
+     - Flipping window depth with depth gadget no longer results in corrupted
+       window contents.
+     - Fixed const-correctness of various Text class methods.
+     - SDL framebuffers initialised to black.
+     - More doxygen fixes.
+     - Removed WoopsiArray::begin().
+     - Removed LinkedList::begin().
+     - Renamed Gadget::draw() to Gadget::redraw() and removed unnecessary
+       overloads from all classes.
+     - Const correctness fixes in Gadget class.
+     - ScrollingTextbox adjusts scrollbar grip position correctly when first
+       initialised.
+     - Alert box draws XOR rect correctly when released.
+     - Requester draws XOR rect correctly when released.
+     - WoopsiKeyboard no longer adds itself as the decoration event handler
+       twice; fixes XOR rect drawing when clicked/released.
+
+  - New Features:
+     - Added Gadget::getChild() and Gadget::getChildCount() (for leonelhs).
+     - Added context menu example (for leonelhs).
+     - ListData class raises events to ListDataEventHandler objects.
+     - ListBox listens for ListData events.
+     - Added base template class for event args passing.
+     - Refactored gadget event system:
+       - Replaced EventArgs struct with GadgetEventArgs class.
+       - Renamed EventHandler to GadgetEventHandler.
+       - Gadgets can now have multiple event handlers.
+       - Replaced handleEvent() method with multiple methods.
+       - Removed EventType enum from GadgetEventHandler.
+     - ListData events passed by references instead of pointers.
+     - WoopsiKeyboard includes a set of new events:
+       - Press
+       - Release
+       - Repeat
+     - WoopsiKeyboard no longer stores the last key clicked.
+     - WoopsiKeyboard has set of event-related classes:
+       - KeyboardEventHandler
+       - KeyboardEventArgs
+     - Refactored context menu event system:
+       - Added ContextMenuEventArgs class;
+       - Removed "_value" from ContextMenu;
+       - Removed "getContextMenuValue()" from Woopsi;
+       - Selected context menu item now accessible via
+         ContextMenuEventArgs::getItem().
+     - Slider grip automatically resizes; no need to call resizeGrip().
+     - End point rects now cached (sans child rects) for extra speed.
+     - Gadget rect caching moved into separate RectCache class.
+     - RectCache::removeOverlappedRects made non-recursive.
+     - Gadget::clipRectToHierarchy made non-recursive.
+     - Added GraphicsPort::copy() to copy regions of the framebuffer around.
+     - Screen dragging code improved; uses new GraphicsPort::copy() method.
+     - Added GraphicsPort::scroll() to scroll regions of gadgets.
+     - Removed scrolling code from ScrollingPanel and rely on new scroll()
+       method instead.
+     - Added GraphicsPort::dim() function to add DimmedScreen functionality to
+       all gadgets.
+     - Added ability to specify foreground or background clipping when creating
+       a new GraphicsPort instance.
+
+  V0.37 (20090112)
+  
+  - Fixes:
+     - ListBox::setAllowMultipleSelections() works correctly.
+     - Replaced byte and short iterator variables with ints.
+     - Compatible with devKitPro v24 and libnds 1.3.1.
+     - Renamed "DynamicArray" to "WoopsiArray" for compatibility with dkp24.
+     - Made libnds makefile the default instead of PALib.
+
+  V0.36 (20081104)
+  
+  - Fixes:
+     - s32 used as iterator when working with visible rect cache to prevent
+       permanent loops when large numbers of rects were visible.
+     - s32 used as child gadget iterator.
+     - MultiLineTextBox::resize() correctly recalculates the number of visible
+       rows.
+     - Tidied up MultiLineTextBox::getRowX() and getRowY().
+     - MultiLineTextBox::getCurrentPage() no longer divides by 0 if there are no
+       visible rows.
+     - MultiLineTextBox::draw() tidied up; correctly draws when partial line of
+       text is visible.
+     - MultiLineTextBox vertical alignment options all work correctly.
+     - MultiLineTextBox scrolls correctly when text is added.
+     - MultiLineTextBox has cursor support.
+     - Text::stripTopLines() was not removing all characters.
+     - Deleted empty fontbase.cpp file.
+     - Removed unused "bitmap.h" include from "skin.h".
+
+  - New Features:
+     - Moved all classes into WoopsiUI namespace.
+     - Added Date class.
+     - Added Calendar gadget.
+     - Added Calendar example.
+     - Added Date example.
+     - Added ProgressBar example.
+     - Text::wrap() only wraps lines impacted by insert/delete/append
+       operations.
+     - Replaced unused Bitmap struct with a Bitmap class with drawing routines.
+     - Replaced SuperBitmap drawing operations with a Bitmap object.
+
+  V0.35 (20081012)
+  
+  - Fixes:
+     - Renamed "Textbox" to "TextBox".
+     - Corrected case of "PackedFontBase.h" include in "packedfontbase.cpp"
+       (thanks Gattman, bug 2101099).
+     - Removed offcolour pixels from around @ symbol in sysfont bitmap.
+     - Moved @ symbol in tinyfont.bmp to correct ASCII location.
+     - SkinnedWindows move to front when clicked.
+     - Renamed TextBox::TextPositionXXX to TextAlignmentXXX, along with all
+       related functions and similar in MultiLineTextBox and ScrollingTextBox.
+     - TextBox::addText() was allocating one byte too many when concatenating
+       strings.
+     - Renamed addText() to appendText() in TextBox, MultiLineTextBox and
+       ScrollingTextBox classes.
+     - Text::wrap() correctly wraps text rows with no break points.
+     - Fixed const-correctness of some Font (and subclass) methods.
+
+  - New Features:
+     - Button has different appearance when disabled.
+     - CheckBox has different appearance when disabled.
+     - ContextMenuItem has different appearance when disabled.
+     - CycleButton has different appearance when disabled.
+     - RadioButton has different appearance when disabled.
+     - Added WoopsiKeyboard gadget.
+     - Added all missing 7-bit ASCII glyphs to sysfont.
+     - Added keyboard example.
+     - Added TextBox::appendText(char).
+     - Added TextBox::setText(char).
+     - Added MultiLineTextBox::appendText(char).
+     - Added MultiLineTextBox::setText(char).
+     - Added ScrollingTextBox::addText(char).
+     - Added ScrollingTextBox::setText(char).
+     - Added WoopsiTimer gadget.
+     - Woopsi::registerForVBL() and Woopsi::unregisterFromVBL() now only work
+       with timers; all VBL code now is handled with timer gadgets.
+     - Removed EVENT_VBL event.
+     - Removed Gadget::vbl().
+     - AnimButton automatically animates as it has as built-in timer gadget.
+     - Added missing glyphs to tinyfont.bmp.
+     - Added timer example.
+     - Added cursor functionality to TextBox.
+     - Added GraphicsPort::drawFilledXORRect().
+     - Added GraphicsPort::drawLine() and associated clipping functions.
+     - Added WoopsiString class and replaced string handling code in TextBox.
+     - Added Label gadget as a base class for TextBox and Button; can be used as
+       a read-only, borderless text display gadget.
+     - Text inherits from WoopsiString class.
+     - Added MultiLineTextBox::removeText() methods.
+     - TextBox border bevelled both out and in.
+
+  V0.34 (20080702)
+  
+  - Fixes:
+     - All gadgets have protected copy constructors.
+     - Added destructor to DimmedScreen class.
+     - Replaced SuperBitmap::drawLine() with a function that works correctly.
+     - Fixed crash in SuperBitmap::floodFill() when pixel stack overflowed the
+       DS' stack.
+     - Fixed bug in SuperBitmap::floodFill() that prevented rows above the
+       initial click point being filled and occasionally froze the DS.
+     - Fixed path null pointer crash in FileRequester constructor.
+     - SuperBitmap::drawHorizLine() no longer tries to DMA_Force() if the width
+       of the line is 1.
+     - Fixed size of data stored in SuperBitmap floodFill's stack.
+     - Removed bitshifts from Screen::Drag() that would prevent resizing the
+       screen on alternative platforms.
+     - Windows can no longer be dragged vertically out of non-permeable screens
+       that are themselves dragged down.
+     - Fixed crash when dragging screen in SDL build.
+     - Added John's fix to limit SDL screen dragging to bottom screen.
+     - Gadget::lowerGadgetToBottom() does not try to move decorations.
+     - Gadget::raiseGadgetToTop() only invalidates the rect cache of any gadgets
+       it collides with.
+     - AmigaWindow controls how it moves to the top of the parent gadget stack
+       rather than the Screen gadget.
+  
+  - New Features:
+     - FileRequester tidied up and flags parameter added to constructor.
+     - Added FileRequester demo to examples directory.
+     - Added DimmedScreen demo to examples directory.
+     - Fixes to example makefiles.
+     - Added DimmedScreen readme file.
+     - Added WPaint to examples directory.
+     - Gadgets get drawn automatically when added to their parents.
+     - Added EVENT_MOVE_FORWARD and EVENT_MOVE_BACKWARD events.
+
+  V0.33b (20080522)
+  
+  - Fixes:
+     - Fixed warnings in the AnimButton/BitmapButton constructors.
+     
+  - New Features:
+     - Added makefiles to "Hello World" examples.
+
+  V0.33 (20080522)
+  
+  - Fixes:
+     - Gadget::click() checks correct class variable for double click timer.
+     - Deleted ListBoxItem class.
+     - Removed "closable" from gadget flags.
+     - SkinnedWindow resizes titlebar correctly.
+     - Wired up SkinnedWindow depth button visibility to skin data.
+     - More consistent names for SkinnedScreen button pointers.
+     - Added missing GraphicsPort::drawPixel() functions.
+     - Made char pointers const-correct for devkitPro r23 compatibility.
+     - System makes copies of string data where appropriate.
+     - Removed duplicate title string pointer from window classes.
+     - SkinnedWindow only drags when titlebar clicked, not any border gadget.
+     - Fixed crash when gadget closed but parent subsequently points one of its
+       pointers back at it.
+     - Fixed checkbox incorrectly setting font pointer instead of leaving it to
+       the base class.
+     - Fixed overflow in slider grip position calculations.
+     - Slider grip moves one page width/height when the gutter is clicked.
+     - Scrollbar buttons default to adjusting grip value by 1.
+     - Gadget::addGadget() checks to see if new children want to steal the focus
+       and will grant it if necessary.
+     - Focus and blur propagate throughout the gadget ancestor list even if a
+       gadget along the way already has focus (or not).
+     - Moved _clickedGadget pointer into Woopsi class and deleted all other
+       occurences.
+     - Changed _clickedGadget handling so that release works with the single
+       pointer in Woopsi.
+     - Windows drag correctly if only one co-ordinate has changed.
+     - Screen title bar no longer steals focus when clicked.
+     - Text::wrap() recognises the end of a single-line string correctly.
+     - BitmapButton inherits from Gadget instead of Textbox.
+     - AnimButton inherits from Gadget instead of Textbox.
+     - Textbox no longer redraws when clicked; functionality moved into Button
+       and ContextMenuItem classes.
+     - Removed redundant DecorationGlyphButton::release().
+     - Fixed tense in DS lid close/open events, so the events are now called
+       "EVENT_LID_CLOSE" and "EVENT_LID_OPEN", and the methods to work with them
+       are called "raiseLidCloseEvent()", "raiseLidOpenEvent()", "lidClose()"
+       and "lidOpen()".
+  
+  - New Features:
+     - ListBox rewritten to be a single gadget instead of a compound gadget.
+     - ListBox allows multiple selection.
+     - Added extra flags to AmigaWindow and SkinnedWindow classes allowing close
+       and depth gadgets to be hidden when gadgets are constructed.
+     - AmigaWindow allows depth and close buttons to be shown/hidden at will.
+     - SkinnedWindow allows depth and close buttons to be shown/hidden at will.
+     - Screen constructor accepts flags parameter.
+     - AmigaScreen constructor accepts flags parameter.
+     - SkinnedScreen constructor accepts flags parameter.
+     - AmigaScreen allows depth and flip buttons to be shown/hidden at will.
+     - SkinnedScreen allows depth and flip buttons to be shown/hidden at will.
+     - Added ScrollingListBox class.
+     - Added DefaultStyle class for control over gadget default colours.
+     - Added DimmedScreen class to the bonus folder.
+     - Added Requester class.
+     - Added FileRequester class to the bonus folder.
+     - Added Window and Screen setTitle() methods.
+     - Added drawEllipse() to the SuperBitmap class.
+     - Added drawFilledEllipse() to the SuperBitmap class.
+     - Added ListData class.
+     - Added FilePath class to bonus folder
+     - Added gadget test screen to demo.
+     - Added release-outside event that fires if the stylus is released outside
+       the boundaries of the gadget.
+     - Added eventVX and eventVY to EventArgs struct.
+     - Drag and move events populate eventVX and eventVY EventArgs properties.
+     - Added EVENT_ACTION event.
+     - Button, AnimButton and BitmapButton all raise EVENT_ACTION events.
+     - CycleGadget raises EVENT_VALUE_CHANGE events when released if the value
+       has changed.
+     - ScrollbarVertical up/down buttons repeat when held.
+     - ScrollbarHorizontal left/right buttons repeat when held.
+
+  V0.32 (200804327)
+  
+  - Fixes:
+     - Moved abstract methods out of FontBase not needed by all fonts.
+     - Renamed "checkGlyphData()" in font classes to "isCharBlank()".
+     - Moved more code out of FontBase into FixedWidthFontBase.
+     - Changed FontBase::clearColour() to support Jeff's new font classes.
+     - Screens receive focus correctly when clicked.
+     - Screens no longer start dragging when clicked other than in the titlebar.
+     - Text class now responsible for maintaining string memory instead of
+       MultiLineTextBox.
+     - Text::wrap() trims spaces from the start of each line.
+     - Text::wrap() breaks more sensibly at quotes, etc.
+     - Closing/shelving a child gadget chooses a new focused gadget correctly if
+       the child is the only gadget in the list.
+     - Gadgets now check recursive isEnabled() function instead of using the
+       enabled flag directly.
+     - Removed WiFi icon due to problems with some loaders.
+     - Moved ROM icon to icons directory to reduce ROM size.
+     - Removed vector from woopsiheaders.h.
+     - Gadget constructor respects GADGET_PERMEABLE flag.
+     - Renamed Woopsi::play() to Woopsi::run().
+     - Protected methods within Woopsi class that should not be public.
+     - Gadget::unregisterChildrenFromVBL() recurses through child tree and
+       unregisters all descendents.
+     - Gadget destructor will perform all deletion operations if it is called
+       directly and the correct deletion queue method is bypassed.
+     - Context menu shelved if the gadget that opened it gets closed.
+     - Slider/scrollbar inaccuracies fixed.
+     - Fixed rounding errors in TextBox alignment.
+     - Documentation updates.
+     - Switched demo code to follow Jeff's design pattern.
+     - Changed Woopsi queue handling to use while loops, so that unexpected
+       changes to the lists don't cause crashes.
+     - All attempts to dereference woopsiApplication check for NULL first.
+     - Gadget::redrawDirty() clips to parent dimensions correctly.
+     - Woopsi's gadget delete queue gets processed before the VBL listeners,
+       ensuring that deleted gadgets no longer try to fire events.
+     - Deleted gadgets no longer raise events.
+     - Gadget::isDeleted() recurses up through hierarchy.
+
+  - New Features:
+     - Added PackedFontBase, PackedFont1 and PackedFont16 classes (proportional
+       font support).
+     - Added "pythonscripts" folder with Jeff's "bmp2font" Python script for
+       creating PackedFont-compatible fonts.
+     - Renamed existing show/hide system to shelve/unshelve and added true
+       show/hide system.
+     - Added Gadget::isEnabled().
+     - Added ListBox and ListBoxItem classes.
+     - Added double click events (optional per gadget via a flag).
+     - Added ProgressBar class.
+     - Added EVENT_SHELVE and EVENT_UNSHELVE events.
+     - Gadgets can become modal.
+     - Added Jeff's application control code to Woopsi class.
+     - Added CycleButton class.
+     - Merged SDL loop code into Woopsi class.
+     - Merged DS and SDL woopsifuncs files.
+     - Buttons change colour when clicked.
+
+  V0.31 (20080411)
+  
+  - Fixes:
+     - Started inlining methods that can be inlined.
+     - Made destructors protected to prevent creation of gadgets on the stack.
+     - More const-correctness.
+     - Gadget destructor deletes children using destroy() method instead of
+       calling delete.
+     - Textbox::resize() remembers correct value of visible flag.
+     - Gadget::show() invalidates the rect cache correctly.
+     - Refactored active/inactive/focused/blurred system:
+        - Renamed Gadget "active" flag to "hasFocus".
+        - Renamed Gadget "setActiveGadget" to "setFocusedGadget".
+        - Renamed Gadget "_activeGadget" to "_focusedGadget".
+        - Refactored Gadget "setActive()" into "focus()" and "blur()" methods.
+     - Refactored visible/invisible system:
+        - Renamed Gadget "visible" flag to "drawingEnabled".
+        - Removed Gadget::setVisible().
+        - Removed Gadget::isVisible().
+        - Added Gadget::enableDrawing().
+        - Added Gadget::disableDrawing().
+        - Added Gadget::drawingEnabled().
+        - Gadget::isDrawingEnabled() only returns true if the gadget is not
+          hidden or deleted.
+        - GraphicsPort drawing methods do not check Gadget::isDeleted() as it
+          is checked in isDrawingEnabled().
+     - MultiLineTextBox restores correct drawing state when resizing.
+     - Fixed spelling of "closeable" to "closable".
+     - Moved Gadget::_visibleRegionCacheInvalid bool into the flags struct.
+     - Split PacMan demo into separate files for each class.
+     - Fixed Font and MonoFont scanGlyph() max co-ord overflows.
+     - Rewritten Text::wrap() function to be faster and more efficient.
+     - Tidied up Text class in general.
+     - Bugfixes to ScrollingTextbox scrollbars.
+     - Bugfixes to ScrollingTextbox event handling.
+     - Vertical and horizontal grip respect borders of gutter when dragged.
+     - Sliders check new value against max/min values when value is set.
+     - Gadget::click() calls "setDragging()".
+     - Gadget::drag() only raises drag events when _flag.dragging is set.
+     - SuperBitmap uses standard dragging system instead of "allowStylusScroll".
+     - Checkbox uses graphics port for all drawing.
+     - RadioButton uses graphics port for all drawing.
+     - Bugfixes to sliders.
+  
+  - New Features:
+     - Added ScrollingTextBox class.
+     - Added bonus code folder.
+     - Moved LinkedList and LinkedListIterator classes from main codebase into
+       bonus folder.
+     - Added Hashmap and HashmapIterator classes into bonus folder.
+     - Restored SimpleWindow and SimpleScreen classes in bonus folder.
+     - Added getPreferredDimensions() to Gadget and Textbox classes.
+     - Moved header includes from woopsi.h to new woopsiheaders.h to allow
+       more streamlined binaries.
+     - Added Gadget::remove() and Gadget::removeChild() methods.
+     - Added ContextMenu and ContextMenuItem classes.
+     - Added Gadget "hidden" flag to more accurately identify if a gadget has
+       been hidden.
+     - Added Gadget::isHidden() method.
+     - Font system improvements:
+        - Moved drawChar() function out of TextWriter into font classes to allow
+          fonts to draw themselves.
+        - FontBase::drawChar() returns the x co-ordinate for the next character,
+          allowing the font and TextWriter classes to handle proportional fonts.
+        - Added getStringWidth() functions for determining the pixel width of a
+          string when printed with a given font, allowing gadgets to work with
+          proportional fonts.
+        - Added FixedWidthFontBase base class for fixed width fonts.
+        - Removed all fixed-width code from FontBase.
+        - Upgraded gadgets to support proportional fonts.
+        - Upgraded Text class to support proportional fonts.
+     - Added GraphicsPort::drawBitmap() function that accepts a transparent
+       colour value and does not draw that colour.
+
+  V0.30 (20080326)
+
+  - Fixes:
+     - Removed EventHandler inheritance from Gadget.
+     - Added EventHandler inheritance to AmigaScreen and SkinnedScreen.
+     - Minor optimisation in TextBox click() and release() functions.
+     - Added more DMA_Active() checks to fix SuperBitmap DMA problems.
+     - Made EventHandler an abstract class.
+     - Removed post-DMA waits.
+     - Added cache flushing to fix empty pixels when using DMA hardware.
+     - Fixed incorrect vector pointer in Gadget::moveHiddenToChildList().
+     - Font::scanGlyph() no longer scans past the end of its bitmap's memory.
+     - Tidied up Debug class.
+     - Added javadoc comments to more files.
+     - Swapped ScrollingPanel and ScrollableBase to use a more logical model
+       of the scrolling region.
+     - Made Gadget::getX() and Gadget::getY() const.
+     - Fixed SliderVertical bugs.
+     - Added scrollbar to Debug GUI.
+     - Fixed incorrect line count in Text::wrap() function.
+     - Fixed incorrect check for movement in all gadget drag() functions.
+     - Removed unnecessary bitmap dimensions from AnimButton class.
+     - Made Gradient::resize() public.
+     - Removed "auto drawing" code from MultiLineTextBox.
+     - Switched to using visibility toggle in Debug class to optimise textbox
+       redraws.
+     - Changed value of TOP_SCREEN_Y_OFFSET to 512 to enable bitmask checking.
+     - ScreenDepthButton uses GraphicsPort for all drawing operations.
+     - Tidied up some of the includes and dependencies.
+     - Removed SimpleScreen and SimpleWindow classes.
+     - Hiding/closing a child now releases the child if it is clicked.
+     - Removed unused Screen::drawChildren(clipRect) method.
+     - MultiLineTextBox resizes correctly.
+     - Textbox resizes correctly.
+     - AmigaWindow resizes correctly.
+     - Minor optimisation in clipping.
+
+  - New Features:
+     - Added vertical slider.
+     - Added vertical scrollbar.
+     - Added horizontal slider.
+     - Added horizontal scrollbar.
+     - Added up, down, left and right arrow glyphs.
+     - Added ScrollableBase base class for scrolling gadgets.
+     - Removed ScrollableBase functions from ScrollingPanel and added
+       ScrollableBase as a base class for ScrollingPanel.
+     - Added EVENT_SCROLL to EventHandler.
+     - Added _darkColour to Gadget class.
+     - Added LinkedList, LinkedListIterator and DynamicArray classes.
+     - Removed all STL code.
+     - Added event enabling/disabling to Gadget class.
+     - Added event enabling/disabling to ScrollingPanel class.
+     - Gadgets track calls to erase() and no longer perform a second erase
+       without a call to draw() first.
+     - Added Gadget::changeDimensions() to allow move and resize with just one
+       redraw.
+     - Merged code for child click, release, keypress, key release, lid opened,
+       lid closed, focus and blur into the Gadget class, giving basic descendant
+       interaction out of the box.
+     - Moved window close/depth button logic out of button classes and into
+       a new AmigaWindow event handler method.
+     - Replaced screen buttons with DecorationGlyphButton class.
+     - Replaced window buttons with WindowBorderButton class.
+     - Skinned decoration buttons inherit from DecorationGlyphButton.
+     - Finished Alert class.
+     - Added library makefile.
+
+  V0.29 (20080111)
+  
+  - Fixes:
+     - Windows prevented from being dragged out of top of screen.
+     - ScreenTitle and WindowBorderTop make a copy of the text passed into them.
+     - BitmapButton's drawing routine offsets its blit origin by 1 to account
+       for the gadget's border width if applicable.
+     - Replaced most of SuperBitmap's draw(Rect) routine with a call to
+       GraphicsPort::drawBitmap().
+     - Increased size of window gadgets in demo skin.
+     - Updated SuperBitmap to use s16 instead of u16 for co-ordinates.
+     - Text::wrap() correctly wraps the last line of text.
+     - Fixed more bugs in TextViewer.
+     - Removed old Debug methods.
+     - Fixed clipping in SuperBitmap draw routines.
+     - Fixed all warnings.
+     - Fixed GraphicsPort clipping - windows were wrapping around vertically
+       when drawn in screens that were dragged down.
+     - Fixed bugs in setting gadget attributes from skins.
+     - Window was handling click() even if a child was clicked.
+     - SuperBitmap::drawFilledRect() was drawing the top line of the rect over
+       itself.
+     - Removed all left bitshifts from GraphicsPort::clipFilledRect() and
+       replaced with SCREEN_WIDTH multipliers (aid portability).
+ 
+  - New Features:
+     - Added SuperBitmap::drawFilledCircle().
+     - ScreenFlipButton uses GraphicsPort for all of its drawing operations.
+     - Added woopsiRGB() define as shortcut to RGB with alpha bit set.
+     - Replaced pixel plotting with DMA_Force() in SuperBitmap::drawHorizLine().
+     - Added SuperBitmap::clipBitmapCoordinates().
+     - SuperBitmap draw routines clip to bitmap dimensions.
+     - Added GraphicsPort::drawFilledCircle().
+     - Ball in Pong demo is now circular.
+     - Added PacMan demo.
+     - MultiLineTextBox outputs using the GraphicsPort.
+     - MultiLineTextBox automatically chooses smallest number of rows if no
+       value (or 0) is given as the parameter in its constructor.
+     - MultiLineTextBox trims its text to match the number of rows specified in
+       its constructor.
+     - Added MultiLineTextBox::setAutomaticDrawing() - if set to "false",
+       draw() must be called when changes are made to the textbox's text for
+       them to be shown.
+     - GraphicsPort has a new drawText() function with a length parameter.
+     - Added Debug console that automatically creates itself when called for
+       the first time.
+     - Added Debug::printf().
+     - Changed skinning structs to be more descriptive.
+     - Added tiny font to debug console.
+     - Added ScrollingPanel gadget.
+     - Added SDL layer.
+     - Added vertical scrolling to MultiLineTextBox.
+     - Added macros for using the 2nd DMA channel.
+     - Added check for DMA active flag in SuperBitmap drawing code.
+     - Gadget class inherits from EventHandler, so any gadget can be subclassed
+       and made to handle events.
+     - Screen decoration button gadgets have their parent screen set as their
+       event handler.
+     - Screen decoration button gadgets raise release events to notify their
+       screens of user input instead of calling functions (subclassing aid).
+
+  - Broken:
+     - Vertical alignment in MultiLineTextBox other than top.
+
+  V0.28 (20071214)
+  
+  - Fixes:
+     - Gadget::hideChild() was only hiding previously-hidden children.
+     - Gadget::hideChild() was moving an iterator in the wrong direction.
+     - Gadget::closeChild() was moving an iterator in the wrong direction.
+     - Gadget destructor closes children correctly.
+     - Gadget::moveChildToHiddenList() was incorrectly reducing the decoration
+       count.
+     - Gadget::moveChildToDeletedList() was incorrectly reducing the decoration
+       count.
+     - Gadget destructor did not close hidden children.
+     - Children and hidden children deregistered from VBL when destructed.
+     - Woopsi no longer automatically switches screen focus when a screen
+       closes.
+     - Renamed screenbase and windowbase files back to screen and window.
+     - Renamed WindowBase class back to Window.
+     - Swapped Bitmap class for Bitmap struct.
+     - GraphicsPort now works with const references to clipping rects.
+     - Fixed GraphicsPort::drawBitmap() clipping on top screen.
+     - Fixed GraphicsPort::drawFilledRect() clipping on top screen.
+     - Removed SuperBitmap::newBitmapGraphicsPort() as the top screen offset
+       code in the GraphicsPort made it unworkable.
+     - VBL count increased before child VBL functions called.
+     - Font class initialises _isMonochrome variable correctly.
+     - GraphicsPort and SuperBitmap reset font colour correctly when using
+       colour parameter.
+     - Window drag initialisation moved into WindowBorderTop gadget.
+     - Removed Window::checkTitleBarClicked().
+     - Added const-correctness and implementation hiding to Font classes.
+     - Removed Gadget::GadgetType enum and all references to it.
+     - Improved const-correctness of GraphicsPort class.
+     - BitmapButton works with const u16* bitmap data instead of non-const.
+     - Swapped bool cast for flag setting in Gadget constructor with PALib-style
+       double logical NOT construct.
+
+  - New Features:
+     - Skinning system.
+     - Added MonoFont class for 1bpp font support.
+     - Split Font class into Font and FontBase classes.
+     - Added Animation class.
+     - Added GraphicsPort::drawRect().
+     - PALib is optional.
+     - Added AnimButton.
+     - Added GraphicsPort::drawBevelledRect().
+     - Removed Gadget::drawIntOutline() and replaced with
+       GraphicsPort::drawBevelledRect().
+     - Added Gadget::getXXXColour() functions.
+     - Added Gadget::getOutlineType().
+     - Added AnimButton test.
+     - Added new ROM icon.
+
+  V0.27 (20071209)
+  
+  - Fixes:
+     - Renamed "font" to "sysfont".
+     - Moved font includes out of "all_gfx.h".
+     - Removed font inheritance (problematic with many gadgets).
+     - Made font an optional parameter in all gadget constructors.
+     - Removed font from constructors of window border gadgets that do not use a
+       font.
+     - Woopsi height based on top screen offset instead of an arbitrary number.
+     - Private class members set to protected where appropriate.
+     - "Gadget::setBorderless()" now invalidates rect cache.
+     - Removed "Gadget::removeGadget()" function (request 1846590).
+     - "Window::createBorder()" sets border focus correctly.
+     - Window border gadgets base their colour on the parent's active flag
+       rather than by abusing the focus system and their own active flags.
+     - GraphicsPort was using SCREEN_WIDTH instead of _bitmapWidth when blitting
+       bitmaps.
+     - Fonts work with const u16* bitmap data instead of plain u16*.
+     - Woopsi clears its background correctly when a screen closes.
+     - Gadgets draw only those regions not obscured by children (previously
+       broken by switch to region caching).
+     - Gradient cache uses new instead of malloc.
+     - Removed support for external bitmaps from SuperBitmap.
+     - Renamed Gadget::getRectClippedToParent to
+       Gadget::getRectClippedToHierarchy.
+     - Making a gadget invisible makes its children invisible.
+     - Fixed off-by-one error in Gadget::checkCollision() functions.
+     - Fixed gadget-space to display-space co-ordinate problem in GraphicsPort
+       clipping routines.
+     - Removed GraphicsPort::clipXORRect() and replaced with bugfixed
+       alternative.
+     - Various functions in Gadget class now check isVisible() instead of
+       _flags.visible.
+     - focus() functions ignore the call unless the gadget is not active.
+     - GraphicsPort will no longer draw to deleted/invisible gadgets.
+     - Tidied up ambiguities in Gadget::closeChild().
+     - Gadget::closeChild() function setting the active gadget pointer to top
+       gadget in the stack, but the top gadget could have been the gadget
+       being closed.
+     - Fixed same problem in Gadget::hideChild().
+ 
+  - New Features:
+     - Added static system font routines to Woopsi class.
+     - Gadgets automatically use system font if no font specified (bug 1846003).
+     - Added "floodFill()" function to SuperBitmap (request 1816931).
+     - Added "drawBitmap()" function to SuperBitmap (request 1813792).
+     - Added "newBitmapGraphicsPort()" function to SuperBitmap.
+     - Added "setFont()" function to Text.
+     - Split Screen class into ScreenBase, AmigaScreen and SimpleScreen classes.
+     - Added "permeable" flag to gadgets - if set to "true", child gadgets can
+       be dragged to exceed the borders of their parents (ie. windows can be
+       dragged off-screen).
+     - Gadget::getRectClippedToHierarchy clips to entire ancestor tree.
+     - Gadget::moveTo() enforces permeability of parent gadgets.
+     - Gadget::resize() enforces permeability of parent gadgets.
+     - Window::resize() enforces permeability of parent gadgets.
+     - Changed VBL events so gadgets must register with Woopsi to receive them
+       (request 1847147).
+     - Centralised gadget deletion queue handling into static Woopsi functions.
+     - Added Gadget::hideChild() function.
+     - Added VBL counting and static getVBLCount() function to Woopsi class
+       (request 1847147).
+     - Split Window class into WindowBase, AmigaWindow and SimpleWindow classes.
+     - Added text output methods with colour parameter to GraphicsPort and
+       SuperBitmap classes.
+
+  V0.26 (20071208)
+  
+  - Fixes:
+     - Added clip-to-physical-screen code back in.
+     - Fixed inconsistency in screen _flags.borderless variable.
+     - Fixed warning in gadget.cpp (bug 1826584).
+     - Removed parent pointers from gadget constructors.
+     - Removed eventhandler.cpp and rolled the functionality into the header.
+     - Removed font bitmap check from TextWriter (feature 1830307).
+     - Renamed "addXXX()" gadget creation functions to "newXXX()" (feature
+       1830242).
+     - Added check for null parent pointer before adding gadgets to child
+       vector (bug 1830241).
+     - Fixed flicker in top display when flipping screens.
+     - Fixed border size confusion in Window class.
+     - Fixed problem with height and width to y2 and x2 conversion in
+       TextWriter.
+     - Fixed scroll limit problem in TextViewer.
+     - Fixed drawing problems in TextViewer.
+     - Removed _deleteQueueActive from Gadget class and rely on vector size
+       instead (bug 1843784).
+     - Made destructors virtual where appropriate.
+     - Set gadgets to be invisible until added to a parent gadget to prevent
+       them being drawn to arbitrary positions on the screen.
+     - Removed "removeOverlappedRects" from Woopsi class.
+     - Changed Gadget::eraseGadget() so that the parent is responsible for.
+       erasing children instead of passing call up to Woopsi instance.
+     - Fixed Woopsi constructor parameter order.
+
+  - New Features:
+     - Screen and window borders can be enabled/disabled with setBorderless().
+     - Gadgets now have a flags bitmask instead of individual bools to control
+       properties (request 1826433).
+     - Added addGadget() and insertGadget() for more control over children.
+     - Added an ID number ("refcon") to the base gadget class (request 1828519).
+     - Added getClientRect() function to gadget/window/screen classes.
+     - Added GraphicsPort class to handle drawing within gadgets.
+     - Gadgets now cache their visible regions to improve drawing speed.
+     - Pong demo uses a GraphicsPort instead of a SuperBitmap.
+     - Added "removeGadget" function for deleting gadgets from vectors.
+     - Added gadget decoration concept to handle borders, etc.
+     - Removed all usage of Gadget::getType() to aid subclassing.
+     - BitmapButton draws its bitmap using GraphicsPort.
+     - Window uses parent screen's GraphicsPort to draw its XOR rectangles.
+       (fixes bug in which XOR rectangle overlaps other screens, but no longer
+       relevant since screens automatically depth-sort when clicked).
+     - Window border gadgets use GraphicsPort for their output.
+     - Screen title gadget uses GraphicsPort for its output.
+     - Removed most drawing functions from Gadget class.
+     - Added hardware-accelerated horizontal line drawing.
+     - Improved speed of filled rect by using faster horizontal line routine.
+     - Renamed bool getters from "getXXX()" to "isXXX()".
+     - Added clip-to-parents into Gadget::cacheVisibleRects and
+       Gadget::splitRects.
+     - Removed glyph font and added support routines to allow single font.
+     - Added font inheritance system.
+     - Added Gradient background class.
+     - Removed background image from demo and replaced with gradient.
+
+  V0.25 (20071104)
+
+  - Fixes:
+     - Added vector to store hidden gadgets, reducing the complexity of
+       maintaining gadget lists and focus.
+     - Removed all screen dimension magic numbers and replaced with defines.
+
+  - New Features:
+     - Split Woopsi library code into separate directory for ease of integration
+       in other projects.
+
+  V0.24 (20071103)
+
+  - Fixes:
+     - Tidied up a lot of the code.
+     - Gadget deletion queue now handles solely in the VBL events.
+     - Optimised TextWriter by preventing it from drawing empty glyphs.
+     - Changed TextWriter into a static class.
+     - Optimised TextViewer so that it uses much less memory.
+     - Text font and glyph font now sent around hierarchy instead of each gadget
+       creating their own font.
+     - Improved Font class.
+     - Removed 8-bit code from Bitmap class.
+     - General refactoring and code tidying.
+     - Made EventHandler methods virtual instead of pure virtual.
+     - Split gadget events into "raiseXEvent()" and "x()" functions.
+     - Clicking a gadget automatically notifies its parent that it is the new
+       clicked gadget.
+     - Moved dirty child redraw function into gadget class.
+     - Added horizontal clipping to rect splitting functions.
+     - Fixed SuperBitmap border.
+     - Relevant gadget methods are now virtual for subclassing.
+     - Removed all unnecessary all_gfx includes.
+
+  - New features:
+     - Added non-draggable screens and windows.
+     - Added show/hide gadget functionality.
+     - Added ability to hide a window instead of closing it when the close
+       button is clicked.
+     - Added closed/hidden/shown events.
+     - Added monochrome output to Font class and definable text colour.
+     - Added drawText() function to SuperBitmap class.
+     - Added window depth button.
+     - Added enable/disable gadget.
+     - Started work on alert requester.
+     - Moved text data manipulation out of TextViewer into a separate class.
+     - Added Gadget::moveTo method.
+     - Added Gadget::resize method.
+     - Added resize event.
+     - Added move event.
+     - Added value change event.
+     - Added window resizing (API only).
+     - Added radio buttons.
+     - Added radio button groups.
+     - Added "clicked" glyphs for screen and window depth buttons.
+     - Most gadget action methods (click(), moveTo(), etc) return bools to
+       indicate success or failure.
+     - Added enabled/disabled events.
+     - Added checkboxes.
+     - Added NDS screen flipping and support for top NDS screen.
+     - Added screen flipping gadget.
+     - Updated screens to swap to front when clicked.
+     - Added a variety of gadget depth manipulation functions.
+
+  V0.23 (20071024)
+
+  - Fixes:
+     - Improved event routing.
+     - Improved drawing speed when blurring windows.
+     - Fixed various null pointer bugs.
+     - Tidied up all gadget destructors.
+     - Misc other minor fixes.
+
+  - New features:
+     - Added window close buttons.
+     - Added gadget close functionality.
+
+  V0.22 (20071022)
+  
+   - Fixes:
+     - Screens can now be the active gadget.
+     - The system can now only have one active gadget at a time (previously,
+       each screen could have an active window).
+     - Doubled the speed of active window switching (system was redrawing
+       twice).
+     - Lid events now sent to all gadgets.
+     - Pad input re-enabled.
+     - Fixed null pointer crashes if no active gadget was available in some
+       events.
+     - Replaced Mario picture with Simian Zombie logo in SuperBitmap test.
+     - Misc other minor fixes.
+     
+   - New features:
+     - Added handleFocus() and handleBlur() events.
+     - Added BitmapButton class.
+
+  V0.21 (20071015)
+  
+   - Fixes:
+     - Deleted setBitmap() in SuperBitmap and added secondary constructor
+       instead - fixes a crash.
+     - Made Woopsi a gadget.
+     - Moved removeOverlappedRects() function from Screen/Window into Gadget.
+     - Improved TextViewer clipping.
+     - Fixed screen title clipping.
+     - Fixed null pointer crash in screen stylus handling.
+     - VBL sent to all gadgets on all screens.
+     
+   - New features:
+     - Screen dragging.
+     - Added addSuperBitmap() to Screen - allows screen backgrounds.
+     - Debug class to aid debugging.
+
+   - Broken:
+     - Pad input is disabled.
+    
+  V0.2a (20070928)
+  
+   - General:
+     - First source code release.
+     - Licenced source under BSD licence.
+     - Started work on "standard developer" documentation.
+     
+   - Fixes:
+     - Borderless windows fixed.
+     - Switched active window colour to closest approximation the DS can make to
+       the original WB2.x blue.
+     - Made screen depth gadget wider so it is easier to click.
+     - TextViewer clips correctly when drawing/scrolling (though it still
+       doesn’t clip to the invalid region when redrawing).
+     - Moved child gadget vector from Screen and Window into Gadget.
+     - Moved drawChildren() from Screen and Window into Gadget.
+     - Fixed window border clipping (fixes window title overlap problem).
+     - Fixed screen title clipping.
+     
+   - New features:
+     - Added drawHorizLine() to SuperBitmap.
+     - Added drawVertLine() to SuperBitmap.
+     - Added drawRect() to SuperBitmap.
+     - Added allowStylusScroll() to SuperBitmap.
+     - Added setShineColour() to Gadget.
+     - Added setHighlightColour() to Gadget.
+     - Added setShadowColour() to Gadget.
+     - Added setBackColour() to Gadget.
+     - Added setFillColour() to Gadget.
+     - Added events for lid opening and lid closing.
+
+  V0.18 (20070926)
+  
+   - Eighth WIP demo release.
+   - Added intelligent gadget drawing.
+   - Improved SuperBitmap init speed.
+   - Improved erase speed.
+   - Code tidying/refactoring.
+
+  V0.17 (20070925)
+  
+   - Seventh WIP demo release.
+   - Added clipping to the majority of gadgets.
+   - Added intelligent gadget removal.
+   - Added a bitmap to the SuperBitmap demo.
+   - Changed Pong demo to use SuperBitmap as its canvas.
+   - Converted window/screen borders into gadgets.
+
+  V0.10 (20070923)
+  
+   - Sixth WIP demo release.
+   - EventArgs and EventHandler system implemented.
+   - Added key and VBL events.
+   - Added drawFilledRect() function for drawing to gadgets.
+   - Added SuperBitmap gadget.
+   - Converted from 8-bit display to 16-bit.
+   - Added Pong demo.
+   - Added SuperBitmap demo.
+  
+  V0.06 (20070921)
+  
+   - Fifth WIP demo release.
+   - Bugfix for TextViewer crash.
+   - Event system work begun.
+   - Calculator app added.
+   - Textbox gadget added.
+   - Button gadget altered to inherit from Textbox.
+   - More optimistion in fast filled rectangle code.
+
+  V0.05 (20070920)
+  
+   - Fourth WIP demo release.
+   - Bugfix for fast filled rectange routine.
+   - Multiple screen support.
+   - Screen depth gadget.
+   - Fixed crash caused by uninitialised pointer in handleReleased() window
+     function.
+   - Begun work on gadget glyphs.
+   - Fixed bug in XORed rectangle code - corner pixels were being XORed twice.
+
+  V0.03 (20070920)
+
+   - Third WIP demo release.
+   - Renamed from "WindowSystemDS" to "Woopsi".
+
+  V0.02 (20070919)
+  
+   - Second WIP demo release.
+
+  V0.01 (20070917)
+  
+   - First WIP demo release.
