@@ -93,9 +93,7 @@ export DIRS_ARM9_HEADER = data/	\
 			../common/	\
 			../common/templateCode/source/	\
 			../common/templateCode/data/arm9/	\
-			../$(PosIndCodeDIR_FILENAME)/$(DIR_ARM9)/include/	\
-			../../../libwoopsi/lib/include	\
-			../../../libwoopsi/lib/include/fonts
+			../$(PosIndCodeDIR_FILENAME)/$(DIR_ARM9)/include/
 			
 # Build Target(s)	(both processors here)
 all: $(EXECUTABLE_FNAME)

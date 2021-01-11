@@ -45,8 +45,8 @@ export TARGET_LIBRARY_LIBNAME_9	=	l$(TARGET_LIBRARY_NAME_9)
 
 DIR_LIB_SRC_CWD := 	src/	\
 					src/fonts
-DIR_LIB_HDR_CWD := 	include/	\
-					include/fonts	\
+DIR_LIB_HDR_CWD := 	includeWoopsi/	\
+					includeWoopsi/fonts	\
 					build 	\
 					lib/libfreetype/include	\
 					lib/libfreetype/include/freetype	\
@@ -134,13 +134,13 @@ $(OBJDIR)/%.o : %.S
 #Builder.
 $(OBJPROG).a: $(addprefix $(OBJDIR)/, $(OBJECTS))
 	$(AR) rvs	$@	$^
-	-mv	$@	lib/$(LIB_NAME).a
-	-cp -R include/	lib/
+	-mv	$@	$(TARGET_LIBRARY_PATH)/$(LIB_NAME).a
+	-cp -R includeWoopsi/	$(TARGET_LIBRARY_PATH)
 	
 ################################################################################################
 clean:
 	-@echo 'cleanup $(OBJPROG).a'
-	-@rm -fr $(OBJDIR)	$(OBJPROG).a	lib/$(LIB_NAME).a	lib/include/
+	-@rm -fr $(OBJDIR)	$(OBJPROG).a	$(TARGET_LIBRARY_PATH)/$(LIB_NAME).a	$(TARGET_LIBRARY_PATH)/includeWoopsi/
 	
 debug:
 	-@echo 'files: $(objs_arm9)'
