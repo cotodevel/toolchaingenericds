@@ -6,6 +6,8 @@
 #include "gzguts.h"
 #include "posixHandleTGDS.h"
 
+extern int write(int fd, const void *buf, int count);
+
 /* Local functions */
 local int gz_init OF((gz_statep));
 local int gz_comp OF((gz_statep, int));

@@ -41,6 +41,9 @@ USA
 #include "sgIP_sockets.h"
 #include "nds_cp15_misc.h"
 
+extern int read(int fd, void *buf, int count);
+extern int write(int fd, const void *buf, int count);
+
 __attribute__((section(".dtcm")))
 struct dsnwifisrvStr dswifiSrv;
 

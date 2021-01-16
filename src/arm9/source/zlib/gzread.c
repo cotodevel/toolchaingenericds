@@ -5,6 +5,9 @@
 
 #include "gzguts.h"
 #include "posixHandleTGDS.h"
+#include "typedefsTGDS.h"
+
+extern int read(int fd, void *buf, int count);
 
 /* Local functions */
 local int gz_load OF((gz_statep, unsigned char *, unsigned, unsigned *));

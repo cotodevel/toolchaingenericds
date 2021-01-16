@@ -127,7 +127,7 @@ export DIRS_ARM9_HEADER = source/	\
 			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
 			
 # Build Target(s)	(both processors here)
-all: compilelib	buildWoopsiUI
+all: compilelib
 
 buildWoopsiUI:
 	$(MAKE)	-R	-C	../lib/
@@ -155,7 +155,6 @@ endif
 ifeq ($(SOURCE_MAKEFILE9),default)
 	-@rm -rf $(CURDIR)/$(DIR_ARM9)/Makefile
 endif
-	$(MAKE)	cleanWoopsiUI
 	-@rm -fr $(EXECUTABLE_FNAME)
 	-@rm -fr	$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
 
