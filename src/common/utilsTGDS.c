@@ -34,6 +34,7 @@ USA
 
 #ifdef ARM9
 #include "fatfslayerTGDS.h"
+#include "videoTGDS.h"
 #endif
 
 size_t ucs2tombs(uint8* dst, const unsigned short* src, size_t len) {
@@ -121,9 +122,9 @@ METHOD_DESCRIPTOR * callback_append_signature(uint32 * func_addr, uint32 * func_
 	return (METHOD_DESCRIPTOR *)method_inst;
 }
 
-//all handlers will have __attribute__((optimize("O0"))) specified.
+//all handlers will have __attribute__((optnone)) specified.
 
-__attribute__((optimize("O0")))
+__attribute__((optnone))
 __attribute__ ((noinline))
 sint32 cback_build(){
 	
@@ -131,7 +132,7 @@ sint32 cback_build(){
 	return (sint32)0;
 }
 
-__attribute__((optimize("O0")))
+__attribute__((optnone))
 __attribute__ ((noinline))
 void cback_build_end(){
 	
@@ -628,7 +629,7 @@ void RenderTGDSLogoMainEngine(u8 * compressedLZSSBMP, int compressedLZSSBMPSize)
 	
 	//Prevent Cache problems.
 	coherent_user_range_by_size((uint32)LZSSCtx.bufferSource, (int)LZSSCtx.bufferSize);
-	renderFBMode3Engine((u16*)LZSSCtx.bufferSource, 0x06000000, (int)TGDSLOGONDSSIZE_WIDTH,(int)TGDSLOGONDSSIZE_HEIGHT);
+	renderFBMode3Engine((u16*)LZSSCtx.bufferSource, (unsigned short *)0x06000000, (int)TGDSLOGONDSSIZE_WIDTH,(int)TGDSLOGONDSSIZE_HEIGHT);
 	
 	//used? discard
 	TGDSARM9Free(LZSSCtx.bufferSource);
@@ -698,10 +699,10 @@ void mainARGV(){
 	else{
 		thisArgc = 0;
 	}
-	main(thisArgc,  &thisArgv[0][0]);
+	main(thisArgc,  (char**)thisArgv);
 }
 
-__attribute__((optimize("-O0")))
+__attribute__((optnone))
 void separateExtension(char *str, char *ext)
 {
 	int x = 0;

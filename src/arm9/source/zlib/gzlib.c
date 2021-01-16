@@ -93,7 +93,7 @@ local gzFile gz_open(path, fd, mode)
     gz_statep state;
 
     /* allocate gzFile structure to return */
-    state = TGDSARM9Malloc(sizeof(gz_state));
+    state = (gz_state *)TGDSARM9Malloc(sizeof(gz_state));
     if (state == NULL)
         return NULL;
     state->size = 0;            /* no buffers allocated yet */
@@ -149,7 +149,7 @@ local gzFile gz_open(path, fd, mode)
     }
 
     /* save the path name for error messages */
-    state->path = TGDSARM9Malloc(strlen(path) + 1);
+    state->path = (char *)TGDSARM9Malloc(strlen(path) + 1);
     if (state->path == NULL) {
         TGDSARM9Free(state);
         return NULL;
@@ -217,7 +217,7 @@ gzFile ZEXPORT gzdopen(fd, mode)
     char *path;         /* identifier for error messages */
     gzFile gz;
 
-    if (fd == -1 || (path = TGDSARM9Malloc(7 + 3 * sizeof(int))) == NULL)
+    if (fd == -1 || (path = (char *)TGDSARM9Malloc(7 + 3 * sizeof(int))) == NULL)
         return NULL;
     sprintf(path, "<fd:%d>", fd);   /* for debugging */
     gz = gz_open(path, fd, mode);
@@ -507,7 +507,7 @@ void ZLIB_INTERNAL gz_error(state, err, msg)
     }
 
     /* construct error message with path */
-    if ((state->msg = TGDSARM9Malloc(strlen(state->path) + strlen(msg) + 3)) == NULL) {
+    if ((state->msg = (char *)TGDSARM9Malloc(strlen(state->path) + strlen(msg) + 3)) == NULL) {
         state->err = Z_MEM_ERROR;
         state->msg = (char *)"out of memory";
         return;

@@ -96,19 +96,19 @@ int funzipstdio(char * inFname, char * outFname){
 	}
 	
 	//Generate full dir path for output: internal ZIP name
-	strncpy(outFname, fname, strlen(fname)+1);
+	strncpy(outFname, (const char *)fname, strlen((const char *)fname)+1);
 	u8 newOutFname[256+1];
 	memset(newOutFname, 0, sizeof(newOutFname));
 	int lastDir = (strlen(inFname) - strlen(outFname));
 	if(lastDir > 0){
-		strncpy(newOutFname, inFname, lastDir);
+		strncpy((char *)newOutFname, inFname, lastDir);
 	}
 	//identical name or error 
 	else{
-		strncpy(newOutFname, inFname, strlen(inFname));
+		strncpy((char *)newOutFname, inFname, strlen(inFname));
 	}
-	strcat(newOutFname, outFname);
-	strcpy(outFname, newOutFname);
+	strcat((char *)newOutFname, outFname);
+	strcpy(outFname, (char *)newOutFname);
 	FILE *out=fopen(outFname,"w+");
 	if(!out){
 		fclose(in);

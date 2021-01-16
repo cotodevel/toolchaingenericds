@@ -416,7 +416,7 @@ int IMA_Adpcm_Player::play( struct fd *fdInst, bool loop_audio, bool automatic_u
 	}
 	
 	strm->closeCb = closeHandle;
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	//struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	paused = false;
 	active=true;
 	

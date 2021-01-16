@@ -294,7 +294,7 @@ void setOrientation(int orientation, bool mainEngine){
 		case ORIENTATION_90:{
 			if(mainEngine == true){
 				REG_BG3PA = 0;
-				REG_BG3PB = -1 << 8;
+				REG_BG3PB = ( (sint16)((-1u)<<8) + 1);
 				REG_BG3PC = 1 << 8;
 				REG_BG3PD = 0;
 				REG_BG3X = 191 << 8;
@@ -303,7 +303,7 @@ void setOrientation(int orientation, bool mainEngine){
 			}
 			else{
 				REG_BG3PA_SUB = 0;
-				REG_BG3PB_SUB = -1 << 8;
+				REG_BG3PB_SUB = ( (sint16)((-1u)<<8) + 1);
 				REG_BG3PC_SUB = 1 << 8;
 				REG_BG3PD_SUB = 0;
 				REG_BG3X_SUB = 191 << 8;
@@ -314,19 +314,19 @@ void setOrientation(int orientation, bool mainEngine){
 		break;
 		case ORIENTATION_180:{
 			if(mainEngine == true){
-				REG_BG3PA = -1 << 8;
+				REG_BG3PA = ( (sint16)((-1u)<<8) + 1);
 				REG_BG3PB = 0;
 				REG_BG3PC = 0;
-				REG_BG3PD = -1 << 8;
+				REG_BG3PD = ( (sint16)((-1u)<<8) + 1);
 				REG_BG3X = 255 << 8;
 				REG_BG3Y = 191 << 8;
 				TGDSIPC->screenOrientationMainEngine = orientation;
 			}
 			else{
-				REG_BG3PA_SUB = -1 << 8;
+				REG_BG3PA_SUB = ( (sint16)((-1u)<<8) + 1);
 				REG_BG3PB_SUB = 0;
 				REG_BG3PC_SUB = 0;
-				REG_BG3PD_SUB = -1 << 8;
+				REG_BG3PD_SUB = ( (sint16)((-1u)<<8) + 1);
 				REG_BG3X_SUB = 255 << 8;
 				REG_BG3Y_SUB = 191 << 8;
 				TGDSIPC->screenOrientationSubEngine = orientation;
@@ -337,7 +337,7 @@ void setOrientation(int orientation, bool mainEngine){
 			if(mainEngine == true){
 				REG_BG3PA = 0;
 				REG_BG3PB = 1 << 8;
-				REG_BG3PC = -1 << 8;
+				REG_BG3PC = ( (sint16)((-1u)<<8) + 1);
 				REG_BG3PD = 0;
 				REG_BG3X = 0;
 				REG_BG3Y = 255 << 8;
@@ -346,7 +346,7 @@ void setOrientation(int orientation, bool mainEngine){
 			else{
 				REG_BG3PA_SUB = 0;
 				REG_BG3PB_SUB = 1 << 8;
-				REG_BG3PC_SUB = -1 << 8;
+				REG_BG3PC_SUB = ( (sint16)((-1u)<<8) + 1);
 				REG_BG3PD_SUB = 0;
 				REG_BG3X_SUB = 0;
 				REG_BG3Y_SUB = 255 << 8;

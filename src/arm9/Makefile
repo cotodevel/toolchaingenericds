@@ -102,7 +102,7 @@ $(OBJDIR):
 $(OBJDIR)/%.o : %.bin
 	-@echo 'trying to convert .BIN ($<) -> .C output: ${@:.o=.c} : arrayName: $(subst build/,,${@:.o=})'
 	$(BIN2C)	$<	${@:.o=.c}	$(subst build/,,${@:.o=})
-	$(CC) $(DEP_CFLAGS) $(CFLAGS) $(DIRLIBS_HDR) $(DIRLIBS_SRC)	-c -o $@ $<
+	$(CC) $(DEP_CFLAGS) $(CFLAGS) $(DIRLIBS_HDR) $(DIRLIBS_SRC)	-c -o $@ ${@:.o=.c}
 
 
 #Do C Compile now!

@@ -24,6 +24,7 @@ USA
 #include "typedefsTGDS.h"
 #include <ctype.h>
 #include <stdlib.h>
+#include <malloc.h>
 
 #include <sys/reent.h>
 #include <sys/select.h>
@@ -300,6 +301,8 @@ extern void TryToDefragmentMemory();
 //newlib
 extern uint32 get_lma_libend();		//linear memory top
 extern uint32 get_lma_wramend();	//(ewram end - linear memory top ) = malloc free memory
+
+extern int main(int argc, char **argv);	//todo: fix the ARGV so it uses this format
 
 #ifdef __cplusplus
 }

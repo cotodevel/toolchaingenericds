@@ -205,8 +205,8 @@ off_t TGDSFSUserfatfs_lseek(struct fd *pfd, off_t offset, int whence){	//(FileDe
 
 bool openDualTGDSFileHandleFromFile(char * filenameToOpen, int * tgdsStructFD1, int * tgdsStructFD2){
 	//Test case for 2 file handles out a single file
-	int retStatus1 = TGDSFSUserfatfs_open_file((const sint8 *)filenameToOpen, "r", tgdsStructFD1);	//returns structFD Video File Handle as posix file descriptor (int fd) and struct fd *
-	int retStatus2 = TGDSFSUserfatfs_open_file((const sint8 *)filenameToOpen, "r", tgdsStructFD2);	//returns structFD Audio File Handle as posix file descriptor (int fd) and struct fd *
+	int retStatus1 = TGDSFSUserfatfs_open_file((const sint8 *)filenameToOpen, (char *)"r", tgdsStructFD1);	//returns structFD Video File Handle as posix file descriptor (int fd) and struct fd *
+	int retStatus2 = TGDSFSUserfatfs_open_file((const sint8 *)filenameToOpen, (char *)"r", tgdsStructFD2);	//returns structFD Audio File Handle as posix file descriptor (int fd) and struct fd *
 	if( (retStatus1 != -1) && (retStatus2 != -1)){
 		return true;
 	}

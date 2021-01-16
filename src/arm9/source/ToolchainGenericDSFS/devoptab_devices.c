@@ -185,7 +185,7 @@ _ssize_t read_r_fatfs( struct _reent *r, int fd, sint8 *ptr, int len ){
     }
     else
     {
-		ret = fatfs_read(fd, ptr, len);
+		ret = fatfs_read(fd, (u8 *)ptr, len);
     }
     return ret;
 }
@@ -203,7 +203,7 @@ _ssize_t write_r_fatfs( struct _reent *r, int fd, const sint8 *ptr, int len ){
 		errno = EBADF;
     }
     else{
-	    ret = fatfs_write(f->cur_entry.d_ino, (sint8*)ptr, len);
+	    ret = fatfs_write(f->cur_entry.d_ino, (u8 *)ptr, len);
     }
     return ret;
 	

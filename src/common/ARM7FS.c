@@ -389,17 +389,17 @@ void performARM7MP2FSTestCaseTGDSFileDescriptor(struct fd * TGDSFileHandleIn, st
 	//setup vars
 	if(TGDSFileHandleIn == NULL){
 		deinitARM7FS();
-		return false;
+		return ;
 	}
 	if(TGDSFileHandleOut == NULL){
 		deinitARM7FS();
-		return false;
+		return ;
 	}
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	TGDSIPC->IR_readbuf=(u32*)TGDSARM9Malloc(splitBufferSize);	//Must be EWRAM because then ARM7 can receive it into ARM7's 0x06000000 through DMA (hardware ring buffer)
 	if((u32*)TGDSIPC->IR_readbuf == (u32*)NULL){
 		deinitARM7FS();
-		return false;
+		return ;
 	}
 	
 	ARM7FS_HandleMethod = TGDS_ARM7FS_TGDSFILEDESCRIPTOR;	//ARM9

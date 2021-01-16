@@ -899,7 +899,7 @@ int parseWaveData(struct fd * fdinst, u32 u32chunkToSeek){
 		u8 lastVar1 = 0;
 		u8 lastVar2 = 0;
 		u8 lastVar3 = 0;
-		int match = 0;
+		//int match = 0;
 		int j = 0;
 		for(j=0; j < sizeof(bytesNonAligned); j++){
 			if(j>0){
@@ -933,7 +933,7 @@ int playSoundStream(char * audioStreamFilename, struct fd * _FileHandleVideo, st
 		//OK
 		_FileHandleVideo = getStructFD(physFh1);
 		_FileHandleAudio = getStructFD(physFh2);
-		int internalCodecType = initSoundStreamFromStructFD(_FileHandleAudio, ".wav");
+		int internalCodecType = initSoundStreamFromStructFD(_FileHandleAudio, (char*)".wav");
 		if(internalCodecType == SRC_WAVADPCM){
 			bool loop_audio = false;
 			bool automatic_updates = false;

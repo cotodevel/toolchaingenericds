@@ -34,6 +34,7 @@ SOFTWARE.
 #include "dswifi9.h"
 #include "dswnifi_lib.h"
 #include "nds_cp15_misc.h"
+#include "biosTGDS.h"
 
 #include <stdarg.h>
 #include <stdlib.h>
@@ -428,7 +429,7 @@ int Wifi_GetAPData(int apnum, Wifi_AccessPoint * apdata) {
 	
 	if(WifiData){
 		if(WifiData->aplist[apnum].flags&WFLAG_APDATA_ACTIVE) {
-			while(Spinlock_Acquire(WifiData->aplist[apnum])!=SPINLOCK_OK);
+			while(Spinlock_Acquire(WifiData->aplist[apnum])!=SPINLOCK_OK){}
 			{
 				// additionally calculate average RSSI here
 				WifiData->aplist[apnum].rssi=0;

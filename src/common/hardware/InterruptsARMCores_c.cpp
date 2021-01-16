@@ -97,7 +97,10 @@ void IRQInit(u8 DSHardware){
 	}
 }
 
+#ifdef ARM7
 static bool penDown = false;
+#endif
+
 //Software bios irq more or less emulated. (replaces default NDS bios for some parts)
 #ifdef ARM9
 __attribute__((section(".itcm")))
@@ -118,6 +121,7 @@ void NDS_IRQHandler(){
 		#ifdef ARM9
 		//handles DS-DS Comms
 		sint32 currentDSWNIFIMode = doMULTIDaemonStage1();
+		(void)currentDSWNIFIMode;
 		#endif
 		VblankUser();
 	}

@@ -22,12 +22,11 @@ USA
 
 // Shared
 #include "dswnifi_lib.h"
-
 #include "typedefsTGDS.h"
 #include "dsregs.h"
 #include "dsregs_asm.h"
-
 #include "wifi_shared.h"
+#include "biosTGDS.h"
 
 // ARM7
 #ifdef ARM7
@@ -36,7 +35,7 @@ USA
 
 // ARM9
 #ifdef ARM9
-
+#include "videoTGDS.h"
 #include "timerTGDS.h"
 #include "keyboard.h"
 #include "sgIP_sockets.h"
@@ -175,7 +174,7 @@ bool switch_dswnifi_mode(sint32 mode){
 	//UDP Nifi (wifi AP)
 	else if (mode == (sint32)dswifi_udpnifimode){
 		dswifiSrv.dsnwifisrv_stat = ds_searching_for_multi_servernotaware;
-		bool useWIFIAP = true;
+		//bool useWIFIAP = true;
 		if(connectDSWIFIAP(DSWNIFI_ENTER_WIFIMODE) == true){	//setWIFISetup set inside
 			setConnectionStatus(proc_connect);
 			setMULTIMode(mode);
@@ -252,8 +251,8 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 				
 				//Ask for Server Input IP here:
 				if(globalTGDSCustomConsole == false){
-					bool isDirectFramebuffer = false;
-					bool disableTSCWhenTGDSConsoleTop = false;
+					//bool isDirectFramebuffer = false;
+					//bool disableTSCWhenTGDSConsoleTop = false;
 					u8* currentVRAMContext = (u8*)TGDSARM9Malloc(128*1024);
 					bool SaveConsoleContext = true; //Save Console context
 					//TGDSLCDSwap(disableTSCWhenTGDSConsoleTop, isDirectFramebuffer, SaveConsoleContext, currentVRAMContext);
@@ -374,7 +373,7 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 							char * outBuf = (char *)malloc(256*10);
 							char * token_hostguest = (char*)((char*)outBuf + (2*256));	//host or guest
 							char * token_extip = (char*)((char*)outBuf + (1*256));	//external NDS ip to connect
-							char * cmdRecv = (char*)((char*)outBuf + (0*256));	//cmd
+							//char * cmdRecv = (char*)((char*)outBuf + (0*256));	//cmd
 							str_split((char*)incomingbuf, "-", outBuf, 10, 256);
 							int host_mode = strncmp((const char*)token_hostguest, (const char *)"host", 4); 	//host == 0
 							int guest_mode = strncmp((const char*)token_hostguest, (const char *)"guest", 5); 	//guest == 0
@@ -779,7 +778,7 @@ bool gdbNdsStart(){
 	}
 	ARM7BufferedAddress = TGDSARM9Malloc(ARM7IOSize);
 	ReadMemoryExt((u32*)ARM7IOAddress, (u32 *)ARM7BufferedAddress, ARM7IOSize);
-	if(initGDBMapBuffer(ARM7BufferedAddress, ARM7IOSize, ARM7IOAddress) == true){
+	if(initGDBMapBuffer((u32 *)ARM7BufferedAddress, ARM7IOSize, ARM7IOAddress) == true){
 		//ARM7 IO : ARM7IOAddress
 		if(connectDSWIFIAP(DSWNIFI_ENTER_WIFIMODE) == true){	//GDB Requires the DS Wifi to enter wifi mode
 			dswifiSrv.GDBStubEnable = true;
@@ -1515,7 +1514,7 @@ bool initGDBMapBuffer(u32 * bufferStart, int GDBMapBufferSize, uint32 newRelocat
 		&&
 		((uint32)newRelocatableAddr < (uint32)maxGDBMapFileAddress)
 	){
-		gdbStubMapBufferInst->bufferStart = bufferStart;
+		gdbStubMapBufferInst->bufferStart = (u8 *)bufferStart;
 		gdbStubMapBufferInst->GDBMapBufferSize = GDBMapBufferSize;
 		setCurrentRelocatableGDBFileAddress(newRelocatableAddr);
 		return true;

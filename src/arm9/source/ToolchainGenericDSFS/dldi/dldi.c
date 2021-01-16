@@ -194,7 +194,7 @@ bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buff
 
 
 static const data_t dldiMagicString[12] = "\xED\xA5\x8D\xBF Chishm";	// Normal DLDI file
-static const data_t dldiMagicLoaderString[12] = "\xEE\xA5\x8D\xBF Chishm";	// Different to a normal DLDI file
+//static const data_t dldiMagicLoaderString[12] = "\xEE\xA5\x8D\xBF Chishm";	// Different to a normal DLDI file
 
 enum DldiOffsets {
 	DO_magicString = 0x00,			// "\xED\xA5\x8D\xBF Chishm"
@@ -260,7 +260,7 @@ static inline addr_t quickFind (const data_t* data, const data_t* search, size_t
 //dldiOutWriteAddress == new physical DLDI out buffer, except, relocated to a new DldiRelocatedAddress!
 bool dldiRelocateLoader(bool clearBSS, u32 DldiRelocatedAddress, u32 dldiSourceInRam, u32 dldiOutWriteAddress){
 	addr_t memOffset;			// Offset of DLDI after the file is loaded into memory
-	addr_t patchOffset;			// Position of patch destination in the file
+	//addr_t patchOffset;			// Position of patch destination in the file
 	addr_t relocationOffset;	// Value added to all offsets within the patch to fix it properly
 	addr_t ddmemOffset;			// Original offset used in the DLDI file
 	addr_t ddmemStart;			// Start of range that offsets can be in the DLDI file

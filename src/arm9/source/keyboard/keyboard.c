@@ -146,7 +146,7 @@ char processKeyboard(char* str, unsigned int max, unsigned int echo, int strYoff
 {
 	scanKeys();
 	
-	int keysHld = keysDown();
+	//int keysHld = keysDown();
 	//get the map
 	uint16 *map = (uint16 *) SCREEN_BASE_BLOCK_SUB(29); 
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 
@@ -227,7 +227,7 @@ char processKeyboard(char* str, unsigned int max, unsigned int echo, int strYoff
 			lastkey = 0; lasttilex = 0; lasttiley = 0;
 
 			buf[0] = c;
-			buf[1] = (char)NULL;
+			buf[1] = (intptr_t)NULL;
 
 			if(c==RET) // Return
 			{
@@ -253,7 +253,7 @@ char processKeyboard(char* str, unsigned int max, unsigned int echo, int strYoff
 							//printf("\x1b[1D \x1b[1D"); 			//todo
 						}
 					}
-					str[strlen(str)-1] = (char) NULL;
+					str[strlen(str)-1] = (intptr_t)NULL;
 				}
 				
 			} 

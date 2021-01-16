@@ -28,10 +28,13 @@ USA
 #include <stdlib.h>
 #include <_ansi.h>
 #include <reent.h>
+#include <errno.h>
+
 #include "typedefsTGDS.h"
 #include "ipcfifoTGDS.h"
 #include "posixHandleTGDS.h"
 #include "linkerTGDS.h"
+#include "biosTGDS.h"
 
 #ifdef ARM7
 #include "xmem.h"
@@ -395,7 +398,7 @@ void printf7(u8 * printfBufferShared, int * arm7ARGVBufferShared, int argvCount)
 	strcpy(printfTemp, (char*)printfBufferShared);
 	strcat(printfTemp, argChar);
 	printfTemp[strlen(printfTemp)+1] = '\0';
-	printf(printfTemp);
+	printf("%s", printfTemp);
 }
 
 void printarm7DebugBuffer(){
@@ -426,7 +429,7 @@ void printarm7DebugBuffer(){
 	strcat(printfTemp, ">6");	//TGDS Console Font Color: TGDSPrintfColor_Yellow
 	
 	printfTemp[strlen(printfTemp)+1] = '\0';
-	printf(printfTemp); 
+	printf("%s", printfTemp); 
 }
 
 int printf(const char *fmt, ...){
@@ -443,23 +446,23 @@ int printf(const char *fmt, ...){
     zone.font = &smallfont_7_font;
 	
 	int color = (int)TGDSPrintfColor_LightGrey;	//default color
-	int stringSize = (int)strlen(ConsolePrintfBuf);
+	//int stringSize = (int)strlen((const char*)ConsolePrintfBuf);
 	
 	//Separate the TGDS Console font color if exists
 	char cpyBuf[256+1] = {0};
-	strcpy(cpyBuf, ConsolePrintfBuf);
+	strcpy(cpyBuf, (const char*)ConsolePrintfBuf);
 	char * outBuf = (char *)malloc(256*10);
 	char * colorChar = (char*)((char*)outBuf + (1*256));
 	int matchCount = str_split((char*)cpyBuf, ">", outBuf, 10, 256);
 	if(matchCount > 0){
 		color = atoi(colorChar);
-		ConsolePrintfBuf[strlen(ConsolePrintfBuf) - (strlen(colorChar)+1) ] = '\0';
+		ConsolePrintfBuf[strlen((const char*)ConsolePrintfBuf) - (strlen(colorChar)+1) ] = '\0';
 	}
 	
     GUI_drawText(&zone, 0, GUI.printfy, color, (sint8*)ConsolePrintfBuf, readAndBlendFromVRAM);
     GUI.printfy += GUI_getFontHeight(&zone);
 	free(outBuf);
-	return strlen(ConsolePrintfBuf)+1;
+	return strlen((const char*)ConsolePrintfBuf)+1;
 }
 
 //same as printf but having X, Y coords (relative to char width and height)
@@ -477,25 +480,22 @@ void printfCoords(int x, int y, const char *fmt, ...){
 	GUI.printfy = y * GUI_getFontHeight(&zone);
 	x = x * zone.font->height;
 	int color = (int)TGDSPrintfColor_LightGrey;	//default color
-	int stringSize = (int)strlen(ConsolePrintfBuf);
+	//int stringSize = (int)strlen((const char*)ConsolePrintfBuf);
 	
 	//Separate the TGDS Console font color if exists
 	char cpyBuf[256+1] = {0};
-	strcpy(cpyBuf, ConsolePrintfBuf);
+	strcpy(cpyBuf, (const char*)ConsolePrintfBuf);
 	char * outBuf = (char *)malloc(256*10);
 	char * colorChar = (char*)((char*)outBuf + (1*256));
 	int matchCount = str_split((char*)cpyBuf, ">", outBuf, 10, 256);
 	if(matchCount > 0){
 		color = atoi(colorChar);
-		ConsolePrintfBuf[strlen(ConsolePrintfBuf) - (strlen(colorChar)+1) ] = '\0';
+		ConsolePrintfBuf[strlen((const char*)ConsolePrintfBuf) - (strlen(colorChar)+1) ] = '\0';
 	}
 	
     GUI_drawText(&zone, x, GUI.printfy, color, (sint8*)ConsolePrintfBuf, readAndBlendFromVRAM);
     GUI.printfy += GUI_getFontHeight(&zone);
 	free(outBuf);
-	return strlen(ConsolePrintfBuf)+1;
-	
-	coherent_user_range_by_size((uint32)0x06200000, 128*1024);
 }
 
 int _vfprintf_r(struct _reent * reent, FILE *fp, const sint8 *fmt, va_list args){
@@ -671,10 +671,10 @@ int _gettimeofday(struct timeval *tv, struct timezone *tz){
 	tv->tv_usec = 0L;
 	if (tz != NULL)
     {
-		const time_t timer = tv->tv_sec;
-		struct tm tm;
-		const long int save_timezone = 0; //__timezone;
-		const long int save_daylight = 0; //__daylight;
+		//const time_t timer = tv->tv_sec;
+		//struct tm tm;
+		//const long int save_timezone = 0; //__timezone;
+		//const long int save_daylight = 0; //__daylight;
 		char *save_tzname[2];
 		save_tzname[0] = ""; //__tzname[0];
 		save_tzname[1] = "";//__tzname[1];

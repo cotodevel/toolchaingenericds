@@ -21,6 +21,8 @@ USA
 
 #include "fatfslayerTGDS.h"
 #include "dldi.h"
+#include "clockTGDS.h"
+
 //fatfs
 FATFS dldiFs;
 
@@ -72,7 +74,7 @@ sint8 * getfatfsPath(sint8 * filename){
 
 void getDirFromFilePath(char * filePath, char* outDirectory){
     char tempDir[256+1] = {0};
-	char outPath[256+1] = {0};
+	//char outPath[256+1] = {0};
 	
     strcpy(tempDir, filePath);
     int offset = 0;
@@ -97,7 +99,7 @@ void getDirFromFilePath(char * filePath, char* outDirectory){
     //Remove last filename and extension
     chr = outDirectory[len];
 	
-	int ofst = 0;
+	//int ofst = 0;
     while(
         (chr != '/')
     )

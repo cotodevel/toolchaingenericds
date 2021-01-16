@@ -605,10 +605,12 @@ void HandleFifoNotEmpty(){
 				switch(ARM7FS_HandleMethod){
 					case(TGDS_ARM7FS_FILEHANDLEPOSIX):{
 						int readSoFar = ARM7FS_ReadBuffer_ARM9CallbackPOSIX(readbuf, fileOffset, ARM7FS_TGDSFileDescriptorRead, readBufferSize);	//UpdateDPG_Audio();
+						(void)readSoFar;
 					}
 					break;
 					case(TGDS_ARM7FS_TGDSFILEDESCRIPTOR):{
 						int readSoFar = ARM7FS_ReadBuffer_ARM9TGDSFD(readbuf, fileOffset, ARM7FS_TGDSFileDescriptorRead, readBufferSize);
+						(void)readSoFar;
 					}
 					break;
 				}
@@ -628,12 +630,14 @@ void HandleFifoNotEmpty(){
 					case(TGDS_ARM7FS_FILEHANDLEPOSIX):{
 						if(ARM7FS_TGDSFileDescriptorWrite != NULL){
 							int writtenSoFar = ARM7FS_SaveBuffer_ARM9CallbackPOSIX(readbuf, fileOffset, ARM7FS_TGDSFileDescriptorWrite, writeBufferSize);
+							(void)writtenSoFar;
 						}
 					}
 					break;
 					case(TGDS_ARM7FS_TGDSFILEDESCRIPTOR):{
 						if(ARM7FS_TGDSFileDescriptorWrite != NULL){
 							int writtenSoFar = ARM7FS_SaveBuffer_ARM9TGDSFD(readbuf, fileOffset, ARM7FS_TGDSFileDescriptorWrite, writeBufferSize);
+							(void)writtenSoFar;
 						}
 					}
 					break;
