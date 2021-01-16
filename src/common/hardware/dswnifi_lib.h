@@ -220,19 +220,19 @@ extern struct frameBlock * HandleSendUserspace(uint8 * databuf_src, int bufsize)
 
 //As long you define this ReceiveHandler, everytime the outter connected DS to this DS sends a packet, it will be received here.
 extern bool TGDSRecvHandler(struct frameBlock * frameBlockRecv);	//called by receiveDSWNIFIFrame(); when a frame is valid. TGDS layer. //Returns: Current DSWnifi mode
-extern __attribute__((weak))	bool TGDSRecvHandlerUser(struct frameBlock * frameBlockRecv, int DSWnifiMode);	//called by TGDSRecvHandler when cmd is User implemented. TGDS User layer
+extern 	bool TGDSRecvHandlerUser(struct frameBlock * frameBlockRecv, int DSWnifiMode);	//called by TGDSRecvHandler when cmd is User implemented. TGDS User layer
 
 //Callback that runs upon setting DSWNIFI mode to dswifi_localnifimode
-extern __attribute__((weak))	void OnDSWIFIlocalnifiEnable();
+extern 	void OnDSWIFIlocalnifiEnable();
 
 //Callback that runs upon setting DSWNIFI mode to dswifi_idlemode
-extern __attribute__((weak))	void OnDSWIFIidlemodeEnable();
+extern 	void OnDSWIFIidlemodeEnable();
 
 //Callback that runs upon setting DSWNIFI mode to dswifi_udpnifimode
-extern __attribute__((weak))	void OnDSWIFIudpnifiEnable();
+extern 	void OnDSWIFIudpnifiEnable();
 
 //Callback that runs upon setting DSWNIFI mode to dswifi_gdbstubmode
-extern __attribute__((weak))	void OnDSWIFIGDBStubEnable();
+extern 	void OnDSWIFIGDBStubEnable();
 
 extern bool sentReq;
 extern sint32 LastDSWnifiMode;

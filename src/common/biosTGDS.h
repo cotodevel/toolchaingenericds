@@ -41,6 +41,7 @@ USA
 
 #include "typedefsTGDS.h"
 #include "ipcfifoTGDS.h"
+#include "InterruptsARMCores_h.h"
 
 #include <stdio.h>
 #include <string.h>

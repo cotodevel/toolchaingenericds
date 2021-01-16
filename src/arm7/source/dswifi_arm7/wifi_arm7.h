@@ -139,6 +139,7 @@ extern void Wifi_LoadBeacon(int from, int to);
 extern void Wifi_SetBeaconChannel(int channel);
 
 extern int RF_Reglist[];
+extern void SetLedState(int state);
 
 #ifdef __cplusplus
 }

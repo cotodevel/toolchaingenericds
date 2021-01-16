@@ -226,7 +226,7 @@ extern vramSetup vramSetupCustomConsole;
 extern bool VRAM_SETUP(vramSetup * vramSetupInst);
 
 //weak symbols : the implementation of this is project-defined
-extern  __attribute__((weak))	vramSetup * getProjectSpecificVRAMSetup();
+extern  	vramSetup * getProjectSpecificVRAMSetup();
 
 
 //Default console VRAM layout setup

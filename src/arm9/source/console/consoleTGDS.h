@@ -301,7 +301,7 @@ extern ConsoleInstance CustomConsole;	//project specific
 extern ConsoleInstance * DefaultSessionConsole;
 
 //weak symbols : the implementation of this is project-defined
-extern __attribute__((weak))	bool InitProjectSpecificConsole();
+extern 	bool InitProjectSpecificConsole();
 
 extern bool InitializeConsole(ConsoleInstance * ConsoleInst);
 extern void UpdateConsoleSettings(ConsoleInstance * ConsoleInst);

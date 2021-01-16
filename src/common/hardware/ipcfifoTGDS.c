@@ -402,7 +402,7 @@ void HandleFifoNotEmpty(){
 				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg
 				u32 ARM7MallocStartaddress = (u32)fifomsg[42];
 				u32 ARM7MallocSize = (u32)fifomsg[43];
-				bool customAllocator = (bool)fifomsg[44];
+				//bool customAllocator = (bool)fifomsg[44];
 				
 				initARM7Malloc(ARM7MallocStartaddress, ARM7MallocSize);
 				

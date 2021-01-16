@@ -63,6 +63,7 @@ extern "C"{
 #endif
 
 extern size_t ucs2tombs(uint8* dst, const unsigned short* src, size_t len);
+extern int	setBacklight(int flags);
 
 #ifdef ARM9
 
@@ -97,7 +98,6 @@ extern int	FS_loadFile(sint8 *filename, sint8 *buf, int size);
 extern int	FS_saveFile(sint8 *filename, sint8 *buf, int size,bool force_file_creation);
 extern int	FS_getFileSize(sint8 *filename);
 
-extern int		setBacklight(int flags);
 extern int		FS_extram_init();
 extern void		FS_lock();
 extern void		FS_unlock();
@@ -117,7 +117,6 @@ extern void buildPath(const char *str, size_t len, char * outBuf, int indexToLef
 extern int getLastDirFromPath(char * stream, char * haystack, char * outBuf);
 extern int str_split(char * stream, char * haystack, char * outBuf, int itemSize, int blockSize);
 extern int inet_pton(int af, const char *src, void *dst);
-extern int	setBacklight(int flags);
 extern void RenderTGDSLogoMainEngine(u8 * compressedLZSSBMP, int compressedLZSSBMPSize);
 
 //ARGV 

@@ -119,9 +119,9 @@ extern void closeARM7FS();	//Must use this!! Instead deinitARM7FS(); directly wh
 	
 	
 	//TGDS FileDescriptor implementation; weak symbols: The implementation of this is project-defined
-	extern  __attribute__((weak))	int ARM7FS_ReadBuffer_ARM9ImplementationTGDSFD(u8 * outBuffer, int fileOffset, struct fd * fdinstIn, int bufferSize);
-	extern  __attribute__((weak))	int ARM7FS_WriteBuffer_ARM9ImplementationTGDSFD(u8 * inBuffer, int fileOffset, struct fd * fdinstOut, int bufferSize);
-	extern  __attribute__((weak))	int ARM7FS_close_ARM9ImplementationTGDSFD(struct fd * fdinstOut);
+	extern  	int ARM7FS_ReadBuffer_ARM9ImplementationTGDSFD(u8 * outBuffer, int fileOffset, struct fd * fdinstIn, int bufferSize);
+	extern  	int ARM7FS_WriteBuffer_ARM9ImplementationTGDSFD(u8 * inBuffer, int fileOffset, struct fd * fdinstOut, int bufferSize);
+	extern  	int ARM7FS_close_ARM9ImplementationTGDSFD(struct fd * fdinstOut);
 	
 //Test Cases
 //Posix

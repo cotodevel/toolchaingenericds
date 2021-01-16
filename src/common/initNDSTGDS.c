@@ -36,6 +36,7 @@ USA
 #include "eventsTGDS.h"
 #include "posixHandleTGDS.h"
 #include "keypadTGDS.h"
+#include "biosTGDS.h"
 
 #ifdef ARM9
 #include "devoptab_devices.h"

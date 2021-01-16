@@ -219,10 +219,10 @@ typedef struct sIPCSharedTGDS {
 	//Soundstream
 	SoundRegion soundIPC;
 	
-} IPCSharedTGDS	__attribute__((aligned (4)));
+} IPCSharedTGDS __attribute__((aligned(4)));
 
 //Shared Work     027FF000h 4KB    -     -    -    R/W
-#define TGDSIPCStartAddress (__attribute__((aligned (4))) struct sIPCSharedTGDS*)(0x027FF000)
+#define TGDSIPCStartAddress (struct sIPCSharedTGDS*)(0x027FF000)
 #define TGDSIPCSize (int)(sizeof(struct sIPCSharedTGDS))
 #define TGDSIPCUserStartAddress (u32)( ((u32)TGDSIPCStartAddress) + TGDSIPCSize)	//u32 because it`s unknown at this point. TGDS project will override it to specific USER IPC struct. Known as GetUserIPCAddress()
 #define IPCRegionSize	(sint32)(4*1024)
@@ -262,8 +262,8 @@ extern "C"{
 #endif
 
 //weak symbols : the implementation of these is project-defined, also abstracted from the hardware IPC FIFO Implementation for easier programming.
-extern __attribute__((weak))	void HandleFifoNotEmptyWeakRef(uint32 cmd1,uint32 cmd2);
-extern __attribute__((weak))	void HandleFifoEmptyWeakRef(uint32 cmd1,uint32 cmd2);
+extern 	void HandleFifoNotEmptyWeakRef(uint32 cmd1,uint32 cmd2);
+extern 	void HandleFifoEmptyWeakRef(uint32 cmd1,uint32 cmd2);
 
 #ifdef ARM7
 extern void XYReadScrPos(struct XYTscPos * StouchScrPosInst);	//TSC Impl.

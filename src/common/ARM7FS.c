@@ -24,6 +24,8 @@ USA
 #include "dmaTGDS.h"
 //#include "dldi.h"
 #include "posixHandleTGDS.h"
+#include "biosTGDS.h"
+#include "InterruptsARMCores_h.h"
 
 #ifdef ARM7
 #include "xmem.h"

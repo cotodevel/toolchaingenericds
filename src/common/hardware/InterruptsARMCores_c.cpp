@@ -248,7 +248,7 @@ void NDS_IRQHandler(){
 				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 				char *  ARM7FS_ARM9Filename = (char *)fifomsg[9];
-				int fileHandleSize = (int)fifomsg[10];
+				//int fileHandleSize = (int)fifomsg[10];
 				int splitBufferSize = (int)fifomsg[11];
 				int curARM7FS_HandleMethod = (int)fifomsg[12];
 				u32 * debugVar = (u32*)fifomsg[13];

@@ -2,8 +2,8 @@
 #include "ipcfifoTGDS.h"
 #include "InterruptsARMCores_h.h"
 #include "utilsTGDS.h"
-
 #include "timerTGDS.h"
+#include "biosTGDS.h"
 
 #ifdef ARM7
 #include <string.h>
@@ -12,12 +12,10 @@
 
 #ifdef ARM9
 #include <stdbool.h>
-
 #include "dsregs.h"
 #include "dsregs_asm.h"
 #include "InterruptsARMCores_h.h"
 #include "wifi_arm9.h"
-
 #endif
 
 

@@ -20,10 +20,11 @@ USA
 
 //Source http://problemkaputt.de/gbatek.htm#dsfirmwareserialflashmemory
 
-#include "spifwTGDS.h"
-#include "spiTGDS.h"
 #include <stdio.h>
 #include <string.h>
+#include "spifwTGDS.h"
+#include "spiTGDS.h"
+#include "biosTGDS.h"
 
 #ifdef ARM7
 

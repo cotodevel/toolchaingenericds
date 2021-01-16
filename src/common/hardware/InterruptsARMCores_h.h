@@ -42,17 +42,17 @@ extern "C"{
 // Common
 
 //weak symbols : the implementation of these is project-defined
-extern __attribute__((weak))	void HblankUser();
-extern __attribute__((weak))	void VblankUser();
-extern __attribute__((weak))	void VcounterUser();
+extern 	void HblankUser();
+extern 	void VblankUser();
+extern 	void VcounterUser();
 
-extern __attribute__((weak))	void Timer0handlerUser();
-extern __attribute__((weak))	void Timer1handlerUser();
-extern __attribute__((weak))	void Timer2handlerUser();
-extern __attribute__((weak))	void Timer3handlerUser();
-extern __attribute__((weak))	void screenLidHasOpenedhandlerUser();
-extern __attribute__((weak))	void screenLidHasClosedhandlerUser();
-extern __attribute__((weak))	void IpcSynchandlerUser(uint8 ipcByte);
+extern 	void Timer0handlerUser();
+extern 	void Timer1handlerUser();
+extern 	void Timer2handlerUser();
+extern 	void Timer3handlerUser();
+extern 	void screenLidHasOpenedhandlerUser();
+extern 	void screenLidHasClosedhandlerUser();
+extern 	void IpcSynchandlerUser(uint8 ipcByte);
 //weak symbols end
 
 extern uint32 getIRQs();

@@ -117,7 +117,7 @@ extern int getMaxRam();
 //TGDS Malloc implementation, before using them requires a call from ARM9: void initARM7Malloc(u32 ARM7MallocStartaddress, u32 memSizeBytes)
 extern bool customMallocARM9;
 //weak symbols : the implementation of this is project-defined
-extern  __attribute__((weak))	struct AllocatorInstance * getProjectSpecificMemoryAllocatorSetup(u32 ARM7MallocStartAddress, int ARM7MallocSize, bool isCustomTGDSMalloc);
+extern  struct AllocatorInstance * getProjectSpecificMemoryAllocatorSetup(u32 ARM7MallocStartAddress, int ARM7MallocSize, bool isCustomTGDSMalloc);
 
 extern struct AllocatorInstance CustomAllocatorInstance;
 extern TGDSARM9MallocHandler 			TGDSMalloc9;

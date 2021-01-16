@@ -66,8 +66,8 @@ USA
 static u16 keys=0;
 static u16 keysold=0;
 
-static u16 oldx=0;
-static u16 oldy=0;
+//static u16 oldx=0;
+//static u16 oldy=0;
 
 void scanKeys()
 {

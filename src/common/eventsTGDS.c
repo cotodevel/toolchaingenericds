@@ -23,6 +23,8 @@ USA
 #include "dsregs_asm.h"
 #include "eventsTGDS.h"
 #include "ipcfifoTGDS.h"
+#include "utilsTGDS.h"
+
 #ifdef ARM7
 #include "wifi_arm7.h"
 #endif
