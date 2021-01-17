@@ -81,6 +81,7 @@ CFLAGS = \
   -Wall \
   -Werror \
   -nostdlib \
+  -fshort-enums	\
   $(COMPILER_SPECIFIC_CFLAGS) \
   $(ARCH_CFLAGS) \
   $(CLI_CFLAG_OVERRIDES)
