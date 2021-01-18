@@ -58,7 +58,7 @@ LIB_NAME := libwoopsi
 
 #Prepare ARM9 dirs
 
-DIRLIBS_HDR = $(foreach dirres,$(DIR_LIB_HDR_CWD),-I "$(CURDIR)/$(dirres)" )	$(DIRLIBS_ALLOWED)	$(DIRLIBS_PROHIBITED)
+DIRLIBS_HDR = $(foreach dirres,$(DIR_LIB_HDR_CWD),-I "$(CURDIR)/$(dirres)" )	$(DIRLIBS_ALLOWED)	$(DIRLIBS_PROHIBITED)	$(TARGET_LIBRARY_HEADERS_9_INC)
 DIRLIBS_SRC = $(foreach dirres,$(DIR_LIB_SRC_CWD),-I "$(CURDIR)/$(dirres)" )
 
 dir_arm9_src_h=  $(foreach dir,$(DIR_LIB_HDR_CWD), $(wildcard $(CURDIR)/$(RELATIVE_PATH)$(dir)*.h))	$(foreach dir,$(DIRS_ARM9_HEADER), $(wildcard $(CURDIR)/$(RELATIVE_PATH)$(dir)*.h))
@@ -89,6 +89,48 @@ OBJDIR 	=	./$(BUILD)
 VPATH 	=	$(DIR_SRC)
 OBJPROG = 	$(addprefix $(OBJDIR)/, $(LIB_NAME))
 
+#------------------------------------------ CLANG START
+CC = clang
+AR2 = llvm-ar
+DEP_DIR = $(BUILD_DIR)/dep
+DEP_CFLAGS = -MT $@ -MMD -MP 
+
+# CFLAGS which can provided from the CLI
+# They will be appended last and will consequently override
+# any pre-existing settings
+CLI_CFLAG_OVERRIDES ?=
+CLI_LDFLAG_OVERRIDES ?=
+
+# Note: These arguments will be used by clang to select
+# the specific architecture target when we use the
+# generic --target=arm-none-eabi
+ARCH_CFLAGS += \
+  -marm 	\
+  -mcpu=arm946e-s \
+  -mfloat-abi=soft	\
+  -mfpu=none	
+  
+ARM_CORTEXM_SYSROOT = \
+  $(shell $(ARM_GNU_CC) $(ARCH_CFLAGS) -print-sysroot 2>&1)
+
+COMPILER_SPECIFIC_CFLAGS += \
+  --target=arm-none-eabi \
+  --sysroot=$(ARM_CORTEXM_SYSROOT) \
+  -Oz	\
+  -DARM9
+  
+CFLAGS = \
+  -g3 \
+  -ffunction-sections -fdata-sections \
+  -nostdlib \
+  -fshort-enums	\
+  $(COMPILER_SPECIFIC_CFLAGS) \
+  $(ARCH_CFLAGS) \
+  $(NEWLIB_NANO_COMPILE_FLAGS_C_9)	\
+  $(CLI_CFLAG_OVERRIDES)
+	
+#------------------------------------------ CLANG END
+
 all: $(OBJDIR)|$(OBJPROG).a
 #all: debug
 
@@ -101,18 +143,18 @@ $(OBJDIR):
 $(OBJDIR)/%.o : %.bin
 	-@echo 'trying to convert .BIN ($<) -> .C output: ${@:.o=.c} : arrayName: $(subst build/,,${@:.o=})'
 	$(BIN2C)	$<	${@:.o=.c}	$(subst build/,,${@:.o=})
-	$(CC)	$(CC_ASFLAGS)	$(DIRLIBS_HDR)	$(DIRLIBS_SRC)	$(DIRLIBS_PROHIBITED)	-o $@ -c ${@:.o=.c}
+	$(CC) $(DEP_CFLAGS) $(CFLAGS) $(DIRLIBS_HDR) $(DIRLIBS_SRC)	-c -o $@ ${@:.o=.c}
 
 #Do C Compile now!
 $(OBJDIR)/%.o : %.c
 	-@echo 'C Compile start: $@'
-	$(CC)	$(CC_ASFLAGS)	$(TARGET_LIBRARY_HEADERS_9_INC)	$(DIRLIBS_HDR)	$(DIRLIBS_SRC)	-o $@ -c $<
+	$(CC) $(DEP_CFLAGS) $(CFLAGS) $(DIRLIBS_HDR) $(DIRLIBS_SRC)	-c -o $@ $< 
 	-@echo 'C Compile End: $@'
 
 #Do C++ (CXX) Compile now!
 $(OBJDIR)/%.o : %.cpp
 	-@echo 'C++ Compile start: $@'
-	$(CPP)	$(CPP_FLAGS)	$(TARGET_LIBRARY_HEADERS_9_INC)	$(DIRLIBS_HDR)	$(DIRLIBS_SRC)	-o $@ -c $<
+	$(CC) $(DEP_CFLAGS) $(CFLAGS) $(DIRLIBS_HDR) $(DIRLIBS_SRC)	-c -o $@ $< 
 	-@echo 'C Compile End: $@'
 
 #Coto: Special "exception" rule. Assembler (.s) support ie: .ifdef/.endif (which differs from CPP-like syntax Assembler: ie: #ifdef/#endif by .S)
@@ -133,7 +175,7 @@ $(OBJDIR)/%.o : %.S
 
 #Builder.
 $(OBJPROG).a: $(addprefix $(OBJDIR)/, $(OBJECTS))
-	$(AR) rvs	$@	$^
+	$(AR2) rc	$@	$^
 	-mv	$@	$(TARGET_LIBRARY_PATH)/$(LIB_NAME).a
 	-cp -R includeWoopsi/	$(TARGET_LIBRARY_PATH)
 	

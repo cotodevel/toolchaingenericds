@@ -1,3 +1,4 @@
+#include <malloc.h>
 #include "freetypefacemanager.h"
 #include "mutablebitmapbase.h"
 #include "woopsistring.h"

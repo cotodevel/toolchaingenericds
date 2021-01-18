@@ -134,7 +134,7 @@ namespace WoopsiUI {
 		/**
 		 * Main entry point for a Woopsi application.
 		 */
-		virtual inline int main(int argc, char argv[argvItems][MAX_TGDSFILENAME_LENGTH]) {
+		virtual inline int main(int argc, char **argv) {
 			startup();				// Run any setup code
 			goModal();				// Run the main Woopsi loop
 			shutdown();				// Run any shutdown code

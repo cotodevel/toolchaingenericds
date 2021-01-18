@@ -28,7 +28,7 @@ USA
 #include "timerTGDS.h"
 #include "biosTGDS.h"
 #include "CPUARMTGDS.h"
-
+#include "eventsTGDS.h"
 
 //---------------------------------------------------------------------------------
 int main(int _argc, sint8 **_argv) {
