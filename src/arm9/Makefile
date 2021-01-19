@@ -73,12 +73,13 @@ ARM_CORTEXM_SYSROOT = \
 COMPILER_SPECIFIC_CFLAGS += \
   --target=arm-none-eabi \
   --sysroot=$(ARM_CORTEXM_SYSROOT) \
-  -Oz	\
+  -Oz \
   -DARM9
   
 CFLAGS = \
   -g3 \
   -nostdlib \
+  -fPIC	\
   -fshort-enums	\
   $(COMPILER_SPECIFIC_CFLAGS) \
   $(ARCH_CFLAGS) \
