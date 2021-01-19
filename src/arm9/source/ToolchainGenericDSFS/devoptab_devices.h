@@ -39,17 +39,17 @@ extern "C"{
 #endif
 
 //stdin / stdout name descriptors 
-extern const sint8 * stdin_name_desc;
-extern const sint8 * stdout_name_desc;
-extern const sint8 * stderr_name_desc;
-extern const sint8 * stdstub_name_desc;
+extern sint8 * stdin_name_desc;
+extern sint8 * stdout_name_desc;
+extern sint8 * stderr_name_desc;
+extern sint8 * stdstub_name_desc;
 
-extern const struct devoptab_t devoptab_stdin;
-extern const struct devoptab_t devoptab_stdout;
-extern const struct devoptab_t devoptab_sterr;
-extern const struct devoptab_t devoptab_sdFilesystem;
-extern const struct devoptab_t devoptab_stub;	//initialize up to OPEN_MAXTGDS POSIX
-extern const struct devoptab_t *devoptab_struct[OPEN_MAXTGDS];
+extern struct devoptab_t devoptab_stdin;
+extern struct devoptab_t devoptab_stdout;
+extern struct devoptab_t devoptab_sterr;
+extern struct devoptab_t devoptab_sdFilesystem;
+extern struct devoptab_t devoptab_stub;	//initialize up to OPEN_MAXTGDS POSIX
+extern struct devoptab_t *devoptab_struct[OPEN_MAXTGDS];
 
 extern int open_r_stdin ( struct _reent *r, const sint8 *path, int flags, int mode );
 extern int close_r_stdin ( struct _reent *r, int fd );

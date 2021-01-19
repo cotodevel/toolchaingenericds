@@ -39,30 +39,30 @@ USA
 #include "posixHandleTGDS.h"
 
 //device name for stdin driver descriptor (max devoptab_fname_size size)
-const sint8 * stdin_name_desc = (sint8*)("stdin");
+sint8 * stdin_name_desc = (sint8*)("stdin");
 //device name for stdout driver descriptor (max devoptab_fname_size size)
-const sint8 * stdout_name_desc = (sint8*)("stdout");
+sint8 * stdout_name_desc = (sint8*)("stdout");
 //device name for stderr driver descriptor (max devoptab_fname_size size)
-const sint8 * stderr_name_desc = (sint8*)("stderr");
+sint8 * stderr_name_desc = (sint8*)("stderr");
 //device name for stub driver descriptor (max devoptab_fname_size size)
-const sint8 * stdstub_name_desc = (sint8*)("stub");
+sint8 * stdstub_name_desc = (sint8*)("stub");
 
 /* dtab for a stream device : stdin */
-const struct devoptab_t devoptab_stdin = { "", &open_r_stdin, &close_r_stdin, &write_r_stdin, &read_r_stdin };
+struct devoptab_t devoptab_stdin = { "", &open_r_stdin, &close_r_stdin, &write_r_stdin, &read_r_stdin };
 
 /* dtab for a stream device : stdout->console NDS */
-const struct devoptab_t devoptab_stdout = { "", &open_r_stdout, &close_r_stdout, &write_r_stdout, &read_r_stdout };
+struct devoptab_t devoptab_stdout = { "", &open_r_stdout, &close_r_stdout, &write_r_stdout, &read_r_stdout };
 
 /* dtab for a stream device : stderr->debug error newlib */
-const struct devoptab_t devoptab_sterr = { "", &open_r_stderr, &close_r_stderr, &write_r_stderr, &read_r_stderr };
+struct devoptab_t devoptab_sterr = { "", &open_r_stderr, &close_r_stderr, &write_r_stderr, &read_r_stderr };
 
 /* dtab for a stream device : FATFS */
-const struct devoptab_t devoptab_sdFilesystem = { "", &open_r_fatfs, &close_r_fatfs, &write_r_fatfs, &read_r_fatfs };
+struct devoptab_t devoptab_sdFilesystem = { "", &open_r_fatfs, &close_r_fatfs, &write_r_fatfs, &read_r_fatfs };
 
 /* dtab for a stream device : STUB */
-const struct devoptab_t devoptab_stub = { "stub:/", 0, 0, 0, 0 };
+struct devoptab_t devoptab_stub = { "stub:/", 0, 0, 0, 0 };
 
-const struct devoptab_t *devoptab_struct[OPEN_MAXTGDS] = {
+struct devoptab_t *devoptab_struct[OPEN_MAXTGDS] = {
    &devoptab_stdin, /* standard input */
    &devoptab_stdout, /* standard output */
    &devoptab_sterr, /* standard error */
