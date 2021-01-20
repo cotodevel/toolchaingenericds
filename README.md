@@ -82,6 +82,9 @@ Features:
 
 Changelog:
 
+TGDS 1.63:
+- newlib-nds and ToolchainGenericDS uses Clang (v11) Compiler (C/C++)! Generates better code also allows to automate unit tests!
+
 TGDS 1.62:
 - Restored dswifi 0.4.0 sources. Fixes synchronous socket connections. TGDS now supports async/sync socket operations.
 
