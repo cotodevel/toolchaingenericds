@@ -639,12 +639,17 @@ char thisArgv[argvItems][MAX_TGDSFILENAME_LENGTH];
 int thisArgc=0;
 
 void mainARGV(){
+	//Command line vector. Will be reused.
+	char** cmdLineVectorPosixCompatible = ((char**)0x02FFFE70);
+	
 	if(__system_argv->length > 0){
 		//get string count (argc) from commandLine
 		int argCount=0;
 		int internalOffset = 0;
 		int i = 0;
 		for(i = 0; i < __system_argv->length; i++){
+			
+			//End of N ARGV? Pass the pointer into the command line vector
 			if(__system_argv->commandLine[i] == '\0'){
 				thisArgv[argCount][internalOffset] = '\0';
 				argCount++;
@@ -656,13 +661,17 @@ void mainARGV(){
 			}
 		}
 		
-		//Actually re-count Args, because garbage may be in ARGV code causing false positives
+		//Actually re-count Args, because garbage may be in ARGV code causing false positives.
+		//Also it is safe to trash the original __system_argv->commandLine struct
 		int argBugged = argCount;
 		argCount = 0;
-		for (i=0; i<argBugged; i++) {
+		
+		//Reset the command line vector
+		memset(cmdLineVectorPosixCompatible, 0, sizeof(struct __argv));
+		
+		for (i=0; i<argBugged; i++){
 			if (thisArgv[i]) {
 				if(strlen(thisArgv[i]) > 8){
-					
 					//Libnds compatibility: If (recv) mainARGV fat:/ change to 0:/
 					char thisARGV[MAX_TGDSFILENAME_LENGTH+1];
 					memset(thisARGV, 0, sizeof(thisARGV));
@@ -687,6 +696,9 @@ void mainARGV(){
 						//copy back
 						memset(thisArgv[i], 0, 256);
 						strcpy(thisArgv[i], thisARGV2);
+						
+						//build the command line vector
+						cmdLineVectorPosixCompatible[i] = &thisArgv[i];
 					}
 					
 					argCount++;
@@ -699,7 +711,8 @@ void mainARGV(){
 	else{
 		thisArgc = 0;
 	}
-	main(thisArgc,  (char**)thisArgv);
+	
+	main(thisArgc,  (char**)cmdLineVectorPosixCompatible);
 }
 
 __attribute__((optnone))
