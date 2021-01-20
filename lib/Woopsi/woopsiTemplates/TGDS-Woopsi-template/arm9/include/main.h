@@ -34,7 +34,7 @@ USA
 extern "C" {
 #endif
 
-extern int main(int argc, char ** argv);
+extern int main(int argc, char **argv);
 //TGDS Dir API: Directory Iterator(s)
 extern char curChosenBrowseFile[256+1];
 extern char globalPath[MAX_TGDSFILENAME_LENGTH+1];

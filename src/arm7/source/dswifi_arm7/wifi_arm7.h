@@ -140,6 +140,7 @@ extern void Wifi_SetBeaconChannel(int channel);
 
 extern int RF_Reglist[];
 extern void SetLedState(int state);
+extern void Wifi_MACWrite(u16 * src, u32 MAC_Base, u32 MAC_Offset, u32 length);
 
 #ifdef __cplusplus
 }

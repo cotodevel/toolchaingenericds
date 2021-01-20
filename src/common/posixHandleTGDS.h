@@ -301,8 +301,7 @@ extern void TryToDefragmentMemory();
 //newlib
 extern uint32 get_lma_libend();		//linear memory top
 extern uint32 get_lma_wramend();	//(ewram end - linear memory top ) = malloc free memory
-
-extern int main(int argc, char **argv);	//todo: fix the ARGV so it uses this format
+extern int main(int argc, char **argv);	
 
 #ifdef __cplusplus
 }

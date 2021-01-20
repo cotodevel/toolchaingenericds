@@ -31,7 +31,7 @@ USA
 extern "C" {
 #endif
 
-extern int main(int _argc, sint8 **_argv);
+extern int main(int argc, char **argv);
 
 #ifdef __cplusplus
 }
