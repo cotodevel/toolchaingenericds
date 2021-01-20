@@ -78,13 +78,10 @@ ARCH_CFLAGS += \
   -mcpu=arm946e-s \
   -mfloat-abi=soft	\
   -mfpu=none	
-  
-ARM_CORTEXM_SYSROOT = \
-  $(shell $(ARM_GNU_CC) $(ARCH_CFLAGS) -print-sysroot 2>&1)
 
 COMPILER_SPECIFIC_CFLAGS += \
   --target=arm-none-eabi \
-  --sysroot=$(ARM_CORTEXM_SYSROOT) \
+  --sysroot= \
   -Oz	\
   -DARM9
   

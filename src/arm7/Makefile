@@ -65,13 +65,10 @@ ARCH_CFLAGS += \
   -marm -mcpu=arm7tdmi \
   -mfloat-abi=soft	\
   -mfpu=none
-  
-ARM_CORTEXM_SYSROOT = \
-  $(shell $(ARM_GNU_CC) $(ARCH_CFLAGS) -print-sysroot 2>&1)
 
 COMPILER_SPECIFIC_CFLAGS += \
   --target=arm-none-eabi \
-  --sysroot=$(ARM_CORTEXM_SYSROOT) \
+  --sysroot= \
   -Oz \
   -DARM7
   
