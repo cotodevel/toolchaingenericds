@@ -23,11 +23,14 @@
 export SOURCE_MAKEFILE7 = default
 export SOURCE_MAKEFILE9 = custom
 
-#Non FPIC Code: Use Makefiles from either TGDS, or custom
-#FPIC code is always default TGDS Makefile
+#Translate paths to windows with forward slashes
+cpath := $(shell pwd)
+ifeq ($(shell uname -o), Cygwin)
+    CURDIR := '$(shell cygpath -w -p ${cpath})'
+endif
 
 #Shared
-include $(DEFAULT_GCC_PATH)Makefile.basenewlib
+include $(DEFAULT_GCC_PATH_WIN)/Makefile.basenewlib
 
 #Custom
 # Project Specific

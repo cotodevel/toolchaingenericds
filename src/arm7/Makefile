@@ -17,7 +17,7 @@
 #
 
 #Prepare ARM7 dirs
-DIRLIBS_HDR = $(foreach dirres,$(DIRS_ARM7_HEADER),-I "$(CURDIR)/$(dirres)" )	$(DIRLIBS_ALLOWED)
+DIRLIBS_HDR = $(foreach dirres,$(DIRS_ARM7_HEADER),-I "$(CURDIR)/$(dirres)" )	$(DIRLIBS_ALLOWED)	
 DIRLIBS_SRC = $(foreach dirres,$(DIRS_ARM7_SRC),-I "$(CURDIR)/$(dirres)" )
 
 dir_arm7_src_h=  $(foreach dir,$(DIRS_ARM7_HEADER), $(wildcard $(CURDIR)/$(RELATIVE_PATH)$(dir)*.h))
@@ -47,10 +47,10 @@ VPATH 	=	$(DIR_SRC)
 OBJPROG =	$(addprefix $(OBJDIR)/, $(TARGET_LIBRARY_FILE_7))
 
 #------------------------------------------ CLANG START
-CC = clang
-AR = llvm-ar
-DEP_DIR = $(BUILD_DIR)/dep
-DEP_CFLAGS = -MT $@ -MMD -MP 
+CC := clang-8
+AR := llvm-ar
+DEP_DIR := $(BUILD_DIR)/dep
+DEP_CFLAGS := -MT $@ -MMD -MP 
 
 # CFLAGS which can provided from the CLI
 # They will be appended last and will consequently override

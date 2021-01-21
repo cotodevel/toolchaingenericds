@@ -21,7 +21,7 @@
 
 @----------
 .text
-#include "dsregs_asm.h"
+#include "../../common/dsregs_asm.h"
 
 @NDS Specific
 #define CONFIG_CPU_DCACHE_SIZE 0x1000

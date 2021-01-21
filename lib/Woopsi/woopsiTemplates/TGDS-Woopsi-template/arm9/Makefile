@@ -59,10 +59,10 @@ OBJPROG = 	$(addprefix $(OBJDIR)/, $(NONSTRIPELF_ARM9))
 
 #------------------------------------------ CLANG START
 LD2 := $(CC)
-CC = clang
-AR2 = llvm-ar
-DEP_DIR = $(BUILD_DIR)/dep
-DEP_CFLAGS = -MT $@ -MMD -MP 
+CC := clang-8
+AR2 := llvm-ar
+DEP_DIR := $(BUILD_DIR)/dep
+DEP_CFLAGS := -MT $@ -MMD -MP 
 
 # CFLAGS which can provided from the CLI
 # They will be appended last and will consequently override

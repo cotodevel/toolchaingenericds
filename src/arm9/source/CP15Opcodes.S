@@ -30,8 +30,8 @@
  
 /****************************************************************************/
 
-#include "dsregs_asm.h"
-#include "global_settings.h"
+#include "../../common/dsregs_asm.h"
+#include "../../common/global_settings.h"
 
 
 @ Protection Region Settings: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0201d/I1039570.html

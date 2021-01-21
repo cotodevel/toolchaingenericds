@@ -23,7 +23,7 @@ export SOURCE_MAKEFILE7 = custom
 export SOURCE_MAKEFILE9 = custom
 
 #Shared
-include $(DEFAULT_GCC_PATH)Makefile.basenewlib
+include $(DEFAULT_GCC_PATH_WIN)/Makefile.basenewlib
 
 #Custom
 export BINSTRIP_RULE_7 =	arm7.bin
@@ -90,10 +90,10 @@ VPATH 	=	$(DIR_SRC)
 OBJPROG = 	$(addprefix $(OBJDIR)/, $(LIB_NAME))
 
 #------------------------------------------ CLANG START
-CC = clang
-AR2 = llvm-ar
-DEP_DIR = $(BUILD_DIR)/dep
-DEP_CFLAGS = -MT $@ -MMD -MP 
+CC := clang-8
+AR2 := llvm-ar
+DEP_DIR := $(BUILD_DIR)/dep
+DEP_CFLAGS := -MT $@ -MMD -MP 
 
 # CFLAGS which can provided from the CLI
 # They will be appended last and will consequently override

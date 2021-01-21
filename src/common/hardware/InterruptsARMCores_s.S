@@ -25,7 +25,7 @@
 .arm
 .align 4
 
-#include "dsregs_asm.h"
+#include "../dsregs_asm.h"
 .global 	IRQWait
 .type   	IRQWait STT_FUNC
 IRQWait:
