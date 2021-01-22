@@ -117,14 +117,15 @@ sint32 get_dtcm_size(){
    @param[in] incr  The number of bytes to increment the stack by.
    @return  A pointer to the start of the new block of memory                */
 /* ------------------------------------------------------------------------- */
+
+char *heap_end;		/* Previous end of heap or 0 if none */
+char *prev_heap_end;
+
 void *
 _sbrk (int  incr)
 {
 	extern char __heap_start;//set by linker
 	extern char __heap_end;//set by linker
-
-	static char *heap_end;		/* Previous end of heap or 0 if none */
-	char        *prev_heap_end;
 
 	if (0 == heap_end) {
 		heap_end = (sint8*)get_lma_libend();			/* Initialize first time round */

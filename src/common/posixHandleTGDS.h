@@ -298,6 +298,9 @@ extern int feof_tgds(int fd);
 extern int ferror_tgds(int fd);
 extern void TryToDefragmentMemory();
 
+extern char *heap_end;
+extern char *prev_heap_end;
+
 //newlib
 extern uint32 get_lma_libend();		//linear memory top
 extern uint32 get_lma_wramend();	//(ewram end - linear memory top ) = malloc free memory
