@@ -78,7 +78,6 @@ void Write32bitAddrExtArm(uint32 address, uint32 value){
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
-inline __attribute__((always_inline))
 void SendFIFOWords(uint32 data0, uint32 data1){	//format: arg0: cmd, arg1: value
 	REG_IPC_FIFO_TX = (uint32)data1;	
 	REG_IPC_FIFO_TX = (uint32)data0;	//last message should always be command
@@ -87,7 +86,6 @@ void SendFIFOWords(uint32 data0, uint32 data1){	//format: arg0: cmd, arg1: value
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
-inline __attribute__((always_inline))
 void HandleFifoEmpty(){
 	HandleFifoEmptyWeakRef((uint32)0,(uint32)0);
 }
@@ -95,7 +93,6 @@ void HandleFifoEmpty(){
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
-inline __attribute__((always_inline))
 void HandleFifoNotEmpty(){
 	volatile uint32 data0 = 0, data1 = 0;
 	while(!(REG_IPC_FIFO_CR & RECV_FIFO_IPC_EMPTY)){
