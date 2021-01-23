@@ -24,6 +24,7 @@ USA
 #include "powerTGDS.h"
 #include "timerTGDS.h"
 #include "posixHandleTGDS.h"
+#include "InterruptsARMCores_h.h"
 
 #ifdef ARM9
 #include "utilsTGDS.h"
@@ -32,7 +33,6 @@ USA
 #include "cstream_fs.h"
 #include "ima_adpcm.h"
 #include "biosTGDS.h"
-
 #endif
 
 void initSound(){
@@ -323,6 +323,7 @@ void stopSound() __attribute__ ((optnone)) {
 	//irqEnable(IRQ_VBLANK);
 	REG_IE|=IRQ_VBLANK;
 	REG_IE &= ~IRQ_TIMER1;
+	disableFastMode();	//always disabled when stopping a sound. Enabling it depends on the streaming code in ARM9. If the streaming is heavy (not WAV/ADPCM), then fast mode is re-enabled.
 }
 
 #endif 

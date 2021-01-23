@@ -512,6 +512,15 @@ void HandleFifoNotEmpty(){
 			
 			//ARM7 DLDI implementation
 			#ifdef ARM7_DLDI
+			case(TGDS_ARM7_ENABLEFASTMODE):{
+				enableFastMode();
+			}
+			break;
+			case(TGDS_ARM7_DISABLEFASTMODE):{
+				disableFastMode();
+			}
+			break;
+			
 			case(TGDS_DLDI_ARM7_STATUS_DEINIT):{
 				dldi_handler_deinit();
 			}

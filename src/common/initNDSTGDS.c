@@ -165,6 +165,7 @@ void initHardware(u8 DSHardware) {
 	//Init SoundSampleContext
 	initSoundSampleContext();
 	initSound();
+	disableFastMode();
 	
 	#endif
 	
