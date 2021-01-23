@@ -46,7 +46,7 @@ USA
 #include "dldi.h"
 #endif
 
-void resetMemory_ARMCores(u8 DSHardware){
+void resetMemory_ARMCores(u8 DSHardware)  __attribute__ ((optnone)) {
 	
 	//cmp r0, #0xFF		@DS Phat
 	//beq FirmwareARM7OK
@@ -146,7 +146,7 @@ void resetMemory_ARMCores(u8 DSHardware){
 	}
 }
 
-void initHardware(u8 DSHardware) {
+void initHardware(u8 DSHardware)  __attribute__ ((optnone)) {
 //---------------------------------------------------------------------------------
 	swiDelay(15000);
 	#ifdef ARM7

@@ -106,7 +106,7 @@ bool FastMode = false;	//enabled: disables VCOUNT / VBLANK methods that may caus
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
-void NDS_IRQHandler(){
+void NDS_IRQHandler()  __attribute__ ((optnone)) {
 	u32 handledIRQ = (REG_IF | SWI_CHECKBITS) & REG_IE;
 	if(handledIRQ & IRQ_HBLANK){
 		HblankUser();
@@ -364,7 +364,7 @@ void DisableIrq(uint32 IRQ){
 	REG_IE	&=	~(IRQ);
 }
 
-void enableFastMode(){
+void enableFastMode() __attribute__ ((optnone)) {
 	#ifdef ARM7
 	FastMode = true;
 	#endif
@@ -373,7 +373,7 @@ void enableFastMode(){
 	#endif
 }
 
-void disableFastMode(){
+void disableFastMode() __attribute__ ((optnone)) {
 	#ifdef ARM7
 	FastMode = false;
 	#endif

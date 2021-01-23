@@ -14,7 +14,7 @@
 #include "posixHandleTGDS.h"
 #include "InterruptsARMCores_h.h"
 
-// default use 128K VRAM (ARM7 Mapped), may be overriden.
+// default use 128K (ARM7 Mapped), may be overriden.
 unsigned int XMEMTOTALSIZE = (128*1024);
 
 // how many bytes will each of our blocks be?
@@ -39,7 +39,7 @@ void XmemSetup(unsigned int size, unsigned short blocks) {
 	XMEM_BLOCKSIZE = blocks;
 }
 
-void XmemInit(unsigned int mallocLinearMemoryStart, unsigned int mallocLinearMemorySize) {
+void XmemInit(unsigned int mallocLinearMemoryStart, unsigned int mallocLinearMemorySize)   __attribute__ ((optnone)) {
 	// init XMEM
 	memset((u8*)mallocLinearMemoryStart, 0, mallocLinearMemorySize);
 	
@@ -51,10 +51,9 @@ void XmemInit(unsigned int mallocLinearMemoryStart, unsigned int mallocLinearMem
 	XMEM_TABLESIZE = XMEM_BLOCKCOUNT;
 	
 	xmem_table = (unsigned char *)mallocLinearMemoryStart;	
-	xmem_blocks = (unsigned char *)((u8*)mallocLinearMemoryStart + XMEM_TABLESIZE);	//Size: (XMEM_BLOCKSIZE*XMEM_BLOCKCOUNT). Should not exceed the end of getTGDSARM7MallocBaseAddress()
+	xmem_blocks = (unsigned char *)((u8*)mallocLinearMemoryStart + XMEM_TABLESIZE);	//Size: (XMEM_BLOCKSIZE*XMEM_BLOCKCOUNT). Should not exceed the end of EWRAM
 	
 	if ((xmem_table == NULL) || (xmem_blocks == NULL)) {
-		
 		int argBuffer[MAXPRINT7ARGVCOUNT];
 		memset((unsigned char *)&argBuffer[0], 0, sizeof(argBuffer));
 		argBuffer[0] = XMEMTOTALSIZE;
@@ -62,8 +61,8 @@ void XmemInit(unsigned int mallocLinearMemoryStart, unsigned int mallocLinearMem
 		while(1==1){
 			IRQVBlankWait();
 		}
-		if (xmem_table) //free(xmem_table);
-		if (xmem_blocks) //free(xmem_blocks);
+		//if (xmem_table) free(xmem_table);
+		//if (xmem_blocks) free(xmem_blocks);
 		return;
 	}
 	
@@ -76,9 +75,13 @@ void XmemInit(unsigned int mallocLinearMemoryStart, unsigned int mallocLinearMem
 	
 	xmem_table[0] = XMEM_STARTBLOCK | XMEM_ENDBLOCK | XMEM_USEDBLOCK; // reserved i suppose
 	
+	for (int i=1;(unsigned)i<XMEM_TABLESIZE;i++) {
+		xmem_table[i] = 0;
+	}
+	
 }
 
-void *Xmalloc(const int size) {
+void *Xmalloc(const int size) __attribute__ ((optnone)) {
 	int i, blocks, sblock, fbr;
 	bool found;
 	
@@ -143,7 +146,7 @@ void *Xmalloc(const int size) {
 	return (void *) ((unsigned int) xmem_blocks + (sblock*XMEM_BLOCKSIZE));
 
 }
-void *Xcalloc(const int size, const int count) {
+void *Xcalloc(const int size, const int count) __attribute__ ((optnone)) {
 
 	void *temp;
 	unsigned int *temp2;
@@ -160,7 +163,7 @@ void *Xcalloc(const int size, const int count) {
 	return temp;
 
 }
-void Xfree(const void *ptr) {
+void Xfree(const void *ptr) __attribute__ ((optnone)) {
 
 	int block,sblock;
 	
@@ -198,7 +201,7 @@ void Xfree(const void *ptr) {
 
 }
 
-unsigned int XMEM_FreeMem(void) {
+unsigned int XMEM_FreeMem(void) __attribute__ ((optnone)) {
 
 	int i,j;
 

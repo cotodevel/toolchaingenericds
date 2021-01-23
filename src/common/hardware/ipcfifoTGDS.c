@@ -78,7 +78,7 @@ void Write32bitAddrExtArm(uint32 address, uint32 value){
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
-void SendFIFOWords(uint32 data0, uint32 data1){	//format: arg0: cmd, arg1: value
+void SendFIFOWords(uint32 data0, uint32 data1)  __attribute__ ((optnone)) {	//format: arg0: cmd, arg1: value
 	REG_IPC_FIFO_TX = (uint32)data1;	
 	REG_IPC_FIFO_TX = (uint32)data0;	//last message should always be command
 }
@@ -86,14 +86,14 @@ void SendFIFOWords(uint32 data0, uint32 data1){	//format: arg0: cmd, arg1: value
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
-void HandleFifoEmpty(){
+void HandleFifoEmpty()  __attribute__ ((optnone)) {
 	HandleFifoEmptyWeakRef((uint32)0,(uint32)0);
 }
 	
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
-void HandleFifoNotEmpty(){
+void HandleFifoNotEmpty()  __attribute__ ((optnone)) {
 	volatile uint32 data0 = 0, data1 = 0;
 	while(!(REG_IPC_FIFO_CR & RECV_FIFO_IPC_EMPTY)){
 		data0 = (u32)REG_IPC_FIFO_RX;
@@ -721,7 +721,7 @@ static int LastTSCPosX = 0;
 static int LastTSCPosY = 0;
 
 __attribute__ ((noinline))
-struct xyCoord readTSC(){
+struct xyCoord readTSC()  __attribute__ ((optnone)) {
 	struct xyCoord tscCoords;
 	//Handle Touchscreen
 	//Set Chip Select LOW to invoke the command & Transmit the instruction byte: TSC CNT Differential Mode: X Raw TSC 
@@ -744,7 +744,7 @@ struct xyCoord readTSC(){
 }
 
 __attribute__ ((noinline))
-void XYReadScrPos(struct XYTscPos * StouchScrPosInst){
+void XYReadScrPos(struct XYTscPos * StouchScrPosInst)  __attribute__ ((optnone)) {
 	
 	uint16 read_raw_x = 0;
 	uint16 read_raw_y = 0;
@@ -800,7 +800,7 @@ void XYReadScrPos(struct XYTscPos * StouchScrPosInst){
 #endif
 
 //Requires VCOUNT irq calls
-void XYReadScrPosUser(struct XYTscPos * StouchScrPosInst){
+void XYReadScrPosUser(struct XYTscPos * StouchScrPosInst)  __attribute__ ((optnone)) {
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 	
 	StouchScrPosInst->rawx    = TGDSIPC->rawx;
 	StouchScrPosInst->touchXpx = TGDSIPC->touchXpx;
