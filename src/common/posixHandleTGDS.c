@@ -539,17 +539,17 @@ int fork(){
 	return -1;
 }
 
-//C++ requires this
+//UNIX/Posix programs exit like this. (TGDS works with hardware directly, thus waits for interrupts)
 void _exit (int status){
+	bool isTGDSCustomConsole = false;	//set default console or custom console: default console
+	GUI_init(isTGDSCustomConsole);
+	GUI_clear();
 	
-	//todo: add some exception handlers to notify ARM cores program has ran	
-	
-	clrscr();
 	printf("----");
 	printf("----");
 	printf("----");
 	printf("----");
-	printf("TGDS APP Halt: Error Status: %d", status);
+	printf("TGDS APP Exit with code:(%d)", status);
 	while(1==1){
 		IRQVBlankWait();
 	}
