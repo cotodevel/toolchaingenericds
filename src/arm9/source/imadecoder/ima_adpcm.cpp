@@ -7,18 +7,15 @@
 #include "ipcfifoTGDS.h"
 #include "ima_adpcm.h"
 #include "soundTGDS.h"
-#include "cstream_fs.h"
-#include "soundTGDSIMADec.h"
+#include "consoleTGDS.h"
 
-//IMA-ADPCM codec specific
-IMA_Adpcm_Player player; IMA_Adpcm_Player *active_player = NULL; IMA_Adpcm_Stream * strm = NULL;
-bool player_loop = false;
-int ADPCMchunksize=0;
-int ADPCMchannels=0;
+#define seek(x) fseek( fin, (x), SEEK_SET )
+#define skip(x) fseek( fin, (x), SEEK_CUR )
+#define tell() ftell(fin)
 
-#define seek(x) pCStreamFS->SetOffset(x)
-#define skip(x) strm->pCStreamFS->SetOffset((int)strm->pCStreamFS->GetOffset() + (int)x)
-#define tell() 	strm->pCStreamFS->GetOffset()
+IMA_Adpcm_Player player;	//Actual PLAYER Instance. See ima_adpcm.cpp -> [PLAYER: section
+int ADPCMchunksize = 0;
+int ADPCMchannels = 0;
 
 extern "C" {
 	void decode_mono_ima_adpcm( IMA_Adpcm_Data *data, u8 *src, s16 *dest, int iterations );
@@ -36,14 +33,12 @@ IMA_Adpcm_Stream::~IMA_Adpcm_Stream()
 		delete[] datacache;
 }
 
-int IMA_Adpcm_Stream::reset(bool loop )
-{	
-	seek(0);
-	
-	if( !pCStreamFS ){
+int IMA_Adpcm_Stream::reset( FILE * audioFileHandle, bool loop )
+{
+	fin = audioFileHandle;
+	close();
+	if( !fin )
 		return IMA_ADPCM_ERROR_CANNOTOPEN;
-	}
-	
 	if( fget32() != 0x46464952 )		// "RIFF"
 	{
 		return IMA_ADPCM_ERROR_NOTRIFFWAVE;
@@ -92,13 +87,13 @@ int IMA_Adpcm_Stream::reset(bool loop )
 				return IMA_ADPCM_ERROR_UNSUPPORTED;
 			}
 			
-			skip(csize - 0x10);
+			skip( csize - 0x10 );
 			break;
 			
 		case 0x61746164:	// data chunk
 			wave_data = tell();
 			loop1 = 0;
-			skip(csize);
+			skip( csize );
 			wave_end = tell();
 			if( format == WAV_FORMAT_PCM )
 				loop2 = csize >> ( sampBits == 16 ? channels : ( channels - 1 ));
@@ -109,45 +104,47 @@ int IMA_Adpcm_Stream::reset(bool loop )
 		case 0x6C706D73:	// sampler chunk
 		{
 			int s;
-			skip(28);
+			skip( 28 );
 			int nl = fget32();
 			skip(4);
 			s = 36;
 			if( nl && loop) 
 			{
-				skip(8);
+				skip( 8 );
 				loop1 = fget32() >> ( 2 - channels );
 				loop2 = fget32() >> ( 2 - channels );
 				s += 8+4+4;
 			}
-			skip(csize - s);
+			skip( csize - s );
 		}
 			break;
 		default:
-			skip(csize);
+			skip( csize );
 		}
 	}
 	wave_loop = loop;
 	oddnibble = 0;
 	data.curSamps = 0;
 	position = 0;
-	seek(wave_data);
+	seek( wave_data );
 	currentblock = tell();
 	state = state_beginblock;
 	return IMA_ADPCM_OKAY;
 }
 
-int IMA_Adpcm_Stream::stream( s16 *target, int length , int frmt)
+int IMA_Adpcm_Stream::stream( s16 *target, int length )
 {
-	if( frmt == WAV_FORMAT_PCM )
+	/*
+	if( format == WAV_FORMAT_PCM )
 		return stream_pcm( target, length );
 	else
-		return decode_ima( target, length );
+	*/
+	return decode_ima( target, length );
 }
 
 int IMA_Adpcm_Stream::stream_pcm( s16 *target, int length )
 {
-	if( pCStreamFS )
+	if( fin )
 	{
 		if( !wave_loop && ( currentblock >= wave_end ))
 			return 1;
@@ -180,7 +177,7 @@ int IMA_Adpcm_Stream::stream_pcm( s16 *target, int length )
 					iterations = loop2-position;
 			}
 			cpysize = iterations << ( sampBits == 16 ? channels : ( channels - 1 ));
-			pCStreamFS->ReadBuffer((u8*)target, cpysize, pCStreamFS->file->loc, pCStreamFS->file);	//fread( target, 1, cpysize, fin );
+			fread( target, 1, cpysize, fin );
 			length -= iterations;
 			position += iterations;
 			currentblock += cpysize;
@@ -191,7 +188,7 @@ int IMA_Adpcm_Stream::stream_pcm( s16 *target, int length )
 
 			
 			if(( position == loop2 ) && wave_loop ) {
-				seek(loop_cblock);
+				seek( loop_cblock );
 				currentblock = loop_cblock;
 				position = loop1;
 			}	
@@ -202,12 +199,10 @@ int IMA_Adpcm_Stream::stream_pcm( s16 *target, int length )
 
 int IMA_Adpcm_Stream::decode_ima( s16 *target, int length )
 {
-	if( pCStreamFS )
+	if( fin )
 	{
-		
-		if( !wave_loop && ( currentblock >= wave_end )){
+		if( !wave_loop && ( currentblock >= wave_end ))
 			return 1;
-		}
 		while(length)
 		{
 			switch( state )
@@ -318,13 +313,15 @@ int IMA_Adpcm_Stream::decode_ima( s16 *target, int length )
 }
 
 void IMA_Adpcm_Stream::close() {
-	if(pCStreamFS!=NULL){
-		delete pCStreamFS; pCStreamFS=NULL;
+	if( fin ){
+		fseek(fin, 0, SEEK_SET);
 	}
 	//Audio stop here....
-	if(closeCb!=NULL){
+	/*
+	if(closeCb != NULL){
 		closeCb();
 	}
+	*/
 }
 
 void IMA_Adpcm_Stream::capture_frame()
@@ -339,7 +336,7 @@ void IMA_Adpcm_Stream::capture_frame()
 
 void IMA_Adpcm_Stream::restore_frame()
 {
-	seek(loop_cblock);
+	seek( loop_cblock );
 	getblock();
 	data = loop_data;
 	srcb = loop_src;
@@ -350,7 +347,9 @@ void IMA_Adpcm_Stream::restore_frame()
 }
 
 int IMA_Adpcm_Stream::fget8() {
-	return (int)pCStreamFS->Readu8();	//fread( a, 1, 1, fin );
+	u8 a[1];
+	fread( a, 1, 1, fin );
+	return a[0];
 }
 
 int IMA_Adpcm_Stream::fget16() {
@@ -377,7 +376,7 @@ void IMA_Adpcm_Stream::getblock()
 {
 	currentblock = tell();
 	blockremain = block << ( 2 - channels );
-	pCStreamFS->ReadBuffer(datacache, block, pCStreamFS->file->loc, pCStreamFS->file);
+	fread( datacache, 1, block, fin );
 	srcb = datacache;
 }
 
@@ -389,59 +388,57 @@ int IMA_Adpcm_Stream::get_sampling_rate() {
 	return sampling_rate;
 }
 
-int IMA_Adpcm_Stream::get_mm_format() {
+int IMA_Adpcm_Stream::get_format() {
 	return (( format == WAV_FORMAT_PCM ? (( sampBits >> 4 ) << 1 ) : WAV_FORMAT_PCM ) + ( channels - 1 ));
 }
 
 /*********************************************
  *
- * PLAYER
+ * [PLAYER: These are the implementation, not the INSTANCE. It must be instanced first from PLAYER object implementation]
  *
  *********************************************/
+
+int on_stream_request( int length, void* dest, int format ) {
+	return player.i_stream_request( length, dest, format );
+}
 
 IMA_Adpcm_Player::IMA_Adpcm_Player() {
 	active=false;
 }
 
-int IMA_Adpcm_Player::play( struct fd *fdInst, bool loop_audio, bool automatic_updates, int buffer_length, closeSoundHandle closeHandle) {	
+int IMA_Adpcm_Player::play( FILE * ADFileHandle, bool loop_audio, bool automatic_updates, int buffer_length, closeSoundHandle closeHandle ) {
 	active = false;
 	stop();
-	active_player = this;
-	strm = active_player->getStream();
 	autofill = automatic_updates;
-	strm->pCStreamFS=new CStreamFS(fdInst);
-	int result = stream.reset(loop_audio );
+	int result = stream.reset( ADFileHandle, loop_audio );
 	if( result ){
 		return result;
 	}
 	
-	strm->closeCb = closeHandle;
-	//struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	stream.closeCb = closeHandle;
 	paused = false;
 	active=true;
-	
+	setvolume( 255 );
 	// open stream
-	this->settargetBufferDecodeSize(buffer_length);
 	cutOff = false;
 	sndPaused = false;
 	
 	DisableSoundSampleContext();	//Disable ARM7 TGDS Sound stuff because decoders require a lot of power.
 	
 	// IMA-ADPCM file
-	int fsize = strm->pCStreamFS->GetSize();
-	ADPCMchunksize = active_player->gettargetBufferDecodeSize();
-	ADPCMchannels = strm->get_channels();
+	int fsize = FS_getFileSizeFromOpenHandle(ADFileHandle);
+	ADPCMchunksize = buffer_length;
+	soundData.channels = headerChunk.wChannels = ADPCMchannels = stream.get_channels();
 	
-	headerChunk.dwSamplesPerSec = strm->get_sampling_rate();
-	soundData.channels = headerChunk.wChannels = ADPCMchannels;
+	headerChunk.dwSamplesPerSec = stream.get_sampling_rate();
 	headerChunk.wFormatTag = 1;
 	headerChunk.wBitsPerSample = 16;	//Always signed 16 bit PCM out
 	
 	soundData.len = fsize;
 	bufCursor = 0;
 	soundData.loc = 0;
-	soundData.dataOffset = tell();
-	soundData.filePointer = getPosixFileHandleByStructFD(soundData.filePointerStructFD, "r");
+	soundData.dataOffset = ftell(ADFileHandle);
+	soundData.filePointer = ADFileHandle;
 	
 	setSoundInterpolation(1);
 	setSoundFrequency(headerChunk.dwSamplesPerSec);
@@ -467,49 +464,79 @@ void IMA_Adpcm_Player::resume() {
 void IMA_Adpcm_Player::stop() {
 	stream.close();
 	active=false;
+	setvolume( 0 );
 }
 
+void IMA_Adpcm_Player::setvolume( int vol ) {
+	if( vol < 0 ) vol = 0;
+	if( vol > 256 ) vol = 256;
+	volume = vol;
+}
+
+int IMA_Adpcm_Player::getvolume() {
+	return volume;
+}
 bool IMA_Adpcm_Player::isactive() {
 	return active;
-}
-
-bool IMA_Adpcm_Player::ispaused() {
-	return paused;
-}
-
-void IMA_Adpcm_Player::settargetBufferDecodeSize( int bufSize ) {
-	targetBufferDecodeSize = bufSize;
-}
-
-int IMA_Adpcm_Player::gettargetBufferDecodeSize() {
-	return targetBufferDecodeSize;
 }
 
 IMA_Adpcm_Stream * IMA_Adpcm_Player::getStream() {
 	return &stream;
 }
 
-int IMA_Adpcm_Player::i_stream_request( int length, void * dest, int frmt ) {
+int IMA_Adpcm_Player::i_stream_request( int length, void * dest, int format ) {
 	if( !paused ) {
-		if(stream.stream( (s16*)dest, length , frmt) == 1)
+		if( !stream.stream( (s16*)dest, length ))
 		{
-			stop();
-			return 1;
+			// apply volume scaler
+			if( volume != 256 ) {
+				s16 *d = (s16*)dest;
+				int i = length;
+				for( ; i; i-- ) {
+					*d = ((*d) * volume) >> 8; *d++;
+					*d = ((*d) * volume) >> 8; *d++;
+				}
+			}
 		}
-	} 
-	else {
+		else{
+			stop();
+		}
+	} else {
 		s16 *d = (s16*)dest;
 		int i = length * 2;
 		for( ; i; i-- ) {
 			*d++ = 0;
 		}
-		return 1;
 	}
 	return length;
 }
 
 void IMA_Adpcm_Player::update() {
-	if( active && !autofill ) {
-		
+	
+}
+
+volatile static s16 tmpData[2048 * 2 * 2];	//ADPCM uses 1 src as decoding frame, and 2nd src as scratchpad
+
+__attribute__((section(".itcm")))
+void IMAADPCMDecode(){
+	player.i_stream_request(ADPCMchunksize, (void*)&tmpData[0], WAV_FORMAT_IMA_ADPCM);
+	coherent_user_range((uint32)tmpData, (uint32)(ADPCMchunksize* 2 * ADPCMchannels));
+	if(soundData.channels == 2)
+	{
+		uint i=0;
+		for(i=0;i<(ADPCMchunksize * 2);++i)
+		{					
+			lBuffer[i] = tmpData[i << 1];
+			rBuffer[i] = tmpData[(i << 1) | 1];
+		}
+	}
+	else
+	{
+		uint i=0;
+		for(i=0;i<(ADPCMchunksize * 2);++i)
+		{
+			lBuffer[i] = tmpData[i];
+			rBuffer[i] = tmpData[i];
+		}
 	}
 }

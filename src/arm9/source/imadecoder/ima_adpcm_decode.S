@@ -8,8 +8,9 @@
 
 .arch	armv5te
 .cpu	arm946e-s
-.align 4
 .text
+.arm
+.align
 
 #define cur		r0
 #define da1		r4

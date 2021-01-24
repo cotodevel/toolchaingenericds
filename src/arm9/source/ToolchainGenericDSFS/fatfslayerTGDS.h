@@ -292,10 +292,22 @@ extern bool leaveDir(char* oldNewDir);
 extern bool updateTGDSFSDirectoryIteratorCWD(char * newCWD, struct FileClassList * lst);
 /////////////////////////////////////////////////////////////////////// INTERNAL DIRECTORY FUNCTIONS END //////////////////////////////////////////////////////////////////
 
+///////////////////////////////////////////////TGDS FileDescriptor Callbacks Implementation Start ///////////////////////////////////////////////
 //Link C to C++ related dependencies
 extern FILE *fdopen(int fd, const char *mode);
 extern int fileno(FILE *);
 extern bool setFileClassObj(int FileClassListIndex, struct FileClass * FileClassObj, struct FileClassList * lst);
+
+extern int TGDSFSUserfatfs_write(u8 *ptr, int len, int offst, struct fd *tgdsfd);
+extern int TGDSFSUserfatfs_read(u8 *ptr, int len, int offst, struct fd *tgdsfd);
+extern int TGDSFSUserfatfs_close(struct fd * tgdsfd);
+extern int TGDSFSUserfatfs_open_file(const sint8 *pathname, char * posixFlags, int * tgdsfd);
+extern off_t TGDSFSUserfatfs_lseek(struct fd *pfd, off_t offset, int whence);
+extern long TGDSFSUserfatfs_tell(struct fd *f);
+
+extern bool openDualTGDSFileHandleFromFile(char * filenameToOpen, int * tgdsStructFD1, int * tgdsStructFD2);
+extern bool closeDualTGDSFileHandleFromFile(struct fd * tgdsStructFD1, struct fd * tgdsStructFD2);
+///////////////////////////////////////////////TGDS FileDescriptor Callbacks Implementation End ///////////////////////////////////////////////
 
 #ifdef __cplusplus
 }

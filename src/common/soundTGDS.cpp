@@ -30,7 +30,6 @@ USA
 #include "utilsTGDS.h"
 #include "fatfslayerTGDS.h"
 #include "videoTGDS.h"
-#include "cstream_fs.h"
 #include "ima_adpcm.h"
 #include "biosTGDS.h"
 #endif
@@ -329,6 +328,7 @@ void stopSound() __attribute__ ((optnone)) {
 #endif 
  
 #ifdef ARM9
+
 //Handles current file playback status
 __attribute__((section(".dtcm")))
 bool soundLoaded = false;
@@ -935,7 +935,7 @@ int playSoundStream(char * audioStreamFilename, struct fd * _FileHandleVideo, st
 		if(internalCodecType == SRC_WAVADPCM){
 			bool loop_audio = false;
 			bool automatic_updates = false;
-			if(player.play(_FileHandleAudio, loop_audio, automatic_updates, ADPCM_SIZE, stopSoundStreamUser) == 0){
+			if(player.play(getPosixFileHandleByStructFD(_FileHandleAudio, "r"), loop_audio, automatic_updates, ADPCM_SIZE, stopSoundStreamUser) == 0){
 				//ADPCM Playback!
 			}
 		}

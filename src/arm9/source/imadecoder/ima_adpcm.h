@@ -2,7 +2,6 @@
 #define _DS_IMA_ADPCM_H
 
 #include <stdio.h>
-#include "cstream_fs.h"
 #include "soundTGDS.h"
 #include "fatfslayerTGDS.h"
 
@@ -15,7 +14,7 @@ enum
 	state_decode
 };
 
-enum WAV_FORMAT{	
+enum {
 	WAV_FORMAT_PCM			= 0x1,
 	WAV_FORMAT_IMA_ADPCM	= 0x11
 };
@@ -93,15 +92,15 @@ public:
 	
 	IMA_Adpcm_Stream();
 	~IMA_Adpcm_Stream();
-	CStreamFS *pCStreamFS;	//audio mp2 stream	//FILE	*fin;
-	int reset(bool loop );
-	int stream( s16 *target, int length, int frmt );
+	FILE	*fin;
+	int reset(FILE * fh, bool loop);
+	int stream( s16 *target, int length);
 	void close();
+	int get_format();
 	int		stream_pcm( s16 *target, int length );
 	int		decode_ima( s16 *target, int length );
 	int get_channels();
 	int get_sampling_rate();
-	int get_mm_format();
 	closeSoundHandle closeCb;
 };
 
@@ -110,24 +109,22 @@ public:
 //**********************************************************************************************
 
 class IMA_Adpcm_Player {
-
 	IMA_Adpcm_Stream stream;
 	bool autofill;
 	bool paused;
 	bool active;
-	int targetBufferDecodeSize;
 public:
-	wavFormatChunk headerChunk;
 	IMA_Adpcm_Player();
-	int play( struct fd *fdInst, bool loop_audio, bool automatic_updates, int buffer_length = ADPCM_SIZE, closeSoundHandle = NULL);
+	int volume;
+	wavFormatChunk headerChunk;
+	int play(FILE * fh, bool loop_audio, bool automatic_updates, int buffer_length = ADPCM_SIZE, closeSoundHandle = NULL);
 	void pause();
 	void resume();
 	void stop();
+	void setvolume( int vol );
+	int getvolume();
 	bool isactive();
-	bool ispaused();
 	int i_stream_request( int length, void * dest, int frmt );
-	void settargetBufferDecodeSize( int bufSize );
-	int gettargetBufferDecodeSize();
 	IMA_Adpcm_Stream * getStream();
 	// update function for manual filling
 	void update();
@@ -138,14 +135,21 @@ public:
 
 #ifdef __cplusplus
 extern "C" {
-extern IMA_Adpcm_Player player;
-extern IMA_Adpcm_Player *active_player;
-extern IMA_Adpcm_Stream * strm;
+extern int on_stream_request( int length, void* dest, int format );
+extern IMA_Adpcm_Player player;	//Actual PLAYER Instance. See ima_adpcm.cpp -> [PLAYER: section
+
 #endif
 
 extern int ADPCMchunksize;
 extern int ADPCMchannels;
 
+extern void SendArm7Command(u32 command, u32 data);
+extern void swapData();
+
+extern bool player_loop;
+extern void soundPauseStart();
+
+extern void IMAADPCMDecode();
 
 #ifdef __cplusplus
 }
