@@ -1,4 +1,4 @@
-#include <nds.h>
+#include "typedefsTGDS.h"
 #include "zombie.h"
 
 using namespace WoopsiUI;

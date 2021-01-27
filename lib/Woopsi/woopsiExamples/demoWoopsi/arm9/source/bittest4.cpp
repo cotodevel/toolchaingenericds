@@ -1,4 +1,4 @@
-#include <nds.h>
+#include "typedefsTGDS.h"
 #include "bittest4.h"
 
 using namespace WoopsiUI;
