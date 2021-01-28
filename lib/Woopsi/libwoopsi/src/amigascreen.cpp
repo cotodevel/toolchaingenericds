@@ -79,6 +79,7 @@ void AmigaScreen::handleReleaseEvent(const GadgetEventArgs& e) {
 	}
 }
 
+//Raised if clicking in any AmigaScreen screen offset
 void AmigaScreen::onClick(s16 x, s16 y) {
 	if (!isBorderless()) {
 		if (y - getY() < SCREEN_TITLE_HEIGHT) {

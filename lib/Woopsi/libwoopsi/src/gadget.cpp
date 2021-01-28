@@ -954,7 +954,8 @@ bool Gadget::click(s16 x, s16 y) {
 
 	// Work out which child was clicked
 	for (s32 i = _gadgets.size() - 1; i > -1; i--) {
-		if (_gadgets[i]->click(x, y)) {
+		if (_gadgets[i]->click(x, y)) {	//this is where the UI click event takes place
+			// Handle clicks on this
 			return true;
 		}
 	}
@@ -981,7 +982,7 @@ bool Gadget::click(s16 x, s16 y) {
 
 	// Tell Woopsi that the clicked gadget has changed
 	if (woopsiApplication != NULL) {
-		woopsiApplication->setClickedGadget(this);
+		woopsiApplication->setClickedGadget(this);	//The real onclick button widget (The main click/release event trigger)
 	}
 
 	// Run any code in the inherited class
