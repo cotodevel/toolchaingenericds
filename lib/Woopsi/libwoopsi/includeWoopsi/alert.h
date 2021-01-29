@@ -10,6 +10,7 @@
 #include "gadgetstyle.h"
 #include "woopsistring.h"
 
+#ifdef __cplusplus
 namespace WoopsiUI {
 
 	class Button;
@@ -65,5 +66,6 @@ namespace WoopsiUI {
 		inline Alert(const Alert& alert) : AmigaWindow(alert) { };
 	};
 }
+#endif
 
 #endif

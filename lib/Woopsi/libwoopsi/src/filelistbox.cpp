@@ -5,6 +5,8 @@
 #include "button.h"
 #include "filepath.h"
 #include "graphicsport.h"
+#include "fatfslayerTGDS.h"
+#include "fileBrowse.h"
 
 #ifndef USING_SDL
 
@@ -124,6 +126,8 @@ void FileListBox::readDirectory() {
 
 #else
 
+//Libfat:
+/*
 	// Build file list using libfat
 	struct stat st;
 
@@ -170,7 +174,51 @@ void FileListBox::readDirectory() {
 
 	// Close the directory
 	closedir(dir);
+*/
 
+//ToolchainGenericDS File Handle API:
+	// Get a copy of the path char array so that it can be used with libfat
+	char* path = new char[_path->getPath().getLength() + 1];
+	_path->getPath().copyToCharArray(path);
+
+	//Create TGDS Dir API context
+	struct FileClassList * fileClassListCtx = initFileList();
+	cleanFileList(fileClassListCtx);
+	
+	//Use TGDS Dir API context
+	char curPath[MAX_TGDSFILENAME_LENGTH+1];
+	strcpy(curPath, path);
+	delete [] path;
+	
+	int startFromIndex = 0;
+	struct FileClass * fileClassInst = FAT_FindFirstFile(curPath, fileClassListCtx, startFromIndex);
+	while(fileClassInst != NULL){
+		//directory?
+		if(fileClassInst->type == FT_DIR){
+			char tmpBuf[MAX_TGDSFILENAME_LENGTH+1];
+			memset(tmpBuf, 0, sizeof(tmpBuf));
+			strcpy(tmpBuf, fileClassInst->fd_namefullPath);
+			parseDirNameTGDS(tmpBuf);
+			// Directory
+			_listbox->addOption(new FileListBoxDataItem(tmpBuf, 0, getShineColour(), getBackColour(), getShineColour(), getHighlightColour(), true));
+		}
+		//file?
+		else if(fileClassInst->type  == FT_FILE){
+			char tmpBuf[MAX_TGDSFILENAME_LENGTH+1];
+			memset(tmpBuf, 0, sizeof(tmpBuf));
+			strcpy(tmpBuf, fileClassInst->fd_namefullPath);
+			parsefileNameTGDS(tmpBuf);
+			// File
+			_listbox->addOption(new FileListBoxDataItem(tmpBuf, 0, getShadowColour(), getBackColour(), getShadowColour(), getHighlightColour(), false));
+		}
+		
+		//more file/dir objects?
+		fileClassInst = FAT_FindNextFile(curPath, fileClassListCtx);
+	}
+
+	//Free TGDS Dir API context
+	freeFileList(fileClassListCtx);
+	
 #endif
 	
 	// Re-enable drawing now that the list is complete

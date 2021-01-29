@@ -52,37 +52,21 @@ static inline void parseDirNameTGDS(char * dirName){
 	
 }
 
-static inline void parsefileNameTGDS(char * fileName){
+static inline void parsefileNameTGDS(char * fileName){ //todo: pass the buffer size here!!
 	int filelen = strlen(fileName) + 1;
 	if(filelen > 4){
-	    if (fileName[0] == '/') {
-			char fixDir[MAX_TGDSFILENAME_LENGTH+1];       //trim the starting / if it has one
-		    memset(fixDir, 0, sizeof(fixDir));
-		    strcpy(fixDir, (char*)&fileName[1]);
-		    memset(fileName, 0, strlen(fileName));
-            strcat(fileName, fixDir);
-		}
 		if ((fileName[2] == '/') && (fileName[3] == '/')) {
-		    char fixDir[MAX_TGDSFILENAME_LENGTH+1];       //trim the starting // if it has one (since getfspath appends 0:/)
-		    memset(fixDir, 0, strlen(fixDir));
-		    fixDir[0] = fileName[0];
-		    fixDir[1] = fileName[1];
-		    fixDir[2] = fileName[2];
-		    strcat(fixDir, (char*)&fileName[4]);
-		    strcpy(fileName, fixDir);
-		    
-		    if(fileName[2] != '/'){	//if we trimmed by accident the only leading / such as 0:filename instead of 0:/filename, restore it so it becomes the latter
-				filelen = strlen(fileName)+1;
-				char tmpBuf[2];
-				tmpBuf[0] = fileName[0];
-				tmpBuf[1] = fileName[1];
-				
-				char fixFile[MAX_TGDSFILENAME_LENGTH+1];       //trim the starting / if it has one
-		        memset(fixFile, 0, sizeof(fixFile));
-		        strcat(fixFile, tmpBuf);
-		        strcat(fixFile, "/");
-		        strcat(fixFile, (char*)&fileName[3]);
+		    int offset = 2;
+			//copy
+			while(fileName[offset] == '/'){
+				offset++;
 			}
+
+			char fixName[MAX_TGDSFILENAME_LENGTH+1];       //trim the starting // if it has one (since getfspath appends 0:/)
+		    memset(fixName, 0, sizeof(fixName));
+		    strcpy(fixName, getfatfsPath((char*)&fileName[offset]));
+		    memset(fileName, 0, 256);
+			strcpy(fileName, fixName);
 		}
 	}
 }

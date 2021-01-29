@@ -21,6 +21,8 @@
  */
 #define woopsiRGB(r, g, b) (((b) << 10) | ((g) << 5) | (r) | (1 << 15))
 
+#ifdef __cplusplus
+
 namespace WoopsiUI {
 
 	class FontBase;
@@ -483,5 +485,6 @@ namespace WoopsiUI {
 		inline Graphics(const Graphics& graphics) { };
 	};
 }
+#endif
 
 #endif

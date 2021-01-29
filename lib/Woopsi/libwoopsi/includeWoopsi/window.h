@@ -14,6 +14,8 @@
 #define WINDOW_CLOSE_BUTTON_WIDTH 14
 #define WINDOW_DEPTH_BUTTON_WIDTH 14
 
+#ifdef __cplusplus
+
 namespace WoopsiUI {
 
 	/**
@@ -91,5 +93,6 @@ namespace WoopsiUI {
 		inline Window(const Window& window) : Gadget(window) { };
 	};
 }
+#endif
 
 #endif

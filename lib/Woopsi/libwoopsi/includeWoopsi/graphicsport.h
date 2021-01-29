@@ -8,6 +8,8 @@
 #include "woopsiarray.h"
 #include "graphics.h"
 
+#ifdef __cplusplus
+
 namespace WoopsiUI {
 	
 	class FontBase;
@@ -431,5 +433,6 @@ namespace WoopsiUI {
 		void addClipRect(const Rect& clipRect);
 	};
 }
+#endif
 
 #endif
