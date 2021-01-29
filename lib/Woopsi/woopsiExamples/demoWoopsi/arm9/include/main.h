@@ -35,10 +35,13 @@ extern "C" {
 #endif
 
 extern int main(int argc, char **argv);
-//TGDS Dir API: Directory Iterator(s)
-extern char curChosenBrowseFile[256+1];
-extern char globalPath[MAX_TGDSFILENAME_LENGTH+1];
-extern int internalCodecType;//Internal because WAV raw decompressed buffers are used if Uncompressed WAV or ADPCM
+
+//TGDS Soundstreaming API
+extern int internalCodecType;
+extern struct fd * _FileHandleVideo; 
+extern struct fd * _FileHandleAudio;
+extern bool stopSoundStreamUser();
+extern void closeSoundUser();
 
 #ifdef __cplusplus
 }

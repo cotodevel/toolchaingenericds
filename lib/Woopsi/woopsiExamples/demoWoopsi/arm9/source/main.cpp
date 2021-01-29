@@ -40,16 +40,12 @@ USA
 #include "ima_adpcm.h"
 
 // Includes
-#include "demo.h"
+#include "WoopsiTemplate.h"
 
-char curChosenBrowseFile[256+1];
-char globalPath[MAX_TGDSFILENAME_LENGTH+1];
-static int curFileIndex = 0;
-static bool pendingPlay = false;
-
-int internalCodecType = SRC_NONE;//Internal because WAV raw decompressed buffers are used if Uncompressed WAV or ADPCM
-static struct fd * _FileHandleVideo = NULL; 
-static struct fd * _FileHandleAudio = NULL;
+//TGDS Soundstreaming API
+int internalCodecType = SRC_NONE; //Returns current sound stream format: WAV, ADPCM or NONE
+struct fd * _FileHandleVideo = NULL; 
+struct fd * _FileHandleAudio = NULL;
 
 bool stopSoundStreamUser(){
 	return stopSoundStream(_FileHandleVideo, _FileHandleAudio, &internalCodecType);
@@ -64,7 +60,6 @@ static inline void menuShow(){
 	printf("     ");
 	printf("     ");
 	printf("toolchaingenericds-template: ");
-	printf("Current file: %s ", curChosenBrowseFile);
 	printf("(Select): This menu. ");
 	printf("(Start): FileBrowser : (A) Play WAV/IMA-ADPCM (Intel) strm ");
 	printf("(D-PAD:UP/DOWN): Volume + / - ");
@@ -73,10 +68,10 @@ static inline void menuShow(){
 	printf("(B): Stop WAV/IMA-ADPCM file. ");
 	printf("Current Volume: %d", (int)getVolume());
 	if(internalCodecType == SRC_WAVADPCM){
-		printf("ADPCM Play: %s >%d", curChosenBrowseFile, TGDSPrintfColor_Red);
+		printf("ADPCM Play: >%d", TGDSPrintfColor_Red);
 	}
 	else if(internalCodecType == SRC_WAV){	
-		printf("WAVPCM Play: %s >%d", curChosenBrowseFile, TGDSPrintfColor_Green);
+		printf("WAVPCM Play: >%d", TGDSPrintfColor_Green);
 	}
 	else{
 		printf("Player Inactive");
@@ -121,8 +116,8 @@ int main(int argc, char **argv) {
 	RenderTGDSLogoMainEngine((uint8*)&TGDSLogoLZSSCompressed[0], TGDSLogoLZSSCompressed_size);
 	
 	// Create the demo application
-	Demo demo;
-	return demo.main(argc, argv);
+	WoopsiTemplate WoopsiTemplateApp;
+	return WoopsiTemplateApp.main(argc, argv);
 	
 	while(1) {
 		handleARM9SVC();	/* Do not remove, handles TGDS services */

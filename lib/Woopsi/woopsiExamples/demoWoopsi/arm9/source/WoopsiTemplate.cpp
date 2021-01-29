@@ -1,28 +1,31 @@
+
 // Includes
-#include "demo.h"
+#include "WoopsiTemplate.h"
 #include "woopsiheaders.h"
-#include "calculator.h"
-#include "pong.h"
-#include "pacman.h"
 #include "bitmapwrapper.h"
 #include "bitmap.h"
 #include "graphics.h"
 #include "rect.h"
 #include "gadgetstyle.h"
 #include "fonts/newtopaz.h"
-#include "zombie.h"
+#include "woopsistring.h"
+#include "colourpicker.h"
+#include "filerequester.h"
+#include "soundTGDS.h"
+#include "main.h"
+
 #include "bittest1.h"
 #include "bittest2.h"
 #include "bittest3.h"
 #include "bittest4.h"
 #include "bittest5.h"
 #include "bittest6.h"
-#include "woopsistring.h"
+#include "calculator.h"
+#include "pong.h"
+#include "pacman.h"
+#include "zombie.h"
 
-#include "colourpicker.h"
-
-void Demo::startup() {
-
+void WoopsiTemplate::startup() {
 	Rect rect;
 
 	// Create SuperBitmap test screen
@@ -283,8 +286,7 @@ void Demo::startup() {
 	//_alert->goModal();
 }
 
-void Demo::shutdown() {
-	
+void WoopsiTemplate::shutdown() {
 	// Clean up
 	//delete _calculator;
 	//delete _pong;
