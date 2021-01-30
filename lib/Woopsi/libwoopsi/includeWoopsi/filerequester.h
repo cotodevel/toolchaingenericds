@@ -145,7 +145,15 @@ namespace WoopsiUI {
 		virtual inline const s32 getOptionCount() const {
 			return _listbox->getOptionCount();
 		};
-
+		
+		/**
+		 * Expose the listBox object.
+		 * @return the listBox object.
+		 */
+		virtual inline FileListBox* getInternalListBoxObject() const {
+			return _listbox;
+		};
+		
 		/**
 		 * Set the displayed path.
 		 * @param path The new path.
