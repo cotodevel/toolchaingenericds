@@ -220,7 +220,7 @@ void FileListBox::readDirectory() {
 	strcpy(curPath, path);
 	delete [] path;
 	
-	listbox->addOption(new FileListBoxDataItem("..", 0, getShineColour(), getBackColour(), getShineColour(), getHighlightColour(), true));	//allow to go back
+	_listbox->addOption(new FileListBoxDataItem("..", 0, getShineColour(), getBackColour(), getShineColour(), getHighlightColour(), true));	//allow to go back
 	int startFromIndex = 0;
 	struct FileClass * fileClassInst = FAT_FindFirstFile(curPath, fileClassListCtx, startFromIndex);
 	while(fileClassInst != NULL){

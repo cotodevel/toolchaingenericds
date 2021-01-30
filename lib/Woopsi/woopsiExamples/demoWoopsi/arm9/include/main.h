@@ -35,6 +35,7 @@ extern "C" {
 #endif
 
 extern int main(int argc, char **argv);
+extern void ApplicationMainLoop();
 
 //TGDS Soundstreaming API
 extern int internalCodecType;

@@ -115,8 +115,9 @@ int main(int argc, char **argv) {
 	//Show logo
 	RenderTGDSLogoMainEngine((uint8*)&TGDSLogoLZSSCompressed[0], TGDSLogoLZSSCompressed_size);
 	
-	// Create the demo application
+	// Create Woopsi UI
 	WoopsiTemplate WoopsiTemplateApp;
+	WoopsiTemplateProc = &WoopsiTemplateApp;
 	return WoopsiTemplateApp.main(argc, argv);
 	
 	while(1) {

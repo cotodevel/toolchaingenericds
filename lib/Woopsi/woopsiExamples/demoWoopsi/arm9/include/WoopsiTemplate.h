@@ -18,19 +18,29 @@ class Calculator;
 class Pong;
 
 #define DEMO_VERSION "Woopsi Demo V0.99.3 Beta"
-
 class WoopsiTemplate : public Woopsi {
 public:
 	void startup();
 	void shutdown();
-
+	void handleLidClosed();
+	void handleLidOpen();
+	void ApplicationMainLoop();
 private:
 	PacMan* _pacMan;
 	Calculator* _calculator;
 	Pong* _pong;
 	Alert* _alert;
 };
+#endif
 
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+extern WoopsiTemplate * WoopsiTemplateProc;
+
+#ifdef __cplusplus
+}
 #endif

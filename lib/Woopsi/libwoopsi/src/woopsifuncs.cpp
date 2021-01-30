@@ -332,6 +332,7 @@ void initWoopsiGfxMode() {
 	memset( &Stylus, 0, sizeof(_stylus) );
 }
 
+__attribute__((section(".itcm")))
 void woopsiWaitVBL() {
 	handleARM9SVC();	/* Do not remove, handles TGDS services */
 	IRQWait(IRQ_HBLANK);
