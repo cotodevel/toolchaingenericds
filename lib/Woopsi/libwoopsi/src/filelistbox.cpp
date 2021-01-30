@@ -7,6 +7,7 @@
 #include "graphicsport.h"
 #include "fatfslayerTGDS.h"
 #include "fileBrowse.h"
+#include "consoleTGDS.h"
 
 #ifndef USING_SDL
 
@@ -54,9 +55,38 @@ void FileListBox::handleDoubleClickEvent(const GadgetEventArgs& e) {
 
 				// Detect type by examining text colour
 				if (selected->getNormalTextColour() == getShineColour()) {
-
-					// Got a directory
-					appendPath(selected->getText());
+					char curPth[256+1];
+					char newPth[256+1];
+					memset(curPth, 0, sizeof(curPth));
+					memset(newPth, 0, sizeof(newPth));
+					
+					selected->getText().copyToCharArray(newPth);
+					
+					const WoopsiUI::FilePath * thisPath = this->getPath();
+					WoopsiUI::WoopsiString curPath = (WoopsiUI::WoopsiString)thisPath->getPath();
+					curPath.copyToCharArray(curPth);
+					
+					int compare = selected->getText().compareTo("..");
+					if (compare == 0){
+						//Leaving dir
+						leaveDir(curPth);
+						WoopsiString newPath;
+						newPath.setText((const char*)curPth);
+						setPath(newPath);
+					}
+					else{
+						// Enter a new directory
+						strcat(curPth, (char*)newPth);
+						char tmpBuf[MAX_TGDSFILENAME_LENGTH+1];
+						memset(tmpBuf, 0, sizeof(tmpBuf));
+						strcpy(tmpBuf, curPth);
+						parseDirNameTGDS(tmpBuf);
+						memset(curPth, 0, sizeof(curPth));
+						strcpy(curPth, tmpBuf);
+						WoopsiString newPath;
+						newPath.setText((const char*)curPth);
+						setPath(newPath);
+					}
 				} else {
 
 					// File selected; raise event
@@ -190,6 +220,7 @@ void FileListBox::readDirectory() {
 	strcpy(curPath, path);
 	delete [] path;
 	
+	listbox->addOption(new FileListBoxDataItem("..", 0, getShineColour(), getBackColour(), getShineColour(), getHighlightColour(), true));	//allow to go back
 	int startFromIndex = 0;
 	struct FileClass * fileClassInst = FAT_FindFirstFile(curPath, fileClassListCtx, startFromIndex);
 	while(fileClassInst != NULL){
