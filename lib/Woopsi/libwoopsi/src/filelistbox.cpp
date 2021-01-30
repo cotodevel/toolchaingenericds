@@ -76,7 +76,7 @@ void FileListBox::handleDoubleClickEvent(const GadgetEventArgs& e) {
 					}
 					else{
 						// Enter a new directory
-						strcat(curPth, (char*)newPth);
+						strcpy(curPth, (char*)newPth);
 						char tmpBuf[MAX_TGDSFILENAME_LENGTH+1];
 						memset(tmpBuf, 0, sizeof(tmpBuf));
 						strcpy(tmpBuf, curPth);
