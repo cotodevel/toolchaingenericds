@@ -22,6 +22,8 @@
 #include "pong.h"
 #include "pacman.h"
 #include "zombie.h"
+#include "posixHandleTGDS.h"
+#include "keypadTGDS.h"
 
 __attribute__((section(".itcm")))
 WoopsiTemplate * WoopsiTemplateProc = NULL;
@@ -279,7 +281,9 @@ void WoopsiTemplate::startup() {
 	// Add Welcome notice
 	_alert = new Alert(2, 2, 200, 80, "Welcome!", "Welcome to Woopsi!");
 	newScreen2->addGadget(_alert);
-
+	
+	_MultiLineTextBoxLogger = NULL;	//destroyable TextBox
+	
 	enableDrawing();	// Ensure Woopsi can now draw itself
 	redraw();			// Draw initial state
 
@@ -293,6 +297,18 @@ void WoopsiTemplate::shutdown() {
 	//delete _pong;
 	//delete _pacMan;
 	Woopsi::shutdown();
+}
+
+void WoopsiTemplate::waitForAOrTouchScreenButtonMessage(MultiLineTextBox* thisLineTextBox, const WoopsiString& thisText){
+	thisLineTextBox->appendText(thisText);
+	scanKeys();
+	while((!(keysDown() & KEY_A)) && (!(keysDown() & KEY_TOUCH))){
+		scanKeys();
+	}
+	scanKeys();
+	while((keysDown() & KEY_A) && (keysDown() & KEY_TOUCH)){
+		scanKeys();
+	}
 }
 
 void WoopsiTemplate::handleLidClosed() {
@@ -323,6 +339,35 @@ void WoopsiTemplate::handleLidOpen() {
 __attribute__((section(".itcm")))
 void Woopsi::ApplicationMainLoop(){
 	//Earlier.. main from Woopsi SDK.
+	
+	/* 
+	//Destroyable Textbox implementation init
+	Rect rect;
+	_fileScreen->getClientRect(rect);
+	_MultiLineTextBoxLogger = new MultiLineTextBox(rect.x, rect.y, 262, 170, "Loading\n...", Gadget::GADGET_DRAGGABLE, 5);
+	_fileScreen->addGadget(_MultiLineTextBoxLogger);
+	
+	_MultiLineTextBoxLogger->removeText(0);
+	_MultiLineTextBoxLogger->moveCursorToPosition(0);
+	_MultiLineTextBoxLogger->appendText("File open OK: ");
+	_MultiLineTextBoxLogger->appendText(strObj);
+	_MultiLineTextBoxLogger->appendText("\n");
+	_MultiLineTextBoxLogger->appendText("Please wait calculating CRC32... \n");
+	
+	char arrBuild[256+1];
+	sprintf(arrBuild, "%s%x\n", "Invalid file: crc32 = 0x", crc32);
+	_MultiLineTextBoxLogger->appendText(WoopsiString(arrBuild));
+	
+	sprintf(arrBuild, "%s%x\n", "Expected: crc32 = 0x", 0x5F35977E);
+	_MultiLineTextBoxLogger->appendText(WoopsiString(arrBuild));
+	
+	waitForAOrTouchScreenButtonMessage(_MultiLineTextBoxLogger, "Press (A) or tap touchscreen to continue. \n");
+	
+	_MultiLineTextBoxLogger->invalidateVisibleRectCache();
+	_fileScreen->eraseGadget(_MultiLineTextBoxLogger);
+	_MultiLineTextBoxLogger->destroy();	//same as delete _MultiLineTextBoxLogger;
+	//Destroyable Textbox implementation end
+	*/
 	
 	//Handle TGDS stuff...
 }
