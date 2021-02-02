@@ -1070,7 +1070,7 @@ void Timer_50ms(void) {
 //---------------------------------------------------------------------------------
 void arm9_synctoarm7() { 
 //---------------------------------------------------------------------------------
-	SendFIFOWords(WIFI_SYNC, 0);
+	SendFIFOWords(WIFI_SYNC);
 }
 
 /*
@@ -1107,7 +1107,10 @@ bool Wifi_InitDefault(bool useFirmwareSettings) {
 	TIMERXDATA(3) = -6553; // 6553.1 * 256 cycles = ~50ms;
 	TIMERXCNT(3) = 0x00C2; // enable, irq, 1/256 clock
 
-	SendFIFOWords(WIFI_INIT, (uint32)wifi_pass);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	setValueSafe(&fifomsg[60], (u32)wifi_pass);
+	SendFIFOWords(WIFI_INIT);
 	
 	while(Wifi_CheckInit()==0) {
 		swiDelay(900);

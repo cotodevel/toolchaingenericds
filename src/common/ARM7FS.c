@@ -59,13 +59,13 @@ int ARM7FS_BufferReadByIRQ(void *OutBuffer, int fileOffset, int readBufferSize){
 	}
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-	fifomsg[0] = (uint32)TGDSIPC->IR_readbuf;
-	fifomsg[1] = (uint32)readBufferSize;
-	fifomsg[2] = (uint32)fileOffset;
-	fifomsg[3] = (uint32)TGDS_ARM7_ARM7FSREAD;
+	setValueSafe(&fifomsg[0], (uint32)TGDSIPC->IR_readbuf);
+	setValueSafe(&fifomsg[1], (uint32)readBufferSize);
+	setValueSafe(&fifomsg[2], (uint32)fileOffset);
+	setValueSafe(&fifomsg[3], (uint32)TGDS_ARM7_ARM7FSREAD);
 	
 	//Wait until ARM9 task done.
-	SendFIFOWords(TGDS_ARM7_ARM7FSREAD, (u32)fifomsg);
+	SendFIFOWords(TGDS_ARM7_ARM7FSREAD);
 	while(fifomsg[3] == (uint32)TGDS_ARM7_ARM7FSREAD){
 		swiDelay(1);
 	}
@@ -92,7 +92,7 @@ int ARM7FS_BufferSaveByIRQ(void *InBuffer, int fileOffset, int writeBufferSize){
 	fifomsg[5] = (uint32)writeBufferSize;
 	fifomsg[6] = (uint32)fileOffset;
 	fifomsg[7] = (uint32)TGDS_ARM7_ARM7FSWRITE;
-	SendFIFOWords(TGDS_ARM7_ARM7FSWRITE, (u32)fifomsg);
+	SendFIFOWords(TGDS_ARM7_ARM7FSWRITE);
 	while((uint32)fifomsg[7] == (uint32)TGDS_ARM7_ARM7FSWRITE){
 		swiDelay(1);
 	}

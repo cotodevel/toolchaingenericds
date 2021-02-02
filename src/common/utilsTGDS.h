@@ -129,6 +129,9 @@ extern void separateExtension(char *str, char *ext);
 
 #endif
 
+extern u32 getValueSafe(u32 * buf);
+extern void setValueSafe(u32 * buf, u32 val);
+
 #ifdef __cplusplus
 }
 #endif

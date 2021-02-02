@@ -344,12 +344,12 @@ void NDS_IRQHandler()  __attribute__ ((optnone)) {
 	
 	if(handledIRQ & IRQ_SCREENLID){
 		isArm7ClosedLid = false;
-		SendFIFOWords(FIFO_IRQ_LIDHASOPENED_SIGNAL, 0);
+		SendFIFOWords(FIFO_IRQ_LIDHASOPENED_SIGNAL);
 		screenLidHasOpenedhandlerUser();
 	}
 
 	if(handledIRQ & IRQ_SCREENLID){
-		SendFIFOWords(FIFO_IRQ_LIDHASOPENED_SIGNAL, 0);
+		SendFIFOWords(FIFO_IRQ_LIDHASOPENED_SIGNAL);
 		screenLidHasOpenedhandlerUser();
 	}
 	#endif
@@ -369,7 +369,7 @@ void enableFastMode() __attribute__ ((optnone)) {
 	FastMode = true;
 	#endif
 	#ifdef ARM9
-	SendFIFOWords(TGDS_ARM7_ENABLEFASTMODE, 0);
+	SendFIFOWords(TGDS_ARM7_ENABLEFASTMODE);
 	#endif
 }
 
@@ -378,6 +378,6 @@ void disableFastMode() __attribute__ ((optnone)) {
 	FastMode = false;
 	#endif
 	#ifdef ARM9
-	SendFIFOWords(TGDS_ARM7_DISABLEFASTMODE, 0);
+	SendFIFOWords(TGDS_ARM7_DISABLEFASTMODE);
 	#endif
 }

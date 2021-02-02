@@ -265,7 +265,7 @@ extern "C"{
 #endif
 
 //weak symbols : the implementation of these is project-defined, also abstracted from the hardware IPC FIFO Implementation for easier programming.
-extern 	void HandleFifoNotEmptyWeakRef(uint32 cmd1,uint32 cmd2);
+extern 	void HandleFifoNotEmptyWeakRef(volatile u32 cmd1);
 extern 	void HandleFifoEmptyWeakRef(uint32 cmd1,uint32 cmd2);
 
 #ifdef ARM7
@@ -276,7 +276,6 @@ extern struct xyCoord readTSC();
 extern void XYReadScrPosUser(struct XYTscPos * StouchScrPosInst);	//User impl.
 extern void HandleFifoNotEmpty();
 extern void HandleFifoEmpty();
-extern void SendFIFOWords(uint32 data0, uint32 data1);
 
 extern void ReadMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead);
 extern void SaveMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead);

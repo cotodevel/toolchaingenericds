@@ -36,7 +36,7 @@ void DeInitWIFI(){
 	sgIP_Hub_RemoveHardwareInterface(wifi_hw);
 	TIMERXDATA(3) = 0;
 	TIMERXCNT(3) = 0;
-	SendFIFOWords(WIFI_DEINIT, 0);
+	SendFIFOWords(WIFI_DEINIT);
 	
 	if(wifi_connect_point != NULL){
 		free((u8*)wifi_connect_point);
