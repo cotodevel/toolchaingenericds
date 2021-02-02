@@ -50,7 +50,12 @@ namespace WoopsiUI {
 		 * Hides the cursor.
 		 */
 		virtual void hideCursor();
-
+		
+		/**
+		 * Gets the text displayed in the label.
+		 */
+		virtual const WoopsiString getText();
+		
 		/**
 		 * Set the text displayed in the label.
 		 * @param text String to display.

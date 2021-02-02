@@ -348,7 +348,7 @@ sint8 * print_ip(uint32 ip, char * outBuf)
     bytes[1] = (ip >> 8) & 0xFF;
     bytes[2] = (ip >> 16) & 0xFF;
     bytes[3] = (ip >> 24) & 0xFF;	
-    sprintf(outBuf,"%d.%d.%d.%d\n", bytes[0], bytes[1], bytes[2], bytes[3]);
+    sprintf(outBuf,"%d.%d.%d.%d", bytes[0], bytes[1], bytes[2], bytes[3]);
 	return outBuf;
 }
 
