@@ -140,7 +140,7 @@ namespace WoopsiUI {
 		 * Main entry point for a Woopsi application.
 		 */
 		virtual inline int main(int argc, char **argv) {
-			startup();				// Run any setup code
+			startup(argc, argv);				// Run any setup code
 			goModal();				// Run the main Woopsi loop
 			shutdown();				// Run any shutdown code
 
@@ -191,7 +191,7 @@ namespace WoopsiUI {
 		 * This method must call enableDrawing() and draw() at some point or nothing will
 		 * be visible.
 		 */
-		virtual void startup() = 0;
+		virtual void startup(int argc, char **argv) = 0;
 
 		/**
 		 * Shut down the application.  All non-gadget objects should be deleted in an override
