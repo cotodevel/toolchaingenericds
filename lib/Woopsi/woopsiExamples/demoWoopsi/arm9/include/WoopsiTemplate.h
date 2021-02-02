@@ -20,7 +20,7 @@ class Pong;
 #define DEMO_VERSION "Woopsi Demo V0.99.3 Beta"
 class WoopsiTemplate : public Woopsi {
 public:
-	void startup();
+	void startup(int argc, char **argv);
 	void shutdown();
 	void waitForAOrTouchScreenButtonMessage(MultiLineTextBox* thisLineTextBox, const WoopsiString& thisText);
 	void handleLidClosed();
