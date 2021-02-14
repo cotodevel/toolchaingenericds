@@ -37,6 +37,7 @@ USA
 #include "posixHandleTGDS.h"
 #include "keypadTGDS.h"
 #include "biosTGDS.h"
+#include "libndsFIFO.h"
 
 #ifdef ARM9
 #include "devoptab_devices.h"
@@ -197,6 +198,8 @@ void initHardware(u8 DSHardware)  __attribute__ ((optnone)) {
 	setDLDIARM7Address((u32 *)dldiGet());
 	#endif
 	
+	fifoInit();
+	
 	//Enable TSC
 	setTouchScreenEnabled(true);	
 	
@@ -205,7 +208,6 @@ void initHardware(u8 DSHardware)  __attribute__ ((optnone)) {
 	
 	//Disable it because handling ARM7 events take extra CPU power we don't really need to use.
 	disableSleepMode();
-	
 	
 	#endif
 	
