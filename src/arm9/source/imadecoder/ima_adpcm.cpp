@@ -515,7 +515,7 @@ void IMA_Adpcm_Player::update() {
 	
 }
 
-volatile static s16 tmpData[2048 * 2 * 2];	//ADPCM uses 1 src as decoding frame, and 2nd src as scratchpad
+volatile static s16 tmpData[ADPCM_SIZE * 2 * 2];	//ADPCM uses 1 src as decoding frame, and 2nd src as scratchpad + 2 channels
 
 __attribute__((section(".itcm")))
 void IMAADPCMDecode(){
