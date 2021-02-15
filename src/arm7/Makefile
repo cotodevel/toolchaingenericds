@@ -70,6 +70,7 @@ COMPILER_SPECIFIC_CFLAGS += \
   --target=arm-none-eabi \
   --sysroot= \
   -Oz \
+  -fno-rtti	-fno-exceptions \
   -DARM7
   
 CFLAGS = \
