@@ -78,6 +78,17 @@ USA
 //  7    Start Bit (Must be set to access Control Byte)
 #define BIT_TSCCNT_START_CTRL (1 << 7)	//Must be set to 1 when using Control Byte in TSCNT
 
+//! holds data related to the touch screen.
+typedef struct touchPosition {
+	u16	rawx; //!< Raw x value from the A2D
+	u16	rawy; //!< Raw x value from the A2D
+	u16	px;   //!< Processes pixel X value
+	u16	py;   //!< Processes pixel Y value
+	u16	z1;   //!< Raw cross panel resistance
+	u16	z2;   //!< Raw cross panel resistance
+} touchPosition;
+
+
 #endif
 
 
@@ -87,6 +98,7 @@ extern "C"{
 
 #ifdef ARM7
 extern void doSPIARM7IO();	//Internal: ARM7 Only. Requires to be called on interrupts
+extern void touchReadXY(touchPosition *touchPos);
 #endif
 
 #ifdef __cplusplus

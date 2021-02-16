@@ -130,6 +130,7 @@ void NDS_IRQHandler()  __attribute__ ((optnone)) {
 		struct sIPCSharedTGDS * sIPCSharedTGDSInst = (struct sIPCSharedTGDS *)TGDSIPCStartAddress;
 		//ARM7 Keypad has access to X/Y/Hinge/Pen down bits
 		sIPCSharedTGDSInst->ARM7REG_KEYINPUT = (uint16)REG_KEYINPUT;
+		
 		u16 keys= REG_KEYXY;
 		if(FastMode == false){
 			if(keys & KEY_TOUCH){
@@ -143,30 +144,30 @@ void NDS_IRQHandler()  __attribute__ ((optnone)) {
 				sIPCSharedTGDSInst->touchXpx = 0;
 				sIPCSharedTGDSInst->touchZ1 = 0;
 				sIPCSharedTGDSInst->touchZ2 = 0;
-				
+			
 				if(penDown){
 					keys |= KEY_TOUCH;	//tsc event must be before coord handling to give priority over touch events
-					
-					struct XYTscPos tempPos;
-					XYReadScrPos(&tempPos);
-					
+				
+					touchPosition tempPos = {0};
+					touchReadXY(&tempPos);
+				
 					if(tempPos.rawx && tempPos.rawy){
 						sIPCSharedTGDSInst->rawy    = tempPos.rawy;
-						sIPCSharedTGDSInst->touchYpx = tempPos.touchYpx;
+						sIPCSharedTGDSInst->touchYpx = tempPos.py;
 						sIPCSharedTGDSInst->rawx    = tempPos.rawx;
-						sIPCSharedTGDSInst->touchXpx = tempPos.touchXpx;
+						sIPCSharedTGDSInst->touchXpx = tempPos.px;
 						sIPCSharedTGDSInst->touchZ1 = tempPos.z1;
 						sIPCSharedTGDSInst->touchZ2 = tempPos.z2;
 					}
 					else{
 						penDown = false;
 					}
-					
+				
 				}
 				else{
 					penDown = true;
 				}
-				
+			
 				//handle re-click
 				if( !(((uint16)REG_KEYINPUT) & KEY_TOUCH) ){
 					penDown = true;
