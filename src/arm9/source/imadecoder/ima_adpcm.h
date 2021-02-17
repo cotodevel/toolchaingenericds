@@ -115,7 +115,6 @@ class IMA_Adpcm_Player {
 	bool active;
 public:
 	IMA_Adpcm_Player();
-	int volume;
 	wavFormatChunk headerChunk;
 	int play(FILE * fh, bool loop_audio, bool automatic_updates, int buffer_length = ADPCM_SIZE, closeSoundHandle = NULL);
 	void pause();
