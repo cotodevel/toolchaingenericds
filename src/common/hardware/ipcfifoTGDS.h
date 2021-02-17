@@ -121,6 +121,9 @@ USA
 #define TGDS_ARM7_ARM7FSWRITE (u32)(0xffffaab0)		
 #define TGDS_ARM7_READFLASHMEM (u32)(0xffffaac0)		
 
+#define TGDS_ARM7_RELOADFLASH (u32)(0xffffabc0)		
+
+
 #define TGDS_LIBNDSFIFO_COMMAND (u32)(0xFFFFAAC1)	//Bottom 8 bits act as the FIFO Channel Index
 
 //TGDS IPC Command Interrupt Index
