@@ -1,0 +1,10 @@
+﻿C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\VC\VCTargets\Microsoft.CppBuild.targets(391,5): warning MSB8028: The intermediate directory (Release\) contains files shared from another project (ConsoleApplication1.vcxproj).  This can lead to incorrect clean and rebuild behavior.
+  adpcm-lib.c
+c:\cygdrive\c\toolchaingenericds\misc\imaadpcm\compressor\consoleapplication1\adpcm-lib.c(341): warning C4018: '<': signed/unsigned mismatch
+  adpcm-xq.c
+c:\cygdrive\c\toolchaingenericds\misc\imaadpcm\compressor\consoleapplication1\adpcm-xq.c(584): warning C4018: '>': signed/unsigned mismatch
+c:\cygdrive\c\toolchaingenericds\misc\imaadpcm\compressor\consoleapplication1\adpcm-xq.c(649): warning C4018: '>': signed/unsigned mismatch
+  Generating code
+  Finished generating code
+  All 21 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  ConsoleApplication1.vcxproj -> C:\cygdrive\c\toolchaingenericds\misc\imaadpcm\Compressor\ConsoleApplication1\Release\ADPCMLIB.exe

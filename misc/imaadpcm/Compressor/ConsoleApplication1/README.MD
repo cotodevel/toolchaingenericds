@@ -57,3 +57,12 @@ Bugs:
 
 4. Pipes are not yet supported.
 
+
+Executables:
+
+These are required in order to run the decompressor if you haven't Visual Studio 2017+ installed, but you have a Windows (7+) operating system.
+(x86)
+https://aka.ms/vs/16/release/vc_redist.x86.exe
+
+(x64)
+https://aka.ms/vs/16/release/vc_redist.x64.exe
