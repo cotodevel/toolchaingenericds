@@ -1,0 +1,6 @@
+Basic WAV 16PCM -> ADPCM 4-bit encoding (Can be up to 44khz, supported by NDS ADPCM audio code)
+Usage:
+adpcm_xq.exe -e source_file.wav output_file.ima
+
+
+Call adpcm_xq.exe without arguments for help
