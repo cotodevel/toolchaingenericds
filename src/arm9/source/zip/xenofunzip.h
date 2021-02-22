@@ -101,6 +101,9 @@ extern int funzipstdio(char * inFname, char * outFname);
 extern u8* xenoTGDSARM9Malloc(int size);
 extern void xenoTGDSARM9Free(void *ptr);
 
+extern int miniunz_main(int argc, char *argv[]);
+extern int untgzmain(int argc,char **argv);
+
 #ifdef __cplusplus
 }
 #endif
