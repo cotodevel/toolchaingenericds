@@ -16,6 +16,9 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
+    <Text Include="algorithm.txt">
+      <Filter>Source Files</Filter>
+    </Text>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -23,6 +26,48 @@
     </ClInclude>
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inflate.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inftrees.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="trees.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zconf.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zconf.in.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zutil.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crc32.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="deflate.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inffast.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inffixed.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tarball.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="throw.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crc32Tool.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -32,5 +77,82 @@
     <ClCompile Include="TGDSPKGBuilder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="inflate.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="inftrees.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="minigzip.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="trees.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="uncompr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="zutil.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="adler32.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="compress.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crc32.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="deflate.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="example.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gzio.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="infback.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="inffast.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tarball.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crc32Tool.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="make_vms.com">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="Makefile">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="Makefile.in">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="README">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="zlib.3">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="ChangeLog">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="configure">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="FAQ">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="INDEX">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>
