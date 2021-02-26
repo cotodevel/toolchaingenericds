@@ -278,7 +278,7 @@ int main( int argc, char *argv[] )
 
 	/* Write the descriptor */
 	char TGDSDescriptorBuffer[256+1];
-	sprintf(TGDSDescriptorBuffer, "mainApp = %s\n\nmainAppCRC32 = %x\n\nTGDSSdkCrc32 = %x\n\nbaseTargetPath = %s/\n\n", TGDSMainApp, crc32mainApp, (crc32TGDSSDKlibcnano7 + crc32TGDSSDKlibcnano9 + crc32TGDSSDKlibtoolchaingen7 + crc32TGDSSDKlibtoolchaingen9), baseTargetDecompressorDirectory);
+	sprintf(TGDSDescriptorBuffer, "[Global]\n\nmainApp = %s\n\nmainAppCRC32 = %x\n\nTGDSSdkCrc32 = %x\n\nbaseTargetPath = %s/\n\n", TGDSMainApp, crc32mainApp, (crc32TGDSSDKlibcnano7 + crc32TGDSSDKlibcnano9 + crc32TGDSSDKlibtoolchaingen7 + crc32TGDSSDKlibtoolchaingen9), baseTargetDecompressorDirectory);
 	tarball.put( (string("descriptor.txt")).c_str(), TGDSDescriptorBuffer);
 
 	/* finalize the tar file */

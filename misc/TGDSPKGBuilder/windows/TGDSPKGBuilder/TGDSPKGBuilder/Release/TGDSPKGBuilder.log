@@ -1,4 +1,4 @@
-﻿Build started 2/25/2021 3:29:57 PM.
+﻿Build started 2/25/2021 7:19:40 PM.
      1>Project "C:\cygdrive\c\toolchaingenericds\misc\TGDSPKGBuilder\windows\TGDSPKGBuilder\TGDSPKGBuilder\TGDSPKGBuilder.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /sdl /O2 /Oi /Oy- /GL /D WIN32 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Yc"stdafx.h" /Fp"Release\TGDSPKGBuilder.pch" /Fo"Release\\" /Fd"Release\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt stdafx.cpp
@@ -92,4 +92,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:04.28
+Time Elapsed 00:00:05.90
