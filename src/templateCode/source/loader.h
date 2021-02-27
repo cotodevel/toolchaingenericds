@@ -21,9 +21,6 @@ USA
 #ifndef __loader_common_h__
 #define __loader_common_h__
 
-//enable GDB debug
-//#define NDSGDB_DEBUG_ENABLE
-
 #include "dsregs.h"
 #include "dsregs_asm.h"
 #include "ipcfifoTGDS.h"
@@ -34,7 +31,6 @@ USA
 #define NDSLOADER_LOAD_OK (u32)(0xFF222219)	//File read OK -> (NDSLoader context generated properly) ARM7 must reload ARM7.bin into arm7 target address
 #define NDSLOADER_START (u32)(0xFF22221A)	//Reload ARM7.bin -> ARM7 target addresses && ARM9.bin -> ARM9 target addresses and boot NDS homebrew
 
-#define NDSLOADER_ENTERGDB_FROM_ARM7 (u32)(0xFF222220)	//file loaded OK
 #define NDSLOADER_INITDLDIARM7_BUSY (u32)(0xFF222221)	//DLDI SETUP ARM9 -> ARM7 Taking place...
 #define NDSLOADER_INITDLDIARM7_DONE (u32)(0xFF222224)	//DLDI SETUP ARM9 -> ARM7 Done!
 
