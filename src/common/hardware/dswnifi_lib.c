@@ -157,6 +157,10 @@ bool switch_dswnifi_mode(sint32 mode){
 	//save last DSWnifiMode
 	if(mode != LastDSWnifiMode){
 		LastDSWnifiMode = mode;
+		
+		if(LastDSWnifiMode == dswifi_gdbstubmode){
+			onGDBStubDisconnected();
+		}
 	}
 	//Raw Network Packet Nifi
 	if (mode == (sint32)dswifi_localnifimode){
@@ -193,6 +197,7 @@ bool switch_dswnifi_mode(sint32 mode){
 	else if (mode == (sint32)dswifi_gdbstubmode){
 		dswifiSrv.dsnwifisrv_stat	= ds_multi_notrunning;
 		if (gdbNdsStart() == true){	//setWIFISetup set inside
+			onGDBStubConnect();
 			setGDBStubEnabled(true);
 			setMULTIMode(mode);
 			OnDSWIFIGDBStubEnable();
@@ -741,14 +746,6 @@ bool gdbNdsStart(){
 	}
 	
 	return false; //ARM7 IO Mapping error or WIFI connection error
-}
-
-bool getGDBStubEnabled(){
-	return GDBEnabled;
-}
-
-void setGDBStubEnabled(bool state){
-	GDBEnabled = state;
 }
 
 int remoteTcpSend(char *data, int len)
@@ -1742,6 +1739,14 @@ int ReceiveDSBinary(u8 * inBuffer, int * inBinSize){
 		break;
 	}
 	return receiveCount;
+}
+
+bool getGDBStubEnabled(){
+	return GDBEnabled;
+}
+
+void setGDBStubEnabled(bool state){
+	GDBEnabled = state;
 }
 
 #endif //ARM9 end

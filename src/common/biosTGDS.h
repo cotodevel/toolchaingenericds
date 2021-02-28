@@ -158,23 +158,6 @@ static inline void handleARM9SVC(){
 			//printf("Press A to retry this GDB Session. ");
 			//printf("Press B to reboot NDS GDB Server ");
 			
-			int keys = 0;
-			while(1){
-				scanKeys();
-				keys = keysDown();
-				if (keys&KEY_A){
-					break;
-				}
-				if (keys&KEY_B){
-					break;
-				}
-				IRQVBlankWait();
-			}
-			
-			if (keys&KEY_B){
-				//main(argc, argv);
-			}
-			
 			if (switch_dswnifi_mode(dswifi_gdbstubmode) == true){ // gdbNdsStart() called
 				reconnectCount++;
 				clrscr();

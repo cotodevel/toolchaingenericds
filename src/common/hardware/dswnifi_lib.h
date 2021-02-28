@@ -352,6 +352,12 @@ extern bool disconnectAsync(int sock);
 extern int openServerSyncConn(int SyncPort, struct sockaddr_in * sain);
 #endif
 
+extern bool GDBEnabled;
+extern void setGDBStubEnabled(bool state);
+extern bool getGDBStubEnabled();
+
+extern void onGDBStubConnect();
+extern void onGDBStubDisconnected();
 
 #ifdef __cplusplus
 }
@@ -417,10 +423,6 @@ extern struct gdbStubMapBuffer * getGDBMapBuffer();
 extern bool initGDBMapBuffer(u32 * bufferStart, int GDBMapBufferSize, uint32 newRelocatableAddr);
 extern void closeGDBMapBuffer();
 extern uint32 readu32GDBMapBuffer(uint32 address);
-
-extern bool GDBEnabled;
-extern void setGDBStubEnabled(bool state);
-extern bool getGDBStubEnabled();
 
 #endif //ARM9 end
 
