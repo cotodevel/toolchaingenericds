@@ -157,10 +157,6 @@ bool switch_dswnifi_mode(sint32 mode){
 	//save last DSWnifiMode
 	if(mode != LastDSWnifiMode){
 		LastDSWnifiMode = mode;
-		
-		if(LastDSWnifiMode == dswifi_gdbstubmode){
-			onGDBStubDisconnected();
-		}
 	}
 	//Raw Network Packet Nifi
 	if (mode == (sint32)dswifi_localnifimode){
@@ -197,7 +193,6 @@ bool switch_dswnifi_mode(sint32 mode){
 	else if (mode == (sint32)dswifi_gdbstubmode){
 		dswifiSrv.dsnwifisrv_stat	= ds_multi_notrunning;
 		if (gdbNdsStart() == true){	//setWIFISetup set inside
-			onGDBStubConnect();
 			setGDBStubEnabled(true);
 			setMULTIMode(mode);
 			OnDSWIFIGDBStubEnable();

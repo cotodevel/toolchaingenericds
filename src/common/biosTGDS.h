@@ -134,15 +134,6 @@ static inline void handleARM9SVC(){
 		int retGDBVal = remoteStubMain();
 		if(retGDBVal == remoteStubMainWIFINotConnected){
 			if (switch_dswnifi_mode(dswifi_gdbstubmode) == true){
-				//clrscr();
-				//Show IP and port here
-				//printf("    ");
-				//printf("    ");
-				/*
-				printf("[Connect to GDB]: NDSMemory Mode!");
-				char IP[16];
-				printf("Port:%d GDB IP:%s",remotePort, print_ip((uint32)Wifi_GetIP(), IP));
-				*/
 				remoteInit();
 			}
 			else{
@@ -151,23 +142,9 @@ static inline void handleARM9SVC(){
 		}
 		else if(retGDBVal == remoteStubMainWIFIConnectedGDBDisconnected){
 			setWIFISetup(false);
-			//clrscr();
-			//printf("    ");
-			//printf("    ");
-			//printf("Remote GDB Client disconnected. ");
-			//printf("Press A to retry this GDB Session. ");
-			//printf("Press B to reboot NDS GDB Server ");
-			
+			onGDBStubDisconnected();
 			if (switch_dswnifi_mode(dswifi_gdbstubmode) == true){ // gdbNdsStart() called
 				reconnectCount++;
-				clrscr();
-				//Show IP and port here
-				//printf("    ");
-				//printf("    ");
-				//printf("[Re-Connect to GDB]: NDSMemory Mode!");
-				//char IP[16];
-				//printf("Retries: %d",reconnectCount);
-				//printf("Port:%d GDB IP:%s", remotePort, print_ip((uint32)Wifi_GetIP(), IP));
 				remoteInit();
 			}
 		}
