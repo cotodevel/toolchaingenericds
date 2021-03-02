@@ -689,8 +689,7 @@ void FAT_DisableWriting (void){
 FAT_FileExists
 Returns the type of file 
 char* filename: IN filename of the file to look for
-FILE_TYPE return: OUT returns FT_NONE if there is now file with 
-	that name, FT_FILE if it is a file and FT_DIR if it is a directory
+FILE_TYPE return: OUT returns FT_NONE if file doesn't exists, FT_FILE if file exists, or FT_DIR if it's a directory and exists
 -----------------------------------------------------------------*/
 int FAT_FileExists(char* filename){
 	return FileExists(filename);	//assign a StructFD inside

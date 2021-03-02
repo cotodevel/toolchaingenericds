@@ -1049,48 +1049,6 @@ int initSoundStream(char * audioStreamFilename) __attribute__ ((optnone)){
 }
 
 int initSoundStreamFromStructFD(struct fd * _FileHandleAudio, char * ext)  __attribute__ ((optnone)) {	//ARM9 Impl.
-	// try this first to prevent false positives with other streams
-	/*
-	if(isURL(fName))
-	{	
-		//it's a url
-		if(!urlFromString(fName, &curSite))
-		{
-			return false;
-		}
-		
-		strcpy(tmpName, curSite.remotePath);
-		separateExtension(tmpName, ext);
-		strlwr(ext);
-		
-		if(strcmp(ext, ".ogg") == 0)
-			soundData.sourceFmt = SRC_STREAM_OGG;
-		else if(strcmp(ext, ".aac") == 0)
-			soundData.sourceFmt = SRC_STREAM_AAC;		
-		else
-			soundData.sourceFmt = SRC_STREAM_MP3;
-		
-		soundData.bufLoc = 0;
-		
-		if(isWIFIConnected())
-		{
-			disconnectWifi();
-		}
-		
-		streamMode = STREAM_DISCONNECTED;
-		streamOpened = false;
-		mp3Buf = NULL;
-		
-		freeStreamBuffer();
-		
-		tmpMeta = (char *)trackMalloc(4081, "metadata");
-		memset(&curIcy, 0, sizeof(ICY_HEADER));	
-		memset(tmpMeta, 0, 4081);
-		
-		return true;
-	}
-	*/
-	
 	initComplexSound(); // initialize sound variables
 	soundData.filePointerStructFD = _FileHandleAudio;	//Global StructDS handle -> WAV stream
 	if(strcmp(ext,".wav") == 0){
