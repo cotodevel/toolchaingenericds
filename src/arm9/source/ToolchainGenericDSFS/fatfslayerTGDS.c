@@ -503,6 +503,18 @@ u8 FAT_SetFileAttributes (const char* filename, u8 attributes, u8 mask){
 
 //Internal
 
+bool FAT_feof(FILE * fh){
+	struct fd * fdinst = getStructFDByFileHandle(fh);
+	if(fdinst != NULL){
+		FIL * filp = fdinst->filPtr;
+		if(f_size(filp) > fdinst->loc){
+			return false;
+		}
+	}
+	return true;
+}
+
+
 //FAT_GetAlias
 //Get the alias (short name) of the last file or directory entry read
 //char* alias OUT: will be filled with the alias (short filename),
