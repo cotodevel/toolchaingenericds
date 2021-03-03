@@ -503,13 +503,20 @@ u8 FAT_SetFileAttributes (const char* filename, u8 attributes, u8 mask){
 
 //Internal
 
+u32 flength(FILE* fh){
+	if(fh != NULL){
+		u32 cPos = ftell(fh);
+		fseek(fh, 0, SEEK_END);
+		u32 aPos = ftell(fh);
+		fseek(fh, cPos, SEEK_SET);
+		return aPos;		
+	}
+	return -1;
+}
+
 bool FAT_feof(FILE * fh){
-	struct fd * fdinst = getStructFDByFileHandle(fh);
-	if(fdinst != NULL){
-		FIL * filp = fdinst->filPtr;
-		if(f_size(filp) > fdinst->loc){
-			return false;
-		}
+	if(ftell(fh) < (flength(fh)-1)){
+		return false;	
 	}
 	return true;
 }
