@@ -142,6 +142,8 @@ void HandleFifoNotEmpty()  __attribute__ ((optnone)) {
 			case (TGDS_ARM7_RELOADFLASH):{
 				//Init Shared Address Region and get NDS Heade
 				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				
 				memcpy((u8*)&TGDSIPC->DSHeader,(u8*)0x027FFE00, sizeof(TGDSIPC->DSHeader));
 				
 				//Read DHCP settings (in order)
@@ -156,6 +158,7 @@ void HandleFifoNotEmpty()  __attribute__ ((optnone)) {
 				initSoundSampleContext();
 				initSound();
 				disableFastMode();
+				setValueSafe(&fifomsg[58], (u32)0);
 			}
 			break;
 			
@@ -939,3 +942,18 @@ void ReadFirmwareARM7Ext(u32 * srcMemory){	//512 bytes src always
 		swiDelay(2);
 	}
 }
+
+#ifdef ARM9
+//Reloads ARM7 Flash memory and returns DS hardware model
+u8 ARM7ReloadFlashSync(){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	setValueSafe(&fifomsg[58], (u32)0xFFFFFFFF);
+	SendFIFOWords(TGDS_ARM7_RELOADFLASH);
+	while(getValueSafe(&fifomsg[58]) != 0){
+		swiDelay(2);
+	}
+	coherent_user_range_by_size((uint32)&TGDSIPC->DSFWHEADERInst.stub[0], 32);
+	return TGDSIPC->DSFWHEADERInst.stub[0x1d];
+}
+#endif

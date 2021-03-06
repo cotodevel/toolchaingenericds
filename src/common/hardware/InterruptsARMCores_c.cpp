@@ -182,15 +182,16 @@ void NDS_IRQHandler()  __attribute__ ((optnone)) {
 		Timer0handlerUser();
 	}
 	if(handledIRQ & IRQ_TIMER1){
-		#ifdef ARM7
-		TIMER1Handler();	//Audio playback handler
-		#endif
 		Timer1handlerUser();
 	}
 	if(handledIRQ & IRQ_TIMER2){
 		Timer2handlerUser();
 	}
 	if(handledIRQ & IRQ_TIMER3){
+		#ifdef ARM7
+		TIMER1Handler();	//Audio playback handler
+		#endif
+		
 		#ifdef ARM9
 		//wifi arm9 irq
 		Timer_50ms();
