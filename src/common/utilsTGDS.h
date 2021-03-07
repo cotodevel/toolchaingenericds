@@ -137,6 +137,9 @@ extern char thisArgv[argvItems][MAX_TGDSFILENAME_LENGTH];
 extern void mainARGV();
 extern void separateExtension(char *str, char *ext);
 
+//ToolchainGenericDS-multiboot NDS Binary loader: Requires tgds_multiboot_payload.bin (TGDS-multiboot Project) in SD root.
+extern void TGDSMultibootRunNDSPayload(char * filename);
+
 //ToolchainGenericDS-LinkedModule 
 extern int getArgcFromTGDSLinkedModule(struct TGDS_Linked_Module * TGDSLMCtx);
 extern char ** getArgvFromTGDSLinkedModule(struct TGDS_Linked_Module * TGDSLMCtx);
