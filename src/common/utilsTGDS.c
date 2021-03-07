@@ -31,6 +31,7 @@ USA
 #include "spifwTGDS.h"
 #include "biosTGDS.h"
 #include "limitsTGDS.h"
+#include "dldi.h"
 
 #ifdef ARM9
 #include "fatfslayerTGDS.h"
@@ -635,6 +636,26 @@ void RenderTGDSLogoMainEngine(u8 * compressedLZSSBMP, int compressedLZSSBMPSize)
 	TGDSARM9Free(LZSSCtx.bufferSource);
 }
 
+static int globalArgc=0; 
+static char **globalArgv=NULL;
+
+void setGlobalArgc(int argcVal){
+	globalArgc = argcVal;
+}
+int getGlobalArgc(){
+	return globalArgc;
+}
+
+void setGlobalArgv(char** argvVal){
+	globalArgv = argvVal;
+}
+
+char** getGlobalArgv(){
+	return globalArgv;
+}
+
+
+
 char thisArgv[argvItems][MAX_TGDSFILENAME_LENGTH];
 int thisArgc=0;
 
@@ -712,6 +733,8 @@ void mainARGV(){
 		thisArgc = 0;
 	}
 	
+	setGlobalArgc(thisArgc);
+	setGlobalArgv((char**)cmdLineVectorPosixCompatible);
 	main(thisArgc,  (char**)cmdLineVectorPosixCompatible);
 }
 
@@ -750,6 +773,56 @@ void separateExtension(char *str, char *ext)
 	}
 	else
 		ext[0] = 0;	
+}
+
+//ToolchainGenericDS-LinkedModule 
+int getArgcFromTGDSLinkedModule(struct TGDS_Linked_Module * TGDSLMCtx){
+	return TGDSLMCtx->argCount;
+}
+
+char ** getArgvFromTGDSLinkedModule(struct TGDS_Linked_Module * TGDSLMCtx){
+	return &TGDSLMCtx->argvs[0];
+}
+
+//Usage: char * TGDSLinkedModuleFilename = "0:/ToolchainGenericDS-linkedmodule.bin"
+void TGDSProjectRunLinkedModule(char * TGDSLinkedModuleFilename, int argc, char **argv, char* TGDSProjectName) __attribute__ ((optnone)) {
+	switch_dswnifi_mode(dswifi_idlemode);
+	FILE * tgdsPayloadFh = fopen(TGDSLinkedModuleFilename, "r");
+	if(tgdsPayloadFh != NULL){
+		fseek(tgdsPayloadFh, 0, SEEK_SET);
+		int	tgds_multiboot_payload_size = FS_getFileSizeFromOpenHandle(tgdsPayloadFh);
+		fread((u32*)0x02200000, 1, tgds_multiboot_payload_size, tgdsPayloadFh);
+		coherent_user_range_by_size(0x02200000, (int)tgds_multiboot_payload_size);
+		fclose(tgdsPayloadFh);
+		int ret=FS_deinit();
+		//Copy and relocate current TGDS DLDI section into target ARM9 binary
+		bool stat = dldiPatchLoader((data_t *)0x02200000, (u32)tgds_multiboot_payload_size, (u32)&_io_dldi_stub);
+		if(stat == false){
+			//printf("DLDI Patch failed. APP does not support DLDI format.");
+		}
+		REG_IME = 0;
+		//Generate TGDS-LM context
+		struct TGDS_Linked_Module * TGDSLinkedModuleCtx = (struct TGDS_Linked_Module *)((int)0x02000000 - 0x1000);
+		memset((u8*)TGDSLinkedModuleCtx, 0, 4096);
+		
+		TGDSLinkedModuleCtx->TGDS_LM_Size = tgds_multiboot_payload_size;
+		TGDSLinkedModuleCtx->TGDS_LM_Entrypoint = 0x02200000;
+		TGDSLinkedModuleCtx->returnAddress = (u32)&TGDSProjectReturnFromLinkedModule;	//Parent TGDS Project defines re-init implementation
+		//TGDS-LM ARGV
+		memset((u8*)TGDSLinkedModuleCtx->args, 0, sizeof(TGDSLinkedModuleCtx->args));
+		memset((u8*)TGDSLinkedModuleCtx->argvs, 0, sizeof(TGDSLinkedModuleCtx->argvs));
+		int i = 0;
+		for(i = 0; i < argc; i++){
+			strcpy((char*)&TGDSLinkedModuleCtx->args[i][0], (char*)argv[i]);
+			TGDSLinkedModuleCtx->argvs[i] = (char*)&TGDSLinkedModuleCtx->args[i][0];
+		}
+		TGDSLinkedModuleCtx->argCount = argc;
+		strcpy((char*)&TGDSLinkedModuleCtx->TGDSMainAppName, TGDSProjectName);
+		
+		typedef void (*t_bootAddr)();
+		t_bootAddr bootARM9Payload = (t_bootAddr)0x02200000;
+		bootARM9Payload();
+	}
 }
 
 #endif

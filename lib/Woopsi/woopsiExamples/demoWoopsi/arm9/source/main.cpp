@@ -80,6 +80,20 @@ static inline void menuShow(){
 	printarm7DebugBuffer();
 }
 
+//ToolchainGenericDS-LinkedModule User implementation: WoopsiTGDS
+int TGDSProjectReturnFromLinkedModule(){
+	//Return from TGDS-LinkedModule? Restore services
+	u8 DSHardware = ARM7ReloadFlashSync();
+	IRQInit(DSHardware);
+	int ret=FS_init();
+	// Create Woopsi UI
+	WoopsiTemplate WoopsiTemplateApp;
+	WoopsiTemplateProc = &WoopsiTemplateApp;
+	int readaArgc = getGlobalArgc();
+	char** readaArgv = getGlobalArgv();
+	return WoopsiTemplateApp.main(readaArgc, readaArgv);
+}
+
 int main(int argc, char **argv) {
 	
 	/*			TGDS 1.6 Standard ARM9 Init code start	*/

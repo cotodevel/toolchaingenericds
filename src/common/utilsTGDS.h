@@ -56,6 +56,19 @@ typedef	struct {
 //splitCustom logic
 typedef void(*splitCustom_fn)(const char *, size_t, char * ,int indexToLeftOut, char * delim);
 
+//ToolchainGenericDS-LinkedModule format: ver 0.2
+struct TGDS_Linked_Module {
+	u32 DSARMRegs[16];
+	int	TGDS_LM_Size;	//filled by the linker
+	unsigned int	TGDS_LM_Entrypoint; //filled by the linker
+	u32 returnAddress; //when LM exits (return from main), jumps here. TGDS LM Caller address
+	//argv 
+	char args[8][MAX_TGDSFILENAME_LENGTH];
+	char *argvs[8];
+	int argCount;
+	char TGDSMainAppName[MAX_TGDSFILENAME_LENGTH];
+};
+
 #endif
 
 #ifdef __cplusplus
@@ -123,6 +136,16 @@ extern int thisArgc;
 extern char thisArgv[argvItems][MAX_TGDSFILENAME_LENGTH];
 extern void mainARGV();
 extern void separateExtension(char *str, char *ext);
+
+//ToolchainGenericDS-LinkedModule 
+extern int getArgcFromTGDSLinkedModule(struct TGDS_Linked_Module * TGDSLMCtx);
+extern char ** getArgvFromTGDSLinkedModule(struct TGDS_Linked_Module * TGDSLMCtx);
+extern void setGlobalArgc(int argcVal);
+extern int getGlobalArgc();
+extern void setGlobalArgv(char** argvVal);
+extern char** getGlobalArgv();
+extern int TGDSProjectReturnFromLinkedModule();
+extern void TGDSProjectRunLinkedModule(char * TGDSLinkedModuleFilename, int argc, char **argv, char* TGDSProjectName);
 
 #endif
 
