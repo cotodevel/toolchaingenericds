@@ -35,6 +35,7 @@ SOFTWARE.
 #include "dswnifi_lib.h"
 #include "nds_cp15_misc.h"
 #include "biosTGDS.h"
+#include "posixHandleTGDS.h"
 
 #include <stdarg.h>
 #include <stdlib.h>
@@ -112,9 +113,9 @@ wHeapRecord * wHeapStart = NULL; // start of heap
 wHeapRecord * wHeapFirst = NULL; // first free block
 void wHeapAllocInit(int size) {
     if(wHeapStart){
-		free(wHeapStart);
+		TGDSARM9Free(wHeapStart);
 	}
-	wHeapStart=(wHeapRecord *)malloc(size);
+	wHeapStart=(wHeapRecord *)TGDSARM9Malloc(size);
     if (!wHeapStart) return;
     wHeapFirst=wHeapStart;
     wHeapStart->flags=WHEAP_RECORD_FLAG_UNUSED;
@@ -1092,8 +1093,8 @@ void wifiValue32Handler(u32 value, void* data) {
 bool Wifi_InitDefault(bool useFirmwareSettings) {
 	
 	//These are already freed.
-	wifi_connect_point = (Wifi_AccessPoint*)malloc(sizeof(Wifi_AccessPoint));
-	WifiData = (Wifi_MainStruct *)malloc(sizeof(Wifi_MainStruct));
+	wifi_connect_point = (Wifi_AccessPoint*)TGDSARM9Malloc(sizeof(Wifi_AccessPoint));
+	WifiData = (Wifi_MainStruct *)TGDSARM9Malloc(sizeof(Wifi_MainStruct));
 	
 	uint32 wifi_pass = Wifi_Init(WIFIINIT_OPTION_USELED|WIFIINIT_OPTION_USEHEAP_96);	//use 96K DSWIFI stack
 	

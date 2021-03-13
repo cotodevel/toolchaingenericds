@@ -218,12 +218,12 @@ char * str_replace (char *string, const char *substr, const char *replacement)
 	while ( ( tok = strstr( newstr, substr ) ) )
 	{
 		oldstr = newstr;
-		newstr = (char*)malloc ( strlen ( oldstr ) - strlen ( substr ) + strlen ( replacement ) + 1 );
+		newstr = (char*)TGDSARM9Malloc ( strlen ( oldstr ) - strlen ( substr ) + strlen ( replacement ) + 1 );
 
 		/* If failed to alloc mem, free old string and return NULL */
 		if ( newstr == NULL )
 		{
-			free (oldstr);
+			TGDSARM9Free (oldstr);
 			return NULL;
 		}
 
@@ -232,10 +232,10 @@ char * str_replace (char *string, const char *substr, const char *replacement)
 		memcpy ( newstr + (tok - oldstr) + strlen( replacement ), tok + strlen ( substr ), strlen ( oldstr ) - strlen ( substr ) - ( tok - oldstr ) );
 		memset ( newstr + strlen ( oldstr ) - strlen ( substr ) + strlen ( replacement ) , 0, 1 );
 
-		free (oldstr);
+		TGDSARM9Free (oldstr);
 	}
 
-	free (string);
+	TGDSARM9Free (string);
 
 	return newstr;
 }
@@ -246,21 +246,21 @@ int split (const sint8 *txt, sint8 delim, sint8 ***tokens)
     sint8 **arr, *p = (sint8 *) txt;
 
     while (*p != '\0') if (*p++ == delim) count += 1;
-    t = tklen = (int*)calloc (count, sizeof (int));
+    t = tklen = (int*)TGDSARM9Calloc (count, sizeof (int));
     for (p = (sint8 *) txt; *p != '\0'; p++) *p == delim ? *t++ : (*t)++;
-    *tokens = arr = (sint8**)malloc (count * sizeof (sint8 *));
+    *tokens = arr = (sint8**)TGDSARM9Malloc (count * sizeof (sint8 *));
     t = tklen;
-    p = *arr++ = (sint8*)calloc (*(t++) + 1, sizeof (sint8 *));
+    p = *arr++ = (sint8*)TGDSARM9Calloc (*(t++) + 1, sizeof (sint8 *));
     while (*txt != '\0')
     {
         if (*txt == delim)
         {
-            p = *arr++ = (sint8*)calloc (*(t++) + 1, sizeof (sint8 *));
+            p = *arr++ = (sint8*)TGDSARM9Calloc (*(t++) + 1, sizeof (sint8 *));
             txt++;
         }
         else *p++ = *txt++;
     }
-    free (tklen);
+    TGDSARM9Free (tklen);
     return count;
 }
 

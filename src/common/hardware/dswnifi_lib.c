@@ -39,6 +39,7 @@ USA
 #include "timerTGDS.h"
 #include "sgIP_sockets.h"
 #include "nds_cp15_misc.h"
+#include "posixHandleTGDS.h"
 
 extern int read(int fd, void *buf, int count);
 extern int write(int fd, const void *buf, int count);
@@ -321,7 +322,7 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 						
 						//Server aware
 						if(strncmp((const char *)cmd, (const char *)"srvaware", 8) == 0){
-							char * outBuf = (char *)malloc(256*10);
+							char * outBuf = (char *)TGDSARM9Malloc(256*10);
 							char * token_hostguest = (char*)((char*)outBuf + (2*256));	//host or guest
 							char * token_extip = (char*)((char*)outBuf + (1*256));	//external NDS ip to connect
 							//char * cmdRecv = (char*)((char*)outBuf + (0*256));	//cmd
@@ -383,7 +384,7 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 								}
 								sentReq = false;	//prepare next issuer msg
 							}
-							free(outBuf);
+							TGDSARM9Free(outBuf);
 						}
 					}
 					break;

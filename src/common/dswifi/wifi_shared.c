@@ -14,8 +14,8 @@
 #include <stdbool.h>
 #include "dsregs.h"
 #include "dsregs_asm.h"
-#include "InterruptsARMCores_h.h"
 #include "wifi_arm9.h"
+#include "posixHandleTGDS.h"
 #endif
 
 
@@ -39,11 +39,11 @@ void DeInitWIFI(){
 	SendFIFOWords(WIFI_DEINIT);
 	
 	if(wifi_connect_point != NULL){
-		free((u8*)wifi_connect_point);
+		TGDSARM9Free((u8*)wifi_connect_point);
 	}
 	
 	if(WifiData != NULL){
-		free((u8*)WifiData);
+		TGDSARM9Free((u8*)WifiData);
 	}
 	#endif
 	swiDelay(8888);

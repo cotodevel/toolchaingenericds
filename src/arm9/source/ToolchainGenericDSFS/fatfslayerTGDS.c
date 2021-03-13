@@ -1887,7 +1887,7 @@ int fatfs_deinit(){
 	
 	//remove TGDS FS file handle context
 	if(files != NULL){
-		free(files);
+		TGDSARM9Free(files);
 	}
 	
 	//ARM9 DLDI impl.
