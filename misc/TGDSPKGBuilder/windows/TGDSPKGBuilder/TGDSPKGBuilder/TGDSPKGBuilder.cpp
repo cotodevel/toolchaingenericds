@@ -121,6 +121,7 @@ extern int file_compress(char  *file, char  *mode);
 
 int main( int argc, char *argv[] )
 {
+	
 	HANDLE hConsole;
 	int k;
 	
@@ -130,13 +131,16 @@ int main( int argc, char *argv[] )
 	//printf("DEBUGGER: argv 3: %s\n", argv[3]);	// c:/toolchain_generic/6.2_2016q4/arm-eabi/lib/
 	//printf("DEBUGGER: argv 5: %s\n", argv[4]);	// /release/arm9dldi-ntr
 	
-	
-
 	/* avoid end-of-line conversions */
     SET_BINARY_MODE(stdin);
     SET_BINARY_MODE(stdout);
 
 	hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+
+	if (argc < 3){
+		TGDSPackageBuilderHelp(hConsole);
+		return -1;
+	}
 #ifdef _WIN32
 	/*
 	// Console font color change
@@ -257,29 +261,63 @@ int main( int argc, char *argv[] )
 	int crc32TGDSSDKlibcnano9 = -1;
 	int crc32TGDSSDKlibtoolchaingen7 = -1;
 	int crc32TGDSSDKlibtoolchaingen9 = -1;
+	int err = 0;
+	FILE* TGDSLibraryFile = NULL;
+	TGDSLibraryFile = fopen((string(TGDSLibrarySourceDirectory) + string("\\") + string("libcnano7.a")).c_str(),"rb");
+	if(TGDSLibraryFile != NULL){
+		err = Crc32_ComputeFile(TGDSLibraryFile, (unsigned __int32*)&crc32TGDSSDKlibcnano7);
+		fclose(TGDSLibraryFile);
+	}
+	else{
+		printf("libcnano7.a missing. Make sure you build newlib-nds first!");
+		return -1;
+	}
+
 	
-	FILE* TGDSLibraryFile = fopen((string(TGDSLibrarySourceDirectory) + string("\\") + string("libcnano7.a")).c_str(),"rb");
-	int err = Crc32_ComputeFile(TGDSLibraryFile, (unsigned __int32*)&crc32TGDSSDKlibcnano7);
-	fclose(TGDSLibraryFile);
-
 	TGDSLibraryFile = fopen((string(TGDSLibrarySourceDirectory) + string("\\") + string("libcnano9.a")).c_str(),"rb");
-	err = Crc32_ComputeFile(TGDSLibraryFile, (unsigned __int32*)&crc32TGDSSDKlibcnano9);
-	fclose(TGDSLibraryFile);
+	if(TGDSLibraryFile != NULL){	
+		err = Crc32_ComputeFile(TGDSLibraryFile, (unsigned __int32*)&crc32TGDSSDKlibcnano9);
+		fclose(TGDSLibraryFile);
+	}
+	else{
+		printf("libcnano9.a missing. Make sure you build newlib-nds first!");
+		return -1;
+	}
 
+	
 	TGDSLibraryFile = fopen((string(TGDSLibrarySourceDirectory) + string("\\") + string("libtoolchaingen7.a")).c_str(),"rb");
-	err = Crc32_ComputeFile(TGDSLibraryFile, (unsigned __int32*)&crc32TGDSSDKlibtoolchaingen7);
-	fclose(TGDSLibraryFile);
+	if(TGDSLibraryFile != NULL){	
+		err = Crc32_ComputeFile(TGDSLibraryFile, (unsigned __int32*)&crc32TGDSSDKlibtoolchaingen7);
+		fclose(TGDSLibraryFile);
+	}
+	else{
+		printf("libtoolchaingen7.a missing. Make sure you build ToolchainGenericDS first!");
+		return -1;
+	}
 
+	
 	TGDSLibraryFile = fopen((string(TGDSLibrarySourceDirectory) + string("\\") + string("libtoolchaingen9.a")).c_str(),"rb");
-	err = Crc32_ComputeFile(TGDSLibraryFile, (unsigned __int32*)&crc32TGDSSDKlibtoolchaingen9);
-	fclose(TGDSLibraryFile);
-
+	if(TGDSLibraryFile != NULL){	
+		err = Crc32_ComputeFile(TGDSLibraryFile, (unsigned __int32*)&crc32TGDSSDKlibtoolchaingen9);
+		fclose(TGDSLibraryFile);
+	}
+	else{
+		printf("libtoolchaingen9.a missing. Make sure you build ToolchainGenericDS first!");
+		return -1;
+	}
 	//ok
 
 	/* Write the descriptor */
 	char TGDSDescriptorBuffer[256+1];
 	sprintf(TGDSDescriptorBuffer, "[Global]\n\nmainApp = %s\n\nmainAppCRC32 = %x\n\nTGDSSdkCrc32 = %x\n\nbaseTargetPath = %s/\n\n", TGDSMainApp, crc32mainApp, (crc32TGDSSDKlibcnano7 + crc32TGDSSDKlibcnano9 + crc32TGDSSDKlibtoolchaingen7 + crc32TGDSSDKlibtoolchaingen9), baseTargetDecompressorDirectory);
-	tarball.put( (string("descriptor.txt")).c_str(), TGDSDescriptorBuffer);
+	
+	try{
+		tarball.put( (string("descriptor.txt")).c_str(), TGDSDescriptorBuffer);
+	}
+	catch(exception ex){
+		printf("descriptor.txt creating fail");
+		return -1;
+	}
 
 	/* finalize the tar file */
 	tarball.finish();
