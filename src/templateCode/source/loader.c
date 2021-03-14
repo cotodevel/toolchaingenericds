@@ -36,3 +36,12 @@ void waitWhileNotSetStatus(u32 status){
 void setNDSLoaderInitStatus(int ndsloaderStatus){
 	NDS_LOADER_IPC_CTX_UNCACHED->ndsloaderInitStatus = ndsloaderStatus;
 }
+
+#ifdef ARM9
+void ARM7JumpTo(u32 ARM7Entrypoint){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	setValueSafe(&fifomsg[64], (uint32)ARM7Entrypoint);
+	SendFIFOWords(ARM7COMMAND_RELOADARM7);
+}
+#endif

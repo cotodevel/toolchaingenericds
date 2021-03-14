@@ -27,12 +27,15 @@ USA
 #include "utilsTGDS.h"
 #include "biosTGDS.h"
 
+//loader defs
 #define ARM7COMMAND_RELOADNDS (u32)(0xFFFFFF01)
 #define NDSLOADER_LOAD_OK (u32)(0xFF222219)	//File read OK -> (NDSLoader context generated properly) ARM7 must reload ARM7.bin into arm7 target address
 #define NDSLOADER_START (u32)(0xFF22221A)	//Reload ARM7.bin -> ARM7 target addresses && ARM9.bin -> ARM9 target addresses and boot NDS homebrew
-
 #define NDSLOADER_INITDLDIARM7_BUSY (u32)(0xFF222221)	//DLDI SETUP ARM9 -> ARM7 Taking place...
 #define NDSLOADER_INITDLDIARM7_DONE (u32)(0xFF222224)	//DLDI SETUP ARM9 -> ARM7 Done!
+
+//other misc loader defs (not related to tgds-multiboot)
+#define ARM7COMMAND_RELOADARM7 (u32)(0xFFFFFF02)
 
 struct ndsloader_s
 {
@@ -108,6 +111,10 @@ extern "C"{
 
 extern void setNDSLoaderInitStatus(int ndsloaderStatus);
 extern void waitWhileNotSetStatus(u32 status);	//[Blocking]: Local ARM Core waits until External action takes place, waits while resolving internal NDS hardware wait states.
+
+#ifdef ARM9
+extern void ARM7JumpTo(u32 ARM7Entrypoint);
+#endif
 
 #ifdef __cplusplus
 }
