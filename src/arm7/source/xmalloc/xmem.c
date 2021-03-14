@@ -78,7 +78,6 @@ void XmemInit(unsigned int mallocLinearMemoryStart, unsigned int mallocLinearMem
 	for (int i=1;(unsigned)i<XMEM_TABLESIZE;i++) {
 		xmem_table[i] = 0;
 	}
-	
 }
 
 void *Xmalloc(const int size) __attribute__ ((optnone)) {
