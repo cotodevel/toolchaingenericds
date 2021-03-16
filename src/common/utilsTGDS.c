@@ -816,6 +816,7 @@ void TGDSProjectRunLinkedModule(char * TGDSLinkedModuleFilename, int argc, char 
 	switch_dswnifi_mode(dswifi_idlemode);
 	FILE * tgdsPayloadFh = fopen(TGDSLinkedModuleFilename, "r");
 	if(tgdsPayloadFh != NULL){
+		switch_dswnifi_mode(dswifi_idlemode);
 		fseek(tgdsPayloadFh, 0, SEEK_SET);
 		int	tgds_multiboot_payload_size = FS_getFileSizeFromOpenHandle(tgdsPayloadFh);
 		dmaFillHalfWord(0, 0, (uint32)0x02200000, (uint32)(tgds_multiboot_payload_size));
@@ -829,9 +830,14 @@ void TGDSProjectRunLinkedModule(char * TGDSLinkedModuleFilename, int argc, char 
 		if(stat == false){
 			//printf("DLDI Patch failed. APP does not support DLDI format.");
 		}
+		
 		REG_IME = 0;
+		
+		//Shut down Wifi context so it can re-enabled by upcoming binary.
+		DeInitWIFI();
+		
 		//Generate TGDS-LM context
-		struct TGDS_Linked_Module * TGDSLinkedModuleCtx = (struct TGDS_Linked_Module *)((int)0x02000000 - 0x1000);
+		struct TGDS_Linked_Module * TGDSLinkedModuleCtx = (struct TGDS_Linked_Module *)((int)0x02200000 - 0x1000);
 		memset((u8*)TGDSLinkedModuleCtx, 0, 4096);
 		
 		TGDSLinkedModuleCtx->TGDS_LM_Size = tgds_multiboot_payload_size;
