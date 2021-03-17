@@ -161,8 +161,14 @@ int main( int argc, char *argv[] )
 
 	// "/baseTargetDecompressorDirectory"
 	char baseTargetDecompressorDirectory[256+1];
-	strcpy(baseTargetDecompressorDirectory, argv[2]); //strcpy(baseTargetDecompressorDirectory, "TGDSbaseTargetDecompressorDirectory/");
-
+	if((argv[2] != NULL) && (strlen(argv[2]) > 1)){
+		strcpy(baseTargetDecompressorDirectory, argv[2]); //strcpy(baseTargetDecompressorDirectory, "TGDSbaseTargetDecompressorDirectory/");
+		strcat(baseTargetDecompressorDirectory, "/");
+	}
+	else{
+		strcpy(baseTargetDecompressorDirectory, "");
+	}
+	
 	char TGDSProjectName[256+1];
 	strcpy(TGDSProjectName, argv[1]); //strcpy(TGDSProjectName, "ToolchainGenericDS-template");
 	char TGDSMainApp[256+1];
@@ -233,9 +239,9 @@ int main( int argc, char *argv[] )
 			strcat(fullPathIn, filename);
 			
 			printf("TAR: Add File: %d: %s \n", i, fullPathIn);
-			printf("into: [%s] \n", (string(baseTargetDecompressorDirectory) + string("/") + string(filename)).c_str());
+			printf("into: [%s] \n", (string(baseTargetDecompressorDirectory) + string(filename)).c_str());
 			
-			tarball.putFile(fullPathIn, (string(baseTargetDecompressorDirectory) + string("/") + string(filename)).c_str());
+			tarball.putFile(fullPathIn, (string(baseTargetDecompressorDirectory) + string(filename)).c_str());
 			
 			//Found mainApp?
 			if(string(TGDSMainApp) == string(filename)){
@@ -309,7 +315,7 @@ int main( int argc, char *argv[] )
 
 	/* Write the descriptor */
 	char TGDSDescriptorBuffer[256+1];
-	sprintf(TGDSDescriptorBuffer, "[Global]\n\nmainApp = %s\n\nmainAppCRC32 = %x\n\nTGDSSdkCrc32 = %x\n\nbaseTargetPath = %s/\n\n", TGDSMainApp, crc32mainApp, (crc32TGDSSDKlibcnano7 + crc32TGDSSDKlibcnano9 + crc32TGDSSDKlibtoolchaingen7 + crc32TGDSSDKlibtoolchaingen9), baseTargetDecompressorDirectory);
+	sprintf(TGDSDescriptorBuffer, "[Global]\n\nmainApp = %s\n\nmainAppCRC32 = %x\n\nTGDSSdkCrc32 = %x\n\nbaseTargetPath = %s\n\n", TGDSMainApp, crc32mainApp, (crc32TGDSSDKlibcnano7 + crc32TGDSSDKlibcnano9 + crc32TGDSSDKlibtoolchaingen7 + crc32TGDSSDKlibtoolchaingen9), baseTargetDecompressorDirectory);
 	
 	try{
 		tarball.put( (string("descriptor.txt")).c_str(), TGDSDescriptorBuffer);
