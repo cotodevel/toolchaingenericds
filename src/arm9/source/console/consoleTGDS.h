@@ -121,8 +121,17 @@ typedef enum {
 	MODE_4_2D = 0x10004, 
 	MODE_5_2D = 0x10005, 
 	MODE_6_2D = 0x10006
-	//todo 3D and framebuffer modes
 } VideoMode;
+
+
+//3D: Main display only
+#define MODE_0_3D    (MODE_0_2D | DISPLAY_BG0_ACTIVE | ENABLE_3D) 
+#define MODE_1_3D    (MODE_1_2D | DISPLAY_BG0_ACTIVE | ENABLE_3D)
+#define MODE_2_3D    (MODE_2_2D | DISPLAY_BG0_ACTIVE | ENABLE_3D)
+#define MODE_3_3D    (MODE_3_2D | DISPLAY_BG0_ACTIVE | ENABLE_3D)
+#define MODE_4_3D    (MODE_4_2D | DISPLAY_BG0_ACTIVE | ENABLE_3D)
+#define MODE_5_3D    (MODE_5_2D | DISPLAY_BG0_ACTIVE | ENABLE_3D)
+#define MODE_6_3D    (MODE_6_2D | DISPLAY_BG0_ACTIVE | ENABLE_3D)
 
 #define backgroundsPerEngine 4
 typedef struct EngineBGStatus
