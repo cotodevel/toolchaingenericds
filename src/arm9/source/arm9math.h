@@ -32,17 +32,18 @@
 #ifndef MATH_ARM9_INCLUDE
 #define MATH_ARM9_INCLUDE
 
-#include "videoGL.h"
 #include "trig_lut.h"
+
+typedef int f32;             // 1.19.12 fixed point for matricies
 
 typedef sint64                   int64;
 typedef sint32                   int32;
 typedef sint16                   int16;
 typedef sint8                   int8;
 
-typedef int32                   fixed;
-typedef int64                   dfixed;
-typedef volatile int32          vfixed;
+typedef sint32                   fixed;
+typedef sint64                   dfixed;
+typedef volatile sint32          vfixed;
 
 typedef volatile sint8                   vint8;
 typedef volatile sint16                   vint16;

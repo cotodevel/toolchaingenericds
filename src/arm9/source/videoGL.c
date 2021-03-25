@@ -1,37 +1,45 @@
-/*---------------------------------------------------------------------------------
-	$Id: videoGL.c,v 1.9 2005-07-29 05:19:55 dovoto Exp $
+//////////////////////////////////////////////////////////////////////
+//
+// videoGL.cpp -- Video API vaguely similar to OpenGL
+//
+// version 0.1, February 14, 2005
+//
+//  Copyright (C) 2005 Michael Noland (joat) and Jason Rogers (dovoto)
+//
+//  This software is provided 'as-is', without any express or implied
+//  warranty.  In no event will the authors be held liable for any
+//  damages arising from the use of this software.
+//
+//  Permission is granted to anyone to use this software for any
+//  purpose, including commercial applications, and to alter it and
+//  redistribute it freely, subject to the following restrictions:
+//
+//  1. The origin of this software must not be misrepresented; you
+//     must not claim that you wrote the original software. If you use
+//     this software in a product, an acknowledgment in the product
+//     documentation would be appreciated but is not required.
+//  2. Altered source versions must be plainly marked as such, and
+//     must not be misrepresented as being the original software.
+//  3. This notice may not be removed or altered from any source
+//     distribution.
+//
+// Changelog:
+//   0.1: First version
+//   0.2: Added gluFrustrum, gluPerspective, and gluLookAt
+//			Converted all floating point math to fixed point
+//
+//////////////////////////////////////////////////////////////////////
 
-	Video API vaguely similar to OpenGL
-
-  Copyright (C) 2005
-			Michael Noland (joat)
-			Jason Rogers (dovoto)
-
-  This software is provided 'as-is', without any express or implied
-  warranty.  In no event will the authors be held liable for any
-  damages arising from the use of this software.
-
-  Permission is granted to anyone to use this software for any
-  purpose, including commercial applications, and to alter it and
-  redistribute it freely, subject to the following restrictions:
-
-  1. The origin of this software must not be misrepresented; you
-     must not claim that you wrote the original software. If you use
-     this software in a product, an acknowledgment in the product
-     documentation would be appreciated but is not required.
-  2. Altered source versions must be plainly marked as such, and
-     must not be misrepresented as being the original software.
-  3. This notice may not be removed or altered from any source
-     distribution.
-	
-
----------------------------------------------------------------------------------*/
+#include <typedefsTGDS.h>
 #include "videoGL.h"
-#include "typedefsTGDS.h"
-#include "trig_lut.h"
+#include "videoTGDS.h"
 #include "arm9math.h"
-#include "dmaTGDS.h"
-#include "powerTGDS.h"
+#include "dsregs.h"
+
+//lut resolution for trig functions (must be power of two and must be the same as LUT resolution)
+//in other words dont change unless you also change your LUTs
+#define LUT_SIZE (512)
+#define LUT_MASK (0x1FF)
 
 #ifdef NO_GL_INLINE
 //////////////////////////////////////////////////////////////////////
@@ -46,6 +54,13 @@ void glBegin(int mode)
   void glEnd( void)
 {
   GFX_END = 0;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+  void glClearColor(uint8 red, uint8 green, uint8 blue)
+{
+  GFX_CLEAR_COLOR = RGB15(red, green, blue);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -108,21 +123,21 @@ void glBegin(int mode)
 
 //////////////////////////////////////////////////////////////////////
 
-  void glPopMatrix(int32 index)
+  void glPopMatrix(sint32 index)
 {
   MATRIX_POP = index;
 }
 
 //////////////////////////////////////////////////////////////////////
 
-  void glRestoreMatrix(int32 index)
+  void glRestoreMatrix(sint32 index)
 {
   MATRIX_RESTORE = index;
 }
 
 //////////////////////////////////////////////////////////////////////
 
-  void glStoreMatrix(int32 index)
+  void glStoreMatrix(sint32 index)
 {
   MATRIX_STORE = index;
 }
@@ -190,6 +205,13 @@ void glBegin(int mode)
 
 //////////////////////////////////////////////////////////////////////
 
+  void glIdentity(void)
+{
+  MATRIX_IDENTITY = 0;
+}
+
+//////////////////////////////////////////////////////////////////////
+
   void glMatrixMode(int mode)
 {
   MATRIX_CONTROL = mode;
@@ -209,8 +231,9 @@ void glBegin(int mode)
   GFX_FLUSH = 2;
 }
 
+//////////////////////////////////////////////////////////////////////
 
-void glMaterialShinyness(void)
+void glMaterialShinnyness(void)
 
 {
 	uint32 shiny32[128/4];
@@ -238,19 +261,11 @@ void glMaterialShinyness(void)
 
 static uint16 enable_bits = GL_TEXTURE_2D | (1<<13) | (1<<14);
 
-
-//////////////////////////////////////////////////////////////////////
-
-void glClearColor(uint8 red, uint8 green, uint8 blue, uint8 alpha)
-{
-  GFX_CLEAR_COLOR = RGB15(red, green, blue) | ((alpha & 0x1F) << 16);
-}
-
 //////////////////////////////////////////////////////////////////////
 
 void glEnable(int bits)
 {
-	enable_bits |= bits | (GL_TEXTURE_2D|GL_TOON_HIGHLIGHT|GL_OUTLINE|GL_ANTIALIAS);
+	enable_bits |= bits & (GL_TEXTURE_2D|GL_TOON_HIGHLIGHT|GL_OUTLINE|GL_ANTIALIAS);
 	GFX_CONTROL = enable_bits;
 }
 
@@ -258,7 +273,7 @@ void glEnable(int bits)
 
 void glDisable(int bits)
 {
-	enable_bits &= ~(bits | (GL_TEXTURE_2D|GL_TOON_HIGHLIGHT|GL_OUTLINE|GL_ANTIALIAS));
+	enable_bits &= ~(bits & (GL_TEXTURE_2D|GL_TOON_HIGHLIGHT|GL_OUTLINE|GL_ANTIALIAS));
 	GFX_CONTROL = enable_bits;
 }
 
@@ -311,25 +326,25 @@ void glLoadMatrix4x3(m4x3* m)
 
 void glMultMatrix4x4(m4x4* m)
 {
-  MATRIX_MULT4x4 = m->m[0];
-  MATRIX_MULT4x4 = m->m[1];
-  MATRIX_MULT4x4 = m->m[2];
-  MATRIX_MULT4x4 = m->m[3];
+  MATRIX_LOAD4x4 = m->m[0];
+  MATRIX_LOAD4x4 = m->m[1];
+  MATRIX_LOAD4x4 = m->m[2];
+  MATRIX_LOAD4x4 = m->m[3];
 
-  MATRIX_MULT4x4 = m->m[4];
-  MATRIX_MULT4x4 = m->m[5];
-  MATRIX_MULT4x4 = m->m[6];
-  MATRIX_MULT4x4 = m->m[7];
+  MATRIX_LOAD4x4 = m->m[4];
+  MATRIX_LOAD4x4 = m->m[5];
+  MATRIX_LOAD4x4 = m->m[6];
+  MATRIX_LOAD4x4 = m->m[7];
 
-  MATRIX_MULT4x4 = m->m[8];
-  MATRIX_MULT4x4 = m->m[9];
-  MATRIX_MULT4x4 = m->m[10];
-  MATRIX_MULT4x4 = m->m[11];
+  MATRIX_LOAD4x4 = m->m[8];
+  MATRIX_LOAD4x4 = m->m[9];
+  MATRIX_LOAD4x4 = m->m[10];
+  MATRIX_LOAD4x4 = m->m[11];
 
-  MATRIX_MULT4x4 = m->m[12];
-  MATRIX_MULT4x4 = m->m[13];
-  MATRIX_MULT4x4 = m->m[14];
-  MATRIX_MULT4x4 = m->m[15];
+  MATRIX_LOAD4x4 = m->m[12];
+  MATRIX_LOAD4x4 = m->m[13];
+  MATRIX_LOAD4x4 = m->m[14];
+  MATRIX_LOAD4x4 = m->m[15];
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -351,9 +366,6 @@ void glMultMatrix4x3(m4x3* m)
   MATRIX_MULT4x3 = m->m[10];
   MATRIX_MULT4x3 = m->m[11];
 
-  
-}void glMultMatrix3x3(m3x3* m)
-{
   MATRIX_MULT3x3 = m->m[0];
   MATRIX_MULT3x3 = m->m[1];
   MATRIX_MULT3x3 = m->m[2];
@@ -428,50 +440,6 @@ void glRotateXi(int angle)
   MATRIX_MULT3x3 = -sine;
   MATRIX_MULT3x3 = cosine;
 }
-
-//////////////////////////////////////////////////////////////////////
- 
-
-void glRotatef32i(int angle, f32 x, f32 y, f32 z)
-{
-
-  f32 axis[3];
-  f32 sine = SIN[angle &  LUT_MASK];
-  f32 cosine = COS[angle & LUT_MASK];
-  f32 one_minus_cosine = intof32(1) - cosine;
-
-  axis[0]=x;
-  axis[1]=y;
-  axis[2]=z;
-
-  normalizef32(axis);   // should require passed in normalized?
-
-  MATRIX_MULT3x3 = cosine + mulf32(one_minus_cosine, mulf32(axis[0], axis[0]));
-  MATRIX_MULT3x3 = mulf32(one_minus_cosine, mulf32(axis[0], axis[1])) - mulf32(axis[2], sine);
-  MATRIX_MULT3x3 = mulf32(mulf32(one_minus_cosine, axis[0]), axis[2]) + mulf32(axis[1], sine);
-
-  MATRIX_MULT3x3 = mulf32(mulf32(one_minus_cosine, axis[0]),  axis[1]) + mulf32(axis[2], sine);
-  MATRIX_MULT3x3 = cosine + mulf32(mulf32(one_minus_cosine, axis[1]), axis[1]);
-  MATRIX_MULT3x3 = mulf32(mulf32(one_minus_cosine, axis[1]), axis[2]) - mulf32(axis[0], sine);
-
-  MATRIX_MULT3x3 = mulf32(mulf32(one_minus_cosine, axis[0]), axis[2]) - mulf32(axis[1], sine);
-  MATRIX_MULT3x3 = mulf32(mulf32(one_minus_cosine, axis[1]), axis[2]) + mulf32(axis[0], sine);
-  MATRIX_MULT3x3 = cosine + mulf32(mulf32(one_minus_cosine, axis[2]), axis[2]);
-
-}
-
- 
-
-
-void glRotatef32(float angle, f32 x, f32 y, f32 z)
-{
-    glRotatef32i((int)(angle * LUT_SIZE / 360.0), x, y, z);
-}
-
-void glRotatef(float angle, float x, float y, float z)
-{
-	glRotatef32(angle, floatof32(x), floatof32(y), floatof32(z));
-}
 //////////////////////////////////////////////////////////////////////
 //	rotations wrapped in float...mainly for testing
 void glRotateX(float angle)
@@ -490,90 +458,49 @@ void glRotateZ(float angle)
 	glRotateZi((int)(angle * LUT_SIZE / 360.0));
 }
 
-//float wrappers for porting
-void glVertex3f(float x, float y, float z)
-{
-	glVertex3v16(floatov16(x), floatov16(y), floatov16(z));
-}
-void glTexCoord2f(float s, float t)
-{
-	glTexCoord2t16(floatot16(s*127), floatot16(t*127));
-}
-
-void glColor3f(float r, float g, float b)
-{
-	glColor3b((uint8)(r*255), (uint8)(g*255), (uint8)(b*255));
-}
-void glScalef(float x, float y, float z)
-{
-	MATRIX_SCALE = floatof32(x);
-	MATRIX_SCALE = floatof32(y);
-	MATRIX_SCALE = floatof32(z);
-}
-void glTranslatef(float x, float y, float z)
-{
-	MATRIX_TRANSLATE = floatof32(x);
-    MATRIX_TRANSLATE = floatof32(y);
-    MATRIX_TRANSLATE = floatof32(z);
-}
-
-void glNormal3f(float x, float y, float z)
-{
-	if(x >= 1 || x <= -1) x *= .95;
-	if(y >= 1 || y <= -1) y *= .95;
-	if(z >= 1 || z <= -1) z *= .95;
-
-	glNormal(NORMAL_PACK(floatov10(x), floatov10(y), floatov10(z)));
-}
 //////////////////////////////////////////////////////////////////////
 // Fixed point look at function, it appears to work as expected although 
 //	testing is recomended
-void gluLookAtf32(f32 eyex, f32 eyey, f32 eyez, f32 lookAtx, f32 lookAty, f32 lookAtz, f32 upx, f32 upy, f32 upz) 
-{ 
-  f32 side[3], forward[3], up[3]; 
+void gluLookAtf32(f32 eyex, f32 eyey, f32 eyez, f32 lookAtx, f32 lookAty, f32 lookAtz, f32 upx, f32 upy, f32 upz)
+{
+	f32 x[3], y[3], z[3], up[3];
 
-  forward[0] = lookAtx - eyex; 
-  forward[1] = lookAty - eyey; 
-  forward[2] = lookAtz - eyez; 
+	z[0] = eyex - lookAtx;
+	z[1] = eyey - lookAty;
+	z[2] = eyez - lookAtz;
 
-  normalizef32(forward); 
+	up[0] = upx;
+	up[1] = upy;
+	up[2] = upz;
 
-  up[0] = upx; 
-  up[1] = upy; 
-  up[2] = upz; 
+	normalizef32(z);
 
-  crossf32(forward, up, side); 
+	crossf32(up, z, x);
+	crossf32(z, x, y);
 
-  normalizef32(side); 
+	normalizef32(x);
+	normalizef32(y);
+	
+	glMatrixMode(GL_MODELVIEW);
 
-  crossf32(side, forward, up); 
+	MATRIX_LOAD4x3 = x[0];
+	MATRIX_LOAD4x3 = x[1];
+	MATRIX_LOAD4x3 = x[2];
 
-  glMatrixMode(GL_MODELVIEW); 
+	MATRIX_LOAD4x3 = y[0];
+	MATRIX_LOAD4x3 = y[1];
+	MATRIX_LOAD4x3 = y[2];
 
- 
-  // should we use MATRIX_MULT4x3 as in ogl|es?? 
+	MATRIX_LOAD4x3 = z[0];
+	MATRIX_LOAD4x3 = z[1];
+	MATRIX_LOAD4x3 = z[2];
 
-  MATRIX_LOAD4x3 =  side[0]; 
-  MATRIX_LOAD4x3 =  up[0]; 
-  MATRIX_LOAD4x3 = -forward[0]; 
+	MATRIX_LOAD4x3 = 0;
+	MATRIX_LOAD4x3 = 0;
+	MATRIX_LOAD4x3 = floatof32(-1.0);
 
-  MATRIX_LOAD4x3 =  side[1]; 
-  MATRIX_LOAD4x3 =  up[1]; 
-  MATRIX_LOAD4x3 = -forward[1]; 
-
-  MATRIX_LOAD4x3 =  side[2]; 
-  MATRIX_LOAD4x3 =  up[2]; 
-  MATRIX_LOAD4x3 = -forward[2]; 
-
-  MATRIX_LOAD4x3 = -eyex; 
-  MATRIX_LOAD4x3 = -eyey; 
-  MATRIX_LOAD4x3 = -eyez; 
-
+	glTranslate3f32(-eyex, -eyey, -eyez);
 }
-
- 
-
-
 ///////////////////////////////////////
 //  glu wrapper for standard float call
 void gluLookAt(float eyex, float eyey, float eyez, float lookAtx, float lookAty, float lookAtz, float upx, float upy, float upz)
@@ -712,51 +639,25 @@ void glSetToonTableRange(int start, int end, rgb color)
 
 //////////////////////////////////////////////////////////////////////
 
-void glClearPolyID(uint8 ID) {
-	GFX_CLEAR_COLOR = (( ID & 0x3F ) << 24 );
-}
-
 void glReset(void)
 {
+  while (GFX_STATUS & (1<<27)); // wait till gfx engine is not busy
+  
+  // Clear the FIFO
+  GFX_STATUS |= (1<<29);
 
-	powerON(POWER_3D_CORE | POWER_MATRIX);	// enable 3D core & geometry engine
-	while (GFX_STATUS & (1<<27)); // wait till gfx engine is not busy
+  // Clear overflows for list memory
+  GFX_CONTROL = enable_bits = ((1<<12) | (1<<13)) | GL_TEXTURE_2D;
+  glResetMatrixStack();
 
-	// Clear the FIFO
-	GFX_STATUS |= (1<<29);
+  GFX_TEX_FORMAT = 0;
+  GFX_POLY_FORMAT = 0;
+  
+  glMatrixMode(GL_PROJECTION);
+  glIdentity();
 
-	// Clear overflows from list memory
-	glResetMatrixStack();
-
-	// prime the vertex/polygon buffers
-	glFlush();
-
-	// reset the control bits
-	GFX_CONTROL = 0;
-
-	// reset the rear-plane(a.k.a. clear color) to black, ID=0, and opaque
-	glClearColor(0,0,0,31);
-	glClearPolyID(0);
-
-	// reset the depth to it's max
-	#define GL_MAX_DEPTH      0x7FFF
-	glClearDepth(GL_MAX_DEPTH);
-
-	GFX_TEX_FORMAT = 0;
-	GFX_POLY_FORMAT = 0;
-
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-
-	glMatrixMode(GL_TEXTURE);
-	glLoadIdentity();
-	
-	// Clear overflows for list memory
-	GFX_CONTROL = enable_bits = ((1<<12) | (1<<13)) | GL_TEXTURE_2D;
-	glResetMatrixStack();
+  glMatrixMode(GL_MODELVIEW);
+  glIdentity();
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -783,7 +684,7 @@ void glResetTextures(void)
 //  Returns 1 if succesful and 0 if out of texture names
 int glGenTextures(int n, int *names)
 {
-	static int name = 1;
+	static int name = 0;
 
 	int index = 0;
 
@@ -798,51 +699,29 @@ int glGenTextures(int n, int *names)
 	return 1;
 }
 
-//---------------------------------------------------------------------------------
+///////////////////////////////////////
 // glBindTexure sets the current named
 //	texture to the active texture.  Target 
 //	is ignored as all DS textures are 2D
-//---------------------------------------------------------------------------------
-void glBindTexture(int target, int name) {
-//---------------------------------------------------------------------------------
-	if (name == 0) 
-		GFX_TEX_FORMAT = 0; 
-	else 
-		GFX_TEX_FORMAT = textures[name]; 
-
+void glBindTexture(int target, int name)
+{
+	GFX_TEX_FORMAT = textures[name];
 	
 	activeTexture = name;
 }
 
-//---------------------------------------------------------------------------------
-void glTexCoord2f32(f32 u, f32 v) { 
-//---------------------------------------------------------------------------------
-	int x=0,y=0; 
-   
-	x = ((0x00700000) & textures[activeTexture]) >> 20; 
-	y = ((0x03800000) & textures[activeTexture]) >> 23; 
-
-	glTexCoord2t16(f32tot16 (mulf32(u,intof32(1<<(3+x)))), f32tot16 (mulf32(v,intof32(1<<(3+y))))); 
-}
-
-
-//---------------------------------------------------------------------------------
+///////////////////////////////////////
 // glTexParameter although named the same 
 //	as its gl counterpart it is not compatible
 //	Effort may be made in the future to make it so.
-//---------------------------------------------------------------------------------
-void glTexParameter(	uint8 sizeX, uint8 sizeY,
-											uint32* addr,
-											uint8 mode,
-											uint32 param) {
-//---------------------------------------------------------------------------------
+void glTexParameter(uint8 sizeX, uint8 sizeY, uint32* addr, uint8 mode, uint32 param)
+{
 	textures[activeTexture] = param | (sizeX << 20) | (sizeY << 23) | (((uint32)addr >> 3) & 0xFFFF) | (mode << 26);
 }
 
 
-//---------------------------------------------------------------------------------
-uint16* vramGetBank(uint16 *addr) {
-//---------------------------------------------------------------------------------
+uint16* vramGetBank(uint16 *addr)
+{
 	if(addr >= VRAM_A && addr < VRAM_B)
 		return VRAM_A;
 	else if(addr >= VRAM_B && addr < VRAM_C)
@@ -862,71 +741,64 @@ uint16* vramGetBank(uint16 *addr) {
 	else return VRAM_I;
 }
 
+int vramIsTextureBank(uint16 *addr)
+{
+	uint16* vram = vramGetBank(addr);
 
-//---------------------------------------------------------------------------------
-int vramIsTextureBank(uint16 *addr) {
-//---------------------------------------------------------------------------------
-   uint16* vram = vramGetBank(addr);
+	if(vram == VRAM_A)
+	{
+		if((VRAM_A_CR & 3) == VRAM_A_TEXTURE)
+			return 1;
+		else return 0;
+	}
+	else if(vram == VRAM_B)
+	{
+		if((VRAM_B_CR & 3) == VRAM_B_TEXTURE)
+			return 1;
+		else return 0;
+	}
+	else if(vram == VRAM_C)
+	{
+		if((VRAM_C_CR & 3) == VRAM_C_TEXTURE)
+			return 1;
+		else return 0;
+	}
+	else if(vram == VRAM_D)
+	{
+		if((VRAM_D_CR & 3) == VRAM_D_TEXTURE)
+			return 1;
+		else return 0;
+	}
+	else 
+		return 0;
+	
+}
+uint32* getNextTextureSlot(int size)
+{
+	uint32* result = nextBlock;
+	nextBlock += size >> 2;
 
-   if(vram == VRAM_A)
-   {
-      if((VRAM_A_CR & 3) == ((VRAM_A_TEXTURE) & 3))
-         return 1;
-      else return 0;
-   }
-   else if(vram == VRAM_B)
-   {
-      if((VRAM_B_CR & 3) == ((VRAM_B_TEXTURE) & 3))
-         return 1;
-      else return 0;
-   }
-   else if(vram == VRAM_C)
-   {
-      if((VRAM_C_CR & 3) == ((VRAM_C_TEXTURE) & 3))
-         return 1;
-      else return 0;
-   }
-   else if(vram == VRAM_D)
-   {
-      if((VRAM_D_CR & 3) == ((VRAM_D_TEXTURE) & 3))
-         return 1;
-      else return 0;
-   }
-   else
-      return 0;
-   
-} 
-//---------------------------------------------------------------------------------
-uint32* getNextTextureSlot(int size) {
-//---------------------------------------------------------------------------------
-   uint32* result = nextBlock;
-   nextBlock += size >> 2;
+	//uh-oh...out of texture memory in this bank...find next one assigned to textures
+	while(!vramIsTextureBank((uint16*)nextBlock) && nextBlock < (uint32*)VRAM_E)
+	{
+		nextBlock = (uint32*)vramGetBank((uint16*)nextBlock) + (0x20000 >> 2); //next bank
+		result = nextBlock;	  	
+		nextBlock += size >> 2;
+	}
 
-   //uh-oh...out of texture memory in this bank...find next one assigned to textures
-   while(!vramIsTextureBank((uint16*)nextBlock - 1) && nextBlock <= (uint32*)VRAM_E)
-   {
-      nextBlock = (uint32*)vramGetBank((uint16*)result) + (0x20000 >> 2); //next bank
-      result = nextBlock;        
-      nextBlock += size >> 2;
-   }
+	if(nextBlock >= (uint32*)VRAM_E)
+		return 0;
 
-   if(nextBlock > (uint32*)VRAM_E)
-      return 0;
+	else return result;	
 
-   else return result;   
+}
 
-} 
-
-//---------------------------------------------------------------------------------
+///////////////////////////////////////
 // Similer to glTextImage2D from gl it takes a pointer to data
 //	Empty fields and target are unused but provided for code compatibility.
 //	type is simply the texture type (GL_RGB, GL_RGB8 ect...)
-//---------------------------------------------------------------------------------
-int glTexImage2D(	int target, int empty1, int type,
-									int sizeX, int sizeY,
-									int empty2, int param,
-									uint8* texture) {
-//---------------------------------------------------------------------------------
+int glTexImage2D(int target, int empty1, int type, int sizeX, int sizeY, int empty2, int param, uint8* texture)
+{
 	uint16 alpha = 0;
 	uint32 size = 0;
 	uint16 palette = 0;
@@ -943,6 +815,7 @@ int glTexImage2D(	int target, int empty1, int type,
 	
 	switch (type)
 	{
+	case GL_RGB:
 	case GL_RGBA:
 		size = size << 1;
 		break;
@@ -967,36 +840,32 @@ int glTexImage2D(	int target, int empty1, int type,
 		return 0;
 
 	glTexParameter(sizeX, sizeY, addr, type, param);
+	GFX_TEX_FORMAT = (sizeX << 20) | (sizeY << 23) | ((type == GL_RGB ? GL_RGBA : type ) << 26);
 	
 	//unlock texture memory
 	vramTemp = VRAM_CR; //vramTemp = vramSetMainBanks(VRAM_A_LCD,VRAM_B_LCD,VRAM_C_LCD,VRAM_D_LCD);
-	dmaTransferWord(3, (uint32)texture, (uint32)addr, (uint32)size);
-	VRAM_CR = vramTemp; //vramRestorMainBanks(vramTemp);
+	VRAMBLOCK_SETBANK_A(VRAM_A_LCDC_MODE);	
+	VRAMBLOCK_SETBANK_B(VRAM_B_LCDC_MODE);	
 
-	/*if(palette)
+	//Make RGB visible
+	uint16 *src = (uint16*)texture;
+	uint16 *dest = (uint16*)addr;
+	size >>= 1;
+	while (size--) {
+		*dest++ = (*(src)) | 0x8000;
+		src++;
+	}
+	
+	VRAM_CR = vramTemp;	//vramRestorMainBanks(vramTemp);
+	/*
+	if(palette)
 	{
-		u32* temp = (u32)(texture+size);
-
 		vramSetBankE(VRAM_E_LCD);
 
-		
-		swiCpuCopy( texture + size, VRAM_E, COPY_MODE_WORD | palette);
+		dmaTransferWord(3, (uint32)(texture+size), (uint32)VRAM_E, (uint32)palette);  //dmaCopyWords(3, (uint32*)(texture+size), (uint32*)(VRAM_E), palette);
 
 		vramSetBankE(VRAM_E_TEX_PALETTE);
 	}
-*/
+	*/
 	return 1;
-}
-
-
-//---------------------------------------------------------------------------------
-void glTexLoadPal(u16* pal, u8 count) {
-//---------------------------------------------------------------------------------
-		VRAMBLOCK_SETBANK_E((uint8)VRAM_E_LCD); 
-		dmaTransferWord(3, (uint32)pal,(uint32)VRAM_E, (uint32)count);
-		VRAMBLOCK_SETBANK_E((uint8)VRAM_E_TEX_PALETTE);
-}
-
-void initGL(){
-	
 }

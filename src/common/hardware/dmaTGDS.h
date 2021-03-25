@@ -42,7 +42,7 @@ USA
 #define		DMASTART_INMEDIATE	(uint32)(0<<(16+12))	//aka DMA_START_NOW
 #define		DMASTART_VBLANK		(uint32)(1<<(16+12))
 #define		DMASTART_HBLANK		(uint32)(2<<(16+12))
-#define		DMASTART_SPECIAL	(uint32)(3<<(16+12))
+#define 	DMA_FIFO	((1<<31) | (1<<26)  | (1<<22) | (7<<27)) //#define		DMASTART_SPECIAL	(uint32)(3<<(16+12))
 
 #define		DMAENABLED	(uint32)(1<<(16+15))	//DMAs disable itself when transfer done	//aka DMA_BUSY	//aka DMA_ENABLE
 

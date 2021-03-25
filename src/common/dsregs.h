@@ -251,6 +251,18 @@ USA
 #define SPRITE_GFX			((uint16*)0x6400000)	
 #define SPRITE_GFX_SUB		((uint16*)0x6600000)
 
+#define VRAM_0        ((uint16*)0x6000000)
+#define VRAM          ((uint16*)0x6800000)
+#define VRAM_A        ((uint16*)0x6800000)
+#define VRAM_B        ((uint16*)0x6820000)
+#define VRAM_C        ((uint16*)0x6840000)
+#define VRAM_D        ((uint16*)0x6860000)
+#define VRAM_E        ((uint16*)0x6880000)
+#define VRAM_F        ((uint16*)0x6890000)
+#define VRAM_G        ((uint16*)0x6894000)
+#define VRAM_H        ((uint16*)0x6898000)
+#define VRAM_I        ((uint16*)0x68A0000)
+
 #define OAM           ((uint16*)0x07000000)
 #define OAM_SUB       ((uint16*)0x07000400)
 
@@ -258,18 +270,6 @@ USA
 #define RGB5(r,g,b)  ((r)|((g)<<5)|((b)<<10))
 #define RGB8(r,g,b)  (((r)>>3)|(((g)>>3)<<5)|(((b)>>3)<<10))
 #define ARGB16(a, r, g, b) ( ((a) << 15) | (r)|((g)<<5)|((b)<<10))
-
-#define VRAM_CR			(*(vuint32*)0x04000240)
-#define VRAM_A_CR		(*(vuint8*)0x04000240)
-#define VRAM_B_CR		(*(vuint8*)0x04000241)
-#define VRAM_C_CR		(*(vuint8*)0x04000242)
-#define VRAM_D_CR		(*(vuint8*)0x04000243)
-#define VRAM_EFG_CR		(*(vuint32*)0x04000244)
-#define VRAM_E_CR		(*(vuint8*)0x04000244)
-#define VRAM_F_CR		(*(vuint8*)0x04000245)
-#define VRAM_G_CR		(*(vuint8*)0x04000246)
-#define VRAM_H_CR		(*(vuint8*)0x04000248)
-#define VRAM_I_CR		(*(vuint8*)0x04000249)
 
 #define VRAM_ENABLE		(1<<7)
 #define VRAM_OFFSET(n)	((n)<<3)
@@ -285,130 +285,13 @@ USA
 	#define POWER_2D_A		((1<<1) | POWERMAN_ARM9)
 	#define POWER_2D_B		((1<<9) | POWERMAN_ARM9)
 	#define	POWER_SWAP_LCDS	((1<<15)| POWERMAN_ARM9)
-
-#define BG_32x32    (0 << 14)
-#define BG_64x32    (1 << 14)
-#define BG_32x64    (2 << 14)
-#define BG_64x64    (3 << 14)
-#define BG_RS_16x16 (0 << 14)
-#define BG_RS_32x32   (1 << 14)
-#define BG_RS_64x64   (2 << 14)
-#define BG_RS_128x128 (3 << 14)
-#define BG_BMP8_128x128  ((0 << 14) | (1 << 7))
-#define BG_BMP8_256x256  ((1 << 14) | (1 << 7))
-#define BG_BMP8_512x256  ((2 << 14) | (1 << 7))
-#define BG_BMP8_512x512  ((3 << 14) | (1 << 7))
-#define BG_BMP8_1024x512 (1 << 14)
-#define BG_BMP8_512x1024 (0)
-#define BG_BMP16_128x128  ((0 << 14) | (1 << 7) | (1 << 2))
-#define BG_BMP16_256x256  ((1 << 14) | (1 << 7) | (1 << 2))
-#define BG_BMP16_512x256  ((2 << 14) | (1 << 7) | (1 << 2))
-#define BG_BMP16_512x512  ((3 << 14) | (1 << 7) | (1 << 2))
-#define BG_256_COLOR   	(1 << 7)
-#define BG_16_COLOR   	(0)
-#define BG_MOSAIC_ON   (1 << 6)
-#define BG_MOSAIC_OFF  (0)
-#define BG_PRIORITY_0  (0)
-#define BG_PRIORITY_1  (1)
-#define BG_PRIORITY_2  (2)
-#define BG_PRIORITY_3  (3)
-#define BG_WRAP_OFF    (0)
-#define BG_WRAP_ON     (1 << 13)
-#define BG_PALETTE_SLOT0 (0)
-#define BG_PALETTE_SLOT1 (0)
-#define BG_PALETTE_SLOT2 (1 << 13)
-#define BG_PALETTE_SLOT3 (1 << 13)
-#define BG_COLOR_256		(0x80)
-#define BG_COLOR_16			(0x00)
-
-
-#define BACKGROUND           (*((bg_attribute *)0x04000008))
-#define BG_OFFSET ((bg_scroll *)(0x04000010))
-
-//0x06000000
-#define BG_MAP_RAM(base)		((uint16*)(((base)*0x800) + 0x06000000))
-#define BG_TILE_RAM(base)		((uint16*)(((base)*0x4000) + 0x06000000))
-#define BG_BMP_RAM(base)		((uint16*)(((base)*0x4000) + 0x06000000))
-
-#define CHAR_BASE_BLOCK(n)			(((n)*0x4000)+ 0x06000000)
-#define SCREEN_BASE_BLOCK(n)		(((n)*0x800) + 0x06000000)
-#define	BGCTRL			( (vuint16*)0x4000008)
-#define	REG_BGOFFSETS	( (vuint16*)0x4000010)
-#define	REG_BG0VOFS		(*(vuint16*)0x4000012)
-#define	REG_BG2PA		(*(vsint16*)0x4000020)
-#define	REG_BG2PB		(*(vsint16*)0x4000022)
-#define	REG_BG2PC		(*(vsint16*)0x4000024)
-#define	REG_BG2PD		(*(vsint16*)0x4000026)
-#define	REG_BG2X		(*(vsint32*)0x4000028)
-#define	REG_BG2Y		(*(vsint32*)0x400002C)
-#define	REG_BG3PA		(*(vsint16*)0x4000030)
-#define	REG_BG3PB		(*(vsint16*)0x4000032)
-#define	REG_BG3PC		(*(vsint16*)0x4000034)
-#define	REG_BG3PD		(*(vsint16*)0x4000036)
-#define	REG_BG3X		(*(vsint32*)0x4000038)
-#define	REG_BG3Y		(*(vsint32*)0x400003C)
-
-#define MAP_BASE_SHIFT 8
-#define TILE_BASE_SHIFT 2
-#define BG_TILE_BASE(base) ((base) << TILE_BASE_SHIFT)
-#define BG_MAP_BASE(base)  ((base) << MAP_BASE_SHIFT)
-#define BG_BMP_BASE(base)  ((base) << MAP_BASE_SHIFT)
-#define BG_PRIORITY(n) (n)
-#define TILE_PALETTE(n) ((n)<<12)
-#define TILE_FLIP_H 	(1<<10)
-#define TILE_FLIP_V 	(1<<11)
-
  
 #define REG_MASTER_BRIGHT     (*(vuint16*)0x0400006C)
 #define REG_MASTER_BRIGHT_SUB (*(vuint16*)0x0400106C)
 
-
-// Window 0
-#define WIN0_X0        (*(vuint8*)0x04000041)
-#define WIN0_X1        (*(vuint8*)0x04000040)
-#define WIN0_Y0        (*(vuint8*)0x04000045)
-#define WIN0_Y1        (*(vuint8*)0x04000044)
-
-// Window 1
-#define WIN1_X0        (*(vuint8*)0x04000043)
-#define WIN1_X1        (*(vuint8*)0x04000042)
-#define WIN1_Y0        (*(vuint8*)0x04000047)
-#define WIN1_Y1        (*(vuint8*)0x04000046)
-
-#define WIN_IN         (*(vuint16*)0x04000048)
-#define WIN_OUT        (*(vuint16*)0x0400004A)
-
-// Window 0
-#define SUB_WIN0_X0    (*(vuint8*)0x04001041)
-#define SUB_WIN0_X1    (*(vuint8*)0x04001040)
-#define SUB_WIN0_Y0    (*(vuint8*)0x04001045)
-#define SUB_WIN0_Y1    (*(vuint8*)0x04001044)
-
-// Window 1
-#define SUB_WIN1_X0    (*(vuint8*)0x04001043)
-#define SUB_WIN1_X1    (*(vuint8*)0x04001042)
-#define SUB_WIN1_Y0    (*(vuint8*)0x04001047)
-#define SUB_WIN1_Y1    (*(vuint8*)0x04001046)
-
-#define SUB_WIN_IN     (*(vuint16*)0x04001048)
-#define SUB_WIN_OUT    (*(vuint16*)0x0400104A)
-
-#define	REG_MOSAIC		(*(vuint16*)0x0400004C)
-#define	REG_MOSAIC_SUB	(*(vuint16*)0x0400104C)
-
-#define REG_BLDCNT     (*(vuint16*)0x04000050)
-#define REG_BLDY	   (*(vuint16*)0x04000054)
-#define REG_BLDALPHA   (*(vuint16*)0x04000052)
-
 #define REG_BLDCNT_SUB     (*(vuint16*)0x04001050)
 #define REG_BLDALPHA_SUB   (*(vuint16*)0x04001052)
 #define REG_BLDY_SUB	   (*(vuint16*)0x04001054)
-
-
-#define BLEND_NONE         (0<<6)
-#define BLEND_ALPHA        (1<<6)
-#define BLEND_FADE_WHITE   (2<<6)
-#define BLEND_FADE_BLACK   (3<<6)
 
 #define BLEND_SRC_BG0      (1<<0)
 #define BLEND_SRC_BG1      (1<<1)
@@ -473,7 +356,6 @@ USA
 #define DISPLAY_SPR_1D_BMP_SIZE_256	(1 << 22)
 #define DISPLAY_SPRITE_ATTR_MASK  ((7 << 4) | (7 << 20) | (1 << 31))
 #define DISPLAY_SPR_EXT_PALETTE		(1 << 31)
-#define DISPLAY_BG_EXT_PALETTE		(1 << 30)
 #define DISPLAY_SCREEN_OFF     (1 << 7)
 #define DISPLAY_CHAR_BASE(n) (((n)&7)<<24)
 #define DISPLAY_SCREEN_BASE(n) (((n)&7)<<27)
