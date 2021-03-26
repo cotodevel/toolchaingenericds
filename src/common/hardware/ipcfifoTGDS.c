@@ -54,7 +54,7 @@ USA
 //arg 1: arg0: handler, arg1: userdata
 u32 fifoFunc[FIFO_CHANNELS][2];	//context is only passed on callback prototype stage, because, the channel index generates the callee callback
 
-void Write8bitAddrExtArm(uint32 address, uint8 value){
+void Write8bitAddrExtArm(uint32 address, uint8 value) __attribute__ ((optnone)) {
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[54] = address;
@@ -62,7 +62,7 @@ void Write8bitAddrExtArm(uint32 address, uint8 value){
 	SendFIFOWords(WRITE_EXTARM_8);
 }
 
-void Write16bitAddrExtArm(uint32 address, uint16 value){
+void Write16bitAddrExtArm(uint32 address, uint16 value) __attribute__ ((optnone)) {
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[56] = address;
@@ -70,7 +70,7 @@ void Write16bitAddrExtArm(uint32 address, uint16 value){
 	SendFIFOWords(WRITE_EXTARM_16);
 }
 
-void Write32bitAddrExtArm(uint32 address, uint32 value){
+void Write32bitAddrExtArm(uint32 address, uint32 value) __attribute__ ((optnone)) {
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[58] = address;
@@ -432,13 +432,16 @@ void HandleFifoNotEmpty()  __attribute__ ((optnone)) {
 			case((uint32)TGDS_ARM7_SETUPARMCoresMALLOC):{	//ARM7
 				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-				u32 ARM7MallocStartaddress = (u32)fifomsg[42];
-				u32 ARM7MallocSize = (u32)fifomsg[43];
-				//bool customAllocator = (bool)fifomsg[44];
+				u32 ARM7MallocStartaddress = (u32)getValueSafe(&fifomsg[42]);
+				u32 ARM7MallocSize = (u32)getValueSafe(&fifomsg[43]);
+				//bool customAllocator = (bool)getValueSafe(&fifomsg[44]);
 				
 				initARM7Malloc(ARM7MallocStartaddress, ARM7MallocSize);
 				
-				fifomsg[45] = fifomsg[44] = fifomsg[43] = fifomsg[42] = 0;
+				setValueSafe(&fifomsg[42], (uint32)0);
+				setValueSafe(&fifomsg[43], (uint32)0);
+				setValueSafe(&fifomsg[44], (uint32)0);
+				setValueSafe(&fifomsg[45], (uint32)0);
 			}
 			break;
 			
