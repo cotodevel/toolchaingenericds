@@ -129,7 +129,7 @@ int main( int argc, char *argv[] )
 	//printf("DEBUGGER: argv 1: %s\n", argv[1]);	// ToolchainGenericDS-template
 	//printf("DEBUGGER: argv 2: %s\n", argv[2]);	// TGDSPKG_template
 	//printf("DEBUGGER: argv 3: %s\n", argv[3]);	// c:/toolchain_generic/6.2_2016q4/arm-eabi/lib/
-	//printf("DEBUGGER: argv 5: %s\n", argv[4]);	// /release/arm9dldi-ntr
+	//printf("DEBUGGER: argv 5: %s\n", argv[4]);	// /release/arm7dldi-ntr
 	
 	/* avoid end-of-line conversions */
     SET_BINARY_MODE(stdin);
