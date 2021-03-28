@@ -55,10 +55,10 @@ export TARGET_LIBRARY_LIBNAME_9	=	l$(TARGET_LIBRARY_NAME_9)
 export DIRS_ARM7_SRC = source/	\
 			source/dswifi_arm7/	\
 			source/xmalloc/	\
-			source/TGDSARM7Logger/	\
 			../common/	\
 			../common/dswifi/	\
 			../common/hardware/	\
+			../common/hardware/dldi/	\
 			../templateCode/source/	\
 			../templateCode/data/arm7/		\
 			data/	\
@@ -68,7 +68,6 @@ export DIRS_ARM7_SRC = source/	\
 export DIRS_ARM7_HEADER = source/	\
 			source/dswifi_arm7/	\
 			source/xmalloc/	\
-			source/TGDSARM7Logger/	\
 			include/	\
 			../include/	\
 			../include/netinet/	\
@@ -76,6 +75,7 @@ export DIRS_ARM7_HEADER = source/	\
 			../common/	\
 			../common/dswifi/	\
 			../common/hardware/	\
+			../common/hardware/dldi/	\
 			../templateCode/source/	\
 			../templateCode/data/arm7/		\
 			data/	\
@@ -88,7 +88,6 @@ export DIRS_ARM9_SRC = source/	\
 			source/console/	\
 			source/console/gui_draw/	\
 			source/ToolchainGenericDSFS/	\
-			source/ToolchainGenericDSFS/dldi/	\
 			source/ToolchainGenericDSFS/fatfs/source/	\
 			source/zlib/	\
 			source/zip/	\
@@ -102,6 +101,7 @@ export DIRS_ARM9_SRC = source/	\
 			../common/dswifi/netinet/	\
 			../common/dswifi/sys/	\
 			../common/hardware/	\
+			../common/hardware/dldi/	\
 			../templateCode/source/	\
 			../templateCode/data/arm9/		\
 			data/	\
@@ -112,7 +112,6 @@ export DIRS_ARM9_HEADER = source/	\
 			source/console/	\
 			source/console/gui_draw/	\
 			source/ToolchainGenericDSFS/	\
-			source/ToolchainGenericDSFS/dldi/	\
 			source/ToolchainGenericDSFS/fatfs/source/	\
 			source/zlib/	\
 			source/zip/	\
@@ -126,6 +125,7 @@ export DIRS_ARM9_HEADER = source/	\
 			../common/dswifi/netinet/	\
 			../common/dswifi/sys/	\
 			../common/hardware/	\
+			../common/hardware/dldi/	\
 			../templateCode/source/	\
 			../templateCode/data/arm9/		\
 			data/	\

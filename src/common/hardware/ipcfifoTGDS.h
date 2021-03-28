@@ -108,7 +108,7 @@ USA
 #define TGDS_ARM7_PRINTF7SETUP (uint32)(0xFFFF0228)
 #define TGDS_ARM7_PRINTF7 (uint32)(0xFFFF0229)
 #define TGDS_ARM7_SETUPEXCEPTIONHANDLER (uint32)(0xFFFF022A)
-#define TGDS_ARM7_SETUPARMCoresMALLOC (uint32)(0xFFFF022C)
+#define TGDS_ARM7_SETUPARMCPUMALLOCANDDLDI (uint32)(0xFFFF022C)
 #define TGDS_ARM7_DETECTTURNOFFCONSOLE (uint32)(0xFFFF022D)
 #define TGDS_ARM7_ENABLESOUNDSAMPLECTX (uint32)(0xFFFF022E)
 #define TGDS_ARM7_DISABLESOUNDSAMPLECTX (uint32)(0xFFFF022F)
@@ -116,38 +116,29 @@ USA
 
 #define TGDS_ARM7_ENABLEFASTMODE (uint32)(0xFFFF0231)
 #define TGDS_ARM7_DISABLEFASTMODE (uint32)(0xFFFF0232)
+#define TGDS_ARM7_READFLASHMEM (u32)(0xffffAAC0)		
 
-#define TGDS_ARM7_ARM7FSREAD (u32)(0xffffaaa0)		
-#define TGDS_ARM7_ARM7FSWRITE (u32)(0xffffaab0)		
-#define TGDS_ARM7_READFLASHMEM (u32)(0xffffaac0)		
+#define TGDS_ARM7_RELOADFLASH (u32)(0xFFFFABC0)		
+#define TGDS_ARM7DLDI_ENABLED (u32)(0xFFFFABC1)
+#define TGDS_ARM7DLDI_DISABLED (u32)(0xFFFFABC2)
 
-#define TGDS_ARM7_RELOADFLASH (u32)(0xffffabc0)		
-
-
+//ARM7 FS IPC Commands
 #define TGDS_LIBNDSFIFO_COMMAND (u32)(0xFFFFAAC1)	//Bottom 8 bits act as the FIFO Channel Index
 
 //TGDS IPC Command Interrupt Index
 #define IPC_NULL_CMD					(u8)(0)	//NULL cmd is unused by TGDS, fallbacks to TGDS project IPCIRQ Handler
 #define IPC_SEND_MULTIPLE_CMDS			(u8)(1)
 
-//ARM7 FS
+//ARM7 Direct Memory
 #define IPC_ARM7READMEMORY_REQBYIRQ		(u8)(2)
 #define IPC_ARM7SAVEMEMORY_REQBYIRQ		(u8)(3)
 
 //ARM7DLDI
-#define IPC_INIT_ARM7DLDI_REQBYIRQ		(u8)(4)
-#define IPC_READ_ARM7DLDI_REQBYIRQ		(u8)(5)
-#define IPC_WRITE_ARM7DLDI_REQBYIRQ		(u8)(6)
-#define IPC_READ_FIRMWARE_REQBYIRQ		(u8)(7)
-#define IPC_TGDSUSER_START_FREE_INDEX	(u8)(8)	//TGDS User Project rely on it
+#define IPC_READ_ARM7DLDI_REQBYIRQ		(u8)(4)
+#define IPC_WRITE_ARM7DLDI_REQBYIRQ		(u8)(5)
+#define IPC_READ_FIRMWARE_REQBYIRQ		(u8)(6)
 
-//ARM7 FS IPC Commands
-#define IPC_ARM7INIT_ARM7FS (u8)(0xE)
-#define IPC_ARM7DEINIT_ARM7FS (u8)(0xF)
-
-//ARM7 FS Transaction Status
-#define ARM7FS_TRANSACTIONSTATUS_IDLE (int)(-1)
-#define ARM7FS_TRANSACTIONSTATUS_BUSY (int)(0)
+#define IPC_TGDSUSER_START_FREE_INDEX	(u8)(7)	//TGDS User Project rely on it
 
 //TGDS -> Libnds FIFO compatibility API. Ensures the behaviour of the FIFO messaging system works.
 // FIFO_CHANNEL_BITS - number of bits used to specify the channel in a packet - default=4
@@ -246,8 +237,7 @@ typedef struct sIPCSharedTGDS {
 	
 	//ARM7 Filesystem
 	bool initStatus;
-	int ARM7FSStatus;	//IO busy/idle
-	int ARM7FSTransactionStatus;	//Global transaction status. This one decides the whole streaming context
+	u32 ARM7FSOperationStatus;	//IO busy/idle
 	
 	//File from ARM7
 	int IR;				//Command Status. This is used as acknowledge from IR sent through IPC IRQ Index Command

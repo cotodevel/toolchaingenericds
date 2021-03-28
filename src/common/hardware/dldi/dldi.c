@@ -1,11 +1,17 @@
-#ifdef ARM9
-
 #include <stdio.h>
 #include <string.h>
 #include "dsregs.h"
 #include "dldi.h"
 #include "dmaTGDS.h"
 #include "busTGDS.h"
+#include "ipcfifoTGDS.h"
+#include "global_settings.h"
+
+
+#ifdef ARM9
+__attribute__((section(".dtcm")))
+#endif
+bool ARM7DLDIEnabled = false;
 
 const uint32  DLDI_MAGIC_NUMBER = 
 	0xBF8DA5ED;	
@@ -14,57 +20,39 @@ const uint32  DLDI_MAGIC_NUMBER =
 const sint8 DLDI_MAGIC_STRING_BACKWARDS [DLDI_MAGIC_STRING_LEN] =
 	{'\0', 'm', 'h', 's', 'i', 'h', 'C', ' '} ;
 
-
-
+#ifdef ARM9
 const DLDI_INTERFACE* io_dldi_data = &_io_dldi_stub;
+#endif
 
-const struct DISC_INTERFACE_STRUCT* dldiGetInternal (void) {
-	if (_io_dldi_stub.ioInterface.features & FEATURE_SLOT_GBA) {
-		SetBusSLOT1ARM7SLOT2ARM9();
-	}
-	if (_io_dldi_stub.ioInterface.features & FEATURE_SLOT_NDS) {
-		SetBusSLOT1ARM9SLOT2ARM7();
-	}
-	
-	return &dldiGet()->ioInterface;
-}
-
+// 2/2 : once DLDI has been setup
 struct DLDI_INTERFACE* dldiGet(void) {
-	if (_io_dldi_stub.ioInterface.features & FEATURE_SLOT_GBA) {
-		SetBusSLOT1ARM7SLOT2ARM9();
-	}
-	if (_io_dldi_stub.ioInterface.features & FEATURE_SLOT_NDS) {
-		SetBusSLOT1ARM9SLOT2ARM7();
-	}
+	
+	#ifdef ARM7
+	struct DLDI_INTERFACE* arm7DLDI = (DLDI_INTERFACE*)DLDIARM7Address;
+	return arm7DLDI;
+	#endif
+	
+	#ifdef ARM9
 	return &_io_dldi_stub;
+	#endif
+	
 }
 
-
-//DLDI bits (must extend from ARM7DLDI later)
-//ARM9DLDI:
-//ARM7: NULL ptr
-//ARM9: Global Physical DLDI section (rather than &_dldi_start, since it's discarded at TGDS init)
+#ifdef ARM7
+//DLDI bits
 u32 * DLDIARM7Address = NULL;
+#endif
 
-void setDLDIARM7Address(u32 * address){
-	DLDIARM7Address = address;
-}
-
-u32 * getDLDIARM7Address(){
-	return DLDIARM7Address;
-}
+#ifdef ARM9
+u8 ARM7SharedDLDI[32768];	//Required by ARM7 DLDI read/write dldi calls
+#endif
 
 bool dldi_handler_init(){
-	bool status = false;
 	struct DLDI_INTERFACE* dldiInit = dldiGet();	//ensures SLOT-1 / SLOT-2 is mapped to ARM7/ARM9 now
 	if( (!dldiInit->ioInterface.startup()) || (!dldiInit->ioInterface.isInserted()) ){
-		status = false;
+		return false;
 	}
-	else{
-		status = true;	//init OK!
-		DLDIARM7Address = (u32*)dldiInit;
-	}
-	return status;
+	return true;
 }
 
 void dldi_handler_deinit(){
@@ -73,8 +61,8 @@ void dldi_handler_deinit(){
 	dldiInit->ioInterface.shutdown();
 }
 
-/////////////////////////////////////////////////// RAM Disk DLDI Implementation ////////////////////////////////////////////
-
+/////////////////////////////////////////////////// (EWRAM DLDI) RAM Disk DLDI Implementation ////////////////////////////////////////////
+#ifdef ARM9
 __attribute__((section(".dldiSection")))
 bool _DLDI_isInserted(void)
 {
@@ -126,78 +114,74 @@ bool _DLDI_readSectors(uint32 sector, uint32 sectorCount, uint8* buffer)
 	}
     return true;
 }
-
+#endif
 //////////////////////////////////////////////// RAM Disk DLDI Implementation End ///////////////////////////////////////////
-
+//future optimization, make it EWRAM-only so we can DMA directly!
 bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer){
 	//ARM7 DLDI implementation
-	#ifdef ARM7_DLDI
+	if(ARM7DLDIEnabled == true){
 		#ifdef ARM7
 		struct  DLDI_INTERFACE* dldiInterface = (struct DLDI_INTERFACE*)DLDIARM7Address;
 		return dldiInterface->ioInterface.readSectors(sector, numSectors, buffer);
 		#endif
 		#ifdef ARM9
-		void * targetMem = (void *)((int)ARM7DLDIBuf + 0x400000);
+		void * targetMem = (void *)((int)&ARM7SharedDLDI[0] + 0x400000);
 		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 		setValueSafe(&fifomsg[20], (uint32)sector);
 		setValueSafe(&fifomsg[21], (uint32)numSectors);
 		setValueSafe(&fifomsg[22], (uint32)targetMem);
-		setValueSafe(&fifomsg[23], (uint32)0xFEFEFEFE);
+		setValueSafe(&fifomsg[23], (uint32)0xFFFFFFFF);
 		sendByteIPC(IPC_READ_ARM7DLDI_REQBYIRQ);
-		while(getValueSafe(&fifomsg[23]) == (uint32)0xFEFEFEFE){
-			swiDelay(18);
+		while(getValueSafe(&fifomsg[23]) != (uint32)0){
+			swiDelay(1);
 		}
 		memcpy((uint16_t*)buffer, (uint16_t*)targetMem, (numSectors * 512));
 		return true;
 		#endif	
-	#endif	
-	#ifdef ARM9_DLDI
+	}
+	else{
 		#ifdef ARM7
 		return false;
 		#endif
 		#ifdef ARM9
-		struct  DLDI_INTERFACE* dldiInterface = (struct  DLDI_INTERFACE*)DLDIARM7Address;
-		return dldiInterface->ioInterface.readSectors(sector, numSectors, buffer);
+		return _io_dldi_stub.ioInterface.readSectors(sector, numSectors, buffer);
 		#endif
-	#endif
+	}
 }
 
 bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buffer){
 	//ARM7 DLDI implementation
-	#ifdef ARM7_DLDI
+	if(ARM7DLDIEnabled == true){
 		#ifdef ARM7
 		struct  DLDI_INTERFACE* dldiInterface = (struct DLDI_INTERFACE*)DLDIARM7Address;
 		return dldiInterface->ioInterface.writeSectors(sector, numSectors, buffer);
 		#endif
 		#ifdef ARM9
-		void * targetMem = (void *)((int)ARM7DLDIBuf + 0x400000);
+		void * targetMem = (void *)((int)&ARM7SharedDLDI[0] + 0x400000);
 		memcpy((uint16_t*)targetMem, (uint16_t*)buffer, (numSectors * 512));
 		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 		setValueSafe(&fifomsg[24], (uint32)sector);
 		setValueSafe(&fifomsg[25], (uint32)numSectors);
 		setValueSafe(&fifomsg[26], (uint32)targetMem);
-		setValueSafe(&fifomsg[27], (uint32)0xFEFEFEFE);
+		setValueSafe(&fifomsg[27], (uint32)0xFFFFFFFF);
 		sendByteIPC(IPC_WRITE_ARM7DLDI_REQBYIRQ);
-		while(getValueSafe(&fifomsg[27]) == (uint32)0xFEFEFEFE){
-			swiDelay(18);
+		while(getValueSafe(&fifomsg[27]) != (uint32)0){
+			swiDelay(1);
 		}
 		return true;
 		#endif	
-	#endif	
-	#ifdef ARM9_DLDI
+	}
+	else{
 		#ifdef ARM7
 		return false;
 		#endif
 		#ifdef ARM9
-		struct  DLDI_INTERFACE* dldiInterface = (struct  DLDI_INTERFACE*)DLDIARM7Address;
-		return dldiInterface->ioInterface.writeSectors(sector, numSectors, buffer);
+		return _io_dldi_stub.ioInterface.writeSectors(sector, numSectors, buffer);
 		#endif
-	#endif
+	}
 }
-#endif
-
 
 static const data_t dldiMagicString[12] = "\xED\xA5\x8D\xBF Chishm";	// Normal DLDI file
 //static const data_t dldiMagicLoaderString[12] = "\xEE\xA5\x8D\xBF Chishm";	// Different to a normal DLDI file

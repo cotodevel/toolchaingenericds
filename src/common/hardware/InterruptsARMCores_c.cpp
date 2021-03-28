@@ -33,9 +33,9 @@ USA
 #include "linkerTGDS.h"
 #include "eventsTGDS.h"
 #include "biosTGDS.h"
-#include "ARM7FS.h"
 #include "dmaTGDS.h"
 #include "soundTGDS.h"
+#include "dldi.h"
 
 void IRQInit(u8 DSHardware){
 	
@@ -212,28 +212,33 @@ void NDS_IRQHandler()  __attribute__ ((optnone)) {
 			case(IPC_ARM7READMEMORY_REQBYIRQ):{
 				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-				uint32 srcMemory = fifomsg[28];
-				uint32 targetMemory = fifomsg[29];
-				int bytesToRead = (int)fifomsg[30];
+				uint32 srcMemory = getValueSafe(&fifomsg[28]);
+				uint32 targetMemory = getValueSafe(&fifomsg[29]);
+				int bytesToRead = (int)getValueSafe(&fifomsg[30]);
 				memcpy((u8*)targetMemory,(u8*)srcMemory, bytesToRead);
-				fifomsg[31] = fifomsg[30] = fifomsg[29] = fifomsg[28] = (uint32)0;
+				setValueSafe(&fifomsg[28], (uint32)0);
+				setValueSafe(&fifomsg[29], (uint32)0);
+				setValueSafe(&fifomsg[30], (uint32)0);
+				setValueSafe(&fifomsg[31], (uint32)0);
 			}
 			break;
 			case(IPC_ARM7SAVEMEMORY_REQBYIRQ):{
 				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-				uint32 srcMemory = fifomsg[32];
-				uint32 targetMemory = fifomsg[33];
-				int bytesToRead = (int)fifomsg[34];
+				uint32 srcMemory = getValueSafe(&fifomsg[32]);
+				uint32 targetMemory = getValueSafe(&fifomsg[33]);
+				int bytesToRead = (int)getValueSafe(&fifomsg[34]);
 				#ifdef ARM9
 				dmaFillWord(0, 0, (uint32)srcMemory, (uint32)bytesToRead);
 				#endif
 				memcpy((u8*)srcMemory, (u8*)targetMemory, bytesToRead);
-				fifomsg[35] = fifomsg[34] = fifomsg[33] = fifomsg[32] = (uint32)0;
+				setValueSafe(&fifomsg[32], (uint32)0);
+				setValueSafe(&fifomsg[33], (uint32)0);
+				setValueSafe(&fifomsg[34], (uint32)0);
+				setValueSafe(&fifomsg[35], (uint32)0);
 			}
 			break;
 			#ifdef ARM7
-			
 			case(IPC_READ_FIRMWARE_REQBYIRQ):{
 				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
@@ -247,87 +252,39 @@ void NDS_IRQHandler()  __attribute__ ((optnone)) {
 				
 				fifomsg[31] = fifomsg[30] = fifomsg[29] = fifomsg[28] = (uint32)0;
 			}
-			break;
-			
-			//ARM7 FS Init
-			case(IPC_ARM7INIT_ARM7FS):{	//ARM7
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-				char *  ARM7FS_ARM9Filename = (char *)fifomsg[9];
-				//int fileHandleSize = (int)fifomsg[10];
-				int splitBufferSize = (int)fifomsg[11];
-				int curARM7FS_HandleMethod = (int)fifomsg[12];
-				u32 * debugVar = (u32*)fifomsg[13];
-				u32 testCase = (u32)fifomsg[14]; 
-				initARM7FS((char*)ARM7FS_ARM9Filename, curARM7FS_HandleMethod);
-				if(testCase == (u32)0xc070c070){
-					performARM7MP2FSTestCase(ARM7FS_ARM9Filename, splitBufferSize, debugVar);	//ARM7 Setup
+			break;			
+				//ARM7_DLDI
+				case(IPC_READ_ARM7DLDI_REQBYIRQ):{
+					struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
+					struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+					uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+					uint32 sector = getValueSafe(&fifomsg[20]);
+					uint32 numSectors = getValueSafe(&fifomsg[21]);
+					uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[22]);
+					dldiInterface->ioInterface.readSectors(sector, numSectors, targetMem);
+					setValueSafe(&fifomsg[20], (u32)0);
+					setValueSafe(&fifomsg[21], (u32)0);
+					setValueSafe(&fifomsg[22], (u32)0);
+					setValueSafe(&fifomsg[23], (u32)0);
 				}
-				fifomsg[15] = fifomsg[14] = fifomsg[13] = fifomsg[12] = fifomsg[11] = fifomsg[10] = fifomsg[9] = 0;
-			}
-			break;
-			
-			case(IPC_ARM7DEINIT_ARM7FS):{	//ARM7
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-				
-				//ARM7(FS) de-init
-				deinitARM7FS();
-				
-				fifomsg[8] = 0;
-			}
-			break;
-			
-			#ifdef ARM7_DLDI
-			case(IPC_INIT_ARM7DLDI_REQBYIRQ):{
-				//Init DLDI ARM7
-				ARM7DLDIInit();
-			}
-			break;
-			
-			case((uint32)IPC_READ_ARM7DLDI_REQBYIRQ):{
-				struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-				uint32 sector = getValueSafe(&fifomsg[20]);
-				uint32 numSectors = getValueSafe(&fifomsg[21]);
-				uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[22]);
-				dldiInterface->ioInterface.readSectors(sector, numSectors, targetMem);
-				setValueSafe(&fifomsg[20], (u32)0);
-				setValueSafe(&fifomsg[21], (u32)0);
-				setValueSafe(&fifomsg[22], (u32)0);
-				setValueSafe(&fifomsg[23], (u32)0);
-			}
-			break;
-			
-			case((uint32)IPC_WRITE_ARM7DLDI_REQBYIRQ):{
-				struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-				uint32 sector = getValueSafe(&fifomsg[24]);
-				uint32 numSectors = getValueSafe(&fifomsg[25]);
-				uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[26]);
-				dldiInterface->ioInterface.writeSectors(sector, numSectors, targetMem);
-				setValueSafe(&fifomsg[24], (u32)0);
-				setValueSafe(&fifomsg[25], (u32)0);
-				setValueSafe(&fifomsg[26], (u32)0);
-				setValueSafe(&fifomsg[27], (u32)0);
-			}
-			break;
-			
-			#endif
-			
+				break;
+				case(IPC_WRITE_ARM7DLDI_REQBYIRQ):{
+					struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
+					struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+					uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+					uint32 sector = getValueSafe(&fifomsg[24]);
+					uint32 numSectors = getValueSafe(&fifomsg[25]);
+					uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[26]);
+					dldiInterface->ioInterface.writeSectors(sector, numSectors, targetMem);
+					setValueSafe(&fifomsg[24], (u32)0);
+					setValueSafe(&fifomsg[25], (u32)0);
+					setValueSafe(&fifomsg[26], (u32)0);
+					setValueSafe(&fifomsg[27], (u32)0);
+				}
+				break;
 			#endif
 			
 			#ifdef ARM9
-			case (IPC_ARM7INIT_ARM7FS):	//ARM9 
-			{
-				
-			}
-			break;
-			
-			case(IPC_ARM7DEINIT_ARM7FS):{	//ARM9 
-				
-			}
-			break;
 			
 			#endif
 			

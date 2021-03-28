@@ -24,11 +24,11 @@ USA
 #include "timerTGDS.h"
 #include "dmaTGDS.h"
 #include "eventsTGDS.h"
-#include "ARM7FS.h"
 #include "posixHandleTGDS.h"
 #include "biosTGDS.h"
 #include "libndsFIFO.h"
 #include "loader.h"	//TGDS-multiboot reload NDS Binary ability
+#include "dldi.h"
 
 #ifdef ARM7
 #include <string.h>
@@ -46,7 +46,6 @@ USA
 #include "dsregs_asm.h"
 #include "wifi_arm9.h"
 #include "nds_cp15_misc.h"
-#include "dldi.h"
 #include "consoleTGDS.h"
 #endif
 
@@ -134,6 +133,7 @@ void HandleFifoNotEmpty()  __attribute__ ((optnone)) {
 			
 			//ARM7 command handler
 			#ifdef ARM7
+			
 			case(ARM7COMMAND_RELOADNDS):{
 				runBootstrapARM7();	//ARM7 Side
 			}
@@ -429,18 +429,39 @@ void HandleFifoNotEmpty()  __attribute__ ((optnone)) {
 			
 			//fifomsg[41] = fifomsg[40] = fifomsg[39]; freed. Available for upcoming stuff
 			
-			case((uint32)TGDS_ARM7_SETUPARMCoresMALLOC):{	//ARM7
+			case((uint32)TGDS_ARM7_SETUPARMCPUMALLOCANDDLDI):{	//ARM7
 				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 				u32 ARM7MallocStartaddress = (u32)getValueSafe(&fifomsg[42]);
 				u32 ARM7MallocSize = (u32)getValueSafe(&fifomsg[43]);
 				//bool customAllocator = (bool)getValueSafe(&fifomsg[44]);
+				u32 dldiStartAddress = (u32)getValueSafe(&fifomsg[45]);
+				u32 ARM7DLDISetting = (u32)getValueSafe(&fifomsg[46]);
+				if(ARM7DLDISetting == TGDS_ARM7DLDI_ENABLED){
+					ARM7DLDIEnabled = true;
+				}
+				else{
+					ARM7DLDIEnabled = false;
+				}
 				
-				initARM7Malloc(ARM7MallocStartaddress, ARM7MallocSize);
+				if(ARM7DLDIEnabled == true){
+					//init DLDI 7 Here
+					DLDIARM7Address = (u32*)dldiStartAddress;
+					bool DLDIARM7InitStatus = dldi_handler_init();
+					if(DLDIARM7InitStatus == true){
+						//setValueSafe(&fifomsg[45], (uint32)0xFAFAFAFA);
+						//after this (if ret status true) it's safe to call dldi read and write sectors from ARM9 (ARM7 DLDI mode)
+					}
+					else{
+						//setValueSafe(&fifomsg[45], (uint32)0xFCFCFCFC);
+					}
+					initARM7Malloc(ARM7MallocStartaddress, ARM7MallocSize);
+				}
 				
 				setValueSafe(&fifomsg[42], (uint32)0);
 				setValueSafe(&fifomsg[43], (uint32)0);
 				setValueSafe(&fifomsg[44], (uint32)0);
+				setValueSafe(&fifomsg[46], (uint32)0);
 				setValueSafe(&fifomsg[45], (uint32)0);
 			}
 			break;
@@ -566,8 +587,6 @@ void HandleFifoNotEmpty()  __attribute__ ((optnone)) {
 			}
 			break;
 			
-			//ARM7 DLDI implementation
-			#ifdef ARM7_DLDI
 			case(TGDS_ARM7_ENABLEFASTMODE):{
 				enableFastMode();
 			}
@@ -581,7 +600,6 @@ void HandleFifoNotEmpty()  __attribute__ ((optnone)) {
 				dldi_handler_deinit();
 			}
 			break;
-			#endif
 			
 			case TGDS_ARM7_ENABLE_SLEEPMODE_TIMEOUT:{
 				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
@@ -662,58 +680,6 @@ void HandleFifoNotEmpty()  __attribute__ ((optnone)) {
 			}
 			break;
 			
-			//ARM7 FS: read from ARM9 POSIX filehandle to ARM7
-			case(TGDS_ARM7_ARM7FSREAD):{
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-				u8* readbuf = (u8*)fifomsg[0];
-				int readBufferSize = (int)fifomsg[1];
-				int fileOffset = (int)fifomsg[2];
-				switch(ARM7FS_HandleMethod){
-					case(TGDS_ARM7FS_FILEHANDLEPOSIX):{
-						int readSoFar = ARM7FS_ReadBuffer_ARM9CallbackPOSIX(readbuf, fileOffset, ARM7FS_TGDSFileDescriptorRead, readBufferSize);	//UpdateDPG_Audio();
-						(void)readSoFar;
-					}
-					break;
-					case(TGDS_ARM7FS_TGDSFILEDESCRIPTOR):{
-						int readSoFar = ARM7FS_ReadBuffer_ARM9TGDSFD(readbuf, fileOffset, ARM7FS_TGDSFileDescriptorRead, readBufferSize);
-						(void)readSoFar;
-					}
-					break;
-				}
-				coherent_user_range_by_size((uint32)readbuf, readBufferSize);
-				fifomsg[3] = fifomsg[2] = fifomsg[1] = fifomsg[0] = 0;
-			}
-			break;
-			
-			//ARM7 FS: write from ARM7 to ARM9 POSIX filehandle
-			case(TGDS_ARM7_ARM7FSWRITE):{
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-				u8* readbuf = (u8*)fifomsg[4];
-				int writeBufferSize = (int)fifomsg[5];
-				int fileOffset = (int)fifomsg[6];
-				coherent_user_range_by_size((uint32)readbuf, writeBufferSize);
-				switch(ARM7FS_HandleMethod){
-					case(TGDS_ARM7FS_FILEHANDLEPOSIX):{
-						if(ARM7FS_TGDSFileDescriptorWrite != NULL){
-							int writtenSoFar = ARM7FS_SaveBuffer_ARM9CallbackPOSIX(readbuf, fileOffset, ARM7FS_TGDSFileDescriptorWrite, writeBufferSize);
-							(void)writtenSoFar;
-						}
-					}
-					break;
-					case(TGDS_ARM7FS_TGDSFILEDESCRIPTOR):{
-						if(ARM7FS_TGDSFileDescriptorWrite != NULL){
-							int writtenSoFar = ARM7FS_SaveBuffer_ARM9TGDSFD(readbuf, fileOffset, ARM7FS_TGDSFileDescriptorWrite, writeBufferSize);
-							(void)writtenSoFar;
-						}
-					}
-					break;
-				}
-				fifomsg[7] = fifomsg[6] = fifomsg[5] = fifomsg[4] = 0;
-			}
-			break;
-			
 			case((uint32)TGDS_ARM7_PRINTF7):{
 				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 
 				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
@@ -724,24 +690,6 @@ void HandleFifoNotEmpty()  __attribute__ ((optnone)) {
 				printf7(printfBufferShared, arm7ARGVBufferShared, argvCount);
 			}
 			break;
-			
-				//ARM7 DLDI implementation
-				#ifdef ARM7_DLDI
-				case(TGDS_DLDI_ARM7_INIT_OK):{
-					//printf("DLDI 7 INIT OK!");
-				}
-				break;
-				
-				case(TGDS_DLDI_ARM7_INIT_ERROR):{
-					//printf("DLDI 7 INIT ERROR!");
-				}
-				break;
-				
-				case(TGDS_DLDI_ARM7_STATUS_INIT):{
-					
-				}
-				break;
-				#endif
 			
 			//ARM7: Exception Handler
 			case((uint32)EXCEPTION_ARM7):{
@@ -908,13 +856,13 @@ void ReadMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead){
 	dmaFillWord(0, 0, (uint32)targetMemory, (uint32)bytesToRead);
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-	fifomsg[28] = (uint32)srcMemory;
-	fifomsg[29] = (uint32)targetMemory;
-	fifomsg[30] = (uint32)bytesToRead;
-	fifomsg[31] = (uint32)TGDS_ARM7_ARM7FSREAD;
+	setValueSafe(&fifomsg[28], (uint32)srcMemory);
+	setValueSafe(&fifomsg[29], (uint32)targetMemory);
+	setValueSafe(&fifomsg[30], (uint32)bytesToRead);
+	setValueSafe(&fifomsg[31], (uint32)0xFFFFFFFF);
 	sendByteIPC(IPC_ARM7READMEMORY_REQBYIRQ);
-	while((uint32)fifomsg[31] == (uint32)TGDS_ARM7_ARM7FSREAD){
-		swiDelay(2);
+	while((uint32)fifomsg[31] != (uint32)0){
+		swiDelay(1);
 	}
 	#ifdef ARM9
 	coherent_user_range_by_size((uint32)targetMemory, (sint32)bytesToRead);
@@ -930,13 +878,13 @@ void SaveMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead){
 	#endif
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-	fifomsg[32] = (uint32)srcMemory;
-	fifomsg[33] = (uint32)targetMemory;
-	fifomsg[34] = (uint32)bytesToRead;
-	fifomsg[35] = (uint32)TGDS_ARM7_ARM7FSWRITE;
+	setValueSafe(&fifomsg[32], (uint32)srcMemory);
+	setValueSafe(&fifomsg[33], (uint32)targetMemory);
+	setValueSafe(&fifomsg[34], (uint32)bytesToRead);
+	setValueSafe(&fifomsg[35], (uint32)0xFFFFFFFF);
 	sendByteIPC(IPC_ARM7SAVEMEMORY_REQBYIRQ);
-	while((uint32)fifomsg[35] == (uint32)TGDS_ARM7_ARM7FSWRITE){
-		swiDelay(2);
+	while((u32)getValueSafe(&fifomsg[35]) != (u32)0){
+		swiDelay(1);
 	}
 }
 

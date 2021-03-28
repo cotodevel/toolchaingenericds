@@ -723,9 +723,9 @@ Call this before exiting back to the GBAMP
 bool return OUT: true if successful.
 -----------------------------------------------------------------*/
 bool FAT_FreeFiles (void){
-	fatfs_init();
+	fatfs_deinit();
 	// Return status of card
-	struct  DLDI_INTERFACE* dldiInterface = (struct DLDI_INTERFACE*)DLDIARM7Address;	
+	struct  DLDI_INTERFACE* dldiInterface = dldiGet();
 	return (bool)dldiInterface->ioInterface.isInserted();
 }
 
@@ -1879,11 +1879,7 @@ int fatfs_deinit(){
 	}
 	
 	int ret = f_unmount("0:");
-	
-	//ARM7 DLDI implementation
-	#ifdef ARM7_DLDI
-	ARM9DeinitDLDI();
-	#endif
+	dldi_handler_deinit();
 	
 	//remove TGDS FS file handle context
 	if(files != NULL){
@@ -1891,11 +1887,10 @@ int fatfs_deinit(){
 	}
 	
 	//ARM9 DLDI impl.
-	#ifdef ARM9_DLDI
-	struct  DLDI_INTERFACE* dldiInterface = (struct DLDI_INTERFACE*)DLDIARM7Address;	
-	dldiInterface->ioInterface.clearStatus();
-	dldiInterface->ioInterface.shutdown();
-	#endif
+	if(ARM7DLDIEnabled == false){
+		_io_dldi_stub.ioInterface.clearStatus();
+		_io_dldi_stub.ioInterface.shutdown();
+	}
 	
 	return ret;
 }
@@ -2044,21 +2039,6 @@ bool updateTGDSFSDirectoryIteratorCWD(char * newCWD, struct FileClassList * lst)
 /////////////////////////////////////////////////////////////////////// INTERNAL DIRECTORY FUNCTIONS END //////////////////////////////////////////////////////////////////
 
 
-///////////////////////////////////////////////TGDS FileDescriptor Callbacks Implementation Start ///////////////////////////////////////////////
-//												See ARM7FS.h, TGDS FileDescriptor Implementation)
-//These callbacks are required when setting up initARM7FSTGDSFileHandle()	or performARM7MP2FSTestCaseTGDSFileDescriptor()
-int ARM7FS_ReadBuffer_ARM9ImplementationTGDSFD(u8 * outBuffer, int fileOffset, struct fd * fdinstIn, int bufferSize){
-	return TGDSFSUserfatfs_read(outBuffer, bufferSize, fileOffset, fdinstIn);
-}
-
-int ARM7FS_WriteBuffer_ARM9ImplementationTGDSFD(u8 * inBuffer, int fileOffset, struct fd * fdinstOut, int bufferSize){
-	return TGDSFSUserfatfs_write(inBuffer, bufferSize, fileOffset, fdinstOut);
-}
-
-int ARM7FS_close_ARM9ImplementationTGDSFD(struct fd * fdinstOut){
-	return TGDSFSUserfatfs_close(fdinstOut);
-}
-///////////////////////////////////////////////TGDS FileDescriptor Callbacks Implementation End ///////////////////////////////////////////////
 //FATFS layer which allows to open N file handles for a file (because TGDS FS forces 1 File Handle to a file)
 int TGDSFSUserfatfs_write(u8 *ptr, int len, int offst, struct fd *tgdsfd){	//(FileDescriptor :struct fd index)
 	f_lseek (
