@@ -205,7 +205,7 @@ void glBegin(int mode)
 
 //////////////////////////////////////////////////////////////////////
 
-  void glIdentity(void)
+  void glLoadIdentity(void)
 {
   MATRIX_IDENTITY = 0;
 }
@@ -654,10 +654,10 @@ void glReset(void)
   GFX_POLY_FORMAT = 0;
   
   glMatrixMode(GL_PROJECTION);
-  glIdentity();
+  glLoadIdentity();
 
   glMatrixMode(GL_MODELVIEW);
-  glIdentity();
+  glLoadIdentity();
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
