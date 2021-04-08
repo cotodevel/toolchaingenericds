@@ -30,7 +30,7 @@
 //			Converted all floating point math to fixed point
 //
 //	 0.3: Display lists added thanks to mike260	
-//
+//	 0.4: Update GL specs from OpenGL 1.0 to OpenGL 1.1 which enables Textures Objects (Coto)
 //////////////////////////////////////////////////////////////////////
 
 
@@ -61,10 +61,7 @@
 #define f32tofloat(n)        (((float)(n)) / (float)(1<<12)) /*!< \brief convert f32 to float */
 
 //newer
-
 typedef uint16 fixed12d3; /*!< \brief Used for depth (glClearDepth, glCutoffDepth) */
-
-
 #define intto12d3(n)    ((n) << 3) /*!< \brief convert int to fixed12d3 */
 #define floatto12d3(n)  ((fixed12d3)((n) * (1 << 3))) /*!< \brief convert float to fixed12d3 */
 
@@ -283,6 +280,25 @@ typedef enum {
 #define FIFO_FLUSH				REG2ID(GFX_FLUSH)             
 #define FIFO_VIEWPORT			REG2ID(GFX_VIEWPORT)          
 
+#ifndef GL_VERSION_1_1
+#define GL_VERSION_1_1 1
+
+typedef unsigned int GLenum;
+typedef unsigned char GLboolean;
+typedef unsigned int GLbitfield;
+typedef signed char GLbyte;
+typedef short GLshort;
+typedef int GLint;
+typedef int GLsizei;
+typedef unsigned char GLubyte;
+typedef unsigned short GLushort;
+typedef unsigned int GLuint;
+typedef float GLfloat;
+typedef float GLclampf;
+typedef double GLdouble;
+typedef double GLclampd;
+typedef void GLvoid;
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -597,9 +613,6 @@ static inline void glPolyFmt(int alpha) // obviously more to this
 }
 
 ////////////////////////////////////////////////////////////
-//Display lists have issues that need to resolving.
-//There seems to be some issues with list size.
-
 static inline void glCallList(const u32* list) {
 	u32 count = *list++;
 

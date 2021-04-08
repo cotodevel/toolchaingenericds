@@ -27,7 +27,8 @@
 //   0.1: First version
 //   0.2: Added gluFrustrum, gluPerspective, and gluLookAt
 //			Converted all floating point math to fixed point
-//
+//	 0.3: Display lists added thanks to mike260	
+//	 0.4: Update GL specs from OpenGL 1.0 to OpenGL 1.1 which enables Textures Objects (Coto)
 //////////////////////////////////////////////////////////////////////
 
 #include <typedefsTGDS.h>
@@ -867,4 +868,49 @@ int glTexImage2D(int target, int empty1, int type, int sizeX, int sizeY, int emp
 	}
 	*/
 	return 1;
+}
+
+//Open GL 1.1 Implementation: Texture Objects support
+//glTexImage*() == glTexImage3D
+void glTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid *pixels){
+
+}
+
+//glTexSubImage*() == glTexSubImage3D
+void glTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, const GLvoid *pixels){
+	//The glTexSubImage2D function specifies a portion of an existing one-dimensional texture image. You cannot define a new texture with glTexSubImage2D.
+}
+
+//glCopyTexImage*() == glCopyTexImage2D
+void glCopyTexImage2D(GLenum target, GLint level, GLenum internalFormat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border){
+	//replaces glTexImage2D() which is hardcoded to a big texture
+}
+
+//glCopyTexSubImage*() == glCopyTexSubImage3D
+void glCopyTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLint x, GLint y, GLsizei width, GLsizei height){
+
+}
+
+//glTexParameter*(),  
+/*  Example: Create a texture object with linear mipmaps and edge clamping.
+	GLuint texture_id;
+	glGenTextures(1, &texture_id);
+	glBindTexture(GL_TEXTURE_2D, texture_id);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	// texture_data is the source data of your texture, in this case
+	// its size is sizeof(unsigned char) * texture_width * texture_height * 4
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture_width, texture_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture_data);
+	glGenerateMipmap(GL_TEXTURE_2D); // Unavailable in OpenGL 2.1, use gluBuild2DMipmaps() insteads.
+*/
+//requires to update glTexParameter
+
+//glPrioritizeTextures()
+void glPrioritizeTextures (GLsizei n, const GLuint *textures, const GLclampf *priorities){
+	//DS 3D GPU does not support texture priority. There may be a way by sorting them by color but
 }
