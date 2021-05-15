@@ -110,7 +110,6 @@ extern sint8 * print_ip(uint32 ip, char * outBuf);
 extern sint8 	*_FS_getFileExtension(sint8 *filename);
 extern sint8 	*FS_getFileName(sint8 *filename);
 extern int		FS_chdir(const sint8 *path);
-extern int getLastDirFromPath(char * stream, char * haystack, char * outBuf);
 
 //splitCustom string by delimiter implementation in C, that does not use malloc/calloc and re-uses callbacks
 extern int count_substr(const char *str, const char* substr, bool overlap);
