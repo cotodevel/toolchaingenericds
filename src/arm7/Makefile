@@ -77,7 +77,6 @@ CFLAGS = \
   -g3 \
   -ffunction-sections -fdata-sections \
   -Wall \
-  -Werror \
   -nostdlib \
   -fPIC	\
   -fshort-enums	\

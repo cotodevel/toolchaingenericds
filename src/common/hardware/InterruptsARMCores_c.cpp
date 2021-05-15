@@ -146,14 +146,14 @@ void NDS_IRQHandler() __attribute__ ((optnone)) {
 			if(penDown){
 				keys |= KEY_TOUCH;	//tsc event must be before coord handling to give priority over touch events
 				
-				struct XYTscPos tempPos;
-				XYReadScrPos(&tempPos);
+				touchPosition tempPos = {0};
+				touchReadXY(&tempPos);
 				
 				if(tempPos.rawx && tempPos.rawy){
 					sIPCSharedTGDSInst->rawy    = tempPos.rawy;
-					sIPCSharedTGDSInst->touchYpx = tempPos.touchYpx;
+					sIPCSharedTGDSInst->touchYpx = tempPos.py;
 					sIPCSharedTGDSInst->rawx    = tempPos.rawx;
-					sIPCSharedTGDSInst->touchXpx = tempPos.touchXpx;
+					sIPCSharedTGDSInst->touchXpx = tempPos.px;
 					sIPCSharedTGDSInst->touchZ1 = tempPos.z1;
 					sIPCSharedTGDSInst->touchZ2 = tempPos.z2;
 				}

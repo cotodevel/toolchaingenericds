@@ -704,6 +704,11 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 }
 
 #ifdef ARM7
+
+static s32 xscale, yscale;
+static s32 xoffset, yoffset;
+static u8 last_time_touched = 0;
+
 static int LastTSCPosX = 0;
 static int LastTSCPosY = 0;
 
@@ -732,13 +737,9 @@ struct xyCoord readTSC(){
 
 __attribute__ ((noinline))
 void XYReadScrPos(struct XYTscPos * StouchScrPosInst){
-	
-	uint16 read_raw_x = 0;
-	uint16 read_raw_y = 0;
-	
 	struct xyCoord coord = readTSC();		
-	read_raw_x = coord.x;
-	read_raw_y = coord.y;
+	uint16 read_raw_x = coord.x;
+	uint16 read_raw_y = coord.y;
 	
 	//Touchscreen Position (pixel TFT X Y Coordinates conversion)
 	//Read the X and Y positions in 12bit differential mode, then convert the touchscreen values (adc) to screen/pixel positions (scr), as such:
@@ -759,25 +760,31 @@ void XYReadScrPos(struct XYTscPos * StouchScrPosInst){
 	uint8 scr_x2  = (DSFWSettingsInst->tsc_tsccalx2y28bit[0]);
 	uint8 scr_y2  = (DSFWSettingsInst->tsc_tsccalx2y28bit[1]);
 	
-	sint32 scrx = (read_raw_x-adc_x1) * (scr_x2-scr_x1) / (adc_x2-adc_x1) + (scr_x1-1);
-	sint32 scry = (read_raw_y-adc_y1) * (scr_y2-scr_y1) / (adc_y2-adc_y1) + (scr_y1-1);
+	//sint32 scrx = (read_raw_x-adc_x1) * (scr_x2-scr_x1) / (adc_x2-adc_x1) + (scr_x1-1);
+	//sint32 scry = (read_raw_y-adc_y1) * (scr_y2-scr_y1) / (adc_y2-adc_y1) + (scr_y1-1);
 	
-	if(scrx > 256){
-		scrx = 256;
-	}
-	
-	if(scry > 192){
-		scry = 192;
-	}
+	xscale = ((scr_x2 - scr_x1) << 19) / ((adc_x2) - (adc_x1));
+	yscale = ((scr_y2 - scr_y1) << 19) / ((adc_y2) - (adc_y1));
+
+	xoffset = ((adc_x1 + adc_x2) * xscale  - ((scr_x1 + scr_x2) << 19) ) / 2;
+	yoffset = ((adc_y1 + adc_y2) * yscale  - ((scr_y1 + scr_y2) << 19) ) / 2;
+
+	s16 px = ( read_raw_x * xscale - xoffset + xscale/2 ) >>19;
+	s16 py = ( read_raw_y * yscale - yoffset + yscale/2 ) >>19;
+
+	if ( px < 0) px = 0;
+	if ( py < 0) py = 0;
+	if ( px > (SCREEN_WIDTH -1)) px = SCREEN_WIDTH -1;
+	if ( py > (SCREEN_HEIGHT -1)) py = SCREEN_HEIGHT -1;
 	
 	//TFT x/y pixel
 	StouchScrPosInst->rawx    = read_raw_x;
-	StouchScrPosInst->touchXpx = scrx;
+	StouchScrPosInst->touchXpx = px;
 	StouchScrPosInst->rawy    = read_raw_y;
-	StouchScrPosInst->touchYpx = scry;
+	StouchScrPosInst->touchYpx = py;
 	
-	LastTSCPosX = scrx;
-	LastTSCPosY = scry;
+	LastTSCPosX = px;
+	LastTSCPosY = py;
 	
 	//todo? maybe we don't need them for UI controls
 	StouchScrPosInst->z1   =   0;

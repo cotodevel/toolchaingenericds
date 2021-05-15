@@ -334,6 +334,8 @@ extern void Write8bitAddrExtArm(uint32 address, uint8 value);
 //arg 1: arg0: handler, arg1: userdata
 extern u32 fifoFunc[FIFO_CHANNELS][2];	//context is only passed on callback prototype stage, because, the channel index generates the callee callback
 
+extern u8 CheckStylus();
+
 #ifdef __cplusplus
 }
 #endif
