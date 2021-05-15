@@ -75,26 +75,31 @@ void dldi_handler_deinit(){
 
 /////////////////////////////////////////////////// RAM Disk DLDI Implementation ////////////////////////////////////////////
 
+__attribute__((section(".dldiSection")))
 bool _DLDI_isInserted(void)
 {
 	return true;	//Always True
 }
 
+__attribute__((section(".dldiSection")))
 bool _DLDI_clearStatus(void)
 {
     return true;	//Always True
 }
 
+__attribute__((section(".dldiSection")))
 bool _DLDI_shutdown(void)
 {
     return true;	//Always True
 }
 
+__attribute__((section(".dldiSection")))
 bool _DLDI_startup(void)
 {
     return true;	//Always True
 } 
 
+__attribute__((section(".dldiSection")))
 bool _DLDI_writeSectors(uint32 sector, uint32 sectorCount, const uint8* buffer)
 {
 	int sectorSize = 512;
@@ -108,6 +113,7 @@ bool _DLDI_writeSectors(uint32 sector, uint32 sectorCount, const uint8* buffer)
     return true;
 }
 
+__attribute__((section(".dldiSection")))
 bool _DLDI_readSectors(uint32 sector, uint32 sectorCount, uint8* buffer)
 {
 	int sectorSize = 512;

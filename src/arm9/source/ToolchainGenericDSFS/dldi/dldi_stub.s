@@ -3,7 +3,7 @@
 #ifdef ARM9
 
 @---------------------------------------------------------------------------------
-	.section    .dldiSection, "awx", %progbits
+	.section    .initDldiSection, "awx", %progbits
 	.align	4
 	.arm
 	.global _io_dldi_stub
@@ -63,7 +63,7 @@ dldi_start:
 dldi_data_end:
 
 @ Pad to end of allocated space
-.space DLDI_ALLOCATED_SPACE - (dldi_data_end - dldi_start)	
+.space (DLDI_ALLOCATED_SPACE - (dldi_data_end - dldi_start)	- 2048)
 
 dldi_end:
 	.end
