@@ -80,18 +80,11 @@ static inline void menuShow(){
 	printarm7DebugBuffer();
 }
 
-//ToolchainGenericDS-LinkedModule User implementation: WoopsiTGDS
-int TGDSProjectReturnFromLinkedModule(){
-	//Return from TGDS-LinkedModule? Restore services
-	u8 DSHardware = ARM7ReloadFlashSync();
-	IRQInit(DSHardware);
-	int ret=FS_init();
-	// Create Woopsi UI
-	WoopsiTemplate WoopsiTemplateApp;
-	WoopsiTemplateProc = &WoopsiTemplateApp;
-	int readaArgc = getGlobalArgc();
-	char** readaArgv = getGlobalArgv();
-	return WoopsiTemplateApp.main(readaArgc, readaArgv);
+//ToolchainGenericDS-LinkedModule User implementation: Called if TGDS-LinkedModule fails to reload ARM9.bin from DLDI.
+char args[8][MAX_TGDSFILENAME_LENGTH];
+char *argvs[8];
+int TGDSProjectReturnFromLinkedModule() __attribute__ ((optnone)) {
+	return -1;
 }
 
 int main(int argc, char **argv) {

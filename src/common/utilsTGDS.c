@@ -36,6 +36,7 @@ USA
 #ifdef ARM9
 #include "fatfslayerTGDS.h"
 #include "videoTGDS.h"
+#include "dmaTGDS.h"
 #endif
 
 size_t ucs2tombs(uint8* dst, const unsigned short* src, size_t len) {
@@ -217,12 +218,12 @@ char * str_replace (char *string, const char *substr, const char *replacement)
 	while ( ( tok = strstr( newstr, substr ) ) )
 	{
 		oldstr = newstr;
-		newstr = (char*)TGDSARM9Malloc ( strlen ( oldstr ) - strlen ( substr ) + strlen ( replacement ) + 1 );
+		newstr = (char*)malloc ( strlen ( oldstr ) - strlen ( substr ) + strlen ( replacement ) + 1 );
 
 		/* If failed to alloc mem, free old string and return NULL */
 		if ( newstr == NULL )
 		{
-			TGDSARM9Free (oldstr);
+			free (oldstr);
 			return NULL;
 		}
 
@@ -231,10 +232,10 @@ char * str_replace (char *string, const char *substr, const char *replacement)
 		memcpy ( newstr + (tok - oldstr) + strlen( replacement ), tok + strlen ( substr ), strlen ( oldstr ) - strlen ( substr ) - ( tok - oldstr ) );
 		memset ( newstr + strlen ( oldstr ) - strlen ( substr ) + strlen ( replacement ) , 0, 1 );
 
-		TGDSARM9Free (oldstr);
+		free (oldstr);
 	}
 
-	TGDSARM9Free (string);
+	free (string);
 
 	return newstr;
 }
@@ -245,21 +246,21 @@ int split (const sint8 *txt, sint8 delim, sint8 ***tokens)
     sint8 **arr, *p = (sint8 *) txt;
 
     while (*p != '\0') if (*p++ == delim) count += 1;
-    t = tklen = (int*)TGDSARM9Calloc (count, sizeof (int));
+    t = tklen = (int*)calloc (count, sizeof (int));
     for (p = (sint8 *) txt; *p != '\0'; p++) *p == delim ? *t++ : (*t)++;
-    *tokens = arr = (sint8**)TGDSARM9Malloc (count * sizeof (sint8 *));
+    *tokens = arr = (sint8**)malloc (count * sizeof (sint8 *));
     t = tklen;
-    p = *arr++ = (sint8*)TGDSARM9Calloc (*(t++) + 1, sizeof (sint8 *));
+    p = *arr++ = (sint8*)calloc (*(t++) + 1, sizeof (sint8 *));
     while (*txt != '\0')
     {
         if (*txt == delim)
         {
-            p = *arr++ = (sint8*)TGDSARM9Calloc (*(t++) + 1, sizeof (sint8 *));
+            p = *arr++ = (sint8*)calloc (*(t++) + 1, sizeof (sint8 *));
             txt++;
         }
         else *p++ = *txt++;
     }
-    TGDSARM9Free (tklen);
+    free (tklen);
     return count;
 }
 
@@ -775,13 +776,39 @@ void separateExtension(char *str, char *ext)
 		ext[0] = 0;	
 }
 
+//ToolchainGenericDS-multiboot NDS Binary loader: Requires tgds_multiboot_payload.bin (TGDS-multiboot Project) in SD root.
+__attribute__((section(".itcm")))
+void TGDSMultibootRunNDSPayload(char * filename) __attribute__ ((optnone)) {
+	switch_dswnifi_mode(dswifi_idlemode);
+	strcpy((char*)(0x02280000 - (MAX_TGDSFILENAME_LENGTH+1)), filename);	//Arg0:	
+	
+	FILE * tgdsPayloadFh = fopen("0:/tgds_multiboot_payload.bin", "r");
+	if(tgdsPayloadFh != NULL){
+		fseek(tgdsPayloadFh, 0, SEEK_SET);
+		int	tgds_multiboot_payload_size = FS_getFileSizeFromOpenHandle(tgdsPayloadFh);
+		fread((u32*)0x02280000, 1, tgds_multiboot_payload_size, tgdsPayloadFh);
+		coherent_user_range_by_size(0x02280000, (int)tgds_multiboot_payload_size);
+		fclose(tgdsPayloadFh);
+		int ret=FS_deinit();
+		//Copy and relocate current TGDS DLDI section into target ARM9 binary
+		bool stat = dldiPatchLoader((data_t *)0x02280000, (u32)tgds_multiboot_payload_size, (u32)&_io_dldi_stub);
+		if(stat == false){
+			//printf("DLDI Patch failed. APP does not support DLDI format.");
+		}
+		REG_IME = 0;
+		typedef void (*t_bootAddr)();
+		t_bootAddr bootARM9Payload = (t_bootAddr)0x02280000;
+		bootARM9Payload();
+	}
+}
+
 //ToolchainGenericDS-LinkedModule 
 int getArgcFromTGDSLinkedModule(struct TGDS_Linked_Module * TGDSLMCtx){
 	return TGDSLMCtx->argCount;
 }
 
 char ** getArgvFromTGDSLinkedModule(struct TGDS_Linked_Module * TGDSLMCtx){
-	return &TGDSLMCtx->argvs[0];
+	return &TGDSLMCtx->argvs;
 }
 
 //Usage: char * TGDSLinkedModuleFilename = "0:/ToolchainGenericDS-linkedmodule.bin"
@@ -791,6 +818,8 @@ void TGDSProjectRunLinkedModule(char * TGDSLinkedModuleFilename, int argc, char 
 	if(tgdsPayloadFh != NULL){
 		fseek(tgdsPayloadFh, 0, SEEK_SET);
 		int	tgds_multiboot_payload_size = FS_getFileSizeFromOpenHandle(tgdsPayloadFh);
+		dmaFillHalfWord(0, 0, (uint32)0x02200000, (uint32)(tgds_multiboot_payload_size));
+		coherent_user_range_by_size((uint32)0x02200000, tgds_multiboot_payload_size);
 		fread((u32*)0x02200000, 1, tgds_multiboot_payload_size, tgdsPayloadFh);
 		coherent_user_range_by_size(0x02200000, (int)tgds_multiboot_payload_size);
 		fclose(tgdsPayloadFh);
@@ -807,10 +836,9 @@ void TGDSProjectRunLinkedModule(char * TGDSLinkedModuleFilename, int argc, char 
 		
 		TGDSLinkedModuleCtx->TGDS_LM_Size = tgds_multiboot_payload_size;
 		TGDSLinkedModuleCtx->TGDS_LM_Entrypoint = 0x02200000;
-		TGDSLinkedModuleCtx->returnAddress = (u32)&TGDSProjectReturnFromLinkedModule;	//Parent TGDS Project defines re-init implementation
+		//TGDSLinkedModuleCtx->returnAddressTGDSLinkedModule = 0;	//Implemented when TGDS-LM boots
+		TGDSLinkedModuleCtx->returnAddressTGDSMainApp = (u32)&TGDSProjectReturnFromLinkedModule;	//Implemented in Parent TGDS App
 		//TGDS-LM ARGV
-		memset((u8*)TGDSLinkedModuleCtx->args, 0, sizeof(TGDSLinkedModuleCtx->args));
-		memset((u8*)TGDSLinkedModuleCtx->argvs, 0, sizeof(TGDSLinkedModuleCtx->argvs));
 		int i = 0;
 		for(i = 0; i < argc; i++){
 			strcpy((char*)&TGDSLinkedModuleCtx->args[i][0], (char*)argv[i]);
@@ -868,14 +896,14 @@ int	setBacklight(int flags){
 	return 0;
 }
 
-u32 getValueSafe(u32 * buf) __attribute__ ((optnone)) {
+u32 getValueSafe(u32 * buf){
 	#ifdef ARM9
 	coherent_user_range_by_size((uint32)buf, 4);
 	#endif
 	return (u32)(*buf);
 }
 
-void setValueSafe(u32 * buf, u32 val) __attribute__ ((optnone)) {
+void setValueSafe(u32 * buf, u32 val){
 	(*buf) = (u32)val;
 	#ifdef ARM9
 	coherent_user_range_by_size((uint32)buf, 4);

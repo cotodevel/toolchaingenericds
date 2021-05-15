@@ -57,16 +57,20 @@ typedef	struct {
 typedef void(*splitCustom_fn)(const char *, size_t, char * ,int indexToLeftOut, char * delim);
 
 //ToolchainGenericDS-LinkedModule format: ver 0.2
+#define TGDS_LINKEDMODULE_TOPSIZE	(int)((1024*1024*1) + (256*1024))	//sint8 * is char *
 struct TGDS_Linked_Module {
 	u32 DSARMRegs[16];
 	int	TGDS_LM_Size;	//filled by the linker
 	unsigned int	TGDS_LM_Entrypoint; //filled by the linker
-	u32 returnAddress; //when LM exits (return from main), jumps here. TGDS LM Caller address
+	u32 returnAddressTGDSLinkedModule; //TGDS LM implementation called when LM exits (return from module). (1/2)
+	u32 returnAddressTGDSMainApp; //TGDS LM implementation called returnAddressTGDSLinkedModule reloads from RAM rather than image. (2/2)
 	//argv 
 	char args[8][MAX_TGDSFILENAME_LENGTH];
 	char *argvs[8];
 	int argCount;
-	char TGDSMainAppName[MAX_TGDSFILENAME_LENGTH];
+	
+	//TGDS ARM9.bin defs
+	char TGDSMainAppName[MAX_TGDSFILENAME_LENGTH]; //todo: save full name (relative path it was called from) when calling TGDS-LModules
 };
 
 #endif
@@ -77,9 +81,6 @@ extern "C"{
 
 extern size_t ucs2tombs(uint8* dst, const unsigned short* src, size_t len);
 extern int	setBacklight(int flags);
-
-extern u32 getValueSafe(u32 * buf);
-extern void setValueSafe(u32 * buf, u32 val);
 
 #ifdef ARM9
 
@@ -109,6 +110,7 @@ extern sint32 glueARMHandlerConfig(VERSION_DESCRIPTOR * versionInst,METHOD_DESCR
 //misc
 extern int	split (const sint8 *txt, sint8 delim, sint8 ***tokens);
 
+#ifdef ARM9
 extern int	FS_loadFile(sint8 *filename, sint8 *buf, int size);
 extern int	FS_saveFile(sint8 *filename, sint8 *buf, int size,bool force_file_creation);
 extern int	FS_getFileSize(sint8 *filename);
@@ -139,6 +141,9 @@ extern char thisArgv[argvItems][MAX_TGDSFILENAME_LENGTH];
 extern void mainARGV();
 extern void separateExtension(char *str, char *ext);
 
+//ToolchainGenericDS-multiboot NDS Binary loader: Requires tgds_multiboot_payload.bin (TGDS-multiboot Project) in SD root.
+extern void TGDSMultibootRunNDSPayload(char * filename);
+
 //ToolchainGenericDS-LinkedModule 
 extern int getArgcFromTGDSLinkedModule(struct TGDS_Linked_Module * TGDSLMCtx);
 extern char ** getArgvFromTGDSLinkedModule(struct TGDS_Linked_Module * TGDSLMCtx);
@@ -146,10 +151,18 @@ extern void setGlobalArgc(int argcVal);
 extern int getGlobalArgc();
 extern void setGlobalArgv(char** argvVal);
 extern char** getGlobalArgv();
-extern int TGDSProjectReturnFromLinkedModule();
+
+extern int TGDSProjectReturnFromLinkedModule();	//resides in TGDS App caller address
+	extern void TGDSProjectReturnFromLinkedModuleDeciderStub();	//resides in TGDSLinkedModule address. Called when TGDS-LM binary exceeds 1.25M
+
 extern void TGDSProjectRunLinkedModule(char * TGDSLinkedModuleFilename, int argc, char **argv, char* TGDSProjectName);
 
 #endif
+
+#endif
+
+extern u32 getValueSafe(u32 * buf);
+extern void setValueSafe(u32 * buf, u32 val);
 
 #ifdef __cplusplus
 }
