@@ -110,4 +110,13 @@ void OnDSWIFIGDBStubEnable(){
 
 }
 
+//GDBStub Callbacks
+void onGDBStubConnect(){
+
+}
+
+void onGDBStubDisconnected(){
+
+}
+
 #endif
