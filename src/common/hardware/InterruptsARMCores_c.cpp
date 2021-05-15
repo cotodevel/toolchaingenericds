@@ -37,7 +37,7 @@ USA
 #include "dmaTGDS.h"
 #include "soundTGDS.h"
 
-void IRQInit(u8 DSHardware){
+void IRQInit(u8 DSHardware) __attribute__ ((optnone)) {
 	
 	//NTR
 	if(
@@ -105,7 +105,7 @@ static bool penDown = false;
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
-void NDS_IRQHandler(){
+void NDS_IRQHandler() __attribute__ ((optnone)) {
 	u32 handledIRQ = (REG_IF | SWI_CHECKBITS) & REG_IE;
 	if(handledIRQ & IRQ_HBLANK){
 		HblankUser();
