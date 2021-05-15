@@ -95,7 +95,7 @@ void initTGDSDevoptab(){
 	//devoptab_sdFilesystem is missing on purpose. Must be set manually through void initTGDS(bool defaultDriver, char * devoptabFSName)
 	
 	//Allocate TGDS FS file handle
-	files = (struct fd*)malloc(sizeof(struct fd)*OPEN_MAXTGDS);
+	files = (struct fd*)TGDSARM9Malloc(sizeof(struct fd)*OPEN_MAXTGDS);
 }
 
 sint32 open_posix_filedescriptor_devices(){

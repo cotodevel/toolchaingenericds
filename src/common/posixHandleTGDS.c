@@ -73,7 +73,7 @@ uint32 get_lma_libend(){
 	return (uint32)(&__vma_stub_end__);	//linear memory top (start)
 }
 
-//(ewram end - linear memory top ) = malloc free memory (bottom, end)
+//(ewram end - linear memory top ) = TGDSARM9Malloc free memory (bottom, end)
 uint32 get_lma_wramend(){
 	#ifdef ARM7
 	extern uint32 sp_USR;	//the farthest stack from the end memory is our free memory (in ARM7, shared stacks)
@@ -261,7 +261,7 @@ void writeDebugBuffer7(char *chr, int argvCount, int * argv){
 }
 #endif
 
-//ARM7 malloc support. Will depend on the current memory mapped (can be either IWRAM(very scarse), EWRAM, VRAM or maybe other)
+//ARM7 TGDSARM9Malloc support. Will depend on the current memory mapped (can be either IWRAM(very scarse), EWRAM, VRAM or maybe other)
 #ifdef ARM7
 u32 ARM7MallocBaseAddress = 0;
 u32 ARM7MallocTop = 0;
@@ -288,7 +288,7 @@ void initARM7Malloc(u32 ARM7MallocStartaddress, u32 ARM7MallocSize){	//ARM7 Impl
 #endif
 
 #ifdef ARM9
-//ARM9 Malloc implementation: Blocking, because several processes running on ARM7 may require ARM9 having a proper malloc impl.
+//ARM9 Malloc implementation: Blocking, because several processes running on ARM7 may require ARM9 having a proper TGDSARM9Malloc impl.
 u32 ARM9MallocBaseAddress = 0;
 void setTGDSARM9MallocBaseAddress(u32 address){
 	ARM9MallocBaseAddress = address;
@@ -452,7 +452,7 @@ int printf(const char *fmt, ...){
 	//Separate the TGDS Console font color if exists
 	char cpyBuf[256+1] = {0};
 	strcpy(cpyBuf, (const char*)ConsolePrintfBuf);
-	char * outBuf = (char *)malloc(256*10);
+	char * outBuf = (char *)TGDSARM9Malloc(256*10);
 	char * colorChar = (char*)((char*)outBuf + (1*256));
 	int matchCount = str_split((char*)cpyBuf, ">", outBuf, 10, 256);
 	if(matchCount > 0){
@@ -462,7 +462,7 @@ int printf(const char *fmt, ...){
 	
     GUI_drawText(&zone, 0, GUI.printfy, color, (sint8*)ConsolePrintfBuf, readAndBlendFromVRAM);
     GUI.printfy += GUI_getFontHeight(&zone);
-	free(outBuf);
+	TGDSARM9Free(outBuf);
 	return strlen((const char*)ConsolePrintfBuf)+1;
 }
 
@@ -486,7 +486,7 @@ void printfCoords(int x, int y, const char *fmt, ...){
 	//Separate the TGDS Console font color if exists
 	char cpyBuf[256+1] = {0};
 	strcpy(cpyBuf, (const char*)ConsolePrintfBuf);
-	char * outBuf = (char *)malloc(256*10);
+	char * outBuf = (char *)TGDSARM9Malloc(256*10);
 	char * colorChar = (char*)((char*)outBuf + (1*256));
 	int matchCount = str_split((char*)cpyBuf, ">", outBuf, 10, 256);
 	if(matchCount > 0){
@@ -496,7 +496,7 @@ void printfCoords(int x, int y, const char *fmt, ...){
 	
     GUI_drawText(&zone, x, GUI.printfy, color, (sint8*)ConsolePrintfBuf, readAndBlendFromVRAM);
     GUI.printfy += GUI_getFontHeight(&zone);
-	free(outBuf);
+	TGDSARM9Free(outBuf);
 }
 
 int _vfprintf_r(struct _reent * reent, FILE *fp, const sint8 *fmt, va_list args){
@@ -590,7 +590,7 @@ _ssize_t _write_r ( struct _reent *ptr, int fd, const void *buf, size_t cnt ){
 
 int _open_r ( struct _reent *ptr, const sint8 *file, int flags, int mode ){
 	if(file != NULL){
-		char * outBuf = (char *)malloc(256*10);
+		char * outBuf = (char *)TGDSARM9Malloc(256*10);
 		int i = 0;
 		char * token_rootpath = (char*)((char*)outBuf + (0*256));
 		str_split((char*)file, "/", outBuf, 10, 256);
@@ -601,12 +601,12 @@ int _open_r ( struct _reent *ptr, const sint8 *file, int flags, int mode ){
 			if(strlen(token_rootpath) > 0){
 				sprintf((sint8*)token_str,"%s%s",(char*)token_rootpath,"/");	//format properly
 				if (strcmp((sint8*)token_str,devoptab_struct[i]->name) == 0){
-					free(outBuf);
+					TGDSARM9Free(outBuf);
 					return devoptab_struct[i]->open_r( NULL, file, flags, mode ); //returns / allocates a new struct fd index with either DIR or FIL structure allocated
 				}
 			}
 		}
-		free(outBuf);
+		TGDSARM9Free(outBuf);
 	}
 	return -1;
 }
@@ -711,7 +711,7 @@ int getMaxRam(){
 }
 
 //Memory is too fragmented up to this point, causing to have VERY little memory left. 
-//Luckily for us this memory hack allows dmalloc to re-arrange and free more memory for us! Also fixing malloc memory fragmentation!! WTF Dude.
+//Luckily for us this memory hack allows dmalloc to re-arrange and free more memory for us! Also fixing TGDSARM9Malloc memory fragmentation!! WTF Dude.
 void TryToDefragmentMemory(){
 	int freeRam = getMaxRam();
 	//I'm not kidding, this allows to de-fragment memory. Relative to how much memory we have and re-allocate it

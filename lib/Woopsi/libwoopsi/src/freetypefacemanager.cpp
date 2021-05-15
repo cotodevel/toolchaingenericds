@@ -1,4 +1,4 @@
-#include <malloc.h>
+#include "posixHandleTGDS.h"
 #include "freetypefacemanager.h"
 #include "mutablebitmapbase.h"
 #include "woopsistring.h"
@@ -15,7 +15,7 @@ using namespace WoopsiUI;
 FreeTypeFaceManager::~FreeTypeFaceManager() {
 	while (_root != NULL) {
 		FreeTypeFaceManagerItem* temp = _root->next;
-		free(_root->faceID->path);
+		TGDSARM9Free(_root->faceID->path);
 		delete _root->faceID;
 		delete _root;
 		_root = temp;
@@ -28,7 +28,7 @@ const FaceID* FreeTypeFaceManager::addFace(const char* path, const u8 index) {
 	FaceID* faceID = new FaceID;
 
 	// Copy path into faceID struct
-	faceID->path = (char*)malloc(strlen(path) + 1);
+	faceID->path = (char*)TGDSARM9Malloc(strlen(path) + 1);
 	strcpy(faceID->path, path);
 
 	faceID->index = index;

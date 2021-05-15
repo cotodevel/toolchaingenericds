@@ -84,7 +84,7 @@ void Debug::printf(const char *fmt, ...) {
 	//Separate the TGDS Console font color if exists
 	char cpyBuf[256+1] = {0};
 	strcpy(cpyBuf, (const char*)ConsolePrintfBuf);
-	char * outBuf = (char *)malloc(256*10);
+	char * outBuf = (char *)TGDSARM9Malloc(256*10);
 	char * colorChar = (char*)((char*)outBuf + (1*256));
 	int matchCount = str_split((char*)cpyBuf, ">", outBuf, 10, 256);
 	if(matchCount > 0){
@@ -94,7 +94,7 @@ void Debug::printf(const char *fmt, ...) {
 	
     GUI_drawText(&zone, 0, GUI.printfy, color, (sint8*)ConsolePrintfBuf, readAndBlendFromVRAM);
     GUI.printfy += GUI_getFontHeight(&zone);
-	free(outBuf);
+	TGDSARM9Free(outBuf);
 }
 
 

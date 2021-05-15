@@ -61,7 +61,7 @@ void  AnimButtonTest::startup() {
 	_dimensions->addGadgetEventHandler(this);
 	
 	// Create bitmaps for button
-	_bitmaps = (BitmapWrapper**)malloc(10 * sizeof(BitmapWrapper*));
+	_bitmaps = (BitmapWrapper**)TGDSARM9Malloc(10 * sizeof(BitmapWrapper*));
 	_bitmaps[0] = new BitmapWrapper(ik1_Bitmap, 111, 53);
 	_bitmaps[1] = new BitmapWrapper(ik2_Bitmap, 111, 53);
 	_bitmaps[2] = new BitmapWrapper(ik3_Bitmap, 111, 53);
@@ -109,7 +109,7 @@ void  AnimButtonTest::shutdown() {
 		delete _bitmaps[i];
 	}
 	
-	free(_bitmaps);
+	TGDSARM9Free(_bitmaps);
 
 	// Call base shutdown method
 	Woopsi::shutdown();

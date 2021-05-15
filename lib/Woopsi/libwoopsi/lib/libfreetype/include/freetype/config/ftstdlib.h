@@ -120,10 +120,10 @@
   /**********************************************************************/
 
 
+#include "posixHandleTGDS.h"
 #include <stdlib.h>
 
 #define ft_qsort  qsort
-
 #define ft_exit   exit    /* only used to exit from unhandled exceptions */
 
 
@@ -134,10 +134,10 @@
   /**********************************************************************/
 
 
-#define ft_scalloc   calloc
-#define ft_sfree     free
-#define ft_smalloc   malloc
-#define ft_srealloc  realloc
+#define ft_scalloc   TGDSARM9Calloc
+#define ft_sfree     TGDSARM9Free
+#define ft_smalloc   TGDSARM9Malloc
+#define ft_srealloc  TGDSARM9Realloc
 
 
   /**********************************************************************/
