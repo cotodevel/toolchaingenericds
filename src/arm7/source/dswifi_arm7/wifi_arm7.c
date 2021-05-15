@@ -493,7 +493,7 @@ int Wifi_CopyFirstTxData(s32 macbase) {
 u16 arm7q[1024];
 u16 arm7qlen = 0;
 
-void Wifi_TxRaw(u16 * data, int datalen) {
+void Wifi_TxRaw(u16 * data, int datalen) __attribute__ ((optnone)) {
 	datalen = (datalen+3)&(~3);
 	Wifi_MACWrite(data, 0, 0, datalen);
 	//	WIFI_REG(0xB8)=0x0001;
@@ -513,7 +513,7 @@ int Wifi_TxCheck() {
 
 u16 beacon_channel;
 
-void Wifi_LoadBeacon(int from, int to) {
+void Wifi_LoadBeacon(int from, int to) __attribute__ ((optnone)) {
 	u8 data[512];
 	int packetlen,len,i,type,seglen;
 	packetlen=Wifi_MACRead(from,10);
@@ -564,7 +564,7 @@ void Wifi_SetBeaconChannel(int channel) {
 //  Wifi Interrupts
 //
 
-void Wifi_Intr_RxEnd() {
+void Wifi_Intr_RxEnd() __attribute__ ((optnone)) {
 	int base;
 	int packetlen;
 	int full_packetlen;
@@ -606,7 +606,7 @@ void Wifi_Intr_RxEnd() {
 u16 count_ofs_list[CNT_STAT_NUM] = {
 	0x1B0, 0x1B2, 0x1B4, 0x1B6, 0x1B8, 0x1BA, 0x1BC, 0x1BE, 0x1C0, 0x1C4, 0x1D0, 0x1D2, 0x1D4, 0x1D6, 0x1D8, 0x1DA, 0x1DC, 0x1DE
 };
-void Wifi_Intr_CntOverflow() {
+void Wifi_Intr_CntOverflow() __attribute__ ((optnone)) {
 	int i;
 	int s,d;
 	s=CNT_STAT_START;
@@ -617,7 +617,7 @@ void Wifi_Intr_CntOverflow() {
 	}
 }
 
-void Wifi_Intr_TxEnd() { 
+void Wifi_Intr_TxEnd() __attribute__ ((optnone)) { 
 	WifiData->stats[WSTAT_DEBUG]=((WIFI_REG(0xA8)&0x8000)|(WIFI_REG(0xB6)&0x7FFF));
 	if(!Wifi_TxCheck()) {
 		return;
@@ -653,7 +653,7 @@ void Wifi_Intr_DoNothing() {
 }
 
 
-void Wifi_Interrupt() {
+void Wifi_Interrupt() __attribute__ ((optnone)) {
 	int wIF;
 	if(!WifiData) { W_IF = W_IF; return; }
 	if(!(WifiData->flags7&WFLAG_ARM7_RUNNING)) { W_IF = W_IF; return; }
@@ -696,7 +696,7 @@ static u8 scanlist[] = {
 static int scanlist_size = sizeof(scanlist)/sizeof(scanlist[0]);
 static int scanIndex = 0;
 
-void Wifi_Update() {
+void Wifi_Update() __attribute__ ((optnone)) {
 	int i;
 	if(!WifiData) return;
 	WifiData->random ^=(W_RANDOM ^ (W_RANDOM<<11) ^ (W_RANDOM<<22));
@@ -876,7 +876,7 @@ void Wifi_Update() {
 //
 //  Wifi User-called Functions
 //
-void erasemem(void * mem, int length) {
+void erasemem(void * mem, int length) __attribute__ ((optnone)) {
 	int i;
 	char * m = (char *)mem;
 	for(i=0;i<length;i++)
@@ -884,7 +884,7 @@ void erasemem(void * mem, int length) {
 }
 
 
-void Wifi_Init(u32 wifidata) {
+void Wifi_Init(u32 wifidata) __attribute__ ((optnone)) {
 	WifiData = (Wifi_MainStruct *)wifidata;
 
 	POWERCNT7 |= 2; // enable power for the wifi
@@ -946,13 +946,13 @@ void Wifi_Init(u32 wifidata) {
 	WifiData->flags7 |= WFLAG_ARM7_ACTIVE;
 }
 
-void Wifi_Deinit() {
+void Wifi_Deinit() __attribute__ ((optnone)) {
 	Wifi_Stop();
 	POWERCNT7 &= ~2;
 	DeInitFlashData();
 }
 
-void Wifi_Start() {
+void Wifi_Start() __attribute__ ((optnone)) {
 	int i, tIME;
 	tIME=REG_IME;
 	REG_IME=0;
@@ -1061,7 +1061,7 @@ void Wifi_Stop() {
 	REG_IME=tIME;
 }
 
-void Wifi_SetChannel(int channel) {
+void Wifi_SetChannel(int channel) __attribute__ ((optnone)) {
 	int i,n,l;
 	if(channel<1 || channel>13) return;
 	Wifi_SetBeaconChannel(channel);
@@ -1106,7 +1106,7 @@ void Wifi_SetChannel(int channel) {
 	}
 	WifiData->curChannel=channel+1;
 }
-void Wifi_SetWepKey(void * wepkey) {
+void Wifi_SetWepKey(void * wepkey) __attribute__ ((optnone)) {
 	int i;
 	for(i=0;i<16;i++) {
 		W_WEPKEY0[i]=((u16 *)wepkey)[i];
@@ -1116,7 +1116,7 @@ void Wifi_SetWepKey(void * wepkey) {
 	}
 }
 
-void Wifi_SetWepMode(int wepmode) {
+void Wifi_SetWepMode(int wepmode) __attribute__ ((optnone)) {
 	if(wepmode<0 || wepmode>7) return;
 	if(wepmode==0) {
 		WIFI_REG(0x32)=0x0000;
@@ -1127,20 +1127,20 @@ void Wifi_SetWepMode(int wepmode) {
 	W_MODE_WEP = (W_MODE_WEP & 0xFFC7) | (wepmode<<3);
 }
 
-void Wifi_SetBeaconPeriod(int beacon_period) {
+void Wifi_SetBeaconPeriod(int beacon_period) __attribute__ ((optnone)) {
 	if(beacon_period<0x10 || beacon_period>0x3E7) return;
 	WIFI_REG(0x8C)=beacon_period;
 }
 
-void Wifi_SetMode(int wifimode) {
+void Wifi_SetMode(int wifimode) __attribute__ ((optnone)) {
 	if(wifimode>3 || wifimode<0) return;
 	W_MODE_WEP = (W_MODE_WEP& 0xfff8) | wifimode;
 }
-void Wifi_SetPreambleType(int preamble_type) {
+void Wifi_SetPreambleType(int preamble_type) __attribute__ ((optnone)) {
 	if(preamble_type>1 || preamble_type<0) return;
 	WIFI_REG(0x80BC) = (WIFI_REG(0x80BC) & 0xFFBF) | (preamble_type<<6);
 }
-void Wifi_DisableTempPowerSave() {
+void Wifi_DisableTempPowerSave() __attribute__ ((optnone)) {
 	WIFI_REG(0x8038) &= ~2;
 	WIFI_REG(0x8048) = 0;
 }
@@ -1154,7 +1154,7 @@ void Wifi_DisableTempPowerSave() {
 //  802.11b system, tied in a bit with the :
 
 
-int Wifi_TxQueue(u16 * data, int datalen) {
+int Wifi_TxQueue(u16 * data, int datalen) __attribute__ ((optnone)) {
 	int i,j;
 	if(arm7qlen) {
 		if(Wifi_TxCheck()) {
@@ -1180,7 +1180,7 @@ int Wifi_TxQueue(u16 * data, int datalen) {
 	return 1;
 }
 
-int Wifi_GenMgtHeader(u8 * data, u16 headerflags) {
+int Wifi_GenMgtHeader(u8 * data, u16 headerflags) __attribute__ ((optnone)) {
 	// tx header
 	((u16 *)data)[0]=0;
 	((u16 *)data)[1]=0;
@@ -1206,7 +1206,7 @@ int Wifi_GenMgtHeader(u8 * data, u16 headerflags) {
 	}
 }
 
-int Wifi_SendOpenSystemAuthPacket() {
+int Wifi_SendOpenSystemAuthPacket() __attribute__ ((optnone)) {
 	// max size is 12+24+4+6 = 46
 	u8 data[64];
 	int i;
@@ -1222,7 +1222,7 @@ int Wifi_SendOpenSystemAuthPacket() {
 	return Wifi_TxQueue((u16 *)data, i+6);
 }
 
-int Wifi_SendSharedKeyAuthPacket() {
+int Wifi_SendSharedKeyAuthPacket() __attribute__ ((optnone)) {
 	// max size is 12+24+4+6 = 46
 	u8 data[64];
 	int i;
@@ -1238,7 +1238,7 @@ int Wifi_SendSharedKeyAuthPacket() {
 	return Wifi_TxQueue((u16 *)data, i+6);
 }
 
-int Wifi_SendSharedKeyAuthPacket2(int challenge_length, u8 * challenge_Text) {
+int Wifi_SendSharedKeyAuthPacket2(int challenge_length, u8 * challenge_Text) __attribute__ ((optnone)) {
 	u8 data[320];
 	int i,j;
 	i=Wifi_GenMgtHeader(data,0x40B0);
@@ -1261,7 +1261,7 @@ int Wifi_SendSharedKeyAuthPacket2(int challenge_length, u8 * challenge_Text) {
 }
 
 
-int Wifi_SendAssocPacket() { // uses arm7 data in our struct
+int Wifi_SendAssocPacket() __attribute__ ((optnone)) { // uses arm7 data in our struct
 	u8 data[96];
 	int i,j,numrates;
 
@@ -1304,7 +1304,7 @@ int Wifi_SendAssocPacket() { // uses arm7 data in our struct
 	return Wifi_TxQueue((u16 *)data, i);
 }
 
-int Wifi_SendNullFrame() {  // Fix: Either sent ToDS properly or drop ToDS flag. Also fix length (16+4) 
+int Wifi_SendNullFrame() __attribute__ ((optnone)) {  // Fix: Either sent ToDS properly or drop ToDS flag. Also fix length (16+4) 
 	// max size is 12+16 = 28
 	u16 data[16];
 	// tx header
@@ -1323,7 +1323,7 @@ int Wifi_SendNullFrame() {  // Fix: Either sent ToDS properly or drop ToDS flag.
 	return Wifi_TxQueue(data, 30);
 }
 
-int Wifi_SendPSPollFrame() {
+int Wifi_SendPSPollFrame() __attribute__ ((optnone)) {
 	// max size is 12+16 = 28
 	u16 data[16];
 	// tx header
@@ -1342,7 +1342,7 @@ int Wifi_SendPSPollFrame() {
 	return Wifi_TxQueue(data, 28);
 }
 
-int Wifi_ProcessReceivedFrame(int macbase, int framelen) {
+int Wifi_ProcessReceivedFrame(int macbase, int framelen) __attribute__ ((optnone)) {
 	Wifi_RxHeader packetheader;
 	u16 control_802;
 	Wifi_MACCopy((u16 *)&packetheader,macbase,0,12);
@@ -1730,7 +1730,7 @@ void Wifi_SetSyncHandler(WifiSyncHandler sh) {
 	synchandler=sh;
 }
 
-void wifiAddressHandler( void * address, void * userdata ) {
+void wifiAddressHandler( void * address, void * userdata )  __attribute__ ((optnone)) {
 	EnableIrq(IRQ_WIFI);
 	Wifi_Init((uint32)address);
 }
@@ -1760,6 +1760,6 @@ void arm7_synctoarm9() {
 }
 
 
-void installWifiFIFO() {
+void installWifiFIFO()   __attribute__ ((optnone)) {
 	Wifi_SetSyncHandler(arm7_synctoarm9); // allow wifi lib to notify arm9
 }
