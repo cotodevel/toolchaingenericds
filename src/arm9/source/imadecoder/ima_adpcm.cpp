@@ -418,7 +418,7 @@ int IMA_Adpcm_Player::play( FILE * ADFileHandle, bool loop_audio, bool automatic
 	stream.closeCb = closeHandle;
 	paused = false;
 	active=true;
-	setvolume( 255 );
+	setvolume( 4 );
 	// open stream
 	cutOff = false;
 	sndPaused = false;
@@ -468,13 +468,11 @@ void IMA_Adpcm_Player::stop() {
 }
 
 void IMA_Adpcm_Player::setvolume( int vol ) {
-	if( vol < 0 ) vol = 0;
-	if( vol > 256 ) vol = 256;
-	volume = vol;
+	setVolume(vol);
 }
 
 int IMA_Adpcm_Player::getvolume() {
-	return volume;
+	return getVolume();
 }
 bool IMA_Adpcm_Player::isactive() {
 	return active;
@@ -488,15 +486,7 @@ int IMA_Adpcm_Player::i_stream_request( int length, void * dest, int format ) {
 	if( !paused ) {
 		if( !stream.stream( (s16*)dest, length ))
 		{
-			// apply volume scaler
-			if( volume != 256 ) {
-				s16 *d = (s16*)dest;
-				int i = length;
-				for( ; i; i-- ) {
-					*d = ((*d) * volume) >> 8; *d++;
-					*d = ((*d) * volume) >> 8; *d++;
-				}
-			}
+			
 		}
 		else{
 			stop();
@@ -515,7 +505,7 @@ void IMA_Adpcm_Player::update() {
 	
 }
 
-volatile static s16 tmpData[ADPCM_SIZE * 2 * 2];	//ADPCM uses 1 src as decoding frame, and 2nd src as scratchpad
+volatile static s16 tmpData[ADPCM_SIZE * 2 * 2];	//ADPCM uses 1 src as decoding frame, and 2nd src as scratchpad + 2 channels
 
 __attribute__((section(".itcm")))
 void IMAADPCMDecode(){

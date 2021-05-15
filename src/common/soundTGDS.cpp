@@ -275,7 +275,6 @@ void setSwapChannel()  __attribute__ ((optnone))
 
 void setupSound()  __attribute__ ((optnone)) {
 	//Init SoundSampleContext
-	initSoundSampleContext();
 	initSound();
 
 	sndCursor = 0;
@@ -679,34 +678,34 @@ void freeSound()
 	
 }
 
-u8 getVolume()
+int getVolume() __attribute__ ((optnone)) 
 {
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 	
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 
+	coherent_user_range_by_size((uint32)&TGDSIPC->soundIPC, sizeof(TGDSIPC->soundIPC));
 	return TGDSIPC->soundIPC.volume;
 }
 
-void setVolume(u8 volume)
+void setVolume(int volume) __attribute__ ((optnone)) 
 {
-	if(volume > 16)
-		volume = 16;
+	if(volume > 8){
+		volume = 8;
+	}
+	if(volume < 1){
+		volume = 1;
+	}
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 	
+	coherent_user_range_by_size((uint32)&TGDSIPC->soundIPC, sizeof(TGDSIPC->soundIPC));
 	TGDSIPC->soundIPC.volume = volume;
 }
 
-void volumeUp(int x, int y)
+void volumeUp(int x, int y) __attribute__ ((optnone)) 
 {
-	if(getVolume() < 16)
-	{
-		setVolume(getVolume() + 1);
-	}
+	setVolume(getVolume() + 1);
 }
 
-void volumeDown(int x, int y)
+void volumeDown(int x, int y) __attribute__ ((optnone)) 
 {
-	if(getVolume() > 0)
-	{
-		setVolume(getVolume() - 1);
-	}
+	setVolume(getVolume() - 1);
 }
 
 void setWavDecodeCallback(void (*cb)()){

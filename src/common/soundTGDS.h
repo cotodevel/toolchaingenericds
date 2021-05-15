@@ -172,7 +172,7 @@ typedef struct
 	
 	s16 *interlaced;
 	int channels;
-	u8 volume;
+	int volume;
 	
 	u32 tX;
 	u32 tY;
@@ -180,7 +180,7 @@ typedef struct
 	int psgChannel;
 	u32 cr;
 	u32 timer;
-} SoundRegion;
+} SoundRegion __attribute__((aligned (4)));
 
 //ARM7: PTR to EWRAM
 //ARM9: EWRAM (can't be Shared Memory cause sound clicks)
@@ -264,8 +264,8 @@ extern void initComplexSound();
 extern void setSoundInterrupt();
 extern void setSoundFrequency(u32 freq);
 extern void setSoundLength(u32 len);
-extern u8 getVolume();
-extern void setVolume(u8 volume);
+extern int getVolume();
+extern void setVolume(int volume);
 extern void volumeUp(int x, int y);
 extern void volumeDown(int x, int y);
 extern bool soundLoaded;
