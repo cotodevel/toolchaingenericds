@@ -418,6 +418,10 @@ extern bool initGDBMapBuffer(u32 * bufferStart, int GDBMapBufferSize, uint32 new
 extern void closeGDBMapBuffer();
 extern uint32 readu32GDBMapBuffer(uint32 address);
 
+extern bool GDBEnabled;
+extern void setGDBStubEnabled(bool state);
+extern bool getGDBStubEnabled();
+
 #endif //ARM9 end
 
 #endif

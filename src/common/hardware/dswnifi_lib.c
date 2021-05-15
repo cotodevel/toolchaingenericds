@@ -193,6 +193,7 @@ bool switch_dswnifi_mode(sint32 mode){
 	else if (mode == (sint32)dswifi_gdbstubmode){
 		dswifiSrv.dsnwifisrv_stat	= ds_multi_notrunning;
 		if (gdbNdsStart() == true){	//setWIFISetup set inside
+			setGDBStubEnabled(true);
 			setMULTIMode(mode);
 			OnDSWIFIGDBStubEnable();
 			return true;
@@ -717,14 +718,14 @@ bool connectDSWIFIAP(int DSWNIFI_MODE){
 	return false;
 }
 
-//Todo: map ARM7 mem: 96K, just 64K for now
+bool GDBEnabled=false;
 static u32 ARM7IOAddress = 0x03800000;
 static int ARM7IOSize = (64*1024);
 static u8 * ARM7BufferedAddress = NULL;
 
 bool gdbNdsStart(){
+	setGDBStubEnabled(false);
 	dswifiSrv.GDBStubEnable = false;
-	
 	//Sadly can't map ARM7 mem directly while in GDB session (return 0's), so we preload it before
 	if(ARM7BufferedAddress != NULL){
 		TGDSARM9Free(ARM7BufferedAddress);
@@ -740,6 +741,14 @@ bool gdbNdsStart(){
 	}
 	
 	return false; //ARM7 IO Mapping error or WIFI connection error
+}
+
+bool getGDBStubEnabled(){
+	return GDBEnabled;
+}
+
+void setGDBStubEnabled(bool state){
+	GDBEnabled = state;
 }
 
 int remoteTcpSend(char *data, int len)

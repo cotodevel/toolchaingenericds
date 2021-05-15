@@ -42,6 +42,8 @@ USA
 #include "typedefsTGDS.h"
 #include "ipcfifoTGDS.h"
 #include "InterruptsARMCores_h.h"
+#include "dswnifi_lib.h"
+#include "keypadTGDS.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -120,8 +122,76 @@ static inline void handleARM9SVC(){
 	if(REG_IPC_FIFO_CR & IPC_FIFO_ERROR){
 		REG_IPC_FIFO_CR = (REG_IPC_FIFO_CR | IPC_FIFO_SEND_CLEAR);	//bit14 FIFO ERROR ACK + Flush Send FIFO
 	}
+	
 	//Audio playback here....
 	updateStream();	//runs once
+	
+	//Handle GDBStub service if enabled
+	//GDB Debugging start
+	extern bool GDBEnabled;
+	if(GDBEnabled == true){
+		//GDB Stub Process must run here
+		int retGDBVal = remoteStubMain();
+		if(retGDBVal == remoteStubMainWIFINotConnected){
+			if (switch_dswnifi_mode(dswifi_gdbstubmode) == true){
+				//clrscr();
+				//Show IP and port here
+				//printf("    ");
+				//printf("    ");
+				/*
+				printf("[Connect to GDB]: NDSMemory Mode!");
+				char IP[16];
+				printf("Port:%d GDB IP:%s",remotePort, print_ip((uint32)Wifi_GetIP(), IP));
+				*/
+				remoteInit();
+			}
+			else{
+				//GDB Client Reconnect:ERROR
+			}
+		}
+		else if(retGDBVal == remoteStubMainWIFIConnectedGDBDisconnected){
+			setWIFISetup(false);
+			//clrscr();
+			//printf("    ");
+			//printf("    ");
+			//printf("Remote GDB Client disconnected. ");
+			//printf("Press A to retry this GDB Session. ");
+			//printf("Press B to reboot NDS GDB Server ");
+			
+			int keys = 0;
+			while(1){
+				scanKeys();
+				keys = keysDown();
+				if (keys&KEY_A){
+					break;
+				}
+				if (keys&KEY_B){
+					break;
+				}
+				IRQVBlankWait();
+			}
+			
+			if (keys&KEY_B){
+				//main(argc, argv);
+			}
+			
+			if (switch_dswnifi_mode(dswifi_gdbstubmode) == true){ // gdbNdsStart() called
+				reconnectCount++;
+				clrscr();
+				//Show IP and port here
+				//printf("    ");
+				//printf("    ");
+				//printf("[Re-Connect to GDB]: NDSMemory Mode!");
+				//char IP[16];
+				//printf("Retries: %d",reconnectCount);
+				//printf("Port:%d GDB IP:%s", remotePort, print_ip((uint32)Wifi_GetIP(), IP));
+				remoteInit();
+			}
+		}
+		
+		//GDB Debugging end
+	}
+
 }
 
 #endif
