@@ -206,6 +206,8 @@ extern char * dldi_tryingInterface();
 /////////////////////////////////////////Libfat wrapper layer. Call these as if you were calling libfat code./////////////////////////////////////////
 extern struct FileClass * FAT_FindFirstFile(char* filename, struct FileClassList * lst, int startFromGivenIndex);
 extern struct FileClass * 	FAT_FindNextFile(char* filename, struct FileClassList * lst);
+extern bool FAT_feof(FILE * fh);
+extern u32 flength(FILE* fh);
 extern u8 	FAT_GetFileAttributesFromFileClass(struct FileClass * fileInst);
 extern u8 	FAT_GetFileAttributes(struct FileClassList * lst);
 extern u8 	FAT_SetFileAttributes(const char* filename, u8 attributes, u8 mask);
