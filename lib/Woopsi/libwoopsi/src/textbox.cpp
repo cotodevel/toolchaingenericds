@@ -72,6 +72,10 @@ const u16 TextBox::getCursorXPos() const {
 	return cursorX;
 }
 
+const WoopsiString TextBox::getText() {
+	return _text;
+}
+
 void TextBox::setText(const WoopsiString& text) {
 	_text.setText(text);
 	repositionCursor(_text.getLength());

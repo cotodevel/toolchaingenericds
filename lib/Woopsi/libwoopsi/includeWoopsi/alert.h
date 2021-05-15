@@ -43,7 +43,21 @@ namespace WoopsiUI {
 		 * Handles release events raised by its sub-gadgets.
 		 */
 		virtual void handleReleaseEvent(const GadgetEventArgs& e);
-
+		
+		/**
+		 * Get the OK Button handle.
+		 */
+		virtual Button* getButtonHandle(){
+			return _button;
+		}
+		
+		/**
+		 * Get the MultiLineTextBox handle.
+		 */
+		virtual MultiLineTextBox* getTextBoxHandle(){
+			return _textBox;
+		}
+		
 	protected:
 		Button* _button;					/**< Pointer to the OK button. */
 		MultiLineTextBox* _textBox;			/**< Pointer to the alert message box. */

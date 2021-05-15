@@ -1,9 +1,10 @@
-#include "posixHandleTGDS.h"
+#include <malloc.h>
 #include "freetypefacemanager.h"
 #include "mutablebitmapbase.h"
 #include "woopsistring.h"
 #include "freetypefont.h"
 #include "stringiterator.h"
+#include "posixHandleTGDS.h"
 
 // FreeType assumes that structures allocated by the user and passed as
 // arguments are zeroed out except for the actual data. In other words, 
