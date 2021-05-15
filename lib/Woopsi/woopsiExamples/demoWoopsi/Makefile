@@ -34,7 +34,7 @@ include $(DEFAULT_GCC_PATH_WIN)/Makefile.basenewlib
 
 #Custom
 # Project Specific
-export TGDSPROJECTNAME = TGDS-Woopsi-template
+export TGDSPROJECTNAME = demoWoopsi
 export EXECUTABLE_FNAME = $(TGDSPROJECTNAME).nds
 export EXECUTABLE_VERSION_HEADER =	0.1
 export EXECUTABLE_VERSION =	"$(EXECUTABLE_VERSION_HEADER)"

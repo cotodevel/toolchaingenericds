@@ -1,3 +1,16 @@
+License:
+
+Three Clause BSD, University of Illinois/NCSA Open Source License, GPL v2, Freetype
+
+"Non-endorsement" clause states: 
+
+A non endorsement license such as the three clause BSD, prohibit reusers from suggesting that derived data or analysis has any 
+official status and clarifies that the data publisher does not endorse the actions of its reusers.
+
+Coto: I take no words for the source code, I only adapt it to TGDS and I won't endorse it as my work, nor the derivative work of this to be part of the author(s) wishes.
+
+--------------------------------GNU v2 License ---------------------------------
+
                     GNU GENERAL PUBLIC LICENSE
                        Version 2, June 1991
 
@@ -337,3 +350,418 @@ proprietary programs.  If your program is a subroutine library, you may
 consider it more useful to permit linking proprietary applications with the
 library.  If this is what you want to do, use the GNU Lesser General
 Public License instead of this License.
+
+
+--------------------------------Clang License ---------------------------------
+
+University of Illinois/NCSA Open Source License
+
+Copyright (c) [year] [fullname]. All rights reserved.
+
+Developed by: [project]
+              [fullname]
+              [projecturl]
+
+Permission is hereby granted, free of charge, to any person
+obtaining a copy of this software and associated documentation files
+(the "Software"), to deal with the Software without restriction,
+including without limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of the Software,
+and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+* Redistributions of source code must retain the above copyright notice,
+  this list of conditions and the following disclaimers.
+
+* Redistributions in binary form must reproduce the above copyright
+  notice, this list of conditions and the following disclaimers in the
+  documentation and/or other materials provided with the distribution.
+
+* Neither the names of [fullname], [project] nor the names of its
+  contributors may be used to endorse or promote products derived from
+  this Software without specific prior written permission.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS WITH
+THE SOFTWARE.
+
+
+------------------------------- Woopsi License --------------------------------
+
+* Copyright (c) 2007-2010, Antony Dzeryn
+* All rights reserved.
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
+*     * Redistributions of source code must retain the above copyright
+*       notice, this list of conditions and the following disclaimer.
+*     * Redistributions in binary form must reproduce the above copyright
+*       notice, this list of conditions and the following disclaimer in the
+*       documentation and/or other materials provided with the distribution.
+*     * Neither the names "Woopsi", "Simian Zombie" nor the
+*       names of its contributors may be used to endorse or promote products
+*       derived from this software without specific prior written permission.
+*
+* THIS SOFTWARE IS PROVIDED BY Antony Dzeryn ``AS IS'' AND ANY
+* EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+* DISCLAIMED. IN NO EVENT SHALL Antony Dzeryn BE LIABLE FOR ANY
+* DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+* ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+  
+Woopsi
+------
+
+  Woopsi is a windowing system for the Nintendo DS, written in C++.  The aim of
+  the project is to create a windowing system that other programmers can use for
+  their applications, decreasing the tedious amount of GUI code that they have
+  to write.
+  
+
+Features
+--------
+
+  - Multiple screen support;
+  - A full set of user interface components:
+    - Text buttons with text alignment functionality;
+    - Image buttons;
+    - Animated buttons;
+    - Radio buttons and radio button groups;
+    - Check boxes;
+    - Labels;
+    - Single-line textboxes with cursor support;
+    - Multi-line textboxes with cursor support.
+    - Screens;
+    - Windows;
+    - Gradient backgrounds;
+    - SuperBitmap, for persistent drawing and displaying large bitmaps in small
+      gadgets;
+    - Scrolling panels, for containing graphics or gadgets within regions that
+      are larger than the parent container;
+    - Scroll bars;
+    - Slider bars;
+    - Context-sensitive menu;
+    - List boxes;
+    - Progress bars;
+    - Requesters;
+    - File requesters;
+    - Cycle buttons;
+    - Keyboard;
+    - Calendar;
+    - Timer, for VBL-driven effects;
+    - Colour picker;
+  - Draggable gadgets, including draggable windows and screens;
+  - Borderless gadgets, including borderless windows;
+  - Built-in debug console;
+  - All gadgets can become modal;
+  - Intelligent, optimised gadget drawing and erasing;
+  - Event system;
+  - Automatic gadget garbage collection;
+  - Complete API for constructing new gadgets:
+    - Extensible font system that supports:
+      - Compressed proportional and fixed-width fonts (monochrome and 16-bit);
+      - FreeType library integration for TTF/OTF/etc fonts with antialiasing.
+    - Text manipulation, including wrapping functions and width calculation;
+    - Animation class with support for variable framerates and standard/pingpong
+      looping;
+    - Bitmap class for 16-bit bitmap image manipulation;
+    - Graphics class providing clipped, DMA-accelerated drawing functions:
+      - Pixels;
+      - Lines;
+      - Filled and unfilled rectangles;
+      - Filled and unfilled ellipses;
+      - XOR horizontal/vertical lines, pixels, rectangles and filled rectangles;
+      - Bitmap blitting;
+      - Bitmap blitting with transparent colour key;
+      - Bitmap blitting in greyscale;
+      - Flood fill;
+      - Region scrolling;
+      - Region copying;
+      - Region dimming;
+      - Region conversion to greyscale;
+      - Text rendering.
+    - Dynamic array container and iterator classes.
+    - Date class.
+  - Object-orientated design for easy integration into other C++ software;
+  - Simple API for rapid GUI creation;
+  - Non pre-emptive, FIFO multitasking - each gadget runs simultaneously;
+  - Unicode strings encoded with UTF-8;
+  - Two build options:
+    - Standard libwoopsi.a library for use with DS projects;
+    - SDL layer to facilitate native compilation on non-DS platforms and
+      aid porting/debugging.
+  - Suite of supporting Windows tools:
+    - bmp2font, to convert BMPs to Woopsi fonts;
+    - font2bmp, to convert Windows fonts to BMP images;
+    - bmp2bmp, to convert BMPs to Woopsi bitmaps;
+    - font2font, to convert Windows fonts to Woopsi fonts.
+
+
+Requirements
+------------
+
+  To run the project you will need either a DS emulator or a real DS and a flash
+  cart.
+  
+  To compile the project you need devKitPro.  This archive contains a VC++ 2008
+  Express project, but the Woopsi library and all examples and tests are built
+  from the command line.
+   
+
+SDL Compatibility
+-----------------
+
+  Woopsi has been designed to be portable.  Thanks to this, Woopsi comes
+  equipped with an optional SDL layer that replaces libnds and allows the code
+  to be compiled for any platform with an SDL port.  To create an SDL build of
+  Woopsi:
+  
+  - Create a new SDL project in your dev environment of choice;
+  - Copy the "libwoopsi" source folder into your SDL project;
+  - Copy the contents of the "sdl" folder from this archive into your copy of
+     the "libwoopsi/src" folder.
+
+  To use the FreeType integration of Woopsi with SDL, you will need to download,
+  compile and install FreeType for your chosen platform.  See the "Credits and
+  Acknowledgements" section below for the URL.
+  
+  If you do not want to download FreeType, or cannot compile it for your
+  platform (I confess that I have not tried this), delete any .h and .cpp files
+  from the libwoopsi/src and libwoopsi/include folders that begin with
+  the word "freetype".  This will prevent you from using TTF/OTF/etc fonts, but
+  will allow you to develop the core of your GUI using SDL.
+     
+  Note that you should not use the Woopsi makefiles, as these are only relevant
+  to DS builds of Woopsi.
+  
+  
+Credits and Acknowledgements
+---------------------------
+
+  - Coding and design                                - Antony Dzeryn
+  - Testing, technical advice, other contributions   - Jeff Laing
+  - PALib independence                               - Steven Harrison
+  - Testing and suggestions                          - John Buxton
+                                                     - Lakedaemon
+                                                     - Chase
+  - Unicode work                                     - Olivier Binda
+  - Testing and gadget contributions                 - Mark Adamson
+  - Simian Zombie logo                               - John Clay
+  - Thanks to                                        - The devKitPro team
+                                                     - The PALib team
+                                                     - Nintendo
+                                                     - R. J. Michal
+
+  Woopsi uses the FreeType library for advanced font support.  See
+  http://www.freetype.org for more information.
+
+
+Links
+-----
+
+  - http://ant.simianzombie.com                      - Woopsi development blog
+  - http://ant.simianzombie.com/forum                - Woopsi forum
+  - http://www.sourceforge.net/projects/woopsi       - Woopsi SourceForge page
+
+
+Email
+-----
+
+  Contact me at spam_mail250@yahoo.com.
+
+
+Licencing and Contributions
+---------------------------
+
+  Any contributions of bugfixes or new features will be gratefully received.
+  Any such contributions must follow the style guidelines laid out in Woopsi's
+  documentation.  They must also be of sufficient general usefulness and quality
+  to qualify for inclusion in the main code base.
+  
+  Please don't be offended if I reject or tidy up submissions that don't meet
+  these criteria.
+  
+  All code will continue to be distributed under the BSD licence, so do not
+  contribute code if you are unwilling to release it under that licence.
+
+
+--------------------------------Freetype License ---------------------------------
+
+                    The FreeType Project LICENSE
+                    ----------------------------
+
+                            2006-Jan-27
+
+                    Copyright 1996-2002, 2006 by
+          David Turner, Robert Wilhelm, and Werner Lemberg
+
+
+
+Introduction
+============
+
+  The FreeType  Project is distributed in  several archive packages;
+  some of them may contain, in addition to the FreeType font engine,
+  various tools and  contributions which rely on, or  relate to, the
+  FreeType Project.
+
+  This  license applies  to all  files found  in such  packages, and
+  which do not  fall under their own explicit  license.  The license
+  affects  thus  the  FreeType   font  engine,  the  test  programs,
+  documentation and makefiles, at the very least.
+
+  This  license   was  inspired  by  the  BSD,   Artistic,  and  IJG
+  (Independent JPEG  Group) licenses, which  all encourage inclusion
+  and  use of  free  software in  commercial  and freeware  products
+  alike.  As a consequence, its main points are that:
+
+    o We don't promise that this software works. However, we will be
+      interested in any kind of bug reports. (`as is' distribution)
+
+    o You can  use this software for whatever you  want, in parts or
+      full form, without having to pay us. (`royalty-free' usage)
+
+    o You may not pretend that  you wrote this software.  If you use
+      it, or  only parts of it,  in a program,  you must acknowledge
+      somewhere  in  your  documentation  that  you  have  used  the
+      FreeType code. (`credits')
+
+  We  specifically  permit  and  encourage  the  inclusion  of  this
+  software, with  or without modifications,  in commercial products.
+  We  disclaim  all warranties  covering  The  FreeType Project  and
+  assume no liability related to The FreeType Project.
+
+
+  Finally,  many  people  asked  us  for  a  preferred  form  for  a
+  credit/disclaimer to use in compliance with this license.  We thus
+  encourage you to use the following text:
+
+   """  
+    Portions of this software are copyright © <year> The FreeType
+    Project (www.freetype.org).  All rights reserved.
+   """
+
+  Please replace <year> with the value from the FreeType version you
+  actually use.
+
+
+Legal Terms
+===========
+
+0. Definitions
+--------------
+
+  Throughout this license,  the terms `package', `FreeType Project',
+  and  `FreeType  archive' refer  to  the  set  of files  originally
+  distributed  by the  authors  (David Turner,  Robert Wilhelm,  and
+  Werner Lemberg) as the `FreeType Project', be they named as alpha,
+  beta or final release.
+
+  `You' refers to  the licensee, or person using  the project, where
+  `using' is a generic term including compiling the project's source
+  code as  well as linking it  to form a  `program' or `executable'.
+  This  program is  referred to  as  `a program  using the  FreeType
+  engine'.
+
+  This  license applies  to all  files distributed  in  the original
+  FreeType  Project,   including  all  source   code,  binaries  and
+  documentation,  unless  otherwise  stated   in  the  file  in  its
+  original, unmodified form as  distributed in the original archive.
+  If you are  unsure whether or not a particular  file is covered by
+  this license, you must contact us to verify this.
+
+  The FreeType  Project is copyright (C) 1996-2000  by David Turner,
+  Robert Wilhelm, and Werner Lemberg.  All rights reserved except as
+  specified below.
+
+1. No Warranty
+--------------
+
+  THE FREETYPE PROJECT  IS PROVIDED `AS IS' WITHOUT  WARRANTY OF ANY
+  KIND, EITHER  EXPRESS OR IMPLIED,  INCLUDING, BUT NOT  LIMITED TO,
+  WARRANTIES  OF  MERCHANTABILITY   AND  FITNESS  FOR  A  PARTICULAR
+  PURPOSE.  IN NO EVENT WILL ANY OF THE AUTHORS OR COPYRIGHT HOLDERS
+  BE LIABLE  FOR ANY DAMAGES CAUSED  BY THE USE OR  THE INABILITY TO
+  USE, OF THE FREETYPE PROJECT.
+
+2. Redistribution
+-----------------
+
+  This  license  grants  a  worldwide, royalty-free,  perpetual  and
+  irrevocable right  and license to use,  execute, perform, compile,
+  display,  copy,   create  derivative  works   of,  distribute  and
+  sublicense the  FreeType Project (in  both source and  object code
+  forms)  and  derivative works  thereof  for  any  purpose; and  to
+  authorize others  to exercise  some or all  of the  rights granted
+  herein, subject to the following conditions:
+
+    o Redistribution of  source code  must retain this  license file
+      (`FTL.TXT') unaltered; any  additions, deletions or changes to
+      the original  files must be clearly  indicated in accompanying
+      documentation.   The  copyright   notices  of  the  unaltered,
+      original  files must  be  preserved in  all  copies of  source
+      files.
+
+    o Redistribution in binary form must provide a  disclaimer  that
+      states  that  the software is based in part of the work of the
+      FreeType Team,  in  the  distribution  documentation.  We also
+      encourage you to put an URL to the FreeType web page  in  your
+      documentation, though this isn't mandatory.
+
+  These conditions  apply to any  software derived from or  based on
+  the FreeType Project,  not just the unmodified files.   If you use
+  our work, you  must acknowledge us.  However, no  fee need be paid
+  to us.
+
+3. Advertising
+--------------
+
+  Neither the  FreeType authors and  contributors nor you  shall use
+  the name of the  other for commercial, advertising, or promotional
+  purposes without specific prior written permission.
+
+  We suggest,  but do not require, that  you use one or  more of the
+  following phrases to refer  to this software in your documentation
+  or advertising  materials: `FreeType Project',  `FreeType Engine',
+  `FreeType library', or `FreeType Distribution'.
+
+  As  you have  not signed  this license,  you are  not  required to
+  accept  it.   However,  as  the FreeType  Project  is  copyrighted
+  material, only  this license, or  another one contracted  with the
+  authors, grants you  the right to use, distribute,  and modify it.
+  Therefore,  by  using,  distributing,  or modifying  the  FreeType
+  Project, you indicate that you understand and accept all the terms
+  of this license.
+
+4. Contacts
+-----------
+
+  There are two mailing lists related to FreeType:
+
+    o freetype@nongnu.org
+
+      Discusses general use and applications of FreeType, as well as
+      future and  wanted additions to the  library and distribution.
+      If  you are looking  for support,  start in  this list  if you
+      haven't found anything to help you in the documentation.
+
+    o freetype-devel@nongnu.org
+
+      Discusses bugs,  as well  as engine internals,  design issues,
+      specific licenses, porting, etc.
+
+  Our home page can be found at
+
+    http://www.freetype.org
+
+
+--- end of FTL.TXT ---

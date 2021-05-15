@@ -40,7 +40,7 @@ USA
 #include "ima_adpcm.h"
 
 // Includes
-#include "helloworld.h"
+#include "demo.h"
 
 char curChosenBrowseFile[256+1];
 char globalPath[MAX_TGDSFILENAME_LENGTH+1];
@@ -120,9 +120,9 @@ int main(int argc, char **argv) {
 	//Show logo
 	RenderTGDSLogoMainEngine((uint8*)&TGDSLogoLZSSCompressed[0], TGDSLogoLZSSCompressed_size);
 	
-	//Woopsi: Create the Hello World application
-	HelloWorld app;
-	return app.main(argc, argv);
+	// Create the demo application
+	Demo demo;
+	return demo.main(argc, argv);
 	
 	while(1) {
 		handleARM9SVC();	/* Do not remove, handles TGDS services */

@@ -59,6 +59,7 @@ void Button::drawOutline(GraphicsPort* port) {
 	port->drawBevelledRect(0, 0, getWidth(), getHeight(), col1, col2);
 }
 
+//The real onclick button widget (The redraw event)
 void Button::onClick(s16 x, s16 y) {
 	redraw();
 }
