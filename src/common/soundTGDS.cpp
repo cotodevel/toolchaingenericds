@@ -220,7 +220,7 @@ u32 micBufLoc = 0;
 u32 sampleLen = 0;
 int sndRate = 0;
 
-void mallocData(int size)
+void mallocData(int size)  __attribute__ ((optnone)) 
 {
     // this no longer uses malloc due to using vram bank d.
 	strpcmL0 = VRAM_D;
@@ -242,11 +242,11 @@ void mallocData(int size)
 	}
 }
 
-void freeData()
+void freeData()  __attribute__ ((optnone)) 
 {	
 	//free(strpcmR0);
 }
-void setSwapChannel()
+void setSwapChannel()  __attribute__ ((optnone)) 
 {
 	s16 *buf;
   
@@ -271,7 +271,7 @@ void setSwapChannel()
 	sndCursor = 1 - sndCursor;
 }
 
-void setupSound(){    
+void setupSound()  __attribute__ ((optnone)) {
 	//Init SoundSampleContext
 	initSoundSampleContext();
 	initSound();
@@ -309,7 +309,7 @@ void setupSound(){
 	lastR = 0;
 }
 
-void stopSound() {
+void stopSound() __attribute__ ((optnone)) {
 	//irqSet(IRQ_TIMER1, 0);
 	TIMERXCNT(0) = 0;
 	TIMERXCNT(1) = 0;
@@ -426,7 +426,7 @@ void freeData()
 }
 
 __attribute__((section(".itcm")))
-void swapData()
+void swapData() __attribute__ ((optnone)) 
 {
 	m_SIWRAM = 1 - m_SIWRAM;
 	
@@ -466,7 +466,7 @@ void swapAndSend(u32 type)
 
 // update function
 __attribute__((section(".itcm")))
-void updateStream()
+void updateStream() __attribute__ ((optnone)) 
 {	
 	if(!updateRequested)
 	{
@@ -538,7 +538,7 @@ void setSoundInterrupt()
 	//REG_IPC_FIFO_CR = IPC_FIFO_ENABLE | IPC_FIFO_SEND_CLEAR | IPC_FIFO_RECV_IRQ;
 }
 
-void initComplexSound(){
+void initComplexSound() __attribute__ ((optnone)) {
 	soundData.sourceFmt = SRC_NONE;
 	soundData.filePointer = NULL;
 	setVolume(4);	//Default volume
@@ -987,7 +987,7 @@ int initSoundStream(char * audioStreamFilename){
 	return initSoundStreamFromStructFD(tgdsfd, ext);
 }
 
-int initSoundStreamFromStructFD(struct fd * _FileHandleAudio, char * ext){	//ARM9 Impl.
+int initSoundStreamFromStructFD(struct fd * _FileHandleAudio, char * ext)  __attribute__ ((optnone)) {	//ARM9 Impl.
 	// try this first to prevent false positives with other streams
 	/*
 	if(isURL(fName))
