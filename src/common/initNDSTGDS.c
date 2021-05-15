@@ -37,6 +37,7 @@ USA
 #include "posixHandleTGDS.h"
 #include "keypadTGDS.h"
 #include "biosTGDS.h"
+#include "libndsFIFO.h"
 
 #ifdef ARM9
 #include "devoptab_devices.h"
@@ -195,6 +196,8 @@ void initHardware(u8 DSHardware) __attribute__ ((optnone)) {
 	//Setup SLOT-1 if ARM9 DLDI
 	setDLDIARM7Address((u32 *)dldiGet());
 	#endif
+	
+	fifoInit();
 	
 	//Enable TSC
 	setTouchScreenEnabled(true);	

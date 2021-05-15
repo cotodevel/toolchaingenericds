@@ -17,8 +17,6 @@ USA
 */
 
 //TGDS IPC Version: 1.3
-
-
 #include "global_settings.h"
 #include "ipcfifoTGDS.h"
 #include "InterruptsARMCores_h.h"
@@ -28,6 +26,7 @@ USA
 #include "eventsTGDS.h"
 #include "posixHandleTGDS.h"
 #include "biosTGDS.h"
+#include "libndsFIFO.h"
 
 #ifdef ARM7
 #include <string.h>
@@ -48,6 +47,10 @@ USA
 #include "dldi.h"
 #include "consoleTGDS.h"
 #endif
+
+//arg 0: channel
+//arg 1: arg0: handler, arg1: userdata
+u32 fifoFunc[FIFO_CHANNELS][2];	//context is only passed on callback prototype stage, because, the channel index generates the callee callback
 
 void Write8bitAddrExtArm(uint32 address, uint8 value){
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
@@ -680,6 +683,21 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 			break;
 			
 			#endif
+			
+			//Handle Libnds FIFO receive handlers
+			case(TGDS_LIBNDSFIFO_COMMAND):{
+				int channel = (int)receiveByteIPC();
+				sendByteIPCNOIRQ((uint8)0);	//clean
+				//Run: FifoDatamsgHandlerFunc newhandler -> arg: void * userdata by a given channel				
+				//arg 0: channel
+				//arg 1: arg0: handler, arg1: userdata
+				FifoHandlerFunc fn = (FifoHandlerFunc)fifoFunc[channel][0];
+				if((int)fn != 0){
+					fn(fifoCheckDatamsgLength(channel), fifoFunc[channel][1]);
+				}
+			}
+			break;
+			
 		}
 		HandleFifoNotEmptyWeakRef(data0);	//this one follows: cmd, value order
 	}
