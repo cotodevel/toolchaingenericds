@@ -27,6 +27,7 @@ USA
 #include "posixHandleTGDS.h"
 #include "biosTGDS.h"
 #include "libndsFIFO.h"
+#include "loader.h"	//TGDS-multiboot reload NDS Binary ability
 
 #ifdef ARM7
 #include <string.h>
@@ -139,6 +140,10 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 			
 			//ARM7 command handler
 			#ifdef ARM7
+			case(ARM7COMMAND_RELOADNDS):{
+				runBootstrapARM7();	//ARM7 Side
+			}
+			break;
 			
 			case (TGDS_ARM7_RELOADFLASH):{
 				//Init Shared Address Region and get NDS Heade
