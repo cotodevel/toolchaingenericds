@@ -9,6 +9,7 @@
 #include "gadgetstyle.h"
 #include "woopsistring.h"
 
+#ifdef __cplusplus
 namespace WoopsiUI {
 
 	class WindowBorderButton;
@@ -163,5 +164,6 @@ namespace WoopsiUI {
 		inline AmigaWindow(const AmigaWindow& amigaWindow) : Window(amigaWindow) { };
 	};
 }
+#endif
 
 #endif

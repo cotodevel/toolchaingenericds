@@ -5,6 +5,9 @@
 #include "button.h"
 #include "filepath.h"
 #include "graphicsport.h"
+#include "fatfslayerTGDS.h"
+#include "fileBrowse.h"
+#include "consoleTGDS.h"
 
 #ifndef USING_SDL
 
@@ -52,9 +55,38 @@ void FileListBox::handleDoubleClickEvent(const GadgetEventArgs& e) {
 
 				// Detect type by examining text colour
 				if (selected->getNormalTextColour() == getShineColour()) {
-
-					// Got a directory
-					appendPath(selected->getText());
+					char curPth[256+1];
+					char newPth[256+1];
+					memset(curPth, 0, sizeof(curPth));
+					memset(newPth, 0, sizeof(newPth));
+					
+					selected->getText().copyToCharArray(newPth);
+					
+					const WoopsiUI::FilePath * thisPath = this->getPath();
+					WoopsiUI::WoopsiString curPath = (WoopsiUI::WoopsiString)thisPath->getPath();
+					curPath.copyToCharArray(curPth);
+					
+					int compare = selected->getText().compareTo("..");
+					if (compare == 0){
+						//Leaving dir
+						leaveDir(curPth);
+						WoopsiString newPath;
+						newPath.setText((const char*)curPth);
+						setPath(newPath);
+					}
+					else{
+						// Enter a new directory
+						strcpy(curPth, (char*)newPth);
+						char tmpBuf[MAX_TGDSFILENAME_LENGTH+1];
+						memset(tmpBuf, 0, sizeof(tmpBuf));
+						strcpy(tmpBuf, curPth);
+						parseDirNameTGDS(tmpBuf);
+						memset(curPth, 0, sizeof(curPth));
+						strcpy(curPth, tmpBuf);
+						WoopsiString newPath;
+						newPath.setText((const char*)curPth);
+						setPath(newPath);
+					}
 				} else {
 
 					// File selected; raise event
@@ -124,6 +156,8 @@ void FileListBox::readDirectory() {
 
 #else
 
+//Libfat:
+/*
 	// Build file list using libfat
 	struct stat st;
 
@@ -170,7 +204,52 @@ void FileListBox::readDirectory() {
 
 	// Close the directory
 	closedir(dir);
+*/
 
+//ToolchainGenericDS File Handle API:
+	// Get a copy of the path char array so that it can be used with libfat
+	char* path = new char[_path->getPath().getLength() + 1];
+	_path->getPath().copyToCharArray(path);
+
+	//Create TGDS Dir API context
+	struct FileClassList * fileClassListCtx = initFileList();
+	cleanFileList(fileClassListCtx);
+	
+	//Use TGDS Dir API context
+	char curPath[MAX_TGDSFILENAME_LENGTH+1];
+	strcpy(curPath, path);
+	delete [] path;
+	
+	_listbox->addOption(new FileListBoxDataItem("..", 0, getShineColour(), getBackColour(), getShineColour(), getHighlightColour(), true));	//allow to go back
+	int startFromIndex = 0;
+	struct FileClass * fileClassInst = FAT_FindFirstFile(curPath, fileClassListCtx, startFromIndex);
+	while(fileClassInst != NULL){
+		//directory?
+		if(fileClassInst->type == FT_DIR){
+			char tmpBuf[MAX_TGDSFILENAME_LENGTH+1];
+			memset(tmpBuf, 0, sizeof(tmpBuf));
+			strcpy(tmpBuf, fileClassInst->fd_namefullPath);
+			parseDirNameTGDS(tmpBuf);
+			// Directory
+			_listbox->addOption(new FileListBoxDataItem(tmpBuf, 0, getShineColour(), getBackColour(), getShineColour(), getHighlightColour(), true));
+		}
+		//file?
+		else if(fileClassInst->type  == FT_FILE){
+			char tmpBuf[MAX_TGDSFILENAME_LENGTH+1];
+			memset(tmpBuf, 0, sizeof(tmpBuf));
+			strcpy(tmpBuf, fileClassInst->fd_namefullPath);
+			parsefileNameTGDS(tmpBuf);
+			// File
+			_listbox->addOption(new FileListBoxDataItem(tmpBuf, 0, getShadowColour(), getBackColour(), getShadowColour(), getHighlightColour(), false));
+		}
+		
+		//more file/dir objects?
+		fileClassInst = FAT_FindNextFile(curPath, fileClassListCtx);
+	}
+
+	//Free TGDS Dir API context
+	freeFileList(fileClassListCtx);
+	
 #endif
 	
 	// Re-enable drawing now that the list is complete

@@ -52,7 +52,12 @@ namespace WoopsiUI {
 		 * Destructor.
 		 */
 		virtual ~Woopsi();
-
+		
+		/**
+		 * Main() method exposed to TGDS project.
+		 */
+		void ApplicationMainLoop();
+		
 		/**
 		 * Run the gadget modally.  This will run the Woopsi application until stopModal()
 		 * is called.

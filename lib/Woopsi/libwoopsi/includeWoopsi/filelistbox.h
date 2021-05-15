@@ -96,7 +96,15 @@ namespace WoopsiUI {
 		virtual inline const s32 getSelectedIndex() const {
 			return _listbox->getSelectedIndex();
 		};
-
+		
+		/**
+		 * Sets the selected index. Read scrollingListBox.h -> selectOption(const s32 index) for details
+		 * @return : none.
+		 */
+		virtual inline const void setSelectedIndex(const s32 indexToSelect) const {
+			_listbox->setSelectedIndex(indexToSelect);
+		};
+		
 		/**
 		 * Get the selected option.  Returns NULL if nothing is selected.
 		 * @return The selected option.

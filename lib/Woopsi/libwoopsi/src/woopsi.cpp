@@ -90,6 +90,8 @@ Woopsi::~Woopsi() {
 	woopsiFreeDefaultGadgetStyle();
 }
 
+//Woopsi main loop
+__attribute__((section(".itcm")))
 void Woopsi::goModal() {
 
 	// Loop until no longer modal
@@ -98,11 +100,12 @@ void Woopsi::goModal() {
 	}
 }
 
+__attribute__((section(".itcm")))
 void Woopsi::processOneVBL(Gadget* gadget) {
 	handleVBL();
 	handleStylus(gadget);
 	handleKeys();
-	handleLid();
+	ApplicationMainLoop();	//handleLid();
 	woopsiWaitVBL();
 
 #ifdef USING_SDL
@@ -129,6 +132,7 @@ void Woopsi::processOneVBL(Gadget* gadget) {
 #endif
 }
 
+__attribute__((section(".itcm")))
 void Woopsi::handleVBL() {
 
 	// Increase vbl counter
@@ -146,6 +150,7 @@ void Woopsi::handleVBL() {
 }
 
 // Process all stylus input
+__attribute__((section(".itcm")))
 void Woopsi::handleStylus(Gadget* gadget) {
 
 	// All gadgets
@@ -236,6 +241,7 @@ void Woopsi::handleKey(bool newPress, bool released, u32& heldTime, KeyCode keyC
 }
 
 // Process all key input
+__attribute__((section(".itcm")))
 void Woopsi::handleKeys() {
 	if (_focusedGadget != NULL) {
 		handleKey(Pad.Newpress.A, Pad.Released.A, Pad.HeldTime.A, KEY_CODE_A);
@@ -258,27 +264,11 @@ void Woopsi::handleLid() {
 	// Check for lid closed event
 	if (Pad.Held.Lid && !_lidClosed) {
 
-		// Lid has just been closed
-		_lidClosed = true;
-
-		// Run lid closed on all gadgets
-		s32 i = 0;
-		while (i < _gadgets.size()) {
-			_gadgets[i]->lidClose();
-			i++;
-		}
+		
 
 	} else if (!Pad.Held.Lid && _lidClosed) {
 
-		// Lid has just been opened
-		_lidClosed = false;
-
-		// Run lid opened on all gadgets
-		s32 i = 0;
-		while (i < _gadgets.size()) {
-			_gadgets[i]->lidOpen();
-			i++;
-		}
+		
 	}
 }
 

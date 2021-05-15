@@ -98,7 +98,7 @@ void FileRequester::handleReleaseEvent(const GadgetEventArgs& e) {
 		if (e.getSource() == _cancelButton) {
 
 			// Close the window
-			close();
+			//close();
 			return;
 		} else if (e.getSource() == _okButton) {
 
@@ -106,12 +106,12 @@ void FileRequester::handleReleaseEvent(const GadgetEventArgs& e) {
 			_gadgetEventHandlers->raiseValueChangeEvent();
 
 			// Close the window
-			close();
+			//close();
 			return;
 		}
 	}
 	
-	AmigaWindow::handleReleaseEvent(e);
+	//AmigaWindow::handleReleaseEvent(e);
 }
 
 void FileRequester::handleValueChangeEvent(const GadgetEventArgs& e) {
@@ -119,10 +119,10 @@ void FileRequester::handleValueChangeEvent(const GadgetEventArgs& e) {
 		if (e.getSource() == _listbox) {
 
 			// File selected; raise event
-			_gadgetEventHandlers->raiseValueChangeEvent();
+			//_gadgetEventHandlers->raiseValueChangeEvent();
 
 			// Close the window
-			close();
+			//close();
 		}
 	}
 }
