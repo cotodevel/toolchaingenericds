@@ -26,7 +26,7 @@
 __attribute__((section(".itcm")))
 WoopsiTemplate * WoopsiTemplateProc = NULL;
 
-void WoopsiTemplate::startup() {
+void WoopsiTemplate::startup(int argc, char **argv) {
 	Rect rect;
 
 	// Create SuperBitmap test screen
