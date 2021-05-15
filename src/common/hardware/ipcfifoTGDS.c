@@ -139,6 +139,26 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 			
 			//ARM7 command handler
 			#ifdef ARM7
+			
+			case (TGDS_ARM7_RELOADFLASH):{
+				//Init Shared Address Region and get NDS Heade
+				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+				memcpy((u8*)&TGDSIPC->DSHeader,(u8*)0x027FFE00, sizeof(TGDSIPC->DSHeader));
+				
+				//Read DHCP settings (in order)
+				LoadFirmwareSettingsFromFlash();
+				
+				//Hardware ARM7 Init
+				u8 DSHardwareReadFromFlash = TGDSIPC->DSFWHEADERInst.stub[0x1d];
+				resetMemory_ARMCores(DSHardwareReadFromFlash);
+				IRQInit(DSHardwareReadFromFlash);
+				
+				//Init SoundSampleContext
+				initSoundSampleContext();
+				initSound();
+			}
+			break;
+			
 			case ARM7COMMAND_START_SOUND:{
 				setupSound();
 			}
