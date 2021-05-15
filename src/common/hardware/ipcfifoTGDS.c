@@ -560,6 +560,14 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 			}
 			break;
 			
+			case((uint32)ARM7COMMAND_RELOADARM7):{
+				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				u32 ARM7Entrypoint = getValueSafe(&fifomsg[64]);
+				reloadARMCore(ARM7Entrypoint);
+			}
+			break;
+			
 			//ARM7 DLDI implementation
 			#ifdef ARM7_DLDI
 			case(TGDS_DLDI_ARM7_STATUS_DEINIT):{
