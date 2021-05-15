@@ -70,6 +70,9 @@ void XmemInit(unsigned int mallocLinearMemoryStart, unsigned int mallocLinearMem
 	
 	xmem_table[0] = XMEM_STARTBLOCK | XMEM_ENDBLOCK | XMEM_USEDBLOCK; // reserved i suppose
 	
+	for (int i=1;(unsigned)i<XMEM_TABLESIZE;i++) {
+		xmem_table[i] = 0;
+	}
 }
 
 void *Xmalloc(const int size) {
