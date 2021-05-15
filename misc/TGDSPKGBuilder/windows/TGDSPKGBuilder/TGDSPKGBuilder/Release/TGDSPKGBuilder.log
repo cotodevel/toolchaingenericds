@@ -1,0 +1,95 @@
+﻿Build started 3/16/2021 10:06:59 PM.
+     1>Project "C:\cygdrive\c\ToolchainGenericDS\misc\TGDSPKGBuilder\windows\TGDSPKGBuilder\TGDSPKGBuilder\TGDSPKGBuilder.vcxproj" on node 2 (Rebuild target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /sdl /O2 /Oi /Oy- /GL /D WIN32 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Yc"stdafx.h" /Fp"Release\TGDSPKGBuilder.pch" /Fo"Release\\" /Fd"Release\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt stdafx.cpp
+         stdafx.cpp
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /sdl /O2 /Oi /Oy- /GL /D WIN32 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Release\\" /Fd"Release\vc110.pdb" /Gd /TC /analyze- /errorReport:prompt adler32.c compress.c crc32.c crc32Tool.c deflate.c example.c gzio.c infback.c inffast.c inflate.c inftrees.c minigzip.c trees.c uncompr.c zutil.c
+         adler32.c
+         compress.c
+         crc32.c
+         crc32Tool.c
+     1>crc32Tool.c(128): warning C4102: 'ERR_EXIT' : unreferenced label
+         deflate.c
+         example.c
+     1>example.c(63): warning C4028: formal parameter 2 different from declaration
+     1>example.c(63): warning C4028: formal parameter 3 different from declaration
+     1>example.c(209): warning C4028: formal parameter 2 different from declaration
+     1>example.c(209): warning C4028: formal parameter 3 different from declaration
+     1>example.c(249): warning C4028: formal parameter 2 different from declaration
+     1>example.c(249): warning C4028: formal parameter 3 different from declaration
+     1>example.c(303): warning C4028: formal parameter 2 different from declaration
+     1>example.c(303): warning C4028: formal parameter 3 different from declaration
+     1>example.c(380): warning C4028: formal parameter 2 different from declaration
+     1>example.c(380): warning C4028: formal parameter 3 different from declaration
+     1>example.c(459): warning C4028: formal parameter 2 different from declaration
+     1>example.c(459): warning C4028: formal parameter 3 different from declaration
+     1>example.c(534): warning C4047: 'function' : 'Byte *' differs in levels of indirection from 'uLong'
+     1>example.c(534): warning C4024: 'test_compress' : different types for formal and actual parameter 2
+     1>example.c(534): warning C4047: 'function' : 'uLong' differs in levels of indirection from 'Byte *'
+     1>example.c(534): warning C4024: 'test_compress' : different types for formal and actual parameter 3
+     1>example.c(540): warning C4047: 'function' : 'Byte *' differs in levels of indirection from 'uLong'
+     1>example.c(540): warning C4024: 'test_inflate' : different types for formal and actual parameter 2
+     1>example.c(540): warning C4047: 'function' : 'uLong' differs in levels of indirection from 'Byte *'
+     1>example.c(540): warning C4024: 'test_inflate' : different types for formal and actual parameter 3
+     1>example.c(542): warning C4047: 'function' : 'Byte *' differs in levels of indirection from 'uLong'
+     1>example.c(542): warning C4024: 'test_large_deflate' : different types for formal and actual parameter 2
+     1>example.c(542): warning C4047: 'function' : 'uLong' differs in levels of indirection from 'Byte *'
+     1>example.c(542): warning C4024: 'test_large_deflate' : different types for formal and actual parameter 3
+     1>example.c(543): warning C4047: 'function' : 'Byte *' differs in levels of indirection from 'uLong'
+     1>example.c(543): warning C4024: 'test_large_inflate' : different types for formal and actual parameter 2
+     1>example.c(543): warning C4047: 'function' : 'uLong' differs in levels of indirection from 'Byte *'
+     1>example.c(543): warning C4024: 'test_large_inflate' : different types for formal and actual parameter 3
+     1>example.c(546): warning C4047: 'function' : 'Byte *' differs in levels of indirection from 'uLong'
+     1>example.c(546): warning C4024: 'test_sync' : different types for formal and actual parameter 2
+     1>example.c(546): warning C4047: 'function' : 'uLong' differs in levels of indirection from 'Byte *'
+     1>example.c(546): warning C4024: 'test_sync' : different types for formal and actual parameter 3
+     1>example.c(550): warning C4047: 'function' : 'Byte *' differs in levels of indirection from 'uLong'
+     1>example.c(550): warning C4024: 'test_dict_inflate' : different types for formal and actual parameter 2
+     1>example.c(550): warning C4047: 'function' : 'uLong' differs in levels of indirection from 'Byte *'
+     1>example.c(550): warning C4024: 'test_dict_inflate' : different types for formal and actual parameter 3
+         gzio.c
+         infback.c
+         inffast.c
+         inflate.c
+         inftrees.c
+         minigzip.c
+         trees.c
+         uncompr.c
+         zutil.c
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /sdl /O2 /Oi /Oy- /GL /D WIN32 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Release\\" /Fd"Release\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt tarball.cpp TGDSPKGBuilder.cpp
+         tarball.cpp
+         TGDSPKGBuilder.cpp
+     1>TGDSPKGBuilder.cpp(78): warning C4800: 'BOOL' : forcing value to bool 'true' or 'false' (performance warning)
+     1>TGDSPKGBuilder.cpp(228): warning C4018: '<' : signed/unsigned mismatch
+     1>TGDSPKGBuilder.cpp(195): warning C4101: 'ffd' : unreferenced local variable
+     1>TGDSPKGBuilder.cpp(197): warning C4101: 'szDir' : unreferenced local variable
+     1>TGDSPKGBuilder.cpp(126): warning C4101: 'k' : unreferenced local variable
+     1>TGDSPKGBuilder.cpp(198): warning C4101: 'length_of_arg' : unreferenced local variable
+     1>TGDSPKGBuilder.cpp(196): warning C4101: 'filesize' : unreferenced local variable
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\cygdrive\c\ToolchainGenericDS\misc\TGDSPKGBuilder\windows\TGDSPKGBuilder\Release\TGDSPKGBuilder.exe" /INCREMENTAL:NO /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\cygdrive\c\ToolchainGenericDS\misc\TGDSPKGBuilder\windows\TGDSPKGBuilder\Release\TGDSPKGBuilder.pdb" /SUBSYSTEM:CONSOLE /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\cygdrive\c\ToolchainGenericDS\misc\TGDSPKGBuilder\windows\TGDSPKGBuilder\Release\TGDSPKGBuilder.lib" /MACHINE:X86 /SAFESEH Release\adler32.obj
+         Release\compress.obj
+         Release\crc32.obj
+         Release\crc32Tool.obj
+         Release\deflate.obj
+         Release\example.obj
+         Release\gzio.obj
+         Release\infback.obj
+         Release\inffast.obj
+         Release\inflate.obj
+         Release\inftrees.obj
+         Release\minigzip.obj
+         Release\tarball.obj
+         Release\TGDSPKGBuilder.obj
+         Release\stdafx.obj
+         Release\trees.obj
+         Release\uncompr.obj
+         Release\zutil.obj
+         Generating code
+         Finished generating code
+         TGDSPKGBuilder.vcxproj -> C:\cygdrive\c\ToolchainGenericDS\misc\TGDSPKGBuilder\windows\TGDSPKGBuilder\Release\TGDSPKGBuilder.exe
+     1>Done Building Project "C:\cygdrive\c\ToolchainGenericDS\misc\TGDSPKGBuilder\windows\TGDSPKGBuilder\TGDSPKGBuilder\TGDSPKGBuilder.vcxproj" (Rebuild target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:04.43
