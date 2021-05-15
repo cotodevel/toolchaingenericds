@@ -794,3 +794,17 @@ int	setBacklight(int flags){
 	#endif
 	return 0;
 }
+
+u32 getValueSafe(u32 * buf) __attribute__ ((optnone)) {
+	#ifdef ARM9
+	coherent_user_range_by_size((uint32)buf, 4);
+	#endif
+	return (u32)(*buf);
+}
+
+void setValueSafe(u32 * buf, u32 val) __attribute__ ((optnone)) {
+	(*buf) = (u32)val;
+	#ifdef ARM9
+	coherent_user_range_by_size((uint32)buf, 4);
+	#endif
+}

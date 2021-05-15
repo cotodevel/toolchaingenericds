@@ -125,6 +125,9 @@ extern char thisArgv[argvItems][MAX_TGDSFILENAME_LENGTH];
 extern void mainARGV();
 extern void separateExtension(char *str, char *ext);
 
+extern u32 getValueSafe(u32 * buf);
+extern void setValueSafe(u32 * buf, u32 val);
+
 #endif
 
 #endif
