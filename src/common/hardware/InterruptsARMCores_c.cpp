@@ -33,7 +33,6 @@ USA
 #include "linkerTGDS.h"
 #include "eventsTGDS.h"
 #include "biosTGDS.h"
-#include "ARM7FS.h"
 #include "dmaTGDS.h"
 #include "soundTGDS.h"
 
@@ -247,35 +246,6 @@ void NDS_IRQHandler() __attribute__ ((optnone)) {
 			}
 			break;
 			
-			//ARM7 FS Init
-			case(IPC_ARM7INIT_ARM7FS):{	//ARM7
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-				char *  ARM7FS_ARM9Filename = (char *)fifomsg[9];
-				//int fileHandleSize = (int)fifomsg[10];
-				int splitBufferSize = (int)fifomsg[11];
-				int curARM7FS_HandleMethod = (int)fifomsg[12];
-				u32 * debugVar = (u32*)fifomsg[13];
-				u32 testCase = (u32)fifomsg[14]; 
-				initARM7FS((char*)ARM7FS_ARM9Filename, curARM7FS_HandleMethod);
-				if(testCase == (u32)0xc070c070){
-					performARM7MP2FSTestCase(ARM7FS_ARM9Filename, splitBufferSize, debugVar);	//ARM7 Setup
-				}
-				fifomsg[15] = fifomsg[14] = fifomsg[13] = fifomsg[12] = fifomsg[11] = fifomsg[10] = fifomsg[9] = 0;
-			}
-			break;
-			
-			case(IPC_ARM7DEINIT_ARM7FS):{	//ARM7
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-				
-				//ARM7(FS) de-init
-				deinitARM7FS();
-				
-				fifomsg[8] = 0;
-			}
-			break;
-			
 			#ifdef ARM7_DLDI
 			case(IPC_INIT_ARM7DLDI_REQBYIRQ):{
 				//Init DLDI ARM7
@@ -344,12 +314,12 @@ void NDS_IRQHandler() __attribute__ ((optnone)) {
 	
 	if(handledIRQ & IRQ_SCREENLID){
 		isArm7ClosedLid = false;
-		SendFIFOWords(FIFO_IRQ_LIDHASOPENED_SIGNAL, 0);
+		SendFIFOWords(FIFO_IRQ_LIDHASOPENED_SIGNAL);
 		screenLidHasOpenedhandlerUser();
 	}
 
 	if(handledIRQ & IRQ_SCREENLID){
-		SendFIFOWords(FIFO_IRQ_LIDHASOPENED_SIGNAL, 0);
+		SendFIFOWords(FIFO_IRQ_LIDHASOPENED_SIGNAL);
 		screenLidHasOpenedhandlerUser();
 	}
 	#endif

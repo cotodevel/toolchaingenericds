@@ -40,7 +40,7 @@ void initSound(){
 	#endif
 	
 	#ifdef ARM9
-	SendFIFOWords(FIFO_INITSOUND, 0);
+	SendFIFOWords(FIFO_INITSOUND);
 	#endif
 }
 
@@ -58,7 +58,7 @@ void startSoundSample(int sampleRate, const void* data, u32 bytes, u8 channel, u
 	fifomsg[52] = (uint32)bytes;
 	u32 packedSnd = (u32)( ((channel&0xff) << 24) | ((vol&0xff) << 16) | ((pan&0xff) << 8) | (format&0xff) );
 	fifomsg[53] = (uint32)packedSnd;
-	SendFIFOWords(FIFO_PLAYSOUND, (uint32)fifomsg);
+	SendFIFOWords(FIFO_PLAYSOUND);
 	#endif
 	
 	#ifdef ARM7
@@ -168,7 +168,10 @@ void EnableSoundSampleContext(int SndSamplemode){
 	soundSampleContextCurrentMode = SndSamplemode;
 	#endif
 	#ifdef ARM9
-	SendFIFOWords(TGDS_ARM7_ENABLESOUNDSAMPLECTX, (u32)SndSamplemode);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	setValueSafe(&fifomsg[60], (uint32)SndSamplemode);
+	SendFIFOWords(TGDS_ARM7_ENABLESOUNDSAMPLECTX);
 	#endif
 }
 
@@ -177,7 +180,7 @@ void DisableSoundSampleContext(){
 	soundSampleContextCurrentMode = SOUNDSAMPLECONTEXT_SOUND_IDLE;
 	#endif
 	#ifdef ARM9
-	SendFIFOWords(TGDS_ARM7_DISABLESOUNDSAMPLECTX, 0);
+	SendFIFOWords(TGDS_ARM7_DISABLESOUNDSAMPLECTX);
 	#endif
 }
 
@@ -325,6 +328,57 @@ void stopSound() __attribute__ ((optnone)) {
 	REG_IE &= ~IRQ_TIMER1;
 }
 
+//ARM7: Sample Playback handler
+void updateSoundContextSamplePlayback(){
+	bool playSample = false;
+	switch(getSoundSampleContextEnabledStatus()){
+		//Samples
+		case(SOUNDSAMPLECONTEXT_SOUND_SAMPLEPLAYBACK):
+		{
+			playSample = true;
+		}
+		break;
+		
+		case(SOUNDSAMPLECONTEXT_SOUND_STREAMPLAYBACK):{
+			//Only play sound samples when SRC_WAV or SRC_WAVADPCM streams
+			/*	//todo
+			if(soundData.sourceFmt == SRC_WAV){
+				playSample = true;
+			}
+			*/
+		}
+		break;
+	}
+	
+	if(playSample == true){
+		//VBLANK intervals: Look out for assigned channels, playing.
+		struct soundSampleContext * curSoundSampleContext = getsoundSampleContextByIndex(SoundTGDSCurChannel);
+		int thisChannel = curSoundSampleContext->channel;
+		
+		//Returns -1 if channel is busy, or channel if idle
+		if( (isFreeSoundChannel(thisChannel) == thisChannel) && (curSoundSampleContext->status == SOUNDSAMPLECONTEXT_PENDING) ){	//Play sample?
+			startSoundSample(curSoundSampleContext->sampleRate, curSoundSampleContext->arm9data, curSoundSampleContext->bytes, thisChannel, curSoundSampleContext->vol,  curSoundSampleContext->pan, curSoundSampleContext->format);
+			curSoundSampleContext->status = SOUNDSAMPLECONTEXT_PLAYING;
+		}
+		
+		//Returns -1 if channel is busy, or channel if idle
+		if( (isFreeSoundChannel(thisChannel) == thisChannel) && (curSoundSampleContext->status == SOUNDSAMPLECONTEXT_PLAYING) ){	//Idle? free context
+			freesoundSampleContext(curSoundSampleContext);
+			struct sIPCSharedTGDS * TGDSIPC = (struct sIPCSharedTGDS *)0x027FF000;
+			uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+			fifomsg[60] = (uint32)thisChannel;			
+			SendFIFOWords(FIFO_FLUSHSOUNDCONTEXT);
+		}
+		
+		if(SoundTGDSCurChannel > SoundSampleContextChannels){
+			SoundTGDSCurChannel = 0;
+		}
+		else{
+			SoundTGDSCurChannel++;
+		}
+	}
+}
+
 #endif 
  
 #ifdef ARM9
@@ -460,7 +514,7 @@ __attribute__((section(".itcm")))
 void swapAndSend(u32 type)
 {
 	swapData();
-	SendFIFOWords(type, 0);
+	SendFIFOWords(type);
 }
 
 // update function
@@ -547,17 +601,26 @@ void initComplexSound() __attribute__ ((optnone)) {
 
 void setSoundFrequency(u32 freq)
 {
-	SendFIFOWords(ARM7COMMAND_SOUND_SETRATE, freq);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	setValueSafe(&fifomsg[60], (uint32)freq);
+	SendFIFOWords(ARM7COMMAND_SOUND_SETRATE);
 }
 
 void setSoundInterpolation(u32 mult)
 {
-	SendFIFOWords(ARM7COMMAND_SOUND_SETMULT, mult);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	setValueSafe(&fifomsg[62], (uint32)mult);
+	SendFIFOWords(ARM7COMMAND_SOUND_SETMULT);
 }
 
 void setSoundLength(u32 len)
 {
-	SendFIFOWords(ARM7COMMAND_SOUND_SETLEN, len);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	setValueSafe(&fifomsg[61], (uint32)len);
+	SendFIFOWords(ARM7COMMAND_SOUND_SETLEN);
 	sndLen = len;
 }
 
@@ -569,14 +632,14 @@ int getSoundLength()
 void startSound9()
 {	
 	if(!playing)
-		SendFIFOWords(ARM7COMMAND_START_SOUND, 0);
+		SendFIFOWords(ARM7COMMAND_START_SOUND);
 	playing = true;
 }
 
 void stopSound()
 {
 	if(playing)
-		SendFIFOWords(ARM7COMMAND_STOP_SOUND, 0);
+		SendFIFOWords(ARM7COMMAND_STOP_SOUND);
 	playing = false;
 }
 
@@ -925,7 +988,7 @@ int parseWaveData(struct fd * fdinst, u32 u32chunkToSeek){
 
 //Usercode: Opens a .WAV or IMA-ADPCM (Intel) file and begins to stream it. Copies the file handles 
 //Returns: the stream format.
-int playSoundStream(char * audioStreamFilename, struct fd * _FileHandleVideo, struct fd * _FileHandleAudio){
+int playSoundStream(char * audioStreamFilename, struct fd * _FileHandleVideo, struct fd * _FileHandleAudio) __attribute__ ((optnone)){
 	int physFh1 = -1;
 	int physFh2 = -1;
 	if(openDualTGDSFileHandleFromFile(audioStreamFilename, &physFh1, &physFh2) == true){
@@ -955,7 +1018,7 @@ int playSoundStream(char * audioStreamFilename, struct fd * _FileHandleVideo, st
 
 //Internal: Stops an audiostream playback.
 //Returns: true if successfully halted, false if no audiostream available.
-bool stopSoundStream(struct fd * tgdsStructFD1, struct fd * tgdsStructFD2, int * internalCodecType){
+bool stopSoundStream(struct fd * tgdsStructFD1, struct fd * tgdsStructFD2, int * internalCodecType) __attribute__ ((optnone)){
 	closeSound(); 
 	*internalCodecType = SRC_NONE;
 	
@@ -966,7 +1029,7 @@ bool stopSoundStream(struct fd * tgdsStructFD1, struct fd * tgdsStructFD2, int *
 }
 
 //Internal: Opens a .WAV file (or returns the detected header), otherwise returns SRC_NONE
-int initSoundStream(char * audioStreamFilename){
+int initSoundStream(char * audioStreamFilename) __attribute__ ((optnone)){
 	char tmpName[256];
 	char ext[256];
 	

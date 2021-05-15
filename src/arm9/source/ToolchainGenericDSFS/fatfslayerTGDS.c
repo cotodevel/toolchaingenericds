@@ -2222,7 +2222,6 @@ bool updateTGDSFSDirectoryIteratorCWD(char * newCWD, struct FileClassList * lst)
 
 
 ///////////////////////////////////////////////TGDS FileDescriptor Callbacks Implementation Start ///////////////////////////////////////////////
-//												See ARM7FS.h, TGDS FileDescriptor Implementation)
 //These callbacks are required when setting up initARM7FSTGDSFileHandle()	or performARM7MP2FSTestCaseTGDSFileDescriptor()
 int ARM7FS_ReadBuffer_ARM9ImplementationTGDSFD(u8 * outBuffer, int fileOffset, struct fd * fdinstIn, int bufferSize){
 	return TGDSFSUserfatfs_read(outBuffer, bufferSize, fileOffset, fdinstIn);

@@ -235,7 +235,7 @@ void printf7(char *chr, int argvCount, int * argv){
 		fifomsg[36] = (uint32)printf7Buf;
 		fifomsg[37] = (uint32)arm7ARGVBufferShared;
 		fifomsg[38] = (uint32)argvCount;
-		SendFIFOWords(TGDS_ARM7_PRINTF7, (u32)fifomsg);
+		SendFIFOWords(TGDS_ARM7_PRINTF7);
 	}
 }
 
@@ -332,7 +332,7 @@ void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,									
 			TGDSMallocFreeMemory9 = (TGDSARM9MallocFreeMemoryHandler)MallocFreeMemoryHandler;
 		}
 	}
-	SendFIFOWords(TGDS_ARM7_SETUPARMCoresMALLOC, (u32)fifomsg);	//ARM7 Setup
+	SendFIFOWords(TGDS_ARM7_SETUPARMCoresMALLOC);	//ARM7 Setup
 	while(fifomsg[45] == TGDS_ARM7_SETUPARMCoresMALLOC){
 		swiDelay(2);
 	}
@@ -377,8 +377,7 @@ void printf7Setup(){
 	fifomsg[48] = (uint32)&arm7ARGVBuffer[0];
 	//ARM7 print debugger
 	fifomsg[49] = (uint32)&arm7ARGVDebugBuffer[0];
-	
-	SendFIFOWords(TGDS_ARM7_PRINTF7SETUP, (u32)fifomsg);
+	SendFIFOWords(TGDS_ARM7_PRINTF7SETUP);
 }
 
 void printf7(u8 * printfBufferShared, int * arm7ARGVBufferShared, int argvCount){

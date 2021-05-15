@@ -100,7 +100,7 @@ static inline void handleARM7SVC(){
 	//Lid Closing + backlight events (ARM7)
 	if(isArm7ClosedLid == false){
 		if((REG_KEYXY & KEY_HINGE) == KEY_HINGE){
-			SendFIFOWords(FIFO_IRQ_LIDHASCLOSED_SIGNAL, 0);
+			SendFIFOWords(FIFO_IRQ_LIDHASCLOSED_SIGNAL);
 			screenLidHasClosedhandlerUser();
 			isArm7ClosedLid = true;
 		}

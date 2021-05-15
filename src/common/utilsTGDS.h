@@ -65,6 +65,9 @@ extern "C"{
 extern size_t ucs2tombs(uint8* dst, const unsigned short* src, size_t len);
 extern int	setBacklight(int flags);
 
+extern u32 getValueSafe(u32 * buf);
+extern void setValueSafe(u32 * buf, u32 val);
+
 #ifdef ARM9
 
 //reserved for project appVersion
@@ -93,7 +96,6 @@ extern sint32 glueARMHandlerConfig(VERSION_DESCRIPTOR * versionInst,METHOD_DESCR
 //misc
 extern int	split (const sint8 *txt, sint8 delim, sint8 ***tokens);
 
-#ifdef ARM9
 extern int	FS_loadFile(sint8 *filename, sint8 *buf, int size);
 extern int	FS_saveFile(sint8 *filename, sint8 *buf, int size,bool force_file_creation);
 extern int	FS_getFileSize(sint8 *filename);
@@ -124,11 +126,6 @@ extern int thisArgc;
 extern char thisArgv[argvItems][MAX_TGDSFILENAME_LENGTH];
 extern void mainARGV();
 extern void separateExtension(char *str, char *ext);
-
-extern u32 getValueSafe(u32 * buf);
-extern void setValueSafe(u32 * buf, u32 val);
-
-#endif
 
 #endif
 

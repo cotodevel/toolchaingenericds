@@ -53,7 +53,7 @@ void enableTGDSEventHandling(){
 	eventsTGDSActive = true;
 	#endif
 	#ifdef ARM9
-	SendFIFOWords(TGDS_ARM7_ENABLE_EVENT_HANDLING, 0);
+	SendFIFOWords(TGDS_ARM7_ENABLE_EVENT_HANDLING);
 	#endif
 }
 
@@ -62,7 +62,10 @@ void TGDSSetEvent(int newEvent){
 	TGDSEvent = newEvent;
 	#endif
 	#ifdef ARM9
-	SendFIFOWords(TGDS_ARM7_SET_EVENT_HANDLING, (u32)newEvent);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	setValueSafe(&fifomsg[60], (uint32)newEvent);
+	SendFIFOWords(TGDS_ARM7_SET_EVENT_HANDLING);
 	#endif
 }
 
@@ -71,7 +74,7 @@ void disableTGDSEventHandling(){
 	eventsTGDSActive = false;
 	#endif
 	#ifdef ARM9
-	SendFIFOWords(TGDS_ARM7_DISABLE_EVENT_HANDLING, 0);
+	SendFIFOWords(TGDS_ARM7_DISABLE_EVENT_HANDLING);
 	#endif
 }
 
@@ -81,7 +84,10 @@ void setTurnOffScreensTimeout(int secondsBeforeEventTrigger){
 	sleepModeTimeout = secondsBeforeEventTrigger;
 	#endif
 	#ifdef ARM9
-	SendFIFOWords(TGDS_ARM7_ENABLE_SLEEPMODE_TIMEOUT, (u32)secondsBeforeEventTrigger);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	fifomsg[60] = (uint32)secondsBeforeEventTrigger;
+	SendFIFOWords(TGDS_ARM7_ENABLE_SLEEPMODE_TIMEOUT);
 	#endif
 }
 
@@ -94,7 +100,7 @@ void TurnOnScreens(){
 	#endif
 	
 	#ifdef ARM9
-	SendFIFOWords(TGDS_ARM7_TURNON_BACKLIGHT, 0);
+	SendFIFOWords(TGDS_ARM7_TURNON_BACKLIGHT);
 	#endif
 }
 
@@ -105,7 +111,7 @@ void TurnOffScreens(){
 	#endif
 	
 	#ifdef ARM9
-	SendFIFOWords(TGDS_ARM7_TURNOFF_BACKLIGHT, 0);
+	SendFIFOWords(TGDS_ARM7_TURNOFF_BACKLIGHT);
 	#endif
 }
 
@@ -124,7 +130,7 @@ void enableSleepMode(){
 	sleepModeEnabled = true;
 	#endif
 	#ifdef ARM9
-	SendFIFOWords(TGDS_ARM7_ENABLE_SLEEPMODE, 0);
+	SendFIFOWords(TGDS_ARM7_ENABLE_SLEEPMODE);
 	#endif
 }
 
@@ -135,6 +141,6 @@ void disableSleepMode(){
 	TurnOnScreens();
 	#endif
 	#ifdef ARM9
-	SendFIFOWords(TGDS_ARM7_DISABLE_SLEEPMODE, 0);
+	SendFIFOWords(TGDS_ARM7_DISABLE_SLEEPMODE);
 	#endif
 }

@@ -57,7 +57,7 @@ extern "C" {
 #endif
 
 //NOT weak symbols : the implementation of these is project-defined (here)
-extern void HandleFifoNotEmptyWeakRef(uint32 cmd1,uint32 cmd2);
+extern void HandleFifoNotEmptyWeakRef(volatile u32 cmd1);
 extern void HandleFifoEmptyWeakRef(uint32 cmd1,uint32 cmd2);
 
 extern struct sIPCSharedTGDSSpecific* getsIPCSharedTGDSSpecific();

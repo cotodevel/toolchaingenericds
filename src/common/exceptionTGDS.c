@@ -39,6 +39,7 @@ USA
 #include "global_settings.h"
 #include "keypadTGDS.h"
 #include "posixHandleTGDS.h"
+#include "utilsTGDS.h"
 
 #ifdef ARM9
 #include "dswnifi_lib.h"
@@ -65,7 +66,10 @@ void setupDefaultExceptionHandler(){
 	
 	#ifdef ARM9
 	*(uint32*)0x02FFFD9C = (uint32)DebugException;
-	SendFIFOWords(TGDS_ARM7_SETUPEXCEPTIONHANDLER, (u32)&exceptionArmRegs[0]);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	setValueSafe(&fifomsg[60], (uint32)&exceptionArmRegs[0]);
+	SendFIFOWords(TGDS_ARM7_SETUPEXCEPTIONHANDLER);
 	#endif
 	
 	#endif
@@ -104,7 +108,10 @@ void exception_sysexit(){
 	memset((unsigned char *)&argBuffer[0], 0, sizeof(argBuffer));
 	writeDebugBuffer7("TGDS ARM7.bin Exception: Unexpected main() exit. ", 0, (int*)&argBuffer[0]);
 	
-	SendFIFOWords(EXCEPTION_ARM7, unexpectedsysexit_7);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	setValueSafe(&fifomsg[60], (uint32)unexpectedsysexit_7);
+	SendFIFOWords(EXCEPTION_ARM7);
 	while(1){
 		IRQWait(IRQ_VBLANK);
 	}
@@ -123,7 +130,10 @@ void generalARMExceptionHandler(){
 	memset((unsigned char *)&argBuffer[0], 0, sizeof(argBuffer));
 	writeDebugBuffer7("TGDS ARM7.bin Exception: Hardware Exception.", 0, (int*)&argBuffer[0]);
 	
-	SendFIFOWords(EXCEPTION_ARM7, generalARM7Exception);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	fifomsg[60] = (u32)generalARM7Exception;
+	SendFIFOWords(EXCEPTION_ARM7);
 	while(1==1){
 		IRQVBlankWait();
 	}
