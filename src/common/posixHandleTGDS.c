@@ -73,7 +73,7 @@ uint32 get_lma_libend(){
 	return (uint32)(&__vma_stub_end__);	//linear memory top (start)
 }
 
-//(ewram end - linear memory top ) = TGDSARM9Malloc free memory (bottom, end)
+//(ewram end - linear memory top ) = malloc free memory (bottom, end)
 uint32 get_lma_wramend(){
 	#ifdef ARM7
 	extern uint32 sp_USR;	//the farthest stack from the end memory is our free memory (in ARM7, shared stacks)
@@ -261,7 +261,7 @@ void writeDebugBuffer7(char *chr, int argvCount, int * argv){
 }
 #endif
 
-//ARM7 TGDSARM9Malloc support. Will depend on the current memory mapped (can be either IWRAM(very scarse), EWRAM, VRAM or maybe other)
+//ARM7 malloc support. Will depend on the current memory mapped (can be either IWRAM(very scarse), EWRAM, VRAM or maybe other)
 #ifdef ARM7
 u32 ARM7MallocBaseAddress = 0;
 u32 ARM7MallocTop = 0;
@@ -288,7 +288,7 @@ void initARM7Malloc(u32 ARM7MallocStartaddress, u32 ARM7MallocSize){	//ARM7 Impl
 #endif
 
 #ifdef ARM9
-//ARM9 Malloc implementation: Blocking, because several processes running on ARM7 may require ARM9 having a proper TGDSARM9Malloc impl.
+//ARM9 Malloc implementation: Blocking, because several processes running on ARM7 may require ARM9 having a proper malloc impl.
 u32 ARM9MallocBaseAddress = 0;
 void setTGDSARM9MallocBaseAddress(u32 address){
 	ARM9MallocBaseAddress = address;
@@ -539,17 +539,17 @@ int fork(){
 	return -1;
 }
 
-//C++ requires this
+//UNIX/Posix programs exit like this. (TGDS works with hardware directly, thus waits for interrupts)
 void _exit (int status){
+	bool isTGDSCustomConsole = false;	//set default console or custom console: default console
+	GUI_init(isTGDSCustomConsole);
+	GUI_clear();
 	
-	//todo: add some exception handlers to notify ARM cores program has ran	
-	
-	clrscr();
 	printf("----");
 	printf("----");
 	printf("----");
 	printf("----");
-	printf("TGDS APP Halt: Error Status: %d", status);
+	printf("TGDS APP Exit with code:(%d)", status);
 	while(1==1){
 		IRQVBlankWait();
 	}
@@ -711,7 +711,7 @@ int getMaxRam(){
 }
 
 //Memory is too fragmented up to this point, causing to have VERY little memory left. 
-//Luckily for us this memory hack allows dmalloc to re-arrange and free more memory for us! Also fixing TGDSARM9Malloc memory fragmentation!! WTF Dude.
+//Luckily for us this memory hack allows dmalloc to re-arrange and free more memory for us! Also fixing malloc memory fragmentation!! WTF Dude.
 void TryToDefragmentMemory(){
 	int freeRam = getMaxRam();
 	//I'm not kidding, this allows to de-fragment memory. Relative to how much memory we have and re-allocate it
