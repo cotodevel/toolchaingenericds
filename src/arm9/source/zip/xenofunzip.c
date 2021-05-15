@@ -40,16 +40,17 @@ int funzipstdio(char * inFname, char * outFname){
 	n = fgetc(in);  n |= fgetc(in) << 8;
 	if (n == ZIPMAG){
 		if (fread((char *)h, 1, LOCHDR, in) != LOCHDR || SH(h) != LOCREM){
-			err("invalid zipfile");
+			return -1; //err("invalid zipfile");
 		}
 
 		switch (method = SH(h + LOCHOW)) {
 			case STORED:
 			case DEFLATED:
 				break;
-			default:
-				err("first entry not deflated or stored");
-				break;
+			default:{
+				return -1; //err("first entry not deflated or stored");
+			}
+			break;
 		}
 		int offst = 0;
 		for (n = SH(h + LOCFIL); n--; ){ 
@@ -64,13 +65,13 @@ int funzipstdio(char * inFname, char * outFname){
 	}
 	else if (n == GZPMAG){
 		if (fread((char *)h, 1, GZPHDR, in) != GZPHDR){
-			err("invalid gzip file");
+			return -1; //err("invalid gzip file");
 		}
 		if ((method = h[GZPHOW]) != DEFLATED && method != ENHDEFLATED){
-			err("gzip file not deflated");
+			return -1; //err("gzip file not deflated");
 		}
 		if (h[GZPFLG] & GZPMUL){
-			err("cannot handle multi-part gzip files");
+			return -1; //err("cannot handle multi-part gzip files");
 		}
 		if (h[GZPFLG] & GZPISX){
 			n = fgetc(in);  n |= fgetc(in) << 8;
@@ -86,13 +87,13 @@ int funzipstdio(char * inFname, char * outFname){
 		encrypted = h[GZPFLG] & GZPISE;
 	}
 	else{
-		err("input not a zip or gzip file");
+		return -1; //err("input not a zip or gzip file");
 	}
 	//now in points to deflated entry. let's just inflate it using zlib.
 
 	//if entry encrypted, decrypt and validate encryption header
 	if (encrypted){
-		err("encrypted zip unsupported");
+		return -1; //err("encrypted zip unsupported");
 	}
 	
 	//Generate full dir path for output: internal ZIP name
