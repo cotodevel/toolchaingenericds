@@ -66,37 +66,14 @@ DSTATUS disk_initialize (
 		//DS
 		if(pdrv == DLDICART){
 			//DS DLDI
-			#ifdef ARM7_DLDI
-			
-			clrscr();
-			printf("ARM7 DLDI Init! ");
-			
-			clrscr();
-			printf("ARM7 DLDI Init! ");
-			
-			clrscr();
-			printf("ARM7 DLDI Init! ");
-			
-			clrscr();
-			printf("ARM7 DLDI Init! ");
-			
-			u32 targetAddrDLDI7 = (u32)getDLDIARM7Address();
-			printf("ARM7 DLDI Init: %x", targetAddrDLDI7);
-			ARM7DLDIInit(targetAddrDLDI7);
-			printf("ARM7 DLDI Done! ");
-			
-			ret = 0;	//init OK!
-			#endif
-			
-			#ifdef ARM9_DLDI
-			if(dldi_handler_init() == true){	//Init DLDI: ARM9 version
-				ret = 0;	//init OK!
+			if(ARM7DLDIEnabled == false){
+				if(dldi_handler_init() == true){	//Init DLDI: ARM9 version
+					ret = 0;	//init OK!
+				}
+				else{
+					ret = STA_NOINIT;
+				}
 			}
-			else{
-				ret = STA_NOINIT;
-			}
-			#endif
-			
 		}
 		
 	return ret;

@@ -704,9 +704,9 @@ Call this before exiting back to the GBAMP
 bool return OUT: true if successful.
 -----------------------------------------------------------------*/
 bool FAT_FreeFiles (void){
-	fatfs_init();
+	fatfs_deinit();
 	// Return status of card
-	struct  DLDI_INTERFACE* dldiInterface = (struct DLDI_INTERFACE*)DLDIARM7Address;	
+	struct  DLDI_INTERFACE* dldiInterface = dldiGet();
 	return (bool)dldiInterface->ioInterface.isInserted();
 }
 
@@ -1860,11 +1860,7 @@ int fatfs_deinit(){
 	}
 	
 	int ret = f_unmount("0:");
-	
-	//ARM7 DLDI implementation
-	#ifdef ARM7_DLDI
-	ARM9DeinitDLDI();
-	#endif
+	dldi_handler_deinit();
 	
 	//remove TGDS FS file handle context
 	if(files != NULL){
@@ -1872,11 +1868,10 @@ int fatfs_deinit(){
 	}
 	
 	//ARM9 DLDI impl.
-	#ifdef ARM9_DLDI
-	struct  DLDI_INTERFACE* dldiInterface = (struct DLDI_INTERFACE*)DLDIARM7Address;	
-	dldiInterface->ioInterface.clearStatus();
-	dldiInterface->ioInterface.shutdown();
-	#endif
+	if(ARM7DLDIEnabled == false){
+		_io_dldi_stub.ioInterface.clearStatus();
+		_io_dldi_stub.ioInterface.shutdown();
+	}
 	
 	return ret;
 }

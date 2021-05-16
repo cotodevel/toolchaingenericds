@@ -107,6 +107,9 @@ struct AllocatorInstance
 	TGDSARM9MallocFreeMemoryHandler	CustomTGDSMallocFreeMemory9;
 	int memoryToAllocate;
 	u32 ARM9MallocStartaddress;
+	
+	//EWRAM DLDI ARM9 physical address
+	u32 DLDI9StartAddress;
 };
 
 #ifdef __cplusplus
@@ -129,11 +132,13 @@ extern TGDSARM9MallocFreeMemoryHandler	TGDSMallocFreeMemory9;
 extern u32 ARM9MallocBaseAddress;
 extern void setTGDSARM9MallocBaseAddress(u32 address);
 extern u32 getTGDSARM9MallocBaseAddress();
-extern void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize, //ARM7
-								
+extern void initARMCoresMalloc(
+								u32 ARM7MallocStartAddress, int ARM7MallocSize, //ARM7
 								u32 ARM9MallocStartaddress, u32 ARM9MallocSize, u32 * mallocHandler, //ARM9
 								u32 * callocHandler, u32 * freeHandler, u32 * MallocFreeMemoryHandler, 
-								bool customAllocator);
+								bool customAllocator,
+								u32 dldiMemAddress	//ARM9 -> ARM7 DLDI Location
+							);
 
 #ifdef __cplusplus
 }

@@ -1,5 +1,3 @@
-#ifdef ARM9
-
 /*
  dldi.h
 
@@ -99,6 +97,7 @@ typedef struct DLDI_INTERFACE {
 extern "C" {
 #endif
 
+extern bool ARM7DLDIEnabled;
 extern const uint32  DLDI_MAGIC_NUMBER;
 
 /*
@@ -107,28 +106,22 @@ You'll need to set the bus permissions appropriately before using.
 */
 // The only built in driver
 extern DLDI_INTERFACE _io_dldi_stub;
-
 extern const DLDI_INTERFACE* io_dldi_data;
-
-/*
-Return a pointer to the internal IO interface, (DLDI handle-> struct DISC_INTERFACE_STRUCT ioInterface)
-while setting hardware bus owner (either SLOT1 or SLOT2, depending from cart nature).
-*/
-extern const struct DISC_INTERFACE_STRUCT* dldiGetInternal (void);
 
 /* pointer to DLDI_INTERFACE (DLDI handle) */
 extern struct DLDI_INTERFACE* dldiGet(void);
 
-//ARM9DLDI:
-//ARM7: NULL ptr
-//ARM9: Global Physical DLDI section (rather than &_dldi_start, since it's discarded at TGDS init)
-extern u32 * DLDIARM7Address;
-extern void setDLDIARM7Address(u32 * address);
-extern u32 * getDLDIARM7Address();
-
-#ifdef ARM9
 extern bool dldi_handler_init();
 extern void dldi_handler_deinit();
+extern bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer);
+extern bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buffer);
+
+#ifdef ARM7
+extern u32 * DLDIARM7Address;
+#endif
+
+#ifdef ARM9
+extern u8 ARM7SharedDLDI[32768];
 
 //Coto: RAM Disk DLDI Implementation. DLDI RW Works (32MB @ 0x08000000) in emulators now!
 extern bool _DLDI_isInserted(void);
@@ -137,15 +130,11 @@ extern bool _DLDI_shutdown(void);
 extern bool _DLDI_startup(void);
 extern bool _DLDI_readSectors(uint32 sector, uint32 sectorCount, uint8* buffer);
 extern bool _DLDI_writeSectors(uint32 sector, uint32 sectorCount, const uint8* buffer);
-extern bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer);
-extern bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buffer);
 extern bool dldiRelocateLoader(bool clearBSS, u32 DldiRelocatedAddress, u32 dldiSourceInRam, u32 dldiOutWriteAddress);
 extern bool dldiPatchLoader(data_t *binData, u32 binSize, u32 physDLDIAddress);
-
 #endif
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif

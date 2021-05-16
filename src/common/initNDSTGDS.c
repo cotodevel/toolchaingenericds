@@ -192,11 +192,6 @@ void initHardware(u8 DSHardware) __attribute__ ((optnone)) {
 	printf7Setup();
 	TryToDefragmentMemory();
 	
-	#ifdef ARM9_DLDI
-	//Setup SLOT-1 if ARM9 DLDI
-	setDLDIARM7Address((u32 *)dldiGet());
-	#endif
-	
 	fifoInit();
 	
 	//Enable TSC
