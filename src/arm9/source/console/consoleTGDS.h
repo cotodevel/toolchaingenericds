@@ -28,37 +28,7 @@ USA
 #include "ipcfifoTGDS.h"
 #include "spifwTGDS.h"
 
-#define ENABLE_3D    (1<<3)
-#define DISPLAY_ENABLE_SHIFT 8
-#define DISPLAY_BG0_ACTIVE    (1 << 8)
-#define DISPLAY_BG1_ACTIVE    (1 << 9)
-#define DISPLAY_BG2_ACTIVE    (1 << 10)
-#define DISPLAY_BG3_ACTIVE    (1 << 11)
-#define DISPLAY_SPR_ACTIVE    (1 << 12)
-#define DISPLAY_WIN0_ON       (1 << 13)
-#define DISPLAY_WIN1_ON       (1 << 14)
-#define DISPLAY_SPR_WIN_ON    (1 << 15)
-
-#define BACKGROUND           (*((bg_attribute *)0x04000008))
-#define BG_OFFSET ((bg_scroll *)(0x04000010))
-
-#define BACKGROUND_SUB       (*((bg_attribute *)0x04001008))
-#define BG_OFFSET_SUB ((bg_scroll *)(0x04001010))
-
-//main
-#define BG_MAP_RAM(base)		((uint16*)(((base)*0x800) + 0x06000000))
-#define BG_TILE_RAM(base)		((uint16*)(((base)*0x4000) + 0x06000000))
-#define BG_BMP_RAM(base)		((uint16*)(((base)*0x4000) + 0x06000000))
-#define CHAR_BASE_BLOCK(n)			(((n)*0x4000)+ 0x06000000)
-#define SCREEN_BASE_BLOCK(n)		(((n)*0x800) + 0x06000000)
-
 //sub
-#define BG_MAP_RAM_SUB(base)	((uint16*)(((base)*0x800) + 0x06200000))
-#define BG_TILE_RAM_SUB(base)	((uint16*)(((base)*0x4000) + 0x06200000))
-#define BG_BMP_RAM_SUB(base)	((uint16*)(((base)*0x4000) + 0x06200000))
-#define SCREEN_BASE_BLOCK_SUB(n)	(((n)*0x800) + 0x06200000)
-#define CHAR_BASE_BLOCK_SUB(n)		(((n)*0x4000)+ 0x06200000)
-#define	BGCTRL_SUB				( (vuint16*)0x4001008)
 #define	REG_BG0CNT_SUB		(*(vuint16*)0x4001008)
 #define	REG_BG1CNT_SUB		(*(vuint16*)0x400100A)
 #define	REG_BG2CNT_SUB		(*(vuint16*)0x400100C)
@@ -110,28 +80,6 @@ USA
 #define TGDSPrintfColor_Red		(u8)(TGDSPrintfColor_PalleteBase+9)
 #define TGDSPrintfColor_Grey		(u8)(TGDSPrintfColor_PalleteBase+10)
 #define TGDSPrintfColor_LightGrey		(u8)(TGDSPrintfColor_PalleteBase+11)
-
-
-//Console uses 2D. used by REG_DISPCNT / REG_DISPCNT_SUB
-typedef enum {
-	MODE_0_2D = 0x10000, 
-	MODE_1_2D = 0x10001, 
-	MODE_2_2D = 0x10002, 
-	MODE_3_2D = 0x10003, 
-	MODE_4_2D = 0x10004, 
-	MODE_5_2D = 0x10005, 
-	MODE_6_2D = 0x10006
-} VideoMode;
-
-
-//3D: Main display only
-#define MODE_0_3D    (MODE_0_2D | DISPLAY_BG0_ACTIVE | ENABLE_3D) 
-#define MODE_1_3D    (MODE_1_2D | DISPLAY_BG0_ACTIVE | ENABLE_3D)
-#define MODE_2_3D    (MODE_2_2D | DISPLAY_BG0_ACTIVE | ENABLE_3D)
-#define MODE_3_3D    (MODE_3_2D | DISPLAY_BG0_ACTIVE | ENABLE_3D)
-#define MODE_4_3D    (MODE_4_2D | DISPLAY_BG0_ACTIVE | ENABLE_3D)
-#define MODE_5_3D    (MODE_5_2D | DISPLAY_BG0_ACTIVE | ENABLE_3D)
-#define MODE_6_3D    (MODE_6_2D | DISPLAY_BG0_ACTIVE | ENABLE_3D)
 
 #define backgroundsPerEngine 4
 typedef struct EngineBGStatus

@@ -106,7 +106,10 @@ USA
 #define SRC_WAVADPCM		(int)(15)
 #define WAV_READ_SIZE 4096
 
-#define VRAM_D		((s16*)0x06000000)
+#ifdef ARM7
+#define VRAM_D		((s16*)0x06000000)	//ARM7 128K 
+#endif
+
 #define SIWRAM		((s16*)0x037F8000)
 
 #define REG_SIWRAMCNT (*(vu8*)0x04000247)
