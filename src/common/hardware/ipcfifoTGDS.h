@@ -114,8 +114,6 @@ USA
 #define TGDS_ARM7_DISABLESOUNDSAMPLECTX (uint32)(0xFFFF022F)
 #define TGDS_ARM7_INITSTREAMSOUNDCTX (uint32)(0xFFFF0230)
 
-#define TGDS_ARM7_ENABLEFASTMODE (uint32)(0xFFFF0231)
-#define TGDS_ARM7_DISABLEFASTMODE (uint32)(0xFFFF0232)
 #define TGDS_ARM7_READFLASHMEM (u32)(0xffffAAC0)		
 
 #define TGDS_ARM7_RELOADFLASH (u32)(0xFFFFABC0)		
@@ -317,6 +315,7 @@ extern struct xyCoord readTSC();
 extern void XYReadScrPosUser(struct XYTscPos * StouchScrPosInst);	//User impl.
 extern void HandleFifoNotEmpty();
 extern void HandleFifoEmpty();
+extern void SendFIFOWords(uint32 data0);
 
 extern void ReadMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead);
 extern void SaveMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead);
@@ -330,7 +329,10 @@ extern void Write8bitAddrExtArm(uint32 address, uint8 value);
 //arg 1: arg0: handler, arg1: userdata
 extern u32 fifoFunc[FIFO_CHANNELS][2];	//context is only passed on callback prototype stage, because, the channel index generates the callee callback
 extern u8 CheckStylus();
+
+#ifdef ARM9
 extern u8 ARM7ReloadFlashSync();
+#endif
 
 #ifdef __cplusplus
 }

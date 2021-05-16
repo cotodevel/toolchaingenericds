@@ -77,18 +77,25 @@ void Write32bitAddrExtArm(uint32 address, uint32 value) __attribute__ ((optnone)
 	SendFIFOWords(WRITE_EXTARM_32);
 }
 
+//Async FIFO Sender
+#ifdef ARM9
+__attribute__((section(".itcm")))
+#endif
+void SendFIFOWords(uint32 data0) __attribute__ ((optnone)) {	//format: arg0: cmd, arg1: value
+	REG_IPC_FIFO_TX = (uint32)data0;
+}
 
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
-void HandleFifoEmpty()  __attribute__ ((optnone)) {
+void HandleFifoEmpty() __attribute__ ((optnone)) {
 	HandleFifoEmptyWeakRef((uint32)0,(uint32)0);
 }
 	
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
-void HandleFifoNotEmpty()  __attribute__ ((optnone)) {
+void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 	volatile uint32 data0 = 0;	
 		
 	while(!(REG_IPC_FIFO_CR & RECV_FIFO_IPC_EMPTY)){
@@ -133,7 +140,6 @@ void HandleFifoNotEmpty()  __attribute__ ((optnone)) {
 			
 			//ARM7 command handler
 			#ifdef ARM7
-			
 			case(ARM7COMMAND_RELOADNDS):{
 				runBootstrapARM7();	//ARM7 Side
 			}
@@ -157,7 +163,6 @@ void HandleFifoNotEmpty()  __attribute__ ((optnone)) {
 				//Init SoundSampleContext
 				initSoundSampleContext();
 				initSound();
-				disableFastMode();
 				setValueSafe(&fifomsg[58], (u32)0);
 			}
 			break;
@@ -584,15 +589,6 @@ void HandleFifoNotEmpty()  __attribute__ ((optnone)) {
 				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 				u32 ARM7Entrypoint = getValueSafe(&fifomsg[64]);
 				reloadARMCore(ARM7Entrypoint);
-			}
-			break;
-			
-			case(TGDS_ARM7_ENABLEFASTMODE):{
-				enableFastMode();
-			}
-			break;
-			case(TGDS_ARM7_DISABLEFASTMODE):{
-				disableFastMode();
 			}
 			break;
 			

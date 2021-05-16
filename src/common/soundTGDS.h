@@ -213,15 +213,9 @@ struct soundPlayerContext{
 extern "C"{
 #endif
 
-extern void SendFIFOWords(u32 data0);
-
-#ifdef __cplusplus
-}
-#endif
-
+extern void SendFIFOWords(uint32 data0);
 
 #ifdef ARM7
-
 extern s16 *strpcmL0;
 extern s16 *strpcmL1;
 extern s16 *strpcmR0;
@@ -236,16 +230,7 @@ extern u32 sampleLen;
 extern int sndRate;
 extern void freeData();
 extern void setSwapChannel();
-
-#ifdef __cplusplus
-extern "C"{
-#endif
-
 extern void setupSound();
-
-#ifdef __cplusplus
-}
-#endif
 
 static inline void TIMER1Handler()
 {	
@@ -253,10 +238,6 @@ static inline void TIMER1Handler()
 	SendFIFOWords(ARM9COMMAND_UPDATE_BUFFER);
 }
 
-#endif
-
-#ifdef __cplusplus
-extern "C"{
 #endif
 
 //Sound Sample Context: Plays raw sound samples at VBLANK intervals
@@ -387,7 +368,6 @@ static inline s32 isFreeSoundChannel(u8 chan){
 	}
 	return -1;
 }
-
 
 static inline s16 checkClipping(int data)
 {

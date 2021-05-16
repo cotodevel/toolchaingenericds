@@ -1,6 +1,6 @@
 ![ToolchainGenericDS](img/TGDS-Logo.png)
 
-This is the ToolchainGenericDS 1.62 library for NintendoDS:
+This is the ToolchainGenericDS library for NintendoDS:
 
 [Building the devkit]:
 - Recompile Newlib 2.1 for Nintendo DS (mandatory, not on this guide). See: https://bitbucket.org/Coto88/newlib-nds
@@ -82,6 +82,9 @@ Features:
 		DLDI RAMDisk: Download http://memory.dataram.com/products-and-services/software/ramdisk#freeware, mount a RAMDisk, copy files to it. Then use Desmume, choose Slot-2 (Gba slot) -> GBA Cartridge, choose the RAMDisk!. Launch emulator, TGDS Project now works with DLDI (32MB @ 0x08000000)!
 
 Changelog:
+
+TGDS 1.63.1:
+- Bugfixes in audioplayback that emerged between TGDS1.62 and TGDS1.63
 
 TGDS 1.63:
 - newlib-nds and ToolchainGenericDS uses Clang (v8.0.1) Compiler (C/C++)! Generates better code also allows to automate unit tests!

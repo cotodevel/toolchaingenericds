@@ -1,32 +1,28 @@
 // Includes
-#include "WoopsiTemplate.h"
+#include "demo.h"
 #include "woopsiheaders.h"
+#include "calculator.h"
+#include "pong.h"
+#include "pacman.h"
 #include "bitmapwrapper.h"
 #include "bitmap.h"
 #include "graphics.h"
 #include "rect.h"
 #include "gadgetstyle.h"
 #include "fonts/newtopaz.h"
-#include "woopsistring.h"
-#include "colourpicker.h"
-#include "filerequester.h"
-#include "soundTGDS.h"
-#include "main.h"
+#include "zombie.h"
 #include "bittest1.h"
 #include "bittest2.h"
 #include "bittest3.h"
 #include "bittest4.h"
 #include "bittest5.h"
 #include "bittest6.h"
-#include "calculator.h"
-#include "pong.h"
-#include "pacman.h"
-#include "zombie.h"
+#include "woopsistring.h"
 
-__attribute__((section(".itcm")))
-WoopsiTemplate * WoopsiTemplateProc = NULL;
+#include "colourpicker.h"
 
-void WoopsiTemplate::startup(int argc, char **argv) {
+void Demo::startup() {
+
 	Rect rect;
 
 	// Create SuperBitmap test screen
@@ -287,42 +283,12 @@ void WoopsiTemplate::startup(int argc, char **argv) {
 	//_alert->goModal();
 }
 
-void WoopsiTemplate::shutdown() {
+void Demo::shutdown() {
+	
 	// Clean up
 	//delete _calculator;
 	//delete _pong;
 	//delete _pacMan;
+
 	Woopsi::shutdown();
-}
-
-void WoopsiTemplate::handleLidClosed() {
-	// Lid has just been closed
-	_lidClosed = true;
-
-	// Run lid closed on all gadgets
-	s32 i = 0;
-	while (i < _gadgets.size()) {
-		_gadgets[i]->lidClose();
-		i++;
-	}
-}
-
-void WoopsiTemplate::handleLidOpen() {
-	// Lid has just been opened
-	_lidClosed = false;
-
-	// Run lid opened on all gadgets
-	s32 i = 0;
-	while (i < _gadgets.size()) {
-		_gadgets[i]->lidOpen();
-		i++;
-	}
-}
-
-//Called once Woopsi events are ended: TGDS Main Loop
-__attribute__((section(".itcm")))
-void Woopsi::ApplicationMainLoop(){
-	//Earlier.. main from Woopsi SDK.
-	
-	//Handle TGDS stuff...
 }

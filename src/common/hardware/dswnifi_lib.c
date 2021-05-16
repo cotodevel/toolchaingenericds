@@ -39,7 +39,6 @@ USA
 #include "timerTGDS.h"
 #include "sgIP_sockets.h"
 #include "nds_cp15_misc.h"
-#include "posixHandleTGDS.h"
 
 extern int read(int fd, void *buf, int count);
 extern int write(int fd, const void *buf, int count);
@@ -153,7 +152,7 @@ struct frameBlock * receiveDSWNIFIFrame(uint8 * databuf_src, int frameSizeRecv){
 //if UDPNIFI connect OK: true, otherwise false. 
 //if NIFI: returns true always
 //if GDBSTUB: connect OK: true, otherwise false.
-bool switch_dswnifi_mode(sint32 mode) __attribute__ ((optnone)) {
+bool switch_dswnifi_mode(sint32 mode)  __attribute__ ((optnone)) {
 	swiDelay(12000);
 	//save last DSWnifiMode
 	if(mode != LastDSWnifiMode){
@@ -166,6 +165,7 @@ bool switch_dswnifi_mode(sint32 mode) __attribute__ ((optnone)) {
 			setMULTIMode(mode);
 			setConnectionStatus(proc_connect);
 			OnDSWIFIlocalnifiEnable();
+			return true;
 		}
 		else{
 			//Could not connect
@@ -181,6 +181,7 @@ bool switch_dswnifi_mode(sint32 mode) __attribute__ ((optnone)) {
 			setConnectionStatus(proc_connect);
 			setMULTIMode(mode);
 			OnDSWIFIudpnifiEnable();
+			return true;
 		}
 		else{
 			//Could not connect
@@ -195,6 +196,7 @@ bool switch_dswnifi_mode(sint32 mode) __attribute__ ((optnone)) {
 			setGDBStubEnabled(true);
 			setMULTIMode(mode);
 			OnDSWIFIGDBStubEnable();
+			return true;
 		}
 		else{
 			//Could not connect
@@ -739,6 +741,14 @@ bool gdbNdsStart(){
 	}
 	
 	return false; //ARM7 IO Mapping error or WIFI connection error
+}
+
+bool getGDBStubEnabled(){
+	return GDBEnabled;
+}
+
+void setGDBStubEnabled(bool state){
+	GDBEnabled = state;
 }
 
 int remoteTcpSend(char *data, int len)
@@ -1732,14 +1742,6 @@ int ReceiveDSBinary(u8 * inBuffer, int * inBinSize){
 		break;
 	}
 	return receiveCount;
-}
-
-bool getGDBStubEnabled(){
-	return GDBEnabled;
-}
-
-void setGDBStubEnabled(bool state){
-	GDBEnabled = state;
 }
 
 #endif //ARM9 end

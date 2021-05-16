@@ -284,11 +284,11 @@ void setupSound()  __attribute__ ((optnone)) {
 	
 	mallocData(sampleLen * 2 * multRate);
     
-	TIMERXDATA(2) = SOUND_FREQ((sndRate * multRate));
-	TIMERXCNT(2) = TIMER_DIV_1 | TIMER_ENABLE;
+	TIMERXDATA(0) = SOUND_FREQ((sndRate * multRate));
+	TIMERXCNT(0) = TIMER_DIV_1 | TIMER_ENABLE;
   
-	TIMERXDATA(3) = 0x10000 - (sampleLen * 2 * multRate);
-	TIMERXCNT(3) = TIMER_CASCADE | TIMER_IRQ_REQ | TIMER_ENABLE;
+	TIMERXDATA(1) = 0x10000 - (sampleLen * 2 * multRate);
+	TIMERXCNT(1) = TIMER_CASCADE | TIMER_IRQ_REQ | TIMER_ENABLE;
 	
 	//irqSet(IRQ_TIMER1, TIMER1Handler);
 	int ch;
@@ -304,7 +304,7 @@ void setupSound()  __attribute__ ((optnone)) {
 	//irqSet(IRQ_VBLANK, 0);
 	//irqDisable(IRQ_VBLANK);
 	REG_IE&=~IRQ_VBLANK;
-	REG_IE |= IRQ_TIMER3;
+	REG_IE |= IRQ_TIMER1;
 	
 	lastL = 0;
 	lastR = 0;
@@ -312,6 +312,8 @@ void setupSound()  __attribute__ ((optnone)) {
 
 void stopSound() __attribute__ ((optnone)) {
 	//irqSet(IRQ_TIMER1, 0);
+	TIMERXCNT(0) = 0;
+	TIMERXCNT(1) = 0;
 	
 	SCHANNEL_CR(0) = 0;
 	SCHANNEL_CR(1) = 0;
@@ -322,8 +324,7 @@ void stopSound() __attribute__ ((optnone)) {
 	//irqSet(IRQ_VBLANK, VblankHandler);
 	//irqEnable(IRQ_VBLANK);
 	REG_IE|=IRQ_VBLANK;
-	REG_IE &= ~IRQ_TIMER3;
-	disableFastMode();	//always disabled when stopping a sound. Enabling it depends on the streaming code in ARM9. If the streaming is heavy (not WAV/ADPCM), then fast mode is re-enabled.
+	REG_IE &= ~IRQ_TIMER1;
 }
 
 //ARM7: Sample Playback handler
@@ -380,7 +381,6 @@ void updateSoundContextSamplePlayback(){
 #endif 
  
 #ifdef ARM9
-
 //Handles current file playback status
 __attribute__((section(".dtcm")))
 bool soundLoaded = false;
@@ -630,13 +630,15 @@ int getSoundLength()
 
 void startSound9()
 {	
-	SendFIFOWords(ARM7COMMAND_START_SOUND);
+	if(!playing)
+		SendFIFOWords(ARM7COMMAND_START_SOUND);
 	playing = true;
 }
 
 void stopSound()
 {
-	SendFIFOWords(ARM7COMMAND_STOP_SOUND);
+	if(playing)
+		SendFIFOWords(ARM7COMMAND_STOP_SOUND);
 	playing = false;
 }
 
@@ -1047,6 +1049,48 @@ int initSoundStream(char * audioStreamFilename) __attribute__ ((optnone)){
 }
 
 int initSoundStreamFromStructFD(struct fd * _FileHandleAudio, char * ext)  __attribute__ ((optnone)) {	//ARM9 Impl.
+	// try this first to prevent false positives with other streams
+	/*
+	if(isURL(fName))
+	{	
+		//it's a url
+		if(!urlFromString(fName, &curSite))
+		{
+			return false;
+		}
+		
+		strcpy(tmpName, curSite.remotePath);
+		separateExtension(tmpName, ext);
+		strlwr(ext);
+		
+		if(strcmp(ext, ".ogg") == 0)
+			soundData.sourceFmt = SRC_STREAM_OGG;
+		else if(strcmp(ext, ".aac") == 0)
+			soundData.sourceFmt = SRC_STREAM_AAC;		
+		else
+			soundData.sourceFmt = SRC_STREAM_MP3;
+		
+		soundData.bufLoc = 0;
+		
+		if(isWIFIConnected())
+		{
+			disconnectWifi();
+		}
+		
+		streamMode = STREAM_DISCONNECTED;
+		streamOpened = false;
+		mp3Buf = NULL;
+		
+		freeStreamBuffer();
+		
+		tmpMeta = (char *)trackMalloc(4081, "metadata");
+		memset(&curIcy, 0, sizeof(ICY_HEADER));	
+		memset(tmpMeta, 0, 4081);
+		
+		return true;
+	}
+	*/
+	
 	initComplexSound(); // initialize sound variables
 	soundData.filePointerStructFD = _FileHandleAudio;	//Global StructDS handle -> WAV stream
 	if(strcmp(ext,".wav") == 0){
@@ -1201,10 +1245,3 @@ int initSoundStreamFromStructFD(struct fd * _FileHandleAudio, char * ext)  __att
 }
 
 #endif
-
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
-void SendFIFOWords(u32 data0) {
-	REG_IPC_FIFO_TX = data0;
-}

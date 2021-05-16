@@ -47,7 +47,7 @@ USA
 #include "dldi.h"
 #endif
 
-void resetMemory_ARMCores(u8 DSHardware)  __attribute__ ((optnone)) {
+void resetMemory_ARMCores(u8 DSHardware) __attribute__ ((optnone)) {
 	
 	//cmp r0, #0xFF		@DS Phat
 	//beq FirmwareARM7OK
@@ -147,7 +147,7 @@ void resetMemory_ARMCores(u8 DSHardware)  __attribute__ ((optnone)) {
 	}
 }
 
-void initHardware(u8 DSHardware)  __attribute__ ((optnone)) {
+void initHardware(u8 DSHardware) __attribute__ ((optnone)) {
 //---------------------------------------------------------------------------------
 	swiDelay(15000);
 	#ifdef ARM7
@@ -166,7 +166,6 @@ void initHardware(u8 DSHardware)  __attribute__ ((optnone)) {
 	//Init SoundSampleContext
 	initSoundSampleContext();
 	initSound();
-	disableFastMode();
 	
 	#endif
 	
@@ -192,6 +191,7 @@ void initHardware(u8 DSHardware)  __attribute__ ((optnone)) {
 	
 	printf7Setup();
 	TryToDefragmentMemory();
+	
 	fifoInit();
 	
 	//Enable TSC
@@ -202,6 +202,7 @@ void initHardware(u8 DSHardware)  __attribute__ ((optnone)) {
 	
 	//Disable it because handling ARM7 events take extra CPU power we don't really need to use.
 	disableSleepMode();
+	
 	
 	#endif
 	

@@ -503,25 +503,6 @@ u8 FAT_SetFileAttributes (const char* filename, u8 attributes, u8 mask){
 
 //Internal
 
-u32 flength(FILE* fh){
-	if(fh != NULL){
-		u32 cPos = ftell(fh);
-		fseek(fh, 0, SEEK_END);
-		u32 aPos = ftell(fh);
-		fseek(fh, cPos, SEEK_SET);
-		return aPos;		
-	}
-	return -1;
-}
-
-bool FAT_feof(FILE * fh){
-	if(ftell(fh) < (flength(fh)-1)){
-		return false;	
-	}
-	return true;
-}
-
-
 //FAT_GetAlias
 //Get the alias (short name) of the last file or directory entry read
 //char* alias OUT: will be filled with the alias (short filename),
@@ -1932,6 +1913,218 @@ bool TGDSFS_detectUnicode(struct fd *pfd){
 	return false;
 }
 
+
+/////////////////////////////////////////
+
+
+
+//Takes an open file handle, gets filesize without updating its internal file pointer
+int	FS_getFileSizeFromOpenHandle(FILE * f){
+	int size = -1;
+	if (f != NULL){
+		int fLoc = ftell(f);
+		fseek(f, 0, SEEK_END);
+		size = ftell(f);
+		fseek(f, fLoc, SEEK_SET);
+	}
+	return size;
+}
+
+int	FS_getFileSizeFromOpenStructFD(struct fd * tgdsfd){
+	int size = -1;
+	if ((tgdsfd != NULL) && (tgdsfd->filPtr != NULL)){
+		size = f_size(tgdsfd->filPtr);
+	}
+	return size;
+}
+
+struct fd *getStructFD(int fd){
+    struct fd *f = NULL;
+    if((fd < OPEN_MAXTGDS) && (fd >= 0)){
+        f = (struct fd *)(files + fd);
+		if(f->dirPtr){
+			f->dirPtr = (DIR *)&(files + fd)->dir;
+		}
+		if(f->filPtr){
+			f->filPtr = (FIL *)&(files + fd)->fil;
+		}
+    }
+    return f;
+}
+
+//char * devoptabFSName must be a buffer already allocated if bool defaultDriver == false
+void initTGDS(char * devoptabFSName){
+	if(devoptabFSName == NULL){
+		return;
+	}
+	
+	initTGDSDevoptab();
+	
+	int fd = 0;
+	/* search in all struct fd instances*/
+	for (fd = 0; fd < OPEN_MAXTGDS; fd++){
+		memset((uint8*)(files + fd), 0, sizeof(struct fd));
+		(files + fd)->isused = (sint32)structfd_isunused;
+		//Internal default invalid value (overriden later)
+		(files + fd)->cur_entry.d_ino = (sint32)structfd_posixInvalidFileDirOrBufferHandle;	//Posix File Descriptor
+		(files + fd)->StructFD = (sint32)structfd_posixInvalidFileDirOrBufferHandle;		//TGDS File Descriptor (struct fd)
+		(files + fd)->StructFDType = FT_NONE;	//struct fd type invalid.
+		(files + fd)->isatty = (sint32)structfd_isattydefault;
+		(files + fd)->descriptor_flags = (sint32)structfd_descriptorflagsdefault;
+		(files + fd)->status_flags = (sint32)structfd_status_flagsdefault;
+		(files + fd)->loc = (sint32)structfd_fildir_offsetdefault;
+		
+		(files + fd)->filPtr = NULL;
+		(files + fd)->dirPtr = NULL;
+	}
+	//Set up proper devoptab device mount name.
+	memcpy((uint32*)&devoptab_sdFilesystem.name[0], (uint32*)devoptabFSName, strlen(devoptabFSName));
+	
+	memset((u8*)&dldiFs, 0, sizeof(dldiFs));
+}
+
+FILE * getPosixFileHandleByStructFD(struct fd * fdinst, const char * mode){
+	if(fdinst != NULL){
+		return fdopen(fdinst->cur_entry.d_ino, mode);
+	}
+	return NULL;
+}
+
+struct fd * getStructFDByFileHandle(FILE * fh){
+	if(fh != NULL){
+		int StructFD = fileno(fh);
+		return getStructFD(StructFD);
+	}
+	return NULL;
+}
+
+int getStructFDIndexByFileName(char * filename){
+	int ret = structfd_posixInvalidFileDirOrBufferHandle;
+	int fd = 0;
+	/* search in all struct fd instances*/
+	for (fd = 0; fd < OPEN_MAXTGDS; fd++){
+		if((files + fd)->isused == (sint32)structfd_isused){
+			if(strcmp((char*)&(files + fd)->fd_name, filename) == 0){
+				//printfDebugger("getStructFDIndexByFileName(): idx:%d - f:%s",fd, (files + fd)->fd_name);
+				return fd;
+			}
+		}
+	}
+	return ret;
+}
+
+//returns / allocates a new struct fd index ,  for a certain devoptab_t so we can allocate different handles for each devoptab
+int FileHandleAlloc(struct devoptab_t * devoptabInst){
+    int fd = 0;
+    int ret = structfd_posixInvalidFileDirOrBufferHandle;
+    for (fd = 0; fd < OPEN_MAXTGDS; fd++){
+        if ((sint32)(files + fd)->isused == (sint32)structfd_isunused){
+			(files + fd)->isused = (sint32)structfd_isused;
+			
+			//PosixFD default valid value (overriden now)
+			(files + fd)->devoptabFileDescriptor = devoptabInst;
+			
+			//Internal default value (overriden now)
+			(files + fd)->cur_entry.d_ino = (sint32)fd;	//Posix File Descriptor
+			(files + fd)->StructFD = (sint32)structfd_posixInvalidFileDirOrBufferHandle;		//TGDS File Descriptor (struct fd) not valid yet. Set up by initStructFDHandle()
+			(files + fd)->StructFDType = FT_NONE;	//struct fd type not valid yet. Will be assigned by fatfs_open_file (FT_FILE), or fatfs_open_dir (FT_DIR)
+			
+			(files + fd)->isatty = (sint32)structfd_isattydefault;
+			(files + fd)->descriptor_flags = (sint32)structfd_descriptorflagsdefault;
+			(files + fd)->status_flags = (sint32)structfd_status_flagsdefault;
+			(files + fd)->loc = (sint32)structfd_fildir_offsetdefault;
+			
+			(files + fd)->filPtr = NULL;
+			(files + fd)->dirPtr = NULL;
+			
+            ret = fd;
+            break;
+        }
+    }
+	//if for some reason all the file handles are exhausted, discard the last one and assign that one. (fixes homebrew that opens a lot of file handles and doesn't close them up accordingly)
+	if(ret == structfd_posixInvalidFileDirOrBufferHandle){
+		int retClose = fatfs_close(OPEN_MAXTGDS - 1);	//requires a struct fd(file descriptor), returns 0 if success, structfd_posixInvalidFileDirOrBufferHandle if error
+		if(retClose == structfd_posixInvalidFileDirOrBufferHandle){
+			//couldnt really close file handle
+			ret = retClose;
+		}
+		else{
+			//file handle close success!
+			return FileHandleAlloc(devoptabInst);	//ret == return value here
+		}
+	}
+
+    return ret;
+}
+
+//deallocates a posix index, returns such index deallocated
+int FileHandleFree(int fd){
+	int ret = structfd_posixInvalidFileDirOrBufferHandle;
+    if ((fd < OPEN_MAXTGDS) && (fd >= 0) && ((files + fd)->isused == structfd_isused)){
+        (files + fd)->isused = (sint32)structfd_isunused;
+		(files + fd)->cur_entry.d_ino = (sint32)structfd_posixInvalidFileDirOrBufferHandle;	//Posix File Descriptor
+		(files + fd)->StructFD = (sint32)structfd_posixInvalidFileDirOrBufferHandle;		//TGDS File Descriptor (struct fd)
+		(files + fd)->StructFDType = FT_NONE;	//struct fd type invalid.
+		(files + fd)->loc = structfd_posixInvalidFileHandleOffset;
+		ret = fd;
+    }
+	return ret;
+}
+
+sint8 * getDeviceNameByStructFDIndex(int StructFDIndex){
+	sint8 * out;
+	if((StructFDIndex < 0) || (StructFDIndex > OPEN_MAXTGDS)){
+		out = NULL;
+	}
+	
+	sint32 i = 0;
+	/* search in all struct fd instances*/
+    for (i = 0; i < OPEN_MAXTGDS; i++)
+    {
+        if ((files + i)->cur_entry.d_ino == StructFDIndex)
+        {
+			out = (sint8*)(&devoptab_struct[i]->name);
+		}
+    }
+	return out;
+}
+
+//useful for handling native DIR * to Internal File Descriptors (struct fd index)
+int getStructFDIndexByDIR(DIR *dirp){
+	int fd = 0;
+    int ret = structfd_posixInvalidFileDirOrBufferHandle;
+    /* search in all struct fd instances*/
+    for (fd = 0; fd < OPEN_MAXTGDS; fd++)
+    {
+        if ((files + fd)->dirPtr)
+        {
+			if((files + fd)->dirPtr->obj.id == dirp->obj.id){
+				ret = (files + fd)->cur_entry.d_ino;
+				break;
+			}
+		}
+    }
+	return ret;
+}
+
+u32 flength(FILE* fh){
+	if(fh != NULL){
+		u32 cPos = ftell(fh);
+		fseek(fh, 0, SEEK_END);
+		u32 aPos = ftell(fh);
+		fseek(fh, cPos, SEEK_SET);
+		return aPos;		
+	}
+	return -1;
+}
+
+bool FAT_feof(FILE * fh){
+	if(ftell(fh) < (flength(fh)-1)){
+		return false;	
+	}
+	return true;
+}
+
 ////////////////////////////////////////////////////////////////////////////INTERNAL CODE END///////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////// INTERNAL DIRECTORY FUNCTIONS /////////////////////////////////////////////////////////////////////
@@ -2039,6 +2232,21 @@ bool updateTGDSFSDirectoryIteratorCWD(char * newCWD, struct FileClassList * lst)
 /////////////////////////////////////////////////////////////////////// INTERNAL DIRECTORY FUNCTIONS END //////////////////////////////////////////////////////////////////
 
 
+
+///////////////////////////////////////////////TGDS FileDescriptor Callbacks Implementation Start ///////////////////////////////////////////////
+//These callbacks are required when setting up initARM7FSTGDSFileHandle()	or performARM7MP2FSTestCaseTGDSFileDescriptor()
+int ARM7FS_ReadBuffer_ARM9ImplementationTGDSFD(u8 * outBuffer, int fileOffset, struct fd * fdinstIn, int bufferSize){
+	return TGDSFSUserfatfs_read(outBuffer, bufferSize, fileOffset, fdinstIn);
+}
+
+int ARM7FS_WriteBuffer_ARM9ImplementationTGDSFD(u8 * inBuffer, int fileOffset, struct fd * fdinstOut, int bufferSize){
+	return TGDSFSUserfatfs_write(inBuffer, bufferSize, fileOffset, fdinstOut);
+}
+
+int ARM7FS_close_ARM9ImplementationTGDSFD(struct fd * fdinstOut){
+	return TGDSFSUserfatfs_close(fdinstOut);
+}
+///////////////////////////////////////////////TGDS FileDescriptor Callbacks Implementation End ///////////////////////////////////////////////
 //FATFS layer which allows to open N file handles for a file (because TGDS FS forces 1 File Handle to a file)
 int TGDSFSUserfatfs_write(u8 *ptr, int len, int offst, struct fd *tgdsfd){	//(FileDescriptor :struct fd index)
 	f_lseek (

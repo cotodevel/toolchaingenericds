@@ -35,7 +35,6 @@ SOFTWARE.
 #include "dswnifi_lib.h"
 #include "nds_cp15_misc.h"
 #include "biosTGDS.h"
-#include "posixHandleTGDS.h"
 
 #include <stdarg.h>
 #include <stdlib.h>

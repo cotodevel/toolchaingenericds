@@ -37,7 +37,7 @@ USA
 #include "soundTGDS.h"
 #include "dldi.h"
 
-void IRQInit(u8 DSHardware){
+void IRQInit(u8 DSHardware) __attribute__ ((optnone)) {
 	
 	//NTR
 	if(
@@ -99,14 +99,13 @@ void IRQInit(u8 DSHardware){
 
 #ifdef ARM7
 static bool penDown = false;
-bool FastMode = false;	//enabled: disables VCOUNT / VBLANK methods that may cause audio stutters.
 #endif
 
 //Software bios irq more or less emulated. (replaces default NDS bios for some parts)
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
-void NDS_IRQHandler()  __attribute__ ((optnone)) {
+void NDS_IRQHandler() __attribute__ ((optnone)) {
 	u32 handledIRQ = (REG_IF | SWI_CHECKBITS) & REG_IE;
 	if(handledIRQ & IRQ_HBLANK){
 		HblankUser();
@@ -131,49 +130,48 @@ void NDS_IRQHandler()  __attribute__ ((optnone)) {
 		//ARM7 Keypad has access to X/Y/Hinge/Pen down bits
 		sIPCSharedTGDSInst->ARM7REG_KEYINPUT = (uint16)REG_KEYINPUT;
 		
-		u16 keys= REG_KEYXY;
-		if(FastMode == false){
-			if(keys & KEY_TOUCH){
-				penDown = false;
-			}
-			else{	
-				//reset state
-				sIPCSharedTGDSInst->rawy    = 0;
-				sIPCSharedTGDSInst->touchYpx = 0;
-				sIPCSharedTGDSInst->rawx    = 0;
-				sIPCSharedTGDSInst->touchXpx = 0;
-				sIPCSharedTGDSInst->touchZ1 = 0;
-				sIPCSharedTGDSInst->touchZ2 = 0;
+		u16 keys= REG_KEYXY;	
+		if(keys & KEY_TOUCH){
+			penDown = false;
+		}
+		else{	
+			//reset state
+			sIPCSharedTGDSInst->rawy    = 0;
+			sIPCSharedTGDSInst->touchYpx = 0;
+			sIPCSharedTGDSInst->rawx    = 0;
+			sIPCSharedTGDSInst->touchXpx = 0;
+			sIPCSharedTGDSInst->touchZ1 = 0;
+			sIPCSharedTGDSInst->touchZ2 = 0;
 			
-				if(penDown){
-					keys |= KEY_TOUCH;	//tsc event must be before coord handling to give priority over touch events
+			if(penDown){
+				keys |= KEY_TOUCH;	//tsc event must be before coord handling to give priority over touch events
 				
-					touchPosition tempPos = {0};
-					touchReadXY(&tempPos);
+				touchPosition tempPos = {0};
+				touchReadXY(&tempPos);
 				
-					if(tempPos.rawx && tempPos.rawy){
-						sIPCSharedTGDSInst->rawy    = tempPos.rawy;
-						sIPCSharedTGDSInst->touchYpx = tempPos.py;
-						sIPCSharedTGDSInst->rawx    = tempPos.rawx;
-						sIPCSharedTGDSInst->touchXpx = tempPos.px;
-						sIPCSharedTGDSInst->touchZ1 = tempPos.z1;
-						sIPCSharedTGDSInst->touchZ2 = tempPos.z2;
-					}
-					else{
-						penDown = false;
-					}
-				
+				if(tempPos.rawx && tempPos.rawy){
+					sIPCSharedTGDSInst->rawy    = tempPos.rawy;
+					sIPCSharedTGDSInst->touchYpx = tempPos.py;
+					sIPCSharedTGDSInst->rawx    = tempPos.rawx;
+					sIPCSharedTGDSInst->touchXpx = tempPos.px;
+					sIPCSharedTGDSInst->touchZ1 = tempPos.z1;
+					sIPCSharedTGDSInst->touchZ2 = tempPos.z2;
 				}
 				else{
-					penDown = true;
+					penDown = false;
 				}
+				
+			}
+			else{
+				penDown = true;
+			}
 			
-				//handle re-click
-				if( !(((uint16)REG_KEYINPUT) & KEY_TOUCH) ){
-					penDown = true;
-				}
+			//handle re-click
+			if( !(((uint16)REG_KEYINPUT) & KEY_TOUCH) ){
+				penDown = true;
 			}
 		}
+		
 		sIPCSharedTGDSInst->ARM7REG_KEYXY	= keys;
 		#endif
 		VcounterUser();
@@ -182,16 +180,15 @@ void NDS_IRQHandler()  __attribute__ ((optnone)) {
 		Timer0handlerUser();
 	}
 	if(handledIRQ & IRQ_TIMER1){
+		#ifdef ARM7
+		TIMER1Handler();	//Audio playback handler
+		#endif
 		Timer1handlerUser();
 	}
 	if(handledIRQ & IRQ_TIMER2){
 		Timer2handlerUser();
 	}
 	if(handledIRQ & IRQ_TIMER3){
-		#ifdef ARM7
-		TIMER1Handler();	//Audio playback handler
-		#endif
-		
 		#ifdef ARM9
 		//wifi arm9 irq
 		Timer_50ms();
@@ -239,6 +236,7 @@ void NDS_IRQHandler()  __attribute__ ((optnone)) {
 			}
 			break;
 			#ifdef ARM7
+			
 			case(IPC_READ_FIRMWARE_REQBYIRQ):{
 				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
@@ -321,22 +319,4 @@ void EnableIrq(uint32 IRQ){
 
 void DisableIrq(uint32 IRQ){
 	REG_IE	&=	~(IRQ);
-}
-
-void enableFastMode() __attribute__ ((optnone)) {
-	#ifdef ARM7
-	FastMode = true;
-	#endif
-	#ifdef ARM9
-	SendFIFOWords(TGDS_ARM7_ENABLEFASTMODE);
-	#endif
-}
-
-void disableFastMode() __attribute__ ((optnone)) {
-	#ifdef ARM7
-	FastMode = false;
-	#endif
-	#ifdef ARM9
-	SendFIFOWords(TGDS_ARM7_DISABLEFASTMODE);
-	#endif
 }

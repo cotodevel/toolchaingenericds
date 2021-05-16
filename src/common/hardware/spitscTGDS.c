@@ -138,9 +138,9 @@ uint16 touchRead(uint32 command) {
 //---------------------------------------------------------------------------------
 	uint16 result, result2;
 
-	uint32 oldIME = REG_IME;
+	//uint32 oldIME = REG_IME;
 
-	REG_IME = 0;
+	//REG_IME = 0;
 	
 	SerialWaitBusy();
 
@@ -161,7 +161,7 @@ uint16 touchRead(uint32 command) {
 
 	result2 = REG_SPIDATA >>3;
 
-	REG_IME = oldIME;
+	//REG_IME = oldIME;
 
 	// Return the result
 	return ((result & 0x7F) << 5) | result2;
@@ -337,9 +337,9 @@ void touchReadXY(touchPosition *touchPos) {
 		touchInit = true;
 	}
 
-	uint32 oldIME = REG_IME;
+	//uint32 oldIME = REG_IME;
 
-	REG_IME = 0;
+	//REG_IME = 0;
 
 	first_check = CheckStylus();
 	if(first_check != 0){
@@ -409,7 +409,7 @@ void touchReadXY(touchPosition *touchPos) {
 
 	UpdateRange(&range, dist_max, error_where, last_time_touched);
 
-	REG_IME = oldIME;
+	//REG_IME = oldIME;
 
 }
 

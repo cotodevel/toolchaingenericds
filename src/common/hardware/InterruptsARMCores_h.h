@@ -63,13 +63,6 @@ extern void IRQWait(uint32 irqstowait);
 extern void IRQVBlankWait();
 extern void IRQInit(u8 DSHardware);
 
-#ifdef ARM7
-extern bool FastMode;
-#endif
-
-extern void enableFastMode();
-extern void disableFastMode();
-
 #ifdef __cplusplus
 }
 #endif

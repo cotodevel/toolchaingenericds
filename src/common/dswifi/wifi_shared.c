@@ -14,8 +14,8 @@
 #include <stdbool.h>
 #include "dsregs.h"
 #include "dsregs_asm.h"
+#include "InterruptsARMCores_h.h"
 #include "wifi_arm9.h"
-#include "posixHandleTGDS.h"
 #endif
 
 

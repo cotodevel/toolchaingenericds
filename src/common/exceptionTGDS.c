@@ -39,6 +39,7 @@ USA
 #include "global_settings.h"
 #include "keypadTGDS.h"
 #include "posixHandleTGDS.h"
+#include "utilsTGDS.h"
 
 #ifdef ARM9
 #include "dswnifi_lib.h"

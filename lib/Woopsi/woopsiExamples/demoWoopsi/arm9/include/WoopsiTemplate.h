@@ -22,12 +22,9 @@ class WoopsiTemplate : public Woopsi {
 public:
 	void startup(int argc, char **argv);
 	void shutdown();
-	void waitForAOrTouchScreenButtonMessage(MultiLineTextBox* thisLineTextBox, const WoopsiString& thisText);
 	void handleLidClosed();
 	void handleLidOpen();
 	void ApplicationMainLoop();
-	AmigaScreen* _fileScreen;
-	MultiLineTextBox* _MultiLineTextBoxLogger;
 private:
 	PacMan* _pacMan;
 	Calculator* _calculator;
