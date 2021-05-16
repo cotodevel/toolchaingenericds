@@ -30,7 +30,7 @@
 //			Converted all floating point math to fixed point
 //
 //	 0.3: Display lists added thanks to mike260	
-//
+//	 0.4: Update GL specs from OpenGL 1.0 to OpenGL 1.1 which enables Textures Objects (Coto)
 //////////////////////////////////////////////////////////////////////
 
 
@@ -51,31 +51,42 @@
 #include "videoTGDS.h"
 #include "dmaTGDS.h"
 #include "arm9math.h"
+#include "nds_cp15_misc.h"
 
 //////////////////////////////////////////////////////////////////////
 
-typedef int f32;             // 1.19.12 fixed point for matricies
-#define intof32(n)           ((n) << 12)
-#define f32toint(n)          ((n) >> 12)
-#define floatof32(n)         ((f32)((n) * (1 << 12)))
-#define f32tofloat(n)        (((float)(n)) / (float)(1<<12))
+#define inttof32(n)          (1 << 12) /*!< \brief convert int to f32 */
+#define f32toint(n)          (n >> 12) /*!< \brief convert f32 to int */
+#define floattof32(n)        ((int)((n) * (1 << 12))) /*!< \brief convert float to f32 */
+#define f32tofloat(n)        (((float)(n)) / (float)(1<<12)) /*!< \brief convert f32 to float */
 
-typedef short int t16;       // text coordinate 1.11.4 fixed point
-#define intot16(n)           ((n) << 4)
-#define t16toint(n)          ((n) >> 4)
-#define floatot16(n)         ((t16)((n) * (1 << 4)))
-#define TEXTURE_PACK(u,v)    ((intot16(u)<<16) | intot16(v))
+//newer
+typedef uint16 fixed12d3; /*!< \brief Used for depth (glClearDepth, glCutoffDepth) */
+#define intto12d3(n)    ((n) << 3) /*!< \brief convert int to fixed12d3 */
+#define floatto12d3(n)  ((fixed12d3)((n) * (1 << 3))) /*!< \brief convert float to fixed12d3 */
 
-typedef short int v16;       // vertex 1.3.12 fixed format
-#define intov16(n)           ((n) << 12)
-#define v16toint(n)          ((n) >> 12)
-#define floatov16(n)         ((v16)((n) * (1 << 12)))
+//////////////////////////////////////////////////////////////////////
 
-typedef short int v10;       // vertex 1.0.9 fixed point
-#define intov10(n)           ((n) << 9)
-#define v10toint(n)          ((n) >> 9)
-#define floatov10(n)         ((v10)((n) * (1 << 9)))
-#define NORMAL_PACK(x,y,z)   (intov10(x) | (intov10(y) << 10) | (intov10(z) << 20))
+typedef short t16;        /*!< \brief text coordinate 12.4 fixed point */
+#define f32tot16(n)          ((t16)(n >> 8)) /*!< \brief convert f32 to t16 */
+#define inttot16(n)          ((n) << 4) /*!< \brief convert int to t16 */
+#define t16toint(n)          ((n) >> 4) /*!< \brief convert t16 to int */
+#define floattot16(n)        ((t16)((n) * (1 << 4))) /*!< \brief convert float to t16 */
+#define TEXTURE_PACK(u,v)    (((u) & 0xFFFF) | ((v) << 16)) /*!< \brief Pack 2 t16 texture coordinate values into a 32bit value */
+
+typedef short int v16;       /*!< \brief vertex 4.12 fixed format */
+#define inttov16(n)          ((n) << 12) /*!< \brief convert int to v16 */
+#define f32tov16(n)          (n) /*!< \brief f32 to v16 */
+#define v16toint(n)          ((n) >> 12) /*!< \brief convert v16 to int */
+#define floattov16(n)        ((v16)((n) * (1 << 12))) /*!< \brief convert float to v16 */
+#define VERTEX_PACK(x,y)     (u32)(((x) & 0xFFFF) | ((y) << 16)) /*!< \brief Pack to v16 values into one 32bit value */
+
+typedef short int v10;       /*!< \brief normal .10 fixed point, NOT USED FOR 10bit VERTEXES!!!*/
+#define inttov10(n)          ((n) << 9) /*!< \brief convert int to v10 */
+#define f32tov10(n)          ((v10)(n >> 3)) /*!< \brief convert f32 to v10 */
+#define v10toint(n)          ((n) >> 9) /*!< \brief convert v10 to int */
+#define floattov10(n)        ((n>.998) ? 0x1FF : ((v10)((n)*(1<<9)))) /*!< \brief convert float to v10 */
+#define NORMAL_PACK(x,y,z)   (u32)(((x) & 0x3FF) | (((y) & 0x3FF) << 10) | ((z & 0x3FF) << 20)) /*!< \brief Pack 3 v10 normals into a 32bit value */
 
 typedef unsigned short rgb;
 
@@ -93,7 +104,7 @@ typedef struct {
 
 typedef struct {
   f32 x,y,z;
-} vector;
+} GLvector;
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -154,14 +165,24 @@ typedef struct {
 #define MATRIX_MULT4x3    (*(vfixed*) 0x04000464)
 #define MATRIX_MULT3x3    (*(vfixed*) 0x04000468)
 
-#define GL_TRIANGLE        0
-#define GL_QUAD            1
-#define GL_TRIANGLE_STRIP  2
-#define GL_QUAD_STRIP      3
+typedef enum {
+	GL_TRIANGLES      = 0, /*!< draw triangles with each 3 vertices defining a triangle */
+	GL_QUADS          = 1, /*!< draw quads with each 4 vertices defining a quad */
+	GL_TRIANGLE_STRIP = 2, /*!< draw triangles with the first triangle defined by 3 vertices, then each additional triangle being defined by one additional vertex */
+	GL_QUAD_STRIP     = 3, /*!< draw quads with the first quad being defined by 4 vertices, then each additional triangle being defined by 2 vertices. */
+	GL_TRIANGLE       = 0, /*!< same as GL_TRIANGLES, old non-OpenGL version */
+	GL_QUAD           = 1  /*!< same as GL_QUADS, old non-OpenGL version */
+} GL_GLBEGIN_ENUM;
 
-#define GL_MODELVIEW       2
-#define GL_PROJECTION      0
-#define GL_TEXTURE         3
+/*! \brief Enums selecting matrix mode<BR>
+<A HREF="http://problemkaputt.de/gbatek.htm#ds3dmatrixloadmultiply">GBATEK http://problemkaputt.de/gbatek.htm#ds3dmatrixloadmultiply</A><BR>
+related functions: glMatrixMode() */
+typedef enum {
+	GL_PROJECTION     = 0, /*!< used to set the Projection Matrix */
+	GL_POSITION       = 1, /*!< used to set the Position Matrix */
+	GL_MODELVIEW      = 2, /*!< used to set the Modelview Matrix */
+	GL_TEXTURE        = 3  /*!< used to set the Texture Matrix */
+} GL_MATRIX_MODE_ENUM;
 
 #define GL_AMBIENT              1
 #define GL_DIFFUSE              2
@@ -230,6 +251,7 @@ typedef struct {
 //////////////////////////////////////////////////////////////////////
 //Fifo commands
 
+#define FIFO_COMMAND_PACK(c1,c2,c3,c4) (((c4) << 24) | ((c3) << 16) | ((c2) << 8) | (c1)) /*!< \brief packs four packed commands into a 32bit command for sending to the GFX FIFO */
 #define REG2ID(r)						(u8)( ( ((u32)(&(r)))-0x04000400 ) >> 2 )
 
 #define FIFO_NOP				REG2ID(GFX_FIFO)  
@@ -258,6 +280,25 @@ typedef struct {
 #define FIFO_FLUSH				REG2ID(GFX_FLUSH)             
 #define FIFO_VIEWPORT			REG2ID(GFX_VIEWPORT)          
 
+#ifndef GL_VERSION_1_1
+#define GL_VERSION_1_1 1
+
+typedef unsigned int GLenum;
+typedef unsigned char GLboolean;
+typedef unsigned int GLbitfield;
+typedef signed char GLbyte;
+typedef short GLshort;
+typedef int GLint;
+typedef int GLsizei;
+typedef unsigned char GLubyte;
+typedef unsigned short GLushort;
+typedef unsigned int GLuint;
+typedef float GLfloat;
+typedef float GLclampf;
+typedef double GLdouble;
+typedef double GLclampd;
+typedef void GLvoid;
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -330,21 +371,21 @@ void glReset(void);
 //////////////////////////////////////////////////////////////////////
  void glStoreMatrix(sint32 index);
 //////////////////////////////////////////////////////////////////////
- void glScalev(vector* v);
+ void glScalev(GLvector* v);
 //////////////////////////////////////////////////////////////////////
-  void glTranslatev(vector* v);
+  void glTranslatev(GLvector* v);
 //////////////////////////////////////////////////////////////////////
   void glTranslate3f32(f32 x, f32 y, f32 z);
 //////////////////////////////////////////////////////////////////////
   void glScalef32(f32 factor);
 //////////////////////////////////////////////////////////////////////
-  void glTranslatef32(f32 delta);
+  void glTranslatef32(int x, int y, int z);
 //////////////////////////////////////////////////////////////////////
   void glLight(int id, rgb color, v10 x, v10 y, v10 z);
 //////////////////////////////////////////////////////////////////////
   void glNormal(uint32 normal);
 //////////////////////////////////////////////////////////////////////
-  void glIdentity(void);
+  void glLoadIdentity(void);
 //////////////////////////////////////////////////////////////////////
   void glMatrixMode(int mode);
 //////////////////////////////////////////////////////////////////////
@@ -461,7 +502,7 @@ void glMaterialShinnyness(void);
 
 //////////////////////////////////////////////////////////////////////
 
-  static inline void glScalev(vector* v)
+  static inline void glScalev(GLvector* v)
 {
   MATRIX_SCALE = v->x;
   MATRIX_SCALE = v->y;
@@ -470,7 +511,7 @@ void glMaterialShinnyness(void);
 
 //////////////////////////////////////////////////////////////////////
 
-  static inline void glTranslatev(vector* v)
+  static inline void glTranslatev(GLvector* v)
 {
   MATRIX_TRANSLATE = v->x;
   MATRIX_TRANSLATE = v->y;
@@ -497,11 +538,10 @@ void glMaterialShinnyness(void);
 
 //////////////////////////////////////////////////////////////////////
 
-  static inline void glTranslatef32(f32 delta)
-{
-  MATRIX_TRANSLATE = delta;
-  MATRIX_TRANSLATE = delta;
-  MATRIX_TRANSLATE = delta;
+static inline void glTranslatef32(int x, int y, int z) {
+	MATRIX_TRANSLATE = x;
+	MATRIX_TRANSLATE = y;
+	MATRIX_TRANSLATE = z;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -522,7 +562,7 @@ void glMaterialShinnyness(void);
 
 //////////////////////////////////////////////////////////////////////
 
-  static inline void glIdentity(void)
+  static inline void glLoadIdentity(void)
 {
   MATRIX_IDENTITY = 0;
 }
@@ -573,23 +613,21 @@ static inline void glPolyFmt(int alpha) // obviously more to this
 }
 
 ////////////////////////////////////////////////////////////
-//Display lists have issues that need to resolving.
-//There seems to be some issues with list size.
-
-static inline void glCallList(u32* list)
-{
+static inline void glCallList(const u32* list) {
 	u32 count = *list++;
 
-	while(count--)
-		GFX_FIFO = *list++;
+	// flush the area that we are going to DMA
+	coherent_user_range_by_size((uint32)list, count*4);
+	
+	// don't start DMAing while anything else is being DMAed because FIFO DMA is touchy as hell
+	//    If anyone can explain this better that would be great. -- gabebear
+	while((DMAXCNT(0) & DMAENABLED)||(DMAXCNT(1) & DMAENABLED)||(DMAXCNT(2) & DMAENABLED)||(DMAXCNT(3) & DMAENABLED));
 
-	//this works sometimes??
-//	DMA_SRC(0) = (uint32)list;
-//	DMA_DEST(0) = 0x4000400;
-//	DMA_CR(0) = DMA_FIFO | count;
-//
-//	while(DMA_CR(0) & DMA_BUSY);
-
+	// send the packed list asynchronously via DMA to the FIFO
+	DMAXSAD(0) = (u32)list;
+	DMAXDAD(0) = 0x4000400;
+	DMAXCNT(0) = DMA_FIFO | count;
+	while(DMAXCNT(0) & DMAENABLED);
 }
 
 #endif  //endif #no inline

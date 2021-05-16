@@ -27,7 +27,8 @@
 //   0.1: First version
 //   0.2: Added gluFrustrum, gluPerspective, and gluLookAt
 //			Converted all floating point math to fixed point
-//
+//	 0.3: Display lists added thanks to mike260	
+//	 0.4: Update GL specs from OpenGL 1.0 to OpenGL 1.1 which enables Textures Objects (Coto)
 //////////////////////////////////////////////////////////////////////
 
 #include <typedefsTGDS.h>
@@ -144,7 +145,7 @@ void glBegin(int mode)
 
 //////////////////////////////////////////////////////////////////////
 
-  void glScalev(vector* v)
+  void glScalev(GLvector* v)
 {
   MATRIX_SCALE = v->x;
   MATRIX_SCALE = v->y;
@@ -153,7 +154,7 @@ void glBegin(int mode)
 
 //////////////////////////////////////////////////////////////////////
 
-  void glTranslatev(vector* v)
+  void glTranslatev(GLvector* v)
 {
   MATRIX_TRANSLATE = v->x;
   MATRIX_TRANSLATE = v->y;
@@ -180,11 +181,10 @@ void glBegin(int mode)
 
 //////////////////////////////////////////////////////////////////////
 
-  void glTranslatef32(f32 delta)
-{
-  MATRIX_TRANSLATE = delta;
-  MATRIX_TRANSLATE = delta;
-  MATRIX_TRANSLATE = delta;
+void glTranslatef32(int x, int y, int z) {
+	MATRIX_TRANSLATE = x;
+	MATRIX_TRANSLATE = y;
+	MATRIX_TRANSLATE = z;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -205,7 +205,7 @@ void glBegin(int mode)
 
 //////////////////////////////////////////////////////////////////////
 
-  void glIdentity(void)
+  void glLoadIdentity(void)
 {
   MATRIX_IDENTITY = 0;
 }
@@ -398,7 +398,7 @@ void glRotateZi(int angle)
   
   MATRIX_MULT3x3 = 0;
   MATRIX_MULT3x3 = 0;
-  MATRIX_MULT3x3 = intof32(1);
+  MATRIX_MULT3x3 = inttof32(1);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -413,7 +413,7 @@ void glRotateYi(int angle)
   MATRIX_MULT3x3 = -sine;
   
   MATRIX_MULT3x3 = 0;
-  MATRIX_MULT3x3 = intof32(1);
+  MATRIX_MULT3x3 = inttof32(1);
   MATRIX_MULT3x3 = 0;
   
   MATRIX_MULT3x3 = sine;
@@ -428,7 +428,7 @@ void glRotateXi(int angle)
   f32 sine = SIN[angle &  LUT_MASK];
   f32 cosine = COS[angle & LUT_MASK];
 
-  MATRIX_MULT3x3 = intof32(1);
+  MATRIX_MULT3x3 = inttof32(1);
   MATRIX_MULT3x3 = 0;
   MATRIX_MULT3x3 = 0;
 
@@ -497,7 +497,7 @@ void gluLookAtf32(f32 eyex, f32 eyey, f32 eyez, f32 lookAtx, f32 lookAty, f32 lo
 
 	MATRIX_LOAD4x3 = 0;
 	MATRIX_LOAD4x3 = 0;
-	MATRIX_LOAD4x3 = floatof32(-1.0);
+	MATRIX_LOAD4x3 = floattof32(-1.0);
 
 	glTranslate3f32(-eyex, -eyey, -eyez);
 }
@@ -505,8 +505,8 @@ void gluLookAtf32(f32 eyex, f32 eyey, f32 eyez, f32 lookAtx, f32 lookAty, f32 lo
 //  glu wrapper for standard float call
 void gluLookAt(float eyex, float eyey, float eyez, float lookAtx, float lookAty, float lookAtz, float upx, float upy, float upz)
 {
-	gluLookAtf32(floatof32(eyex), floatof32(eyey), floatof32(eyez), floatof32(lookAtx), floatof32(lookAty), floatof32(lookAtz),
-					floatof32(upx), floatof32(upy), floatof32(upz));
+	gluLookAtf32(floattof32(eyex), floattof32(eyey), floattof32(eyez), floattof32(lookAtx), floattof32(lookAty), floattof32(lookAtz),
+					floattof32(upx), floattof32(upy), floattof32(upz));
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 //	frustrum has only been tested as part of perspective
@@ -528,7 +528,7 @@ void gluFrustumf32(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far)
    MATRIX_LOAD4x4 = 0;  
    MATRIX_LOAD4x4 = 0;  
    MATRIX_LOAD4x4 = -divf32(far + near, far - near);     
-   MATRIX_LOAD4x4 = floatof32(-1.0F);
+   MATRIX_LOAD4x4 = floattof32(-1.0F);
    
    MATRIX_LOAD4x4 = 0;  
    MATRIX_LOAD4x4 = 0;  
@@ -541,7 +541,7 @@ void gluFrustumf32(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far)
 //  Frustrum wrapper
 void gluFrustum(float left, float right, float bottom, float top, float near, float far)
 {
-	gluFrustumf32(floatof32(left), floatof32(right), floatof32(bottom), floatof32(top), floatof32(near), floatof32(far));
+	gluFrustumf32(floattof32(left), floattof32(right), floattof32(bottom), floattof32(top), floattof32(near), floattof32(far));
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -563,7 +563,7 @@ void gluPerspectivef32(int fovy, f32 aspect, f32 zNear, f32 zFar)
 void gluPerspective(float fovy, float aspect, float zNear, float zFar)
 {
 	
-	 gluPerspectivef32((int)(fovy * LUT_SIZE / 360.0), floatof32(aspect), floatof32(zNear), floatof32(zFar));    
+	 gluPerspectivef32((int)(fovy * LUT_SIZE / 360.0), floattof32(aspect), floattof32(zNear), floattof32(zFar));    
 }
 
 
@@ -654,10 +654,10 @@ void glReset(void)
   GFX_POLY_FORMAT = 0;
   
   glMatrixMode(GL_PROJECTION);
-  glIdentity();
+  glLoadIdentity();
 
   glMatrixMode(GL_MODELVIEW);
-  glIdentity();
+  glLoadIdentity();
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -868,4 +868,49 @@ int glTexImage2D(int target, int empty1, int type, int sizeX, int sizeY, int emp
 	}
 	*/
 	return 1;
+}
+
+//Open GL 1.1 Implementation: Texture Objects support
+//glTexImage*() == glTexImage3D
+void glTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid *pixels){
+
+}
+
+//glTexSubImage*() == glTexSubImage3D
+void glTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, const GLvoid *pixels){
+	//The glTexSubImage2D function specifies a portion of an existing one-dimensional texture image. You cannot define a new texture with glTexSubImage2D.
+}
+
+//glCopyTexImage*() == glCopyTexImage2D
+void glCopyTexImage2D(GLenum target, GLint level, GLenum internalFormat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border){
+	//replaces glTexImage2D() which is hardcoded to a big texture
+}
+
+//glCopyTexSubImage*() == glCopyTexSubImage3D
+void glCopyTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLint x, GLint y, GLsizei width, GLsizei height){
+
+}
+
+//glTexParameter*(),  
+/*  Example: Create a texture object with linear mipmaps and edge clamping.
+	GLuint texture_id;
+	glGenTextures(1, &texture_id);
+	glBindTexture(GL_TEXTURE_2D, texture_id);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	// texture_data is the source data of your texture, in this case
+	// its size is sizeof(unsigned char) * texture_width * texture_height * 4
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture_width, texture_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture_data);
+	glGenerateMipmap(GL_TEXTURE_2D); // Unavailable in OpenGL 2.1, use gluBuild2DMipmaps() insteads.
+*/
+//requires to update glTexParameter
+
+//glPrioritizeTextures()
+void glPrioritizeTextures (GLsizei n, const GLuint *textures, const GLclampf *priorities){
+	//DS 3D GPU does not support texture priority. There may be a way by sorting them by color but
 }
