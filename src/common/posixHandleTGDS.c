@@ -265,16 +265,16 @@ void writeDebugBuffer7(char *chr, int argvCount, int * argv){
 #ifdef ARM7
 u32 ARM7MallocBaseAddress = 0;
 u32 ARM7MallocTop = 0;
-void setTGDSARM7MallocBaseAddress(u32 address){
+void setTGDSARM7MallocBaseAddress(u32 address) __attribute__ ((optnone)) {
 	ARM7MallocBaseAddress = address;
 }
 
-u32 getTGDSARM7MallocBaseAddress(){
+u32 getTGDSARM7MallocBaseAddress() __attribute__ ((optnone)) {
 	return ARM7MallocBaseAddress;
 }
 
 //example: u32 ARM7MallocStartaddress = 0x06000000, u32 memSize = 128*1024
-void initARM7Malloc(u32 ARM7MallocStartaddress, u32 ARM7MallocSize){	//ARM7 Impl.
+void initARM7Malloc(u32 ARM7MallocStartaddress, u32 ARM7MallocSize) __attribute__ ((optnone)) {	//ARM7 Impl.
 	setTGDSARM7MallocBaseAddress(ARM7MallocStartaddress);
 	ARM7MallocTop = XMEMTOTALSIZE = ARM7MallocSize;
 	//Init XMEM (let's see how good this one behaves...)
@@ -290,11 +290,11 @@ void initARM7Malloc(u32 ARM7MallocStartaddress, u32 ARM7MallocSize){	//ARM7 Impl
 #ifdef ARM9
 //ARM9 Malloc implementation: Blocking, because several processes running on ARM7 may require ARM9 having a proper malloc impl.
 u32 ARM9MallocBaseAddress = 0;
-void setTGDSARM9MallocBaseAddress(u32 address){
+void setTGDSARM9MallocBaseAddress(u32 address) __attribute__ ((optnone)) {
 	ARM9MallocBaseAddress = address;
 }
 
-u32 getTGDSARM9MallocBaseAddress(){
+u32 getTGDSARM9MallocBaseAddress() __attribute__ ((optnone)) {
 	return ARM9MallocBaseAddress;
 }
 //Global
@@ -310,13 +310,13 @@ struct AllocatorInstance CustomAllocatorInstance;
 void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,											//ARM7
 						u32 ARM9MallocStartaddress, u32 ARM9MallocSize, u32 * mallocHandler, u32 * callocHandler, //ARM9
 						u32 * freeHandler, u32 * MallocFreeMemoryHandler, bool customAllocator
-){
+) __attribute__ ((optnone)) {
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-	fifomsg[42] = (uint32)ARM7MallocStartAddress;
-	fifomsg[43] = (uint32)ARM7MallocSize;
-	fifomsg[44] = (uint32)customAllocator;
-	fifomsg[45] = (uint32)TGDS_ARM7_SETUPARMCoresMALLOC;
+	setValueSafe(&fifomsg[42], (uint32)ARM7MallocStartAddress);
+	setValueSafe(&fifomsg[43], (uint32)ARM7MallocSize);
+	setValueSafe(&fifomsg[44], (uint32)customAllocator);
+	setValueSafe(&fifomsg[45], (uint32)TGDS_ARM7_SETUPARMCoresMALLOC);
 	setTGDSARM9MallocBaseAddress(ARM9MallocStartaddress);
 	if(customAllocator == true){
 		if(mallocHandler != NULL){
@@ -333,12 +333,12 @@ void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,									
 		}
 	}
 	SendFIFOWords(TGDS_ARM7_SETUPARMCoresMALLOC);	//ARM7 Setup
-	while(fifomsg[45] == TGDS_ARM7_SETUPARMCoresMALLOC){
-		swiDelay(2);
+	while((u32)getValueSafe(&fifomsg[45]) == (u32)TGDS_ARM7_SETUPARMCoresMALLOC){
+		swiDelay(1);
 	}
 }
 
-void setTGDSMemoryAllocator(struct AllocatorInstance * TGDSMemoryAllocator){
+void setTGDSMemoryAllocator(struct AllocatorInstance * TGDSMemoryAllocator) __attribute__ ((optnone)) {
 	//Enable Default/Custom TGDS Memory Allocator
 	u32 ARM9MallocStartaddress = (u32)sbrk(0);
 	if(TGDSMemoryAllocator->customMalloc == false){
@@ -380,7 +380,7 @@ void printf7Setup(){
 	SendFIFOWords(TGDS_ARM7_PRINTF7SETUP);
 }
 
-void printf7(u8 * printfBufferShared, int * arm7ARGVBufferShared, int argvCount){
+void printf7(u8 * printfBufferShared, int * arm7ARGVBufferShared, int argvCount) __attribute__ ((optnone)) {
 	//argvCount can't be retrieved from here because this call comes from FIFO hardware (and with it, the argvCount value)
 	coherent_user_range_by_size((uint32)printfBufferShared, strlen((char*)printfBufferShared) + 1);
 	coherent_user_range_by_size((uint32)arm7ARGVBufferShared, sizeof(int) * MAXPRINT7ARGVCOUNT);
@@ -432,7 +432,7 @@ void printarm7DebugBuffer(){
 	printf("%s", printfTemp); 
 }
 
-int printf(const char *fmt, ...){
+int printf(const char *fmt, ...) __attribute__ ((optnone)) {
 	//Indentical Implementation as GUI_printf
 	va_list args;
 	va_start (args, fmt);
@@ -466,7 +466,7 @@ int printf(const char *fmt, ...){
 }
 
 //same as printf but having X, Y coords (relative to char width and height)
-void printfCoords(int x, int y, const char *fmt, ...){
+void printfCoords(int x, int y, const char *fmt, ...) __attribute__ ((optnone)) {
 	va_list args;
 	va_start (args, fmt);
 	vsnprintf ((sint8*)ConsolePrintfBuf, 64, fmt, args);
@@ -498,7 +498,7 @@ void printfCoords(int x, int y, const char *fmt, ...){
 	TGDSARM9Free(outBuf);
 }
 
-int _vfprintf_r(struct _reent * reent, FILE *fp, const sint8 *fmt, va_list args){
+int _vfprintf_r(struct _reent * reent, FILE *fp, const sint8 *fmt, va_list args) __attribute__ ((optnone)) {
 	coherent_user_range_by_size((uint32)fmt, strlen(fmt)+1);
 	char * stringBuf = (char*)&ConsolePrintfBuf[0];
 	vsnprintf ((sint8*)stringBuf, 64, fmt, args);
@@ -539,7 +539,7 @@ int fork(){
 }
 
 //UNIX/Posix programs exit like this. (TGDS works with hardware directly, thus waits for interrupts)
-void _exit (int status){
+void _exit (int status) __attribute__ ((optnone)) {
 	bool isTGDSCustomConsole = false;	//set default console or custom console: default console
 	GUI_init(isTGDSCustomConsole);
 	GUI_clear();
@@ -567,7 +567,7 @@ pid_t _getpid (void){
 //read (get struct FD index from FILE * handle)
 
 //ok _read_r reentrant called
-_ssize_t _read_r ( struct _reent *ptr, int fd, void *buf, size_t cnt ){
+_ssize_t _read_r ( struct _reent *ptr, int fd, void *buf, size_t cnt ) __attribute__ ((optnone)) {
 	//Conversion here 
 	struct fd * fdinst = getStructFD(fd);
 	if((fdinst != NULL) && (fdinst->devoptabFileDescriptor != NULL) && (fdinst->devoptabFileDescriptor != (struct devoptab_t *)&devoptab_stub)){
@@ -578,7 +578,7 @@ _ssize_t _read_r ( struct _reent *ptr, int fd, void *buf, size_t cnt ){
 
 //ok _write_r reentrant called
 //write (get struct FD index from FILE * handle)
-_ssize_t _write_r ( struct _reent *ptr, int fd, const void *buf, size_t cnt ){
+_ssize_t _write_r ( struct _reent *ptr, int fd, const void *buf, size_t cnt ) __attribute__ ((optnone)) {
 	//Conversion here 
 	struct fd * fdinst = getStructFD(fd);
 	if((fdinst != NULL) && (fdinst->devoptabFileDescriptor != NULL) && (fdinst->devoptabFileDescriptor != (struct devoptab_t *)&devoptab_stub)){
@@ -587,7 +587,7 @@ _ssize_t _write_r ( struct _reent *ptr, int fd, const void *buf, size_t cnt ){
 	return -1;
 }
 
-int _open_r ( struct _reent *ptr, const sint8 *file, int flags, int mode ){
+int _open_r ( struct _reent *ptr, const sint8 *file, int flags, int mode ) __attribute__ ((optnone)) {
 	if(file != NULL){
 		char * outBuf = (char *)TGDSARM9Malloc(256*10);
 		int i = 0;
@@ -621,7 +621,7 @@ int close (int fd){
 
 //allocates a new struct fd index with either DIR or FIL structure allocated
 //not overriden, we force the call from fd_close
-int _close_r ( struct _reent *ptr, int fd ){
+int _close_r ( struct _reent *ptr, int fd ) __attribute__ ((optnone)) {
 	//Conversion here 
 	struct fd * fdinst = getStructFD(fd);	
 	if((fdinst != NULL) && (fdinst->devoptabFileDescriptor != NULL) && (fdinst->devoptabFileDescriptor != (struct devoptab_t *)&devoptab_stub)){
@@ -657,7 +657,7 @@ int	_stat_r ( struct _reent *_r, const char *file, struct stat *pstat ){
 	return fatfs_stat(file, pstat);
 }
 
-int _gettimeofday(struct timeval *tv, struct timezone *tz){
+int _gettimeofday(struct timeval *tv, struct timezone *tz) __attribute__ ((optnone)) {
 	if (tv == NULL)
     {
 		__set_errno (EINVAL);
@@ -704,14 +704,14 @@ int lstat(const char * path, struct stat *buf){
 	return fatfs_stat((const sint8 *)path,buf);
 }
 
-int getMaxRam(){
+int getMaxRam() __attribute__ ((optnone)) {
 	int maxRam = ((int)(&_ewram_end)  - (int)sbrk(0) );
 	return (int)maxRam;
 }
 
 //Memory is too fragmented up to this point, causing to have VERY little memory left. 
 //Luckily for us this memory hack allows dmalloc to re-arrange and free more memory for us! Also fixing malloc memory fragmentation!! WTF Dude.
-void TryToDefragmentMemory(){
+void TryToDefragmentMemory() __attribute__ ((optnone)) {
 	int freeRam = getMaxRam();
 	//I'm not kidding, this allows to de-fragment memory. Relative to how much memory we have and re-allocate it
 	char * defragMalloc[1024];	//4M / 4096. DS Mem can't be higher than this
