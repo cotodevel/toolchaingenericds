@@ -56,10 +56,10 @@ export TARGET_LIBRARY_CRT0_FILE_9 = nds_arm_ld_crt0
 export TARGET_LIBRARY_LINKER_FILE_7 = $(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_LINKER_SRC)/$(TARGET_LIBRARY_CRT0_FILE_7).S
 export TARGET_LIBRARY_LINKER_FILE_9 = $(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_LINKER_SRC)/$(TARGET_LIBRARY_CRT0_FILE_9).S
 
-export TARGET_LIBRARY_NAME_7 = toolchaingen7
-export TARGET_LIBRARY_NAME_9 = toolchaingen9
-export TARGET_LIBRARY_FILE_7	=	lib$(TARGET_LIBRARY_NAME_7).a
-export TARGET_LIBRARY_FILE_9	=	lib$(TARGET_LIBRARY_NAME_9).a
+export TARGET_LIBRARY_TGDS_NTR_7 = toolchaingen7
+export TARGET_LIBRARY_TGDS_NTR_9 = toolchaingen9
+export TARGET_LIBRARY_TGDS_TWL_7 = $(TARGET_LIBRARY_TGDS_NTR_7)i
+export TARGET_LIBRARY_TGDS_TWL_9 = $(TARGET_LIBRARY_TGDS_NTR_9)i
 
 #####################################################ARM7#####################################################
 
@@ -124,6 +124,7 @@ endif
 $(EXECUTABLE_FNAME)	:	compile
 	-@echo 'ndstool begin'
 	$(NDSTOOL)	-v	-c $@	-7  $(CURDIR)/arm7/$(BINSTRIP_RULE_7)	-e7  0x03800000	-9 $(CURDIR)/arm9/$(BINSTRIP_RULE_9) -e9  0x02000000	-b	icon.bmp "ToolchainGenericDS SDK;$(TGDSPROJECTNAME) NDS Binary; "
+	$(NDSTOOL)	-c 	${@:.nds=.srl} -b	icon.bmp "ToolchainGenericDS SDK;$(TGDSPROJECTNAME) NDS Binary; " -7 arm7/arm7-nonstripped_dsi.elf -9 arm9/arm9-nonstripped_dsi.elf
 	-@echo 'ndstool end: built: $@'
 	
 #---------------------------------------------------------------------------------
@@ -144,7 +145,7 @@ ifeq ($(SOURCE_MAKEFILE9),default)
 endif
 	-@rm -rf $(CURDIR)/$(PosIndCodeDIR_FILENAME)/$(DIR_ARM7)/Makefile
 	-@rm -rf $(CURDIR)/$(PosIndCodeDIR_FILENAME)/$(DIR_ARM9)/Makefile
-	-@rm -fr $(EXECUTABLE_FNAME)	$(CURDIR)/common/templateCode/
+	-@rm -fr $(EXECUTABLE_FNAME)	$(TGDSPROJECTNAME).srl	$(CURDIR)/common/templateCode/
 
 rebase:
 	git reset --hard HEAD

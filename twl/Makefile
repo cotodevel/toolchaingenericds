@@ -40,96 +40,101 @@ export DIR_ARM9 = arm9
 export BUILD_ARM9	=	build
 export ELF_ARM7 = arm7.elf
 export ELF_ARM9 = arm9.elf
-
-export TARGET_LIBRARY_NAME_7 = toolchaingen7
-export TARGET_LIBRARY_NAME_9 = toolchaingen9
+#TWL TGDS7 & TGDS9
+export TARGET_LIBRARY_NAME_7 = toolchaingen7i
+export TARGET_LIBRARY_NAME_9 = toolchaingen9i
 export TARGET_LIBRARY_FILE_7	=	lib$(TARGET_LIBRARY_NAME_7).a
 export TARGET_LIBRARY_FILE_9	=	lib$(TARGET_LIBRARY_NAME_9).a
 export TARGET_LIBRARY_LIBNAME_7	=	l$(TARGET_LIBRARY_NAME_7)
 export TARGET_LIBRARY_LIBNAME_9	=	l$(TARGET_LIBRARY_NAME_9)
 
 .SUFFIXES: .all
-
 #####################################################ARM7#####################################################
 #the correct format is : ../include/sys/ otherwise recursive folders break in later bash scripts
-export DIRS_ARM7_SRC = source/	\
-			source/dswifi_arm7/	\
-			source/xmalloc/	\
-			../common/	\
-			../common/dswifi/	\
-			../common/hardware/	\
-			../common/hardware/dldi/	\
-			../templateCode/source/	\
-			../templateCode/data/arm7/		\
-			data/	\
+export DIRS_ARM7_SRC = ../source/	\
+			../source/dswifi_arm7/	\
+			../source/xmalloc/	\
+			../../common/	\
+			../../common/dswifi/	\
+			../../common/dswifi/netinet/	\
+			../../common/dswifi/sys/	\
+			../../common/dswifi/arpa/	\
+			../../common/hardware/	\
+			../../common/hardware/dldi/	\
+			../../templateCode/source/	\
+			../../templateCode/data/arm7/		\
+			../data/	\
 			build/	\
 			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
 			
-export DIRS_ARM7_HEADER = source/	\
-			source/dswifi_arm7/	\
-			source/xmalloc/	\
-			include/	\
+export DIRS_ARM7_HEADER = ../source/	\
+			../source/dswifi_arm7/	\
+			../source/xmalloc/	\
 			../include/	\
-			../include/netinet/	\
-			../include/sys/	\
-			../common/	\
-			../common/dswifi/	\
-			../common/hardware/	\
-			../common/hardware/dldi/	\
-			../templateCode/source/	\
-			../templateCode/data/arm7/		\
-			data/	\
+			../../common/	\
+			../../common/dswifi/	\
+			../../common/dswifi/netinet/	\
+			../../common/dswifi/sys/	\
+			../../common/dswifi/arpa/	\
+			../../common/hardware/	\
+			../../common/hardware/dldi/	\
+			../../templateCode/source/	\
+			../../templateCode/data/arm7/		\
+			../data/	\
 			build/	\
 			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
 			
 #####################################################ARM9#####################################################
 
-export DIRS_ARM9_SRC = source/	\
-			source/console/	\
-			source/console/gui_draw/	\
-			source/ToolchainGenericDSFS/	\
-			source/ToolchainGenericDSFS/fatfs/source/	\
-			source/zlib/	\
-			source/zip/	\
-			source/dswifi_arm9/	\
-			source/wnifilib/	\
-			source/imadecoder/	\
+export DIRS_ARM9_SRC = ../source/	\
+			../source/console/	\
+			../source/console/gui_draw/	\
+			../source/ToolchainGenericDSFS/	\
+			../source/ToolchainGenericDSFS/fatfs/source/	\
+			../source/zlib/	\
+			../source/zip/	\
+			../source/dswifi_arm9/	\
+			../source/wnifilib/	\
+			../source/imadecoder/	\
 			../include/	\
-			../common/	\
-			../common/dswifi/	\
-			../common/dswifi/netinet/	\
-			../common/dswifi/sys/	\
-			../common/hardware/	\
-			../common/hardware/dldi/	\
-			../templateCode/source/	\
-			../templateCode/data/arm9/		\
-			data/	\
+			../../common/	\
+			../../common/dswifi/	\
+			../../common/dswifi/netinet/	\
+			../../common/dswifi/sys/	\
+			../../common/dswifi/arpa/	\
+			../../common/hardware/	\
+			../../common/hardware/dldi/	\
+			../../templateCode/source/	\
+			../../templateCode/data/arm9/		\
+			../data/	\
 			build/	\
 			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
 			
-export DIRS_ARM9_HEADER = source/	\
-			source/console/	\
-			source/console/gui_draw/	\
-			source/ToolchainGenericDSFS/	\
-			source/ToolchainGenericDSFS/fatfs/source/	\
-			source/zlib/	\
-			source/zip/	\
-			source/dswifi_arm9/	\
-			source/wnifilib/	\
-			source/imadecoder/	\
+export DIRS_ARM9_HEADER = ../source/	\
+			../source/console/	\
+			../source/console/gui_draw/	\
+			../source/ToolchainGenericDSFS/	\
+			../source/ToolchainGenericDSFS/fatfs/source/	\
+			../source/zlib/	\
+			../source/zip/	\
+			../source/dswifi_arm9/	\
+			../source/wnifilib/	\
+			../source/imadecoder/	\
 			../include/	\
-			../common/	\
-			../common/dswifi/	\
-			../common/dswifi/netinet/	\
-			../common/dswifi/sys/	\
-			../common/hardware/	\
-			../common/hardware/dldi/	\
-			../templateCode/source/	\
-			../templateCode/data/arm9/		\
-			data/	\
+			../../common/	\
+			../../common/dswifi/	\
+			../../common/dswifi/netinet/	\
+			../../common/dswifi/sys/	\
+			../../common/dswifi/arpa/	\
+			../../common/hardware/	\
+			../../common/hardware/dldi/	\
+			../../templateCode/source/	\
+			../../templateCode/data/arm9/		\
+			../data/	\
 			build/	\
 			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
 			
+
 # Build Target(s)	(both processors here)
 all: compilelib	buildWoopsiUI
 
@@ -138,36 +143,31 @@ buildWoopsiUI:
 
 #Make
 compilelib	:
-	cp	-r	$(CURDIR)/templateCode/	$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/
+	cp	-r	$(CURDIR)/../src/templateCode/	$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/
 ifeq ($(SOURCE_MAKEFILE7),default)
-	cp	-r	$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/$(DIR_ARM7)/Makefile	$(CURDIR)/$(DIR_ARM7)
+	cp	-r	$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/$(DIR_ARM7)/Makefile	../src/arm7/twl/
 endif
-	$(MAKE)	-R	-C	$(DIR_ARM7)/
+	$(MAKE)	-R	-C	../src/arm7/twl/
 ifeq ($(SOURCE_MAKEFILE9),default)
-	cp	-r	$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/$(DIR_ARM9)/Makefile	$(CURDIR)/$(DIR_ARM9)
+	cp	-r	$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/$(DIR_ARM9)/Makefile	../src/arm9/twl/
 endif
-	$(MAKE)	-R	-C	$(DIR_ARM9)/
+	$(MAKE)	-R	-C	../src/arm9/twl/
 
 #---------------------------------------------------------------------------------
 # Clean
 clean:
-	$(MAKE)	clean	-C	$(DIR_ARM7)/
-ifeq ($(SOURCE_MAKEFILE7),default)
-	-@rm -rf $(CURDIR)/$(DIR_ARM7)/Makefile
-endif
-	$(MAKE)	clean	-C	$(DIR_ARM9)/
-ifeq ($(SOURCE_MAKEFILE9),default)
-	-@rm -rf $(CURDIR)/$(DIR_ARM9)/Makefile
-endif
 	$(MAKE)	cleanWoopsiUI
+	$(MAKE)	clean	-C	../src/arm7/twl/
+ifeq ($(SOURCE_MAKEFILE7),default)
+	-@rm -rf ../src/arm7/twl/Makefile
+endif
+	$(MAKE)	clean	-C	../src/arm9/twl/
+ifeq ($(SOURCE_MAKEFILE9),default)
+	-@rm -rf ../src/arm9/twl/Makefile
+endif
 	-@rm -fr $(EXECUTABLE_FNAME)
 	-@rm -fr	$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
-
 #---------------------------------------------------------------------------------
-
 cleanWoopsiUI:
 	$(MAKE)	clean	-C	../lib/
-
-commitChanges:
-	-@git commit -a	-m '$(COMMITMSG)'
-	-@git push origin HEAD
+#---------------------------------------------------------------------------------

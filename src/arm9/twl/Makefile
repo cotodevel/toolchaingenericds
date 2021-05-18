@@ -73,7 +73,8 @@ COMPILER_SPECIFIC_CFLAGS += \
   --target=arm-none-eabi \
   --sysroot= \
   -Oz \
-  -DARM9
+  -DARM9	\
+  -DTWLMODE
   
 CFLAGS = \
   -g3 \
@@ -92,7 +93,7 @@ all: $(OBJDIR)|forceDelete	$(OBJPROG)
 #all: debug
 
 forceDelete:
-	-@rm -fr ./$(BUILD)/$(TARGET_LIBRARY_FILE_9)	$(TARGET_LIBRARY_PATH)/$(TARGET_LIBRARY_FILE_9)	$(TARGET_LIBRARY_HEADERS_9)
+	-@rm -fr ./$(BUILD)/$(TARGET_LIBRARY_FILE_9)	$(TARGET_LIBRARY_PATH)/$(TARGET_LIBRARY_FILE_9)
 
 #Check $(OBJDIR) if not exists: create it
 $(OBJDIR):
@@ -148,12 +149,12 @@ $(OBJPROG): $(addprefix $(OBJDIR)/, $(OBJECTS))
 	-@echo 'Entering Linking phase'
 	$(AR2) rc	$@	$^
 ifeq ($(TGDS_ENV),windows)
-	-mkdir -p $(TARGET_LIBRARY_PATH) && cp	$(OBJPROG)	$(TARGET_LIBRARY_PATH)
-	-mkdir -p $(TARGET_LIBRARY_HEADERS_9) && cp $(dir_arm9_src_h) $(TARGET_LIBRARY_HEADERS_9)
+	-cp	$(OBJPROG)	$(TARGET_LIBRARY_PATH)
+	-cp $(dir_arm9_src_h) $(TARGET_LIBRARY_HEADERS_9)
 endif
 ifeq ($(TGDS_ENV),linux)
-	-sudo mkdir -p $(TARGET_LIBRARY_PATH) && sudo cp	$(OBJPROG)	$(TARGET_LIBRARY_PATH)
-	-sudo mkdir -p $(TARGET_LIBRARY_HEADERS_9) && sudo cp $(dir_arm9_src_h) $(TARGET_LIBRARY_HEADERS_9)
+	-sudo cp	$(OBJPROG)	$(TARGET_LIBRARY_PATH)
+	-sudo cp $(dir_arm9_src_h) $(TARGET_LIBRARY_HEADERS_9)
 endif
 	-@echo 'Leaving Linking phase. $(OBJPROG)'
 	

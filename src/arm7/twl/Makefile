@@ -71,7 +71,8 @@ COMPILER_SPECIFIC_CFLAGS += \
   --sysroot= \
   -Os \
   -fno-rtti	-fno-exceptions \
-  -DARM7
+  -DARM7	\
+  -DTWLMODE
   
 CFLAGS = \
   -g3 \
@@ -90,7 +91,7 @@ all: $(OBJDIR)|forceDelete	$(OBJPROG)
 #all: debug
 
 forceDelete:
-	-@rm -fr ./$(BUILD)/$(TARGET_LIBRARY_FILE_7)	$(TARGET_LIBRARY_PATH)/$(TARGET_LIBRARY_FILE_7)	$(TARGET_LIBRARY_HEADERS_7)
+	-@rm -fr ./$(BUILD)/$(TARGET_LIBRARY_FILE_7)	$(TARGET_LIBRARY_PATH)/$(TARGET_LIBRARY_FILE_7)	
 	
 #Check $(OBJDIR) if not exists: create it
 $(OBJDIR):
@@ -136,12 +137,12 @@ $(OBJPROG): $(addprefix $(OBJDIR)/, $(OBJECTS))
 	-@echo 'Entering Linking phase'
 	$(AR) rc	$@	$^
 ifeq ($(TGDS_ENV),windows)
-	-mkdir -p $(TARGET_LIBRARY_PATH) && cp	$(OBJPROG)	$(TARGET_LIBRARY_PATH)
-	-mkdir -p $(TARGET_LIBRARY_HEADERS_7) && cp $(dir_arm7_src_h) $(TARGET_LIBRARY_HEADERS_7)
+	-cp	$(OBJPROG)	$(TARGET_LIBRARY_PATH)
+	-cp $(dir_arm7_src_h) $(TARGET_LIBRARY_HEADERS_7)
 endif
 ifeq ($(TGDS_ENV),linux)
-	-sudo mkdir -p $(TARGET_LIBRARY_PATH) && sudo cp	$(OBJPROG)	$(TARGET_LIBRARY_PATH)
-	-sudo mkdir -p $(TARGET_LIBRARY_HEADERS_7) && sudo cp $(dir_arm7_src_h) $(TARGET_LIBRARY_HEADERS_7)
+	-sudo cp	$(OBJPROG)	$(TARGET_LIBRARY_PATH)
+	-sudo cp $(dir_arm7_src_h) $(TARGET_LIBRARY_HEADERS_7)
 endif
 	-@echo 'Leaving Linking phase. $(OBJPROG)'
 	

@@ -49,50 +49,54 @@ void IRQInit(u8 DSHardware) __attribute__ ((optnone)) {
 		||
 		(DSHardware == 0x63)
 	){
-		//FIFO IRQ Init
-		REG_IF = REG_IF;
-		REG_IE = 0;
-		REG_IME = 0;
-		
-		#ifdef ARM9
-		//DrainWrite
-		DrainWriteBuffer();
+		#ifdef NTRMODE
+			//FIFO IRQ Init
+			REG_IF = REG_IF;
+			REG_IE = 0;
+			REG_IME = 0;
+			
+			#ifdef ARM9
+			//DrainWrite
+			DrainWriteBuffer();
+			#endif
+			
+			//FIFO IRQ Init
+			REG_IPC_SYNC = (1 << 14);	//14    R/W  Enable IRQ from remote CPU  (0=Disable, 1=Enable)
+			REG_IPC_FIFO_CR = IPC_FIFO_SEND_CLEAR | RECV_FIFO_IPC_IRQ  | FIFO_IPC_ENABLE;
+			
+			//Set up PPU IRQ: HBLANK/VBLANK/VCOUNT
+			REG_DISPSTAT = (DISP_HBLANK_IRQ | DISP_VBLANK_IRQ | DISP_YTRIGGER_IRQ);
+			
+			//Set up PPU IRQ Vertical Line
+			setVCountIRQLine(TGDS_VCOUNT_LINE_INTERRUPT);
+			
+			volatile uint32 interrupts_to_wait_armX = 0;
+			
+			#ifdef ARM7
+			interrupts_to_wait_armX = IRQ_TIMER1 | IRQ_HBLANK | IRQ_VBLANK | IRQ_VCOUNT | IRQ_IPCSYNC | IRQ_RECVFIFO_NOT_EMPTY | IRQ_SCREENLID;
+			#endif
+			
+			#ifdef ARM9
+			interrupts_to_wait_armX = IRQ_HBLANK| IRQ_VBLANK | IRQ_VCOUNT | IRQ_IPCSYNC | IRQ_RECVFIFO_NOT_EMPTY;
+			#endif
+			
+			REG_IE = interrupts_to_wait_armX; 
+			
+			INTERRUPT_VECTOR = (uint32)&NDS_IRQHandler;
+			REG_IME = 1;
 		#endif
 		
-		//FIFO IRQ Init
-		REG_IPC_SYNC = (1 << 14);	//14    R/W  Enable IRQ from remote CPU  (0=Disable, 1=Enable)
-		REG_IPC_FIFO_CR = IPC_FIFO_SEND_CLEAR | RECV_FIFO_IPC_IRQ  | FIFO_IPC_ENABLE;
-		
-		//Set up PPU IRQ: HBLANK/VBLANK/VCOUNT
-		REG_DISPSTAT = (DISP_HBLANK_IRQ | DISP_VBLANK_IRQ | DISP_YTRIGGER_IRQ);
-		
-		//Set up PPU IRQ Vertical Line
-		setVCountIRQLine(TGDS_VCOUNT_LINE_INTERRUPT);
-		
-		volatile uint32 interrupts_to_wait_armX = 0;
-		
-		#ifdef ARM7
-		interrupts_to_wait_armX = IRQ_TIMER1 | IRQ_HBLANK | IRQ_VBLANK | IRQ_VCOUNT | IRQ_IPCSYNC | IRQ_RECVFIFO_NOT_EMPTY | IRQ_SCREENLID;
-		#endif
-		
-		#ifdef ARM9
-		interrupts_to_wait_armX = IRQ_HBLANK| IRQ_VBLANK | IRQ_VCOUNT | IRQ_IPCSYNC | IRQ_RECVFIFO_NOT_EMPTY;
-		#endif
-		
-		REG_IE = interrupts_to_wait_armX; 
-		
-		INTERRUPT_VECTOR = (uint32)&NDS_IRQHandler;
-		REG_IME = 1;
 	}
 	//TWL 
 	else if(DSHardware == 0x57){
-		  
-		#ifdef ARM7
-		//TWL ARM7 IRQ Init code goes here...
-		#endif
-		
-		#ifdef ARM9
-		//TWL ARM9 IRQ Init code goes here...
+		#ifdef TWLMODE
+			#ifdef ARM7
+			//TWL ARM7 IRQ Init code goes here...
+			#endif
+			
+			#ifdef ARM9
+			//TWL ARM9 IRQ Init code goes here...
+			#endif
 		#endif
 	}
 }
