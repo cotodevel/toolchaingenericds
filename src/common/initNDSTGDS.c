@@ -183,6 +183,11 @@ void initHardware(u8 DSHardware) __attribute__ ((optnone)) {
 	//Hardware ARM9 Init
 	resetMemory_ARMCores(DSHardware);
 	IRQInit(DSHardware);
+	setupTWLSDHardware(DSHardware);
+	
+	#ifdef TWLMODE
+	setCpuClock(true);
+	#endif
 	
 	//Enable mpu
 	CP15ControlRegisterEnable(CR_M);
@@ -209,7 +214,6 @@ void initHardware(u8 DSHardware) __attribute__ ((optnone)) {
 	//Disable it because handling ARM7 events take extra CPU power we don't really need to use.
 	disableSleepMode();
 	
-	setupTWLSDHardware(DSHardware);
 	#endif
 	
 }

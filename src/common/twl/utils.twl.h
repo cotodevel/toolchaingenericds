@@ -54,6 +54,93 @@ enum IRQ_MASKSAUX {
 */
 #define REG_AUXIF	(*(vuint32*)0x0400021C)
 
+/* internal fifo messages utilized by libnds. */
+
+typedef enum {
+	SOUND_PLAY_MESSAGE = 0x1234,
+	SOUND_PSG_MESSAGE,
+	SOUND_NOISE_MESSAGE,
+	MIC_RECORD_MESSAGE,
+	MIC_BUFFER_FULL_MESSAGE,
+	SYS_INPUT_MESSAGE,
+	SDMMC_SD_READ_SECTORS,
+	SDMMC_SD_WRITE_SECTORS,
+	SDMMC_NAND_READ_SECTORS,
+	SDMMC_NAND_WRITE_SECTORS
+} FifoMessageType;
+
+typedef struct FifoMessage {
+	u16 type;
+
+	union {
+
+		struct {
+			const void* data;
+			u32 dataSize;
+			u16 loopPoint;
+			u16 freq;
+			u8 volume;
+			u8 pan;
+			bool loop;
+			u8 format;
+			u8 channel;
+		} SoundPlay;
+
+		struct{
+			u16 freq;
+			u8 dutyCycle;
+			u8 volume;
+			u8 pan;
+			u8 channel;
+		} SoundPsg;
+
+		struct{
+			void* buffer;
+			u32 bufferLength;
+			u16 freq;
+			u8 format;
+		} MicRecord;
+
+		struct{
+			void* buffer;
+			u32 length;
+		} MicBufferFull;
+
+		struct{
+			touchPosition touch;
+			u16 keys;
+		} SystemInput;
+		
+		struct{
+			void *buffer;
+			u32 startsector;
+			u32	numsectors;
+		} sdParams;
+
+		struct{
+			void *buffer;
+			u32 address;
+			u32	length;
+		} blockParams;
+	};
+
+} __attribute__((aligned(4))) FifoMessage;
+
+typedef enum {
+	SDMMC_HAVE_SD,
+	SDMMC_SD_START,
+	SDMMC_SD_IS_INSERTED,
+	SDMMC_SD_STOP,
+	SDMMC_NAND_START,
+	SDMMC_NAND_STOP,
+	SDMMC_NAND_SIZE
+} FifoSdmmcCommands;
+
+typedef enum {
+	FW_READ,
+	FW_WRITE
+} FifoFirmwareCommands;
+
 #endif
 
 

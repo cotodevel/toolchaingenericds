@@ -7,6 +7,9 @@
 #include "ipcfifoTGDS.h"
 #include "global_settings.h"
 
+#ifdef TWLMODE
+#include "memory.h"
+#endif
 
 #ifdef ARM9
 __attribute__((section(".dtcm")))
@@ -483,3 +486,12 @@ bool dldiPatchLoader(data_t *binData, u32 binSize, u32 physDLDIAddress)
 
 	return true;
 }
+
+#ifdef TWLMODE
+#ifdef ARM9
+extern const struct DISC_INTERFACE_STRUCT __io_dsisd;
+const struct DISC_INTERFACE_STRUCT* get_io_dsisd (void) {
+	return (isDSiMode() && __NDSHeader->unitCode ) ? &__io_dsisd : NULL;
+}
+#endif
+#endif

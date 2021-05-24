@@ -90,6 +90,9 @@ typedef struct DLDI_INTERFACE {
 	// Original I/O interface data
 	struct DISC_INTERFACE_STRUCT ioInterface;
 } DLDI_INTERFACE;
+
+#define DEVICE_TYPE_DSI_SD ('_') | ('S' << 8) | ('D' << 16) | ('_' << 24)
+
 #endif
 
 
@@ -132,6 +135,13 @@ extern bool _DLDI_readSectors(uint32 sector, uint32 sectorCount, uint8* buffer);
 extern bool _DLDI_writeSectors(uint32 sector, uint32 sectorCount, const uint8* buffer);
 extern bool dldiRelocateLoader(bool clearBSS, u32 DldiRelocatedAddress, u32 dldiSourceInRam, u32 dldiOutWriteAddress);
 extern bool dldiPatchLoader(data_t *binData, u32 binSize, u32 physDLDIAddress);
+#endif
+
+#ifdef TWLMODE
+#ifdef ARM9
+extern const struct DISC_INTERFACE_STRUCT __io_dsisd;
+extern const struct DISC_INTERFACE_STRUCT* get_io_dsisd (void);
+#endif
 #endif
 
 #ifdef __cplusplus

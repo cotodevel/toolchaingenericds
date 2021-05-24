@@ -22,6 +22,7 @@ USA
 #define __libndsFIFO_h__
 
 #include "ipcfifoTGDS.h"
+#include "biosTGDS.h"
 
 #ifdef __cplusplus
 extern "C"{
@@ -210,6 +211,12 @@ static inline int fifoCheckDatamsgLength(int channel) __attribute__ ((optnone)) 
 	return -1;
 }
 
+static inline void fifoWaitValue32(int channel) {
+	while(!fifoCheckValue32(channel)) {
+		swiDelay(1);
+	}
+
+}
 
 /*!
 	\brief Get the first address in queue for a specific channel.

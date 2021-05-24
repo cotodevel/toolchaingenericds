@@ -947,6 +947,47 @@ void setValueSafe(u32 * buf, u32 val) __attribute__ ((optnone)) {
 }
 
 #ifdef TWLMODE
+
+#ifdef ARM9
+
+//The rest of SD ARM9 code here
+
+//! Enum values for the fifo system commands.
+typedef enum {
+	SYS_REQ_TOUCH,
+	SYS_REQ_KEYS,
+	SYS_REQ_TIME,
+	SYS_SET_TIME,
+	SDMMC_INSERT,
+	SDMMC_REMOVE
+} FifoSystemCommands;
+
+static void(*SDcallback)(int)=NULL;
+
+//---------------------------------------------------------------------------------
+void setSDcallback(void(*callback)(int)) {
+//---------------------------------------------------------------------------------
+	SDcallback = callback;
+}
+
+//---------------------------------------------------------------------------------
+// Handle system requests from the arm7
+//---------------------------------------------------------------------------------
+void systemValueHandler(u32 value, void* data){
+//---------------------------------------------------------------------------------
+	switch(value) {
+	case SDMMC_INSERT:
+		if(SDcallback) SDcallback(1);
+		break;
+	case SDMMC_REMOVE:
+		if(SDcallback) SDcallback(0);
+		break;
+	}
+}
+
+
+#endif
+
 //---------------------------------------------------------------------------------
 void enableSlot1() {
 //---------------------------------------------------------------------------------

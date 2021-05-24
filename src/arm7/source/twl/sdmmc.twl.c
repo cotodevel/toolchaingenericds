@@ -8,6 +8,7 @@
 //#include <nds/fifomessages.h>
 #include <stddef.h>
 #include "utilsTGDS.h"
+#include "utils.twl.h"
 
 static struct mmcdevice deviceSD;
 static struct mmcdevice deviceNAND;
