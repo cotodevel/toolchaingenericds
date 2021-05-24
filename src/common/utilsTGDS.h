@@ -156,13 +156,31 @@ extern int TGDSProjectReturnFromLinkedModule();	//resides in TGDS App caller add
 	extern void TGDSProjectReturnFromLinkedModuleDeciderStub();	//resides in TGDSLinkedModule address. Called when TGDS-LM binary exceeds 1.25M
 
 extern void TGDSProjectRunLinkedModule(char * TGDSLinkedModuleFilename, int argc, char **argv, char* TGDSProjectName);
-
 #endif
 
 #endif
 
 extern u32 getValueSafe(u32 * buf);
 extern void setValueSafe(u32 * buf, u32 val);
+
+#ifdef ARM7
+extern void sdmmcMsgHandler(int bytes, void *user_data);
+extern void sdmmcValueHandler(u32 value, void* user_data);
+#endif
+
+#ifdef TWLMODE
+extern void twlEnableSlot1();
+extern void twlDisableSlot1();
+
+#ifdef ARM9
+extern void setupTWLSDHardware(u8 DSHardware);
+#endif
+
+#endif
+
+extern bool sleepIsEnabled;
+extern bool __dsimode; // set in crt0
+extern void shutdownNDSHardware();
 
 #ifdef __cplusplus
 }

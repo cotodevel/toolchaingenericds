@@ -63,6 +63,14 @@ extern void IRQWait(uint32 irqstowait);
 extern void IRQVBlankWait();
 extern void IRQInit(u8 DSHardware);
 
+#ifdef TWLMODE
+	#ifdef ARM7
+	extern void i2cIRQHandler();
+	#endif
+	extern void irqDisableAUX(uint32 irq);
+	extern void irqEnableAUX(uint32 irq);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

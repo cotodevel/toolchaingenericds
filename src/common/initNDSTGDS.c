@@ -155,6 +155,14 @@ void initHardware(u8 DSHardware) __attribute__ ((optnone)) {
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	memcpy((u8*)&TGDSIPC->DSHeader,(u8*)0x027FFE00, sizeof(TGDSIPC->DSHeader));
 	
+	#ifdef NTRMODE
+	__dsimode = false;
+	#endif
+	
+	#ifdef TWLMODE
+	__dsimode = true;
+	#endif
+	
 	//Read DHCP settings (in order)
 	LoadFirmwareSettingsFromFlash();
 	
@@ -166,11 +174,9 @@ void initHardware(u8 DSHardware) __attribute__ ((optnone)) {
 	//Init SoundSampleContext
 	initSoundSampleContext();
 	initSound();
-	
 	#endif
 	
 	#ifdef ARM9
-	
 	//Disable mpu
 	CP15ControlRegisterDisable(CR_M);
 	
@@ -203,7 +209,7 @@ void initHardware(u8 DSHardware) __attribute__ ((optnone)) {
 	//Disable it because handling ARM7 events take extra CPU power we don't really need to use.
 	disableSleepMode();
 	
-	
+	setupTWLSDHardware(DSHardware);
 	#endif
 	
 }

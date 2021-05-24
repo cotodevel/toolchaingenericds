@@ -638,6 +638,25 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 			}
 			break;
 			
+			#ifdef TWLMODE
+			case TGDS_ARM7_REQ_SLOT1_DISABLE:{
+				disableSlot1();
+			}
+			break;
+			
+			case TGDS_ARM7_REQ_SLOT1_ENABLE:{
+				enableSlot1();
+			}
+			break;
+			
+			case TGDS_ARM7_TWL_SDMMC_INIT:{
+				fifoSetValue32Handler(FIFO_SDMMC, sdmmcValueHandler, 0);
+				fifoSetDatamsgHandler(FIFO_SDMMC, sdmmcMsgHandler, 0);
+			}
+			break;
+			
+			#endif
+			
 			#endif
 			
 			//ARM9 command handler
@@ -744,8 +763,8 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 
 #ifdef ARM7
 
-static s32 xscale, yscale;
-static s32 xoffset, yoffset;
+//static s32 xscale, yscale;
+//static s32 xoffset, yoffset;
 static u8 last_time_touched = 0;
 
 static int LastTSCPosX = 0;

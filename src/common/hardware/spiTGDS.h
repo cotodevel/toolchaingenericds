@@ -56,32 +56,9 @@ USA
 #define		BITMASK_SPI_DATA	0xff
 
 //Card SPI
-#define CARD_COMMAND   ((vu8*)0x040001A8)
-#define REG_ROMCTRL		(*(vu32*)0x040001A4)
-#define REG_AUXSPICNT	(*(vu16*)0x040001A0)
-#define REG_AUXSPICNTH	(*(vu8*)0x040001A1)
-#define REG_AUXSPIDATA	(*(vu8*)0x040001A2)
-
-#define CARD_DATA_RD   (*(vu32*)0x04100010)
-
-#define CARD_1B0       (*(vu32*)0x040001B0)
-#define CARD_1B4       (*(vu32*)0x040001B4)
-#define CARD_1B8       (*(vu16*)0x040001B8)
 #define CARD_1BA       (*(vu16*)0x040001BA)
-
-
-#define CARD_CR1_ENABLE  0x80  // in byte 1, i.e. 0x8000
-#define CARD_CR1_IRQ     0x40  // in byte 1, i.e. 0x4000
-
-// 3 bits in b10..b8 indicate something
-// read bits
-#define CARD_BUSY         (1<<31)           // when reading, still expecting incomming data?
-#define CARD_DATA_READY   (1<<23)           // when reading, CARD_DATA_RD or CARD_DATA has another word of data and is good to go
-
-#define BIT_SPICNT_IRQ (1<<14) 
 #define SPI_IRQ     (1<<14)	
 
-#define BIT_SPICNT_ENABLE (1<<15) 
 #define SPI_ENABLE  (1<<15)	
 #define BIT_SPICNT_BUSY (1<<7) 
 #define SPI_BUSY 	(1<<7) 	
@@ -126,10 +103,11 @@ USA
 //Card SPI
 #define CARD_COMMAND   ((vu8*)0x040001A8)
 #define REG_ROMCTRL		(*(vu32*)0x040001A4)
+#define REG_CARD_COMMAND	((vu8*)0x040001A8)
+#define	REG_CARD_DATA_RD	(*(vu32*)0x04100010)
 #define REG_AUXSPICNT	(*(vu16*)0x040001A0)
 #define REG_AUXSPICNTH	(*(vu8*)0x040001A1)
 #define REG_AUXSPIDATA	(*(vu8*)0x040001A2)
-
 #define CARD_DATA_RD   (*(vu32*)0x04100010)
 
 #define CARD_1B0       (*(vu32*)0x040001B0)
@@ -144,7 +122,44 @@ USA
 // read bits
 #define CARD_BUSY         (1<<31)           // when reading, still expecting incomming data?
 #define CARD_DATA_READY   (1<<23)           // when reading, CARD_DATA_RD or CARD_DATA has another word of data and is good to go
+#define CARD_ACTIVATE     (1<<31)           // when writing, get the ball rolling
+#define CARD_nRESET       (1<<29)           // value on the /reset pin (1 = high out, not a reset state, 0 = low out = in reset)
 
+#define CARD_SEC_LARGE    (1<<28)           // Use "other" secure area mode, which tranfers blocks of 0x1000 bytes at a time
+#define CARD_CLK_SLOW     (1<<27)           // Transfer clock rate (0 = 6.7MHz, 1 = 4.2MHz)
+#define CARD_BLK_SIZE(n)  (((n)&0x7)<<24)   // Transfer block size, (0 = None, 1..6 = (0x100 << n) bytes, 7 = 4 bytes)
+#define CARD_SEC_CMD      (1<<22)           // The command transfer will be hardware encrypted (KEY2)
+#define CARD_DELAY2(n)    (((n)&0x3F)<<16)  // Transfer delay length part 2
+#define CARD_SEC_SEED     (1<<15)           // Apply encryption (KEY2) seed to hardware registers
+#define CARD_SEC_EN       (1<<14)           // Security enable
+#define CARD_SEC_DAT      (1<<13)           // The data transfer will be hardware encrypted (KEY2)
+#define CARD_DELAY1(n)    ((n)&0x1FFF)      // Transfer delay length part 1
+
+// Card commands
+#define CARD_CMD_DUMMY          0x9F
+#define CARD_CMD_HEADER_READ    0x00
+#define CARD_CMD_HEADER_CHIPID  0x90
+#define CARD_CMD_ACTIVATE_BF    0x3C  // Go into blowfish (KEY1) encryption mode
+#define CARD_CMD_ACTIVATE_SEC   0x40  // Go into hardware (KEY2) encryption mode
+#define CARD_CMD_SECURE_CHIPID  0x10
+#define CARD_CMD_SECURE_READ    0x20
+#define CARD_CMD_DISABLE_SEC    0x60  // Leave hardware (KEY2) encryption mode
+#define CARD_CMD_DATA_MODE      0xA0
+#define CARD_CMD_DATA_READ      0xB7
+#define CARD_CMD_DATA_CHIPID    0xB8
+
+// SPI EEPROM COMMANDS
+#define SPI_EEPROM_WRSR   0x01
+#define SPI_EEPROM_PP     0x02	// Page Program
+#define SPI_EEPROM_READ   0x03
+#define SPI_EEPROM_WRDI   0x04  // Write disable
+#define SPI_EEPROM_RDSR   0x05  // Read status register
+#define SPI_EEPROM_WREN   0x06  // Write enable
+#define SPI_EEPROM_PW     0x0a	// Page Write
+#define SPI_EEPROM_FAST   0x0b	// Fast Read
+#define SPI_EEPROM_RDID   0x9f
+#define SPI_EEPROM_RDP    0xab	// Release from deep power down
+#define SPI_EEPROM_DPD    0xb9  // Deep power down
 
 #endif
 

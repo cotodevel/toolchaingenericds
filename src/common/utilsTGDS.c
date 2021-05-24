@@ -33,6 +33,17 @@ USA
 #include "limitsTGDS.h"
 #include "dldi.h"
 
+#ifdef TWLMODE
+
+#ifdef ARM7
+#include "i2c.h"
+#endif
+
+#endif
+
+bool sleepIsEnabled = true;
+bool __dsimode = false; // set by detecting DS model from firmware
+
 #ifdef ARM9
 #include "fatfslayerTGDS.h"
 #include "videoTGDS.h"
@@ -862,19 +873,32 @@ void TGDSProjectRunLinkedModule(char * TGDSLinkedModuleFilename, int argc, char 
 #endif
 
 //Shuts off the NDS
-void shutdownNDSHardware(){
-	#ifdef ARM7
-		int PMBitsRead = PowerManagementDeviceRead((int)POWMAN_READ_BIT);
-		PMBitsRead |= (int)(POWMAN_SYSTEM_PWR_BIT);
-		PowerManagementDeviceWrite(POWMAN_WRITE_BIT, (int)PMBitsRead);
+void shutdownNDSHardware(){	//aka systemShutDown()
+	#ifdef NTRMODE
+		#ifdef ARM7
+			int PMBitsRead = PowerManagementDeviceRead((int)POWMAN_READ_BIT);
+			PMBitsRead |= (int)(POWMAN_SYSTEM_PWR_BIT);
+			PowerManagementDeviceWrite(POWMAN_WRITE_BIT, (int)PMBitsRead);
+		#endif
+		
+		#ifdef ARM9
+			struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+			uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+			setValueSafe(&fifomsg[60], (uint32)FIFO_SHUTDOWN_DS);
+			setValueSafe(&fifomsg[61], (uint32)0);
+			SendFIFOWords(FIFO_POWERMGMT_WRITE);
+		#endif
 	#endif
 	
-	#ifdef ARM9
-		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-		setValueSafe(&fifomsg[60], (uint32)FIFO_SHUTDOWN_DS);
-		setValueSafe(&fifomsg[61], (uint32)0);
-		SendFIFOWords(FIFO_POWERMGMT_WRITE);
+	#ifdef TWLMODE
+		#ifdef ARM7
+		i2cWriteRegister(I2C_PM, I2CREGPM_RESETFLAG, 1);
+		i2cWriteRegister(I2C_PM, I2CREGPM_PWRCNT, 1);
+		#endif
+		#ifdef ARM9
+		//todo
+		#endif
+		
 	#endif
 }
 
@@ -921,3 +945,60 @@ void setValueSafe(u32 * buf, u32 val) __attribute__ ((optnone)) {
 	coherent_user_range_by_size((uint32)buf, 4);
 	#endif
 }
+
+#ifdef TWLMODE
+//---------------------------------------------------------------------------------
+void enableSlot1() {
+//---------------------------------------------------------------------------------
+	#ifdef ARM7
+	if(isDSiMode()) twlEnableSlot1();
+	#endif
+	#ifdef ARM9
+	SendFIFOWords(TGDS_ARM7_REQ_SLOT1_ENABLE);
+	#endif
+}
+
+//---------------------------------------------------------------------------------
+void disableSlot1() {
+//---------------------------------------------------------------------------------
+	#ifdef ARM7
+	if(isDSiMode()) twlDisableSlot1();
+	#endif
+	#ifdef ARM9
+	SendFIFOWords(TGDS_ARM7_REQ_SLOT1_DISABLE);
+	#endif
+}
+
+
+//---------------------------------------------------------------------------------
+void systemSleep(void) {
+//---------------------------------------------------------------------------------
+}
+
+//---------------------------------------------------------------------------------
+int sleepEnabled(void) {
+//---------------------------------------------------------------------------------
+	return -1;
+}
+
+#endif
+
+#ifdef ARM9
+void setupTWLSDHardware(u8 DSHardware){	
+	if(
+		(DSHardware != (u8)0xFF)	//DS Phat
+		&&
+		(DSHardware != (u8)0x20)	//DS Lite
+		&&
+		(DSHardware != (u8)0x43)	//iQueDS
+		&&
+		(DSHardware != (u8)0x63)	//iQueDS Lite
+		){
+		__dsimode = true;	//is TWL mode
+		SendFIFOWords(TGDS_ARM7_TWL_SDMMC_INIT);
+	}
+	else{
+		__dsimode = false;	//is NTR mode
+	}	
+}
+#endif

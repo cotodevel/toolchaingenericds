@@ -54,7 +54,9 @@ export TARGET_LIBRARY_LIBNAME_9	=	l$(TARGET_LIBRARY_NAME_9)
 export DIRS_ARM7_SRC = ../source/	\
 			../source/dswifi_arm7/	\
 			../source/xmalloc/	\
+			../source/twl/	\
 			../../common/	\
+			../../common/twl/	\
 			../../common/dswifi/	\
 			../../common/dswifi/netinet/	\
 			../../common/dswifi/sys/	\
@@ -70,8 +72,10 @@ export DIRS_ARM7_SRC = ../source/	\
 export DIRS_ARM7_HEADER = ../source/	\
 			../source/dswifi_arm7/	\
 			../source/xmalloc/	\
+			../source/twl/	\
 			../include/	\
 			../../common/	\
+			../../common/twl/	\
 			../../common/dswifi/	\
 			../../common/dswifi/netinet/	\
 			../../common/dswifi/sys/	\
@@ -98,6 +102,7 @@ export DIRS_ARM9_SRC = ../source/	\
 			../source/imadecoder/	\
 			../include/	\
 			../../common/	\
+			../../common/twl/	\
 			../../common/dswifi/	\
 			../../common/dswifi/netinet/	\
 			../../common/dswifi/sys/	\
@@ -122,6 +127,7 @@ export DIRS_ARM9_HEADER = ../source/	\
 			../source/imadecoder/	\
 			../include/	\
 			../../common/	\
+			../../common/twl/	\
 			../../common/dswifi/	\
 			../../common/dswifi/netinet/	\
 			../../common/dswifi/sys/	\

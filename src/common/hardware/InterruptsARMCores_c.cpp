@@ -37,6 +37,15 @@ USA
 #include "soundTGDS.h"
 #include "dldi.h"
 
+#ifdef TWLMODE
+#include "utils.twl.h"
+
+#ifdef ARM7
+#include "i2c.h"
+#endif
+
+#endif
+
 void IRQInit(u8 DSHardware) __attribute__ ((optnone)) {
 	
 	//NTR
@@ -89,9 +98,14 @@ void IRQInit(u8 DSHardware) __attribute__ ((optnone)) {
 	}
 	//TWL 
 	else if(DSHardware == 0x57){
-		#ifdef TWLMODE
+		#ifdef TWLMODE			
 			#ifdef ARM7
-			//TWL ARM7 IRQ Init code goes here...
+			if (isDSiMode()) {
+				REG_AUXIE = 0;
+				REG_AUXIF = ~0;
+				
+				irqEnableAUX(IRQ_I2C);	
+			}
 			#endif
 			
 			#ifdef ARM9
@@ -313,6 +327,13 @@ void NDS_IRQHandler() __attribute__ ((optnone)) {
 		SendFIFOWords(FIFO_IRQ_LIDHASOPENED_SIGNAL);
 		screenLidHasOpenedhandlerUser();
 	}
+	
+	#ifdef TWLMODE
+	if(handledIRQ & IRQ_I2C){
+		i2cIRQHandler();
+	}
+	#endif
+	
 	#endif
 	REG_IF = handledIRQ;
 }
@@ -324,3 +345,44 @@ void EnableIrq(uint32 IRQ){
 void DisableIrq(uint32 IRQ){
 	REG_IE	&=	~(IRQ);
 }
+
+#ifdef TWLMODE
+	#ifdef ARM7
+	//---------------------------------------------------------------------------------
+	TWL_CODE void i2cIRQHandler() {
+	//---------------------------------------------------------------------------------
+		int cause = (i2cReadRegister(I2C_PM, I2CREGPM_PWRIF) & 0x3) | (i2cReadRegister(I2C_GPIO, 0x02)<<2);
+
+		switch (cause & 3) {
+			case 1:{
+				/*
+				if (__powerbuttonCB) {
+					__powerbuttonCB();
+				} 
+				else {
+				*/
+					i2cWriteRegister(I2C_PM, I2CREGPM_RESETFLAG, 1);
+					i2cWriteRegister(I2C_PM, I2CREGPM_PWRCNT, 1);
+				//}
+			}
+			break;
+			case 2:{
+				shutdownNDSHardware(); //todo: maybe this call doesn't work in TWL mode? writePowerManagement(PM_CONTROL_REG,PM_SYSTEM_PWR);
+			}
+			break;
+		}
+	}
+	
+	//---------------------------------------------------------------------------------
+	TWL_CODE void irqDisableAUX(uint32 irq) {
+	//---------------------------------------------------------------------------------
+		REG_AUXIE &= ~irq;
+	}
+
+	//---------------------------------------------------------------------------------
+	TWL_CODE void irqEnableAUX(uint32 irq) {
+	//---------------------------------------------------------------------------------
+		REG_AUXIE |= irq;
+	}
+	#endif
+#endif

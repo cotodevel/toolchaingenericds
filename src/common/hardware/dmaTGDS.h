@@ -35,6 +35,7 @@ USA
 
 #define 	DMA16BIT   	(uint32)(0 << 26)	//aka DMA_16_BIT or COPY_MODE_HWORD
 #define 	DMA32BIT   	(uint32)(1 << 26)	//aka DMA_32_BIT or COPY_MODE_WORD 
+#define 	DMA_REPEAT      (1 << 25)
 
 #define 	COPY_FIXED_SOURCE (uint32)(1<<24)	//aka COPY_MODE_FILL
 #define 	COPY_SRCDEST_DMA (uint32)(0)		//aka COPY_MODE_COPY
@@ -45,7 +46,7 @@ USA
 #define 	DMA_FIFO	((1<<31) | (1<<26)  | (1<<22) | (7<<27)) //#define		DMASTART_SPECIAL	(uint32)(3<<(16+12))
 
 #define		DMAENABLED	(uint32)(1<<(16+15))	//DMAs disable itself when transfer done	//aka DMA_BUSY	//aka DMA_ENABLE
-
+#define 	DMA_START_CARD  (5<<27)
 #define 	DMARAISEIRQ     (uint32)(1<<(16+14))	//DMAs will raise a DMA IRQ when Word Count fed (transfer) is complete
 
 //word count

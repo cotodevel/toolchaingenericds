@@ -99,6 +99,12 @@ extern "C"{
 #ifdef ARM7
 extern void doSPIARM7IO();	//Internal: ARM7 Only. Requires to be called on interrupts
 extern void touchReadXY(touchPosition *touchPos);
+extern bool touchPenDown();
+
+extern bool touchInit;
+extern s32 xscale, yscale;
+extern s32 xoffset, yoffset;
+
 #endif
 
 #ifdef __cplusplus

@@ -80,7 +80,7 @@ USA
 #define IME_DISABLE	(uint32)(0)
 #define IME_ENABLE	(uint32)(1)
 
-#define REG_DISPSTAT	DISPSTAT
+#define	REG_DISPSTAT	(*(vu16*)0x04000004)
 #define REG_DISPCNT		DISPCNT
 #define REG_DISPCNT_SUB		DISPCNT2
 
@@ -99,8 +99,9 @@ USA
 
 ////////////
 
+//!	Current display scanline.
+#define	REG_VCOUNT		(*(vu16*)0x4000006)
 
-#define REG_VCOUNT	VCOUNT
 #define		CART		((uint16 *) 0x08000000)
 #define		DISPCNT2	(*((uint32 volatile *) 0x04001000))
 #define		DISPSTAT2	(*((uint16 volatile *) 0x04001004))
@@ -428,6 +429,32 @@ USA
 
 #endif
 //ARM7 END
+
+
+
+#ifdef TWLMODE
+
+#define TWL_CODE	__attribute__((section(".twl")))
+#define TWL_DATA	__attribute__((section(".twl")))
+#define TWL_BSS		__attribute__((section(".twl_bss")))
+
+
+#define REG_SCFG_ROM		*(vu16*)0x4004000
+
+#ifdef ARM7
+#define REG_SCFG_A9ROM		*(vu8*)0x4004000
+#define REG_SCFG_A7ROM		*(vu8*)0x4004001  // ??
+
+#define REG_CONSOLEID	(*(vu64*)0x04004D00)
+
+#endif
+
+#define REG_SCFG_CLK		*(vu16*)0x4004004
+#define REG_SCFG_RST		*(vu16*)0x4004006
+#define REG_SCFG_EXT		*(vu32*)0x4004008
+#define REG_SCFG_MC			*(vu16*)0x4004010
+
+#endif
 
 // End of file!
 #endif
