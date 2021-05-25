@@ -187,7 +187,6 @@ void initHardware(u8 DSHardware) __attribute__ ((optnone)) {
 	//Hardware ARM9 Init
 	resetMemory_ARMCores(DSHardware);
 	IRQInit(DSHardware);
-	setupTWLSDHardware(DSHardware);
 	
 	#ifdef TWLMODE
 	setCpuClock(true);
@@ -208,6 +207,7 @@ void initHardware(u8 DSHardware) __attribute__ ((optnone)) {
 	TryToDefragmentMemory();
 	
 	fifoInit();
+	setupTWLSDHardware(DSHardware);
 	
 	//Enable TSC
 	setTouchScreenEnabled(true);	

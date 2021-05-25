@@ -92,6 +92,8 @@ bool sdio_Shutdown() {
 	return true;
 }
 
+
+//__io_dsisd is mapped to DLDI format. Thus DLDI calls must be called from __io_dsisd in TWLmode rather than default DLDI
 const struct DISC_INTERFACE_STRUCT __io_dsisd = {
 	DEVICE_TYPE_DSI_SD,
 	FEATURE_MEDIUM_CANREAD | FEATURE_MEDIUM_CANWRITE,

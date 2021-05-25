@@ -650,6 +650,7 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 			}
 			break;
 			
+			//Inits DSi SD driver
 			case TGDS_ARM7_TWL_SDMMC_INIT:{
 				fifoSetValue32Handler(FIFO_SDMMC, sdmmcValueHandler, 0);
 				fifoSetDatamsgHandler(FIFO_SDMMC, sdmmcMsgHandler, 0);
