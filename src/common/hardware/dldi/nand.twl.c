@@ -37,7 +37,7 @@ bool nand_ReadSectors(sec_t sector, sec_t numSectors,void* buffer) {
 //---------------------------------------------------------------------------------
 	FifoMessage msg;
 
-	coherent_user_range(buffer,numSectors * 512);
+	coherent_user_range((uint32)buffer, numSectors * 512);
 
 	msg.type = SDMMC_NAND_READ_SECTORS;
 	msg.sdParams.startsector = sector;
@@ -58,7 +58,7 @@ bool nand_WriteSectors(sec_t sector, sec_t numSectors,const void* buffer) {
 //---------------------------------------------------------------------------------
 	FifoMessage msg;
 
-	coherent_user_range(buffer,numSectors * 512);
+	coherent_user_range((uint32)buffer, numSectors * 512);
 
 	msg.type = SDMMC_NAND_WRITE_SECTORS;
 	msg.sdParams.startsector = sector;

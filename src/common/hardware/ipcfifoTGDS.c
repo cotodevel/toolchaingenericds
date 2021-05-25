@@ -29,6 +29,7 @@ USA
 #include "libndsFIFO.h"
 #include "loader.h"	//TGDS-multiboot reload NDS Binary ability
 #include "dldi.h"
+#include "initNDSTGDS.h"
 
 #ifdef ARM7
 #include <string.h>

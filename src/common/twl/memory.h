@@ -40,9 +40,9 @@
 #define REG_EXMEMSTAT (*(vu16*)0x04000204)
 #endif
 
-#define ARM7_MAIN_RAM_PRIORITY BIT(15)
-#define ARM7_OWNS_CARD BIT(11)
-#define ARM7_OWNS_ROM  BIT(7)
+#define ARM7_MAIN_RAM_PRIORITY (1 << 15)
+#define ARM7_OWNS_CARD (1 << 11)
+#define ARM7_OWNS_ROM  (1 << 7)
 
 #define REG_MBK1 ((vu8*)0x04004040) /* WRAM_A 0..3 */
 #define REG_MBK2 ((vu8*)0x04004044) /* WRAM_B 0..3 */

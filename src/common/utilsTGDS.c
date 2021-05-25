@@ -39,6 +39,8 @@ USA
 #include "i2c.h"
 #endif
 
+#include "utils.twl.h"
+
 #endif
 
 bool sleepIsEnabled = true;
@@ -731,7 +733,7 @@ void mainARGV(){
 						strcpy(thisArgv[i], thisARGV2);
 						
 						//build the command line vector
-						cmdLineVectorPosixCompatible[i] = &thisArgv[i];
+						cmdLineVectorPosixCompatible[i] = (char *)&thisArgv[i];
 					}
 					
 					argCount++;
@@ -819,7 +821,7 @@ int getArgcFromTGDSLinkedModule(struct TGDS_Linked_Module * TGDSLMCtx){
 }
 
 char ** getArgvFromTGDSLinkedModule(struct TGDS_Linked_Module * TGDSLMCtx){
-	return &TGDSLMCtx->argvs;
+	return (char **)&TGDSLMCtx->argvs;
 }
 
 //Usage: char * TGDSLinkedModuleFilename = "0:/ToolchainGenericDS-linkedmodule.bin"

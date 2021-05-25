@@ -32,6 +32,7 @@
 #include "ipcfifoTGDS.h"
 #include "memory.h"
 #include "nds_cp15_misc.h"
+#include "libndsFIFO.h"
 //---------------------------------------------------------------------------------
 void readFirmware(u32 address, void *buffer, u32 length) {
 //---------------------------------------------------------------------------------
@@ -47,7 +48,7 @@ void readFirmware(u32 address, void *buffer, u32 length) {
 
 	while(!fifoCheckValue32(FIFO_FIRMWARE));
 	fifoGetValue32(FIFO_FIRMWARE);
-	DC_InvalidateRange(buffer,length);
+	coherent_user_range((uint32)buffer, length);
 
 }	
 
@@ -56,7 +57,7 @@ int writeFirmware(u32 address, void *buffer, u32 length) {
 //---------------------------------------------------------------------------------
 
 	if ( ((address & 0xff) != 0) || ((length  & 0xff) != 0)) return -1;
-	coherent_user_range(buffer,length);
+	coherent_user_range((uint32)buffer, length);
 
 	FifoMessage msg;
 

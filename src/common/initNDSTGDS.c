@@ -47,6 +47,10 @@ USA
 #include "dldi.h"
 #endif
 
+#ifdef TWLMODE
+#include "utils.twl.h"
+#endif
+
 void resetMemory_ARMCores(u8 DSHardware) __attribute__ ((optnone)) {
 	
 	//cmp r0, #0xFF		@DS Phat

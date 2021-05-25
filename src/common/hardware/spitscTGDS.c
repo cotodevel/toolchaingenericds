@@ -366,8 +366,8 @@ void touchReadXY(touchPosition *touchPos) {
 		touchInit = true;
 	}
 	
-	sint16 dist_max_y, dist_max_x, dist_max;
-	u8 error, error_where, first_check, i;
+	sint16 dist_max_y=0, dist_max_x=0, dist_max=0;
+	u8 error=0, error_where=0, first_check=0, i=0;
 		
 	#ifdef TWLMODE
 	if (cdcIsAvailable()) {	//TWL Mode

@@ -37,6 +37,7 @@ extern "C" {
 #endif
 
 #include <serial.h>
+#include "spiTGDS.h"
 #include "utils.twl.h"
 #include "utilsTGDS.h"
 #include "touch.h"

@@ -1,4 +1,6 @@
 #ifdef TWLMODE
+#ifdef ARM7
+
 /*---------------------------------------------------------------------------------
 
 	Copyright (C) 2005 - 2010
@@ -31,6 +33,7 @@
 #include "spiTGDS.h"
 #include "utils.twl.h"
 #include "dmaTGDS.h"
+#include "serial.h"
 
 //---------------------------------------------------------------------------------
 u8 cardEepromCommand(u8 command) {
@@ -310,4 +313,5 @@ void cardEepromSectorErase(uint32 address) {
 		} while (REG_AUXSPIDATA & 0x01);  // WIP (Write In Progress) ?
 		REG_AUXSPICNT = /*MODE*/0x40;
 }
+#endif
 #endif

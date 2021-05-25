@@ -9,6 +9,7 @@
 #include <stddef.h>
 #include "utilsTGDS.h"
 #include "utils.twl.h"
+#include "libndsFIFO.h"
 
 static struct mmcdevice deviceSD;
 static struct mmcdevice deviceNAND;

@@ -42,7 +42,7 @@ bool sdio_ReadSectors(sec_t sector, sec_t numSectors,void* buffer) {
 //---------------------------------------------------------------------------------
 	FifoMessage msg;
 
-	coherent_user_range(buffer,numSectors * 512);
+	coherent_user_range((uint32)buffer, numSectors * 512);
 
 	msg.type = SDMMC_SD_READ_SECTORS;
 	msg.sdParams.startsector = sector;
@@ -63,7 +63,7 @@ bool sdio_WriteSectors(sec_t sector, sec_t numSectors,const void* buffer) {
 //---------------------------------------------------------------------------------
 	FifoMessage msg;
 
-	coherent_user_range(buffer,numSectors * 512);
+	coherent_user_range((uint32)buffer, numSectors * 512);
 
 	msg.type = SDMMC_SD_WRITE_SECTORS;
 	msg.sdParams.startsector = sector;

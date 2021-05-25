@@ -171,6 +171,8 @@ extern void sdmmcValueHandler(u32 value, void* user_data);
 #ifdef TWLMODE
 extern void twlEnableSlot1();
 extern void twlDisableSlot1();
+extern void disableSlot1();
+extern void enableSlot1();
 
 #ifdef ARM9
 extern void setupTWLSDHardware(u8 DSHardware);

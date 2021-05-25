@@ -39,7 +39,6 @@
 
 // 'Networking'
 #define REG_RCNT	(*(vu16*)0x04000134)
-#define REG_KEYXY	(*(vu16*)0x04000136)
 #define RTC_CR		(*(vu16*)0x04000138)
 #define RTC_CR8		(*( vu8*)0x04000138)
 
@@ -57,10 +56,14 @@
 #define SIO_MULTI_3     (*(vu16*)0x04000126)
 #define SIO_MULTI_SEND  (*(vu16*)0x0400012A)
 
+//REG_AUXSPICNT
+#define CARD_ENABLE			(1<<15)
+#define CARD_SPI_ENABLE		(1<<13)
+#define CARD_SPI_BUSY		(1<<7)
+#define CARD_SPI_HOLD		(1<<6)
 
-// SPI chain registers
-#define REG_SPICNT      (*(vu16*)0x040001C0)
-#define REG_SPIDATA     (*(vu16*)0x040001C2)
+#define CARD_SPICNTH_ENABLE  (1<<7)  // in byte 1, i.e. 0x8000
+#define CARD_SPICNTH_IRQ     (1<<6)  // in byte 1, i.e. 0x4000
 
 // meh
 #define SPI_BAUD_4MHz    0
@@ -79,15 +82,6 @@
 #define SPI_DEVICE_TOUCH      (2 << 8)
 #define SPI_DEVICE_MICROPHONE (2 << 8)
 
-// When used, the /CS line will stay low after the transfer ends
-// i.e. when we're part of a continuous transfer
-#define SPI_CONTINUOUS       BIT(11)
-
-// Fixme: does this stuff really belong in serial.h?
-
-
-// Fixme: does this stuff really belong in serial.h?
-
 // Firmware commands
 #define FIRMWARE_WREN 0x06
 #define FIRMWARE_WRDI 0x04
@@ -102,12 +96,11 @@
 #define FIRMWARE_DP   0xB9
 #define FIRMWARE_RDP  0xAB
 
-/*
-static inline
-void SerialWaitBusy() {
-	while (REG_SPICNT & SPI_BUSY);
+//---------------------------------------------------------------------------------
+static inline void eepromWaitBusy() {
+//---------------------------------------------------------------------------------
+	while (REG_AUXSPICNT & CARD_SPI_BUSY);
 }
-*/
 
 // Read the firmware
 void readFirmware(u32 address, void * destination, u32 size);

@@ -4,11 +4,14 @@
 #include "dldi.h"
 #include "dmaTGDS.h"
 #include "busTGDS.h"
+#include "biosTGDS.h"
 #include "ipcfifoTGDS.h"
 #include "global_settings.h"
+#include "utilsTGDS.h"
 
 #ifdef TWLMODE
 #include "memory.h"
+#include "utils.twl.h"
 #endif
 
 #ifdef ARM9
