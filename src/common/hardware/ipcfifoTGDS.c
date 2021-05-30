@@ -464,6 +464,14 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 					initARM7Malloc(ARM7MallocStartaddress, ARM7MallocSize);
 				}
 				
+				#ifdef TWLMODE
+				//Inits DSi SD driver (separate from DLDI)
+				if(__dsimode == true){
+					fifoSetValue32Handler(FIFO_SDMMC, sdmmcValueHandler, 0);
+					fifoSetDatamsgHandler(FIFO_SDMMC, sdmmcMsgHandler, 0);
+				}
+				#endif
+				
 				setValueSafe(&fifomsg[42], (uint32)0);
 				setValueSafe(&fifomsg[43], (uint32)0);
 				setValueSafe(&fifomsg[44], (uint32)0);
@@ -647,13 +655,6 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 			
 			case TGDS_ARM7_REQ_SLOT1_ENABLE:{
 				enableSlot1();
-			}
-			break;
-			
-			//Inits DSi SD driver
-			case TGDS_ARM7_TWL_SDMMC_INIT:{
-				fifoSetValue32Handler(FIFO_SDMMC, sdmmcValueHandler, 0);
-				fifoSetDatamsgHandler(FIFO_SDMMC, sdmmcMsgHandler, 0);
 			}
 			break;
 			

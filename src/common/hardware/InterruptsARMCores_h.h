@@ -56,8 +56,8 @@ extern 	void IpcSynchandlerUser(uint8 ipcByte);
 //weak symbols end
 
 extern uint32 getIRQs();
-extern void EnableIrq(uint32 IRQ);
-extern void DisableIrq(uint32 IRQ);
+extern void irqEnable(uint32 IRQ);
+extern void irqDisable(uint32 IRQ);
 extern void NDS_IRQHandler();	//Actual Interrupt Handler
 extern void IRQWait(uint32 irqstowait);
 extern void IRQVBlankWait();

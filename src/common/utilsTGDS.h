@@ -174,10 +174,6 @@ extern void twlDisableSlot1();
 extern void disableSlot1();
 extern void enableSlot1();
 
-#ifdef ARM9
-extern void setupTWLSDHardware(u8 DSHardware);
-#endif
-
 #endif
 
 extern bool sleepIsEnabled;

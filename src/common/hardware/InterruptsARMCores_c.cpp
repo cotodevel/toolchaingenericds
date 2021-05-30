@@ -48,6 +48,35 @@ USA
 
 void IRQInit(u8 DSHardware) __attribute__ ((optnone)) {
 	
+	#ifdef ARM9
+	//DrainWrite
+	DrainWriteBuffer();
+	#endif
+	
+	//FIFO IRQ Init
+	REG_IE = 0;
+	REG_IF = ~0;
+	REG_IME = 0;
+	
+	//FIFO IRQ Init
+	REG_IPC_SYNC = (1 << 14);	//14    R/W  Enable IRQ from remote CPU  (0=Disable, 1=Enable)
+	REG_IPC_FIFO_CR = IPC_FIFO_SEND_CLEAR | RECV_FIFO_IPC_IRQ  | FIFO_IPC_ENABLE;
+	
+	//Set up PPU IRQ: HBLANK/VBLANK/VCOUNT
+	REG_DISPSTAT = (DISP_HBLANK_IRQ | DISP_VBLANK_IRQ | DISP_YTRIGGER_IRQ);
+	
+	//Set up PPU IRQ Vertical Line
+	setVCountIRQLine(TGDS_VCOUNT_LINE_INTERRUPT);
+	
+	volatile uint32 interrupts_to_wait_armX = 0;	
+	#ifdef ARM7
+	interrupts_to_wait_armX = IRQ_TIMER1 | IRQ_HBLANK | IRQ_VBLANK | IRQ_VCOUNT | IRQ_IPCSYNC | IRQ_RECVFIFO_NOT_EMPTY | IRQ_SCREENLID;
+	#endif
+	
+	#ifdef ARM9
+	interrupts_to_wait_armX = IRQ_HBLANK| IRQ_VBLANK | IRQ_VCOUNT | IRQ_IPCSYNC | IRQ_RECVFIFO_NOT_EMPTY;
+	#endif
+	
 	//NTR
 	if(
 		(DSHardware == 0xFF)
@@ -58,61 +87,29 @@ void IRQInit(u8 DSHardware) __attribute__ ((optnone)) {
 		||
 		(DSHardware == 0x63)
 	){
-		#ifdef NTRMODE
-			//FIFO IRQ Init
-			REG_IF = REG_IF;
-			REG_IE = 0;
-			REG_IME = 0;
-			
-			#ifdef ARM9
-			//DrainWrite
-			DrainWriteBuffer();
-			#endif
-			
-			//FIFO IRQ Init
-			REG_IPC_SYNC = (1 << 14);	//14    R/W  Enable IRQ from remote CPU  (0=Disable, 1=Enable)
-			REG_IPC_FIFO_CR = IPC_FIFO_SEND_CLEAR | RECV_FIFO_IPC_IRQ  | FIFO_IPC_ENABLE;
-			
-			//Set up PPU IRQ: HBLANK/VBLANK/VCOUNT
-			REG_DISPSTAT = (DISP_HBLANK_IRQ | DISP_VBLANK_IRQ | DISP_YTRIGGER_IRQ);
-			
-			//Set up PPU IRQ Vertical Line
-			setVCountIRQLine(TGDS_VCOUNT_LINE_INTERRUPT);
-			
-			volatile uint32 interrupts_to_wait_armX = 0;
-			
-			#ifdef ARM7
-			interrupts_to_wait_armX = IRQ_TIMER1 | IRQ_HBLANK | IRQ_VBLANK | IRQ_VCOUNT | IRQ_IPCSYNC | IRQ_RECVFIFO_NOT_EMPTY | IRQ_SCREENLID;
-			#endif
-			
-			#ifdef ARM9
-			interrupts_to_wait_armX = IRQ_HBLANK| IRQ_VBLANK | IRQ_VCOUNT | IRQ_IPCSYNC | IRQ_RECVFIFO_NOT_EMPTY;
-			#endif
-			
-			REG_IE = interrupts_to_wait_armX; 
-			
-			INTERRUPT_VECTOR = (uint32)&NDS_IRQHandler;
-			REG_IME = 1;
-		#endif
-		
+		__dsimode = false;
 	}
 	//TWL 
 	else if(DSHardware == 0x57){
-		#ifdef TWLMODE			
+		__dsimode = true;
+		#ifdef TWLMODE
 			#ifdef ARM7
-			if (isDSiMode()) {
-				REG_AUXIE = 0;
-				REG_AUXIF = ~0;
-				
-				irqEnableAUX(IRQ_I2C);	
-			}
+			//TWL ARM7 IRQ Init
+			REG_AUXIE = 0;
+			REG_AUXIF = ~0;
+			irqEnableAUX(IRQ_I2C);
 			#endif
 			
 			#ifdef ARM9
-			//TWL ARM9 IRQ Init code goes here...
+			//TWL ARM9 IRQ Init
 			#endif
 		#endif
 	}
+	
+	REG_IE = interrupts_to_wait_armX; 
+	
+	INTERRUPT_VECTOR = (uint32)&NDS_IRQHandler;
+	REG_IME = 1;
 }
 
 #ifdef ARM7
@@ -125,6 +122,11 @@ __attribute__((section(".itcm")))
 #endif
 void NDS_IRQHandler() __attribute__ ((optnone)) {
 	u32 handledIRQ = (REG_IF | SWI_CHECKBITS) & REG_IE;
+	
+	#ifdef TWLMODE
+	u32 handledIRQAUX = (REG_AUXIF | SWI_CHECKBITS) & REG_AUXIE;
+	#endif
+	
 	if(handledIRQ & IRQ_HBLANK){
 		HblankUser();
 	}
@@ -322,27 +324,26 @@ void NDS_IRQHandler() __attribute__ ((optnone)) {
 		SendFIFOWords(FIFO_IRQ_LIDHASOPENED_SIGNAL);
 		screenLidHasOpenedhandlerUser();
 	}
-
-	if(handledIRQ & IRQ_SCREENLID){
-		SendFIFOWords(FIFO_IRQ_LIDHASOPENED_SIGNAL);
-		screenLidHasOpenedhandlerUser();
-	}
 	
 	#ifdef TWLMODE
-	if(handledIRQ & IRQ_I2C){
+	if(handledIRQAUX & IRQ_I2C){
 		i2cIRQHandler();
 	}
 	#endif
 	
 	#endif
 	REG_IF = handledIRQ;
+	
+	#ifdef TWLMODE
+	REG_AUXIF = handledIRQAUX;
+	#endif
 }
 
-void EnableIrq(uint32 IRQ){
+void irqEnable(uint32 IRQ){
 	REG_IE	|=	IRQ;
 }
 
-void DisableIrq(uint32 IRQ){
+void irqDisable(uint32 IRQ){
 	REG_IE	&=	~(IRQ);
 }
 

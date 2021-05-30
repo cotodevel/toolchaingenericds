@@ -159,14 +159,6 @@ void initHardware(u8 DSHardware) __attribute__ ((optnone)) {
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	memcpy((u8*)&TGDSIPC->DSHeader,(u8*)0x027FFE00, sizeof(TGDSIPC->DSHeader));
 	
-	#ifdef NTRMODE
-	__dsimode = false;
-	#endif
-	
-	#ifdef TWLMODE
-	__dsimode = true;
-	#endif
-	
 	//Read DHCP settings (in order)
 	LoadFirmwareSettingsFromFlash();
 	
@@ -207,7 +199,6 @@ void initHardware(u8 DSHardware) __attribute__ ((optnone)) {
 	TryToDefragmentMemory();
 	
 	fifoInit();
-	setupTWLSDHardware(DSHardware);
 	
 	//Enable TSC
 	setTouchScreenEnabled(true);	
@@ -217,7 +208,6 @@ void initHardware(u8 DSHardware) __attribute__ ((optnone)) {
 	
 	//Disable it because handling ARM7 events take extra CPU power we don't really need to use.
 	disableSleepMode();
-	
 	#endif
 	
 }

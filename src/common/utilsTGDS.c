@@ -1025,23 +1025,3 @@ int sleepEnabled(void) {
 }
 
 #endif
-
-#ifdef ARM9
-void setupTWLSDHardware(u8 DSHardware){	
-	if(
-		(DSHardware != (u8)0xFF)	//DS Phat
-		&&
-		(DSHardware != (u8)0x20)	//DS Lite
-		&&
-		(DSHardware != (u8)0x43)	//iQueDS
-		&&
-		(DSHardware != (u8)0x63)	//iQueDS Lite
-		){
-		__dsimode = true;	//is TWL mode
-		SendFIFOWords(TGDS_ARM7_TWL_SDMMC_INIT);
-	}
-	else{
-		__dsimode = false;	//is NTR mode
-	}	
-}
-#endif
