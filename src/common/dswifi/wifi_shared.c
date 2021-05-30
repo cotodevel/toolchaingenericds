@@ -28,7 +28,7 @@ void DeInitWIFI(){
 	#ifdef ARM9
 	Wifi_DisconnectAP();
 	Wifi_DisableWifi();
-	DisableIrq(IRQ_TIMER3);
+	irqDisable(IRQ_TIMER3);
 	Wifi_SetSyncHandler(NULL);
 	if(WifiData != NULL){
 		memset((void *)WifiData, 0, sizeof(Wifi_MainStruct));

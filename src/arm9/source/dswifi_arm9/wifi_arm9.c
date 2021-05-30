@@ -1099,7 +1099,7 @@ bool Wifi_InitDefault(bool useFirmwareSettings) {
 	
 	if(!wifi_pass) return false;
 
-	EnableIrq(IRQ_TIMER3);
+	irqEnable(IRQ_TIMER3);
 
 	Wifi_SetSyncHandler(arm9_synctoarm7); // tell wifi lib to use our handler to notify arm7
 

@@ -69,10 +69,10 @@ void initNiFi(){
 	Wifi_SetChannel(10);
 	
 	if(1){
-		DisableIrq(IRQ_TIMER3);
+		irqDisable(IRQ_TIMER3);
 		TIMERXDATA(3) = -1310; // 1310 * 256 cycles = ~10ms;
 		TIMERXCNT(3) = 0x00C2; // enable, irq, 1/256 clock
-		EnableIrq(IRQ_TIMER3);
+		irqEnable(IRQ_TIMER3);
 	}
 	Wifi_EnableWifi();
 }

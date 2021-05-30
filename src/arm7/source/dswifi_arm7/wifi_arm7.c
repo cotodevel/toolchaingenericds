@@ -1731,7 +1731,7 @@ void Wifi_SetSyncHandler(WifiSyncHandler sh) {
 }
 
 void wifiAddressHandler( void * address, void * userdata )  __attribute__ ((optnone)) {
-	EnableIrq(IRQ_WIFI);
+	irqEnable(IRQ_WIFI);
 	Wifi_Init((uint32)address);
 }
 
