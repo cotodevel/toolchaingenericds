@@ -27,29 +27,13 @@ USA
 
 //Interrupt Routines
 #ifdef ARM7
-
-	#ifdef EXCEPTION_VECTORS_0x00000000
-	//todo: replace projects that their own exception vectors @ 0x00000000 methods for raising exceptions
-	#endif
-	
-	#ifdef EXCEPTION_VECTORS_0xffff0000
-		#define INTERRUPT_VECTOR *((uint32*)&_arm7_irqhandler)
-		#define SWI_CHECKBITS *((uint32*)&_arm7_irqcheckbits)
-	#endif
-	
+	#define INTERRUPT_VECTOR *((uint32*)&_arm7_irqhandler)
+	#define SWI_CHECKBITS *((uint32*)&_arm7_irqcheckbits)
 #endif
 
 #ifdef ARM9
-
-	#ifdef EXCEPTION_VECTORS_0x00000000
-	//todo: replace projects that their own exception vectors @ 0x00000000 methods for raising exceptions
-	#endif
-	
-	#ifdef EXCEPTION_VECTORS_0xffff0000
-		#define INTERRUPT_VECTOR *((uint32*)&_arm9_irqhandler)
-		#define SWI_CHECKBITS *((uint32*)&_arm9_irqcheckbits)
-	#endif
-	
+	#define INTERRUPT_VECTOR *((uint32*)&_arm9_irqhandler)
+	#define SWI_CHECKBITS *((uint32*)&_arm9_irqcheckbits)
 #endif
 
 #endif
