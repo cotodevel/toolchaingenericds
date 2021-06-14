@@ -235,7 +235,7 @@ void initHardware(u8 DSHardware) __attribute__ ((optnone)) {
 	
 	*(u32*)0x04004008 = SFGEXT9;
 	
-	setCpuClock(true);
+	setCpuClock(false);	//true: 133Mhz / false: 66Mhz (TWL Mode only)
 	#endif
 	
 	//Disable mpu
