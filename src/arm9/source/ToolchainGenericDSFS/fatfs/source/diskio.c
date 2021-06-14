@@ -63,15 +63,12 @@ DSTATUS disk_initialize (
 		ret = (!(sdmmcInitResult & 2)) ? 0 : STA_NOINIT;
 		*/
 		
-		//DS
-		if(pdrv == DLDICART){
-			//DS/DSi DLDI init
-			if(dldi_handler_init() == true){	//Init DLDI: ARM9 version
-				ret = 0;	//init OK!
-			}
-			else{
-				ret = STA_NOINIT;
-			}
+		//DS/DSi DLDI init
+		if(dldi_handler_init() == true){	//Init DLDI: ARM9 version
+			ret = 0;	//init OK!
+		}
+		else{
+			ret = STA_NOINIT;
 		}
 		
 	return ret;

@@ -180,7 +180,7 @@ void initHardware(u8 DSHardware) __attribute__ ((optnone)) {
 	//3-6   Unused (0)
 	//7     Revised Card Interface Circuit (0=NITRO, 1=Revised) (set via ARM9) (R)
 	//8     Extended ARM7 Interrupts      (0=NITRO, 1=Extended) (4000218h) = TWL
-	//9     Extended SPI Clock (8MHz)     (0=NITRO, 1=Extended) (40001C0h) = NTR
+	//9     Extended SPI Clock (8MHz)     (0=NITRO, 1=Extended) (40001C0h) = TWL
 	//10    Extended Sound DMA        ?   (0=NITRO, 1=Extended) (?) = NTR
 
 	
@@ -197,13 +197,13 @@ void initHardware(u8 DSHardware) __attribute__ ((optnone)) {
 	SFGEXT7 = (SFGEXT7 & ~(0x1 << 8)) | (0x1 << 8);
 	
 	//Extended SPI Clock (8MHz)     (0=NITRO, 1=Extended) (40001C0h)
-	SFGEXT7 = (SFGEXT7 & ~(0x1 << 9)) | (0x0 << 9);
+	SFGEXT7 = (SFGEXT7 & ~(0x1 << 9)) | (0x1 << 9);
 	
 	//Extended Sound DMA        ?   (0=NITRO, 1=Extended) (?)
 	SFGEXT7 = (SFGEXT7 & ~(0x1 << 10)) | (0x0 << 10);
 	
 	//Access to New DMA Controller   (0=Disable, 1=Enable) (40041xxh)
-	SFGEXT7 = (SFGEXT7 & ~(0x1 << 16)) | (0x0 << 16);
+	SFGEXT7 = (SFGEXT7 & ~(0x1 << 16)) | (0x1 << 16);
 	
 	//Access to 2nd NDS Cart Slot   (0=Disable, 1=Enable)	(set via ARM7)
 	SFGEXT7 = (SFGEXT7 & ~(0x1 << 24)) | (0x0 << 24);
@@ -231,7 +231,7 @@ void initHardware(u8 DSHardware) __attribute__ ((optnone)) {
 	SFGEXT9 = (SFGEXT9 & ~(0x3 << 14)) | (0x0 << 14);
 	
 	//Access to New DMA Controller   (0=Disable, 1=Enable) (40041xxh)
-	SFGEXT9 = (SFGEXT9 & ~(0x1 << 16)) | (0x0 << 16);
+	SFGEXT9 = (SFGEXT9 & ~(0x1 << 16)) | (0x1 << 16);
 	
 	*(u32*)0x04004008 = SFGEXT9;
 	

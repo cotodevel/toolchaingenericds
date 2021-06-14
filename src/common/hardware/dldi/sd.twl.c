@@ -44,7 +44,7 @@ bool sdio_ReadSectors(sec_t sector, sec_t numSectors,void* buffer) __attribute__
 	return false;
 	#endif
 	#ifdef TWLMODE
-	void * targetMem = (void *)((int)&ARM7SharedDLDI[0]); //TWL uncached EWRAM
+	void * targetMem = (void *)((int)&ARM7SharedDLDI[0]	+ 0x400000); //TWL uncached EWRAM
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	setValueSafeInt(&fifomsg[20], sector);
@@ -69,7 +69,7 @@ bool sdio_WriteSectors(sec_t sector, sec_t numSectors, const void* buffer) __att
 	return false;
 	#endif
 	#ifdef TWLMODE
-	void * targetMem = (void *)((int)&ARM7SharedDLDI[0]); //TWL uncached EWRAM
+	void * targetMem = (void *)((int)&ARM7SharedDLDI[0] + 0x400000); //TWL uncached EWRAM
 	memcpy((uint16_t*)targetMem, (uint16_t*)buffer, (numSectors * 512));
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
