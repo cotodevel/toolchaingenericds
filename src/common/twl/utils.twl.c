@@ -10,11 +10,6 @@
 //#include "touch.h"
 #include "memory.h"
 
-//!	Checks whether the application is running in DSi mode.
-bool isDSiMode() {
-	return __dsimode;
-}
-
 bool cdcIsAvailable(void) {
 	return isDSiMode() && (__DSiHeader->appflags & 0x01);
 }

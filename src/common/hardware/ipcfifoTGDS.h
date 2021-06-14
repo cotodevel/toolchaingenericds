@@ -133,12 +133,20 @@ USA
 #define IPC_ARM7READMEMORY_REQBYIRQ		(u8)(2)
 #define IPC_ARM7SAVEMEMORY_REQBYIRQ		(u8)(3)
 
-//ARM7DLDI
-#define IPC_READ_ARM7DLDI_REQBYIRQ		(u8)(4)
-#define IPC_WRITE_ARM7DLDI_REQBYIRQ		(u8)(5)
-#define IPC_READ_FIRMWARE_REQBYIRQ		(u8)(6)
+//ARM7DLDI Hardware
+	//Slot1 or slot2 access
+	#define IPC_READ_ARM7DLDI_REQBYIRQ		(u8)(4)
+	#define IPC_WRITE_ARM7DLDI_REQBYIRQ		(u8)(5)
 
-#define IPC_TGDSUSER_START_FREE_INDEX	(u8)(7)	//TGDS User Project rely on it
+	//SD TWL Access
+	#define IPC_READ_ARM7_TWLSD_REQBYIRQ		(u8)(6)
+	#define IPC_WRITE_ARM7_TWLSD_REQBYIRQ		(u8)(7)
+	
+	#define IPC_STARTUP_ARM7_TWLSD_REQBYIRQ		(u8)(8)
+	#define IPC_SD_IS_INSERTED_ARM7_TWLSD_REQBYIRQ		(u8)(9)
+	
+#define IPC_READ_FIRMWARE_REQBYIRQ		(u8)(10)
+#define IPC_TGDSUSER_START_FREE_INDEX	(u8)(11)	//TGDS User Project rely on it
 
 //TGDS -> Libnds FIFO compatibility API. Ensures the behaviour of the FIFO messaging system works.
 // FIFO_CHANNEL_BITS - number of bits used to specify the channel in a packet - default=4

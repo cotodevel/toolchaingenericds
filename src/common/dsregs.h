@@ -432,8 +432,9 @@ USA
 
 
 
-#ifdef TWLMODE
 
+
+//TWL bits
 #define TWL_CODE	__attribute__((section(".twl")))
 #define TWL_DATA	__attribute__((section(".twl")))
 #define TWL_BSS		__attribute__((section(".twl_bss")))
@@ -454,7 +455,9 @@ USA
 #define REG_SCFG_EXT		*(vu32*)0x4004008
 #define REG_SCFG_MC			*(vu16*)0x4004010
 
-#endif
+
+
+
 
 // End of file!
 #endif

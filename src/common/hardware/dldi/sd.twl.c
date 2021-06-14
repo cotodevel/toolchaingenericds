@@ -1,93 +1,99 @@
-#ifdef TWLMODE
 #ifdef ARM9
-
 #include "typedefsTGDS.h"
 #include "nand.h"
 #include "dldi.h"
 #include "libndsFIFO.h"
 #include "utils.twl.h"
 #include "nds_cp15_misc.h"
+
+///////////////////////////////////TWL mode SD ARM9i DLDI Access///////////////////////////////////
 //---------------------------------------------------------------------------------
-bool sdio_Startup() {
+bool sdio_Startup() __attribute__ ((optnone)) {
 //---------------------------------------------------------------------------------
-	fifoSendValue32(FIFO_SDMMC,SDMMC_HAVE_SD);
-	while(!fifoCheckValue32(FIFO_SDMMC));
-	int result = fifoGetValue32(FIFO_SDMMC);
-
-	if(result==0) return false;
-
-	fifoSendValue32(FIFO_SDMMC,SDMMC_SD_START);
-
-	fifoWaitValue32(FIFO_SDMMC);
-
-	result = fifoGetValue32(FIFO_SDMMC);
-
-	return result == 0;
+	#ifdef NTRMODE
+	return false;
+	#endif
+	#ifdef TWLMODE
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	setValueSafe(&fifomsg[23], (uint32)0xABCDABCD);
+	sendByteIPC(IPC_STARTUP_ARM7_TWLSD_REQBYIRQ);
+	while(getValueSafe(&fifomsg[23]) == (uint32)0xABCDABCD){
+		swiDelay(1);
+	}
+	return true;
+	#endif
 }
 
 //---------------------------------------------------------------------------------
-bool sdio_IsInserted() {
+bool sdio_IsInserted() __attribute__ ((optnone)) {
 //---------------------------------------------------------------------------------
-	fifoSendValue32(FIFO_SDMMC,SDMMC_SD_IS_INSERTED);
-
-	fifoWaitValue32(FIFO_SDMMC);
-
-	int result = fifoGetValue32(FIFO_SDMMC);
-
-	return result == 1;
+	#ifdef NTRMODE
+	return false;
+	#endif
+	#ifdef TWLMODE
+	return true;
+	#endif
 }
 
 //---------------------------------------------------------------------------------
-bool sdio_ReadSectors(sec_t sector, sec_t numSectors,void* buffer) {
-//---------------------------------------------------------------------------------
-	FifoMessage msg;
-
-	coherent_user_range((uint32)buffer, numSectors * 512);
-
-	msg.type = SDMMC_SD_READ_SECTORS;
-	msg.sdParams.startsector = sector;
-	msg.sdParams.numsectors = numSectors;
-	msg.sdParams.buffer = buffer;
-	
-	fifoSendDatamsg(FIFO_SDMMC, sizeof(msg), (u8*)&msg);
-
-	fifoWaitValue32(FIFO_SDMMC);
-
-	int result = fifoGetValue32(FIFO_SDMMC);
-	
-	return result == 0;
+__attribute__((section(".itcm")))
+bool sdio_ReadSectors(sec_t sector, sec_t numSectors,void* buffer) __attribute__ ((optnone)) {
+//---------------------------------------------------------------------------------	
+	#ifdef NTRMODE
+	return false;
+	#endif
+	#ifdef TWLMODE
+	void * targetMem = (void *)((int)&ARM7SharedDLDI[0]); //TWL uncached EWRAM
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	setValueSafeInt(&fifomsg[20], sector);
+	setValueSafeInt(&fifomsg[21], numSectors);
+	setValueSafe(&fifomsg[22], (uint32)targetMem);
+	setValueSafe(&fifomsg[23], (uint32)0xFFAAFFAA);
+	sendByteIPC(IPC_READ_ARM7_TWLSD_REQBYIRQ);
+	while(getValueSafe(&fifomsg[23]) == (uint32)0xFFAAFFAA){
+		swiDelay(333);
+	}
+	memcpy((uint16_t*)buffer, (uint16_t*)targetMem, (numSectors * 512));
+	//so far here, but reads are wrong
+	return true;
+	#endif
 }
 
 //---------------------------------------------------------------------------------
-bool sdio_WriteSectors(sec_t sector, sec_t numSectors,const void* buffer) {
+__attribute__((section(".itcm")))
+bool sdio_WriteSectors(sec_t sector, sec_t numSectors, const void* buffer) __attribute__ ((optnone)) {
 //---------------------------------------------------------------------------------
-	FifoMessage msg;
-
-	coherent_user_range((uint32)buffer, numSectors * 512);
-
-	msg.type = SDMMC_SD_WRITE_SECTORS;
-	msg.sdParams.startsector = sector;
-	msg.sdParams.numsectors = numSectors;
-	msg.sdParams.buffer = (void*)buffer;
-	
-	fifoSendDatamsg(FIFO_SDMMC, sizeof(msg), (u8*)&msg);
-
-	fifoWaitValue32(FIFO_SDMMC);
-
-	int result = fifoGetValue32(FIFO_SDMMC);
-	
-	return result == 0;
+	#ifdef NTRMODE
+	return false;
+	#endif
+	#ifdef TWLMODE
+	void * targetMem = (void *)((int)&ARM7SharedDLDI[0]); //TWL uncached EWRAM
+	memcpy((uint16_t*)targetMem, (uint16_t*)buffer, (numSectors * 512));
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	setValueSafe(&fifomsg[24], (uint32)sector);
+	setValueSafe(&fifomsg[25], (uint32)numSectors);
+	setValueSafe(&fifomsg[26], (uint32)targetMem);
+	setValueSafe(&fifomsg[27], (uint32)0xFFBBCCAA);
+	sendByteIPC(IPC_WRITE_ARM7_TWLSD_REQBYIRQ);
+	while(getValueSafe(&fifomsg[27]) == (uint32)0xFFBBCCAA){
+		swiDelay(1);
+	}
+	return true;
+	#endif
 }
 
 
 //---------------------------------------------------------------------------------
-bool sdio_ClearStatus() {
+bool sdio_ClearStatus() __attribute__ ((optnone)) {
 //---------------------------------------------------------------------------------
 	return true;
 }
 
 //---------------------------------------------------------------------------------
-bool sdio_Shutdown() {
+bool sdio_Shutdown() __attribute__ ((optnone)) {
 //---------------------------------------------------------------------------------
 	return true;
 }
@@ -104,5 +110,5 @@ const struct DISC_INTERFACE_STRUCT __io_dsisd = {
 	(FN_MEDIUM_CLEARSTATUS)&sdio_ClearStatus,
 	(FN_MEDIUM_SHUTDOWN)&sdio_Shutdown
 };
-#endif
+
 #endif

@@ -42,6 +42,7 @@ USA
 
 #ifdef ARM7
 #include "i2c.h"
+#include "sdmmc.h"
 #endif
 
 #endif
@@ -63,14 +64,19 @@ void IRQInit(u8 DSHardware) __attribute__ ((optnone)) {
 	REG_IPC_FIFO_CR = IPC_FIFO_SEND_CLEAR | RECV_FIFO_IPC_IRQ  | FIFO_IPC_ENABLE;
 	
 	//Set up PPU IRQ: HBLANK/VBLANK/VCOUNT
+	#ifdef ARM7
+	REG_DISPSTAT = (DISP_VBLANK_IRQ | DISP_YTRIGGER_IRQ);
+	#endif
+	#ifdef ARM9
 	REG_DISPSTAT = (DISP_HBLANK_IRQ | DISP_VBLANK_IRQ | DISP_YTRIGGER_IRQ);
+	#endif
 	
 	//Set up PPU IRQ Vertical Line
 	setVCountIRQLine(TGDS_VCOUNT_LINE_INTERRUPT);
 	
 	volatile uint32 interrupts_to_wait_armX = 0;	
 	#ifdef ARM7
-	interrupts_to_wait_armX = IRQ_TIMER1 | IRQ_HBLANK | IRQ_VBLANK | IRQ_VCOUNT | IRQ_IPCSYNC | IRQ_RECVFIFO_NOT_EMPTY | IRQ_SCREENLID;
+	interrupts_to_wait_armX = IRQ_TIMER1 | IRQ_VBLANK | IRQ_VCOUNT | IRQ_IPCSYNC | IRQ_RECVFIFO_NOT_EMPTY | IRQ_SCREENLID;
 	#endif
 	
 	#ifdef ARM9
@@ -97,7 +103,7 @@ void IRQInit(u8 DSHardware) __attribute__ ((optnone)) {
 			//TWL ARM7 IRQ Init
 			REG_AUXIE = 0;
 			REG_AUXIF = ~0;
-			irqEnableAUX(IRQ_I2C);
+			irqEnableAUX(GPIO33_2);
 			#endif
 			
 			#ifdef ARM9
@@ -124,7 +130,7 @@ void NDS_IRQHandler() __attribute__ ((optnone)) {
 	u32 handledIRQ = (REG_IF | SWI_CHECKBITS) & REG_IE;
 	
 	#ifdef TWLMODE
-	u32 handledIRQAUX = (REG_AUXIF | SWI_CHECKBITS) & REG_AUXIE;
+	u32 handledIRQAUX = REG_AUXIE & REG_AUXIF;
 	#endif
 	
 	if(handledIRQ & IRQ_HBLANK){
@@ -272,6 +278,8 @@ void NDS_IRQHandler() __attribute__ ((optnone)) {
 			}
 			break;			
 				//ARM7_DLDI
+				
+				//Slot-1 or slot-2 access
 				case(IPC_READ_ARM7DLDI_REQBYIRQ):{
 					struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
 					struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
@@ -300,6 +308,58 @@ void NDS_IRQHandler() __attribute__ ((optnone)) {
 					setValueSafe(&fifomsg[27], (u32)0);
 				}
 				break;
+				
+				//TWL SD Hardware
+				#ifdef TWLMODE
+				
+				case(IPC_STARTUP_ARM7_TWLSD_REQBYIRQ):{
+					struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+					uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+					int result = sdmmc_sd_startup();
+					if(result == 0){ //success?
+						
+					}
+					else{
+						while(1==1){
+							*(u32*)0x02000000 = 0xEAEAEAEA;
+							swiDelay(1);
+						}
+					}
+					setValueSafe(&fifomsg[23], (u32)result);	//last value has ret status
+					
+				}
+				break;
+				
+				case(IPC_SD_IS_INSERTED_ARM7_TWLSD_REQBYIRQ):{
+					struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+					uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+					setValueSafe(&fifomsg[23], (u32)0);	//last value has ret status
+				}
+				break;
+				
+				case(IPC_READ_ARM7_TWLSD_REQBYIRQ):{
+					struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+					uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+					int sector = getValueSafeInt(&fifomsg[20]);
+					int numSectors = getValueSafeInt(&fifomsg[21]);
+					uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[22]);
+					u32 retval = (u32)sdmmc_sdcard_readsectors(sector, numSectors, (void*)targetMem);
+					setValueSafe(&fifomsg[23], (u32)retval);	//last value has ret status
+				}
+				break;
+				
+				case(IPC_WRITE_ARM7_TWLSD_REQBYIRQ):{
+					struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+					uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+					uint32 sector = getValueSafe(&fifomsg[24]);
+					uint32 numSectors = getValueSafe(&fifomsg[25]);
+					uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[26]);
+					//u32 retval = (u32)sdmmc_writesectors(&deviceSD, sector, numSectors, targetMem);
+					setValueSafe(&fifomsg[27], (u32)0);	//last value has ret status
+				}
+				break;
+				#endif
+				
 			#endif
 			
 			#ifdef ARM9
@@ -320,15 +380,26 @@ void NDS_IRQHandler() __attribute__ ((optnone)) {
 	}
 	
 	if(handledIRQ & IRQ_SCREENLID){
-		isArm7ClosedLid = false;
-		SendFIFOWords(FIFO_IRQ_LIDHASOPENED_SIGNAL);
-		screenLidHasOpenedhandlerUser();
+		if(isArm7ClosedLid == true){
+			SendFIFOWords(FIFO_IRQ_LIDHASOPENED_SIGNAL);
+			screenLidHasOpenedhandlerUser();
+			isArm7ClosedLid = false;
+		}
 	}
 	
 	#ifdef TWLMODE
 	if(handledIRQAUX & IRQ_I2C){
 		i2cIRQHandler();
 	}
+	
+	if(handledIRQAUX & IRQ_SDMMC){
+		
+	}
+	
+	if(handledIRQAUX & GPIO33_2){
+		
+	}
+	
 	#endif
 	
 	#endif
@@ -356,15 +427,13 @@ void irqDisable(uint32 IRQ){
 
 		switch (cause & 3) {
 			case 1:{
-				/*
-				if (__powerbuttonCB) {
-					__powerbuttonCB();
+				if (/*__powerbuttonCB*/ 1 == 1) {
+					//__powerbuttonCB();
 				} 
 				else {
-				*/
 					i2cWriteRegister(I2C_PM, I2CREGPM_RESETFLAG, 1);
 					i2cWriteRegister(I2C_PM, I2CREGPM_PWRCNT, 1);
-				//}
+				}
 			}
 			break;
 			case 2:{

@@ -368,7 +368,8 @@ void touchReadXY(touchPosition *touchPos) {
 	
 	sint16 dist_max_y=0, dist_max_x=0, dist_max=0;
 	u8 error=0, error_where=0, first_check=0, i=0;
-		
+	
+	/*	
 	#ifdef TWLMODE
 	if (cdcIsAvailable()) {	//TWL Mode
 		cdcTouchRead(touchPos);	
@@ -441,68 +442,68 @@ void touchReadXY(touchPosition *touchPos) {
 		}
 	}
 	#endif
-		
-	#ifdef NTRMODE
-		//uint32 oldIME = REG_IME;
-		//REG_IME = 0;
-		first_check = CheckStylus();
-		if(first_check != 0){
-			error_where = 0;
-			touchPos->z1 =  readTouchValue(TSC_MEASURE_Z1 | 1, &dist_max, &error);
-			touchPos->z2 =  readTouchValue(TSC_MEASURE_Z2 | 1, &dist_max, &error);
-			touchPos->rawx = readTouchValue(TSC_MEASURE_X | 1, &dist_max_x, &error);
-			if(error==1) error_where += 1;
+	*/
+	
+	//NTR + TWL (Using backwards compatible TSC code)
+	//uint32 oldIME = REG_IME;
+	//REG_IME = 0;
+	first_check = CheckStylus();
+	if(first_check != 0){
+		error_where = 0;
+		touchPos->z1 =  readTouchValue(TSC_MEASURE_Z1 | 1, &dist_max, &error);
+		touchPos->z2 =  readTouchValue(TSC_MEASURE_Z2 | 1, &dist_max, &error);
+		touchPos->rawx = readTouchValue(TSC_MEASURE_X | 1, &dist_max_x, &error);
+		if(error==1) error_where += 1;
 
-			touchPos->rawy = readTouchValue(TSC_MEASURE_Y | 1, &dist_max_y, &error);
-			if(error==1) error_where += 2;
+		touchPos->rawy = readTouchValue(TSC_MEASURE_Y | 1, &dist_max_y, &error);
+		if(error==1) error_where += 2;
 
-			REG_SPICNT = SPI_ENABLE | SPI_BAUD_2MHz | SPI_DEVICE_TOUCH | SPI_CONTINUOUS;
-			for(i=0; i<12; i++){
-				REG_SPIDATA = 0;
-				SerialWaitBusy();
-			}
-
-			REG_SPICNT = SPI_ENABLE | SPI_BAUD_2MHz | SPI_DEVICE_TOUCH;
+		REG_SPICNT = SPI_ENABLE | SPI_BAUD_2MHz | SPI_DEVICE_TOUCH | SPI_CONTINUOUS;
+		for(i=0; i<12; i++){
 			REG_SPIDATA = 0;
 			SerialWaitBusy();
-			if(first_check == 2) error_where = 3;
-
-			switch( CheckStylus() ){
-				case 0:
-					last_time_touched = 0;
-					break;
-				case 1:
-					last_time_touched = 1;
-
-					if(dist_max_x > dist_max_y)
-						dist_max = dist_max_x;
-					else
-						dist_max = dist_max_y;
-
-					break;
-				case 2:
-					last_time_touched = 0;
-					error_where = 3;
-
-					break;
-			}
-			s16 px = ( touchPos->rawx * xscale - xoffset + xscale/2 ) >>19;
-			s16 py = ( touchPos->rawy * yscale - yoffset + yscale/2 ) >>19;
-			if ( px < 0) px = 0;
-			if ( py < 0) py = 0;
-			if ( px > (SCREEN_WIDTH -1)) px = SCREEN_WIDTH -1;
-			if ( py > (SCREEN_HEIGHT -1)) py = SCREEN_HEIGHT -1;
-			touchPos->px = px;
-			touchPos->py = py;
 		}
-		else{
-			error_where = 3;
-			touchPos->rawx = 0;
-			touchPos->rawy = 0;
-			last_time_touched = 0;
+
+		REG_SPICNT = SPI_ENABLE | SPI_BAUD_2MHz | SPI_DEVICE_TOUCH;
+		REG_SPIDATA = 0;
+		SerialWaitBusy();
+		if(first_check == 2) error_where = 3;
+
+		switch( CheckStylus() ){
+			case 0:
+				last_time_touched = 0;
+				break;
+			case 1:
+				last_time_touched = 1;
+
+				if(dist_max_x > dist_max_y)
+					dist_max = dist_max_x;
+				else
+					dist_max = dist_max_y;
+
+				break;
+			case 2:
+				last_time_touched = 0;
+				error_where = 3;
+
+				break;
 		}
-	#endif
-		
+		s16 px = ( touchPos->rawx * xscale - xoffset + xscale/2 ) >>19;
+		s16 py = ( touchPos->rawy * yscale - yoffset + yscale/2 ) >>19;
+		if ( px < 0) px = 0;
+		if ( py < 0) py = 0;
+		if ( px > (SCREEN_WIDTH -1)) px = SCREEN_WIDTH -1;
+		if ( py > (SCREEN_HEIGHT -1)) py = SCREEN_HEIGHT -1;
+		touchPos->px = px;
+		touchPos->py = py;
+	}
+	else{
+		error_where = 3;
+		touchPos->rawx = 0;
+		touchPos->rawy = 0;
+		last_time_touched = 0;
+	}
+	
 	UpdateRange(&range, dist_max, error_where, last_time_touched);
 	//REG_IME = oldIME;
 }

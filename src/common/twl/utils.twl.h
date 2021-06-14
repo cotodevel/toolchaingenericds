@@ -1,7 +1,5 @@
-#ifdef TWLMODE
-
+//TWL Header
 /*
-
 			Copyright (C) 2017  Coto
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -28,8 +26,9 @@ USA
 
 //! values allowed for REG_AUXIE and REG_AUXIF
 enum IRQ_MASKSAUX {
-	IRQ_I2C	=	(1 << 6),	/*!< I2C interrupt mask / 6     DSi7: GPIO33[2] Powerbutton interrupt (short pulse upon key-down) (DSi ARM7)*/
-	IRQ_SDMMC = 	(1 << 8)  /*!< Sdmmc interrupt mask / 8	DSi7: SD/MMC Controller   ;-Onboard eMMC and External SD Slot (DSi ARM7)*/
+	GPIO33_2	=	(1 << 6),	/*!< DSi7: GPIO33[2] Powerbutton interrupt (short pulse upon key-down) (DSi ARM7)*/
+	IRQ_SDMMC = 	(1 << 8),  /*!< Sdmmc interrupt mask / 8	DSi7: SD/MMC Controller   ;-Onboard eMMC and External SD Slot (DSi ARM7)*/
+	IRQ_I2C = 		(1 << 13)	/*!< I2C interrupt mask / 6     */
 };
 
 
@@ -148,8 +147,6 @@ typedef enum {
 extern "C" {
 #endif
 
-extern bool isDSiMode();
-
 #ifdef ARM9
 /*!
 	\brief Sets the ARM9 clock speed, only possible in DSi mode
@@ -168,6 +165,4 @@ extern bool cdcIsAvailable(void);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

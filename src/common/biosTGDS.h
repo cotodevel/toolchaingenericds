@@ -96,65 +96,6 @@ struct LZSSContext {
 //LZSS end
 // CUE Author Code End
 
-#ifdef ARM7
-extern bool isArm7ClosedLid;
-static inline void handleARM7SVC(){
-	//Lid Closing + backlight events (ARM7)
-	if(isArm7ClosedLid == false){
-		if((REG_KEYXY & KEY_HINGE) == KEY_HINGE){
-			SendFIFOWords(FIFO_IRQ_LIDHASCLOSED_SIGNAL);
-			screenLidHasClosedhandlerUser();
-			isArm7ClosedLid = true;
-		}
-	}
-	
-	//Handles Sender FIFO overflows
-	if(REG_IPC_FIFO_CR & IPC_FIFO_ERROR){
-		REG_IPC_FIFO_CR = (REG_IPC_FIFO_CR | IPC_FIFO_SEND_CLEAR);	//bit14 FIFO ERROR ACK + Flush Send FIFO
-	}
-}
-
-#endif
-
-#ifdef ARM9
-static inline void handleARM9SVC(){
-	//Handles Sender FIFO overflows
-	if(REG_IPC_FIFO_CR & IPC_FIFO_ERROR){
-		REG_IPC_FIFO_CR = (REG_IPC_FIFO_CR | IPC_FIFO_SEND_CLEAR);	//bit14 FIFO ERROR ACK + Flush Send FIFO
-	}
-	
-	//Audio playback here....
-	updateStream();	//runs once
-	
-	//Handle GDBStub service if enabled
-	//GDB Debugging start
-	extern bool GDBEnabled;
-	if(GDBEnabled == true){
-		//GDB Stub Process must run here
-		int retGDBVal = remoteStubMain();
-		if(retGDBVal == remoteStubMainWIFINotConnected){
-			if (switch_dswnifi_mode(dswifi_gdbstubmode) == true){
-				remoteInit();
-			}
-			else{
-				//GDB Client Reconnect:ERROR
-			}
-		}
-		else if(retGDBVal == remoteStubMainWIFIConnectedGDBDisconnected){
-			setWIFISetup(false);
-			onGDBStubDisconnected();
-			if (switch_dswnifi_mode(dswifi_gdbstubmode) == true){ // gdbNdsStart() called
-				reconnectCount++;
-				remoteInit();
-			}
-		}
-		
-		//GDB Debugging end
-	}
-
-}
-
-#endif
 
 #endif
 
@@ -192,12 +133,16 @@ extern void swiFastCopy(uint32 * source, uint32 * dest, int flags);
 
 //Init SVCs
 #ifdef ARM7
+extern bool isArm7ClosedLid;
 extern void handleARM7InitSVC();
+extern void handleARM7SVC();
 #endif
 
 #ifdef ARM9
 extern void handleARM9InitSVC();
+extern void handleARM9SVC();
 #endif
+
 
 #ifdef __cplusplus
 }

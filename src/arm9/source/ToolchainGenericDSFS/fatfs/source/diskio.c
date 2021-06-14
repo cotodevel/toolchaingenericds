@@ -65,14 +65,12 @@ DSTATUS disk_initialize (
 		
 		//DS
 		if(pdrv == DLDICART){
-			//DS DLDI
-			if(ARM7DLDIEnabled == false){
-				if(dldi_handler_init() == true){	//Init DLDI: ARM9 version
-					ret = 0;	//init OK!
-				}
-				else{
-					ret = STA_NOINIT;
-				}
+			//DS/DSi DLDI init
+			if(dldi_handler_init() == true){	//Init DLDI: ARM9 version
+				ret = 0;	//init OK!
+			}
+			else{
+				ret = STA_NOINIT;
 			}
 		}
 		
@@ -86,7 +84,7 @@ DSTATUS disk_initialize (
 /*-----------------------------------------------------------------------*/
 
 DRESULT disk_read (
-	BYTE pdrv,		/* Physical drive nmuber to identify the drive */
+	BYTE pdrv,		/* Physical drive number to identify the drive */
 	BYTE *buff,		/* Data buffer to store read data */
 	DWORD sector,	/* Start sector in LBA */
 	UINT count		/* Number of sectors to read */

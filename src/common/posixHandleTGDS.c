@@ -314,7 +314,11 @@ void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,									
 						u32 * freeHandler, u32 * MallocFreeMemoryHandler, bool customAllocator, u32 dldiMemAddress
 ) __attribute__ ((optnone)) {
 	u32 ARM7DLDISetting = 0;
-	if(strncmp((char *)&_io_dldi_stub.friendlyName[0], "TGDS RAMDISK", 12) == 0){
+	if(
+		(strncmp((char *)&_io_dldi_stub.friendlyName[0], "TGDS RAMDISK", 12) == 0) //TGDS RAMDisk?
+		&&
+		(__dsimode == false) //DS-mode only? (otherwise, defaults to DSi SD access through ARM7DLDI)
+	){
 		ARM7DLDIEnabled = false; 	//ARM9DLDI
 		ARM7DLDISetting = TGDS_ARM7DLDI_DISABLED;
 	}
@@ -323,7 +327,7 @@ void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,									
 		ARM7DLDISetting = TGDS_ARM7DLDI_ENABLED;
 	}
 	
-	//Map cart (ARM9 only)
+	//Map cart (ARM9 only). (This doesn't affect DSi SD as it's mapped directly into ARM7 registers, but still useful if you want to mount TWL SD + DLDI through slot1/slot2(old ds) at the same time)
 	if(ARM7DLDIEnabled == true){	//Only set bits for real hardware carts
 		if (_io_dldi_stub.ioInterface.features & FEATURE_SLOT_GBA) {
 			SetBusSLOT1ARM9SLOT2ARM7();
@@ -367,17 +371,6 @@ void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,									
 	while((u32)getValueSafe(&fifomsg[45]) != (u32)0){
 		swiDelay(1);
 	}
-	
-	/*
-	//Debug
-	u32 ret = (u32)getValueSafe(&fifomsg[45]);
-	if(ret == 0xFAFAFAFA){
-		printf("initARMCoresMalloc: arm7dldi init OK");	//OK, read/writes not
-	}
-	if(ret == 0xFCFCFCFC){
-		printf("initARMCoresMalloc: arm7dldi init ERR");
-	}
-	*/
 }
 
 void setTGDSMemoryAllocator(struct AllocatorInstance * TGDSMemoryAllocator) __attribute__ ((optnone)) {

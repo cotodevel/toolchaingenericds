@@ -137,11 +137,16 @@ extern bool dldiRelocateLoader(bool clearBSS, u32 DldiRelocatedAddress, u32 dldi
 extern bool dldiPatchLoader(data_t *binData, u32 binSize, u32 physDLDIAddress);
 #endif
 
-#ifdef TWLMODE
+///////////////////////////////////TWL mode SD ARM9i DLDI Access///////////////////////////////////
 #ifdef ARM9
 extern const struct DISC_INTERFACE_STRUCT __io_dsisd;
 extern const struct DISC_INTERFACE_STRUCT* get_io_dsisd (void);
-#endif
+extern bool sdio_Startup();
+extern bool sdio_IsInserted();
+extern bool sdio_ReadSectors(sec_t sector, sec_t numSectors,void* buffer);
+extern bool sdio_WriteSectors(sec_t sector, sec_t numSectors,const void* buffer);
+extern bool sdio_ClearStatus();
+extern bool sdio_Shutdown();
 #endif
 
 #ifdef __cplusplus

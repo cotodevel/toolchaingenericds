@@ -38,19 +38,24 @@ USA
 #ifdef ARM7
 #include "i2c.h"
 #endif
-
 #include "utils.twl.h"
 
 #endif
-
-bool sleepIsEnabled = true;
-bool __dsimode = false; // set by detecting DS model from firmware
 
 #ifdef ARM9
 #include "fatfslayerTGDS.h"
 #include "videoTGDS.h"
 #include "dmaTGDS.h"
 #endif
+
+bool sleepIsEnabled = true;
+bool __dsimode = false; // set by detecting DS model from firmware
+
+
+//!	Checks whether the application is running in DSi mode.
+bool isDSiMode() {
+	return __dsimode;
+}
 
 size_t ucs2tombs(uint8* dst, const unsigned short* src, size_t len) {
 	size_t i=0,j=0;
@@ -943,6 +948,26 @@ __attribute__((section(".itcm")))
 #endif
 void setValueSafe(u32 * buf, u32 val) __attribute__ ((optnone)) {
 	(*buf) = (u32)val;
+	#ifdef ARM9
+	coherent_user_range_by_size((uint32)buf, 4);
+	#endif
+}
+
+#ifdef ARM9
+__attribute__((section(".itcm")))
+#endif
+int getValueSafeInt(u32 * buf) __attribute__ ((optnone)) {
+	#ifdef ARM9
+	coherent_user_range_by_size((uint32)buf, 4);
+	#endif
+	return (int)(*buf);
+}
+
+#ifdef ARM9
+__attribute__((section(".itcm")))
+#endif
+void setValueSafeInt(u32 * buf, int val) __attribute__ ((optnone)) {
+	*((int*)buf) = (int)val;
 	#ifdef ARM9
 	coherent_user_range_by_size((uint32)buf, 4);
 	#endif

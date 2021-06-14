@@ -742,7 +742,12 @@ bool setFileClass(bool iterable, char * fullPath, int FileClassListIndex, int Ty
 bool setFileClassObj(int FileClassListIndex, struct FileClass * FileClassObj, struct FileClassList * lst){
 	if( (lst != NULL) && (FileClassListIndex < FileClassItems) ){	//prevent overlapping current FileClassList		
 		struct FileClass * thisFileClass = getFileClassFromList(FileClassListIndex, lst);
-		memcpy(((u8*)thisFileClass + 0x400000), (u8*)FileClassObj, sizeof(struct FileClass));	//uncached
+		if(__dsimode == false){
+			memcpy(((u8*)thisFileClass + 0x400000), (u8*)FileClassObj, sizeof(struct FileClass));	//uncached NTR
+		}
+		else{
+			memcpy(((u8*)thisFileClass + 0x400000), (u8*)FileClassObj, sizeof(struct FileClass));	//uncached TWL
+		}
 		lst->FileDirCount++;
 		return true;
 	}

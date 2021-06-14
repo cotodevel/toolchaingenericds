@@ -170,19 +170,80 @@ void initHardware(u8 DSHardware) __attribute__ ((optnone)) {
 	//Init SoundSampleContext
 	initSoundSampleContext();
 	initSound();
+	
+	#ifdef TWLMODE
+	u32 SFGEXT7 = *(u32*)0x04004008;
+	
+	//0     Revised ARM7 DMA Circuit       (0=NITRO, 1=Revised) = NTR
+	//1     Revised Sound DMA              (0=NITRO, 1=Revised) = NTR
+	//2     Revised Sound                  (0=NITRO, 1=Revised) = NTR
+	//3-6   Unused (0)
+	//7     Revised Card Interface Circuit (0=NITRO, 1=Revised) (set via ARM9) (R)
+	//8     Extended ARM7 Interrupts      (0=NITRO, 1=Extended) (4000218h) = TWL
+	//9     Extended SPI Clock (8MHz)     (0=NITRO, 1=Extended) (40001C0h) = NTR
+	//10    Extended Sound DMA        ?   (0=NITRO, 1=Extended) (?) = NTR
+
+	
+	//Revised ARM7 DMA Circuit       (0=NITRO, 1=Revised)
+	SFGEXT7 = (SFGEXT7 & ~(0x1 << 0)) | (0x0 << 0);
+	
+	//Revised Sound DMA              (0=NITRO, 1=Revised)
+	SFGEXT7 = (SFGEXT7 & ~(0x1 << 1)) | (0x0 << 1);
+	
+	//Revised Sound                  (0=NITRO, 1=Revised)
+	SFGEXT7 = (SFGEXT7 & ~(0x1 << 2)) | (0x0 << 2);
+	
+	//Extended ARM7 Interrupts      (0=NITRO, 1=Extended) (4000218h)
+	SFGEXT7 = (SFGEXT7 & ~(0x1 << 8)) | (0x1 << 8);
+	
+	//Extended SPI Clock (8MHz)     (0=NITRO, 1=Extended) (40001C0h)
+	SFGEXT7 = (SFGEXT7 & ~(0x1 << 9)) | (0x0 << 9);
+	
+	//Extended Sound DMA        ?   (0=NITRO, 1=Extended) (?)
+	SFGEXT7 = (SFGEXT7 & ~(0x1 << 10)) | (0x0 << 10);
+	
+	//Access to New DMA Controller   (0=Disable, 1=Enable) (40041xxh)
+	SFGEXT7 = (SFGEXT7 & ~(0x1 << 16)) | (0x0 << 16);
+	
+	//Access to 2nd NDS Cart Slot   (0=Disable, 1=Enable)	(set via ARM7)
+	SFGEXT7 = (SFGEXT7 & ~(0x1 << 24)) | (0x0 << 24);
+	
+	// 25    Access to New Shared WRAM     (0=Disable, 1=Enable)  (set via ARM7) (R)
+	SFGEXT7 = (SFGEXT7 & ~(0x1 << 25)) | (0x0 << 25);
+	
+	*(u32*)0x04004008 = SFGEXT7;
+	#endif
+	
 	#endif
 	
 	#ifdef ARM9
+	
+	#ifdef TWLMODE
+	u32 SFGEXT9 = *(u32*)0x04004008;
+	
+	//Revised Card Interface Circuit (0=NITRO, 1=Revised) (set via ARM9) (R)
+	SFGEXT9 = (SFGEXT9 & ~(0x1 << 7)) | (0x1 << 7);
+	
+	//Extended ARM9 Interrupts       (0=NITRO, 1=Extended)
+	SFGEXT9 = (SFGEXT9 & ~(0x1 << 8)) | (0x1 << 8);
+	
+	//EWRAM: 4MB + (2) mirrors TWL Mode
+	SFGEXT9 = (SFGEXT9 & ~(0x3 << 14)) | (0x0 << 14);
+	
+	//Access to New DMA Controller   (0=Disable, 1=Enable) (40041xxh)
+	SFGEXT9 = (SFGEXT9 & ~(0x1 << 16)) | (0x0 << 16);
+	
+	*(u32*)0x04004008 = SFGEXT9;
+	
+	setCpuClock(true);
+	#endif
+	
 	//Disable mpu
 	CP15ControlRegisterDisable(CR_M);
 	
 	//Hardware ARM9 Init
 	resetMemory_ARMCores(DSHardware);
 	IRQInit(DSHardware);
-	
-	#ifdef TWLMODE
-	setCpuClock(true);
-	#endif
 	
 	//Enable mpu
 	CP15ControlRegisterEnable(CR_M);

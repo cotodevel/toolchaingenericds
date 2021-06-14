@@ -18,8 +18,8 @@ USA
 
 */
 
-#ifndef __toolchain_utils_h__
-#define __toolchain_utils_h__
+#ifndef __utilsTGDS_h__
+#define __utilsTGDS_h__
 
 #include "typedefsTGDS.h"
 #include "dsregs.h"
@@ -163,23 +163,26 @@ extern void TGDSProjectRunLinkedModule(char * TGDSLinkedModuleFilename, int argc
 extern u32 getValueSafe(u32 * buf);
 extern void setValueSafe(u32 * buf, u32 val);
 
+extern int getValueSafeInt(u32 * buf);
+extern void setValueSafeInt(u32 * buf, int val);
+
 #ifdef ARM7
 extern void sdmmcMsgHandler(int bytes, void *user_data);
-extern void sdmmcValueHandler(u32 value, void* user_data);
+extern int sdmmcValueHandler(u32 value, void* user_data);
 #endif
 
-#ifdef TWLMODE
+
+//TWL Bits
 extern void twlEnableSlot1();
 extern void twlDisableSlot1();
 extern void disableSlot1();
 extern void enableSlot1();
 
-#endif
-
 extern bool sleepIsEnabled;
 extern bool __dsimode; // set in crt0
 extern void shutdownNDSHardware();
 
+extern bool isDSiMode();
 #ifdef __cplusplus
 }
 #endif

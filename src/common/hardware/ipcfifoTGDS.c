@@ -97,6 +97,10 @@ void HandleFifoEmpty() __attribute__ ((optnone)) {
 __attribute__((section(".itcm")))
 #endif
 void HandleFifoNotEmpty() __attribute__ ((optnone)) {
+	if((REG_IPC_FIFO_CR & IPC_FIFO_ERROR) == IPC_FIFO_ERROR){
+		REG_IPC_FIFO_CR = REG_IPC_FIFO_CR | IPC_FIFO_ERROR;	//bit14 FIFO ERROR ACK + Flush Send FIFO
+	}
+	
 	volatile uint32 data0 = 0;	
 		
 	while(!(REG_IPC_FIFO_CR & RECV_FIFO_IPC_EMPTY)){
@@ -450,27 +454,23 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 					ARM7DLDIEnabled = false;
 				}
 				
+				//NTR hardware + TWL emu/hardware = ARM7DLDI
 				if(ARM7DLDIEnabled == true){
-					//init DLDI 7 Here
-					DLDIARM7Address = (u32*)dldiStartAddress;
-					bool DLDIARM7InitStatus = dldi_handler_init();
-					if(DLDIARM7InitStatus == true){
-						//setValueSafe(&fifomsg[45], (uint32)0xFAFAFAFA);
-						//after this (if ret status true) it's safe to call dldi read and write sectors from ARM9 (ARM7 DLDI mode)
+					//ARM7DLDI: ONLY if NTR hardware
+					if(__dsimode == false){
+						DLDIARM7Address = (u32*)dldiStartAddress;
+						bool DLDIARM7InitStatus = dldi_handler_init();	//Init DLDI: ARM7 version
+						if(DLDIARM7InitStatus == true){
+							//setValueSafe(&fifomsg[45], (uint32)0xFAFAFAFA);
+							//after this (if ret status true) it's safe to call dldi read and write sectors from ARM9 (ARM7 DLDI mode)
+						}
+						else{
+							//setValueSafe(&fifomsg[45], (uint32)0xFCFCFCFC);
+						}
 					}
-					else{
-						//setValueSafe(&fifomsg[45], (uint32)0xFCFCFCFC);
-					}
-					initARM7Malloc(ARM7MallocStartaddress, ARM7MallocSize);
 				}
 				
-				#ifdef TWLMODE
-				//Inits DSi SD driver (separate from DLDI)
-				if(__dsimode == true){
-					fifoSetValue32Handler(FIFO_SDMMC, sdmmcValueHandler, 0);
-					fifoSetDatamsgHandler(FIFO_SDMMC, sdmmcMsgHandler, 0);
-				}
-				#endif
+				initARM7Malloc(ARM7MallocStartaddress, ARM7MallocSize);
 				
 				setValueSafe(&fifomsg[42], (uint32)0);
 				setValueSafe(&fifomsg[43], (uint32)0);
@@ -758,9 +758,11 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 				}
 			}
 			break;
-			
+			default:{
+				HandleFifoNotEmptyWeakRef(data0);	//this one follows: cmd, value order
+			}
+			break;
 		}
-		HandleFifoNotEmptyWeakRef(data0);	//this one follows: cmd, value order
 	}
 }
 

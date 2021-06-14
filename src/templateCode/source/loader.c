@@ -28,13 +28,26 @@ USA
 
 //[Blocking]: Local ARM Core waits until External action takes place, waits while resolving internal NDS hardware wait states.
 void waitWhileNotSetStatus(u32 status){
-	while(NDS_LOADER_IPC_CTX_UNCACHED->ndsloaderInitStatus != status){
+	#ifdef NTRMODE
+	while(NDS_LOADER_IPC_CTX_UNCACHED_NTR->ndsloaderInitStatus != status){
 		swiDelay(111);	
 	}
+	#endif
+	
+	#ifdef TWLMODE
+	while(NDS_LOADER_IPC_CTX_UNCACHED_TWL->ndsloaderInitStatus != status){
+		swiDelay(111);	
+	}
+	#endif
 }
 
 void setNDSLoaderInitStatus(int ndsloaderStatus){
-	NDS_LOADER_IPC_CTX_UNCACHED->ndsloaderInitStatus = ndsloaderStatus;
+	#ifdef NTRMODE
+	NDS_LOADER_IPC_CTX_UNCACHED_NTR->ndsloaderInitStatus = ndsloaderStatus;
+	#endif
+	#ifdef TWLMODE
+	NDS_LOADER_IPC_CTX_UNCACHED_TWL->ndsloaderInitStatus = ndsloaderStatus;
+	#endif
 }
 
 #ifdef ARM9

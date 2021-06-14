@@ -72,12 +72,13 @@ ARCH_CFLAGS += \
 COMPILER_SPECIFIC_CFLAGS += \
   --target=arm-none-eabi \
   --sysroot= \
-  -Oz \
+  -Os \
   -DARM9	\
   -DTWLMODE
   
 CFLAGS = \
   -g3 \
+  -ffunction-sections -fdata-sections \
   -nostdlib \
   -fPIC	\
   -fshort-enums	\

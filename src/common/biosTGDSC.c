@@ -81,12 +81,22 @@ struct LZSSContext LZS_DecodeFromBuffer(unsigned char *pak_buffer, unsigned int 
 }
 #endif
 
-//Services Implementation
-
-//These services run when a TGDS binary starts
+//TGDS Services:
 #ifdef ARM7
+bool isArm7ClosedLid = false;
 void handleARM7InitSVC(){
 
+}
+
+void handleARM7SVC(){
+	//Lid Closing + backlight events (ARM7)
+	if(isArm7ClosedLid == false){
+		if((REG_KEYXY & KEY_HINGE) == KEY_HINGE){
+			SendFIFOWords(FIFO_IRQ_LIDHASCLOSED_SIGNAL);
+			screenLidHasClosedhandlerUser();
+			isArm7ClosedLid = true;
+		}
+	}
 }
 #endif
 
@@ -94,10 +104,35 @@ void handleARM7InitSVC(){
 void handleARM9InitSVC(){
 
 }
-#endif
 
-//Services
-
-#ifdef ARM7
-bool isArm7ClosedLid = false;
+void handleARM9SVC(){
+	//Audio playback here....
+	updateStream();	//runs once
+	
+	//Handle GDBStub service if enabled
+	//GDB Debugging start
+	extern bool GDBEnabled;
+	if(GDBEnabled == true){
+		//GDB Stub Process must run here
+		int retGDBVal = remoteStubMain();
+		if(retGDBVal == remoteStubMainWIFINotConnected){
+			if (switch_dswnifi_mode(dswifi_gdbstubmode) == true){
+				remoteInit();
+			}
+			else{
+				//GDB Client Reconnect:ERROR
+			}
+		}
+		else if(retGDBVal == remoteStubMainWIFIConnectedGDBDisconnected){
+			setWIFISetup(false);
+			onGDBStubDisconnected();
+			if (switch_dswnifi_mode(dswifi_gdbstubmode) == true){ // gdbNdsStart() called
+				reconnectCount++;
+				remoteInit();
+			}
+		}
+		
+		//GDB Debugging end
+	}
+}
 #endif
