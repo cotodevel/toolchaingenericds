@@ -51,6 +51,8 @@ Thanks to:
 https://forum.gbadev.org/viewtopic.php?f=18&t=16289
 - Michael Noland (joat) & Jason Rogers (dovoto): NDSLIB VideoGL implementation and ARM9 Math hardware registers
 
+TWL support: Normatt (SD dldi code) / fincs (codec) / WinterMute / others (updated NDSTools, TWL hardware, VideoGL 3D code related to Texture mapping when using Call Lists )
+
 ---------------------------------------------
 
 Developers:
