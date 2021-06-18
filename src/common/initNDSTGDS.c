@@ -183,7 +183,6 @@ void initHardware(u8 DSHardware) __attribute__ ((optnone)) {
 	//9     Extended SPI Clock (8MHz)     (0=NITRO, 1=Extended) (40001C0h) = TWL
 	//10    Extended Sound DMA        ?   (0=NITRO, 1=Extended) (?) = NTR
 
-	
 	//Revised ARM7 DMA Circuit       (0=NITRO, 1=Revised)
 	SFGEXT7 = (SFGEXT7 & ~(0x1 << 0)) | (0x0 << 0);
 	
@@ -221,13 +220,26 @@ void initHardware(u8 DSHardware) __attribute__ ((optnone)) {
 	#ifdef TWLMODE
 	u32 SFGEXT9 = *(u32*)0x04004008;
 	
+	//7     Revised Card Interface Circuit (0=NITRO, 1=Revised) = TWL
+	//8     Extended ARM9 Interrupts       (0=NITRO, 1=Extended) = TWL
+	//12    Extended LCD Circuit           (0=NITRO, 1=Extended) = NTR
+	//13    Extended VRAM Access           (0=NITRO, 1=Extended) = NTR
+	//14-15 Main Memory RAM Limit (0..1=4MB/DS, 2=16MB/DSi, 3=32MB/DSiDebugger) = 4MB + (2) mirrors NTR mode
+	//16    Access to New DMA Controller   (0=Disable, 1=Enable) (40041xxh) = TWL
+	
 	//Revised Card Interface Circuit (0=NITRO, 1=Revised) (set via ARM9) (R)
 	SFGEXT9 = (SFGEXT9 & ~(0x1 << 7)) | (0x1 << 7);
 	
 	//Extended ARM9 Interrupts       (0=NITRO, 1=Extended)
 	SFGEXT9 = (SFGEXT9 & ~(0x1 << 8)) | (0x1 << 8);
 	
-	//EWRAM: 4MB + (2) mirrors TWL Mode
+	//Extended LCD Circuit           (0=NITRO, 1=Extended)
+	SFGEXT9 = (SFGEXT9 & ~(0x1 << 12)) | (0x0 << 12);
+	
+	//Extended VRAM Access           (0=NITRO, 1=Extended)
+	SFGEXT9 = (SFGEXT9 & ~(0x1 << 13)) | (0x0 << 13);
+	
+	//EWRAM: 4MB + (2) mirrors NTR mode
 	SFGEXT9 = (SFGEXT9 & ~(0x3 << 14)) | (0x0 << 14);
 	
 	//Access to New DMA Controller   (0=Disable, 1=Enable) (40041xxh)
