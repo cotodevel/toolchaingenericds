@@ -36,6 +36,7 @@ USA
 #include "dmaTGDS.h"
 #include "soundTGDS.h"
 #include "dldi.h"
+#include "debugNocash.h"
 
 #ifdef TWLMODE
 #include "utils.twl.h"
@@ -94,6 +95,7 @@ void IRQInit(u8 DSHardware) __attribute__ ((optnone)) {
 		(DSHardware == 0x63)
 	){
 		__dsimode = false;
+		nocashMessage("TGDS:IRQInit():NTR Mode!");
 	}
 	//TWL 
 	else if(DSHardware == 0x57){
@@ -110,6 +112,7 @@ void IRQInit(u8 DSHardware) __attribute__ ((optnone)) {
 			//TWL ARM9 IRQ Init
 			#endif
 		#endif
+		nocashMessage("TGDS:IRQInit():TWL Mode!");
 	}
 	
 	REG_IE = interrupts_to_wait_armX; 
