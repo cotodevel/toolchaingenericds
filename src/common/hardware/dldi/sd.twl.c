@@ -5,6 +5,7 @@
 #include "libndsFIFO.h"
 #include "utils.twl.h"
 #include "nds_cp15_misc.h"
+#include "debugNocash.h"
 
 ///////////////////////////////////TWL mode SD ARM9i DLDI Access///////////////////////////////////
 //---------------------------------------------------------------------------------
@@ -14,12 +15,20 @@ bool sdio_Startup() __attribute__ ((optnone)) {
 	return false;
 	#endif
 	#ifdef TWLMODE
+	nocashMessage("TGDS:sdio_Startup():TWL Mode: If this gets stuck, most likely you're running a TGDS NTR Binary in TWL Mode.");
+	//int retryCount = 0;
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	setValueSafe(&fifomsg[23], (uint32)0xABCDABCD);
 	sendByteIPC(IPC_STARTUP_ARM7_TWLSD_REQBYIRQ);
 	while(getValueSafe(&fifomsg[23]) == (uint32)0xABCDABCD){
 		swiDelay(1);
+		/*retryCount++;	//make it fail (slide) when either TWL SD Card failed to init due to: hardware SD failure, or TWL Mode reloading binaries (TGDS-MB TWL), 
+						//as this layer ignores binary embedded DLDI, using the TWL one.
+		
+		if(retryCount > 9000){
+			return false;
+		}*/
 	}
 	return true;
 	#endif

@@ -32,6 +32,7 @@ USA
 #include "biosTGDS.h"
 #include "limitsTGDS.h"
 #include "dldi.h"
+#include "debugNocash.h"
 
 #ifdef TWLMODE
 
@@ -51,7 +52,47 @@ USA
 bool sleepIsEnabled = true;
 bool __dsimode = false; // set by detecting DS model from firmware
 
+#ifdef NTRMODE
+char * TGDSPayloadMode = "NTRModePayload";
+#endif
 
+#ifdef TWLMODE
+char * TGDSPayloadMode = "TWLModePayload";
+#endif
+
+
+void reportTGDSPayloadMode(){
+	#ifdef ARM7
+	int argBuffer[MAXPRINT7ARGVCOUNT];
+	memset((unsigned char *)&argBuffer[0], 0, sizeof(argBuffer));
+	argBuffer[0] = 0xc070ffff;
+	char dbgMsg[64];
+	memset(dbgMsg, 0, sizeof(dbgMsg));
+	strcpy(dbgMsg, "TGDS ARM7.bin Payload Mode: ");
+	strcat(dbgMsg, TGDSPayloadMode);
+	writeDebugBuffer7(dbgMsg, 1, (int*)&argBuffer[0]);
+	#endif
+	
+	#ifdef ARM9
+	//send ARM7 signal, wait for it to be ready, then continue
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	setValueSafe(&fifomsg[45], (u32)0xFFFFFFFF);
+	SendFIFOWords(TGDS_ARMCORES_REPORT_PAYLOAD_MODE);	//ARM7 Setup
+	while((u32)getValueSafe(&fifomsg[45]) == (u32)0xFFFFFFFF){
+		swiDelay(1);
+	}
+	printarm7DebugBuffer();
+	printf("TGDS ARM9.bin Payload Mode: %s", TGDSPayloadMode);
+	
+	char dbgMsg[64];
+	memset(dbgMsg, 0, sizeof(dbgMsg));
+	strcpy(dbgMsg, "TGDS ARM9.bin Payload Mode:");
+	strcat(dbgMsg, TGDSPayloadMode);
+	nocashMessage(dbgMsg);
+	#endif
+}
+	
 //!	Checks whether the application is running in DSi mode.
 bool isDSiMode() {
 	return __dsimode;
@@ -794,13 +835,22 @@ void separateExtension(char *str, char *ext)
 		ext[0] = 0;	
 }
 
-//ToolchainGenericDS-multiboot NDS Binary loader: Requires tgds_multiboot_payload.bin (TGDS-multiboot Project) in SD root.
+//ToolchainGenericDS-multiboot NDS Binary loader: Requires tgds_multiboot_payload_ntr.bin / tgds_multiboot_payload_twl.bin (TGDS-multiboot Project) in SD root.
 __attribute__((section(".itcm")))
 void TGDSMultibootRunNDSPayload(char * filename) __attribute__ ((optnone)) {
+	char msgDebug[96];
+	memset(msgDebug, 0, sizeof(msgDebug));	
 	switch_dswnifi_mode(dswifi_idlemode);
 	strcpy((char*)(0x02280000 - (MAX_TGDSFILENAME_LENGTH+1)), filename);	//Arg0:	
+	#ifdef NTRMODE
+	char * TGDSMBPAYLOAD = "0:/tgds_multiboot_payload_ntr.bin";	//TGDS NTR SDK (ARM9 binaries) emits TGDSMultibootRunNDSPayload() which reloads into NTR TGDS-MB Reload payload
+	#endif
 	
-	FILE * tgdsPayloadFh = fopen("0:/tgds_multiboot_payload.bin", "r");
+	#ifdef TWLMODE
+	char * TGDSMBPAYLOAD = "0:/tgds_multiboot_payload_twl.bin";	//TGDS TWL SDK (ARM9i binaries) emits TGDSMultibootRunNDSPayload() which reloads into TWL TGDS-MB Reload payload
+	#endif
+	
+	FILE * tgdsPayloadFh = fopen(TGDSMBPAYLOAD, "r");
 	if(tgdsPayloadFh != NULL){
 		fseek(tgdsPayloadFh, 0, SEEK_SET);
 		int	tgds_multiboot_payload_size = FS_getFileSizeFromOpenHandle(tgdsPayloadFh);
@@ -811,12 +861,22 @@ void TGDSMultibootRunNDSPayload(char * filename) __attribute__ ((optnone)) {
 		//Copy and relocate current TGDS DLDI section into target ARM9 binary
 		bool stat = dldiPatchLoader((data_t *)0x02280000, (u32)tgds_multiboot_payload_size, (u32)&_io_dldi_stub);
 		if(stat == false){
-			//printf("DLDI Patch failed. APP does not support DLDI format.");
+			sprintf(msgDebug, "%s%s", "TGDSMultibootRunNDSPayload():DLDI Patch failed. APP does not support DLDI format.", "");
+			nocashMessage((char*)&msgDebug[0]);
+		}
+		else{
+			sprintf(msgDebug, "%s%s", "TGDSMultibootRunNDSPayload():DLDI Patch OK.", "");
+			nocashMessage((char*)&msgDebug[0]);
 		}
 		REG_IME = 0;
 		typedef void (*t_bootAddr)();
 		t_bootAddr bootARM9Payload = (t_bootAddr)0x02280000;
 		bootARM9Payload();
+	}
+	else{
+		sprintf(msgDebug, "%s%s", "TGDSMultibootRunNDSPayload(): Missing Payload:", TGDSMBPAYLOAD);
+		nocashMessage((char*)&msgDebug[0]);
+		printf((char*)&msgDebug[0]);
 	}
 }
 

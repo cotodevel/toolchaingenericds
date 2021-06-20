@@ -647,6 +647,14 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 			}
 			break;
 			
+			case TGDS_ARMCORES_REPORT_PAYLOAD_MODE:{
+				reportTGDSPayloadMode();				
+				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				setValueSafe(&fifomsg[45], (uint32)0);
+			}
+			break;
+			
 			#ifdef TWLMODE
 			case TGDS_ARM7_REQ_SLOT1_DISABLE:{
 				disableSlot1();

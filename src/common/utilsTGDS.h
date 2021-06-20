@@ -141,7 +141,7 @@ extern char thisArgv[argvItems][MAX_TGDSFILENAME_LENGTH];
 extern void mainARGV();
 extern void separateExtension(char *str, char *ext);
 
-//ToolchainGenericDS-multiboot NDS Binary loader: Requires tgds_multiboot_payload.bin (TGDS-multiboot Project) in SD root.
+//ToolchainGenericDS-multiboot NDS Binary loader: Requires tgds_multiboot_payload_ntr.bin / tgds_multiboot_payload_twl.bin (TGDS-multiboot Project) in SD root.
 extern void TGDSMultibootRunNDSPayload(char * filename);
 
 //ToolchainGenericDS-LinkedModule 
@@ -183,6 +183,10 @@ extern bool __dsimode; // set in crt0
 extern void shutdownNDSHardware();
 
 extern bool isDSiMode();
+
+extern char * TGDSPayloadMode;
+extern void reportTGDSPayloadMode();
+
 #ifdef __cplusplus
 }
 #endif

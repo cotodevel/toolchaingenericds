@@ -55,7 +55,7 @@ USA
 #include "limitsTGDS.h"
 #include "dswnifi_lib.h"
 #endif
-
+#include "debugNocash.h"
 
 #ifdef ARM7
 uint32 get_iwram_start(){
@@ -466,7 +466,8 @@ void printarm7DebugBuffer(){
 	strcat(printfTemp, ">6");	//TGDS Console Font Color: TGDSPrintfColor_Yellow
 	
 	printfTemp[strlen(printfTemp)+1] = '\0';
-	printf("%s", printfTemp); 
+	printf("%s", printfTemp);
+	nocashMessage(printfTemp);
 }
 
 int printf(const char *fmt, ...) __attribute__ ((optnone)) {
