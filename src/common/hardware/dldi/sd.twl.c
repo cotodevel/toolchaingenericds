@@ -65,7 +65,7 @@ bool sdio_ReadSectors(sec_t sector, sec_t numSectors,void* buffer) __attribute__
 		swiDelay(333);
 	}
 	memcpy((uint16_t*)buffer, (uint16_t*)targetMem, (numSectors * 512));
-	//so far here, but reads are wrong
+	coherent_user_range_by_size((uint32)buffer, (numSectors * 512)); //make coherent writes to dest buffer
 	return true;
 	#endif
 }
@@ -79,6 +79,7 @@ bool sdio_WriteSectors(sec_t sector, sec_t numSectors, const void* buffer) __att
 	#endif
 	#ifdef TWLMODE
 	void * targetMem = (void *)((int)&ARM7SharedDLDI[0] + 0x400000); //TWL uncached EWRAM
+	coherent_user_range_by_size((uint32)buffer, (numSectors * 512)); //make coherent reads from src buffer
 	memcpy((uint16_t*)targetMem, (uint16_t*)buffer, (numSectors * 512));
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
