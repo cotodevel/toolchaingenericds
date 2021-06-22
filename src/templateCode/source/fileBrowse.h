@@ -108,7 +108,7 @@ static inline bool ShowBrowser(char * Path, char * outBuf){
 	scanKeys();
 	while((keysDown() & KEY_START) || (keysDown() & KEY_A) || (keysDown() & KEY_B)){
 		scanKeys();
-		IRQWait(IRQ_VBLANK);
+		IRQWait(0, IRQ_VBLANK);
 	}
 	
 	//Create TGDS Dir API context
@@ -194,7 +194,7 @@ static inline bool ShowBrowser(char * Path, char * outBuf){
 			while(pressed&KEY_DOWN){
 				scanKeys();
 				pressed = keysDown();
-				IRQWait(IRQ_VBLANK);
+				IRQWait(0, IRQ_VBLANK);
 			}
 		}
 		
@@ -213,7 +213,7 @@ static inline bool ShowBrowser(char * Path, char * outBuf){
 			while(pressed&KEY_DOWN){
 				scanKeys();
 				pressed = keysDown();
-				IRQWait(IRQ_VBLANK);
+				IRQWait(0, IRQ_VBLANK);
 			}
 		}
 		
@@ -232,7 +232,7 @@ static inline bool ShowBrowser(char * Path, char * outBuf){
 			while(pressed&KEY_LEFT){
 				scanKeys();
 				pressed = keysDown();
-				IRQWait(IRQ_VBLANK);
+				IRQWait(0, IRQ_VBLANK);
 			}
 		}
 		
@@ -251,7 +251,7 @@ static inline bool ShowBrowser(char * Path, char * outBuf){
 			while(pressed&KEY_RIGHT){
 				scanKeys();
 				pressed = keysDown();
-				IRQWait(IRQ_VBLANK);
+				IRQWait(0, IRQ_VBLANK);
 			}
 		}
 		
@@ -260,7 +260,7 @@ static inline bool ShowBrowser(char * Path, char * outBuf){
 			while(pressed&KEY_UP){
 				scanKeys();
 				pressed = keysDown();
-				IRQWait(IRQ_VBLANK);
+				IRQWait(0, IRQ_VBLANK);
 			}
 		}
 		
@@ -278,7 +278,7 @@ static inline bool ShowBrowser(char * Path, char * outBuf){
 			while(pressed&KEY_UP){
 				scanKeys();
 				pressed = keysDown();
-				IRQWait(IRQ_VBLANK);
+				IRQWait(0, IRQ_VBLANK);
 			}
 		}
 		

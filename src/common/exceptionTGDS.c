@@ -113,7 +113,7 @@ void exception_sysexit(){
 	setValueSafe(&fifomsg[60], (uint32)unexpectedsysexit_7);
 	SendFIFOWords(EXCEPTION_ARM7);
 	while(1){
-		IRQWait(IRQ_VBLANK);
+		IRQWait(0, IRQ_VBLANK);
 	}
 	#endif
 	

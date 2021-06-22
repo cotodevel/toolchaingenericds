@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
 	
     while (1) {
 		handleARM7SVC();	/* Do not remove, handles TGDS services */
-		IRQWait(IRQ_HBLANK);
+		IRQWait(0, IRQ_VBLANK);
 	}
 	return 0;
 }

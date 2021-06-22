@@ -69,7 +69,7 @@ void IRQInit(u8 DSHardware) __attribute__ ((optnone)) {
 	REG_DISPSTAT = (DISP_VBLANK_IRQ | DISP_YTRIGGER_IRQ);
 	#endif
 	#ifdef ARM9
-	REG_DISPSTAT = (DISP_HBLANK_IRQ | DISP_VBLANK_IRQ | DISP_YTRIGGER_IRQ);
+	REG_DISPSTAT = (DISP_VBLANK_IRQ | DISP_YTRIGGER_IRQ);
 	#endif
 	
 	//Set up PPU IRQ Vertical Line
@@ -81,7 +81,7 @@ void IRQInit(u8 DSHardware) __attribute__ ((optnone)) {
 	#endif
 	
 	#ifdef ARM9
-	interrupts_to_wait_armX = IRQ_HBLANK| IRQ_VBLANK | IRQ_VCOUNT | IRQ_IPCSYNC | IRQ_RECVFIFO_NOT_EMPTY;
+	interrupts_to_wait_armX = IRQ_VBLANK | IRQ_VCOUNT | IRQ_IPCSYNC | IRQ_RECVFIFO_NOT_EMPTY;
 	#endif
 	
 	//NTR
@@ -130,7 +130,7 @@ static bool penDown = false;
 __attribute__((section(".itcm")))
 #endif
 void NDS_IRQHandler() __attribute__ ((optnone)) {
-	u32 handledIRQ = (REG_IF | SWI_CHECKBITS) & REG_IE;
+	u32 handledIRQ = REG_IF & REG_IE;
 	
 	#ifdef TWLMODE
 	u32 handledIRQAUX = REG_AUXIE & REG_AUXIF;
@@ -407,6 +407,7 @@ void NDS_IRQHandler() __attribute__ ((optnone)) {
 	
 	#endif
 	REG_IF = handledIRQ;
+	SWI_CHECKBITS |= handledIRQ;
 	
 	#ifdef TWLMODE
 	REG_AUXIF = handledIRQAUX;

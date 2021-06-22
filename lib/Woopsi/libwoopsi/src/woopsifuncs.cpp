@@ -335,7 +335,7 @@ void initWoopsiGfxMode() {
 __attribute__((section(".itcm")))
 void woopsiWaitVBL() {
 	handleARM9SVC();	/* Do not remove, handles TGDS services */
-	IRQWait(IRQ_HBLANK);
+	IRQWait(0, IRQ_VBLANK);
 }
 
 #endif
