@@ -85,6 +85,9 @@ Features:
 
 Changelog:
 
+TGDS 1.64:
+- TGDS TWL Support, which means TGDS projects now work on real DSi/N2DS/N3DS using TWL hardware through SD hardware, besides NTR mode.
+
 TGDS 1.63.1:
 - Bugfixes in audioplayback that emerged between TGDS1.62 and TGDS1.63
 
