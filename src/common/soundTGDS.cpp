@@ -654,7 +654,7 @@ void freeSound()
 	stopSound();
 	freeData();
 	
-	switch(soundData.sourceFmt)
+	switch(internalCodecType)
 	{
 		case SRC_WAV:{
 			if(memoryLoad)
@@ -664,6 +664,11 @@ void freeSound()
 			}
 		}
 		break;
+		case SRC_WAVADPCM:{
+			player.stop();
+		}
+		break;
+		
 		default:{
 			freeSoundCustomDecoder(soundData.sourceFmt);
 		}
@@ -994,18 +999,18 @@ int playSoundStream(char * audioStreamFilename, struct fd * _FileHandleVideo, st
 		//OK
 		_FileHandleVideo = getStructFD(physFh1);
 		_FileHandleAudio = getStructFD(physFh2);
-		int internalCodecType = initSoundStreamFromStructFD(_FileHandleAudio, (char*)".wav");
-		if(internalCodecType == SRC_WAVADPCM){
+		int intCodecType = initSoundStreamFromStructFD(_FileHandleAudio, (char*)".wav");
+		if(intCodecType == SRC_WAVADPCM){
 			bool loop_audio = false;
 			bool automatic_updates = false;
 			if(player.play(getPosixFileHandleByStructFD(_FileHandleAudio, "r"), loop_audio, automatic_updates, ADPCM_SIZE, stopSoundStreamUser) == 0){
 				//ADPCM Playback!
 			}
 		}
-		else if(internalCodecType == SRC_WAV){
+		else if(intCodecType == SRC_WAV){
 			//WAV Playback!
 		}
-		return internalCodecType;
+		return intCodecType;
 	}
 	return SRC_NONE;
 }
@@ -1230,7 +1235,7 @@ int initSoundStreamFromStructFD(struct fd * _FileHandleAudio, char * ext)  __att
 			
 			wavDecode();
 			startSound9();
-			
+			internalCodecType = SRC_WAV;
 			return SRC_WAV;
 		}
 		if(headerChunk.wFormatTag == WAVE_FORMAT_IMA_ADPCM){

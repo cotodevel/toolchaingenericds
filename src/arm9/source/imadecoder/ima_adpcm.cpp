@@ -24,13 +24,12 @@ extern "C" {
 
 IMA_Adpcm_Stream::IMA_Adpcm_Stream()
 {
-	datacache = 0;
+	
 }
 
 IMA_Adpcm_Stream::~IMA_Adpcm_Stream()
 {
-	if( datacache )
-		delete[] datacache;
+	
 }
 
 int IMA_Adpcm_Stream::reset( FILE * audioFileHandle, bool loop )
@@ -77,6 +76,9 @@ int IMA_Adpcm_Stream::reset( FILE * audioFileHandle, bool loop )
 			skip( 4 );	// avg bytes/second
 			block = fget16();
 			
+			if( datacache ){
+				delete[] datacache;
+			}
 			datacache = new u8[block];
 
 			sampBits = fget16();
@@ -447,6 +449,7 @@ int IMA_Adpcm_Player::play( FILE * ADFileHandle, bool loop_audio, bool automatic
 	mallocData(ADPCMchunksize*2);
 	IMAADPCMDecode();
 	soundData.sourceFmt = SRC_WAV;
+	internalCodecType = SRC_WAVADPCM;
 	startSound9();
 	return 0;
 }

@@ -342,6 +342,8 @@ extern int playSoundStream(char * audioStreamFilename, struct fd * _FileHandleVi
 //Returns: true if successfully halted, false if no audiostream available.
 extern bool stopSoundStream(struct fd * tgdsStructFD1, struct fd * tgdsStructFD2, int * internalCodecType);
 
+extern int internalCodecType;	//defines either AD-PCM, WAV or other formats
+
 #endif
 
 extern void EnableSoundSampleContext(int SndSamplemode);
