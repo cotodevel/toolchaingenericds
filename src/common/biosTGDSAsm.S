@@ -57,42 +57,42 @@
 .global 	swiDelay
 .type   	swiDelay	STT_FUNC
 swiDelay:
-	swi	0x30000
+	swi	0x00030000
 	bx	lr
 
 @uint16 swiCRC16(uint16 crc, void * data, uint32 size);
 .global 	swiCRC16
 .type   	swiCRC16 STT_FUNC
 swiCRC16:
-	swi 0xe0000
+	swi 0x000e0000
 bx r14
 
 @void swiSleep(void);
 .global 	swiSleep
 .type   	swiSleep STT_FUNC
 swiSleep:
-	swi	0x70000
+	swi	0x00070000
 	bx	lr
 
 @int swiIsDebugger(void);
 .global 	swiIsDebugger
 .type   	swiIsDebugger STT_FUNC
 swiIsDebugger:
-	swi	0xF0000
+	swi	0x000F0000
 	bx	lr
 
 @int swiDivide(int numerator, int divisor);
 .global 	swiDivide
 .type   	swiDivide STT_FUNC
 swiDivide:
-	swi	0x90000
+	swi	0x00090000
 	bx	lr
 
 @int swiRemainder(int numerator, int divisor);
 .global 	swiRemainder
 .type   	swiRemainder STT_FUNC
 swiRemainder:
-	swi	0x90000
+	swi	0x00090000
 	mov	r0, r1
 	bx	lr
 
@@ -101,7 +101,7 @@ swiRemainder:
 .type   	swiDivMod STT_FUNC
 swiDivMod:
 	push	{r2, r3}
-	swi	0x90000
+	swi	0x00090000
 	pop	{r2, r3}
 	str	r0, [r2]
 	str	r1, [r3]
@@ -111,7 +111,7 @@ swiDivMod:
 .global 	swiSqrt
 .type   	swiSqrt STT_FUNC
 swiSqrt:
-	swi	0xD0000
+	swi	0x000D0000
 	bx	lr
 
 
@@ -120,28 +120,28 @@ swiSqrt:
 .global 	swiHalt
 .type   	swiHalt STT_FUNC
 swiHalt:
-	swi	0x60000
+	swi	0x00060000
 	bx	lr
 
 @uint16 swiGetSineTable(int index);
 .global 	swiGetSineTable
 .type   	swiGetSineTable STT_FUNC
 swiGetSineTable:
-	swi	0x1A0000
+	swi	0x001A0000
 	bx	lr
 
 @uint16 swiGetPitchTable(int index);
 .global 	swiGetPitchTable
 .type   	swiGetPitchTable STT_FUNC
 swiGetPitchTable:
-	swi	0x1B0000
+	swi	0x001B0000
 	bx	lr
 
 @uint8 swiGetVolumeTable(int index);
 .global 	swiGetVolumeTable
 .type   	swiGetVolumeTable STT_FUNC
 swiGetVolumeTable:
-	swi	0x1C0000
+	swi	0x001C0000
 	bx	lr
 
 
@@ -150,14 +150,14 @@ swiGetVolumeTable:
 .type   	swiSetHaltCR STT_FUNC
 swiSetHaltCR:
 	mov	r2, r0
-	swi	0x1F0000
+	swi	0x001F0000
 	bx	lr
 
 @void swiChangeSoundBias(int enabled, int delay);
 .global 	swiChangeSoundBias
 .type   	swiChangeSoundBias STT_FUNC
 swiChangeSoundBias:
-	swi	0x80000
+	swi	0x00080000
 	bx	lr
 	
 #endif
@@ -221,14 +221,14 @@ swiSoftResetByAddress:
 .global 	swiDecompressLZSSWram
 .type   	swiDecompressLZSSWram STT_FUNC
 swiDecompressLZSSWram:
-	swi	0x110000
+	swi	0x00110000
 	bx	lr
 
 @int swiDecompressLZSSVramByCallback(void * source, void * destination, uint32 toGetSize, struct DecompressionStream * stream);
 .global 	swiDecompressLZSSVramByCallback
 .type   	swiDecompressLZSSVramByCallback STT_FUNC
 swiDecompressLZSSVramByCallback:
-	swi	0x120000
+	swi	0x00120000
 	bx	lr
 
 .pool
