@@ -8,10 +8,14 @@
 #include "utilsTGDS.h"
 #include "utils.twl.h"
 #include "libndsFIFO.h"
-static struct mmcdevice deviceSD;
+
+//TWL SD hardware descriptor
+struct mmcdevice deviceSD;
+
+//Todo: TWL MMC hardware descriptor
 
 //---------------------------------------------------------------------------------
-int geterror(struct mmcdevice *ctx) {
+int geterror(struct mmcdevice *ctx)	__attribute__ ((optnone))	{
 //---------------------------------------------------------------------------------
     //if(ctx->error == 0x4) return -1;
     //else return 0;
@@ -20,7 +24,7 @@ int geterror(struct mmcdevice *ctx) {
 
 
 //---------------------------------------------------------------------------------
-void setTarget(struct mmcdevice *ctx) {
+void setTarget(struct mmcdevice *ctx)	__attribute__ ((optnone))	{
 //---------------------------------------------------------------------------------
     sdmmc_mask16(REG_SDPORTSEL,0x3,(u16)ctx->devicenumber);
     setckl(ctx->clk);
@@ -34,7 +38,7 @@ void setTarget(struct mmcdevice *ctx) {
 
 
 //---------------------------------------------------------------------------------
-void sdmmc_send_command(struct mmcdevice *ctx, uint32_t cmd, uint32_t args) {
+void sdmmc_send_command(struct mmcdevice *ctx, uint32_t cmd, uint32_t args)	__attribute__ ((optnone))	{
 //---------------------------------------------------------------------------------
 	const bool getSDRESP = (cmd << 15) >> 31;
 	u16 flags = (cmd << 15) >> 31;
@@ -225,7 +229,7 @@ void sdmmc_send_command(struct mmcdevice *ctx, uint32_t cmd, uint32_t args) {
 }
 
 //---------------------------------------------------------------------------------
-static u32 calcSDSize(u8* csd, int type) {
+static u32 calcSDSize(u8* csd, int type)	__attribute__ ((optnone))	{
 //---------------------------------------------------------------------------------
     u32 result = 0;
     if (type == -1) type = csd[14] >> 6;
@@ -253,7 +257,7 @@ static u32 calcSDSize(u8* csd, int type) {
 }
 
 //---------------------------------------------------------------------------------
-void sdmmc_controller_init(bool force) {
+void sdmmc_controller_init(bool force)	__attribute__ ((optnone))	{
 //---------------------------------------------------------------------------------
     deviceSD.isSDHC = 0;
     deviceSD.SDOPT = 0;
@@ -302,7 +306,7 @@ void sdmmc_controller_init(bool force) {
 }
 
 //---------------------------------------------------------------------------------
-int sdmmc_sdcard_init() {
+int sdmmc_sdcard_init()	__attribute__ ((optnone))	{
 //---------------------------------------------------------------------------------
 	// We need to send at least 74 clock pulses.
     setTarget(&deviceSD);
@@ -395,11 +399,11 @@ int sdmmc_sdcard_init() {
 }
 
 //---------------------------------------------------------------------------------
-int sdmmc_sdcard_readsectors(u32 sector_no, u32 numsectors, void *out) {
+int sdmmc_readsectors(struct mmcdevice *device, u32 sector_no, u32 numsectors, void *out)	__attribute__ ((optnone))	{
 //---------------------------------------------------------------------------------
-    if (deviceSD.isSDHC == 0)
+    if (device->isSDHC == 0)
         sector_no <<= 9;
-    setTarget(&deviceSD);
+    setTarget(device);
     sdmmc_write16(REG_SDSTOP,0x100);
 
 #ifdef DATA32_SUPPORT
@@ -408,14 +412,35 @@ int sdmmc_sdcard_readsectors(u32 sector_no, u32 numsectors, void *out) {
 #endif
 
     sdmmc_write16(REG_SDBLKCOUNT,numsectors);	//sd_numblk / sd_numblk32 set to 0 will cause endless loops
-    deviceSD.rData = out;
-    deviceSD.size = numsectors << 9;
-    sdmmc_send_command(&deviceSD,0x33C12,sector_no);
-    return geterror(&deviceSD);
+    device->rData = out;
+    device->size = numsectors << 9;
+    sdmmc_send_command(device,0x33C12,sector_no);
+    return geterror(device);
 }
 
 //---------------------------------------------------------------------------------
-int sdmmc_sd_startup() {
+int sdmmc_writesectors(struct mmcdevice *device, u32 sector_no, u32 numsectors, void *in)	__attribute__ ((optnone))	{
+//---------------------------------------------------------------------------------
+    if (device->isSDHC == 0)
+        sector_no <<= 9;
+    setTarget(device);
+    sdmmc_write16(REG_SDSTOP,0x100);
+
+#ifdef DATA32_SUPPORT
+    sdmmc_write16(REG_SDBLKCOUNT32,numsectors);
+    sdmmc_write16(REG_SDBLKLEN32,0x200);
+#endif
+
+    sdmmc_write16(REG_SDBLKCOUNT,numsectors);
+    device->tData = in;
+    device->size = numsectors << 9;
+    sdmmc_send_command(device,0x52C19,sector_no);
+    setTarget(&deviceSD);
+    return geterror(device);
+}
+
+//---------------------------------------------------------------------------------
+int sdmmc_sd_startup()	__attribute__ ((optnone))	{
 //---------------------------------------------------------------------------------
     sdmmc_controller_init(false);
     return sdmmc_sdcard_init();

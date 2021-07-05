@@ -196,7 +196,7 @@ bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer) __a
 		else{
 			#ifdef ARM7
 				#ifdef TWLMODE
-				sdmmc_sdcard_readsectors(sector, numSectors, buffer);
+				sdmmc_readsectors(&deviceSD, sector, numSectors, buffer);
 				return true;
 				#endif
 				
@@ -258,8 +258,8 @@ bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buff
 		else{
 			#ifdef ARM7
 				#ifdef TWLMODE
-				//sdmmc_writesectors(&deviceSD, sector, numSectors, (void*)buffer);
-				return false;
+				sdmmc_writesectors(&deviceSD, sector, numSectors, buffer);
+				return true;
 				#endif
 				
 				#ifndef TWLMODE
@@ -267,10 +267,10 @@ bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buff
 				#endif
 			#endif
 			
-			#ifdef ARM9
+			#ifdef ARM9			
 				#ifdef TWLMODE
-				//sdio_WriteSectors(sector, numSectors, buffer);
-				return false;
+				sdio_WriteSectors(sector, numSectors, buffer);
+				return true;
 				#endif
 				#ifndef TWLMODE
 				return false;

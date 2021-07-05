@@ -195,7 +195,11 @@ extern "C"{
 #endif
 
 extern int sdmmc_sd_startup();
-extern int sdmmc_sdcard_readsectors(u32 sector_no, u32 numsectors, void *out);
+extern int sdmmc_readsectors(struct mmcdevice *device, u32 sector_no, u32 numsectors, void *out);
+extern int sdmmc_writesectors(struct mmcdevice *device, u32 sector_no, u32 numsectors, void *in);
+
+//TWL SD hardware descriptor
+extern struct mmcdevice deviceSD;
 
 #ifdef __cplusplus
 }
