@@ -132,9 +132,8 @@ void resetMemory_ARMCores(u8 DSHardware) __attribute__ ((optnone)) {
 		VRAM_CR   = 0x03000000;
 		REG_POWERCNT  = 0x820F;
     
-		//Memory Setup: ARM7 TGDS 96K = 0x037f8000 ~ 0x03810000. TGDS Sound Streaming code: Disabled 
-		//Upcoming target TGDS Project can make use of TGDS Sound Streaming, or use it as contiguous 96K IWRAM for larger ARM7 projects.
-		WRAM_CR = WRAM_0KARM9_32KARM7;	
+		//set WORKRAM 32K to ARM9 by default
+		WRAM_CR = WRAM_32KARM9_0KARM7;
 		#endif
 	}
 	
