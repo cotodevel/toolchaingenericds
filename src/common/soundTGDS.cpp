@@ -25,6 +25,7 @@ USA
 #include "timerTGDS.h"
 #include "posixHandleTGDS.h"
 #include "InterruptsARMCores_h.h"
+#include "debugNocash.h"
 
 #ifdef ARM9
 #include "utilsTGDS.h"
@@ -993,6 +994,16 @@ int parseWaveData(struct fd * fdinst, u32 u32chunkToSeek){
 //Usercode: Opens a .WAV or IMA-ADPCM (Intel) file and begins to stream it. Copies the file handles 
 //Returns: the stream format.
 int playSoundStream(char * audioStreamFilename, struct fd * _FileHandleVideo, struct fd * _FileHandleAudio) __attribute__ ((optnone)){
+	
+	//If trying to play SoundStream code while Shared RAM is mapped @ ARM7, throw error
+	if((WRAM_CR & WRAM_0KARM9_32KARM7) == WRAM_0KARM9_32KARM7){
+		nocashMessage("TGDS:playSoundStream(): Trying to play a Sound Stream ");
+		nocashMessage("but SharedWRAM is used by ARM7. Aborting.");
+		printf("TGDS:playSoundStream(): Trying to play a Sound Stream ");
+		printf("but SharedWRAM is used by ARM7. Aborting.");
+		return SRC_NONE;
+	}
+	
 	int physFh1 = -1;
 	int physFh2 = -1;
 	if(openDualTGDSFileHandleFromFile(audioStreamFilename, &physFh1, &physFh2) == true){
