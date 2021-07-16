@@ -72,18 +72,18 @@ ARCH_CFLAGS += \
 COMPILER_SPECIFIC_CFLAGS += \
   --target=arm-none-eabi \
   --sysroot= \
-  -Oz \
+  -O1 \
   -DARM9	\
   -DNTRMODE
   
 CFLAGS = \
   -g3 \
   -nostdlib \
+  -ffunction-sections -fdata-sections \
   -fPIC	\
   -fshort-enums	\
   $(COMPILER_SPECIFIC_CFLAGS) \
   $(ARCH_CFLAGS) \
-  $(NEWLIB_NANO_COMPILE_FLAGS_C_9)	\
   $(CLI_CFLAG_OVERRIDES)	\
   -DNOCRYPT
 	

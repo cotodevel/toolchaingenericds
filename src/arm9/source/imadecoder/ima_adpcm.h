@@ -50,7 +50,7 @@ private:
 	IMA_Adpcm_Data		data;
 	IMA_Adpcm_Data		loop_data;
 	
-	u8*		datacache;
+	u8		datacache[8192];	//Highest IMA-ADPCM block is 512 bytes but we add some overhead just in case
 	u8*		loop_src;
 	int		loop_cblock;
 	int		loop_state;
