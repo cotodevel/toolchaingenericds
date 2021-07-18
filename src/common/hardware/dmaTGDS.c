@@ -19,6 +19,7 @@ USA
 */
 #include "dmaTGDS.h"
 
+//EWRAM <-> Other IO
 void dmaFillWord(sint32 dmachannel,uint32 value, uint32 dest, uint32 word_count){
 	dmaFill(dmachannel,value,dest,(DMAFIXED_SRC | DMAINCR_DEST | DMA32BIT | DMASTART_INMEDIATE | DMAENABLED | (word_count>>2)));
 }
@@ -34,3 +35,23 @@ void dmaTransferHalfWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 w
 void dmaTransferWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count){
 	dmaTransfer(dmachannel, source, dest, (DMAINCR_SRC | DMAINCR_DEST | DMA32BIT | DMASTART_INMEDIATE | DMAENABLED | (word_count>>2)));
 }
+
+
+//EWRAM <-> GBA Cart Slot
+void dmaFillWordSlot2(sint32 dmachannel,uint32 value, uint32 dest, uint32 word_count){
+	dmaFill(dmachannel,value,dest,(DMAFIXED_SRC | DMAINCR_DEST | DMA32BIT | DMASTART_SLOT2 | DMAENABLED | (word_count>>2)));
+}
+
+void dmaFillHalfWordSlot2(sint32 dmachannel,uint32 value, uint32 dest, uint32 word_count){
+	dmaFill(dmachannel,value,dest,(DMAFIXED_SRC | DMAINCR_DEST | DMA16BIT | DMASTART_SLOT2 | DMAENABLED | (word_count>>1)));
+}
+
+void dmaTransferHalfWordSlot2(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count){
+	dmaTransfer(dmachannel, source, dest, (DMAINCR_SRC | DMAINCR_DEST | DMA16BIT | DMASTART_SLOT2 | DMAENABLED | (word_count>>1)));
+}
+
+void dmaTransferWordSlot2(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count){
+	dmaTransfer(dmachannel, source, dest, (DMAINCR_SRC | DMAINCR_DEST | DMA32BIT | DMASTART_SLOT2 | DMAENABLED | (word_count>>2)));
+}
+
+

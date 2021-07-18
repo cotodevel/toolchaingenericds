@@ -40,9 +40,23 @@ USA
 #define 	COPY_FIXED_SOURCE (uint32)(1<<24)	//aka COPY_MODE_FILL
 #define 	COPY_SRCDEST_DMA (uint32)(0)		//aka COPY_MODE_COPY
 
+//0  Start Immediately
+//1  Start at V-Blank
+//2  Start at H-Blank (paused during V-Blank)
+//3  Synchronize to start of display
+//4  Main memory display
+//5  DS Cartridge Slot
+//6  GBA Cartridge Slot
+//7  Geometry Command FIFO
 #define		DMASTART_INMEDIATE	(uint32)(0<<(16+12))	//aka DMA_START_NOW
 #define		DMASTART_VBLANK		(uint32)(1<<(16+12))
 #define		DMASTART_HBLANK		(uint32)(2<<(16+12))
+#define		DMASTART_SYNC_DISPLAYSTART		(uint32)(3<<(16+12))
+#define		DMASTART_MAINMEM_DISPLAY		(uint32)(4<<(16+12))
+#define		DMASTART_SLOT1		(uint32)(5<<(16+12))
+#define		DMASTART_SLOT2		(uint32)(6<<(16+12))
+#define		DMASTART_GXFIFO		(uint32)(7<<(16+12))
+
 #define 	DMA_FIFO	((1<<31) | (1<<26)  | (1<<22) | (7<<27)) //#define		DMASTART_SPECIAL	(uint32)(3<<(16+12))
 
 #define		DMAENABLED	(uint32)(1<<(16+15))	//DMAs disable itself when transfer done	//aka DMA_BUSY	//aka DMA_ENABLE
@@ -104,6 +118,12 @@ extern void dmaFillWord(sint32 dmachannel,uint32 value, uint32 dest, uint32 word
 extern void dmaFillHalfWord(sint32 dmachannel,uint32 value, uint32 dest, uint32 word_count);
 extern void dmaTransferHalfWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count);
 extern void dmaTransferWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count);
+
+extern void dmaFillWordSlot2(sint32 dmachannel,uint32 value, uint32 dest, uint32 word_count);
+extern void dmaFillHalfWordSlot2(sint32 dmachannel,uint32 value, uint32 dest, uint32 word_count);
+extern void dmaTransferHalfWordSlot2(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count);
+extern void dmaTransferWordSlot2(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count);
+
 
 #ifdef __cplusplus
 }
