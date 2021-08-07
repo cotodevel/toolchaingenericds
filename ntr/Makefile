@@ -97,6 +97,7 @@ export DIRS_ARM9_SRC = ../source/	\
 			../source/ToolchainGenericDSFS/fatfs/source/	\
 			../source/zlib/	\
 			../source/zip/	\
+			../source/lzss9/	\
 			../source/dswifi_arm9/	\
 			../source/wnifilib/	\
 			../source/imadecoder/	\
@@ -122,6 +123,7 @@ export DIRS_ARM9_HEADER = ../source/	\
 			../source/ToolchainGenericDSFS/fatfs/source/	\
 			../source/zlib/	\
 			../source/zip/	\
+			../source/lzss9/	\
 			../source/dswifi_arm9/	\
 			../source/wnifilib/	\
 			../source/imadecoder/	\
