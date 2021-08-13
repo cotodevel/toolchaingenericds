@@ -108,6 +108,12 @@ static inline void dmaTransfer(sint32 dmachannel, uint32 source, uint32 dest, ui
 	while(DMAXCNT(dmachannel) & DMAENABLED);
 }
 
+static inline void dmaTransferAsync(sint32 dmachannel, uint32 source, uint32 dest, uint32 mode){	
+	DMAXSAD(dmachannel)= source;
+	DMAXDAD(dmachannel)= dest;
+	DMAXCNT(dmachannel)= mode;	
+}
+
 #endif
 
 #ifdef __cplusplus

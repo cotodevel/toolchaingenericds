@@ -55,7 +55,7 @@ void dmaTransferWordSlot2(sint32 dmachannel, uint32 source, uint32 dest, uint32 
 }
 
 #ifdef ARM9
-//Vblank (ARM9) rendering
+//Vblank (ARM9) rendering. Sync
 void dmaFillWordVBlank(sint32 dmachannel,uint32 value, uint32 dest, uint32 word_count){
 	dmaFill(dmachannel,value,dest,(DMAFIXED_SRC | DMAINCR_DEST | DMA32BIT | DMASTART_VBLANK | DMAENABLED | (word_count>>2)));
 }
@@ -64,11 +64,12 @@ void dmaFillHalfWordVBlank(sint32 dmachannel,uint32 value, uint32 dest, uint32 w
 	dmaFill(dmachannel,value,dest,(DMAFIXED_SRC | DMAINCR_DEST | DMA16BIT | DMASTART_VBLANK | DMAENABLED | (word_count>>1)));
 }
 
+//Async methods as frame renders while in VBLank, but DMA Controller may still be busy when another VBlank render frame is called. Thus we have to manually wait for it
 void dmaTransferHalfWordVBlank(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count){
-	dmaTransfer(dmachannel, source, dest, (DMAINCR_SRC | DMAINCR_DEST | DMA16BIT | DMASTART_VBLANK | DMAENABLED | (word_count>>1)));
+	dmaTransferAsync(dmachannel, source, dest, (DMAINCR_SRC | DMAINCR_DEST | DMA16BIT | DMASTART_VBLANK | DMAENABLED | (word_count>>1)));
 }
 
 void dmaTransferWordVBlank(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count){
-	dmaTransfer(dmachannel, source, dest, (DMAINCR_SRC | DMAINCR_DEST | DMA32BIT | DMASTART_VBLANK | DMAENABLED | (word_count>>2)));
+	dmaTransferAsync(dmachannel, source, dest, (DMAINCR_SRC | DMAINCR_DEST | DMA32BIT | DMASTART_VBLANK | DMAENABLED | (word_count>>2)));
 }
 #endif
