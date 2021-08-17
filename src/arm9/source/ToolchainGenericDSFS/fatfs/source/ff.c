@@ -3548,6 +3548,7 @@ FRESULT f_open (
 /* Read File                                                             */
 /*-----------------------------------------------------------------------*/
 
+__attribute__((section(".itcm")))
 FRESULT f_read (
 	FIL* fp, 	/* Pointer to the file object */
 	void* buff,	/* Pointer to data buffer */
@@ -4037,6 +4038,7 @@ FRESULT f_getcwd (
 /* Seek File Read/Write Pointer                                          */
 /*-----------------------------------------------------------------------*/
 
+__attribute__((section(".itcm")))
 FRESULT f_lseek (
 	FIL* fp,		/* Pointer to the file object */
 	FSIZE_t ofs		/* File pointer from top of file */
