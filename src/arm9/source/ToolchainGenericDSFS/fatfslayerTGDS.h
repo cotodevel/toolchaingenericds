@@ -26,12 +26,97 @@ USA
 
 ////////////////////////////////////////////////////////////////////////////INTERNAL CODE START/////////////////////////////////////////////////////////////////////////////////////
 
-#include <dirent.h>
 #include <stdio.h>
 #include <sys/stat.h>
 #include "devoptab_devices.h"
+
+#ifdef ARM9
+#include <dirent.h>
+#include "ff.h"
 #include "posixHandleTGDS.h"
-#include "ff.h"	//DIR struct definition here. dirent.h´s DIR was removed, and rewritten
+#endif
+
+#if defined (MSDOS) || defined(WIN32)
+
+#include <stdio.h>
+#include <string.h>
+#include <stdarg.h>
+#include <ctype.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <string.h>
+#include "..\misc\vs2012TGDS-FS\TGDSFSVS2012\TGDSFSVS2012\TGDSTypes.h"
+#include "fatfs\source\ff.h"	//DIR struct definition here. dirent.h´s DIR was removed, and rewritten
+
+#define fatfs_O_ACCMODE (FA_READ|FA_WRITE)
+#define	O_ACCMODE	(O_RDONLY|O_WRONLY|O_RDWR)
+
+#ifndef __cplusplus
+typedef unsigned char bool;
+static const bool false = 0;
+static const bool true = 1;
+#endif
+
+#define	_IFMT		0170000	/* type of file */
+#define		_IFDIR	0040000	/* directory */
+#define		_IFCHR	0020000	/* character special */
+#define		_IFBLK	0060000	/* block special */
+#define		_IFREG	0100000	/* regular */
+#define		_IFLNK	0120000	/* symbolic link */
+#define		_IFSOCK	0140000	/* socket */
+#define		_IFIFO	0010000	/* fifo */
+
+#define 	S_BLKSIZE  1024 /* size of a block */
+
+#define	S_ISUID		0004000	/* set user id on execution */
+#define	S_ISGID		0002000	/* set group id on execution */
+#define	S_ISVTX		0001000	/* save swapped text even after use */
+#ifndef	_POSIX_SOURCE
+#define	S_IREAD		0000400	/* read permission, owner */
+#define	S_IWRITE 	0000200	/* write permission, owner */
+#define	S_IEXEC		0000100	/* execute/search permission, owner */
+#define	S_ENFMT 	0002000	/* enforcement-mode locking */
+#endif	/* !_POSIX_SOURCE */
+
+#define	S_IFMT		_IFMT
+#define	S_IFDIR		_IFDIR
+#define	S_IFCHR		_IFCHR
+#define	S_IFBLK		_IFBLK
+#define	S_IFREG		_IFREG
+#define	S_IFLNK		_IFLNK
+#define	S_IFSOCK	_IFSOCK
+#define	S_IFIFO		_IFIFO
+
+
+#define	S_IRWXU 	(S_IRUSR | S_IWUSR | S_IXUSR)
+#define		S_IRUSR	0000400	/* read permission, owner */
+#define		S_IWUSR	0000200	/* write permission, owner */
+#define		S_IXUSR 0000100/* execute/search permission, owner */
+#define	S_IRWXG		(S_IRGRP | S_IWGRP | S_IXGRP)
+#define		S_IRGRP	0000040	/* read permission, group */
+#define		S_IWGRP	0000020	/* write permission, grougroup */
+#define		S_IXGRP 0000010/* execute/search permission, group */
+#define	S_IRWXO		(S_IROTH | S_IWOTH | S_IXOTH)
+#define		S_IROTH	0000004	/* read permission, other */
+#define		S_IWOTH	0000002	/* write permission, other */
+#define		S_IXOTH 0000001/* execute/search permission, other */
+
+#define	S_ISBLK(m)	(((m)&_IFMT) == _IFBLK)
+#define	S_ISCHR(m)	(((m)&_IFMT) == _IFCHR)
+#define	S_ISDIR(m)	(((m)&_IFMT) == _IFDIR)
+#define	S_ISFIFO(m)	(((m)&_IFMT) == _IFIFO)
+#define	S_ISREG(m)	(((m)&_IFMT) == _IFREG)
+#define	S_ISLNK(m)	(((m)&_IFMT) == _IFLNK)
+#define	S_ISSOCK(m)	(((m)&_IFMT) == _IFSOCK)
+
+
+//this dirent is guaranteed to work with fatfs, add items if you want but don't edit those definitions.
+struct dirent {
+	ino_t d_ino;				/* file serial number -- Index == Posix d_ino "Serial Number" file handle = getStructFD(index) */
+    char d_name[MAX_TGDSFILENAME_LENGTH+1];	/* name must be no longer than this */
+};
+#endif
 
 //TGDS FS defs: These must be typecasted otherwise compiler will generate wrong strb opcodes
 #define FT_NONE (int)(0)
@@ -128,7 +213,10 @@ struct fd {
 };
 
 //This should be implemented in newlib, but it's not exposed 
-static inline int charPosixToFlagPosix(char * flags){
+#ifdef ARM9
+inline 
+#endif
+static int charPosixToFlagPosix(char * flags){
 	int flagsPosix = 0;
 	if(strcmp(flags, "r") == 0){
 		flagsPosix |= O_RDONLY;
@@ -183,7 +271,9 @@ extern struct dirent *readdir(DIR *dirp);
 extern void rewinddir(DIR *dirp);
 extern int dirfd(DIR *dirp);
 extern int remove(const char *filename);
+#ifdef ARM9
 extern int chmod(const char *pathname, mode_t mode);
+#endif
 extern DIR *fdopendir(int fd);
 extern void seekdir(DIR *dirp, long loc);
 extern int fatfs2libfatAttrib(int fatfsFlags);
@@ -321,19 +411,33 @@ extern long TGDSFSUserfatfs_tell(struct fd *f);
 
 extern bool openDualTGDSFileHandleFromFile(char * filenameToOpen, int * tgdsStructFD1, int * tgdsStructFD2);
 extern bool closeDualTGDSFileHandleFromFile(struct fd * tgdsStructFD1, struct fd * tgdsStructFD2);
+#if defined(WIN32)
+extern int getLastDirFromPath(char * stream, char * haystack, char * outBuf);
+#endif
+
+extern int ARM7FS_close_ARM9ImplementationTGDSFD(struct fd * fdinstOut);
+extern int ARM7FS_ReadBuffer_ARM9ImplementationTGDSFD(u8 * outBuffer, int fileOffset, struct fd * fdinstIn, int bufferSize);
+extern int ARM7FS_WriteBuffer_ARM9ImplementationTGDSFD(u8 * inBuffer, int fileOffset, struct fd * fdinstOut, int bufferSize);
+
 ///////////////////////////////////////////////TGDS FileDescriptor Callbacks Implementation End ///////////////////////////////////////////////
 
 #ifdef __cplusplus
 }
 #endif
 
-static inline struct FileClassList * initFileList(){
+#ifdef ARM9
+inline 
+#endif
+static struct FileClassList * initFileList(){
 	return (struct FileClassList *)TGDSARM9Malloc(sizeof(struct FileClassList));
 }
 
 //return: true if clean success
 //false if lst == NULL
-static inline bool cleanFileList(struct FileClassList * lst){
+#ifdef ARM9
+inline 
+#endif
+static bool cleanFileList(struct FileClassList * lst){
 	if(lst != NULL){
 		memset((u8*)lst, 0, sizeof(struct FileClassList));
 		lst->CurrentFileDirEntry = 0;
@@ -345,7 +449,10 @@ static inline bool cleanFileList(struct FileClassList * lst){
 	return false;
 }
 
-static inline void freeFileList(struct FileClassList * lst){
+#ifdef ARM9
+inline 
+#endif
+static void freeFileList(struct FileClassList * lst){
 	if(lst != NULL){
 		TGDSARM9Free(lst);
 	}
@@ -354,7 +461,10 @@ static inline void freeFileList(struct FileClassList * lst){
 //returns: the struct FileClassList * context if success
 //if error: returns NULL, which means, operation failed.
 
-static inline struct FileClassList * pushEntryToFileClassList(bool iterable, char * fullPath, int Typ, int StructFD, struct FileClassList * lst){
+#ifdef ARM9
+inline 
+#endif
+static struct FileClassList * pushEntryToFileClassList(bool iterable, char * fullPath, int Typ, int StructFD, struct FileClassList * lst){
 	if(lst != NULL){		
 		int FileClassListIndex = lst->FileDirCount;
 		setFileClass(iterable, fullPath, FileClassListIndex, Typ, StructFD, lst);
@@ -363,13 +473,16 @@ static inline struct FileClassList * pushEntryToFileClassList(bool iterable, cha
 	return NULL;
 }
 
-static inline struct FileClassList * popEntryfromFileClassList(struct FileClassList * lst){
+#ifdef ARM9
+inline
+#endif
+static struct FileClassList * popEntryfromFileClassList(struct FileClassList * lst){
 	if(lst != NULL){		
 		int FileClassListIndex = lst->FileDirCount;
 		if(FileClassListIndex > 0){
 			if(FileClassListIndex < FileClassItems){	//prevent overlapping current FileClassList 
-				lst->FileDirCount = FileClassListIndex - 1;
 				struct FileClass * FileClassInst = getFileClassFromList(FileClassListIndex, lst);
+				lst->FileDirCount = FileClassListIndex - 1;
 				memset(FileClassInst, 0, sizeof(struct FileClass));
 				return lst;
 			}
@@ -378,7 +491,10 @@ static inline struct FileClassList * popEntryfromFileClassList(struct FileClassL
 	return NULL;
 }
 
-static inline bool contains(int * arr, int arrSize, int value){
+#ifdef ARM9
+inline 
+#endif
+static bool contains(int * arr, int arrSize, int value){
     int i=0;
 	for(i=0; i < arrSize; i++){
         if(arr[i] == value){
@@ -388,16 +504,19 @@ static inline bool contains(int * arr, int arrSize, int value){
     return false;
 } 
 
-static inline struct FileClassList * randomizeFileClassList(struct FileClassList * lst){
+#ifdef ARM9
+inline 
+#endif
+static struct FileClassList * randomizeFileClassList(struct FileClassList * lst){
 	if(lst != NULL){
 		//Build rand table
 		int listCount = lst->FileDirCount;
 		int uniqueArr[FileClassItems];
 		int i=0;
+		int indx=0;
 		for(i=0; i < FileClassItems; i++){
             uniqueArr[i] = -1;
         }
-		int indx=0;
 		for(;;){
 		    int randVal = rand() % (listCount);
 		    if (contains(uniqueArr, listCount, randVal) == false){
@@ -413,12 +532,10 @@ static inline struct FileClassList * randomizeFileClassList(struct FileClassList
 		for(indx=0; indx < listCount; indx++){
 			struct FileClass fileListSrc;
 			struct FileClass fileListTarget;
-			memset(&fileListSrc, 0, sizeof(struct FileClass));
-			memset(&fileListTarget, 0, sizeof(struct FileClass));
-			
 			int targetIndx = uniqueArr[indx];
 			int srcIndx = indx;
-			
+			memset(&fileListSrc, 0, sizeof(struct FileClass));
+			memset(&fileListTarget, 0, sizeof(struct FileClass));
 			if(targetIndx != srcIndx){
 				struct FileClass * FileClassInstSource = getFileClassFromList(srcIndx, lst);
 				struct FileClass * FileClassInstTarget = getFileClassFromList(targetIndx, lst);

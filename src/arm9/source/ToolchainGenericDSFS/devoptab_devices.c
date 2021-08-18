@@ -18,25 +18,25 @@ USA
 
 */
 
-#ifdef ARM9
-
+#if defined(ARM9) || defined(WIN32)
 #include "devoptab_devices.h"
+#ifdef ARM9
 #include "consoleTGDS.h"
 #include "dsregs.h"
 #include "typedefsTGDS.h"
 #include "consoleTGDS.h"
+#include <stdbool.h>
+#include "posixHandleTGDS.h"
+#endif
 
 #include "errno.h"
-
 #include <string.h>
 #include <stdio.h>
-#include <stdbool.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <time.h>
 
 #include "fatfslayerTGDS.h"
-#include "posixHandleTGDS.h"
 
 //device name for stdin driver descriptor (max devoptab_fname_size size)
 sint8 * stdin_name_desc = (sint8*)("stdin");

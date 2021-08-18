@@ -625,7 +625,6 @@ void st_qword (BYTE* ptr, QWORD val)	/* Store an 8-byte word in little-endian */
 /*-----------------------------------------------------------------------*/
 
 /* Copy memory to memory */
-static
 void mem_cpy (void* dst, const void* src, UINT cnt)
 {
 	BYTE *d = (BYTE*)dst;
@@ -3547,8 +3546,9 @@ FRESULT f_open (
 /*-----------------------------------------------------------------------*/
 /* Read File                                                             */
 /*-----------------------------------------------------------------------*/
-
+#ifdef ARM9
 __attribute__((section(".itcm")))
+#endif
 FRESULT f_read (
 	FIL* fp, 	/* Pointer to the file object */
 	void* buff,	/* Pointer to data buffer */
@@ -4038,7 +4038,9 @@ FRESULT f_getcwd (
 /* Seek File Read/Write Pointer                                          */
 /*-----------------------------------------------------------------------*/
 
+#ifdef ARM9
 __attribute__((section(".itcm")))
+#endif
 FRESULT f_lseek (
 	FIL* fp,		/* Pointer to the file object */
 	FSIZE_t ofs		/* File pointer from top of file */

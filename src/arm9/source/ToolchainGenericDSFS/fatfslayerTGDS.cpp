@@ -1,3 +1,7 @@
+#if defined(WIN32)
+//disable _CRT_SECURE_NO_WARNINGS message to build this in VC++
+#pragma warning(disable:4996)
+#endif
 /*
 			Copyright (C) 2017  Coto
 This program is free software; you can redistribute it and/or modify
@@ -21,7 +25,12 @@ USA
 
 #include "fatfslayerTGDS.h"
 #include "dldi.h"
+#if defined(WIN32)
+#include "fatfs\source\ff.h"
+#endif
+#ifdef ARM9
 #include "clockTGDS.h"
+#endif
 
 //fatfs
 FATFS dldiFs;
@@ -197,7 +206,7 @@ int remove(const char *filename){
 
 int chmod(const char *pathname, mode_t mode){
 	BYTE fatfsFlags = posixToFatfsAttrib(mode);
-	return f_chmod(pathname, fatfsFlags, AM_SYS );	//only care about the system bit (if the file we are changing is SYSTEM)
+	return f_chmod((const TCHAR*)pathname, fatfsFlags, AM_SYS );	//only care about the system bit (if the file we are changing is SYSTEM)
 }
 
 DIR *fdopendir(int structFDIndex){	//(FileDescriptor :struct fd index)
@@ -253,7 +262,7 @@ int fatfs2libfatAttrib(int fatfsFlags){
 }
 
 void SetfatfsAttributesToFile(char * filename, int Newgccnewlibnano_to_fatfsAttributes, int mask){
-	f_chmod(filename, Newgccnewlibnano_to_fatfsAttributes, mask);
+	f_chmod((const TCHAR*)filename, Newgccnewlibnano_to_fatfsAttributes, mask);
 }
 
 //posix -> fatfs
@@ -481,6 +490,7 @@ u8 FAT_GetFileAttributes(struct FileClassList * lst){
 u8 FAT_SetFileAttributes (const char* filename, u8 attributes, u8 mask){
 	u8	libfatAttributesIn = 0;
 	u8	libfatAttributesOut= 0;
+	FILINFO finfo;
 	struct FileClass fileInst;
 	int sizeToCopy = 0;
 	if(strlen(filename) > sizeof(fileInst.fd_namefullPath)){
@@ -489,8 +499,7 @@ u8 FAT_SetFileAttributes (const char* filename, u8 attributes, u8 mask){
 	else{
 		sizeToCopy = strlen(filename);
 	}
-	snprintf(fileInst.fd_namefullPath, sizeToCopy, "%s", filename);
-	FILINFO finfo; 
+	sprintf(fileInst.fd_namefullPath, "%s", filename);
 	if(getFileFILINFOfromFileClass(&fileInst, &finfo) == true){	
 		libfatAttributesIn = (uint8)fatfs2libfatAttrib((int)finfo.fattrib);
 		libfatAttributesOut = (libfatAttributesIn & ~(mask & 0x27)) | (attributes & 0x27);
@@ -582,6 +591,7 @@ char* filename: OUT will be filled with the filename, should be at
 bool return OUT: return true if successful
 -----------------------------------------------------------------*/
 bool FAT_GetLongFilename(char* Longfilename, struct FileClassList * lst){
+	FILINFO finfo;
 	if (Longfilename == NULL){
 		return false;
 	}
@@ -597,7 +607,6 @@ bool FAT_GetLongFilename(char* Longfilename, struct FileClassList * lst){
 		return false;
 	}
 	struct FileClass * fileInst = getFileClassFromList(CurEntry, lst);	//assign a FileClass to the StructFD generated before
-	FILINFO finfo;
 	if(getFileFILINFOfromFileClass(fileInst, &finfo) == true){			//actually open the file and check attributes (rather than read dir contents)
 		if (	 
 		(	//file
@@ -706,7 +715,7 @@ bool return OUT: true if successful.
 bool FAT_FreeFiles (void){
 	fatfs_deinit();
 	// Return status of card
-	struct  DLDI_INTERFACE* dldiInterface = dldiGet();
+	DLDI_INTERFACE* dldiInterface = dldiGet();
 	return (bool)dldiInterface->ioInterface.isInserted();
 }
 
@@ -761,8 +770,8 @@ struct FileClass * getFileClassFromList(int FileClassListIndex, struct FileClass
 //path can be either Directory or File, a proper FileClass will be returned.
 struct FileClass getFileClassFromPath(char * path){
 	struct FileClass FileClassOut;
-	FileClassOut.type = FT_NONE;
 	FILE * fh = fopen(path,"r");
+	FileClassOut.type = FT_NONE;
 	if(fh != NULL){
 		FileClassOut.type = FT_FILE;
 		fclose(fh);
@@ -1152,13 +1161,13 @@ void initStructFDHandle(struct fd *pfd, int flags, const FILINFO *fno, int struc
 //returns an internal index struct fd allocated
 int fatfs_open_file(const sint8 *pathname, int flags, const FILINFO *fno){
 	//Lookup if file is already open.
+	BYTE mode;
+	FRESULT result;
 	int structFDIndex = getStructFDIndexByFileName((char*)pathname);
 	if(structFDIndex != structfd_posixInvalidFileDirOrBufferHandle){
 		return structFDIndex;
 	}
 	//If not, then allocate a new file handle (struct FD)
-	BYTE mode;
-	FRESULT result;
 	
 	//allocates a new struct fd index, allocating a FIL structure, for the devoptab_sdFilesystem object.
 	structFDIndex = FileHandleAlloc((struct devoptab_t *)&devoptab_sdFilesystem);	
@@ -1175,7 +1184,7 @@ int fatfs_open_file(const sint8 *pathname, int flags, const FILINFO *fno){
 	else{
 		FILINFO fno_after;
         if(flags & O_CREAT){
-			result = f_unlink(pathname);
+			result = f_unlink((const TCHAR*)pathname);
 			if (result == FR_OK){
 				//file was deleted
 			}
@@ -1184,9 +1193,9 @@ int fatfs_open_file(const sint8 *pathname, int flags, const FILINFO *fno){
 			}
 		}
 		mode = posixToFatfsAttrib(flags);
-		result = f_open(fdinst->filPtr, pathname, mode);	/* Opens an existing file. If not exist, creates a new file. */
+		result = f_open(fdinst->filPtr, (const TCHAR*)pathname, mode);	/* Opens an existing file. If not exist, creates a new file. */
 		if (result == FR_OK){		
-			result = f_stat(pathname, &fno_after);
+			result = f_stat((const TCHAR*)pathname, &fno_after);
 			fno = &fno_after;			
 			if ((result == FR_OK) && (TGDSFS_detectUnicode(fdinst) == true)){
 				//Update struct fd with new FIL
@@ -1261,7 +1270,7 @@ int fatfs_open_dir(const sint8 *pathname, int flags, const FILINFO *fno){
 		result = FR_TOO_MANY_OPEN_FILES;
     }
     else{
-		result = f_opendir(fdinst->dirPtr, pathname);
+		result = f_opendir(fdinst->dirPtr, (const TCHAR*)pathname);
         if (result == FR_OK){
 			//Update struct fd with new DIR
 			initStructFDHandle(fdinst, flags, fno, structFDIndex, FT_DIR);
@@ -1300,7 +1309,7 @@ int fatfs_open_file_or_dir(const sint8 *pathname, int flags){
 	FILINFO fno;
 	int structFD = structfd_posixInvalidFileDirOrBufferHandle;
 	fno.fname[0] = '\0'; /* initialize as invalid */
-	FRESULT result = f_stat(pathname, &fno);
+	FRESULT result = f_stat((const TCHAR*)pathname, &fno);
 	//dir case // todo: same logic as below file if dir does not exists and must be created
     if ((result == FR_OK) && ((fno.fattrib & AM_MASK) & AM_DIR)){
         structFD = fatfs_open_dir(pathname, flags, &fno);
@@ -1321,6 +1330,7 @@ int fatfs_open_file_or_dir(const sint8 *pathname, int flags){
 
 // Use NDS RTC to update timestamps into files when certain operations require it
 DWORD get_fattime (void){
+	#ifdef ARM9
 	struct tm * tmStruct = getTime();
     return ((((sint32)tmStruct->tm_year-60)<<25)
 				|
@@ -1333,6 +1343,8 @@ DWORD get_fattime (void){
 				(((sint32)tmStruct->tm_min)<<5)
 				|
 				(((sint32)tmStruct->tm_sec)<<0)	);
+	#endif
+	return 0;
 }
 
 //Copies newly alloced struct fd / Creates duplicate filehandles when opening a new file
@@ -1356,7 +1368,7 @@ int fatfs_open_fileIntoTargetStructFD(const sint8 *pathname, char * posixFlags, 
 		FILINFO fno_after;
 		int flags = charPosixToFlagPosix(posixFlags);
         if(flags & O_CREAT){
-			result = f_unlink(pathname);
+			result = f_unlink((const TCHAR*)pathname);
 			if (result == FR_OK){
 				//file was deleted
 			}
@@ -1365,9 +1377,9 @@ int fatfs_open_fileIntoTargetStructFD(const sint8 *pathname, char * posixFlags, 
 			}
 		}
 		mode = posixToFatfsAttrib(flags);
-		result = f_open(fdinst->filPtr, pathname, mode);	/* Opens an existing file. If not exist, creates a new file. */
+		result = f_open(fdinst->filPtr, (const TCHAR*)pathname, mode);	/* Opens an existing file. If not exist, creates a new file. */
 		if (result == FR_OK){		
-			result = f_stat(pathname, &fno_after);
+			result = f_stat((const TCHAR*)pathname, &fno_after);
 			if ((result == FR_OK) && (TGDSFS_detectUnicode(fdinst) == true)){
 				//Update struct fd with new FIL
 				initStructFDHandle(fdinst, flags, &fno_after, structFDIndex, FT_FILE);
@@ -1523,7 +1535,7 @@ off_t fatfs_lseek(int structFDIndex, off_t offset, int whence){	//(FileDescripto
 int fatfs_unlink(const sint8 *path){
     int ret = structfd_posixInvalidFileDirOrBufferHandle;
     FRESULT result;
-    result = f_unlink(path);
+    result = f_unlink((const TCHAR*)path);
     if (result == FR_OK){
         ret = 0;
     }
@@ -1543,7 +1555,7 @@ int fatfs_link(const sint8 *path1, const sint8 *path2){
 int fatfs_rename(const sint8 *oldfname, const sint8 * newfname){
     int ret = structfd_posixInvalidFileDirOrBufferHandle;
     FRESULT result;
-    result = f_rename(oldfname, newfname);
+    result = f_rename((const TCHAR*)oldfname, (const TCHAR*)newfname);
     if (result != FR_OK){
         errno = fresultToErrno(result);
     }
@@ -1583,7 +1595,7 @@ int fatfs_fsync(int structFDIndex){	//uses struct fd indexing
 int fatfs_stat(const sint8 *path, struct stat *buf){
     int ret = structfd_posixInvalidFileDirOrBufferHandle;
     FILINFO fno;
-	FRESULT result = f_stat(path, &fno);
+	FRESULT result = f_stat((const TCHAR*)path, &fno);
     if ((result == FR_OK) && (buf != NULL)){
         fillPosixStatStruct(&fno, buf);
         ret = 0;
@@ -1598,7 +1610,7 @@ int fatfs_stat(const sint8 *path, struct stat *buf){
 //else if error return structfd_posixInvalidFileDirOrBufferHandle if path exists or failed due to other IO reason
 int fatfs_mkdir(const sint8 *path, mode_t mode){
     int ret = structfd_posixInvalidFileDirOrBufferHandle;
-    FRESULT result = f_mkdir(path);
+    FRESULT result = f_mkdir((const TCHAR*)path);
     if (result == FR_OK){
         ret = 0;
     }
@@ -1612,14 +1624,14 @@ int fatfs_mkdir(const sint8 *path, mode_t mode){
 //else if error return structfd_posixInvalidFileDirOrBufferHandle if readonly or not empty, or failed due to other IO reason
 int fatfs_rmdir(const sint8 *path){
     int ret = structfd_posixInvalidFileDirOrBufferHandle;
-    FRESULT result = f_unlink(path);
+    FRESULT result = f_unlink((const TCHAR*)path);
     if (result == FR_OK){
         ret = 0;
     }
     else if (result == FR_DENIED){
         FILINFO fno;
         // the dir was readonly or not empty: check 
-        result = f_stat(path, &fno);
+        result = f_stat((const TCHAR*)path, &fno);
         if (result == FR_OK){
             if ((fno.fattrib & AM_MASK) & AM_RDO){
                 errno = EACCES;
@@ -1642,7 +1654,7 @@ int fatfs_rmdir(const sint8 *path){
 //else if error return structfd_posixInvalidFileDirOrBufferHandle if incorrect path, or failed due to other IO reason
 int fatfs_chdir(const sint8 *path){
     int ret = structfd_posixInvalidFileDirOrBufferHandle;
-    FRESULT result = f_chdir(path);
+    FRESULT result = f_chdir((const TCHAR*)path);
     if (result == FR_OK){
         ret = 0;
     }
@@ -1656,7 +1668,7 @@ int fatfs_chdir(const sint8 *path){
 //else if error return NULL if path is incorrect, or failed due to other IO reason
 sint8 *fatfs_getcwd(sint8 *buf, size_t size){
 	sint8 *ret = NULL;
-    FRESULT result = f_getcwd(buf, size);
+    FRESULT result = f_getcwd((TCHAR*)buf, size);
     if (result == FR_OK){
         ret = buf;
     }
@@ -1771,7 +1783,7 @@ int fatfs_readdir_r(
 			fdinst->loc++;
 			
 			//d_name : dir or file name. NOT full path (posix <- fatfs)
-			int topsize = strlen(fno.fname)+1;
+			int topsize = strlen((char*)fno.fname)+1;
 			if((sint32)topsize > (sint32)(MAX_TGDSFILENAME_LENGTH+1)){
 				topsize = (sint32)(MAX_TGDSFILENAME_LENGTH+1);
 			}
@@ -1849,7 +1861,7 @@ void fatfs_seekdir(DIR *dirp, long loc){
 int fatfs_init(){
 	char * devoptabFSName = (char*)"0:/";
 	initTGDS(devoptabFSName);
-    return (f_mount(&dldiFs, "0:", 1));
+    return (f_mount(&dldiFs, (const TCHAR*)"0:", 1));
 }
 
 //internal: SD de-init code: requires to call fatfs_init() at least once before.
@@ -1864,7 +1876,7 @@ int fatfs_deinit(){
 		}
 	}
 	
-	int ret = f_unmount("0:");
+	int ret = f_unmount((const TCHAR*)"0:");
 	dldi_handler_deinit();
 	
 	//remove TGDS FS file handle context
@@ -1874,8 +1886,15 @@ int fatfs_deinit(){
 	
 	//ARM9 DLDI impl.
 	if(ARM7DLDIEnabled == false){
+		#ifdef ARM9
 		_io_dldi_stub.ioInterface.clearStatus();
 		_io_dldi_stub.ioInterface.shutdown();
+		#endif
+		#if defined(WIN32)
+		struct DLDI_INTERFACE * ptr =  (struct DLDI_INTERFACE*)&_io_dldi_stub[0];
+		ptr->ioInterface.clearStatus();
+		ptr->ioInterface.shutdown();
+		#endif
 	}
 	
 	return ret;
@@ -1887,7 +1906,9 @@ int fatfs_deinit(){
 int _fstat_r( struct _reent *_r, int structFDIndex, struct stat *buf ){	//(FileDescriptor :struct fd index)
     struct fd * f = getStructFD(structFDIndex);
     if ((f == NULL) || (f->isused == structfd_isunused)){
-        _r->_errno = EBADF;
+        #ifdef ARM9
+		_r->_errno = EBADF;
+		#endif
 		return structfd_posixInvalidFileDirOrBufferHandle;
     }
     *buf = f->stat;
@@ -1898,6 +1919,7 @@ int _fstat_r( struct _reent *_r, int structFDIndex, struct stat *buf ){	//(FileD
 //true: able to detect if file was unicode or not
 //false: couldn't tell if file was unicode or not
 bool TGDSFS_detectUnicode(struct fd *pfd){
+	#ifdef ARM9
 	if(pfd != NULL){
 		FILE * fil = fdopen(pfd->cur_entry.d_ino, "r");
 		if(fil != NULL){
@@ -1916,6 +1938,11 @@ bool TGDSFS_detectUnicode(struct fd *pfd){
 		}
 	}
 	return false;
+	#endif
+	
+	#if defined(WIN32)
+		return true;
+	#endif
 }
 
 
@@ -2077,7 +2104,7 @@ int FileHandleFree(int fd){
 }
 
 sint8 * getDeviceNameByStructFDIndex(int StructFDIndex){
-	sint8 * out;
+	sint8 * out = NULL;
 	if((StructFDIndex < 0) || (StructFDIndex > OPEN_MAXTGDS)){
 		out = NULL;
 	}
@@ -2143,7 +2170,7 @@ bool buildFileClassListFromPath(char * path, struct FileClassList * lst, int sta
 		DIR dir;
 		int i = 0;
 		FILINFO fno;
-		result = f_opendir(&dir, path);                       /* Open the directory */
+		result = f_opendir(&dir, (const TCHAR*)path);                       /* Open the directory */
 		if (result == FR_OK) {
 			for(;;){
 				result = f_readdir(&dir, &fno);                   /* Read a directory item */
@@ -2321,3 +2348,147 @@ bool closeDualTGDSFileHandleFromFile(struct fd * tgdsStructFD1, struct fd * tgds
 	return true;
 }
 ///////////////////////////////////////////////TGDS FileDescriptor Callbacks Implementation End ///////////////////////////////////////////////
+#if defined(WIN32)
+static bool cv_snprintf(char* buf, int len, const char* fmt, ...)
+{
+    va_list va;
+    va_start(va, fmt);
+    int res = vsnprintf((char *)buf, len, fmt, va);
+    va_end(va);
+#if defined _MSC_VER
+    // maybe truncation maybe error 
+    if(res < 0)
+        //check for last errno 
+    res = len -1;
+    // ensure null terminating on VS2013	
+#if def_MSC_VER<=1800
+    buf[res] = 0; 
+#endif
+#endif
+    return res >= 0 && res < len;
+}
+
+//taken from https://stackoverflow.com/questions/9052490/find-the-count-of-substring-in-string
+//modified by Coto
+static int indexParse = 0;
+int count_substr(const char *str, const char* substr, bool overlap) {
+  if (strlen(substr) == 0) return -1; // forbid empty substr
+
+  int count = 0;
+  int increment = overlap ? 1 : strlen(substr);
+  char* s = NULL;
+  for ( s =(char*)str; (s = strstr(s, substr)); s += increment)
+    ++count;
+  return count;
+}
+
+typedef void(*splitCustom_fn)(const char *, size_t, char * ,int indexToLeftOut, char * delim);
+void splitCustom(const char *str, char sep, splitCustom_fn fun, char * outBuf, int indexToLeftOut)
+{
+    unsigned int start = 0, stop = 0;
+    for (stop = 0; str[stop]; stop++) {
+        if (str[stop] == sep) {
+            fun(str + start, stop - start, outBuf, indexToLeftOut, &sep);
+            start = stop + 1;
+        }
+    }
+    fun(str + start, stop - start, outBuf, indexToLeftOut, &sep);
+}
+
+//this callback debugs every character separated from splitCustom()
+/*
+void print(const char *str, size_t len, char * outBuf, int indexToLeftOut, char * delim){
+    if(indexParse != indexToLeftOut){
+        char localBuf[MAX_TGDSFILENAME_LENGTH+1];
+        snprintf(localBuf,len+1,"%s",str);
+        printf(" %d:%s%s:%d\n", (int)len, localBuf, delim, indexParse);
+        indexParse++;
+    }
+}
+*/
+
+//this callback builds an output path (outBuf) and filters out the desired index. (used as a trim last directory callback)
+void buildPath(const char *str, size_t len, char * outBuf, int indexToLeftOut, char * delim){
+    if(indexParse != indexToLeftOut){
+        if(strlen(outBuf) == 0){
+            cv_snprintf(outBuf,len+2,"%s%s",str, delim);
+        }
+        else{
+            char localBuf[MAX_TGDSFILENAME_LENGTH+1];
+            sprintf(localBuf,"%s",outBuf);
+            cv_snprintf(outBuf,strlen(outBuf)+len+2,"%s%s%s",localBuf,str,delim);
+        }
+        indexParse++;
+    }
+}
+
+//this callback splits the haystack found in a stream, in the outBuf
+void splitCallback(const char *str, size_t len, char * outBuf, int indexToLeftOut, char * delim){
+    cv_snprintf( ((char*)outBuf + (indexParse*256)), len+1, "%s", str);
+    indexParse++;
+} 
+
+int getLastDirFromPath(char * stream, char * haystack, char * outBuf){
+    indexParse = 0;
+    //leading / always src stream
+    int topval = strlen(stream); 
+    if(stream[topval-1] != '/'){
+        stream[topval-1] = '/';
+    }
+    int indexToLeftOut = count_substr(stream, haystack, false);
+    int indexToLeftOutCopy = indexToLeftOut;
+    if(indexToLeftOutCopy > 1){ //allow index 0 to exist, so it's always left the minimum directory
+        indexToLeftOutCopy--;
+    }
+    splitCustom(stream, (char)*haystack, buildPath, outBuf, indexToLeftOutCopy);
+    //remove 0: out stream
+    topval = strlen(outBuf) + 1;
+    if((outBuf[0] == '0') && (outBuf[1] == ':')){
+        char temp[MAX_TGDSFILENAME_LENGTH+1];
+        cv_snprintf(temp,topval-2,"%s",(char*)&outBuf[2]);
+        sprintf(outBuf,"%s",temp);
+    }
+	//remove leading / in out stream 
+    topval = strlen(outBuf); 
+    if(outBuf[topval-1] == '/'){
+        outBuf[topval-1] = '\0';
+		
+		//count how many slashes there are, if zero, force dir to be "/"
+		int count = 0;
+		int iter = topval-1;
+		while(iter >= 0){
+			if(outBuf[iter] == '/'){
+				count++;
+			}
+			iter--;
+		}
+		if(count == 0){
+			topval = 1;
+			outBuf[topval] = '\0';
+		}
+	}
+	//edge case: the only directory was the leading / and was just removed, if so restore item
+    if(topval == 1){
+        outBuf[topval-1] = '/';
+    }
+	//edge case: remove double leading / 
+	if((outBuf[0] == '/') && (outBuf[1] == '/')){
+		char temp[MAX_TGDSFILENAME_LENGTH+1];
+		cv_snprintf(temp,strlen(outBuf)+1-1,"%s",(char*)&outBuf[1]);	//strlen(charBuf) +1 ending char - current offset we start to copy from
+		sprintf(outBuf,"%s",temp);
+	}
+    return indexToLeftOut;
+}
+
+int str_split(char * stream, char * haystack, char * outBuf, int itemSize, int blockSize){
+	int i = 0;
+	for(i = 0; i < itemSize; i++){
+		*( outBuf + (i*blockSize) ) = '\0';
+	}
+	
+	indexParse = 0;
+    int indexToLeftOut = count_substr(stream, haystack, false);
+    splitCustom(stream, (char)*haystack, splitCallback, outBuf, indexToLeftOut);
+    return indexToLeftOut;
+}
+#endif

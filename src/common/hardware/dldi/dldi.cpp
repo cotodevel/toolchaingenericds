@@ -1,13 +1,20 @@
 #include <stdio.h>
 #include <string.h>
-#include "dsregs.h"
 #include "dldi.h"
+
+#if defined(WIN32) || defined(ARM9)
+#include "fatfslayerTGDS.h"
+#endif
+
+#ifdef ARM9
+#include "dsregs.h"
 #include "dmaTGDS.h"
 #include "busTGDS.h"
 #include "biosTGDS.h"
 #include "ipcfifoTGDS.h"
 #include "global_settings.h"
 #include "utilsTGDS.h"
+#endif
 
 #ifdef TWLMODE
 
@@ -17,6 +24,11 @@
 
 #include "memory.h"
 #include "utils.twl.h"
+#endif
+
+#if defined(WIN32)
+FILE * virtualDLDIDISKImg = NULL;
+u8 _io_dldi_stub[16384];
 #endif
 
 #ifdef ARM9
@@ -35,6 +47,10 @@ const sint8 DLDI_MAGIC_STRING_BACKWARDS [DLDI_MAGIC_STRING_LEN] =
 const DLDI_INTERFACE* io_dldi_data = &_io_dldi_stub;
 #endif
 
+#if defined(WIN32)
+const DLDI_INTERFACE* io_dldi_data = (const DLDI_INTERFACE*)&_io_dldi_stub[0];
+#endif
+
 // 2/2 : once DLDI has been setup
 struct DLDI_INTERFACE* dldiGet(void) {
 	
@@ -45,6 +61,10 @@ struct DLDI_INTERFACE* dldiGet(void) {
 	
 	#ifdef ARM9
 	return &_io_dldi_stub;
+	#endif
+
+	#if defined(WIN32)
+	return (struct DLDI_INTERFACE*)&_io_dldi_stub[0];
 	#endif
 	
 }
@@ -58,13 +78,28 @@ u32 * DLDIARM7Address = NULL;
 u8 ARM7SharedDLDI[32768];	//Required by ARM7 DLDI read/write dldi calls
 #endif
 
-bool dldi_handler_init() __attribute__ ((optnone)) {
+#if defined(WIN32)
+bool __dsimode = false; //always NTR mode for debugging purposes
+#endif
+
+#ifdef ARM9
+__attribute__ ((optnone))
+#endif
+bool dldi_handler_init() {
 	//DS
 	if(__dsimode == false){
 		if(ARM7DLDIEnabled == false){	
-			#ifdef ARM9
+			#ifdef ARM9	//this is RAW ARM Code. 
 			struct DLDI_INTERFACE* dldiInit = dldiGet();	//NTR Mode + Emu = ARM9DLDI: Ensures SLOT-1 / SLOT-2 is mapped to ARM7/ARM9 now
 			if( (!dldiInit->ioInterface.startup()) || (!dldiInit->ioInterface.isInserted()) ){
+				return false;
+			}
+			#endif
+
+			#if defined(WIN32)
+			fseek(virtualDLDIDISKImg, 0, SEEK_SET);
+			int res = ftell(virtualDLDIDISKImg);
+			if(res != 0){
 				return false;
 			}
 			#endif
@@ -91,7 +126,10 @@ bool dldi_handler_init() __attribute__ ((optnone)) {
 	return true;
 }
 
-void dldi_handler_deinit() __attribute__ ((optnone)) {
+#ifdef ARM9
+__attribute__ ((optnone))
+#endif
+void dldi_handler_deinit() {
 	//DS
 	if(__dsimode == false){
 		struct DLDI_INTERFACE* dldiInit = dldiGet();	//ensures SLOT-1 / SLOT-2 is mapped to ARM7/ARM9 now
@@ -165,7 +203,10 @@ bool _DLDI_readSectors(uint32 sector, uint32 sectorCount, uint8* buffer)
 #endif
 //////////////////////////////////////////////// RAM Disk DLDI Implementation End ///////////////////////////////////////////
 //future optimization, make it EWRAM-only so we can DMA directly!
-bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer) __attribute__ ((optnone)) {
+#ifdef ARM9
+__attribute__ ((optnone))
+#endif
+bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer) {
 	//ARM7 DLDI implementation
 	if(ARM7DLDIEnabled == true){
 	
@@ -221,13 +262,25 @@ bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer) __a
 		#ifdef ARM7
 		return false;
 		#endif
-		#ifdef ARM9
+		#ifdef ARM9 //this is RAW ARM code
 		return _io_dldi_stub.ioInterface.readSectors(sector, numSectors, buffer);
 		#endif
+
+		#if defined(WIN32)
+		fseek(virtualDLDIDISKImg, 512*sector, SEEK_SET);
+		int fetch = fread(buffer, 1, 512*numSectors, virtualDLDIDISKImg);
+		if(fetch != (512*numSectors)){
+			return false;
+		}
+		#endif
 	}
+	return true;
 }
 
-bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buffer) __attribute__ ((optnone)) {
+#ifdef ARM9
+__attribute__ ((optnone))
+#endif
+bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buffer) {
 	//ARM7 DLDI implementation
 	if(ARM7DLDIEnabled == true){
 		
@@ -258,7 +311,7 @@ bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buff
 		else{
 			#ifdef ARM7
 				#ifdef TWLMODE
-				sdmmc_writesectors(&deviceSD, sector, numSectors, buffer);
+				sdmmc_writesectors(&deviceSD, sector, numSectors, (void*)buffer);
 				return true;
 				#endif
 				
@@ -282,10 +335,20 @@ bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buff
 		#ifdef ARM7
 		return false;
 		#endif
-		#ifdef ARM9
+		#ifdef ARM9 //this is RAW ARM Code
 		return _io_dldi_stub.ioInterface.writeSectors(sector, numSectors, buffer);
 		#endif
+
+		#if defined(WIN32)
+		fseek(virtualDLDIDISKImg, 512*sector, SEEK_SET);
+		int fetch = fwrite((void*)buffer, 1, 512*numSectors, virtualDLDIDISKImg);
+		if(fetch != (512*numSectors)){
+			return false;
+		}
+		#endif
 	}
+
+	return true;
 }
 
 static const data_t dldiMagicString[12] = "\xED\xA5\x8D\xBF Chishm";	// Normal DLDI file
@@ -374,9 +437,12 @@ bool dldiRelocateLoader(bool clearBSS, u32 DldiRelocatedAddress, u32 dldiSourceI
 	pAH = (data_t *)dldiSourceInRam;
 	dldiFileSize = 1 << pAH[DO_driverSize];
 	// Copy the DLDI patch into the application
-	//dmaCopyWords(0, (void*)pAH, (void*)pDH, dldiFileSize);			//dmaCopyWords (uint8 channel, const void *src, void *dest, uint32 size)
+	#if defined(WIN32)
+	memcpy((void *)pDH, (const void *)pAH, dldiFileSize);
+	#endif
+	#ifdef ARM9
 	dmaTransferWord(3, (uint32)pAH, (uint32)pDH, (uint32)dldiFileSize);	//void dmaTransferWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count)
-
+	#endif
 	if (*((u32*)(pDH + DO_ioType)) == DEVICE_TYPE_DLDI) {
 		// No DLDI patch
 		return false;

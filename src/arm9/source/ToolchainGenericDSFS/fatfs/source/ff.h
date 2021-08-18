@@ -33,7 +33,9 @@ extern "C" {
 #error Wrong configuration file (ffconf.h).
 #endif
 
-
+#if defined(WIN32)
+#define TCHAR char
+#endif
 
 /* Definitions of volume management */
 
@@ -374,6 +376,7 @@ extern DWORD clst2sect (	/* !=0:Sector number, 0:Failed (invalid cluster#) */
 	DWORD clst		/* Cluster# to be converted */
 );
 
+extern void mem_cpy (void* dst, const void* src, UINT cnt);
 #ifdef __cplusplus
 }
 #endif

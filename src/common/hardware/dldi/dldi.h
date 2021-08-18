@@ -28,7 +28,14 @@
 #ifndef NDS_DLDI_INCLUDE
 #define NDS_DLDI_INCLUDE
 
+#if defined (ARM7) || defined(ARM9)
 #include "typedefsTGDS.h"
+#endif
+
+#if defined (MSDOS) || defined(WIN32)
+#include "fatfslayerTGDS.h"
+#include "..\misc\vs2012TGDS-FS\TGDSFSVS2012\TGDSFSVS2012\TGDSTypes.h"
+#endif
 
 typedef uint32_t sec_t;
 typedef signed int addr_t;
@@ -102,14 +109,22 @@ extern "C" {
 
 extern bool ARM7DLDIEnabled;
 extern const uint32  DLDI_MAGIC_NUMBER;
+extern bool __dsimode;
+
+#ifdef ARM9
+extern struct DLDI_INTERFACE _io_dldi_stub;
+#endif
+#if defined(WIN32)
 
 /*
 Pointer to the internal DLDI, not directly usable by libfat.
 You'll need to set the bus permissions appropriately before using.
 */
 // The only built in driver
-extern DLDI_INTERFACE _io_dldi_stub;
-extern const DLDI_INTERFACE* io_dldi_data;
+extern u8 _io_dldi_stub[16384];
+extern FILE * virtualDLDIDISKImg;
+#endif
+extern const struct DLDI_INTERFACE* io_dldi_data;
 
 /* pointer to DLDI_INTERFACE (DLDI handle) */
 extern struct DLDI_INTERFACE* dldiGet(void);
