@@ -20,7 +20,6 @@ USA
 
 #ifdef ARM7
 #include "wifi_arm7.h"
-#include "DldiBulk.h"
 #endif
 
 #ifdef ARM9

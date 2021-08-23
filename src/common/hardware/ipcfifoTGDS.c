@@ -145,19 +145,6 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 			
 			//ARM7 command handler
 			#ifdef ARM7
-			case(TGDS_BULK_READ_DLDI):{
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-				uint32 fileOffsetInFileHandle = fifomsg[32];
-				uint32 EwramSourceBuffer = fifomsg[33];
-				uint32 readSize = fifomsg[34];
-				uint32 fileSize = fifomsg[35];
-				uint32 sectorSize = fifomsg[36];
-				uint32 sectorsPerCluster = fifomsg[37];
-				u32 * sectorTable = (u32*)fifomsg[38];
-				fifomsg[39] = DldiBulkReadFromFileIntoEwramArm7(fileOffsetInFileHandle, (u8 *)EwramSourceBuffer, readSize, fileSize, sectorSize, sectorsPerCluster, sectorTable);
-			}
-			break;
 			
 			case(ARM7COMMAND_RELOADNDS):{
 				runBootstrapARM7();	//ARM7 Side

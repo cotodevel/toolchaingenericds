@@ -124,7 +124,6 @@ USA
 
 #define TGDS_ARMCORES_REPORT_PAYLOAD_MODE (u32)(0xFFFFABC3)
 
-#define TGDS_BULK_READ_DLDI (u32)(0xFFFFABC4)
 
 //ARM7 FS IPC Commands
 #define TGDS_LIBNDSFIFO_COMMAND (u32)(0xFFFFAAC1)	//Bottom 8 bits act as the FIFO Channel Index
