@@ -124,6 +124,8 @@ USA
 
 #define TGDS_ARMCORES_REPORT_PAYLOAD_MODE (u32)(0xFFFFABC3)
 
+#define FIFO_READ_ARM7DLDI_REQBYIRQ (u32)(0xFFFFABC4)
+#define FIFO_READ_TWLSD_REQBYIRQ (u32)(0xFFFFABC6)
 
 //ARM7 FS IPC Commands
 #define TGDS_LIBNDSFIFO_COMMAND (u32)(0xFFFFAAC1)	//Bottom 8 bits act as the FIFO Channel Index
@@ -138,18 +140,16 @@ USA
 
 //ARM7DLDI Hardware
 	//Slot1 or slot2 access
-	#define IPC_READ_ARM7DLDI_REQBYIRQ		(u8)(4)
-	#define IPC_WRITE_ARM7DLDI_REQBYIRQ		(u8)(5)
+	#define IPC_WRITE_ARM7DLDI_REQBYIRQ		(u8)(4)
 
 	//SD TWL Access
-	#define IPC_READ_ARM7_TWLSD_REQBYIRQ		(u8)(6)
-	#define IPC_WRITE_ARM7_TWLSD_REQBYIRQ		(u8)(7)
+	#define IPC_WRITE_ARM7_TWLSD_REQBYIRQ		(u8)(5)
 	
-	#define IPC_STARTUP_ARM7_TWLSD_REQBYIRQ		(u8)(8)
-	#define IPC_SD_IS_INSERTED_ARM7_TWLSD_REQBYIRQ		(u8)(9)
+	#define IPC_STARTUP_ARM7_TWLSD_REQBYIRQ		(u8)(6)
+	#define IPC_SD_IS_INSERTED_ARM7_TWLSD_REQBYIRQ		(u8)(7)
 	
-#define IPC_READ_FIRMWARE_REQBYIRQ		(u8)(10)
-#define IPC_TGDSUSER_START_FREE_INDEX	(u8)(11)	//TGDS User Project rely on it
+#define IPC_READ_FIRMWARE_REQBYIRQ		(u8)(8)
+#define IPC_TGDSUSER_START_FREE_INDEX	(u8)(9)	//TGDS User Project rely on it
 
 //TGDS -> Libnds FIFO compatibility API. Ensures the behaviour of the FIFO messaging system works.
 // FIFO_CHANNEL_BITS - number of bits used to specify the channel in a packet - default=4

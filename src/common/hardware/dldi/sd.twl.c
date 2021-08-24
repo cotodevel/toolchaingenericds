@@ -60,7 +60,7 @@ bool sdio_ReadSectors(sec_t sector, sec_t numSectors,void* buffer) __attribute__
 	setValueSafeInt(&fifomsg[21], numSectors);
 	setValueSafe(&fifomsg[22], (uint32)targetMem);
 	setValueSafe(&fifomsg[23], (uint32)0xFFAAFFAA);
-	sendByteIPC(IPC_READ_ARM7_TWLSD_REQBYIRQ);
+	SendFIFOWords(FIFO_READ_TWLSD_REQBYIRQ);
 	while(getValueSafe(&fifomsg[23]) == (uint32)0xFFAAFFAA){
 		swiDelay(333);
 	}
