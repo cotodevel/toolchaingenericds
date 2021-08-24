@@ -1347,20 +1347,102 @@ DWORD get_fattime (void){
 	return 0;
 }
 
-//Copies newly alloced struct fd / Creates duplicate filehandles when opening a new file
-int fatfs_open_fileIntoTargetStructFD(const sint8 *pathname, char * posixFlags, int * tgdsfd){
+/////////////////////////////// direct struct fd methods start
+
+int fatfs_readDirectStructFD(struct fd * pfd, u8 *ptr, int len){
+    int ret = structfd_posixInvalidFileDirOrBufferHandle;
+    if ( (pfd == NULL) || (pfd->filPtr == NULL) ){	//not file/dir? not alloced struct fd?
+        errno = EBADF;
+    }
+    FIL *filp;
+	FRESULT result;
+	UINT nbytes_read;
+	filp = pfd->filPtr;
+	result = f_read(filp, ptr, len, &nbytes_read);
+	if (result == FR_OK){
+		ret = nbytes_read;
+	}
+	else{
+		errno = fresultToErrno(result);
+	}
+    return ret;
+}
+
+int fatfs_seekDirectStructFD(struct fd * pfd, int offst){
+	return f_lseek (
+			pfd->filPtr,   /* Pointer to the file object structure */
+			(DWORD)offst       /* File offset in unit of byte */
+		);
+}
+
+//receives a new struct fd index with either DIR or FIL structure allocated so it can be closed.
+//returns 0 if success, 1 if error
+int fatfs_closeDirectStructFD(struct fd * pfd){
+    int ret = structfd_posixInvalidFileDirOrBufferHandle;
+    if ( (pfd == NULL) || (pfd->filPtr == NULL) ){
+		errno = EBADF;
+    }
+	FIL *filp;
+	FRESULT result;
+	filp = pfd->filPtr;
+	result = f_close(filp);
+	if (
+	(result == FR_OK)			//file sync with hardware SD ok
+	||
+	(result == FR_DISK_ERR)		//create file (fwrite + w): file didn't exist before open(); thus file descriptor didn't have any data of sectors to compare with. Exception expected
+	){
+		//struct stat buf;	//flush stat
+		memset (&pfd->stat, 0, sizeof(pfd->stat));
+		
+		//free struct fd
+		if(pfd->filPtr){	//must we clean a FIL?
+			pfd->filPtr = NULL;
+		}
+		if(pfd->dirPtr){	//must we clean a DIR?
+			pfd->dirPtr = NULL;
+		}
+		//clean filename
+		sprintf((char*)&pfd->fd_name[0],"%s",(char*)&devoptab_stub.name[0]);
+		
+		ret = 0;
+		//update d_ino here (POSIX compliant)
+		pfd->cur_entry.d_ino = (sint32)structfd_posixInvalidFileDirOrBufferHandle;
+		pfd->loc = 0;
+	}
+	else{
+		errno = fresultToErrno(result);
+	}
+	return ret;
+}
+
+
+/////////////////////////////// direct struct fd methods end
+
+
+//Maps a new struct fd / Creates filehandles when opening a new file
+//if int * tgdsfd is -2, means a direct struct fd was used instead of allocating a new one
+int fatfs_open_fileIntoTargetStructFD(const sint8 *pathname, char * posixFlags, int * tgdsfd, struct fd * directStructFD){
 	BYTE mode;
 	FRESULT result;
-	
-	//allocates a new struct fd index, allocating a FIL structure, for the devoptab_sdFilesystem object.
-	int structFDIndex = FileHandleAlloc((struct devoptab_t *)&devoptab_sdFilesystem);	
-    if (structFDIndex != structfd_posixInvalidFileDirOrBufferHandle){
-		(files + structFDIndex)->filPtr	=	(FIL *)&(files + structFDIndex)->fil;
-		(files + structFDIndex)->dirPtr	= NULL;
-		(files + structFDIndex)->StructFDType = FT_FILE;
+	struct fd * fdinst = NULL;
+	int structFDIndex = -2;
+	if(directStructFD == NULL){
+		//allocates a new struct fd index, allocating a FIL structure, for the devoptab_sdFilesystem object.
+		structFDIndex = FileHandleAlloc((struct devoptab_t *)&devoptab_sdFilesystem);	
+		if (structFDIndex != structfd_posixInvalidFileDirOrBufferHandle){
+			(files + structFDIndex)->filPtr	=	(FIL *)&(files + structFDIndex)->fil;
+			(files + structFDIndex)->dirPtr	= NULL;
+			(files + structFDIndex)->StructFDType = FT_FILE;
+		}
+		fdinst = getStructFD(structFDIndex);	//getStructFD requires struct fd index
 	}
-	
-	struct fd * fdinst = getStructFD(structFDIndex);	//getStructFD requires struct fd index
+	else{
+		fdinst = directStructFD;
+		memset(fdinst, 0, sizeof(struct fd));
+		fdinst->filPtr	=	(FIL *)&fdinst->fil;
+		fdinst->dirPtr	= NULL;
+		fdinst->StructFDType = FT_FILE;
+	}
 	if (fdinst == NULL){
 		result = FR_TOO_MANY_OPEN_FILES;
     }
@@ -1415,21 +1497,22 @@ int fatfs_open_fileIntoTargetStructFD(const sint8 *pathname, char * posixFlags, 
 			}
 		}
         else {	//invalid file or O_CREAT wasn't issued
-			
-			//free struct fd
-			int i_fil = FileHandleFree(fdinst->cur_entry.d_ino);	//returns structfd index that was deallocated
-			if (i_fil != structfd_posixInvalidFileDirOrBufferHandle){	//FileHandleFree could free struct fd properly? set filesAlloc[index] free
-				if(fdinst->filPtr){	//must we clean a FIL?
-					fdinst->filPtr = NULL;
+			if(directStructFD == NULL){
+				//free struct fd
+				int i_fil = FileHandleFree(fdinst->cur_entry.d_ino);	//returns structfd index that was deallocated
+				if (i_fil != structfd_posixInvalidFileDirOrBufferHandle){	//FileHandleFree could free struct fd properly? set filesAlloc[index] free
+					if(fdinst->filPtr){	//must we clean a FIL?
+						fdinst->filPtr = NULL;
+					}
+					if(fdinst->dirPtr){	//must we clean a DIR?
+						fdinst->dirPtr = NULL;
+					}
+					//clean filename
+					sprintf((char*)&fdinst->fd_name[0],"%s",(char*)&devoptab_stub.name[0]);
 				}
-				if(fdinst->dirPtr){	//must we clean a DIR?
-					fdinst->dirPtr = NULL;
+				else{
+					//file_free failed
 				}
-				//clean filename
-				sprintf((char*)&fdinst->fd_name[0],"%s",(char*)&devoptab_stub.name[0]);
-			}
-			else{
-				//file_free failed
 			}
 			structFDIndex = structfd_posixInvalidFileDirOrBufferHandle;	//file handle generated, but file open failed, so, invalid.
 		}
@@ -2306,7 +2389,7 @@ int TGDSFSUserfatfs_close(struct fd * tgdsfd){
 //returns an internal index struct fd allocated. Requires DLDI enabled
 int TGDSFSUserfatfs_open_file(const sint8 *pathname, char * posixFlags, int * tgdsfd){
 	//Copies newly alloced struct fd / Creates duplicate filehandles when opening a new file
-	return fatfs_open_fileIntoTargetStructFD(pathname, posixFlags, tgdsfd);
+	return fatfs_open_fileIntoTargetStructFD(pathname, posixFlags, tgdsfd, NULL);
 }
 
 long TGDSFSUserfatfs_tell(struct fd *f){	//NULL check already outside

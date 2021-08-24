@@ -344,7 +344,6 @@ extern int fatfsToPosixAttrib(BYTE flags);
 extern int fresultToErrno(FRESULT result);	/* POSIX ERROR Handling */
 extern void initStructFDHandle(struct fd *pfd, int flags, const FILINFO *fno, int structFD, int StructFDType);
 
-extern int fatfs_open_fileIntoTargetStructFD(const sint8 *pathname, char * posixFlags, int * tgdsfd);	//Copies newly alloced struct fd / Creates duplicate filehandles when opening a new file
 extern int fatfs_open_file(const sint8 *pathname, int flags, const FILINFO *fno);	//(FRESULT is the file properties that must be copied to stat st)/ returns an internal index struct fd allocated
 extern int fatfs_open_dir(const sint8 *pathname, int flags, const FILINFO *fno);	//(FRESULT is the file properties that must be copied to stat st)/ returns an internal index struct fd allocated
 extern int fatfs_open_file_or_dir(const sint8 *pathname, int flags);	//returns an internal index struct fd allocated
@@ -418,8 +417,13 @@ extern int getLastDirFromPath(char * stream, char * haystack, char * outBuf);
 extern int ARM7FS_close_ARM9ImplementationTGDSFD(struct fd * fdinstOut);
 extern int ARM7FS_ReadBuffer_ARM9ImplementationTGDSFD(u8 * outBuffer, int fileOffset, struct fd * fdinstIn, int bufferSize);
 extern int ARM7FS_WriteBuffer_ARM9ImplementationTGDSFD(u8 * inBuffer, int fileOffset, struct fd * fdinstOut, int bufferSize);
-
 ///////////////////////////////////////////////TGDS FileDescriptor Callbacks Implementation End ///////////////////////////////////////////////
+
+//direct structFD
+extern int fatfs_open_fileIntoTargetStructFD(const sint8 *pathname, char * posixFlags, int * tgdsfd, struct fd * directStructFD);	//Copies newly alloced struct fd / Creates duplicate filehandles when opening a new file
+extern int fatfs_readDirectStructFD(struct fd * pfd, u8 *ptr, int len);
+extern int fatfs_closeDirectStructFD(struct fd * pfd);
+extern int fatfs_seekDirectStructFD(struct fd * pfd, int offst);
 
 #ifdef __cplusplus
 }
