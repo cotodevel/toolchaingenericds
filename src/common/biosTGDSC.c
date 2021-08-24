@@ -105,6 +105,9 @@ void handleARM9InitSVC(){
 
 }
 
+#ifdef ARM9
+__attribute__((section(".itcm")))
+#endif
 void handleARM9SVC(){
 	//Audio playback here....
 	updateStream();	//runs once
