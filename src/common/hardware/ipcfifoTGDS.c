@@ -50,14 +50,6 @@ USA
 #include "consoleTGDS.h"
 #endif
 
-#ifdef TWLMODE
-
-#ifdef ARM7
-#include "sdmmc.h"
-#endif
-
-#endif
-
 //arg 0: channel
 //arg 1: arg0: handler, arg1: userdata
 u32 fifoFunc[FIFO_CHANNELS][2];	//context is only passed on callback prototype stage, because, the channel index generates the callee callback
@@ -155,36 +147,6 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 			
 			//ARM7 command handler
 			#ifdef ARM7
-			
-			#ifdef TWLMODE
-			case(FIFO_READ_TWLSD_REQBYIRQ):{
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-				int sector = getValueSafeInt(&fifomsg[20]);
-				int numSectors = getValueSafeInt(&fifomsg[21]);
-				uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[22]);
-				u32 retval = (u32)sdmmc_readsectors(&deviceSD, sector, numSectors, (void*)targetMem);
-				setValueSafe(&fifomsg[23], (u32)retval);	//last value has ret status & release ARM9 dldi cmd
-			}
-			break;
-			#endif
-			
-			//Slot-1 or slot-2 access
-			case(FIFO_READ_ARM7DLDI_REQBYIRQ):{
-				struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-				uint32 sector = getValueSafe(&fifomsg[20]);
-				uint32 numSectors = getValueSafe(&fifomsg[21]);
-				uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[22]);
-				dldiInterface->ioInterface.readSectors(sector, numSectors, targetMem);
-				setValueSafe(&fifomsg[20], (u32)0);
-				setValueSafe(&fifomsg[21], (u32)0);
-				setValueSafe(&fifomsg[22], (u32)0);
-				setValueSafe(&fifomsg[23], (u32)0);
-			}
-			break;
-			
 			
 			case(ARM7COMMAND_RELOADNDS):{
 				runBootstrapARM7();	//ARM7 Side

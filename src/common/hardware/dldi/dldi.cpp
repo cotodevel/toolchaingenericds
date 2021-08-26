@@ -224,7 +224,7 @@ bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer) {
 			setValueSafe(&fifomsg[21], (uint32)numSectors);
 			setValueSafe(&fifomsg[22], (uint32)targetMem);
 			setValueSafe(&fifomsg[23], (uint32)0xFFFFFFFF);
-			SendFIFOWords(FIFO_READ_ARM7DLDI_REQBYIRQ);
+			sendByteIPC(IPC_READ_ARM7DLDI_REQBYIRQ);
 			while(getValueSafe(&fifomsg[23]) != (uint32)0){
 				swiDelay(1);
 			}

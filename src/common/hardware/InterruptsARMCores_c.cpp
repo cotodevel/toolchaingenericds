@@ -281,6 +281,21 @@ void NDS_IRQHandler() __attribute__ ((optnone)) {
 			}
 			break;			
 				//ARM7_DLDI
+				//Slot-1 or slot-2 access
+				case(IPC_READ_ARM7DLDI_REQBYIRQ):{
+					struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
+					struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+					uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+					uint32 sector = getValueSafe(&fifomsg[20]);
+					uint32 numSectors = getValueSafe(&fifomsg[21]);
+					uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[22]);
+					dldiInterface->ioInterface.readSectors(sector, numSectors, targetMem);
+					setValueSafe(&fifomsg[20], (u32)0);
+					setValueSafe(&fifomsg[21], (u32)0);
+					setValueSafe(&fifomsg[22], (u32)0);
+					setValueSafe(&fifomsg[23], (u32)0);
+				}
+				break;
 				
 				
 				case(IPC_WRITE_ARM7DLDI_REQBYIRQ):{
@@ -323,6 +338,17 @@ void NDS_IRQHandler() __attribute__ ((optnone)) {
 					struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 					uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 					setValueSafe(&fifomsg[23], (u32)0);	//last value has ret status
+				}
+				break;
+				
+				case(IPC_READ_ARM7_TWLSD_REQBYIRQ):{
+					struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+					uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+					int sector = getValueSafeInt(&fifomsg[20]);
+					int numSectors = getValueSafeInt(&fifomsg[21]);
+					uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[22]);
+					u32 retval = (u32)sdmmc_readsectors(&deviceSD, sector, numSectors, (void*)targetMem);
+					setValueSafe(&fifomsg[23], (u32)retval);	//last value has ret status & release ARM9 dldi cmd
 				}
 				break;
 				
