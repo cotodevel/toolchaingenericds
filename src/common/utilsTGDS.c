@@ -75,8 +75,7 @@ void reportTGDSPayloadMode(){
 	
 	#ifdef ARM9
 	//send ARM7 signal, wait for it to be ready, then continue
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
 	setValueSafe(&fifomsg[45], (u32)0xFFFFFFFF);
 	SendFIFOWords(TGDS_ARMCORES_REPORT_PAYLOAD_MODE);	//ARM7 Setup
 	while((u32)getValueSafe(&fifomsg[45]) == (u32)0xFFFFFFFF){
@@ -949,8 +948,7 @@ void shutdownNDSHardware(){	//aka systemShutDown()
 		#endif
 		
 		#ifdef ARM9
-			struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-			uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+			uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
 			setValueSafe(&fifomsg[60], (uint32)FIFO_SHUTDOWN_DS);
 			setValueSafe(&fifomsg[61], (uint32)0);
 			SendFIFOWords(FIFO_POWERMGMT_WRITE);
@@ -984,8 +982,7 @@ int	setBacklight(int flags){
 	#endif
 	
 	#ifdef ARM9
-		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+		uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
 		fifomsg[60] = (uint32)FIFO_SCREENPOWER_WRITE;
 		fifomsg[61] = (uint32)(flags);
 		SendFIFOWords(FIFO_POWERMGMT_WRITE);

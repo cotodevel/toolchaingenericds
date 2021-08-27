@@ -52,8 +52,7 @@ void setNDSLoaderInitStatus(int ndsloaderStatus){
 
 #ifdef ARM9
 void ARM7JumpTo(u32 ARM7Entrypoint){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
 	setValueSafe(&fifomsg[64], (uint32)ARM7Entrypoint);
 	SendFIFOWords(ARM7COMMAND_RELOADARM7);
 }

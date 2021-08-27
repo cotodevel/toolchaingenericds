@@ -17,11 +17,10 @@ bool sdio_Startup() __attribute__ ((optnone)) {
 	#ifdef TWLMODE
 	nocashMessage("TGDS:sdio_Startup():TWL Mode: If this gets stuck, most likely you're running a TGDS NTR Binary in TWL Mode.");
 	//int retryCount = 0;
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-	setValueSafe(&fifomsg[23], (uint32)0xABCDABCD);
+	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
+	fifomsg[23] = (uint32)0xABCDABCD;
 	sendByteIPC(IPC_STARTUP_ARM7_TWLSD_REQBYIRQ);
-	while(getValueSafe(&fifomsg[23]) == (uint32)0xABCDABCD){
+	while(fifomsg[23] == (uint32)0xABCDABCD){
 		swiDelay(1);
 		/*retryCount++;	//make it fail (slide) when either TWL SD Card failed to init due to: hardware SD failure, or TWL Mode reloading binaries (TGDS-MB TWL), 
 						//as this layer ignores binary embedded DLDI, using the TWL one.
@@ -54,14 +53,13 @@ bool sdio_ReadSectors(sec_t sector, sec_t numSectors,void* buffer) __attribute__
 	#endif
 	#ifdef TWLMODE
 	void * targetMem = (void *)((int)&ARM7SharedDLDI[0]	+ 0x400000); //TWL uncached EWRAM
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-	setValueSafeInt(&fifomsg[20], sector);
-	setValueSafeInt(&fifomsg[21], numSectors);
-	setValueSafe(&fifomsg[22], (uint32)targetMem);
-	setValueSafe(&fifomsg[23], (uint32)0xFFAAFFAA);
+	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
+	fifomsg[20] = sector;
+	fifomsg[21] = numSectors;
+	fifomsg[22] = (uint32)targetMem;
+	fifomsg[23] = (uint32)0xFFAAFFAA;
 	sendByteIPC(IPC_READ_ARM7_TWLSD_REQBYIRQ);
-	while(getValueSafe(&fifomsg[23]) == (uint32)0xFFAAFFAA){
+	while(fifomsg[23] == (uint32)0xFFAAFFAA){
 		swiDelay(333);
 	}
 	memcpy((uint16_t*)buffer, (uint16_t*)targetMem, (numSectors * 512));
@@ -81,14 +79,13 @@ bool sdio_WriteSectors(sec_t sector, sec_t numSectors, const void* buffer) __att
 	void * targetMem = (void *)((int)&ARM7SharedDLDI[0] + 0x400000); //TWL uncached EWRAM
 	coherent_user_range_by_size((uint32)buffer, (numSectors * 512)); //make coherent reads from src buffer
 	memcpy((uint16_t*)targetMem, (uint16_t*)buffer, (numSectors * 512));
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-	setValueSafe(&fifomsg[24], (uint32)sector);
-	setValueSafe(&fifomsg[25], (uint32)numSectors);
-	setValueSafe(&fifomsg[26], (uint32)targetMem);
-	setValueSafe(&fifomsg[27], (uint32)0xFFBBCCAA);
+	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
+	fifomsg[24] = (uint32)sector;
+	fifomsg[25] = (uint32)numSectors;
+	fifomsg[26] = (uint32)targetMem;
+	fifomsg[27] = (uint32)0xFFBBCCAA;
 	sendByteIPC(IPC_WRITE_ARM7_TWLSD_REQBYIRQ);
-	while(getValueSafe(&fifomsg[27]) == (uint32)0xFFBBCCAA){
+	while(fifomsg[27] == (uint32)0xFFBBCCAA){
 		swiDelay(1);
 	}
 	return true;

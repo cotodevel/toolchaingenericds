@@ -231,9 +231,6 @@ typedef struct sIPCSharedTGDS {
 	
 	uint32 WRAM_CR_ISSET;	//0 when ARM7 boots / 1 by ARM9 when its done
 	
-	//FIFO Mesagging: used when 3+ args sent between ARM cores through FIFO interrupts.
-	uint32 fifoMesaggingQueue[(0x40) + (0x4 * 4)];	//68 * 4 Words for various command handling
-	
 	//IPC Mesagging: used when 1+ args sent between ARM Cores through IPC interrupts.
 	u8 ipcMesaggingQueue[0x10];
 	
@@ -270,6 +267,9 @@ typedef struct sIPCSharedTGDS {
 	struct libndsFIFOs libndsFIFO;
 } IPCSharedTGDS __attribute__((aligned(4)));
 
+//FIFO Mesagging: used when 3+ args sent between ARM cores through FIFO interrupts.
+#define NDS_CACHED_SCRATCHPAD	(int)(((int)0x02400000 - (4096)) | 0x400000)
+#define NDS_UNCACHED_SCRATCHPAD	(int)(NDS_CACHED_SCRATCHPAD | 0x400000)
 
 //Shared Work     027FF000h 4KB    -     -    -    R/W
 #define TGDSIPCStartAddress (struct sIPCSharedTGDS*)(0x027FF000)

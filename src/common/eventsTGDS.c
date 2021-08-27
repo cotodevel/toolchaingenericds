@@ -62,8 +62,7 @@ void TGDSSetEvent(int newEvent){
 	TGDSEvent = newEvent;
 	#endif
 	#ifdef ARM9
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
 	setValueSafe(&fifomsg[60], (uint32)newEvent);
 	SendFIFOWords(TGDS_ARM7_SET_EVENT_HANDLING);
 	#endif
@@ -84,8 +83,7 @@ void setTurnOffScreensTimeout(int secondsBeforeEventTrigger){
 	sleepModeTimeout = secondsBeforeEventTrigger;
 	#endif
 	#ifdef ARM9
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
 	fifomsg[60] = (uint32)secondsBeforeEventTrigger;
 	SendFIFOWords(TGDS_ARM7_ENABLE_SLEEPMODE_TIMEOUT);
 	#endif

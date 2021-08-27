@@ -1107,8 +1107,7 @@ bool Wifi_InitDefault(bool useFirmwareSettings) {
 	TIMERXDATA(3) = -6553; // 6553.1 * 256 cycles = ~50ms;
 	TIMERXCNT(3) = 0x00C2; // enable, irq, 1/256 clock
 
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
 	setValueSafe(&fifomsg[60], (u32)wifi_pass);
 	SendFIFOWords(WIFI_INIT);
 	

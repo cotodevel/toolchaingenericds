@@ -232,8 +232,7 @@ void printf7(char *chr, int argvCount, int * argv){
 				arm7ARGVBufferShared[i] = argv[i];
 			}
 		}
-		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 
-		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+		uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 		fifomsg[36] = (uint32)printf7Buf;
 		fifomsg[37] = (uint32)arm7ARGVBufferShared;
 		fifomsg[38] = (uint32)argvCount;
@@ -345,8 +344,7 @@ void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,									
 		}
 	}
 	
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
 	setValueSafe(&fifomsg[42], (uint32)ARM7MallocStartAddress);
 	setValueSafe(&fifomsg[43], (uint32)ARM7MallocSize);
 	setValueSafe(&fifomsg[44], (uint32)customAllocator);
@@ -407,8 +405,7 @@ int arm7ARGVBuffer[MAXPRINT7ARGVCOUNT];
 int arm7ARGVDebugBuffer[MAXPRINT7ARGVCOUNT];
 
 void printf7Setup(){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
 	fifomsg[46] = (uint32)&printf7Buffer[0];
 	fifomsg[47] = (uint32)&arm7debugBuffer[0];
 	fifomsg[48] = (uint32)&arm7ARGVBuffer[0];
