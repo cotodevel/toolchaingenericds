@@ -467,32 +467,21 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 				u32 ARM7MallocSize = (u32)getValueSafe(&fifomsg[43]);
 				//bool customAllocator = (bool)getValueSafe(&fifomsg[44]);
 				u32 dldiStartAddress = (u32)getValueSafe(&fifomsg[45]);
-				u32 ARM7DLDISetting = (u32)getValueSafe(&fifomsg[46]);
-				if(ARM7DLDISetting == TGDS_ARM7DLDI_ENABLED){
-					ARM7DLDIEnabled = true;
-				}
-				else{
-					ARM7DLDIEnabled = false;
-				}
 				
-				//NTR hardware + TWL emu/hardware = ARM7DLDI
-				if(ARM7DLDIEnabled == true){
-					//ARM7DLDI: ONLY if NTR hardware
-					if(__dsimode == false){
-						DLDIARM7Address = (u32*)dldiStartAddress;
-						bool DLDIARM7InitStatus = dldi_handler_init();	//Init DLDI: ARM7 version
-						if(DLDIARM7InitStatus == true){
-							//setValueSafe(&fifomsg[45], (uint32)0xFAFAFAFA);
-							//after this (if ret status true) it's safe to call dldi read and write sectors from ARM9 (ARM7 DLDI mode)
-						}
-						else{
-							//setValueSafe(&fifomsg[45], (uint32)0xFCFCFCFC);
-						}
+				//ARM7DLDI: ONLY if NTR hardware. TWL uses SDIO instead
+				if(__dsimode == false){
+					DLDIARM7Address = (u32*)dldiStartAddress;
+					bool DLDIARM7InitStatus = dldi_handler_init();	//Init DLDI: ARM7 version
+					if(DLDIARM7InitStatus == true){
+						//setValueSafe(&fifomsg[45], (uint32)0xFAFAFAFA);
+						//after this (if ret status true) it's safe to call dldi read and write sectors from ARM9 (ARM7 DLDI mode)
+					}
+					else{
+						//setValueSafe(&fifomsg[45], (uint32)0xFCFCFCFC);
 					}
 				}
 				
-				initARM7Malloc(ARM7MallocStartaddress, ARM7MallocSize);
-				
+				initARM7Malloc(ARM7MallocStartaddress, ARM7MallocSize);				
 				setValueSafe(&fifomsg[42], (uint32)0);
 				setValueSafe(&fifomsg[43], (uint32)0);
 				setValueSafe(&fifomsg[44], (uint32)0);

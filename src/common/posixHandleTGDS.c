@@ -312,36 +312,12 @@ void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,									
 						u32 ARM9MallocStartaddress, u32 ARM9MallocSize, u32 * mallocHandler, u32 * callocHandler, //ARM9
 						u32 * freeHandler, u32 * MallocFreeMemoryHandler, bool customAllocator, u32 dldiMemAddress
 ) __attribute__ ((optnone)) {
-	u32 ARM7DLDISetting = 0;
-	if(
-		(strncmp((char *)&_io_dldi_stub.friendlyName[0], "TGDS RAMDISK", 12) == 0) //TGDS RAMDisk?
-		&&
-		(__dsimode == false) //DS-mode only? (otherwise, defaults to DSi SD access through ARM7DLDI)
-	){
-		ARM7DLDIEnabled = false; 	//ARM9DLDI
-		ARM7DLDISetting = TGDS_ARM7DLDI_DISABLED;
-	}
-	else{
-		ARM7DLDIEnabled = true;		//ARM7DLDI
-		ARM7DLDISetting = TGDS_ARM7DLDI_ENABLED;
-	}
 	
-	//Map cart (ARM9 only). (This doesn't affect DSi SD as it's mapped directly into ARM7 registers, but still useful if you want to mount TWL SD + DLDI through slot1/slot2(old ds) at the same time)
-	if(ARM7DLDIEnabled == true){	//Only set bits for real hardware carts
-		if (_io_dldi_stub.ioInterface.features & FEATURE_SLOT_GBA) {
-			SetBusSLOT1ARM9SLOT2ARM7();
-		}
-		if (_io_dldi_stub.ioInterface.features & FEATURE_SLOT_NDS) {
-			SetBusSLOT1ARM7SLOT2ARM9();
-		}
+	if (_io_dldi_stub.ioInterface.features & FEATURE_SLOT_GBA) {
+		SetBusSLOT1ARM9SLOT2ARM7();
 	}
-	if(ARM7DLDIEnabled == false){	//Emulator DLDI? set cart rights
-		if (_io_dldi_stub.ioInterface.features & FEATURE_SLOT_GBA) {
-			SetBusSLOT1ARM7SLOT2ARM9();
-		}
-		if (_io_dldi_stub.ioInterface.features & FEATURE_SLOT_NDS) {
-			SetBusSLOT1ARM9SLOT2ARM7();
-		}
+	if (_io_dldi_stub.ioInterface.features & FEATURE_SLOT_NDS) {
+		SetBusSLOT1ARM7SLOT2ARM9();
 	}
 	
 	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
@@ -349,7 +325,6 @@ void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,									
 	setValueSafe(&fifomsg[43], (uint32)ARM7MallocSize);
 	setValueSafe(&fifomsg[44], (uint32)customAllocator);
 	setValueSafe(&fifomsg[45], (uint32)dldiMemAddress);
-	setValueSafe(&fifomsg[46], (uint32)ARM7DLDISetting);
 	setTGDSARM9MallocBaseAddress(ARM9MallocStartaddress);
 	if(customAllocator == true){
 		if(mallocHandler != NULL){

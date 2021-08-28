@@ -1967,18 +1967,15 @@ int fatfs_deinit(){
 		TGDSARM9Free(files);
 	}
 	
-	//ARM9 DLDI impl.
-	if(ARM7DLDIEnabled == false){
-		#ifdef ARM9
-		_io_dldi_stub.ioInterface.clearStatus();
-		_io_dldi_stub.ioInterface.shutdown();
-		#endif
-		#if defined(WIN32)
-		struct DLDI_INTERFACE * ptr =  (struct DLDI_INTERFACE*)&_io_dldi_stub[0];
-		ptr->ioInterface.clearStatus();
-		ptr->ioInterface.shutdown();
-		#endif
-	}
+	#ifdef ARM9
+	_io_dldi_stub.ioInterface.clearStatus();
+	_io_dldi_stub.ioInterface.shutdown();
+	#endif
+	#if defined(WIN32)
+	struct DLDI_INTERFACE * ptr =  (struct DLDI_INTERFACE*)&_io_dldi_stub[0];
+	ptr->ioInterface.clearStatus();
+	ptr->ioInterface.shutdown();
+	#endif
 	
 	return ret;
 }

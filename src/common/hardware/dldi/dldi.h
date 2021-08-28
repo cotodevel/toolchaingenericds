@@ -107,7 +107,6 @@ typedef struct DLDI_INTERFACE {
 extern "C" {
 #endif
 
-extern bool ARM7DLDIEnabled;
 extern const uint32  DLDI_MAGIC_NUMBER;
 extern bool __dsimode;
 
