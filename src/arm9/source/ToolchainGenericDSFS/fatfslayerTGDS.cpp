@@ -1951,7 +1951,6 @@ int fatfs_init(){
 int fatfs_deinit(){
 	
 	if(files != NULL){
-		
 		int fd = 0;
 		/* search in all struct fd instances, close file handle if open*/
 		for (fd = 0; fd < OPEN_MAXTGDS; fd++){	
@@ -1967,14 +1966,8 @@ int fatfs_deinit(){
 		TGDSARM9Free(files);
 	}
 	
-	#ifdef ARM9
-	_io_dldi_stub.ioInterface.clearStatus();
-	_io_dldi_stub.ioInterface.shutdown();
-	#endif
 	#if defined(WIN32)
-	struct DLDI_INTERFACE * ptr =  (struct DLDI_INTERFACE*)&_io_dldi_stub[0];
-	ptr->ioInterface.clearStatus();
-	ptr->ioInterface.shutdown();
+	//Skip
 	#endif
 	
 	return ret;

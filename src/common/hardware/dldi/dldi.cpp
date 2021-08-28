@@ -38,14 +38,6 @@ const uint32  DLDI_MAGIC_NUMBER =
 const sint8 DLDI_MAGIC_STRING_BACKWARDS [DLDI_MAGIC_STRING_LEN] =
 	{'\0', 'm', 'h', 's', 'i', 'h', 'C', ' '} ;
 
-#ifdef ARM9
-const DLDI_INTERFACE* io_dldi_data = &_io_dldi_stub;
-#endif
-
-#if defined(WIN32)
-const DLDI_INTERFACE* io_dldi_data = (const DLDI_INTERFACE*)&_io_dldi_stub[0];
-#endif
-
 // 2/2 : once DLDI has been setup
 struct DLDI_INTERFACE* dldiGet(void) {
 	
@@ -116,9 +108,20 @@ __attribute__ ((optnone))
 void dldi_handler_deinit() {
 	//DS
 	if(__dsimode == false){
+		#ifdef ARM7
 		struct DLDI_INTERFACE* dldiInit = dldiGet();	//ensures SLOT-1 / SLOT-2 is mapped to ARM7/ARM9 now
 		dldiInit->ioInterface.clearStatus();
 		dldiInit->ioInterface.shutdown();
+		#endif
+		#ifdef ARM9
+		//send dldi deinit cmd		
+		uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
+		fifomsg[27] = (uint32)0xFFFFFFFF;
+		SendFIFOWords(TGDS_DLDI_ARM7_STATUS_DEINIT);
+		while(fifomsg[27] != (uint32)0){
+			swiDelay(1);
+		}
+		#endif
 	}
 	//DSi
 	else{

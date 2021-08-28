@@ -605,6 +605,8 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 			
 			case(TGDS_DLDI_ARM7_STATUS_DEINIT):{
 				dldi_handler_deinit();
+				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
+				fifomsg[27] = (uint32)0;
 			}
 			break;
 			

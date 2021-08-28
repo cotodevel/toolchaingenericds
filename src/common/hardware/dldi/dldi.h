@@ -123,7 +123,6 @@ You'll need to set the bus permissions appropriately before using.
 extern u8 _io_dldi_stub[16384];
 extern FILE * virtualDLDIDISKImg;
 #endif
-extern const struct DLDI_INTERFACE* io_dldi_data;
 
 /* pointer to DLDI_INTERFACE (DLDI handle) */
 extern struct DLDI_INTERFACE* dldiGet(void);
