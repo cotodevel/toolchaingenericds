@@ -192,18 +192,18 @@ struct soundPlayerContext{
 	//Decoder properties
 	struct soundSampleContext soundSampleCxt[SoundSampleContextChannels];	//Each channel used as sample stream context, which means a single channel here can fill n hardware channels
 	
-	#ifdef ARM9
 	bool soundStreamPause;	//Indicates wether a WAV / IMA-ADPCM / Other stream format is playing
 	int sourceFmt;
 	int bufLoc;
 	int channels;
-	FILE *filePointer;
-	struct fd* filePointerStructFD;	//TGDS FS handle of the above FILE* . a.k.a: GlobalSoundStreamStructFD
 	int bits;
 	u32 len;
 	u32 loc;
 	u32 dataOffset;
 	u32 dataLen;
+	#ifdef ARM9
+	FILE *filePointer;
+	struct fd* filePointerStructFD;	//TGDS FS handle of the above FILE* . a.k.a: GlobalSoundStreamStructFD
 	int mp3SampleRate;
 	#endif
 	
