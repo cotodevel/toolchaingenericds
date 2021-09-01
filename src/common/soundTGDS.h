@@ -231,12 +231,7 @@ extern int sndRate;
 extern void freeData();
 extern void setSwapChannel();
 extern void setupSound();
-
-static inline void TIMER1Handler()
-{	
-	setSwapChannel();
-	SendFIFOWords(ARM9COMMAND_UPDATE_BUFFER);
-}
+extern void timerAudioCallback();
 
 #endif
 
@@ -281,6 +276,7 @@ extern int getSoundLength();
 extern struct soundSampleContext * getsoundSampleContextByIndex(int index);
 extern bool freesoundSampleContext(struct soundSampleContext * sampleInst);	//free up a given soundSampleContext
 extern struct soundSampleContext * getFreeSoundSampleContext();				//obtains a free soundSampleContext, if any
+extern void TIMER1Handler();
 
 #ifdef ARM9
 extern int initSoundStream(char * audioStreamFilename);
