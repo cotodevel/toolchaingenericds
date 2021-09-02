@@ -37,7 +37,7 @@
 #include "..\misc\vs2012TGDS-FS\TGDSFSVS2012\TGDSFSVS2012\TGDSTypes.h"
 #endif
 
-typedef uint32_t sec_t;
+typedef unsigned int sec_t;
 typedef signed int addr_t;
 typedef unsigned char data_t;
 
