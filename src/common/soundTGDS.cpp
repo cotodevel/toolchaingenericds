@@ -378,7 +378,6 @@ void updateSoundContextSamplePlayback(){
 void TIMER1Handler(){	
 	setSwapChannel();
 	SendFIFOWords(ARM9COMMAND_UPDATE_BUFFER);
-	timerAudioCallback();
 }
 
 #endif 

@@ -231,8 +231,6 @@ extern int sndRate;
 extern void freeData();
 extern void setSwapChannel();
 extern void setupSound();
-extern void timerAudioCallback();
-
 #endif
 
 //Sound Sample Context: Plays raw sound samples at VBLANK intervals
