@@ -467,10 +467,13 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 				u32 ARM7MallocSize = (u32)getValueSafe(&fifomsg[43]);
 				//bool customAllocator = (bool)getValueSafe(&fifomsg[44]);
 				u32 dldiStartAddress = (u32)getValueSafe(&fifomsg[45]);
+				u32 TargetARM7DLDIAddress = (u32)getValueSafe(&fifomsg[46]);
 				
 				//ARM7DLDI: ONLY if NTR hardware. TWL uses SDIO instead
 				if(__dsimode == false){
-					DLDIARM7Address = (u32*)dldiStartAddress;
+					DLDIARM7Address = (u32*)TargetARM7DLDIAddress; 
+					memcpy (DLDIARM7Address, dldiStartAddress, 16*1024);
+					
 					bool DLDIARM7InitStatus = dldi_handler_init();	//Init DLDI: ARM7 version
 					if(DLDIARM7InitStatus == true){
 						//setValueSafe(&fifomsg[45], (uint32)0xFAFAFAFA);
@@ -487,6 +490,7 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 				setValueSafe(&fifomsg[44], (uint32)0);
 				setValueSafe(&fifomsg[46], (uint32)0);
 				setValueSafe(&fifomsg[45], (uint32)0);
+				setValueSafe(&fifomsg[46], (uint32)0);
 			}
 			break;
 			

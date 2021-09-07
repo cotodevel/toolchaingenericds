@@ -310,7 +310,8 @@ struct AllocatorInstance CustomAllocatorInstance;
 
 void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,											//ARM7
 						u32 ARM9MallocStartaddress, u32 ARM9MallocSize, u32 * mallocHandler, u32 * callocHandler, //ARM9
-						u32 * freeHandler, u32 * MallocFreeMemoryHandler, bool customAllocator, u32 dldiMemAddress
+						u32 * freeHandler, u32 * MallocFreeMemoryHandler, bool customAllocator, u32 dldiMemAddress,
+						u32 TargetARM7DLDIAddress
 ) __attribute__ ((optnone)) {
 	
 	if (_io_dldi_stub.ioInterface.features & FEATURE_SLOT_GBA) {
@@ -325,6 +326,8 @@ void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,									
 	setValueSafe(&fifomsg[43], (uint32)ARM7MallocSize);
 	setValueSafe(&fifomsg[44], (uint32)customAllocator);
 	setValueSafe(&fifomsg[45], (uint32)dldiMemAddress);
+	setValueSafe(&fifomsg[46], (uint32)TargetARM7DLDIAddress);
+	
 	setTGDSARM9MallocBaseAddress(ARM9MallocStartaddress);
 	if(customAllocator == true){
 		if(mallocHandler != NULL){
@@ -341,7 +344,7 @@ void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,									
 		}
 	}
 	SendFIFOWords(TGDS_ARM7_SETUPARMCPUMALLOCANDDLDI);	//ARM7 Setup
-	while((u32)getValueSafe(&fifomsg[45]) != (u32)0){
+	while((u32)getValueSafe(&fifomsg[46]) != (u32)0){
 		swiDelay(1);
 	}
 }
@@ -353,7 +356,8 @@ void setTGDSMemoryAllocator(struct AllocatorInstance * TGDSMemoryAllocator) __at
 		initARMCoresMalloc(
 			TGDSMemoryAllocator->ARM7MallocStartAddress, TGDSMemoryAllocator->ARM7MallocSize,	//ARM7 Malloc
 			ARM9MallocStartaddress, getMaxRam(), NULL, NULL, NULL, NULL, customMallocARM9,		//ARM9 Malloc
-			TGDSMemoryAllocator->DLDI9StartAddress
+			TGDSMemoryAllocator->DLDI9StartAddress,
+			TGDSMemoryAllocator->TargetARM7DLDIAddress
 		);
 	}
 	else{
@@ -363,7 +367,8 @@ void setTGDSMemoryAllocator(struct AllocatorInstance * TGDSMemoryAllocator) __at
 			(u32)TGDSMemoryAllocator->ARM9MallocStartaddress, (u32)TGDSMemoryAllocator->memoryToAllocate,		//ARM9 Malloc
 			(u32 *)TGDSMemoryAllocator->CustomTGDSMalloc9, (u32 *)TGDSMemoryAllocator->CustomTGDSCalloc9, 
 			(u32 *)TGDSMemoryAllocator->CustomTGDSFree9, (u32 *)TGDSMemoryAllocator->CustomTGDSMallocFreeMemory9, customMallocARM9,
-			TGDSMemoryAllocator->DLDI9StartAddress
+			TGDSMemoryAllocator->DLDI9StartAddress,
+			TGDSMemoryAllocator->TargetARM7DLDIAddress
 		);
 	}
 	customMallocARM9 = TGDSMemoryAllocator->customMalloc;
