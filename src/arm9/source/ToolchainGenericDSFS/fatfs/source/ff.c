@@ -625,35 +625,22 @@ void st_qword (BYTE* ptr, QWORD val)	/* Store an 8-byte word in little-endian */
 /*-----------------------------------------------------------------------*/
 
 /* Copy memory to memory */
-static
-void mem_cpy (void* dst, const void* src, UINT cnt)
-{
-	BYTE *d = (BYTE*)dst;
-	const BYTE *s = (const BYTE*)src;
-
-	if (cnt != 0) {
-		do {
-			*d++ = *s++;
-		} while (--cnt);
-	}
+__attribute__((section(".itcm")))
+void mem_cpy (void* dst, const void* src, UINT cnt){
+	memcpy(dst, src, (int)cnt);
 }
 
 
 /* Fill memory block */
-static
-void mem_set (void* dst, int val, UINT cnt)
-{
-	BYTE *d = (BYTE*)dst;
-
-	do {
-		*d++ = (BYTE)val;
-	} while (--cnt);
+__attribute__((section(".itcm")))
+static void mem_set (void* dst, int val, UINT cnt){
+	memset (dst, val,(int)cnt);
 }
 
 
 /* Compare memory block */
-static
-int mem_cmp (const void* dst, const void* src, UINT cnt)	/* ZR:same, NZ:different */
+__attribute__((section(".itcm")))
+static int mem_cmp (const void* dst, const void* src, UINT cnt)	/* ZR:same, NZ:different */
 {
 	const BYTE *d = (const BYTE *)dst, *s = (const BYTE *)src;
 	int r = 0;
@@ -920,9 +907,8 @@ FRESULT move_window (	/* Returns FR_OK or FR_DISK_ERR */
 /*-----------------------------------------------------------------------*/
 /* Synchronize filesystem and data on the storage                        */
 /*-----------------------------------------------------------------------*/
-
-static
-FRESULT sync_fs (	/* Returns FR_OK or FR_DISK_ERR */
+__attribute__((section(".itcm")))
+static FRESULT sync_fs (	/* Returns FR_OK or FR_DISK_ERR */
 	FATFS* fs		/* Filesystem object */
 )
 {
@@ -975,6 +961,7 @@ DWORD clst2sect (	/* !=0:Sector number, 0:Failed (invalid cluster#) */
 /*-----------------------------------------------------------------------*/
 /* FAT access - Read value of a FAT entry                                */
 /*-----------------------------------------------------------------------*/
+__attribute__((section(".itcm")))
 DWORD get_fat (		/* 0xFFFFFFFF:Disk error, 1:Internal error, 2..0x7FFFFFFF:Cluster status */
 	FFOBJID* obj,	/* Corresponding object */
 	DWORD clst		/* Cluster number to get the value */
@@ -1052,8 +1039,8 @@ DWORD get_fat (		/* 0xFFFFFFFF:Disk error, 1:Internal error, 2..0x7FFFFFFF:Clust
 /* FAT access - Change value of a FAT entry                              */
 /*-----------------------------------------------------------------------*/
 
-static
-FRESULT put_fat (	/* FR_OK(0):succeeded, !=0:error */
+__attribute__((section(".itcm")))
+static FRESULT put_fat (	/* FR_OK(0):succeeded, !=0:error */
 	FATFS* fs,		/* Corresponding filesystem object */
 	DWORD clst,		/* FAT index number (cluster number) to be changed */
 	DWORD val		/* New value to be set to the entry */
@@ -3547,7 +3534,9 @@ FRESULT f_open (
 /*-----------------------------------------------------------------------*/
 /* Read File                                                             */
 /*-----------------------------------------------------------------------*/
-
+#ifdef ARM9
+__attribute__((section(".itcm")))
+#endif
 FRESULT f_read (
 	FIL* fp, 	/* Pointer to the file object */
 	void* buff,	/* Pointer to data buffer */
@@ -4037,6 +4026,9 @@ FRESULT f_getcwd (
 /* Seek File Read/Write Pointer                                          */
 /*-----------------------------------------------------------------------*/
 
+#ifdef ARM9
+__attribute__((section(".itcm")))
+#endif
 FRESULT f_lseek (
 	FIL* fp,		/* Pointer to the file object */
 	FSIZE_t ofs		/* File pointer from top of file */

@@ -18,20 +18,56 @@ USA
 
 */
 
-#ifdef ARM9
+#if defined(ARM9) || defined(WIN32)
 
 #ifndef __devoptab_devices_h__
 #define __devoptab_devices_h__
 
+#ifdef ARM9
 #include "posixHandleTGDS.h"
-#include "devoptab_devices.h"
-
 #include "typedefsTGDS.h"
 #include "dsregs.h"
-#include "dsregs_asm.h"
+#endif
 
-#include "ff.h"
+#if defined(WIN32)
+#include "..\misc\vs2012TGDS-FS\TGDSFSVS2012\TGDSFSVS2012\TGDSTypes.h"
+#include "fatfs\source\ff.h"
+
+#define OPEN_MAXTGDS (int)(20)					//Available POSIX File Descriptors (from POSIX -> TGDS)
+#define MAX_TGDSFILENAME_LENGTH (int)(256)				//NAME_MAX: Max filename (POSIX) that inherits into TGDSFILENAME_LENGTH
+
+enum _flags {
+    _READ = 01,     /* file open for reading */
+    _WRITE = 02,    /* file open for writing */
+    _UNBUF = 03,    /* file is unbuffered */
+    _EOF    = 010,  /* EOF has occurred on this file */
+    _ERR    = 020,  /* error occurred on this file */
+};
+
+//File Descriptor Semantics for Newlib
+//Stream 0 is defined by convention to be the "standard input" stream, which newlib uses for the getc() and similar functions that don't otherwise specify an input stream. 
+//Stream 1 is "standard output," the destination for printf() and puts(). 
+//Stream 2 refers to "standard error," the destination conventionally reserved for messages of grave importance.
+
+#define devoptab_fname_size 32
+
+//devoptab_t that match file descriptors
+struct devoptab_t{
+   const sint8 name[devoptab_fname_size];
+   int (*open_r )( struct _reent *r, const sint8 *path, int flags, int mode );
+   int (*close_r )( struct _reent *r, int fd ); 
+   _ssize_t (*write_r ) ( struct _reent *r, int fd, const sint8 *ptr, int len );
+   _ssize_t (*read_r )( struct _reent *r, int fd, sint8 *ptr, int len );
+};
+#endif
+
+#include "devoptab_devices.h"
+
+#ifdef ARM9
 #include "limitsTGDS.h"
+#include "ff.h"
+#include "dsregs_asm.h"
+#endif
 
 
 #ifdef __cplusplus
@@ -71,12 +107,8 @@ extern int close_r_fatfs ( struct _reent *r, int fd );
 extern _ssize_t write_r_fatfs( struct _reent *r, int fd, const sint8 *ptr, int len );
 extern _ssize_t read_r_fatfs ( struct _reent *r, int fd, sint8 *ptr, int len );
 
-#ifdef ARM9
-
 extern sint32 open_posix_filedescriptor_devices();
-
 extern void initTGDSDevoptab();
-#endif
 
 #ifdef __cplusplus
 }

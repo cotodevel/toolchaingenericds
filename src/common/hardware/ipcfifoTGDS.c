@@ -55,24 +55,36 @@ USA
 u32 fifoFunc[FIFO_CHANNELS][2];	//context is only passed on callback prototype stage, because, the channel index generates the callee callback
 
 void Write8bitAddrExtArm(uint32 address, uint8 value) __attribute__ ((optnone)) {
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	#ifdef ARM7
+	uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
+	#endif
+	#ifdef ARM9
+	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
+	#endif
 	fifomsg[54] = address;
 	fifomsg[55] = (uint32)value;
 	SendFIFOWords(WRITE_EXTARM_8);
 }
 
 void Write16bitAddrExtArm(uint32 address, uint16 value) __attribute__ ((optnone)) {
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	#ifdef ARM7
+	uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
+	#endif
+	#ifdef ARM9
+	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
+	#endif
 	fifomsg[56] = address;
 	fifomsg[57] = (uint32)value;
 	SendFIFOWords(WRITE_EXTARM_16);
 }
 
 void Write32bitAddrExtArm(uint32 address, uint32 value) __attribute__ ((optnone)) {
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	#ifdef ARM7
+	uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
+	#endif
+	#ifdef ARM9
+	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
+	#endif
 	fifomsg[58] = address;
 	fifomsg[59] = (uint32)value;
 	SendFIFOWords(WRITE_EXTARM_32);
@@ -97,22 +109,28 @@ void HandleFifoEmpty() __attribute__ ((optnone)) {
 __attribute__((section(".itcm")))
 #endif
 void HandleFifoNotEmpty() __attribute__ ((optnone)) {
-	if((REG_IPC_FIFO_CR & IPC_FIFO_ERROR) == IPC_FIFO_ERROR){
-		REG_IPC_FIFO_CR = REG_IPC_FIFO_CR | IPC_FIFO_ERROR;	//bit14 FIFO ERROR ACK + Flush Send FIFO
-	}
-	
 	volatile uint32 data0 = 0;	
-		
 	while(!(REG_IPC_FIFO_CR & RECV_FIFO_IPC_EMPTY)){
+		
 		//Process IPC FIFO commands
 		data0 = REG_IPC_FIFO_RX;
+		
+		//FIFO Full / Error? Discard
+		if((REG_IPC_FIFO_CR & IPC_FIFO_ERROR) == IPC_FIFO_ERROR){
+			REG_IPC_FIFO_CR = (REG_IPC_FIFO_CR | IPC_FIFO_SEND_CLEAR);	//bit14 FIFO ERROR ACK + Flush Send FIFO
+		}
+		
 		switch (data0) {
 			// ARM7IO from ARM9
 			//	||
 			// ARM9IO from ARM7
 			case((uint32)WRITE_EXTARM_8):{
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				#ifdef ARM7
+				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
+				#endif
+				#ifdef ARM9
+				uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
+				#endif
 				uint32* address = (uint32*)fifomsg[54];
 				uint8 value = (uint8)((uint32)(fifomsg[55]&0xff));
 				*(uint8*)address = (uint8)(value);
@@ -120,8 +138,12 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 			}
 			break;
 			case((uint32)WRITE_EXTARM_16):{
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				#ifdef ARM7
+				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
+				#endif
+				#ifdef ARM9
+				uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
+				#endif
 				uint32* address = (uint32*)fifomsg[56];
 				uint16 value = (uint16)((uint32)(fifomsg[57]&0xffff));
 				*(uint16*)address = (uint16)(value);
@@ -129,8 +151,12 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 			}
 			break;
 			case((uint32)WRITE_EXTARM_32):{
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				#ifdef ARM7
+				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
+				#endif
+				#ifdef ARM9
+				uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
+				#endif
 				uint32* address = (uint32*)fifomsg[58];
 				uint32 value = (uint32)fifomsg[59];
 				*(uint32*)address = (uint32)(value);
@@ -145,16 +171,16 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 			
 			//ARM7 command handler
 			#ifdef ARM7
+			
 			case(ARM7COMMAND_RELOADNDS):{
 				runBootstrapARM7();	//ARM7 Side
 			}
 			break;
 			
 			case (TGDS_ARM7_RELOADFLASH):{
-				//Init Shared Address Region and get NDS Heade
+				//Init Shared Address Region and get NDS Header
 				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-				
+				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 				memcpy((u8*)&TGDSIPC->DSHeader,(u8*)0x027FFE00, sizeof(TGDSIPC->DSHeader));
 				
 				//Read DHCP settings (in order)
@@ -181,20 +207,17 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 			}
 			break;
 			case ARM7COMMAND_SOUND_SETRATE:{
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 				sndRate = fifomsg[60];
 			}
 			break;
 			case ARM7COMMAND_SOUND_SETLEN:{
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 				sampleLen = fifomsg[61];
 			}
 			break;
 			case ARM7COMMAND_SOUND_SETMULT:{
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 				multRate = fifomsg[62];
 			}
 			break;
@@ -422,8 +445,7 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 			break;
 			
 			case((uint32)TGDS_ARM7_ENABLESOUNDSAMPLECTX):{
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 				EnableSoundSampleContext((int)fifomsg[60]);
 			}
 			break;
@@ -440,49 +462,40 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 			//fifomsg[41] = fifomsg[40] = fifomsg[39]; freed. Available for upcoming stuff
 			
 			case((uint32)TGDS_ARM7_SETUPARMCPUMALLOCANDDLDI):{	//ARM7
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 				u32 ARM7MallocStartaddress = (u32)getValueSafe(&fifomsg[42]);
 				u32 ARM7MallocSize = (u32)getValueSafe(&fifomsg[43]);
 				//bool customAllocator = (bool)getValueSafe(&fifomsg[44]);
 				u32 dldiStartAddress = (u32)getValueSafe(&fifomsg[45]);
-				u32 ARM7DLDISetting = (u32)getValueSafe(&fifomsg[46]);
-				if(ARM7DLDISetting == TGDS_ARM7DLDI_ENABLED){
-					ARM7DLDIEnabled = true;
-				}
-				else{
-					ARM7DLDIEnabled = false;
-				}
+				u32 TargetARM7DLDIAddress = (u32)getValueSafe(&fifomsg[46]);
 				
-				//NTR hardware + TWL emu/hardware = ARM7DLDI
-				if(ARM7DLDIEnabled == true){
-					//ARM7DLDI: ONLY if NTR hardware
-					if(__dsimode == false){
-						DLDIARM7Address = (u32*)dldiStartAddress;
-						bool DLDIARM7InitStatus = dldi_handler_init();	//Init DLDI: ARM7 version
-						if(DLDIARM7InitStatus == true){
-							//setValueSafe(&fifomsg[45], (uint32)0xFAFAFAFA);
-							//after this (if ret status true) it's safe to call dldi read and write sectors from ARM9 (ARM7 DLDI mode)
-						}
-						else{
-							//setValueSafe(&fifomsg[45], (uint32)0xFCFCFCFC);
-						}
+				//ARM7DLDI: ONLY if NTR hardware. TWL uses SDIO instead
+				if(__dsimode == false){
+					DLDIARM7Address = (u32*)TargetARM7DLDIAddress; 
+					memcpy (DLDIARM7Address, dldiStartAddress, 16*1024);
+					
+					bool DLDIARM7InitStatus = dldi_handler_init();	//Init DLDI: ARM7 version
+					if(DLDIARM7InitStatus == true){
+						//setValueSafe(&fifomsg[45], (uint32)0xFAFAFAFA);
+						//after this (if ret status true) it's safe to call dldi read and write sectors from ARM9 (ARM7 DLDI mode)
+					}
+					else{
+						//setValueSafe(&fifomsg[45], (uint32)0xFCFCFCFC);
 					}
 				}
 				
-				initARM7Malloc(ARM7MallocStartaddress, ARM7MallocSize);
-				
+				initARM7Malloc(ARM7MallocStartaddress, ARM7MallocSize);				
 				setValueSafe(&fifomsg[42], (uint32)0);
 				setValueSafe(&fifomsg[43], (uint32)0);
 				setValueSafe(&fifomsg[44], (uint32)0);
 				setValueSafe(&fifomsg[46], (uint32)0);
 				setValueSafe(&fifomsg[45], (uint32)0);
+				setValueSafe(&fifomsg[46], (uint32)0);
 			}
 			break;
 			
 			case((uint32)TGDS_ARM7_SETUPEXCEPTIONHANDLER):{
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 				exceptionArmRegsShared = (uint8*)fifomsg[60];		//data0 == ARM9's exceptionArmRegs
 				memset(exceptionArmRegsShared, 0, 0x20);	//same as exceptionArmRegs[0x20]
 				setupDefaultExceptionHandler();	//ARM7 TGDS Exception Handler
@@ -490,8 +503,7 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 			break;
 			
 			case((uint32)TGDS_ARM7_PRINTF7SETUP):{
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 				printfBufferShared = (u8*)fifomsg[46];
 				arm7debugBufferShared = (u8*)fifomsg[47];
 				arm7ARGVBufferShared = (int*)fifomsg[48];
@@ -508,8 +520,7 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 			break;
 			
 			case((uint32)FIFO_PLAYSOUND):{
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 				int sampleRate = (uint32)fifomsg[50];
 				u32* data = (u32*)fifomsg[51];
 				u32 bytes = (uint32)fifomsg[52];
@@ -540,22 +551,19 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 			break;
 			
 			case((uint32)FIFO_POWERCNT_ON):{
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 				powerON((uint16)fifomsg[60]);
 			}
 			break;
 			case((uint32)FIFO_POWERCNT_OFF):{
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 				powerOFF((uint16)fifomsg[60]);
 			}
 			break;
 			//Power Management: 
 				//Supported mode(s): NTR
 			case((uint32)FIFO_POWERMGMT_WRITE):{
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 				uint32 cmd = (uint32)fifomsg[60];
 				uint32 flags = (uint32)fifomsg[61];
 				switch(cmd){
@@ -581,8 +589,7 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 			break;
 			//arm9 wants to send a WIFI context block address / userdata is always zero here
 			case((uint32)WIFI_INIT):{
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 				//	wifiAddressHandler( void * address, void * userdata )
 				wifiAddressHandler((Wifi_MainStruct *)fifomsg[60], 0);
 			}
@@ -594,8 +601,7 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 			break;
 			
 			case((uint32)ARM7COMMAND_RELOADARM7):{
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 				u32 ARM7Entrypoint = getValueSafe(&fifomsg[64]);
 				reloadARMCore(ARM7Entrypoint);
 			}
@@ -603,19 +609,19 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 			
 			case(TGDS_DLDI_ARM7_STATUS_DEINIT):{
 				dldi_handler_deinit();
+				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
+				fifomsg[27] = (uint32)0;
 			}
 			break;
 			
 			case TGDS_ARM7_ENABLE_SLEEPMODE_TIMEOUT:{
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 				setTurnOffScreensTimeout((int)fifomsg[60]);
 			}
 			break;
 			
 			case TGDS_ARM7_SET_EVENT_HANDLING:{
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;				
 				TGDSSetEvent((int)fifomsg[60]);
 			}
 			break;
@@ -649,8 +655,7 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 			
 			case TGDS_ARMCORES_REPORT_PAYLOAD_MODE:{
 				reportTGDSPayloadMode();				
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 				setValueSafe(&fifomsg[45], (uint32)0);
 			}
 			break;
@@ -707,8 +712,7 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 			break;
 			
 			case((uint32)TGDS_ARM7_PRINTF7):{
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 				u8 * printfBufferShared = (u8 *)fifomsg[36];		//uint32 * printfBufferShared
 				int * arm7ARGVBufferShared = (int *)fifomsg[37];
 				int argvCount = (int)fifomsg[38];
@@ -719,8 +723,7 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 			
 			//ARM7: Exception Handler
 			case((uint32)EXCEPTION_ARM7):{
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 				switch((uint32)fifomsg[60]){
 					case(generalARM7Exception):{
 						exception_handler((uint32)generalARM7Exception);
@@ -744,8 +747,7 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 			break;
 			
 			case((uint32)FIFO_FLUSHSOUNDCONTEXT):{
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];				
+				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 				int curChannelFreed = (int)fifomsg[60];
 				flushSoundContext(curChannelFreed);
 			}
@@ -882,8 +884,12 @@ void XYReadScrPosUser(struct XYTscPos * StouchScrPosInst)  __attribute__ ((optno
 //u32 * srcMemory == External ARM Core Base Address
 void ReadMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead){
 	dmaFillWord(0, 0, (uint32)targetMemory, (uint32)bytesToRead);
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	#ifdef ARM7
+	uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
+	#endif
+	#ifdef ARM9
+	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
+	#endif
 	setValueSafe(&fifomsg[28], (uint32)srcMemory);
 	setValueSafe(&fifomsg[29], (uint32)targetMemory);
 	setValueSafe(&fifomsg[30], (uint32)bytesToRead);
@@ -904,8 +910,12 @@ void SaveMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead){
 	#ifdef ARM9
 	coherent_user_range_by_size((uint32)targetMemory, (sint32)bytesToRead);
 	#endif
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	#ifdef ARM7
+	uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
+	#endif
+	#ifdef ARM9
+	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
+	#endif
 	setValueSafe(&fifomsg[32], (uint32)srcMemory);
 	setValueSafe(&fifomsg[33], (uint32)targetMemory);
 	setValueSafe(&fifomsg[34], (uint32)bytesToRead);
@@ -918,8 +928,12 @@ void SaveMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead){
 
 void ReadFirmwareARM7Ext(u32 * srcMemory){	//512 bytes src always
 	memset(srcMemory, 0, (uint32)512);
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	#ifdef ARM7
+	uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
+	#endif
+	#ifdef ARM9
+	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
+	#endif
 	fifomsg[28] = (uint32)srcMemory;
 	//fifomsg[29] = (uint32)targetMemory;
 	//fifomsg[30] = (uint32)bytesToRead;
@@ -934,7 +948,12 @@ void ReadFirmwareARM7Ext(u32 * srcMemory){	//512 bytes src always
 //Reloads ARM7 Flash memory and returns DS hardware model
 u8 ARM7ReloadFlashSync(){
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	#ifdef ARM7
+	uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
+	#endif
+	#ifdef ARM9
+	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
+	#endif
 	setValueSafe(&fifomsg[58], (u32)0xFFFFFFFF);
 	SendFIFOWords(TGDS_ARM7_RELOADFLASH);
 	while(getValueSafe(&fifomsg[58]) != 0){

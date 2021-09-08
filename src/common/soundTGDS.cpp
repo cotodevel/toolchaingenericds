@@ -49,9 +49,7 @@ void initSound(){
 void startSoundSample(int sampleRate, const void* data, u32 bytes, u8 channel, u8 vol,  u8 pan, u8 format)
 {
 	#ifdef ARM9
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-	coherent_user_range_by_size((uint32)fifomsg, sizeof(TGDSIPC->fifoMesaggingQueue));
+	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
 	coherent_user_range_by_size((uint32)data, bytes);	//coherent sound buffer if within cached EWRAM
 	
 	fifomsg[50] = (uint32)sampleRate;
@@ -169,8 +167,7 @@ void EnableSoundSampleContext(int SndSamplemode){
 	soundSampleContextCurrentMode = SndSamplemode;
 	#endif
 	#ifdef ARM9
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
 	setValueSafe(&fifomsg[60], (uint32)SndSamplemode);
 	SendFIFOWords(TGDS_ARM7_ENABLESOUNDSAMPLECTX);
 	#endif
@@ -364,8 +361,7 @@ void updateSoundContextSamplePlayback(){
 		//Returns -1 if channel is busy, or channel if idle
 		if( (isFreeSoundChannel(thisChannel) == thisChannel) && (curSoundSampleContext->status == SOUNDSAMPLECONTEXT_PLAYING) ){	//Idle? free context
 			freesoundSampleContext(curSoundSampleContext);
-			struct sIPCSharedTGDS * TGDSIPC = (struct sIPCSharedTGDS *)0x027FF000;
-			uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+			uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 			fifomsg[60] = (uint32)thisChannel;			
 			SendFIFOWords(FIFO_FLUSHSOUNDCONTEXT);
 		}
@@ -377,6 +373,11 @@ void updateSoundContextSamplePlayback(){
 			SoundTGDSCurChannel++;
 		}
 	}
+}
+
+void TIMER1Handler(){	
+	setSwapChannel();
+	SendFIFOWords(ARM9COMMAND_UPDATE_BUFFER);
 }
 
 #endif 
@@ -595,30 +596,25 @@ void initComplexSound() __attribute__ ((optnone)) {
 	soundData.sourceFmt = SRC_NONE;
 	soundData.filePointer = NULL;
 	setVolume(4);	//Default volume
-	
-	VRAMBLOCK_SETBANK_D(VRAM_D_0x06000000_ARM7);	//give arm7 vram bank d (extend +128K RAM)
 }
 
 void setSoundFrequency(u32 freq)
 {
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
 	setValueSafe(&fifomsg[60], (uint32)freq);
 	SendFIFOWords(ARM7COMMAND_SOUND_SETRATE);
 }
 
 void setSoundInterpolation(u32 mult)
 {
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
 	setValueSafe(&fifomsg[62], (uint32)mult);
 	SendFIFOWords(ARM7COMMAND_SOUND_SETMULT);
 }
 
 void setSoundLength(u32 len)
 {
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
 	setValueSafe(&fifomsg[61], (uint32)len);
 	SendFIFOWords(ARM7COMMAND_SOUND_SETLEN);
 	sndLen = len;

@@ -232,8 +232,7 @@ void printf7(char *chr, int argvCount, int * argv){
 				arm7ARGVBufferShared[i] = argv[i];
 			}
 		}
-		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 
-		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+		uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 		fifomsg[36] = (uint32)printf7Buf;
 		fifomsg[37] = (uint32)arm7ARGVBufferShared;
 		fifomsg[38] = (uint32)argvCount;
@@ -311,47 +310,24 @@ struct AllocatorInstance CustomAllocatorInstance;
 
 void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,											//ARM7
 						u32 ARM9MallocStartaddress, u32 ARM9MallocSize, u32 * mallocHandler, u32 * callocHandler, //ARM9
-						u32 * freeHandler, u32 * MallocFreeMemoryHandler, bool customAllocator, u32 dldiMemAddress
+						u32 * freeHandler, u32 * MallocFreeMemoryHandler, bool customAllocator, u32 dldiMemAddress,
+						u32 TargetARM7DLDIAddress
 ) __attribute__ ((optnone)) {
-	u32 ARM7DLDISetting = 0;
-	if(
-		(strncmp((char *)&_io_dldi_stub.friendlyName[0], "TGDS RAMDISK", 12) == 0) //TGDS RAMDisk?
-		&&
-		(__dsimode == false) //DS-mode only? (otherwise, defaults to DSi SD access through ARM7DLDI)
-	){
-		ARM7DLDIEnabled = false; 	//ARM9DLDI
-		ARM7DLDISetting = TGDS_ARM7DLDI_DISABLED;
+	
+	if (_io_dldi_stub.ioInterface.features & FEATURE_SLOT_GBA) {
+		SetBusSLOT1ARM9SLOT2ARM7();
 	}
-	else{
-		ARM7DLDIEnabled = true;		//ARM7DLDI
-		ARM7DLDISetting = TGDS_ARM7DLDI_ENABLED;
+	if (_io_dldi_stub.ioInterface.features & FEATURE_SLOT_NDS) {
+		SetBusSLOT1ARM7SLOT2ARM9();
 	}
 	
-	//Map cart (ARM9 only). (This doesn't affect DSi SD as it's mapped directly into ARM7 registers, but still useful if you want to mount TWL SD + DLDI through slot1/slot2(old ds) at the same time)
-	if(ARM7DLDIEnabled == true){	//Only set bits for real hardware carts
-		if (_io_dldi_stub.ioInterface.features & FEATURE_SLOT_GBA) {
-			SetBusSLOT1ARM9SLOT2ARM7();
-		}
-		if (_io_dldi_stub.ioInterface.features & FEATURE_SLOT_NDS) {
-			SetBusSLOT1ARM7SLOT2ARM9();
-		}
-	}
-	if(ARM7DLDIEnabled == false){	//Emulator DLDI? set cart rights
-		if (_io_dldi_stub.ioInterface.features & FEATURE_SLOT_GBA) {
-			SetBusSLOT1ARM7SLOT2ARM9();
-		}
-		if (_io_dldi_stub.ioInterface.features & FEATURE_SLOT_NDS) {
-			SetBusSLOT1ARM9SLOT2ARM7();
-		}
-	}
-	
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
 	setValueSafe(&fifomsg[42], (uint32)ARM7MallocStartAddress);
 	setValueSafe(&fifomsg[43], (uint32)ARM7MallocSize);
 	setValueSafe(&fifomsg[44], (uint32)customAllocator);
 	setValueSafe(&fifomsg[45], (uint32)dldiMemAddress);
-	setValueSafe(&fifomsg[46], (uint32)ARM7DLDISetting);
+	setValueSafe(&fifomsg[46], (uint32)TargetARM7DLDIAddress);
+	
 	setTGDSARM9MallocBaseAddress(ARM9MallocStartaddress);
 	if(customAllocator == true){
 		if(mallocHandler != NULL){
@@ -368,7 +344,7 @@ void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,									
 		}
 	}
 	SendFIFOWords(TGDS_ARM7_SETUPARMCPUMALLOCANDDLDI);	//ARM7 Setup
-	while((u32)getValueSafe(&fifomsg[45]) != (u32)0){
+	while((u32)getValueSafe(&fifomsg[46]) != (u32)0){
 		swiDelay(1);
 	}
 }
@@ -380,7 +356,8 @@ void setTGDSMemoryAllocator(struct AllocatorInstance * TGDSMemoryAllocator) __at
 		initARMCoresMalloc(
 			TGDSMemoryAllocator->ARM7MallocStartAddress, TGDSMemoryAllocator->ARM7MallocSize,	//ARM7 Malloc
 			ARM9MallocStartaddress, getMaxRam(), NULL, NULL, NULL, NULL, customMallocARM9,		//ARM9 Malloc
-			TGDSMemoryAllocator->DLDI9StartAddress
+			TGDSMemoryAllocator->DLDI9StartAddress,
+			TGDSMemoryAllocator->TargetARM7DLDIAddress
 		);
 	}
 	else{
@@ -390,7 +367,8 @@ void setTGDSMemoryAllocator(struct AllocatorInstance * TGDSMemoryAllocator) __at
 			(u32)TGDSMemoryAllocator->ARM9MallocStartaddress, (u32)TGDSMemoryAllocator->memoryToAllocate,		//ARM9 Malloc
 			(u32 *)TGDSMemoryAllocator->CustomTGDSMalloc9, (u32 *)TGDSMemoryAllocator->CustomTGDSCalloc9, 
 			(u32 *)TGDSMemoryAllocator->CustomTGDSFree9, (u32 *)TGDSMemoryAllocator->CustomTGDSMallocFreeMemory9, customMallocARM9,
-			TGDSMemoryAllocator->DLDI9StartAddress
+			TGDSMemoryAllocator->DLDI9StartAddress,
+			TGDSMemoryAllocator->TargetARM7DLDIAddress
 		);
 	}
 	customMallocARM9 = TGDSMemoryAllocator->customMalloc;
@@ -407,8 +385,7 @@ int arm7ARGVBuffer[MAXPRINT7ARGVCOUNT];
 int arm7ARGVDebugBuffer[MAXPRINT7ARGVCOUNT];
 
 void printf7Setup(){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
 	fifomsg[46] = (uint32)&printf7Buffer[0];
 	fifomsg[47] = (uint32)&arm7debugBuffer[0];
 	fifomsg[48] = (uint32)&arm7ARGVBuffer[0];

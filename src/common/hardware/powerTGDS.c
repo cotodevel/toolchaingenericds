@@ -47,8 +47,7 @@ void powerON(uint32 values){
 	
 	#ifdef ARM9
 	if(!(values & POWERMAN_ARM9)){
-		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+		uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
 		setValueSafe(&fifomsg[60], (uint32)values);
 		SendFIFOWords(FIFO_POWERCNT_ON);
 	}
@@ -67,8 +66,7 @@ void powerOFF(uint32 values){
 	
 	#ifdef ARM9
 	if(!(values & POWERMAN_ARM9)){
-		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+		uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
 		setValueSafe(&fifomsg[60], (uint32)values);
 		SendFIFOWords(FIFO_POWERCNT_OFF);
 	}

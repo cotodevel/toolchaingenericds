@@ -5,7 +5,9 @@
 
 
 #include "ff.h"
+#ifdef ARM9
 #include "posixHandleTGDS.h"
+#endif
 
 
 #if FF_USE_LFN == 3	/* Dynamic memory allocation */

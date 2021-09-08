@@ -236,8 +236,7 @@ void NDS_IRQHandler() __attribute__ ((optnone)) {
 		uint8 ipcByte = receiveByteIPC();
 		switch(ipcByte){
 			case(IPC_ARM7READMEMORY_REQBYIRQ):{
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 				uint32 srcMemory = getValueSafe(&fifomsg[28]);
 				uint32 targetMemory = getValueSafe(&fifomsg[29]);
 				int bytesToRead = (int)getValueSafe(&fifomsg[30]);
@@ -249,8 +248,7 @@ void NDS_IRQHandler() __attribute__ ((optnone)) {
 			}
 			break;
 			case(IPC_ARM7SAVEMEMORY_REQBYIRQ):{
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 				uint32 srcMemory = getValueSafe(&fifomsg[32]);
 				uint32 targetMemory = getValueSafe(&fifomsg[33]);
 				int bytesToRead = (int)getValueSafe(&fifomsg[34]);
@@ -268,7 +266,7 @@ void NDS_IRQHandler() __attribute__ ((optnone)) {
 			
 			case(IPC_READ_FIRMWARE_REQBYIRQ):{
 				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 				uint32 srcMemory = fifomsg[28];
 				//uint32 targetMemory = fifomsg[29];
 				//int bytesToRead = (int)fifomsg[30];
@@ -281,12 +279,10 @@ void NDS_IRQHandler() __attribute__ ((optnone)) {
 			}
 			break;			
 				//ARM7_DLDI
-				
 				//Slot-1 or slot-2 access
 				case(IPC_READ_ARM7DLDI_REQBYIRQ):{
 					struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
-					struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-					uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+					uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 					uint32 sector = getValueSafe(&fifomsg[20]);
 					uint32 numSectors = getValueSafe(&fifomsg[21]);
 					uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[22]);
@@ -297,10 +293,11 @@ void NDS_IRQHandler() __attribute__ ((optnone)) {
 					setValueSafe(&fifomsg[23], (u32)0);
 				}
 				break;
+				
+				
 				case(IPC_WRITE_ARM7DLDI_REQBYIRQ):{
 					struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
-					struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-					uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+					uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 					uint32 sector = getValueSafe(&fifomsg[24]);
 					uint32 numSectors = getValueSafe(&fifomsg[25]);
 					uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[26]);
@@ -316,8 +313,7 @@ void NDS_IRQHandler() __attribute__ ((optnone)) {
 				#ifdef TWLMODE
 				
 				case(IPC_STARTUP_ARM7_TWLSD_REQBYIRQ):{
-					struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-					uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+					uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 					int result = sdmmc_sd_startup();
 					if(result == 0){ //success?
 						
@@ -334,15 +330,13 @@ void NDS_IRQHandler() __attribute__ ((optnone)) {
 				break;
 				
 				case(IPC_SD_IS_INSERTED_ARM7_TWLSD_REQBYIRQ):{
-					struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-					uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+					uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 					setValueSafe(&fifomsg[23], (u32)0);	//last value has ret status
 				}
 				break;
 				
 				case(IPC_READ_ARM7_TWLSD_REQBYIRQ):{
-					struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-					uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+					uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 					int sector = getValueSafeInt(&fifomsg[20]);
 					int numSectors = getValueSafeInt(&fifomsg[21]);
 					uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[22]);
@@ -350,10 +344,9 @@ void NDS_IRQHandler() __attribute__ ((optnone)) {
 					setValueSafe(&fifomsg[23], (u32)retval);	//last value has ret status & release ARM9 dldi cmd
 				}
 				break;
-
+				
 				case(IPC_WRITE_ARM7_TWLSD_REQBYIRQ):{
-					struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-					uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+					uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 					uint32 sector = getValueSafe(&fifomsg[24]);
 					uint32 numSectors = getValueSafe(&fifomsg[25]);
 					uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[26]);

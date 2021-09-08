@@ -199,7 +199,15 @@ extern bool fifoCheckDatamsg(int channel);
 
 	\return the number of bytes in the queue for the first data entry, or -1 if there are no entries.
 */
-static inline int fifoCheckDatamsgLength(int channel) __attribute__ ((optnone)) {
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+static inline int fifoCheckDatamsgLength(int channel) {
 	if( (channel >= 0) && (channel < FIFO_CHANNELS) ){
 		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 		#ifdef ARM9

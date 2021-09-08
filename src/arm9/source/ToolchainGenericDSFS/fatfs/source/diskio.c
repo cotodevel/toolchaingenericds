@@ -7,10 +7,18 @@
 /* storage control modules to the FatFs module with a defined API.       */
 /*-----------------------------------------------------------------------*/
 
+#if defined(WIN32)
+#include "diskio.h"		/* FatFs lower layer API */
+#include "..\..\dldi.h"
+#include "..\..\..\ToolchainGenericDSFS\fatfslayerTGDS.h"
+#endif
+
+#if defined(ARM9)
 #include "diskio.h"		/* FatFs lower layer API */
 #include "dldi.h"
 #include <stdbool.h>
 #include "global_settings.h"
+#endif
 
 /* Definitions of physical drive number for each media */
 //#define SDCARD        0
@@ -22,9 +30,10 @@
 /*-----------------------------------------------------------------------*/
 /* Get Drive Status                                                      */
 /*-----------------------------------------------------------------------*/
-
+#ifdef ARM9
+__attribute__((unused))
+#endif
 DSTATUS disk_status (
-	__attribute__((unused))
 	BYTE pdrv		/* Physical drive nmuber to identify the drive */
 )
 {
