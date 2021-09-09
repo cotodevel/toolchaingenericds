@@ -536,6 +536,7 @@ void updateStream() __attribute__ ((optnone))
 		// file is done
 		stopSound();
 		sndPaused = false;
+		soundLoaded = false;
 		return;
 	}
 	
@@ -554,7 +555,7 @@ void updateStream() __attribute__ ((optnone))
 		
 		stopSound();
 		sndPaused = false;
-		
+		soundLoaded = false;
 		return;
 	}
 	
