@@ -742,7 +742,61 @@ void TryToDefragmentMemory() __attribute__ ((optnone)) {
 	}
 }
 
+__attribute__((section(".itcm")))
+u8* TGDSARM9Malloc(int size){
+	if(customMallocARM9 == false){
+		return (u8*)malloc((const int)size);
+	}
+	else{
+		return (u8*)TGDSMalloc9((const int)size);
+	}
+}
 
+__attribute__((section(".itcm")))
+u8 * TGDSARM9Calloc(int blockCount, int blockSize){
+	if(customMallocARM9 == false){
+		return (u8*)calloc(blockSize, blockCount);	//reverse order
+	}
+	else{
+		return (u8*)TGDSCalloc9(blockCount, blockSize);	//same order
+	}
+}
+
+__attribute__((section(".itcm")))
+u8 * TGDSARM9Realloc(void *ptr, int size){
+	if(customMallocARM9 == false){
+		if(ptr != NULL){
+			free(ptr);
+		}
+		return (u8*)malloc(size);
+	}
+	else{
+		if(ptr != NULL){
+			TGDSFree9(ptr);
+		}
+		return (u8*)TGDSMalloc9(size);
+	}
+}
+
+__attribute__((section(".itcm")))
+void TGDSARM9Free(void *ptr){
+	if(customMallocARM9 == false){
+		free(ptr);
+	}
+	else{
+		TGDSFree9(ptr);
+	}
+}
+
+__attribute__((section(".itcm")))
+u32 TGDSARM9MallocFreeMemory(){
+	if(customMallocARM9 == false){
+		return (u32)getMaxRam();
+	}
+	else{
+		return (u32)TGDSMallocFreeMemory9();
+	}
+}
 
 
 /*
