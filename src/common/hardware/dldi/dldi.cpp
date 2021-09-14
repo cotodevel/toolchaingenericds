@@ -192,9 +192,9 @@ bool _DLDI_readSectors(uint32 sector, uint32 sectorCount, uint8* buffer)
 //future optimization, make it EWRAM-only so we can DMA directly!
 #ifdef ARM9
 __attribute__ ((optnone))
+__attribute__((section(".itcm")))
 #endif
 bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer) {
-	//ARM7 DLDI implementation
 	//NTR hardware: ARM7DLDI
 	if(__dsimode == false){
 		#ifdef ARM7
@@ -253,6 +253,7 @@ bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer) {
 
 #ifdef ARM9
 __attribute__ ((optnone))
+__attribute__((section(".itcm")))
 #endif
 bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buffer) {
 	//NTR hardware: ARM7DLDI
