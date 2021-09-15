@@ -48,7 +48,7 @@ USA
 
 #endif
 
-void IRQInit(u8 DSHardware) __attribute__ ((optnone)) {
+void IRQInit(u8 DSHardware)  {
 	
 	#ifdef ARM9
 	//DrainWrite
@@ -129,7 +129,7 @@ static bool penDown = false;
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
-void NDS_IRQHandler() __attribute__ ((optnone)) {
+void NDS_IRQHandler()  {
 	u32 handledIRQ = REG_IF & REG_IE;
 	
 	#ifdef TWLMODE

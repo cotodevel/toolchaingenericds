@@ -9,7 +9,14 @@
 
 ///////////////////////////////////TWL mode SD ARM9i DLDI Access///////////////////////////////////
 //---------------------------------------------------------------------------------
-bool sdio_Startup() __attribute__ ((optnone)) {
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+bool sdio_Startup() {
 //---------------------------------------------------------------------------------
 	#ifdef NTRMODE
 	return false;
@@ -34,7 +41,14 @@ bool sdio_Startup() __attribute__ ((optnone)) {
 }
 
 //---------------------------------------------------------------------------------
-bool sdio_IsInserted() __attribute__ ((optnone)) {
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+bool sdio_IsInserted() {
 //---------------------------------------------------------------------------------
 	#ifdef NTRMODE
 	return false;
@@ -45,8 +59,15 @@ bool sdio_IsInserted() __attribute__ ((optnone)) {
 }
 
 //---------------------------------------------------------------------------------
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 __attribute__((section(".itcm")))
-bool sdio_ReadSectors(sec_t sector, sec_t numSectors,void* buffer) __attribute__ ((optnone)) {
+bool sdio_ReadSectors(sec_t sector, sec_t numSectors,void* buffer) {
 //---------------------------------------------------------------------------------	
 	#ifdef NTRMODE
 	return false;
@@ -69,8 +90,15 @@ bool sdio_ReadSectors(sec_t sector, sec_t numSectors,void* buffer) __attribute__
 }
 
 //---------------------------------------------------------------------------------
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 __attribute__((section(".itcm")))
-bool sdio_WriteSectors(sec_t sector, sec_t numSectors, const void* buffer) __attribute__ ((optnone)) {
+bool sdio_WriteSectors(sec_t sector, sec_t numSectors, const void* buffer) {
 //---------------------------------------------------------------------------------
 	#ifdef NTRMODE
 	return false;
@@ -94,13 +122,27 @@ bool sdio_WriteSectors(sec_t sector, sec_t numSectors, const void* buffer) __att
 
 
 //---------------------------------------------------------------------------------
-bool sdio_ClearStatus() __attribute__ ((optnone)) {
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+bool sdio_ClearStatus() {
 //---------------------------------------------------------------------------------
 	return true;
 }
 
 //---------------------------------------------------------------------------------
-bool sdio_Shutdown() __attribute__ ((optnone)) {
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+bool sdio_Shutdown() {
 //---------------------------------------------------------------------------------
 	return true;
 }

@@ -55,6 +55,7 @@ export DIRS_ARM9_SRCLIB = ../../ToolchainGenericDSFS	\
 export DIRS_ARM9_HEADERLIB = ../../ToolchainGenericDSFS	\
 			../../	\
 			../../../../common/	\
+			../../../../common/libhardware/	\
 			../../../../common/hardware/	\
 			../../../../common/hardware/dldi/	\
 			../../../../common/dswifi/	\

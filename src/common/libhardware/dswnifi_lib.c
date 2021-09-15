@@ -152,7 +152,14 @@ struct frameBlock * receiveDSWNIFIFrame(uint8 * databuf_src, int frameSizeRecv){
 //if UDPNIFI connect OK: true, otherwise false. 
 //if NIFI: returns true always
 //if GDBSTUB: connect OK: true, otherwise false.
-bool switch_dswnifi_mode(sint32 mode)  __attribute__ ((optnone)) {
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+bool switch_dswnifi_mode(sint32 mode)  {
 	swiDelay(12000);
 	//save last DSWnifiMode
 	if(mode != LastDSWnifiMode){

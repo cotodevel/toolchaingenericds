@@ -15,7 +15,14 @@ struct mmcdevice deviceSD;
 //Todo: TWL MMC hardware descriptor
 
 //---------------------------------------------------------------------------------
-int geterror(struct mmcdevice *ctx)	__attribute__ ((optnone))	{
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O2")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+int geterror(struct mmcdevice *ctx)	{
 //---------------------------------------------------------------------------------
     //if(ctx->error == 0x4) return -1;
     //else return 0;
@@ -24,7 +31,14 @@ int geterror(struct mmcdevice *ctx)	__attribute__ ((optnone))	{
 
 
 //---------------------------------------------------------------------------------
-void setTarget(struct mmcdevice *ctx)	__attribute__ ((optnone))	{
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O2")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void setTarget(struct mmcdevice *ctx) {
 //---------------------------------------------------------------------------------
     sdmmc_mask16(REG_SDPORTSEL,0x3,(u16)ctx->devicenumber);
     setckl(ctx->clk);
@@ -38,7 +52,14 @@ void setTarget(struct mmcdevice *ctx)	__attribute__ ((optnone))	{
 
 
 //---------------------------------------------------------------------------------
-void sdmmc_send_command(struct mmcdevice *ctx, uint32_t cmd, uint32_t args)	__attribute__ ((optnone))	{
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O2")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void sdmmc_send_command(struct mmcdevice *ctx, uint32_t cmd, uint32_t args)	{
 //---------------------------------------------------------------------------------
 	const bool getSDRESP = (cmd << 15) >> 31;
 	u16 flags = (cmd << 15) >> 31;
@@ -229,7 +250,14 @@ void sdmmc_send_command(struct mmcdevice *ctx, uint32_t cmd, uint32_t args)	__at
 }
 
 //---------------------------------------------------------------------------------
-static u32 calcSDSize(u8* csd, int type)	__attribute__ ((optnone))	{
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O2")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+static u32 calcSDSize(u8* csd, int type){
 //---------------------------------------------------------------------------------
     u32 result = 0;
     if (type == -1) type = csd[14] >> 6;
@@ -257,7 +285,14 @@ static u32 calcSDSize(u8* csd, int type)	__attribute__ ((optnone))	{
 }
 
 //---------------------------------------------------------------------------------
-void sdmmc_controller_init(bool force)	__attribute__ ((optnone))	{
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O2")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void sdmmc_controller_init(bool force)	{
 //---------------------------------------------------------------------------------
     deviceSD.isSDHC = 0;
     deviceSD.SDOPT = 0;
@@ -306,7 +341,14 @@ void sdmmc_controller_init(bool force)	__attribute__ ((optnone))	{
 }
 
 //---------------------------------------------------------------------------------
-int sdmmc_sdcard_init()	__attribute__ ((optnone))	{
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O2")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+int sdmmc_sdcard_init()	{
 //---------------------------------------------------------------------------------
 	// We need to send at least 74 clock pulses.
     setTarget(&deviceSD);
@@ -399,7 +441,14 @@ int sdmmc_sdcard_init()	__attribute__ ((optnone))	{
 }
 
 //---------------------------------------------------------------------------------
-int sdmmc_readsectors(struct mmcdevice *device, u32 sector_no, u32 numsectors, void *out)	__attribute__ ((optnone))	{
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O2")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+int sdmmc_readsectors(struct mmcdevice *device, u32 sector_no, u32 numsectors, void *out){
 //---------------------------------------------------------------------------------
     if (device->isSDHC == 0)
         sector_no <<= 9;
@@ -419,7 +468,14 @@ int sdmmc_readsectors(struct mmcdevice *device, u32 sector_no, u32 numsectors, v
 }
 
 //---------------------------------------------------------------------------------
-int sdmmc_writesectors(struct mmcdevice *device, u32 sector_no, u32 numsectors, void *in)	__attribute__ ((optnone))	{
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O2")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+int sdmmc_writesectors(struct mmcdevice *device, u32 sector_no, u32 numsectors, void *in){
 //---------------------------------------------------------------------------------
     if (device->isSDHC == 0)
         sector_no <<= 9;
@@ -440,7 +496,14 @@ int sdmmc_writesectors(struct mmcdevice *device, u32 sector_no, u32 numsectors, 
 }
 
 //---------------------------------------------------------------------------------
-int sdmmc_sd_startup()	__attribute__ ((optnone))	{
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O2")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+int sdmmc_sd_startup(){
 //---------------------------------------------------------------------------------
     sdmmc_controller_init(false);
     return sdmmc_sdcard_init();

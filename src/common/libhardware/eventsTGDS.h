@@ -62,6 +62,10 @@ extern void enableSleepMode();
 extern void disableSleepMode();
 extern void setAndEnableSleepModeInSeconds(int seconds);
 
+#ifdef ARM7
+extern bool isArm7ClosedLid;
+#endif
+
 #ifdef __cplusplus
 }
 #endif

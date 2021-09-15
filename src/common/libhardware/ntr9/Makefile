@@ -35,9 +35,9 @@ export DIR_ARM9 = arm9
 export BUILD_ARM9	=	build
 export ELF_ARM7 = arm7.elf
 export ELF_ARM9 = arm9.elf
-#TWL TGDS7 & TGDS9
+#NTR TGDS7 & TGDS9
 export TARGET_LIBRARY_NAME_7 = 
-export TARGET_LIBRARY_NAME_9 = tgdsfilesystem9i
+export TARGET_LIBRARY_NAME_9 = hardware9
 export TARGET_LIBRARY_FILE_7	=	lib$(TARGET_LIBRARY_NAME_7).a
 export TARGET_LIBRARY_FILE_9	=	lib$(TARGET_LIBRARY_NAME_9).a
 export TARGET_LIBRARY_LIBNAME_7	=	l$(TARGET_LIBRARY_NAME_7)
@@ -46,21 +46,32 @@ export TARGET_LIBRARY_LIBNAME_9	=	l$(TARGET_LIBRARY_NAME_9)
 .SUFFIXES: .all
 #####################################################ARM9#####################################################
 
-export DIRS_ARM9_SRCLIB = ../../ToolchainGenericDSFS	\
-			../fatfs/source/	\
+export DIRS_ARM9_SRCLIB = ../../libhardware	\
 			data/	\
 			build/	\
 			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
 			
-export DIRS_ARM9_HEADERLIB = ../../ToolchainGenericDSFS	\
+export DIRS_ARM9_HEADERLIB = ../../libhardware	\
 			../../	\
-			../../../../common/	\
-			../../../../common/libhardware/	\
-			../../../../common/hardware/	\
-			../../../../common/hardware/dldi/	\
-			../../../../common/dswifi/	\
-			../../../../arm9/source/console/	\
-			../fatfs/source/	\
+			../../	\
+			../../hardware/	\
+			../../twl/	\
+			../../hardware/dldi/	\
+			../../dswifi/	\
+			../../dswifi/arpa/	\
+			../../dswifi/netinet/	\
+			../../dswifi/sys/	\
+			../../../templateCode/source/	\
+			../../../arm7/source/dswifi_arm7/	\
+			../../../arm7/source/xmalloc/	\
+			../../../arm9/source/	\
+			../../../arm9/source/console/	\
+			../../../arm9/source/dswifi_arm9/	\
+			../../../arm9/source/imadecoder/	\
+			../../../arm9/source/ToolchainGenericDSFS/	\
+			../../../arm9/source/ToolchainGenericDSFS/fatfs/source/	\
+			../../../arm9/source/zip/	\
+			../../../arm9/source/zlib/	\
 			data/	\
 			build/	\
 			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
@@ -87,7 +98,7 @@ d_objs_arm9:=	${file_arm9_src_c:.c=.d}	${file_arm9_src_s:.s=.d}	${file_arm9_src_
 #ARM9 specific definitions. -fno-common so we force initialized data to rodata
 MAPFILE = $(DIR_ARM9).map
 AS_ASFLAGS		=	$(GLOBAL_SHARED_FLAGS_9)	$(SPECIFIC_AS_COMPILER_FLAGS_9)		$(GLOBAL_AS_COMPILER_FLAGS)
-CC_ASFLAGS		=	-Ofast	-march=armv5t	-marm	-mthumb-interwork	-mfloat-abi=soft	-Wall -ftree-vectorize	-ffast-math	-FPIC	-DARM9	-DTWLMODE	-fno-exceptions		-std=c99
+CC_ASFLAGS		=	-Ofast	-march=armv5t	-marm	-mthumb-interwork	-mfloat-abi=soft	-Wall -ftree-vectorize	-ffast-math	-FPIC	-DARM9	-DNTRMODE	-fno-exceptions		-std=c99
 CPP_FLAGS		=	$(CC_ASFLAGS)	-nostdinc++	-fno-rtti	
 BUILD			= 	$(BUILD_ARM9)
 DIR_SRC			=	$(DIRS_ARM9_SRCLIB)
