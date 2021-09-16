@@ -141,12 +141,12 @@ int loadPCX(const unsigned char* pcx, sImage* image) {
 	return 1;
 }
 
-int LoadGLTextures()									// Load PCX files And Convert To Textures
+int LoadGLTextures(u8 * textureSource)									// Load PCX files And Convert To Textures
 {
 	sImage pcx;
 
 	//load our texture
-	loadPCX((u8*)Texture_Cube, &pcx);
+	loadPCX((u8*)textureSource, &pcx);
 	image8to16(&pcx);
 
 	//DS supports no filtering of anykind so no need for more than one texture
