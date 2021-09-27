@@ -515,22 +515,15 @@ bool dldiPatchLoader(data_t *binData, u32 binSize, u32 physDLDIAddress)
 		printf("DLDI section not found in NTR binary. ");
 		#endif
 	}
-	//TGDS DLDI RAMDISK? No need to patch because the offsets are outside the DLDI stub and kept in TGDS NDS Binary anyway to be reused later
-	if(strncmp((char *)&dldiInterface->friendlyName[0], "TGDS RAMDISK", 12) == 0){
-		return false;
-	}
-	else{
-		#ifdef ARM9
-		printf("DLDI section found in NTR binary. Patching... ");
-		#endif
-	}
 	
 	// Find the DLDI reserved space in the file
 	patchOffset = quickFind(binData, dldiMagicString, binSize, sizeof(dldiMagicString));
 
 	if (patchOffset < 0) {
 		// does not have a DLDI section
-		//printf("ERR: NO DLDI SECTION");
+		#ifdef ARM9
+		printf("ERR: NO DLDI SECTION");
+		#endif
 		return false;
 	}
 	
@@ -539,7 +532,9 @@ bool dldiPatchLoader(data_t *binData, u32 binSize, u32 physDLDIAddress)
 	if (pDH[DO_driverSize] > pAH[DO_allocatedSpace]) 
 	{
 		// Not enough space for patch
-		//printf("ERR: NOT ENOUGH SPACE");
+		#ifdef ARM9
+		printf("ERR: NOT ENOUGH SPACE");
+		#endif
 		return false;
 	}
 	
