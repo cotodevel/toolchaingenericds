@@ -406,7 +406,7 @@ __attribute__((section(".dtcm")))
 int maxBytes = 0;
 
 __attribute__((section(".dtcm")))
-bool cutOff = false;
+bool cutOff = false;	//used to detect if audio stream has ended
 
 __attribute__((section(".dtcm")))
 bool sndPaused = false;
