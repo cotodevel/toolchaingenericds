@@ -947,6 +947,68 @@ int getCurrentDirectoryCount(struct FileClassList * lst){
 void setCurrentDirectoryCount(struct FileClassList * lst, int value){
 	lst->FileDirCount = value;
 } 
+
+bool readDirectoryIntoFileClass(char * dir, struct FileClassList * thisClassList){
+	//Create TGDS Dir API context
+	cleanFileList(thisClassList);
+	
+	//Use TGDS Dir API context
+	int pressed = 0;
+	struct FileClass filStub;
+	{
+		filStub.type = FT_FILE;
+		strcpy(filStub.fd_namefullPath, "[notVisibleDirByPrintfIsIgnored]");
+		filStub.isIterable = true;
+		filStub.d_ino = -1;
+		filStub.parentFileClassList = thisClassList;
+	}
+	char curPath[MAX_TGDSFILENAME_LENGTH+1];
+	strcpy(curPath, dir);
+	
+	if(pushEntryToFileClassList(true, filStub.fd_namefullPath, filStub.type, -1, thisClassList) != NULL){
+		//OK item added
+	}
+	else{
+		return false;
+	}
+	int startFromIndex = 1;
+	
+	//Init TGDS FS Directory Iterator Context(s). Mandatory to init them like this!! Otherwise several functions won't work correctly.
+	struct FileClassList * tempfileClassList = initFileList();
+	cleanFileList(tempfileClassList);
+		
+	struct FileClass * fileClassInst = NULL;
+	fileClassInst = FAT_FindFirstFile(curPath, tempfileClassList, startFromIndex);
+
+	while(fileClassInst != NULL){
+		//directory?
+		if(fileClassInst->type == FT_DIR){
+			char tmpBuf[MAX_TGDSFILENAME_LENGTH+1];
+			strcpy(tmpBuf, fileClassInst->fd_namefullPath);
+			parseDirNameTGDS(tmpBuf);
+			strcpy(fileClassInst->fd_namefullPath, tmpBuf);
+		}
+		//file?
+		else if(fileClassInst->type  == FT_FILE){
+			char tmpBuf[MAX_TGDSFILENAME_LENGTH+1];
+			strcpy(tmpBuf, fileClassInst->fd_namefullPath);
+			parsefileNameTGDS(tmpBuf);
+			strcpy(fileClassInst->fd_namefullPath, tmpBuf);
+		}
+		
+		pushEntryToFileClassList(true, fileClassInst->fd_namefullPath, fileClassInst->type, startFromIndex, thisClassList);
+		startFromIndex++;
+
+		//more file/dir objects?
+		fileClassInst = FAT_FindNextFile(curPath, tempfileClassList);
+	}
+
+	//Free TGDS Dir API context
+	freeFileList(tempfileClassList);
+
+	return true;
+}
+
 ///////////////////////////////////////////////////////TGDS FS API extension end. /////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
