@@ -918,7 +918,7 @@ struct FileClass * getNextFile(char * path, struct FileClassList * lst){
 			break;
 		}	
 		//increase the file counter after operation
-		if(lst->CurrentFileDirEntry < (int)(FileClassItems)){ 
+		if(lst->CurrentFileDirEntry < (int)(FileClassItems) && (lst->CurrentFileDirEntry < lst->FileDirCount)){ 
 			lst->CurrentFileDirEntry++;	
 		}
 		else{
