@@ -463,6 +463,7 @@ void IMA_Adpcm_Player::stop()	__attribute__ ((optnone))	{
 	stream.close();
 	active=false;
 	setvolume( 0 );
+	cutOff = true; //notify the TGDS sound stream context ADPCM playback ended
 }
 
 void IMA_Adpcm_Player::setvolume( int vol )	__attribute__ ((optnone))	{
