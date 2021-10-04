@@ -172,11 +172,6 @@ void HandleFifoNotEmpty()  {
 			//ARM7 command handler
 			#ifdef ARM7
 			
-			case(ARM7COMMAND_RELOADNDS):{
-				runBootstrapARM7();	//ARM7 Side
-			}
-			break;
-			
 			case (TGDS_ARM7_RELOADFLASH):{
 				//Init Shared Address Region and get NDS Header
 				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
@@ -600,12 +595,21 @@ void HandleFifoNotEmpty()  {
 			}
 			break;
 			
-			case((uint32)ARM7COMMAND_RELOADARM7):{
-				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-				u32 ARM7Entrypoint = getValueSafe(&fifomsg[64]);
-				reloadARMCore(ARM7Entrypoint);
-			}
-			break;
+			//tgds-mb loader code here (ARM7)
+						case(FIFO_ARM7_RELOAD):{	
+							struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+							uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+							u32 arm7EntryAddressPhys = getValueSafe(&fifomsg[0]);
+							int arm7BootCodeSize = getValueSafe(&fifomsg[1]);
+							u32 arm7entryaddress = getValueSafe(&fifomsg[2]);
+							memcpy((void *)arm7entryaddress,(const void *)arm7EntryAddressPhys, arm7BootCodeSize);
+							reloadARMCore((u32)arm7entryaddress);	//Run Bootstrap7 
+						}
+						break;
+						case(FIFO_TGDSMBRELOAD_SETUP):{
+							reloadNDSBootstub();
+						}
+						break;
 			
 			case(TGDS_DLDI_ARM7_STATUS_DEINIT):{
 				dldi_handler_deinit();
@@ -677,6 +681,12 @@ void HandleFifoNotEmpty()  {
 			
 			//ARM9 command handler
 			#ifdef ARM9
+			//tgds-mb loader code here (ARM9)
+						case(FIFO_ARM7_RELOAD_OK):{
+							reloadStatus = 0;
+						}
+						break;
+			
 			case ARM9COMMAND_UPDATE_BUFFER:{
 				updateRequested = true;
 					

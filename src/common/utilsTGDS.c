@@ -836,6 +836,9 @@ void separateExtension(char *str, char *ext)
 		ext[0] = 0;	
 }
 
+__attribute__((section(".dtcm")))
+u32 reloadStatus = 0;
+
 //ToolchainGenericDS-multiboot NDS Binary loader: Requires tgds_multiboot_payload_ntr.bin / tgds_multiboot_payload_twl.bin (TGDS-multiboot Project) in SD root.
 __attribute__((section(".itcm")))
 void TGDSMultibootRunNDSPayload(char * filename) __attribute__ ((optnone)) {
