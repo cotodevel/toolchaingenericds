@@ -426,6 +426,7 @@ extern int fatfs_readDirectStructFD(struct fd * pfd, u8 *ptr, int len);
 extern int fatfs_closeDirectStructFD(struct fd * pfd);
 extern int fatfs_seekDirectStructFD(struct fd * pfd, int offst);
 
+extern int str_split(char * stream, char * haystack, char * outBuf, int itemSize, int blockSize);
 #ifdef __cplusplus
 }
 #endif

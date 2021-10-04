@@ -1009,6 +1009,49 @@ bool readDirectoryIntoFileClass(char * dir, struct FileClassList * thisClassList
 	return true;
 }
 
+//Returns: next Index from thisClassList where a match "/exe/gif/aiff/bmp/tex/loc/snd/nds" was found
+//example:
+//int curIndex = 0;
+//bool ret = readDirectoryIntoFileClass("/", playlistfileClassListCtx);
+//if(ret == true){
+//	curIndex = getNextFileClassByExtensionFromList(playlistfileClassListCtx, "/exe/gif/aiff/bmp/tex/loc/snd/nds", curIndex); //first occurrence
+					
+//	curIndex++; //next occurence
+//	curIndex = getNextFileClassByExtensionFromList(playlistfileClassListCtx, "/exe/gif/aiff/bmp/tex/loc/snd/nds", curIndex);	
+//}
+int getNextFileClassByExtensionFromList(struct FileClassList * thisClassList, char * filterString, int indexToStart){
+	int indexFound = -1;
+	char * outBuf = (char *)TGDSARM9Malloc(256*10);
+	int i = 0, j = 0;
+	int matchCount = str_split((char*)filterString, "/", outBuf, 10, 256);
+	for(i = 1; i < (matchCount + 1); i++){
+		char * token_rootpath = (char*)&outBuf[256*i];
+		char extToFind[256];
+		strcpy(extToFind, ".");
+		strcat(extToFind, token_rootpath);
+		int fileClassListSize = getCurrentDirectoryCount(thisClassList);
+		for(j = indexToStart; j < fileClassListSize; j++){
+			if(j < fileClassListSize){
+				FileClass * curFile = (FileClass *)&thisClassList->fileList[j];
+				//current playlist only allows known audio formats
+				char tmpName[MAX_TGDSFILENAME_LENGTH+1];
+				char extInFile[MAX_TGDSFILENAME_LENGTH+1];
+				strcpy(tmpName, curFile->fd_namefullPath);	
+				separateExtension(tmpName, extInFile);
+				strlwr(extInFile);		
+				if(
+					(strcmp(extToFind, extInFile) == 0)
+					){
+					indexFound = j;
+					break;
+				}
+			}
+		}
+	}
+	TGDSARM9Free(outBuf);
+	return indexFound;
+}
+
 ///////////////////////////////////////////////////////TGDS FS API extension end. /////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
