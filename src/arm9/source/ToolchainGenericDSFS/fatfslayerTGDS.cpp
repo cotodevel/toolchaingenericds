@@ -2067,7 +2067,7 @@ int fatfs_deinit(){
 	}
 	
 	int ret = f_unmount((const TCHAR*)"0:");
-	dldi_handler_deinit();
+	//dldi_handler_deinit();
 	
 	//remove TGDS FS file handle context
 	if(files != NULL){
