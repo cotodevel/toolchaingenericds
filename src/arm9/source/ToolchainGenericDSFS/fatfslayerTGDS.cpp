@@ -30,6 +30,7 @@ USA
 #endif
 #ifdef ARM9
 #include "clockTGDS.h"
+#include "fileBrowse.h"
 #endif
 
 //fatfs
@@ -1009,7 +1010,9 @@ bool readDirectoryIntoFileClass(char * dir, struct FileClassList * thisClassList
 	return true;
 }
 
-//Returns: next Index from thisClassList where a match "/exe/gif/aiff/bmp/tex/loc/snd/nds" was found
+//Returns: current Index from playlistfileClassListCtx where a matching file extension "/exe/gif/aiff/bmp/tex/loc/snd/nds" was found.
+//Otherwise -1 if not found
+
 //example:
 //int curIndex = 0;
 //bool ret = readDirectoryIntoFileClass("/", playlistfileClassListCtx);
@@ -1677,7 +1680,7 @@ off_t fatfs_lseek(int structFDIndex, off_t offset, int whence){	//(FileDescripto
 				if((int)pos < 0){
 					pos = 0;
 				}
-				if(pos >= (topFile - 1)){
+				if((int)pos >= (topFile - 1)){
 					pos = (topFile - 1);	//offset starts from 0 so -1 here
 				}
 				validArg = true;
@@ -1689,10 +1692,10 @@ off_t fatfs_lseek(int structFDIndex, off_t offset, int whence){	//(FileDescripto
 			case(SEEK_END):{
 				pos = topFile;				//file end is fileSize
 				pos += offset;
-				if(pos < 0){
+				if((int)pos < 0){
 					pos = 0;
 				}
-				if(pos > topFile){
+				if((int)pos > topFile){
 					pos = topFile;
 				}
 				validArg = true;
@@ -2329,7 +2332,7 @@ u32 flength(FILE* fh){
 }
 
 bool FAT_feof(FILE * fh){
-	if(ftell(fh) < (flength(fh)-1)){
+	if(ftell(fh) < (int)(flength(fh)-1)){
 		return false;	
 	}
 	return true;

@@ -328,6 +328,7 @@ extern struct FileClass * getFileClassFromList(int FileClassListIndex, struct Fi
 extern bool setFileClass(bool iterable, char * fullPath, int FileClassListIndex, int Typ, int StructFD, struct FileClassList * lst);
 extern bool TGDSFS_detectUnicode(struct fd *pfd);
 extern bool readDirectoryIntoFileClass(char * dir, struct FileClassList * thisClassList);
+extern int getNextFileClassByExtensionFromList(struct FileClassList * thisClassList, char * filterString, int indexToStart);
 ////////////////////////////////////////////////////////////////////////////USER CODE END/////////////////////////////////////////////////////////////////////////////////////
 
 
