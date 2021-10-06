@@ -140,7 +140,7 @@ int miniunz_list(unzFile uf)
     return 0;
 }
 
-int miniunz_extract_currentfile(unzFile uf, int opt_extract_without_path, int *popt_overwrite, const char *password)
+int miniunz_extract_currentfile(unzFile uf, int opt_extract_without_path, int *popt_overwrite, const char *password, char * outBuf)
 {
     unz_file_info64 file_info = {0};
     FILE* fout = NULL;
@@ -153,11 +153,13 @@ int miniunz_extract_currentfile(unzFile uf, int opt_extract_without_path, int *p
     char *filename_withoutpath = NULL;
     const char *write_filename = NULL;
     char *p = NULL;
-
+	char msg[256];
     err = unzGetCurrentFileInfo64(uf, &file_info, filename_inzip, sizeof(filename_inzip), NULL, 0, NULL, 0);
     if (err != UNZ_OK)
     {
-        printf("error %d with zipfile in unzGetCurrentFileInfo\n",err);
+		memset(msg, 0, sizeof(msg));
+		sprintf(msg, "error %d with zipfile in unzGetCurrentFileInfo\n",err);
+		strcat(outBuf, msg);
         return err;
     }
 
@@ -174,8 +176,7 @@ int miniunz_extract_currentfile(unzFile uf, int opt_extract_without_path, int *p
     {
         if (opt_extract_without_path == 0)
         {
-            printf("creating directory: %s\n", filename_inzip);
-            MKDIR(filename_inzip);
+			MKDIR(filename_inzip);
         }
         return err;
     }
@@ -188,9 +189,11 @@ int miniunz_extract_currentfile(unzFile uf, int opt_extract_without_path, int *p
     }
 	
     err = unzOpenCurrentFilePassword(uf, password);
-    if (err != UNZ_OK)
-        printf("error %d with zipfile in unzOpenCurrentFilePassword\n", err);
-
+    if (err != UNZ_OK){
+        memset(msg, 0, sizeof(msg));
+		sprintf(msg, "error %d with zipfile in unzOpenCurrentFilePassword\n", err);
+		strcat(outBuf, msg);
+	}
     if (opt_extract_without_path)
         write_filename = filename_withoutpath;
     else
@@ -238,7 +241,10 @@ int miniunz_extract_currentfile(unzFile uf, int opt_extract_without_path, int *p
 		getDirFromFilePath(write_filename, (char*)&outDir[1]);
 		outDir[strlen(outDir)-1] = '\0';
 		mkdir(outDir, 777);
-		printf("Creating dir: %s", outDir);
+		
+		memset(msg, 0, sizeof(msg));
+		sprintf(msg, "Creating dir: %s", outDir);
+		strcat(outBuf, msg);
 		
         fout = fopen(write_filename, "w+");
         /* Some zips don't contain directory alone before file */
@@ -251,29 +257,37 @@ int miniunz_extract_currentfile(unzFile uf, int opt_extract_without_path, int *p
             *(filename_withoutpath-1) = c;
             fout = fopen(write_filename, "w");
         }
-        if (fout == NULL)
-            printf("error opening %s\n", write_filename);
-    }
+        if (fout == NULL){
+			memset(msg, 0, sizeof(msg));
+			sprintf(msg, "error opening %s\n", write_filename);
+			strcat(outBuf, msg);
+		}
+	}
 
     /* Read from the zip, unzip to buffer, and write to disk */
     if (fout != NULL)
     {
-        printf(" extracting: %s\n", write_filename);
-
+		memset(msg, 0, sizeof(msg));
+		sprintf(msg, "extracting: %s\n", write_filename);
+		strcat(outBuf, msg);
         do
         {
             err = unzReadCurrentFile(uf, buf, size_buf);
             if (err < 0)
             {
-                printf("error %d with zipfile in unzReadCurrentFile\n", err);
-                break;
+				memset(msg, 0, sizeof(msg));
+				sprintf(msg, "error %d with zipfile in unzReadCurrentFile\n", err);
+				strcat(outBuf, msg);
+				break;
             }
             if (err == 0)
                 break;
             if (fwrite(buf, err, 1, fout) != 1)
             {
-                printf("error %d in writing extracted file\n", errno);
-                err = UNZ_ERRNO;
+				memset(msg, 0, sizeof(msg));
+				sprintf(msg, "error %d in writing extracted file\n", errno);
+				strcat(outBuf, msg);
+				err = UNZ_ERRNO;
                 break;
             }
         }
@@ -288,25 +302,30 @@ int miniunz_extract_currentfile(unzFile uf, int opt_extract_without_path, int *p
     }
 
     errclose = unzCloseCurrentFile(uf);
-    if (errclose != UNZ_OK)
-        printf("error %d with zipfile in unzCloseCurrentFile\n", errclose);
-
+    if (errclose != UNZ_OK){
+        memset(msg, 0, sizeof(msg));
+		sprintf(msg, "error %d with zipfile in unzCloseCurrentFile\n", errclose);
+		strcat(outBuf, msg);
+	}
     TGDSARM9Free(buf);
     return err;
 }
 
-int miniunz_extract_all(unzFile uf, int opt_extract_without_path, int opt_overwrite, const char *password)
+int miniunz_extract_all(unzFile uf, int opt_extract_without_path, int opt_overwrite, const char *password, char * outBuf)
 {
-    int err = unzGoToFirstFile(uf);
+	char msg[256];
+	int err = unzGoToFirstFile(uf);
     if (err != UNZ_OK)
     {
-        printf("error %d with zipfile in unzGoToFirstFile\n", err);
-        return 1;
+		memset(msg, 0, sizeof(msg));
+		sprintf(msg, "error %d with zipfile in unzGoToFirstFile\n", err);
+		strcat(outBuf, msg);
+		return 1;
     }
 
     do
     {
-        err = miniunz_extract_currentfile(uf, opt_extract_without_path, &opt_overwrite, password);
+        err = miniunz_extract_currentfile(uf, opt_extract_without_path, &opt_overwrite, password, outBuf);
         if (err != UNZ_OK)
             break;
         err = unzGoToNextFile(uf);
@@ -315,27 +334,29 @@ int miniunz_extract_all(unzFile uf, int opt_extract_without_path, int opt_overwr
 
     if (err != UNZ_END_OF_LIST_OF_FILE)
     {
-        printf("error %d with zipfile in unzGoToNextFile\n", err);
+		memset(msg, 0, sizeof(msg));
+		sprintf(msg, "error %d with zipfile in unzGoToNextFile\n", err);
+		strcat(outBuf, msg);
         return 1;
     }
     return 0;
 }
 
 int miniunz_extract_onefile(unzFile uf, const char *filename, int opt_extract_without_path, int opt_overwrite,
-    const char *password)
+    const char *password, char * outBuf)
 {
     if (unzLocateFile(uf, filename, NULL) != UNZ_OK)
     {
         printf("file %s not found in the zipfile\n", filename);
         return 2;
     }
-    if (miniunz_extract_currentfile(uf, opt_extract_without_path, &opt_overwrite, password) == UNZ_OK)
+    if (miniunz_extract_currentfile(uf, opt_extract_without_path, &opt_overwrite, password, outBuf) == UNZ_OK)
         return 0;
     return 1;
 }
 
 #ifndef NOMAIN
-int miniunz_main(int argc, const char *argv[])
+int miniunz_main(int argc, const char *argv[], char * outBuf)
 {
     const char *zipfilename = NULL;
     const char *filename_to_extract = NULL;
@@ -411,14 +432,18 @@ int miniunz_main(int argc, const char *argv[])
 #endif
     }
 
-    if (uf == NULL)
-    {
-        printf("Cannot open %s\n", zipfilename);
+	char msg[256];
+    if (uf == NULL){
+		memset(msg, 0, sizeof(msg));
+		sprintf(msg, "Cannot open %s\n", zipfilename);
+		strcat(outBuf, msg);
         return 1;
     }
-
-    printf("%s opened\n", zipfilename);
-
+	
+	memset(msg, 0, sizeof(msg));
+	sprintf(msg, "%s opened\n", zipfilename);
+	strcat(outBuf, msg);
+	
     /* Process command line options */
     if (opt_do_list == 1)
     {
@@ -428,14 +453,16 @@ int miniunz_main(int argc, const char *argv[])
     {
         if (opt_extractdir && CHDIR(dirname))
         {
-            printf("Error changing into %s, aborting\n", dirname);
-            exit(-1);
+            memset(msg, 0, sizeof(msg));
+			sprintf(msg, "Error changing into %s, aborting\n", dirname);
+			strcat(outBuf, msg);
+			exit(-1);
         }
 
         if (filename_to_extract == NULL)
-            ret = miniunz_extract_all(uf, opt_do_extract_withoutpath, opt_overwrite, password);
+            ret = miniunz_extract_all(uf, opt_do_extract_withoutpath, opt_overwrite, password, outBuf);
         else
-            ret = miniunz_extract_onefile(uf, filename_to_extract, opt_do_extract_withoutpath, opt_overwrite, password);
+            ret = miniunz_extract_onefile(uf, filename_to_extract, opt_do_extract_withoutpath, opt_overwrite, password, outBuf);
     }
 
     unzClose(uf);

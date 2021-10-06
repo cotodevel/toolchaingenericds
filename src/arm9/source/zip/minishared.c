@@ -168,6 +168,7 @@ uint32_t tm_to_dosdate(const struct tm *ptm)
         ((fixed_tm.tm_sec / 2) + (32 * fixed_tm.tm_min) + (2048 * (uint32_t)fixed_tm.tm_hour));
 }
 
+/*
 int makedir(const char *newdir)
 {
     char *buffer = NULL;
@@ -220,6 +221,7 @@ int makedir(const char *newdir)
     TGDSARM9Free(buffer);
     return 1;
 }
+*/
 
 FILE *get_file_handle(const char *path)
 {
