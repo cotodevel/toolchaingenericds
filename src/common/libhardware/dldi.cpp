@@ -192,9 +192,9 @@ bool _DLDI_readSectors(uint32 sector, uint32 sectorCount, uint8* buffer)
 //future optimization, make it EWRAM-only so we can DMA directly!
 #ifdef ARM9
 __attribute__ ((optnone))
+__attribute__((section(".itcm")))
 #endif
 bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer) {
-	//ARM7 DLDI implementation
 	//NTR hardware: ARM7DLDI
 	if(__dsimode == false){
 		#ifdef ARM7
@@ -253,6 +253,7 @@ bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer) {
 
 #ifdef ARM9
 __attribute__ ((optnone))
+__attribute__((section(".itcm")))
 #endif
 bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buffer) {
 	//NTR hardware: ARM7DLDI
@@ -514,22 +515,15 @@ bool dldiPatchLoader(data_t *binData, u32 binSize, u32 physDLDIAddress)
 		printf("DLDI section not found in NTR binary. ");
 		#endif
 	}
-	//TGDS DLDI RAMDISK? No need to patch because the offsets are outside the DLDI stub and kept in TGDS NDS Binary anyway to be reused later
-	if(strncmp((char *)&dldiInterface->friendlyName[0], "TGDS RAMDISK", 12) == 0){
-		return false;
-	}
-	else{
-		#ifdef ARM9
-		printf("DLDI section found in NTR binary. Patching... ");
-		#endif
-	}
 	
 	// Find the DLDI reserved space in the file
 	patchOffset = quickFind(binData, dldiMagicString, binSize, sizeof(dldiMagicString));
 
 	if (patchOffset < 0) {
 		// does not have a DLDI section
-		//printf("ERR: NO DLDI SECTION");
+		#ifdef ARM9
+		printf("ERR: NO DLDI SECTION");
+		#endif
 		return false;
 	}
 	
@@ -538,7 +532,9 @@ bool dldiPatchLoader(data_t *binData, u32 binSize, u32 physDLDIAddress)
 	if (pDH[DO_driverSize] > pAH[DO_allocatedSpace]) 
 	{
 		// Not enough space for patch
-		//printf("ERR: NOT ENOUGH SPACE");
+		#ifdef ARM9
+		printf("ERR: NOT ENOUGH SPACE");
+		#endif
 		return false;
 	}
 	

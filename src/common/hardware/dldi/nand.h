@@ -31,7 +31,7 @@
 
 #include <unistd.h>
 
-typedef uint32_t sec_t;
+#include "dldi.h"
 
 #ifdef __cplusplus
 extern "C" {

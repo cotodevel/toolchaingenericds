@@ -327,6 +327,8 @@ extern struct FileClass * getFirstFileEntryFromList(struct FileClassList * lst);
 extern struct FileClass * getFileClassFromList(int FileClassListIndex, struct FileClassList * lst);
 extern bool setFileClass(bool iterable, char * fullPath, int FileClassListIndex, int Typ, int StructFD, struct FileClassList * lst);
 extern bool TGDSFS_detectUnicode(struct fd *pfd);
+extern bool readDirectoryIntoFileClass(char * dir, struct FileClassList * thisClassList);
+extern int getNextFileClassByExtensionFromList(struct FileClassList * thisClassList, char * filterString, int indexToStart);
 ////////////////////////////////////////////////////////////////////////////USER CODE END/////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -425,6 +427,7 @@ extern int fatfs_readDirectStructFD(struct fd * pfd, u8 *ptr, int len);
 extern int fatfs_closeDirectStructFD(struct fd * pfd);
 extern int fatfs_seekDirectStructFD(struct fd * pfd, int offst);
 
+extern int str_split(char * stream, char * haystack, char * outBuf, int itemSize, int blockSize);
 #ifdef __cplusplus
 }
 #endif

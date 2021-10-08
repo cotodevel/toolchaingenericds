@@ -6,8 +6,8 @@
 .global decode_mono_ima_adpcm
 .global decode_stereo_ima_adpcm
 
-.arch	armv4t
-.cpu	arm7tdmi
+.arch	armv5te
+.cpu	arm946e-s
 .text
 .arm
 .align
@@ -72,27 +72,17 @@ decode_mono_ima_adpcm:
 	and		tb, da1, #7
 	ands	ta, da1, #8
 	add		tb, td, tb, lsl#1
-	sub 	ta, istab, tb, LSL #2
-	ldrsh	ta, [ta]
-	add 	tc, istab, st1, LSL #2
-	ldrsh	tc, [tc]
+	ldr		ta, [istab, -tb, lsl#2]
+	ldr		tc, [istab, st1, lsl#2]
 	add		st1, ta
-	lsl		tb,	tb, #16
-	lsr		tb,	tb, #16
-	mul		ta, tb, tc
+	
+	smulbb	ta, tb, tc
 	lsr		da1, #4
 	lsl		ta, #13
-	subne	sa1, sa1, ta
+	qsubne	sa1, sa1, ta
 	sub		iter, #0x10000001
+	qaddeq	sa1, sa1, ta
 	
-	push {r0-r3,lr}
-	mov r0, sa1
-	moveq r1, ta
-	bleq sat_adds32
-		@addeq	sa1, sa1, ta
-	mov sa1, r0
-	pop {r0-r3,lr}
-
 	cmp		st1, #89
 	ldrge	st1, [istab, #-68]
 	lsr		tb, sa1, #16
@@ -110,7 +100,7 @@ decode_mono_ima_adpcm:
 	stmia	ta, {cur,da1,st1,sa1}
 
 	pop		{r4-r11,pc}
-		
+	
 /*************************************************************
  *                                                           *
  * decode_stereo_ima_adpcm( data, source, target, iterations ) *
@@ -136,44 +126,29 @@ decode_stereo_ima_adpcm:
 	and		tb, da1, #7
 	ands	ta, da1, #8
 	add		tb, td, tb, lsl#1
-	sub 	ta, istab, tb, LSL #2
-	ldrsh	ta, [ta]
-	add 	tc, istab, st1, LSL #2
-	ldrsh	tc, [tc]
+	ldr		ta, [istab, -tb, lsl#2]
+	ldr		tc, [istab, st1, lsl#2]
 	add		st1, ta
-	smull 	ta, tc, tb, tc
 	
+	smulbb	ta, tb, tc
 	lsr		da1, #4
 	lsl		ta, #13
-	subne 	sa1, sa1, ta
+	qsubne	sa1, sa1, ta
 	and		tb, da2, #7
-	
-	push {r0-r3,lr}
-	mov r0, sa1
-	moveq r1, ta
-	bleq sat_adds32
-		@addeq	sa1, sa1, ta
-	mov sa1, r0
-	pop {r0-r3,lr}
+	qaddeq	sa1, sa1, ta
+		
 	ands	ta, da2, #8
 	add		tb, td, tb, lsl#1
-	sub 	ta, istab, tb, LSL #2
-	ldrsh	ta, [ta]
-	add 	tc, istab, st2, LSL #2
-	ldrsh	tc, [tc]
+	ldr		ta, [istab, -tb, lsl#2]
+	ldr		tc, [istab, st2, lsl#2]
 	add		st2, ta
-	smull 	ta, tc, tb, tc
+	
+	smulbb	ta, tb, tc
 	sub		iter, #0x10000001
 	lsl		ta, #13
-	subne	sa2, sa2, ta
+	qsubne	sa2, sa2, ta
 	lsr		da2, #4
-	push {r0-r3,lr}
-	mov r0, sa2
-	moveq r1, ta
-	bleq sat_adds32
-		@addeq	sa2, sa2, ta
-	mov sa2, r0
-	pop {r0-r3,lr}	
+	qaddeq	sa2, sa2, ta
 	lsr		tb, sa1, #16
 	lsr		ta, sa2, #16
 	
@@ -246,29 +221,3 @@ Index_Step_Table:
 .word	15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794
 .word	32767
 
-.pool
-@s32 sat_adds32(s32 x, s32 y);
-sat_adds32:
-	mvn	r2, #-2147483648	@0x80000000
-	add	r2, r2, r0, lsr #31
-	add	r0, r1, r0
-	eor	r3, r2, r1
-	eor	r1, r1, r0
-	eor	r1, r1, #-2147483648	@0x80000000
-	orr	r1, r3, r1
-	cmn	r1, #1
-	movgt	r0, r2
-	bx	lr
-
-@s32 sat_subs32(s32 x, s32 y)
-sat_subs32:
-	mvn	r3, #-2147483648	@0x80000000
-	sub	r2, r0, r1
-	add	r0, r3, r0, lsr #31
-	eor	r3, r0, r2
-	eor	r1, r0, r1
-	and	r1, r1, r3
-	cmp	r1, #0
-	movlt	r2, r0
-	mov	r0, r2
-	bx	lr

@@ -133,7 +133,6 @@ extern void swiFastCopy(uint32 * source, uint32 * dest, int flags);
 
 //Init SVCs
 #ifdef ARM7
-extern bool isArm7ClosedLid;
 extern void handleARM7InitSVC();
 extern void handleARM7SVC();
 #endif

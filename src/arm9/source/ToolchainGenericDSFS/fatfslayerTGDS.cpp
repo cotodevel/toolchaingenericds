@@ -30,6 +30,7 @@ USA
 #endif
 #ifdef ARM9
 #include "clockTGDS.h"
+#include "fileBrowse.h"
 #endif
 
 //fatfs
@@ -918,7 +919,7 @@ struct FileClass * getNextFile(char * path, struct FileClassList * lst){
 			break;
 		}	
 		//increase the file counter after operation
-		if(lst->CurrentFileDirEntry < (int)(FileClassItems)){ 
+		if(lst->CurrentFileDirEntry < (int)(FileClassItems) && (lst->CurrentFileDirEntry < lst->FileDirCount)){ 
 			lst->CurrentFileDirEntry++;	
 		}
 		else{
@@ -947,6 +948,113 @@ int getCurrentDirectoryCount(struct FileClassList * lst){
 void setCurrentDirectoryCount(struct FileClassList * lst, int value){
 	lst->FileDirCount = value;
 } 
+
+bool readDirectoryIntoFileClass(char * dir, struct FileClassList * thisClassList){
+	//Create TGDS Dir API context
+	cleanFileList(thisClassList);
+	
+	//Use TGDS Dir API context
+	int pressed = 0;
+	struct FileClass filStub;
+	{
+		filStub.type = FT_FILE;
+		strcpy(filStub.fd_namefullPath, "[notVisibleDirByPrintfIsIgnored]");
+		filStub.isIterable = true;
+		filStub.d_ino = -1;
+		filStub.parentFileClassList = thisClassList;
+	}
+	char curPath[MAX_TGDSFILENAME_LENGTH+1];
+	strcpy(curPath, dir);
+	
+	if(pushEntryToFileClassList(true, filStub.fd_namefullPath, filStub.type, -1, thisClassList) != NULL){
+		//OK item added
+	}
+	else{
+		return false;
+	}
+	int startFromIndex = 1;
+	
+	//Init TGDS FS Directory Iterator Context(s). Mandatory to init them like this!! Otherwise several functions won't work correctly.
+	struct FileClassList * tempfileClassList = initFileList();
+	cleanFileList(tempfileClassList);
+		
+	struct FileClass * fileClassInst = NULL;
+	fileClassInst = FAT_FindFirstFile(curPath, tempfileClassList, startFromIndex);
+
+	while(fileClassInst != NULL){
+		//directory?
+		if(fileClassInst->type == FT_DIR){
+			char tmpBuf[MAX_TGDSFILENAME_LENGTH+1];
+			strcpy(tmpBuf, fileClassInst->fd_namefullPath);
+			parseDirNameTGDS(tmpBuf);
+			strcpy(fileClassInst->fd_namefullPath, tmpBuf);
+		}
+		//file?
+		else if(fileClassInst->type  == FT_FILE){
+			char tmpBuf[MAX_TGDSFILENAME_LENGTH+1];
+			strcpy(tmpBuf, fileClassInst->fd_namefullPath);
+			parsefileNameTGDS(tmpBuf);
+			strcpy(fileClassInst->fd_namefullPath, tmpBuf);
+		}
+		
+		pushEntryToFileClassList(true, fileClassInst->fd_namefullPath, fileClassInst->type, startFromIndex, thisClassList);
+		startFromIndex++;
+
+		//more file/dir objects?
+		fileClassInst = FAT_FindNextFile(curPath, tempfileClassList);
+	}
+
+	//Free TGDS Dir API context
+	freeFileList(tempfileClassList);
+
+	return true;
+}
+
+//Returns: current Index from playlistfileClassListCtx where a matching file extension "/exe/gif/aiff/bmp/tex/loc/snd/nds" was found.
+//Otherwise -1 if not found
+
+//example:
+//int curIndex = 0;
+//bool ret = readDirectoryIntoFileClass("/", playlistfileClassListCtx);
+//if(ret == true){
+//	curIndex = getNextFileClassByExtensionFromList(playlistfileClassListCtx, "/exe/gif/aiff/bmp/tex/loc/snd/nds", curIndex); //first occurrence
+					
+//	curIndex++; //next occurence
+//	curIndex = getNextFileClassByExtensionFromList(playlistfileClassListCtx, "/exe/gif/aiff/bmp/tex/loc/snd/nds", curIndex);	
+//}
+int getNextFileClassByExtensionFromList(struct FileClassList * thisClassList, char * filterString, int indexToStart){
+	int indexFound = -1;
+	char * outBuf = (char *)TGDSARM9Malloc(256*10);
+	int i = 0, j = 0;
+	int matchCount = str_split((char*)filterString, "/", outBuf, 10, 256);
+	for(i = 1; i < (matchCount + 1); i++){
+		char * token_rootpath = (char*)&outBuf[256*i];
+		char extToFind[256];
+		strcpy(extToFind, ".");
+		strcat(extToFind, token_rootpath);
+		int fileClassListSize = getCurrentDirectoryCount(thisClassList);
+		for(j = indexToStart; j < fileClassListSize; j++){
+			if(j < fileClassListSize){
+				FileClass * curFile = (FileClass *)&thisClassList->fileList[j];
+				//current playlist only allows known audio formats
+				char tmpName[MAX_TGDSFILENAME_LENGTH+1];
+				char extInFile[MAX_TGDSFILENAME_LENGTH+1];
+				strcpy(tmpName, curFile->fd_namefullPath);	
+				separateExtension(tmpName, extInFile);
+				strlwr(extInFile);		
+				if(
+					(strcmp(extToFind, extInFile) == 0)
+					){
+					indexFound = j;
+					break;
+				}
+			}
+		}
+	}
+	TGDSARM9Free(outBuf);
+	return indexFound;
+}
+
 ///////////////////////////////////////////////////////TGDS FS API extension end. /////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1572,7 +1680,7 @@ off_t fatfs_lseek(int structFDIndex, off_t offset, int whence){	//(FileDescripto
 				if((int)pos < 0){
 					pos = 0;
 				}
-				if(pos >= (topFile - 1)){
+				if((int)pos >= (topFile - 1)){
 					pos = (topFile - 1);	//offset starts from 0 so -1 here
 				}
 				validArg = true;
@@ -1584,10 +1692,10 @@ off_t fatfs_lseek(int structFDIndex, off_t offset, int whence){	//(FileDescripto
 			case(SEEK_END):{
 				pos = topFile;				//file end is fileSize
 				pos += offset;
-				if(pos < 0){
+				if((int)pos < 0){
 					pos = 0;
 				}
-				if(pos > topFile){
+				if((int)pos > topFile){
 					pos = topFile;
 				}
 				validArg = true;
@@ -1959,7 +2067,7 @@ int fatfs_deinit(){
 	}
 	
 	int ret = f_unmount((const TCHAR*)"0:");
-	dldi_handler_deinit();
+	//dldi_handler_deinit();
 	
 	//remove TGDS FS file handle context
 	if(files != NULL){
@@ -2224,7 +2332,7 @@ u32 flength(FILE* fh){
 }
 
 bool FAT_feof(FILE * fh){
-	if(ftell(fh) < (flength(fh)-1)){
+	if(ftell(fh) < (int)(flength(fh)-1)){
 		return false;	
 	}
 	return true;

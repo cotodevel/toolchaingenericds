@@ -264,6 +264,10 @@ typedef struct sIPCSharedTGDS {
 	SoundRegion soundIPC;
 	
 	struct libndsFIFOs libndsFIFO;
+	
+	//FIFO Mesagging: used by TGDS-multiboot loader code only.
+	uint32 fifoMesaggingQueueSharedRegion[4];	//68 * 4 Words for various command handling
+	
 } IPCSharedTGDS __attribute__((aligned(4)));
 
 //FIFO Mesagging: used when 3+ args sent between ARM cores through FIFO interrupts.

@@ -187,6 +187,10 @@ extern bool isDSiMode();
 extern char * TGDSPayloadMode;
 extern void reportTGDSPayloadMode();
 
+#ifdef ARM9
+extern u32 reloadStatus;
+#endif
+
 #ifdef __cplusplus
 }
 #endif

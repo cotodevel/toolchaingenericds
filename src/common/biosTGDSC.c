@@ -26,6 +26,7 @@ USA
 #include "dmaTGDS.h"
 #include "InterruptsARMCores_h.h"
 #include "posixHandleTGDS.h"
+#include "eventsTGDS.h"
 
 #ifdef ARM9
 #include "dldi.h"
@@ -83,7 +84,6 @@ struct LZSSContext LZS_DecodeFromBuffer(unsigned char *pak_buffer, unsigned int 
 
 //TGDS Services:
 #ifdef ARM7
-bool isArm7ClosedLid = false;
 void handleARM7InitSVC(){
 
 }

@@ -25,35 +25,43 @@ USA
 #include "InterruptsARMCores_h.h"
 #include "biosTGDS.h"
 
+#ifdef ARM7
 
-//[Blocking]: Local ARM Core waits until External action takes place, waits while resolving internal NDS hardware wait states.
-void waitWhileNotSetStatus(u32 status){
-	#ifdef NTRMODE
-	while(NDS_LOADER_IPC_CTX_UNCACHED_NTR->ndsloaderInitStatus != status){
-		swiDelay(111);	
-	}
-	#endif
+//TGDS-MB Bootcode ARM7 v2: Runs from VRAM
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void reloadNDSBootstub(){
 	
-	#ifdef TWLMODE
-	while(NDS_LOADER_IPC_CTX_UNCACHED_TWL->ndsloaderInitStatus != status){
-		swiDelay(111);	
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+	{
+		REG_IME = 0;
+		REG_IF = 0;
+		REG_IE = 0;
+		
+		//ARM7 reloads here (only if within 0x037f8000 range)
+		int arm7BootCodeSize = getValueSafe(&fifomsg[1]);
+		u32 arm7EntryAddress = getValueSafe(&fifomsg[0]);
+		
+		//is ARM7 Payload within 0x02xxxxxx range?
+		if((arm7EntryAddress >= 0x02000000) && (arm7EntryAddress != 0x037f8000) && (arm7EntryAddress != 0x03800000) ){
+			
+		}
+		//ARM7 Payload within 0x03xxxxxx range
+		else{
+			memcpy((void *)arm7EntryAddress,(const void *)ARM7_PAYLOAD, arm7BootCodeSize);
+		}
+		//reload ARM7!
+		setValueSafe(&fifomsg[0], (u32)0);
+		typedef void (*t_bootAddr)();
+		t_bootAddr bootARM7Payload = (t_bootAddr)arm7EntryAddress;
+		bootARM7Payload();
 	}
-	#endif
 }
 
-void setNDSLoaderInitStatus(int ndsloaderStatus){
-	#ifdef NTRMODE
-	NDS_LOADER_IPC_CTX_UNCACHED_NTR->ndsloaderInitStatus = ndsloaderStatus;
-	#endif
-	#ifdef TWLMODE
-	NDS_LOADER_IPC_CTX_UNCACHED_TWL->ndsloaderInitStatus = ndsloaderStatus;
-	#endif
-}
-
-#ifdef ARM9
-void ARM7JumpTo(u32 ARM7Entrypoint){
-	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
-	setValueSafe(&fifomsg[64], (uint32)ARM7Entrypoint);
-	SendFIFOWords(ARM7COMMAND_RELOADARM7);
-}
 #endif

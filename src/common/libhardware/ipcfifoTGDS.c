@@ -54,7 +54,7 @@ USA
 //arg 1: arg0: handler, arg1: userdata
 u32 fifoFunc[FIFO_CHANNELS][2];	//context is only passed on callback prototype stage, because, the channel index generates the callee callback
 
-void Write8bitAddrExtArm(uint32 address, uint8 value) __attribute__ ((optnone)) {
+void Write8bitAddrExtArm(uint32 address, uint8 value)  {
 	#ifdef ARM7
 	uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 	#endif
@@ -66,7 +66,7 @@ void Write8bitAddrExtArm(uint32 address, uint8 value) __attribute__ ((optnone)) 
 	SendFIFOWords(WRITE_EXTARM_8);
 }
 
-void Write16bitAddrExtArm(uint32 address, uint16 value) __attribute__ ((optnone)) {
+void Write16bitAddrExtArm(uint32 address, uint16 value)  {
 	#ifdef ARM7
 	uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 	#endif
@@ -78,7 +78,7 @@ void Write16bitAddrExtArm(uint32 address, uint16 value) __attribute__ ((optnone)
 	SendFIFOWords(WRITE_EXTARM_16);
 }
 
-void Write32bitAddrExtArm(uint32 address, uint32 value) __attribute__ ((optnone)) {
+void Write32bitAddrExtArm(uint32 address, uint32 value)  {
 	#ifdef ARM7
 	uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 	#endif
@@ -94,21 +94,21 @@ void Write32bitAddrExtArm(uint32 address, uint32 value) __attribute__ ((optnone)
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
-void SendFIFOWords(uint32 data0) __attribute__ ((optnone)) {	//format: arg0: cmd, arg1: value
+void SendFIFOWords(uint32 data0)  {	//format: arg0: cmd, arg1: value
 	REG_IPC_FIFO_TX = (uint32)data0;
 }
 
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
-void HandleFifoEmpty() __attribute__ ((optnone)) {
+void HandleFifoEmpty()  {
 	HandleFifoEmptyWeakRef((uint32)0,(uint32)0);
 }
 	
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
-void HandleFifoNotEmpty() __attribute__ ((optnone)) {
+void HandleFifoNotEmpty()  {
 	volatile uint32 data0 = 0;	
 	while(!(REG_IPC_FIFO_CR & RECV_FIFO_IPC_EMPTY)){
 		
@@ -171,11 +171,6 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 			
 			//ARM7 command handler
 			#ifdef ARM7
-			
-			case(ARM7COMMAND_RELOADNDS):{
-				runBootstrapARM7();	//ARM7 Side
-			}
-			break;
 			
 			case (TGDS_ARM7_RELOADFLASH):{
 				//Init Shared Address Region and get NDS Header
@@ -600,12 +595,21 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 			}
 			break;
 			
-			case((uint32)ARM7COMMAND_RELOADARM7):{
-				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-				u32 ARM7Entrypoint = getValueSafe(&fifomsg[64]);
-				reloadARMCore(ARM7Entrypoint);
-			}
-			break;
+			//tgds-mb loader code here (ARM7)
+						case(FIFO_ARM7_RELOAD):{	
+							struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+							uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+							u32 arm7EntryAddressPhys = getValueSafe(&fifomsg[0]);
+							int arm7BootCodeSize = getValueSafe(&fifomsg[1]);
+							u32 arm7entryaddress = getValueSafe(&fifomsg[2]);
+							memcpy((void *)arm7entryaddress,(const void *)arm7EntryAddressPhys, arm7BootCodeSize);
+							reloadARMCore((u32)arm7entryaddress);	//Run Bootstrap7 
+						}
+						break;
+						case(FIFO_TGDSMBRELOAD_SETUP):{
+							reloadNDSBootstub();
+						}
+						break;
 			
 			case(TGDS_DLDI_ARM7_STATUS_DEINIT):{
 				dldi_handler_deinit();
@@ -677,6 +681,12 @@ void HandleFifoNotEmpty() __attribute__ ((optnone)) {
 			
 			//ARM9 command handler
 			#ifdef ARM9
+			//tgds-mb loader code here (ARM9)
+						case(FIFO_ARM7_RELOAD_OK):{
+							reloadStatus = 0;
+						}
+						break;
+			
 			case ARM9COMMAND_UPDATE_BUFFER:{
 				updateRequested = true;
 					
@@ -786,7 +796,7 @@ static int LastTSCPosX = 0;
 static int LastTSCPosY = 0;
 
 __attribute__ ((noinline))
-struct xyCoord readTSC()  __attribute__ ((optnone)) {
+struct xyCoord readTSC()   {
 	struct xyCoord tscCoords;
 	//Handle Touchscreen
 	//Set Chip Select LOW to invoke the command & Transmit the instruction byte: TSC CNT Differential Mode: X Raw TSC 
@@ -809,7 +819,7 @@ struct xyCoord readTSC()  __attribute__ ((optnone)) {
 }
 
 __attribute__ ((noinline))
-void XYReadScrPos(struct XYTscPos * StouchScrPosInst)  __attribute__ ((optnone)) {
+void XYReadScrPos(struct XYTscPos * StouchScrPosInst)   {
 	struct xyCoord coord = readTSC();		
 	uint16 read_raw_x = coord.x;
 	uint16 read_raw_y = coord.y;
@@ -867,7 +877,7 @@ void XYReadScrPos(struct XYTscPos * StouchScrPosInst)  __attribute__ ((optnone))
 #endif
 
 //Requires VCOUNT irq calls
-void XYReadScrPosUser(struct XYTscPos * StouchScrPosInst)  __attribute__ ((optnone)) {
+void XYReadScrPosUser(struct XYTscPos * StouchScrPosInst)   {
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 	
 	StouchScrPosInst->rawx    = TGDSIPC->rawx;
 	StouchScrPosInst->touchXpx = TGDSIPC->touchXpx;

@@ -47,6 +47,8 @@ USA
 #include "fatfslayerTGDS.h"
 #include "videoTGDS.h"
 #include "dmaTGDS.h"
+#include "tgds_ramdisk_dldi.h"
+
 #endif
 
 bool sleepIsEnabled = true;
@@ -834,6 +836,9 @@ void separateExtension(char *str, char *ext)
 		ext[0] = 0;	
 }
 
+__attribute__((section(".dtcm")))
+u32 reloadStatus = 0;
+
 //ToolchainGenericDS-multiboot NDS Binary loader: Requires tgds_multiboot_payload_ntr.bin / tgds_multiboot_payload_twl.bin (TGDS-multiboot Project) in SD root.
 __attribute__((section(".itcm")))
 void TGDSMultibootRunNDSPayload(char * filename) __attribute__ ((optnone)) {
@@ -858,7 +863,11 @@ void TGDSMultibootRunNDSPayload(char * filename) __attribute__ ((optnone)) {
 		fclose(tgdsPayloadFh);
 		int ret=FS_deinit();
 		//Copy and relocate current TGDS DLDI section into target ARM9 binary
-		bool stat = dldiPatchLoader((data_t *)0x02280000, (u32)tgds_multiboot_payload_size, (u32)&_io_dldi_stub);
+		u32 dldiSrc = (u32)&_io_dldi_stub;
+		if(strncmp((char*)&dldiGet()->friendlyName[0], "TGDS RAMDISK", 12) == 0){
+			dldiSrc = (u32)&tgds_ramdisk_dldi[0];
+		}
+		bool stat = dldiPatchLoader((data_t *)0x02280000, (u32)tgds_multiboot_payload_size, (u32)dldiSrc);
 		if(stat == false){
 			sprintf(msgDebug, "%s%s", "TGDSMultibootRunNDSPayload():DLDI Patch failed. APP does not support DLDI format.", "");
 			nocashMessage((char*)&msgDebug[0]);
@@ -902,8 +911,14 @@ void TGDSProjectRunLinkedModule(char * TGDSLinkedModuleFilename, int argc, char 
 		coherent_user_range_by_size(0x02200000, (int)tgds_multiboot_payload_size);
 		fclose(tgdsPayloadFh);
 		int ret=FS_deinit();
+		
 		//Copy and relocate current TGDS DLDI section into target ARM9 binary
-		bool stat = dldiPatchLoader((data_t *)0x02200000, (u32)tgds_multiboot_payload_size, (u32)&_io_dldi_stub);
+		u32 dldiSrc = (u32)&_io_dldi_stub;
+		if(strncmp((char*)&dldiGet()->friendlyName[0], "TGDS RAMDISK", 12) == 0){
+			dldiSrc = (u32)&tgds_ramdisk_dldi[0];
+		}
+		bool stat = dldiPatchLoader((data_t *)0x02200000, (u32)tgds_multiboot_payload_size, dldiSrc);
+		
 		if(stat == false){
 			//printf("DLDI Patch failed. APP does not support DLDI format.");
 		}

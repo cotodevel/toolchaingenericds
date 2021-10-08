@@ -26,6 +26,10 @@ USA
 #include "utilsTGDS.h"
 
 #ifdef ARM7
+bool isArm7ClosedLid = false;
+#endif
+
+#ifdef ARM7
 #include "wifi_arm7.h"
 #endif
 #include "spifwTGDS.h"
