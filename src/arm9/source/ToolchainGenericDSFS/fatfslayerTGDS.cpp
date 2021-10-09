@@ -24,13 +24,14 @@ USA
 //newlib libc ARM Toolchain. <dirent.h> implementation is platform-specific, thus, implemented for ToolchainGenericDS.
 
 #include "fatfslayerTGDS.h"
-#include "dldi.h"
-#if defined(WIN32)
-#include "fatfs\source\ff.h"
-#endif
 #ifdef ARM9
+#include "dldi.h"
 #include "clockTGDS.h"
-#include "fileBrowse.h"
+#endif
+
+#if defined(WIN32)
+#include "dldiWin32.h"
+#include "fatfs\source\ff.h"
 #endif
 
 //fatfs
@@ -200,10 +201,11 @@ int dirfd(DIR *dirp){
     return fatfs_dirfd(dirp);
 }
 
+#ifdef ARM9 //only implement remove in NDS otherwise we can't use remove() from WIN32 DLLs
 int remove(const char *filename){
 	return fatfs_unlink((const sint8 *)filename);
 }
-
+#endif
 
 int chmod(const char *pathname, mode_t mode){
 	BYTE fatfsFlags = posixToFatfsAttrib(mode);
@@ -2059,6 +2061,7 @@ int fatfs_init(){
 int fatfs_deinit(){
 	
 	if(files != NULL){
+		
 		int fd = 0;
 		/* search in all struct fd instances, close file handle if open*/
 		for (fd = 0; fd < OPEN_MAXTGDS; fd++){	
@@ -2074,6 +2077,18 @@ int fatfs_deinit(){
 		TGDSARM9Free(files);
 	}
 	
+	//ARM9 DLDI impl.
+	//if(ARM7DLDIEnabled == false){
+	//	#ifdef ARM9
+	//	_io_dldi_stub.ioInterface.clearStatus();
+	//	_io_dldi_stub.ioInterface.shutdown();
+	//	#endif
+	//	#if defined(WIN32)
+	//	struct DLDI_INTERFACE * ptr =  (struct DLDI_INTERFACE*)&_io_dldi_stub[0];
+	//	ptr->ioInterface.clearStatus();
+	//	ptr->ioInterface.shutdown();
+	//	#endif
+	//}
 	#if defined(WIN32)
 	//Skip
 	#endif
@@ -2529,6 +2544,89 @@ bool closeDualTGDSFileHandleFromFile(struct fd * tgdsStructFD1, struct fd * tgds
 	return true;
 }
 ///////////////////////////////////////////////TGDS FileDescriptor Callbacks Implementation End ///////////////////////////////////////////////
+
+void parseDirNameTGDS(char * dirName){
+	int dirlen = strlen(dirName);
+	if(dirlen > 2){
+	    int i = 0;
+		
+		//trim the starting / if it has one
+		if ( (dirName[0] == '/') && (dirName[1] == '/') ) {
+			char fixDir[MAX_TGDSFILENAME_LENGTH+1];
+		    strcpy(fixDir, (char*)&dirName[1]);
+			strcpy(dirName, "");	//clean
+            strcpy(dirName, fixDir);
+		}
+		char tempDir[MAX_TGDSFILENAME_LENGTH+1];
+		strcpy(tempDir, dirName);
+		
+		if(tempDir[strlen(tempDir)-1]== '/'){
+		   tempDir[strlen(tempDir)-1] = '\0'; 
+		}
+		strcpy(dirName, "");	//clean
+		strcpy(dirName, tempDir);
+	}
+	
+}
+
+void parsefileNameTGDS(char * fileName){ //todo: pass the buffer size here!!
+	int filelen = strlen(fileName) + 1;
+	if(filelen > 4){
+		if ((fileName[2] == '/') && (fileName[3] == '/')) {
+		    int offset = 2;
+			//copy
+			while(fileName[offset] == '/'){
+				offset++;
+			}
+
+			char fixName[MAX_TGDSFILENAME_LENGTH+1];       //trim the starting // if it has one (since getfspath appends 0:/)
+		    memset(fixName, 0, sizeof(fixName));
+		    strcpy(fixName, getfatfsPath((char*)&fileName[offset]));
+		    memset(fileName, 0, 256);
+			strcpy(fileName, fixName);
+		}
+	}
+}
+
+#ifdef ARM9
+__attribute__((optnone))
+#endif
+void separateExtension(char *str, char *ext)
+{
+	int x = 0;
+	int y = 0;
+	for(y = strlen(str) - 1; y > 0; y--)
+	{
+		if(str[y] == '.')
+		{
+			// found last dot
+			x = y;
+			break;
+		}
+		if(str[y] == '/')
+		{
+			// found a slash before a dot, no ext
+			ext[0] = 0;
+			return;
+		}
+	}
+	
+	if(x > 0)
+	{
+		int y = 0;
+		while(str[x] != 0)
+		{
+			ext[y] = str[x];
+			str[x] = 0;
+			x++;
+			y++;
+		}
+		ext[y] = 0;
+	}
+	else
+		ext[0] = 0;	
+}
+
 #if defined(WIN32)
 static bool cv_snprintf(char* buf, int len, const char* fmt, ...)
 {

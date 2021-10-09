@@ -9,7 +9,7 @@
 
 #if defined(WIN32)
 #include "diskio.h"		/* FatFs lower layer API */
-#include "..\..\dldi.h"
+#include "..\..\dldiWin32.h"
 #include "..\..\..\ToolchainGenericDSFS\fatfslayerTGDS.h"
 #endif
 
