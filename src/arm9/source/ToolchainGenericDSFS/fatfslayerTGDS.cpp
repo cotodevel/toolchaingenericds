@@ -24,13 +24,14 @@ USA
 //newlib libc ARM Toolchain. <dirent.h> implementation is platform-specific, thus, implemented for ToolchainGenericDS.
 
 #include "fatfslayerTGDS.h"
-#include "dldi.h"
-#if defined(WIN32)
-#include "fatfs\source\ff.h"
-#endif
 #ifdef ARM9
+#include "dldi.h"
 #include "clockTGDS.h"
-#include "fileBrowse.h"
+#endif
+
+#if defined(WIN32)
+#include "dldiWin32.h"
+#include "fatfs\source\ff.h"
 #endif
 
 //fatfs
@@ -200,10 +201,11 @@ int dirfd(DIR *dirp){
     return fatfs_dirfd(dirp);
 }
 
+#ifdef ARM9 //only implement remove in NDS otherwise we can't use remove() from WIN32 DLLs
 int remove(const char *filename){
 	return fatfs_unlink((const sint8 *)filename);
 }
-
+#endif
 
 int chmod(const char *pathname, mode_t mode){
 	BYTE fatfsFlags = posixToFatfsAttrib(mode);
@@ -965,15 +967,9 @@ bool readDirectoryIntoFileClass(char * dir, struct FileClassList * thisClassList
 	}
 	char curPath[MAX_TGDSFILENAME_LENGTH+1];
 	strcpy(curPath, dir);
+	pushEntryToFileClassList(true, filStub.fd_namefullPath, filStub.type, -1, thisClassList);
 	
-	if(pushEntryToFileClassList(true, filStub.fd_namefullPath, filStub.type, -1, thisClassList) != NULL){
-		//OK item added
-	}
-	else{
-		return false;
-	}
 	int startFromIndex = 1;
-	
 	//Init TGDS FS Directory Iterator Context(s). Mandatory to init them like this!! Otherwise several functions won't work correctly.
 	struct FileClassList * tempfileClassList = initFileList();
 	cleanFileList(tempfileClassList);
@@ -982,21 +978,6 @@ bool readDirectoryIntoFileClass(char * dir, struct FileClassList * thisClassList
 	fileClassInst = FAT_FindFirstFile(curPath, tempfileClassList, startFromIndex);
 
 	while(fileClassInst != NULL){
-		//directory?
-		if(fileClassInst->type == FT_DIR){
-			char tmpBuf[MAX_TGDSFILENAME_LENGTH+1];
-			strcpy(tmpBuf, fileClassInst->fd_namefullPath);
-			parseDirNameTGDS(tmpBuf);
-			strcpy(fileClassInst->fd_namefullPath, tmpBuf);
-		}
-		//file?
-		else if(fileClassInst->type  == FT_FILE){
-			char tmpBuf[MAX_TGDSFILENAME_LENGTH+1];
-			strcpy(tmpBuf, fileClassInst->fd_namefullPath);
-			parsefileNameTGDS(tmpBuf);
-			strcpy(fileClassInst->fd_namefullPath, tmpBuf);
-		}
-		
 		pushEntryToFileClassList(true, fileClassInst->fd_namefullPath, fileClassInst->type, startFromIndex, thisClassList);
 		startFromIndex++;
 
@@ -1053,6 +1034,80 @@ int getNextFileClassByExtensionFromList(struct FileClassList * thisClassList, ch
 	}
 	TGDSARM9Free(outBuf);
 	return indexFound;
+}
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+int pcmpstr(const void* a, const void* b){
+    const char* aa = *(const char**)a;
+    const char* bb = *(const char**)b;
+    return stricmp(aa,bb);
+}
+
+//Returns:	true if success
+//			false if error
+//Note: scratchPadMemory must be at least (FileClassItems * 256) = 76800 bytes
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void sortFileClassListAsc(struct FileClassList * thisClassList, char ** scratchPadMemory, bool ignoreFirstFileClass){
+	struct FileClassList * playlistfileClassListCtx = NULL;
+	playlistfileClassListCtx = initFileList();
+	cleanFileList(playlistfileClassListCtx);
+
+	char ** listItems = scratchPadMemory;
+	char * listItemsArg[FileClassItems];
+	int startOffset = 0;
+	if(ignoreFirstFileClass == true){
+		startOffset = 1;
+	}
+	for(int i = 0; i < thisClassList->FileDirCount - startOffset; i++){
+		FileClass * curFile = (FileClass *)&thisClassList->fileList[i + startOffset];
+		FileClass * curFileDest = (FileClass *)&playlistfileClassListCtx->fileList[i];
+		if(curFile->fd_namefullPath[0] != '\0'){
+			memcpy(curFileDest, curFile, sizeof(FileClass));
+			playlistfileClassListCtx->CurrentFileDirEntry++;
+		}
+	}
+	playlistfileClassListCtx->FileDirCount = playlistfileClassListCtx->CurrentFileDirEntry;
+	for(int i = 0; i < playlistfileClassListCtx->FileDirCount; i++){
+		listItemsArg[i] = (char*)((int)listItems + (i*256));
+		FileClass * curFile = (FileClass *)&playlistfileClassListCtx->fileList[i];
+		strcpy(listItemsArg[i], curFile->fd_namefullPath);
+	}
+	qsort( listItemsArg, playlistfileClassListCtx->FileDirCount, sizeof(char*), pcmpstr);
+	for (int n = 0; n < playlistfileClassListCtx->FileDirCount; n++){
+		FileClass * curFile = (FileClass *)&playlistfileClassListCtx->fileList[n];
+		strcpy((char*)&curFile->fd_namefullPath[0], listItemsArg[n]);
+	}
+	for(int i = 0; i < playlistfileClassListCtx->FileDirCount; i++){
+		FileClass * curFile = (FileClass *)&playlistfileClassListCtx->fileList[i]; 
+		FileClass * curFileDest = (FileClass *)&thisClassList->fileList[i + startOffset];
+		if(curFile->fd_namefullPath[0] != '\0'){
+			memcpy(curFileDest, curFile, sizeof(FileClass));
+			//Update file/directory type
+			if(curFile->fd_namefullPath[0] == '/'){
+				curFileDest->type = FT_DIR;
+			}
+			else{
+				curFileDest->type = FT_FILE;
+			}
+			playlistfileClassListCtx->CurrentFileDirEntry++;
+		}
+	}
+	if((ignoreFirstFileClass == true) && (thisClassList->FileDirCount > 0)){
+		thisClassList->FileDirCount--;
+	}
+	freeFileList(playlistfileClassListCtx);
 }
 
 ///////////////////////////////////////////////////////TGDS FS API extension end. /////////////////////////////////////////////////////
@@ -2059,6 +2114,7 @@ int fatfs_init(){
 int fatfs_deinit(){
 	
 	if(files != NULL){
+		
 		int fd = 0;
 		/* search in all struct fd instances, close file handle if open*/
 		for (fd = 0; fd < OPEN_MAXTGDS; fd++){	
@@ -2074,6 +2130,18 @@ int fatfs_deinit(){
 		TGDSARM9Free(files);
 	}
 	
+	//ARM9 DLDI impl.
+	//if(ARM7DLDIEnabled == false){
+	//	#ifdef ARM9
+	//	_io_dldi_stub.ioInterface.clearStatus();
+	//	_io_dldi_stub.ioInterface.shutdown();
+	//	#endif
+	//	#if defined(WIN32)
+	//	struct DLDI_INTERFACE * ptr =  (struct DLDI_INTERFACE*)&_io_dldi_stub[0];
+	//	ptr->ioInterface.clearStatus();
+	//	ptr->ioInterface.shutdown();
+	//	#endif
+	//}
 	#if defined(WIN32)
 	//Skip
 	#endif
@@ -2382,11 +2450,14 @@ bool buildFileClassListFromPath(char * path, struct FileClassList * lst, int sta
 				}
 				else if((type == FT_FILE) || (type == FT_DIR)){
 					char builtFilePath[MAX_TGDSFILENAME_LENGTH+1];
-					if(type == FT_DIR){
-						sprintf(builtFilePath,"%s%s%s",path,"/",fno.fname);
+					if( path[strlen(path)] != '/' && path[strlen(path)-1] != '/' ){
+						strcat(path, "/");
+					}
+					if(type == FT_DIR){	
+						sprintf(builtFilePath,"%s%s",path,fno.fname);
 					}
 					else if(type == FT_FILE){
-						sprintf(builtFilePath,"%s%s%s",getfatfsPath((sint8*)path),"/",fno.fname);
+						sprintf(builtFilePath,"0:%s%s",path,fno.fname);
 					}		
 					//Generate FileClass from either a Directory or a File
 					bool iterable = true;
@@ -2395,7 +2466,7 @@ bool buildFileClassListFromPath(char * path, struct FileClassList * lst, int sta
 				}			
 			}
 			f_closedir(&dir);
-			lst->FileDirCount = i;
+			lst->FileDirCount = (i + startFromGivenIndex);
 		}
 		else{
 			errno = fresultToErrno(result);
@@ -2529,6 +2600,46 @@ bool closeDualTGDSFileHandleFromFile(struct fd * tgdsStructFD1, struct fd * tgds
 	return true;
 }
 ///////////////////////////////////////////////TGDS FileDescriptor Callbacks Implementation End ///////////////////////////////////////////////
+
+#ifdef ARM9
+__attribute__((optnone))
+#endif
+void separateExtension(char *str, char *ext)
+{
+	int x = 0;
+	int y = 0;
+	for(y = strlen(str) - 1; y > 0; y--)
+	{
+		if(str[y] == '.')
+		{
+			// found last dot
+			x = y;
+			break;
+		}
+		if(str[y] == '/')
+		{
+			// found a slash before a dot, no ext
+			ext[0] = 0;
+			return;
+		}
+	}
+	
+	if(x > 0)
+	{
+		int y = 0;
+		while(str[x] != 0)
+		{
+			ext[y] = str[x];
+			str[x] = 0;
+			x++;
+			y++;
+		}
+		ext[y] = 0;
+	}
+	else
+		ext[0] = 0;	
+}
+
 #if defined(WIN32)
 static bool cv_snprintf(char* buf, int len, const char* fmt, ...)
 {

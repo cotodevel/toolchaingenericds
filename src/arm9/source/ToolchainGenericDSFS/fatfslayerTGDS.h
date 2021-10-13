@@ -52,12 +52,6 @@ USA
 #define fatfs_O_ACCMODE (FA_READ|FA_WRITE)
 #define	O_ACCMODE	(O_RDONLY|O_WRONLY|O_RDWR)
 
-#ifndef __cplusplus
-typedef unsigned char bool;
-static const bool false = 0;
-static const bool true = 1;
-#endif
-
 #define	_IFMT		0170000	/* type of file */
 #define		_IFDIR	0040000	/* directory */
 #define		_IFCHR	0020000	/* character special */
@@ -329,6 +323,7 @@ extern bool setFileClass(bool iterable, char * fullPath, int FileClassListIndex,
 extern bool TGDSFS_detectUnicode(struct fd *pfd);
 extern bool readDirectoryIntoFileClass(char * dir, struct FileClassList * thisClassList);
 extern int getNextFileClassByExtensionFromList(struct FileClassList * thisClassList, char * filterString, int indexToStart);
+extern void sortFileClassListAsc(struct FileClassList * thisClassList, char ** scratchPadMemory, bool ignoreFirstFileClass);
 ////////////////////////////////////////////////////////////////////////////USER CODE END/////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -426,8 +421,10 @@ extern int fatfs_open_fileIntoTargetStructFD(const sint8 *pathname, char * posix
 extern int fatfs_readDirectStructFD(struct fd * pfd, u8 *ptr, int len);
 extern int fatfs_closeDirectStructFD(struct fd * pfd);
 extern int fatfs_seekDirectStructFD(struct fd * pfd, int offst);
-
 extern int str_split(char * stream, char * haystack, char * outBuf, int itemSize, int blockSize);
+
+extern void separateExtension(char *str, char *ext);
+
 #ifdef __cplusplus
 }
 #endif

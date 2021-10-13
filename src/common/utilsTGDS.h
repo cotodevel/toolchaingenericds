@@ -139,7 +139,6 @@ extern void RenderTGDSLogoMainEngine(u8 * compressedLZSSBMP, int compressedLZSSB
 extern int thisArgc;
 extern char thisArgv[argvItems][MAX_TGDSFILENAME_LENGTH];
 extern void mainARGV();
-extern void separateExtension(char *str, char *ext);
 
 //ToolchainGenericDS-multiboot NDS Binary loader: Requires tgds_multiboot_payload_ntr.bin / tgds_multiboot_payload_twl.bin (TGDS-multiboot Project) in SD root.
 extern void TGDSMultibootRunNDSPayload(char * filename);
