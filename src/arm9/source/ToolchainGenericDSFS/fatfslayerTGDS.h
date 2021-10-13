@@ -323,6 +323,7 @@ extern bool setFileClass(bool iterable, char * fullPath, int FileClassListIndex,
 extern bool TGDSFS_detectUnicode(struct fd *pfd);
 extern bool readDirectoryIntoFileClass(char * dir, struct FileClassList * thisClassList);
 extern int getNextFileClassByExtensionFromList(struct FileClassList * thisClassList, char * filterString, int indexToStart);
+extern void sortFileClassListAsc(struct FileClassList * thisClassList, char ** scratchPadMemory, bool ignoreFirstFileClass);
 ////////////////////////////////////////////////////////////////////////////USER CODE END/////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -422,8 +423,6 @@ extern int fatfs_closeDirectStructFD(struct fd * pfd);
 extern int fatfs_seekDirectStructFD(struct fd * pfd, int offst);
 extern int str_split(char * stream, char * haystack, char * outBuf, int itemSize, int blockSize);
 
-extern void parseDirNameTGDS(char * dirName);
-extern void parsefileNameTGDS(char * fileName);
 extern void separateExtension(char *str, char *ext);
 
 #ifdef __cplusplus

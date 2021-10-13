@@ -8,6 +8,7 @@
 #include "fatfslayerTGDS.h"
 #include "fileBrowse.h"
 #include "consoleTGDS.h"
+#include "dmafuncs.h"
 
 #ifndef USING_SDL
 

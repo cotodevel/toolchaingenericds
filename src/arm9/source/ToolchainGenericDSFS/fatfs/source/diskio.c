@@ -11,6 +11,7 @@
 #include "diskio.h"		/* FatFs lower layer API */
 #include "..\..\dldiWin32.h"
 #include "..\..\..\ToolchainGenericDSFS\fatfslayerTGDS.h"
+#include "..\..\..\misc\vs2012TGDS-FS\TGDSFSVS2012\TGDSFSVS2012\TGDSTypes.h"
 #endif
 
 #if defined(ARM9)

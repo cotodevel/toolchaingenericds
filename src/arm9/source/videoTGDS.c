@@ -166,6 +166,13 @@ vramSetup * DEFAULT_CONSOLE_VRAMSETUP(){
 	vramSetupDefault->vramBankSetupInst[VRAM_D_INDEX].vrambankCR = VRAM_D_0x06000000_ARM7;
 	vramSetupDefault->vramBankSetupInst[VRAM_D_INDEX].enabled = true;
 	
+	//144K free decompressor mem
+	//E       64K   0    -     6880000h-688FFFFh
+	//F       16K   0    -     6890000h-6893FFFh
+	//G       16K   0    -     6894000h-6897FFFh
+	//H       32K   0    -     6898000h-689FFFFh
+	//I       16K   0    -     68A0000h-68A3FFFh
+  
 	//VRAM E,F,G,H,I: Unused and reserved
 	vramSetupDefault->vramBankSetupInst[VRAM_E_INDEX].vrambankCR = VRAM_E_LCDC_MODE;
 	vramSetupDefault->vramBankSetupInst[VRAM_E_INDEX].enabled = true;

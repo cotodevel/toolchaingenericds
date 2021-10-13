@@ -24,3 +24,14 @@ void woopsiDmaCopy(const u16* source, u16* dest, u32 count);
 void woopsiDmaFill(u16 fill, u16* dest, u32 count);
 
 #endif
+
+#ifdef __cplusplus
+extern "C"{
+#endif
+
+extern void parseDirNameTGDS(char * dirName);
+extern void parsefileNameTGDS(char * fileName);
+
+#ifdef __cplusplus
+}
+#endif
