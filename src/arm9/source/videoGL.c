@@ -458,6 +458,18 @@ void glRotateZ(float angle)
 	glRotateZi((int)(angle * LUT_SIZE / 360.0));
 }
 
+void glRotate(int angle, float x, float y, float z){ //resembles glRotatef
+	if(x > 0){
+		glRotateX(angle); 
+	}
+	if(y > 0){
+		glRotateY(angle); 
+	}
+	if(z > 0){
+		glRotateZ(angle);
+	}
+}
+
 //////////////////////////////////////////////////////////////////////
 // Fixed point look at function, it appears to work as expected although 
 //	testing is recomended

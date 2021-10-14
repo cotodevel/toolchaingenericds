@@ -631,6 +631,9 @@ static inline void glCallList(const u32* list) {
 }
 
 #endif  //endif #no inline
+
+extern void glRotate(int angle, float x, float y, float z);
+
 #ifdef __cplusplus
 }
 #endif
