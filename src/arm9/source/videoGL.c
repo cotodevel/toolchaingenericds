@@ -36,11 +36,16 @@
 #include "videoTGDS.h"
 #include "arm9math.h"
 #include "dsregs.h"
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
 
 //lut resolution for trig functions (must be power of two and must be the same as LUT resolution)
 //in other words dont change unless you also change your LUTs
 #define LUT_SIZE (512)
 #define LUT_MASK (0x1FF)
+
+struct GLContext globalGLCtx;
 
 #ifdef NO_GL_INLINE
 //////////////////////////////////////////////////////////////////////
@@ -71,16 +76,10 @@ void glBegin(int mode)
   GFX_CLEAR_DEPTH = depth;
 }
 
-//////////////////////////////////////////////////////////////////////
-
-  void glColor3b(uint8 red, uint8 green, uint8 blue)
-{
-  GFX_COLOR = (vuint32)RGB15(red, green, blue);
-}
 
 //////////////////////////////////////////////////////////////////////
 
-  void glColor(rgb color)
+void glColor(rgb color)
 {
   GFX_COLOR = (vuint32)color;
 }
@@ -907,6 +906,59 @@ int glTexImage2D(int target, int empty1, int type, int sizeX, int sizeY, int emp
 	}
 	*/
 	return 1;
+}
+
+u16 lastVertexColor = 0;
+void glColor3b(uint8 red, uint8 green, uint8 blue){
+	switch(globalGLCtx.primitiveShadeModelMode){
+		//light vectors are todo
+		case(GL_FLAT):{
+			//otherwise override all colors to be the same subset of whatever color was passed here
+			if(lastVertexColor == 0){
+				lastVertexColor = RGB15(red, green, blue);
+			}
+			GFX_COLOR = lastVertexColor;
+		}
+		break;
+		
+		case(GL_SMOOTH):{
+			//Smooth shading, the default by DS, causes the computed colors of vertices to be interpolated as the primitive is rasterized, 
+			//typically assigning different colors to each resulting pixel fragment. 
+			GFX_COLOR = (vuint32)RGB15(red, green, blue);			
+		}
+		break;
+		
+		default:{
+			//error! call glInit(); first
+		}
+		break;
+	}
+}
+
+void glShadeModel(GLenum mode){
+	globalGLCtx.primitiveShadeModelMode = mode;
+	lastVertexColor = 0;
+}
+
+static inline int float2int(float valor)
+{
+    float f1,f2;
+    int i1,i2;
+    f1=floor(valor);
+    f2=valor - f1;
+    i1 = (int)f1;
+    i2 = (int)100*f2;
+    return i1;
+}
+
+void glColor3f(float red, float green, float blue){
+	glColor3b(float2int(red), float2int(green), float2int(blue));
+}
+
+//Must be called everytime a new videoGL context starts
+void glInit(){
+	memset((u8*)&globalGLCtx, 0, sizeof(struct GLContext));
+	glShadeModel(GL_SMOOTH);
 }
 
 //Open GL 1.1 Implementation: Texture Objects support
