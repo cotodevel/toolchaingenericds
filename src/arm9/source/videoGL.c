@@ -522,9 +522,7 @@ void gluLookAt(float eyex, float eyey, float eyez, float lookAtx, float lookAty,
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 //	frustrum has only been tested as part of perspective
-void gluFrustumf32(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far)
-{
-  
+void gluFrustumf32(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far){
    glMatrixMode(GL_PROJECTION);
 
    MATRIX_LOAD4x4 = divf32(2*near, right - left);     
@@ -549,10 +547,41 @@ void gluFrustumf32(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far)
 	
    glStoreMatrix(0);
 }
+
+void glOrtho(float left, float right, float bottom, float top, float near, float far){
+	glOrthof32(floattof32(left), floattof32(right), floattof32(bottom), floattof32(top), floattof32(near), floattof32(far));
+}
+
 ///////////////////////////////////////
+void glOrthof32(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far){
+   glMatrixMode(GL_PROJECTION);
+
+   MATRIX_LOAD4x4 = divf32(2, right - left);     
+   MATRIX_LOAD4x4 = 0;  
+   MATRIX_LOAD4x4 = 0;      
+   MATRIX_LOAD4x4 = -divf32(right + left, right - left);
+
+   MATRIX_LOAD4x4 = 0;  
+   MATRIX_LOAD4x4 = divf32(2, top - bottom);
+   MATRIX_LOAD4x4 = 0;
+   MATRIX_LOAD4x4 = -divf32(top + bottom, top - bottom);;
+   
+   MATRIX_LOAD4x4 = 0;  
+   MATRIX_LOAD4x4 = 0;  
+   MATRIX_LOAD4x4 = divf32(-2, far - near);
+   MATRIX_LOAD4x4 = -divf32(far + near, far - near);
+   
+   MATRIX_LOAD4x4 = 0;  
+   MATRIX_LOAD4x4 = 0;  
+   MATRIX_LOAD4x4 = 0;  
+   MATRIX_LOAD4x4 = floattof32(1.0F);
+	
+   glStoreMatrix(0);
+}
+///////////////////////////////////////
+
 //  Frustrum wrapper
-void gluFrustum(float left, float right, float bottom, float top, float near, float far)
-{
+void gluFrustum(float left, float right, float bottom, float top, float near, float far){
 	gluFrustumf32(floattof32(left), floattof32(right), floattof32(bottom), floattof32(top), floattof32(near), floattof32(far));
 }
 
@@ -572,10 +601,8 @@ void gluPerspectivef32(int fovy, f32 aspect, f32 zNear, f32 zFar)
 
 ///////////////////////////////////////
 //  glu wrapper for floating point
-void gluPerspective(float fovy, float aspect, float zNear, float zFar)
-{
-	
-	 gluPerspectivef32((int)(fovy * LUT_SIZE / 360.0), floattof32(aspect), floattof32(zNear), floattof32(zFar));    
+void gluPerspective(float fovy, float aspect, float zNear, float zFar){
+	gluPerspectivef32((int)(fovy * LUT_SIZE / 360.0), floattof32(aspect), floattof32(zNear), floattof32(zFar));    
 }
 
 

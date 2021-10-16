@@ -631,8 +631,10 @@ static inline void glCallList(const u32* list) {
 }
 
 #endif  //endif #no inline
-
 extern void glRotate(int angle, float x, float y, float z);
+
+extern void glOrthof32(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far);
+extern void glOrtho(float left, float right, float bottom, float top, float near, float far);
 
 #ifdef __cplusplus
 }
