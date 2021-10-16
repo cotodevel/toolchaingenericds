@@ -677,8 +677,7 @@ void glSetToonTableRange(int start, int end, rgb color)
 
 //////////////////////////////////////////////////////////////////////
 
-void glReset(void)
-{
+void glReset(void){
   while (GFX_STATUS & (1<<27)); // wait till gfx engine is not busy
   
   // Clear the FIFO
@@ -687,7 +686,9 @@ void glReset(void)
   // Clear overflows for list memory
   GFX_CONTROL = enable_bits = ((1<<12) | (1<<13)) | GL_TEXTURE_2D;
   glResetMatrixStack();
-
+  
+  glInit(); //Initializes a new videoGL context
+  
   GFX_TEX_FORMAT = 0;
   GFX_POLY_FORMAT = 0;
   
