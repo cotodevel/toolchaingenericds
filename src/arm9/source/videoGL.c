@@ -36,11 +36,16 @@
 #include "videoTGDS.h"
 #include "arm9math.h"
 #include "dsregs.h"
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
 
 //lut resolution for trig functions (must be power of two and must be the same as LUT resolution)
 //in other words dont change unless you also change your LUTs
 #define LUT_SIZE (512)
 #define LUT_MASK (0x1FF)
+
+struct GLContext globalGLCtx;
 
 #ifdef NO_GL_INLINE
 //////////////////////////////////////////////////////////////////////
@@ -71,16 +76,10 @@ void glBegin(int mode)
   GFX_CLEAR_DEPTH = depth;
 }
 
-//////////////////////////////////////////////////////////////////////
-
-  void glColor3b(uint8 red, uint8 green, uint8 blue)
-{
-  GFX_COLOR = (vuint32)RGB15(red, green, blue);
-}
 
 //////////////////////////////////////////////////////////////////////
 
-  void glColor(rgb color)
+void glColor(rgb color)
 {
   GFX_COLOR = (vuint32)color;
 }
@@ -458,6 +457,18 @@ void glRotateZ(float angle)
 	glRotateZi((int)(angle * LUT_SIZE / 360.0));
 }
 
+void glRotate(int angle, float x, float y, float z){ //resembles glRotatef
+	if(x > 0){
+		glRotateX(angle); 
+	}
+	if(y > 0){
+		glRotateY(angle); 
+	}
+	if(z > 0){
+		glRotateZ(angle);
+	}
+}
+
 //////////////////////////////////////////////////////////////////////
 // Fixed point look at function, it appears to work as expected although 
 //	testing is recomended
@@ -510,9 +521,7 @@ void gluLookAt(float eyex, float eyey, float eyez, float lookAtx, float lookAty,
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 //	frustrum has only been tested as part of perspective
-void gluFrustumf32(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far)
-{
-  
+void gluFrustumf32(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far){
    glMatrixMode(GL_PROJECTION);
 
    MATRIX_LOAD4x4 = divf32(2*near, right - left);     
@@ -537,10 +546,41 @@ void gluFrustumf32(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far)
 	
    glStoreMatrix(0);
 }
+
+void glOrtho(float left, float right, float bottom, float top, float near, float far){
+	glOrthof32(floattof32(left), floattof32(right), floattof32(bottom), floattof32(top), floattof32(near), floattof32(far));
+}
+
 ///////////////////////////////////////
+void glOrthof32(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far){
+   glMatrixMode(GL_PROJECTION);
+
+   MATRIX_LOAD4x4 = divf32(2, right - left);     
+   MATRIX_LOAD4x4 = 0;  
+   MATRIX_LOAD4x4 = 0;      
+   MATRIX_LOAD4x4 = -divf32(right + left, right - left);
+
+   MATRIX_LOAD4x4 = 0;  
+   MATRIX_LOAD4x4 = divf32(2, top - bottom);
+   MATRIX_LOAD4x4 = 0;
+   MATRIX_LOAD4x4 = -divf32(top + bottom, top - bottom);;
+   
+   MATRIX_LOAD4x4 = 0;  
+   MATRIX_LOAD4x4 = 0;  
+   MATRIX_LOAD4x4 = divf32(-2, far - near);
+   MATRIX_LOAD4x4 = -divf32(far + near, far - near);
+   
+   MATRIX_LOAD4x4 = 0;  
+   MATRIX_LOAD4x4 = 0;  
+   MATRIX_LOAD4x4 = 0;  
+   MATRIX_LOAD4x4 = floattof32(1.0F);
+	
+   glStoreMatrix(0);
+}
+///////////////////////////////////////
+
 //  Frustrum wrapper
-void gluFrustum(float left, float right, float bottom, float top, float near, float far)
-{
+void gluFrustum(float left, float right, float bottom, float top, float near, float far){
 	gluFrustumf32(floattof32(left), floattof32(right), floattof32(bottom), floattof32(top), floattof32(near), floattof32(far));
 }
 
@@ -560,10 +600,8 @@ void gluPerspectivef32(int fovy, f32 aspect, f32 zNear, f32 zFar)
 
 ///////////////////////////////////////
 //  glu wrapper for floating point
-void gluPerspective(float fovy, float aspect, float zNear, float zFar)
-{
-	
-	 gluPerspectivef32((int)(fovy * LUT_SIZE / 360.0), floattof32(aspect), floattof32(zNear), floattof32(zFar));    
+void gluPerspective(float fovy, float aspect, float zNear, float zFar){
+	gluPerspectivef32((int)(fovy * LUT_SIZE / 360.0), floattof32(aspect), floattof32(zNear), floattof32(zFar));    
 }
 
 
@@ -639,8 +677,7 @@ void glSetToonTableRange(int start, int end, rgb color)
 
 //////////////////////////////////////////////////////////////////////
 
-void glReset(void)
-{
+void glReset(void){
   while (GFX_STATUS & (1<<27)); // wait till gfx engine is not busy
   
   // Clear the FIFO
@@ -649,7 +686,9 @@ void glReset(void)
   // Clear overflows for list memory
   GFX_CONTROL = enable_bits = ((1<<12) | (1<<13)) | GL_TEXTURE_2D;
   glResetMatrixStack();
-
+  
+  glInit(); //Initializes a new videoGL context
+  
   GFX_TEX_FORMAT = 0;
   GFX_POLY_FORMAT = 0;
   
@@ -868,6 +907,59 @@ int glTexImage2D(int target, int empty1, int type, int sizeX, int sizeY, int emp
 	}
 	*/
 	return 1;
+}
+
+u16 lastVertexColor = 0;
+void glColor3b(uint8 red, uint8 green, uint8 blue){
+	switch(globalGLCtx.primitiveShadeModelMode){
+		//light vectors are todo
+		case(GL_FLAT):{
+			//otherwise override all colors to be the same subset of whatever color was passed here
+			if(lastVertexColor == 0){
+				lastVertexColor = RGB15(red, green, blue);
+			}
+			GFX_COLOR = lastVertexColor;
+		}
+		break;
+		
+		case(GL_SMOOTH):{
+			//Smooth shading, the default by DS, causes the computed colors of vertices to be interpolated as the primitive is rasterized, 
+			//typically assigning different colors to each resulting pixel fragment. 
+			GFX_COLOR = (vuint32)RGB15(red, green, blue);			
+		}
+		break;
+		
+		default:{
+			//error! call glInit(); first
+		}
+		break;
+	}
+}
+
+void glShadeModel(GLenum mode){
+	globalGLCtx.primitiveShadeModelMode = mode;
+	lastVertexColor = 0;
+}
+
+static inline int float2int(float valor)
+{
+    float f1,f2;
+    int i1,i2;
+    f1=floor(valor);
+    f2=valor - f1;
+    i1 = (int)f1;
+    i2 = (int)100*f2;
+    return i1;
+}
+
+void glColor3f(float red, float green, float blue){
+	glColor3b(float2int(red), float2int(green), float2int(blue));
+}
+
+//Must be called everytime a new videoGL context starts
+void glInit(){
+	memset((u8*)&globalGLCtx, 0, sizeof(struct GLContext));
+	glShadeModel(GL_SMOOTH);
 }
 
 //Open GL 1.1 Implementation: Texture Objects support

@@ -90,11 +90,12 @@ void handleARM7InitSVC(){
 
 void handleARM7SVC(){
 	//Lid Closing + backlight events (ARM7)
-	if(isArm7ClosedLid == false){
-		if((REG_KEYXY & KEY_HINGE) == KEY_HINGE){
-			SendFIFOWords(FIFO_IRQ_LIDHASCLOSED_SIGNAL);
-			screenLidHasClosedhandlerUser();
+	if((REG_KEYXY & KEY_HINGE) == KEY_HINGE){
+		if(!((REG_IE & IRQ_SCREENLID) == IRQ_SCREENLID)){
 			isArm7ClosedLid = true;
+			screenLidHasClosedhandlerUser();
+			REG_IE = REG_IE | IRQ_SCREENLID;
+			SendFIFOWords(FIFO_IRQ_LIDHASCLOSED_SIGNAL);
 		}
 	}
 }

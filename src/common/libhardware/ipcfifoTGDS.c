@@ -109,16 +109,18 @@ void HandleFifoEmpty()  {
 __attribute__((section(".itcm")))
 #endif
 void HandleFifoNotEmpty()  {
+	REG_IF = IRQ_RECVFIFO_NOT_EMPTY;
 	volatile uint32 data0 = 0;	
 	while(!(REG_IPC_FIFO_CR & RECV_FIFO_IPC_EMPTY)){
 		
-		//Process IPC FIFO commands
-		data0 = REG_IPC_FIFO_RX;
-		
 		//FIFO Full / Error? Discard
 		if((REG_IPC_FIFO_CR & IPC_FIFO_ERROR) == IPC_FIFO_ERROR){
-			REG_IPC_FIFO_CR = (REG_IPC_FIFO_CR | IPC_FIFO_SEND_CLEAR);	//bit14 FIFO ERROR ACK + Flush Send FIFO
+			REG_IPC_FIFO_CR = (REG_IPC_FIFO_CR | IPC_FIFO_SEND_CLEAR | FIFO_IPC_ERROR);	//bit14 FIFO ERROR ACK + Flush Send FIFO
+			break;
 		}
+		
+		//Process IPC FIFO commands
+		data0 = (volatile uint32)REG_IPC_FIFO_RX;
 		
 		switch (data0) {
 			// ARM7IO from ARM9

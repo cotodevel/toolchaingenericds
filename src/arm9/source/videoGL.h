@@ -106,6 +106,35 @@ typedef struct {
   f32 x,y,z;
 } GLvector;
 
+#ifndef GL_VERSION_1_1
+#define GL_VERSION_1_1 1
+
+typedef unsigned int GLenum;
+typedef unsigned char GLboolean;
+typedef unsigned int GLbitfield;
+typedef signed char GLbyte;
+typedef short GLshort;
+typedef int GLint;
+typedef int GLsizei;
+typedef unsigned char GLubyte;
+typedef unsigned short GLushort;
+typedef unsigned int GLuint;
+typedef float GLfloat;
+typedef float GLclampf;
+typedef double GLdouble;
+typedef double GLclampd;
+typedef void GLvoid;
+
+#define GL_FLAT ((GLenum)0)		// flat shading (primitives are drawn using the same color set before by glColor3b(uint8 red, uint8 green, uint8 blue)) 
+#define GL_SMOOTH ((GLenum)1)	//smooth shading (color comes from either Toon Shading or HighLight shading
+
+#endif
+
+struct GLContext{
+	GLenum primitiveShadeModelMode;	//glShadeModel(GLenum mode: [GL_FLAT/GL_SMOOTH]);
+
+} __attribute__((aligned (4)));
+
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 // 3D core control
@@ -280,26 +309,6 @@ typedef enum {
 #define FIFO_FLUSH				REG2ID(GFX_FLUSH)             
 #define FIFO_VIEWPORT			REG2ID(GFX_VIEWPORT)          
 
-#ifndef GL_VERSION_1_1
-#define GL_VERSION_1_1 1
-
-typedef unsigned int GLenum;
-typedef unsigned char GLboolean;
-typedef unsigned int GLbitfield;
-typedef signed char GLbyte;
-typedef short GLshort;
-typedef int GLint;
-typedef int GLsizei;
-typedef unsigned char GLubyte;
-typedef unsigned short GLushort;
-typedef unsigned int GLuint;
-typedef float GLfloat;
-typedef float GLclampf;
-typedef double GLdouble;
-typedef double GLclampd;
-typedef void GLvoid;
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -426,13 +435,6 @@ void glMaterialShinnyness(void);
   static inline void glClearDepth(uint16 depth)
 {
   GFX_CLEAR_DEPTH = depth;
-}
-
-//////////////////////////////////////////////////////////////////////
-
-  static inline void glColor3b(uint8 red, uint8 green, uint8 blue)
-{
-  GFX_COLOR = (vuint32)RGB15(red, green, blue);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -631,6 +633,20 @@ static inline void glCallList(const u32* list) {
 }
 
 #endif  //endif #no inline
+extern void glRotate(int angle, float x, float y, float z);
+
+extern void glOrthof32(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far);
+extern void glOrtho(float left, float right, float bottom, float top, float near, float far);
+extern void glColor3f(float red, float green, float blue);
+
+extern struct GLContext globalGLCtx;
+extern void glShadeModel(GLenum mode);
+extern void glInit();
+extern u16 lastVertexColor;
+
+extern void glColor3b(uint8 red, uint8 green, uint8 blue);
+
+
 #ifdef __cplusplus
 }
 #endif
