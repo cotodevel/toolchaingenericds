@@ -376,10 +376,11 @@ void NDS_IRQHandler()  {
 	}
 	
 	if(handledIRQ & IRQ_SCREENLID){
-		if(isArm7ClosedLid == true){
-			SendFIFOWords(FIFO_IRQ_LIDHASOPENED_SIGNAL);
-			screenLidHasOpenedhandlerUser();
+		if((REG_IE & IRQ_SCREENLID) == IRQ_SCREENLID){
+			REG_IE = REG_IE & ~(IRQ_SCREENLID); //prevent multiple irqs
 			isArm7ClosedLid = false;
+			screenLidHasOpenedhandlerUser();
+			SendFIFOWords(FIFO_IRQ_LIDHASOPENED_SIGNAL);
 		}
 	}
 	
@@ -399,7 +400,7 @@ void NDS_IRQHandler()  {
 	#endif
 	
 	#endif
-	REG_IF = handledIRQ;
+	REG_IF = handledIRQ & ~(IRQ_RECVFIFO_NOT_EMPTY);
 	SWI_CHECKBITS |= handledIRQ;
 	
 	#ifdef TWLMODE
