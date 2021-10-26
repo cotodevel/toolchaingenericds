@@ -158,3 +158,27 @@ int LoadGLTextures(u8 * textureSource)									// Load PCX files And Convert To 
 
 	return 0;
 }
+
+//Usage:
+//Load 2 textures and map each one to a texture slot
+//u32 arrayOfTextures[2]; 
+//arrayOfTextures[0] = (u32)&Texture_Cube; //textures required to be in memory.
+//arrayOfTextures[1] = (u32)&Texture_Cellphone;
+//int textureArrayNDS[2]; //0 : Cube tex / 1 : Cellphone tex... enumerated as NDS GX texture format
+//int texturesInSlot = LoadLotsOfGLTextures((u32*)&arrayOfTextures, (int*)&textureArrayNDS, 2);	
+
+//returns: texture count generated
+int LoadLotsOfGLTextures(u32 * textureSourceArray, int * textureArray, int textureCount){	// Load lots of PCX files And Convert To Textures
+	glGenTextures(textureCount, textureArray);
+	int curTexture = 0;
+	for(curTexture = 0; curTexture < textureCount; curTexture++){
+		glBindTexture(0, textureArray[curTexture]);
+		sImage pcx;
+		//load our texture
+		loadPCX((u8*)textureSourceArray[curTexture], &pcx);
+		image8to16(&pcx);
+		glTexImage2D(0, 0, GL_RGB, TEXTURE_SIZE_128 , TEXTURE_SIZE_128, 0, TEXGEN_TEXCOORD, pcx.image.data8); //maps textures automatically to VRAM map
+		imageDestroy(&pcx);	
+	}
+	return curTexture;
+}
