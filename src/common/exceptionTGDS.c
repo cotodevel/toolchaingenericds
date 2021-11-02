@@ -285,6 +285,7 @@ void handleDSInitError(int stage, u32 fwNo){
 	//stage 0 = failed detecting DS model from firmware
 	//stage 1 = failed initializing ARM7 DLDI / NDS ARM9 memory allocator
 	//stage 2 = failed initializing DSWIFI (ARM9)
+	//stage 3 = failed detecting DS model from firmware (2).
 	printf("TGDS boot fail: Stage %d, firmware model: %d", stage, fwNo);
 	
 	while(1==1){

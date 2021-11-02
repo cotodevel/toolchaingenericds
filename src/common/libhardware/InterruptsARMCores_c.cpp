@@ -26,6 +26,7 @@ USA
 #include "wifi_arm9.h"
 #include "dswnifi_lib.h"
 #include "nds_cp15_misc.h"
+#include "exceptionTGDS.h"
 #endif
 
 #include "InterruptsARMCores_h.h"
@@ -84,15 +85,24 @@ void IRQInit(u8 DSHardware)  {
 	interrupts_to_wait_armX = IRQ_VBLANK | IRQ_VCOUNT | IRQ_IPCSYNC | IRQ_RECVFIFO_NOT_EMPTY;
 	#endif
 	
+	REG_IE = interrupts_to_wait_armX; 
+	
+	INTERRUPT_VECTOR = (uint32)&NDS_IRQHandler;
+	REG_IME = 1;
+	
+	//ARM9: Try to initialize NTR hardware even if missing firmware before running the firmware check. So we can use FIFO for retrieving it from ARM7
+	
 	//NTR
 	if(
-		(DSHardware == 0xFF)
+		(DSHardware == 0xFF)	//DS Phat
 		||
-		(DSHardware == 0x20)
+		(DSHardware == 0x20)	//DS Lite normal
 		||
-		(DSHardware == 0x43)
+		(DSHardware == 0x35)	//DS Lite rare fw #1
 		||
-		(DSHardware == 0x63)
+		(DSHardware == 0x43)	//Other DS hardware..
+		||
+		(DSHardware == 0x63)	//..
 	){
 		__dsimode = false;
 		nocashMessage("TGDS:IRQInit():NTR Mode!");
@@ -114,11 +124,12 @@ void IRQInit(u8 DSHardware)  {
 		#endif
 		nocashMessage("TGDS:IRQInit():TWL Mode!");
 	}
-	
-	REG_IE = interrupts_to_wait_armX; 
-	
-	INTERRUPT_VECTOR = (uint32)&NDS_IRQHandler;
-	REG_IME = 1;
+	else{
+		#ifdef ARM9
+		int stage = 3;
+		handleDSInitError(stage, (u32)DSHardware);
+		#endif
+	}
 }
 
 #ifdef ARM7
