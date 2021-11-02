@@ -84,8 +84,9 @@ extern void DebugException();
 extern void setupCustomExceptionHandler(uint32 * Handler);
 extern uint32 CustomHandler;
 extern void CustomDebugException();
-
 extern void LeaveExceptionMode();
+extern void handleDSInitError(int stage, u32 fwNo);
+extern int TGDSInitLoopCount;
 
 #ifdef __cplusplus
 }
