@@ -275,20 +275,6 @@ void NDS_IRQHandler()  {
 			break;
 			#ifdef ARM7
 			
-			case(IPC_READ_FIRMWARE_REQBYIRQ):{
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-				uint32 srcMemory = fifomsg[28];
-				//uint32 targetMemory = fifomsg[29];
-				//int bytesToRead = (int)fifomsg[30];
-				
-				//Read DHCP settings (in order)
-				LoadFirmwareSettingsFromFlash();
-				memcpy((u8*)srcMemory, (u8*)&TGDSIPC->DSFWHEADERInst.stub[0], sizeof(TGDSIPC->DSFWHEADERInst.stub));	//512 bytes
-				
-				fifomsg[31] = fifomsg[30] = fifomsg[29] = fifomsg[28] = (uint32)0;
-			}
-			break;			
 				//ARM7_DLDI
 				//Slot-1 or slot-2 access
 				case(IPC_READ_ARM7DLDI_REQBYIRQ):{

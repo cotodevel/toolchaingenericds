@@ -177,7 +177,7 @@ void HandleFifoNotEmpty()  {
 			case (TGDS_ARM7_RELOADFLASH):{
 				//Init Shared Address Region and get NDS Header
 				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
+				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
 				memcpy((u8*)&TGDSIPC->DSHeader,(u8*)0x027FFE00, sizeof(TGDSIPC->DSHeader));
 				
 				//Read DHCP settings (in order)
@@ -185,13 +185,8 @@ void HandleFifoNotEmpty()  {
 				
 				//Hardware ARM7 Init
 				u8 DSHardwareReadFromFlash = TGDSIPC->DSFWHEADERInst.stub[0x1d];
-				resetMemory_ARMCores(DSHardwareReadFromFlash);
-				IRQInit(DSHardwareReadFromFlash);
 				
-				//Init SoundSampleContext
-				initSoundSampleContext();
-				initSound();
-				setValueSafe(&fifomsg[58], (u32)0);
+				setValueSafe(&fifomsg[58], (u32)DSHardwareReadFromFlash);
 			}
 			break;
 			
@@ -938,40 +933,16 @@ void SaveMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead){
 	}
 }
 
-void ReadFirmwareARM7Ext(u32 * srcMemory){	//512 bytes src always
-	memset(srcMemory, 0, (uint32)512);
-	#ifdef ARM7
-	uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-	#endif
-	#ifdef ARM9
-	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
-	#endif
-	fifomsg[28] = (uint32)srcMemory;
-	//fifomsg[29] = (uint32)targetMemory;
-	//fifomsg[30] = (uint32)bytesToRead;
-	fifomsg[31] = (uint32)TGDS_ARM7_READFLASHMEM;
-	sendByteIPC(IPC_READ_FIRMWARE_REQBYIRQ);
-	while((uint32)fifomsg[31] == (uint32)TGDS_ARM7_READFLASHMEM){
-		swiDelay(2);
-	}
-}
-
 #ifdef ARM9
-//Reloads ARM7 Flash memory and returns DS hardware model
-u8 ARM7ReloadFlashSync(){
+//Reloads ARM7 Flash memory and returns DS hardware model by FIFO IRQ
+u8 ARM7ReadFWVersionFromFlashByFIFOIRQ(){
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	#ifdef ARM7
-	uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-	#endif
-	#ifdef ARM9
-	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
-	#endif
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
 	setValueSafe(&fifomsg[58], (u32)0xFFFFFFFF);
 	SendFIFOWords(TGDS_ARM7_RELOADFLASH);
-	while(getValueSafe(&fifomsg[58]) != 0){
+	while(getValueSafe(&fifomsg[58]) == 0xFFFFFFFF){
 		swiDelay(2);
 	}
-	coherent_user_range_by_size((uint32)&TGDSIPC->DSFWHEADERInst.stub[0], 32);
-	return TGDSIPC->DSFWHEADERInst.stub[0x1d];
+	return (u8)fifomsg[58];
 }
 #endif

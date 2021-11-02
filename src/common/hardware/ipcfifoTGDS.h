@@ -148,8 +148,7 @@ USA
 	#define IPC_STARTUP_ARM7_TWLSD_REQBYIRQ		(u8)(8)
 	#define IPC_SD_IS_INSERTED_ARM7_TWLSD_REQBYIRQ		(u8)(9)
 	
-#define IPC_READ_FIRMWARE_REQBYIRQ		(u8)(10)
-#define IPC_TGDSUSER_START_FREE_INDEX	(u8)(11)	//TGDS User Project rely on it
+#define IPC_TGDSUSER_START_FREE_INDEX	(u8)(10)	//TGDS User Project rely on it
 
 //TGDS -> Libnds FIFO compatibility API. Ensures the behaviour of the FIFO messaging system works.
 // FIFO_CHANNEL_BITS - number of bits used to specify the channel in a packet - default=4
@@ -266,7 +265,7 @@ typedef struct sIPCSharedTGDS {
 	struct libndsFIFOs libndsFIFO;
 	
 	//FIFO Mesagging: used by TGDS-multiboot loader code only.
-	uint32 fifoMesaggingQueueSharedRegion[4];	//68 * 4 Words for various command handling
+	uint32 fifoMesaggingQueueSharedRegion[4];	//4 Words for various command handling which can't use the NDS_CACHED_SCRATCHPAD / NDS_UNCACHED_SCRATCHPAD at the time
 	
 } IPCSharedTGDS __attribute__((aligned(4)));
 
@@ -347,7 +346,7 @@ extern u32 fifoFunc[FIFO_CHANNELS][2];	//context is only passed on callback prot
 extern u8 CheckStylus();
 
 #ifdef ARM9
-extern u8 ARM7ReloadFlashSync();
+extern u8 ARM7ReadFWVersionFromFlashByFIFOIRQ();
 #endif
 
 #ifdef __cplusplus
