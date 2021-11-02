@@ -261,4 +261,37 @@ void exception_handler(uint32 arg){
 		IRQVBlankWait();
 	}
 }
+
+int TGDSInitLoopCount=0;
+
+#ifdef ARM9
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void handleDSInitError(int stage, u32 fwNo){
+	bool isTGDSCustomConsole = false;	//set default console
+	GUI_init(isTGDSCustomConsole);
+	clrscr();
+	
+	printf(" ---- ");
+	printf(" ---- ");
+	printf(" ---- ");
+	
+	//stage 0 = failed detecting DS model from firmware
+	//stage 1 = failed initializing ARM7 DLDI / NDS ARM9 memory allocator
+	//stage 2 = failed initializing DSWIFI (ARM9)
+	//stage 3 = failed detecting DS model from firmware (2).
+	printf("TGDS boot fail: Stage %d, firmware model: %d", stage, fwNo);
+	
+	while(1==1){
+		swiDelay(1);
+	}
+}
+#endif
+
 #endif

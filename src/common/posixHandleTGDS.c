@@ -343,9 +343,16 @@ void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,									
 			TGDSMallocFreeMemory9 = (TGDSARM9MallocFreeMemoryHandler)MallocFreeMemoryHandler;
 		}
 	}
+	TGDSInitLoopCount = 0;
 	SendFIFOWords(TGDS_ARM7_SETUPARMCPUMALLOCANDDLDI);	//ARM7 Setup
 	while((u32)getValueSafe(&fifomsg[46]) != (u32)0){
+		if(TGDSInitLoopCount > 1048576){
+			u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
+			int stage = 1;
+			handleDSInitError(stage, (u32)fwNo);
+		}
 		swiDelay(1);
+		TGDSInitLoopCount++;
 	}
 }
 

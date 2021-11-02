@@ -1110,9 +1110,15 @@ bool Wifi_InitDefault(bool useFirmwareSettings) {
 	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
 	setValueSafe(&fifomsg[60], (u32)wifi_pass);
 	SendFIFOWords(WIFI_INIT);
-	
+	TGDSInitLoopCount = 0;
 	while(Wifi_CheckInit()==0) {
-		swiDelay(900);
+		if(TGDSInitLoopCount > 1048576){
+			u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
+			int stage = 2;
+			handleDSInitError(stage, (u32)fwNo);
+		}
+		swiDelay(1);
+		TGDSInitLoopCount++;
 	}
 
 	if(useFirmwareSettings) {  

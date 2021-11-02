@@ -936,6 +936,11 @@ void glColor3b(uint8 red, uint8 green, uint8 blue){
 	}
 }
 
+//2d point in v16 coords
+void glVertex2i(int x, int y) {
+    glVertex3v16((v16)x, (v16)y, (v16)0);
+}
+
 void glShadeModel(GLenum mode){
 	globalGLCtx.primitiveShadeModelMode = mode;
 	lastVertexColor = 0;
