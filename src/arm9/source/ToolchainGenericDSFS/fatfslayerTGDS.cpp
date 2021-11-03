@@ -991,32 +991,41 @@ bool readDirectoryIntoFileClass(char * dir, struct FileClassList * thisClassList
 	return true;
 }
 
-//Returns: current Index from playlistfileClassListCtx where a matching file extension "/exe/gif/aiff/bmp/tex/loc/snd/nds" was found.
-//Otherwise -1 if not found
+//builds a FileClass list sorted from args priority
+//returns: item count pushed to targetClassList
 
-//example:
-//int curIndex = 0;
-//bool ret = readDirectoryIntoFileClass("/", playlistfileClassListCtx);
-//if(ret == true){
-//	curIndex = getNextFileClassByExtensionFromList(playlistfileClassListCtx, "/exe/gif/aiff/bmp/tex/loc/snd/nds", curIndex); //first occurrence
-					
-//	curIndex++; //next occurence
-//	curIndex = getNextFileClassByExtensionFromList(playlistfileClassListCtx, "/exe/gif/aiff/bmp/tex/loc/snd/nds", curIndex);	
-//}
-int getNextFileClassByExtensionFromList(struct FileClassList * thisClassList, char * filterString, int indexToStart){
-	int indexFound = -1;
-	char * outBuf = (char *)TGDSARM9Malloc(256*10);
+//Usage:
+//struct FileClassList * playlistfileClassListCtx = NULL;
+//playlistfileClassListCtx = initFileList();
+//cleanFileList(playlistfileClassListCtx);
+//bool ret = readDirectoryIntoFileClass("/music", playlistfileClassListCtx);
+//char scratchPadMem[256*40];
+//#define pattern "/ima/wav/it/mod/s3m/xm/mp3/mp2/mpa/ogg/aac/m4a/m4b/flac/sid/nsf/spc/sndh/snd/sc68/gbs"
+//struct FileClassList * foundPlayList = NULL;
+//foundPlayList = initFileList();
+//cleanFileList(foundPlayList);
+//int itemsFound = buildFileClassByExtensionFromList(playlistfileClassListCtx, foundPlayList, (char**)&scratchPadMem, pattern);
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+int buildFileClassByExtensionFromList(struct FileClassList * inputClassList, struct FileClassList * targetClassList, char ** scratchPadMemory, char * filterString){
+	char * outBuf = (char *)scratchPadMemory;
 	int i = 0, j = 0;
-	int matchCount = str_split((char*)filterString, "/", outBuf, 10, 256);
+	int matchCount = str_split((char*)filterString, "/", outBuf, 30, 256); //30 items
+	targetClassList->FileDirCount = 0;
 	for(i = 1; i < (matchCount + 1); i++){
 		char * token_rootpath = (char*)&outBuf[256*i];
 		char extToFind[256];
 		strcpy(extToFind, ".");
 		strcat(extToFind, token_rootpath);
-		int fileClassListSize = getCurrentDirectoryCount(thisClassList);
-		for(j = indexToStart; j < fileClassListSize; j++){
+		int fileClassListSize = getCurrentDirectoryCount(inputClassList);
+		for(j = 0; j < fileClassListSize; j++){
 			if(j < fileClassListSize){
-				FileClass * curFile = (FileClass *)&thisClassList->fileList[j];
+				FileClass * curFile = (FileClass *)&inputClassList->fileList[j];
 				//current playlist only allows known audio formats
 				char tmpName[MAX_TGDSFILENAME_LENGTH+1];
 				char extInFile[MAX_TGDSFILENAME_LENGTH+1];
@@ -1024,16 +1033,15 @@ int getNextFileClassByExtensionFromList(struct FileClassList * thisClassList, ch
 				separateExtension(tmpName, extInFile);
 				strlwr(extInFile);		
 				if(
-					(strcmp(extToFind, extInFile) == 0)
+					(strcmpi(extToFind, extInFile) == 0)
 					){
-					indexFound = j;
-					break;
+					pushEntryToFileClassList(true, curFile->fd_namefullPath, curFile->type, -1, targetClassList);
+					targetClassList->FileDirCount++;
 				}
 			}
 		}
 	}
-	TGDSARM9Free(outBuf);
-	return indexFound;
+	return targetClassList->FileDirCount;
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
