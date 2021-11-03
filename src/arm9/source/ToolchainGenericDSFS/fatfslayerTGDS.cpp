@@ -1058,18 +1058,16 @@ __attribute__ ((optnone))
 int buildFileClassByExtensionFromList(struct FileClassList * inputClassList, struct FileClassList * targetClassList, char ** scratchPadMemory, char * filterString){
 	char * outBuf = (char *)scratchPadMemory;
 	int i = 0, j = 0;
-	int matchCount = str_split((char*)filterString, "/", outBuf, 30, 256); //30 items
-	targetClassList->FileDirCount = 0;
-	for(i = 1; i < (matchCount + 1); i++){
+	int matchCount = str_split((char*)filterString, "/", outBuf, 50, 256); //30 items
+	for(i = 0; i < (matchCount + 3); i++){
 		char * token_rootpath = (char*)&outBuf[256*i];
 		char extToFind[256];
 		strcpy(extToFind, ".");
 		strcat(extToFind, token_rootpath);
-		int fileClassListSize = getCurrentDirectoryCount(inputClassList);
+		int fileClassListSize = getCurrentDirectoryCount(inputClassList) + 1; 
 		for(j = 0; j < fileClassListSize; j++){
 			if(j < fileClassListSize){
 				FileClass * curFile = (FileClass *)&inputClassList->fileList[j];
-				//current playlist only allows known audio formats
 				char tmpName[MAX_TGDSFILENAME_LENGTH+1];
 				char extInFile[MAX_TGDSFILENAME_LENGTH+1];
 				strcpy(tmpName, curFile->fd_namefullPath);	
@@ -1079,7 +1077,6 @@ int buildFileClassByExtensionFromList(struct FileClassList * inputClassList, str
 					(strcmpi(extToFind, extInFile) == 0)
 					){
 					pushEntryToFileClassList(true, curFile->fd_namefullPath, curFile->type, -1, targetClassList);
-					targetClassList->FileDirCount++;
 				}
 			}
 		}
