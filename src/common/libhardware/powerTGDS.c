@@ -24,7 +24,6 @@ USA
 
 #ifdef ARM7
 #include <string.h>
-#include "wifi_arm7.h"
 #include "spifwTGDS.h"
 #endif
 
@@ -34,7 +33,6 @@ USA
 #include "dsregs.h"
 #include "dsregs_asm.h"
 #include "InterruptsARMCores_h.h"
-#include "wifi_arm9.h"
 
 #endif
 
@@ -47,9 +45,10 @@ void powerON(uint32 values){
 	
 	#ifdef ARM9
 	if(!(values & POWERMAN_ARM9)){
-		uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
+		struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
+		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 		setValueSafe(&fifomsg[60], (uint32)values);
-		SendFIFOWords(FIFO_POWERCNT_ON);
+		SendFIFOWords(FIFO_POWERCNT_ON, fifomsg);
 	}
 	else{
 		REG_POWERCNT |= values;
@@ -66,9 +65,10 @@ void powerOFF(uint32 values){
 	
 	#ifdef ARM9
 	if(!(values & POWERMAN_ARM9)){
-		uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
+		struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
+		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 		setValueSafe(&fifomsg[60], (uint32)values);
-		SendFIFOWords(FIFO_POWERCNT_OFF);
+		SendFIFOWords(FIFO_POWERCNT_OFF, fifomsg);
 	}
 	else{
 		REG_POWERCNT &= ~values;

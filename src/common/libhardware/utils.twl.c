@@ -1,4 +1,3 @@
-#ifdef TWLMODE
 
 #include "utils.twl.h"
 #include "utilsTGDS.h"
@@ -8,10 +7,10 @@
 
 //#include <serial.h>
 //#include "touch.h"
-#include "memory.h"
+//#include "memory.h"
 
 bool cdcIsAvailable(void) {
-	return isDSiMode() && (__DSiHeader->appflags & 0x01);
+	return isDSiMode();
 }
 
 #ifdef ARM9
@@ -29,6 +28,4 @@ bool cdcIsAvailable(void) {
 __attribute__((section(".secure")))
 __attribute__((weak))
 const char __secure_area__[2048];
-#endif
-
 #endif

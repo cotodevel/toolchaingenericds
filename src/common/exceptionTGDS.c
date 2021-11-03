@@ -39,10 +39,8 @@ USA
 #include "global_settings.h"
 #include "keypadTGDS.h"
 #include "posixHandleTGDS.h"
-#include "utilsTGDS.h"
 
 #ifdef ARM9
-#include "dswnifi_lib.h"
 #include "nds_cp15_misc.h"
 #endif
 
@@ -66,9 +64,7 @@ void setupDefaultExceptionHandler(){
 	
 	#ifdef ARM9
 	*(uint32*)0x02FFFD9C = (uint32)DebugException;
-	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
-	setValueSafe(&fifomsg[60], (uint32)&exceptionArmRegs[0]);
-	SendFIFOWords(TGDS_ARM7_SETUPEXCEPTIONHANDLER);
+	SendFIFOWordsITCM(TGDS_ARM7_SETUPEXCEPTIONHANDLER, (u32)&exceptionArmRegs[0]);
 	#endif
 	
 	#endif
@@ -103,15 +99,9 @@ uint32 exceptionArmRegs[0x20];
 void exception_sysexit(){
 	#ifdef ARM7
 	
-	int argBuffer[MAXPRINT7ARGVCOUNT];
-	memset((unsigned char *)&argBuffer[0], 0, sizeof(argBuffer));
-	writeDebugBuffer7("TGDS ARM7.bin Exception: Unexpected main() exit. ", 0, (int*)&argBuffer[0]);
-	
-	uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-	setValueSafe(&fifomsg[60], (uint32)unexpectedsysexit_7);
-	SendFIFOWords(EXCEPTION_ARM7);
+	SendFIFOWordsITCM(EXCEPTION_ARM7, unexpectedsysexit_7);
 	while(1){
-		IRQWait(0, IRQ_VBLANK);
+		IRQWait(1, IRQ_VBLANK);
 	}
 	#endif
 	
@@ -124,13 +114,7 @@ void exception_sysexit(){
 void generalARMExceptionHandler(){
 	#ifdef ARM7
 	
-	int argBuffer[MAXPRINT7ARGVCOUNT];
-	memset((unsigned char *)&argBuffer[0], 0, sizeof(argBuffer));
-	writeDebugBuffer7("TGDS ARM7.bin Exception: Hardware Exception.", 0, (int*)&argBuffer[0]);
-	
-	uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-	fifomsg[60] = (u32)generalARM7Exception;
-	SendFIFOWords(EXCEPTION_ARM7);
+	SendFIFOWordsITCM(EXCEPTION_ARM7, generalARM7Exception);
 	while(1==1){
 		IRQVBlankWait();
 	}
@@ -208,7 +192,7 @@ void exception_handler(uint32 arg){
 		
 		while(1){
 			scanKeys();
-			int isdaas = keysDown();
+			int isdaas = keysPressed();
 			if (isdaas&KEY_A)
 			{
 				GDBSession =  true;
@@ -229,41 +213,12 @@ void exception_handler(uint32 arg){
 	
 	while(1){
 		
-		if(GDBSession == true){
-			//GDB Stub Process must run here
-			int retGDBVal = remoteStubMain();
-			if(retGDBVal == remoteStubMainWIFINotConnected){
-				if (switch_dswnifi_mode(dswifi_gdbstubmode) == true){
-					//clrscr();
-					//Show IP and port here
-					printf("[Connect to GDB]:");
-					char IP[16];
-					printf("Port:%d GDB IP:%s", remotePort, print_ip((uint32)Wifi_GetIP(), IP));
-					remoteInit();
-				}
-				else{
-					//GDB Client Reconnect:ERROR
-				}
-			}
-			else if(retGDBVal == remoteStubMainWIFIConnectedGDBDisconnected){
-				setWIFISetup(false);
-				if (switch_dswnifi_mode(dswifi_gdbstubmode) == true){ // gdbNdsStart() called
-					reconnectCount++;
-					//clrscr();
-					//Show IP and port here
-					printf("[Re-Connect to GDB]:So far:%d time(s)",reconnectCount);
-					char IP[16];
-					printf("Port:%d GDB IP:%s",remotePort, print_ip((uint32)Wifi_GetIP(), IP) );
-					remoteInit();
-				}
-			}
-		}
 		IRQVBlankWait();
 	}
 }
+#endif
 
 int TGDSInitLoopCount=0;
-
 #ifdef ARM9
 
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -292,6 +247,4 @@ void handleDSInitError(int stage, u32 fwNo){
 		swiDelay(1);
 	}
 }
-#endif
-
 #endif

@@ -25,7 +25,6 @@ USA
 #include <ctype.h>
 #include <stdlib.h>
 #include <malloc.h>
-
 #include <sys/reent.h>
 #include <sys/select.h>
 #include <sys/types.h>
@@ -42,10 +41,6 @@ USA
 #include <sys/lock.h>
 #include <fcntl.h>
 
-#ifdef ARM7
-#include "xmem.h"
-#endif
-
 #ifdef ARM9
 #include "ff.h"
 #include "utilsTGDS.h"
@@ -57,33 +52,6 @@ USA
 #endif
 
 #define MAXPRINT7ARGVCOUNT (int)(20)
-
-#ifdef ARM7
-//TGDS Malloc implementation, before using them requires a call from ARM9: void initARM7Malloc(u32 ARM7MallocStartaddress, u32 memSizeBytes)
-static inline u8* TGDSARM7Malloc(int size){
-	return (u8*)Xmalloc((const int)size);
-}
-
-static inline u8 * TGDSARM7Calloc(int blockCount, int blockSize){
-	return (u8*)Xcalloc((const int)blockSize, (const int)blockCount);
-}
-
-static inline void TGDSARM7Free(void *ptr){
-	Xfree((const void *)ptr);
-}
-
-static inline u8 * TGDSARM7Realloc(void *ptr, int size){
-	if(ptr != NULL){
-		TGDSARM7Free(ptr);
-	}
-	return (u8*)TGDSARM7Malloc(size);
-}
-
-static inline u32 TGDSARM7MallocFreeMemory(){
-	return (u32)XMEM_FreeMem();
-}
-
-#endif
 
 #ifdef ARM9
 //ARM9 Malloc
@@ -148,34 +116,61 @@ extern void initARMCoresMalloc(
 }
 #endif
 
+static inline u8* TGDSARM9Malloc(int size){
+	if(customMallocARM9 == false){
+		return (u8*)malloc((const int)size);
+	}
+	else{
+		return (u8*)TGDSMalloc9((const int)size);
+	}
+}
+
+static inline u8 * TGDSARM9Calloc(int blockCount, int blockSize){
+	if(customMallocARM9 == false){
+		return (u8*)calloc(blockSize, blockCount);	//reverse order
+	}
+	else{
+		return (u8*)TGDSCalloc9(blockCount, blockSize);	//same order
+	}
+}
+
+static inline u8 * TGDSARM9Realloc(void *ptr, int size){
+	if(customMallocARM9 == false){
+		if(ptr != NULL){
+			free(ptr);
+		}
+		return (u8*)malloc(size);
+	}
+	else{
+		if(ptr != NULL){
+			TGDSFree9(ptr);
+		}
+		return (u8*)TGDSMalloc9(size);
+	}
+}
+
+static inline void TGDSARM9Free(void *ptr){
+	if(customMallocARM9 == false){
+		free(ptr);
+	}
+	else{
+		TGDSFree9(ptr);
+	}
+}
+
+static inline u32 TGDSARM9MallocFreeMemory(){
+	if(customMallocARM9 == false){
+		return (u32)getMaxRam();
+	}
+	else{
+		return (u32)TGDSMallocFreeMemory9();
+	}
+}
+
 #endif
 
 #ifdef __cplusplus
 extern "C"{
-#endif
-
-extern u8* TGDSARM9Malloc(int size);
-extern u8 * TGDSARM9Calloc(int blockCount, int blockSize);
-extern u8 * TGDSARM9Realloc(void *ptr, int size);
-extern void TGDSARM9Free(void *ptr);
-extern u32 TGDSARM9MallocFreeMemory();
-
-#ifdef ARM7
-//ARM7 Malloc
-extern u32 ARM7MallocBaseAddress;
-extern u32 ARM7MallocTop;
-extern void setTGDSARM7MallocBaseAddress(u32 address);
-extern u32 getTGDSARM7MallocBaseAddress();
-
-extern void printf7(char *chr, int argvCount, int * argv);	
-extern void writeDebugBuffer7(char *chr, int argvCount, int * argv);
-//shared
-extern u8 * printfBufferShared;
-extern uint8 * arm7debugBufferShared;
-extern int * arm7ARGVBufferShared;
-
-//args through ARM7 print debugger
-extern int * arm7ARGVDebugBufferShared;
 #endif
 
 //Shared ARM7 Malloc
@@ -183,16 +178,7 @@ extern void initARM7Malloc(u32 ARM7MallocStartaddress, u32 ARM7MallocSize);
 
 #ifdef ARM9
 extern void setTGDSMemoryAllocator(struct AllocatorInstance * TGDSMemoryAllocator);
-extern void printf7Setup();
-extern void printf7(u8 * printfBufferShared, int * arm7ARGVBufferShared, int argvCount);
-//shared
-extern u8 printf7Buffer[MAX_TGDSFILENAME_LENGTH+1];
-extern u8 arm7debugBuffer[MAX_TGDSFILENAME_LENGTH+1];
-extern int arm7ARGVBuffer[MAXPRINT7ARGVCOUNT];
-
-//args through ARM7 print debugger
 extern int argvCount;
-extern int arm7ARGVDebugBuffer[MAXPRINT7ARGVCOUNT];
 #endif
 
 #ifdef ARM9
@@ -204,7 +190,6 @@ extern int arm7ARGVDebugBuffer[MAXPRINT7ARGVCOUNT];
 //argBuffer[2] = 0xc0703333;
 //writeDebugBuffer7("Write buffer 7 tests: Args: ", 3, (int*)&argBuffer[0]);
 
-extern void printarm7DebugBuffer();
 extern int _unlink(const sint8 *path);
 extern void printfCoords(int x, int y, const char *fmt, ...);
 
@@ -262,13 +247,9 @@ extern int feof_tgds(int fd);
 extern int ferror_tgds(int fd);
 extern void TryToDefragmentMemory();
 
-extern char *heap_end;
-extern char *prev_heap_end;
-
 //newlib
 extern uint32 get_lma_libend();		//linear memory top
 extern uint32 get_lma_wramend();	//(ewram end - linear memory top ) = malloc free memory
-extern int main(int argc, char **argv);	
 
 #ifdef __cplusplus
 }
@@ -301,13 +282,5 @@ struct devoptab_t{
 };
 #endif
 
-static inline u8 * getarm7PrintfBuffer(){
-	#ifdef ARM7
-	return printfBufferShared;
-	#endif
-	#ifdef ARM9
-	return (u8 *)&printf7Buffer[0];
-	#endif
-}
 #endif
 

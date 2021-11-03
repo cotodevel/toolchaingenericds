@@ -20,7 +20,6 @@ USA
 
 #ifdef ARM9
 #include "fileBrowse.h"
-#include "loader.h"
 
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("O0")))
@@ -31,9 +30,8 @@ __attribute__ ((optnone))
 #endif
 bool ShowBrowser(char * Path, char * outBuf){
 	scanKeys();
-	while((keysDown() & KEY_START) || (keysDown() & KEY_A) || (keysDown() & KEY_B)){
+	while((keysHeld() & KEY_START) || (keysHeld() & KEY_A) || (keysHeld() & KEY_B)){
 		scanKeys();
-		IRQWait(0, IRQ_VBLANK);
 	}
 	
 	//Create TGDS Dir API context
@@ -104,7 +102,6 @@ bool ShowBrowser(char * Path, char * outBuf){
 			while(pressed&KEY_DOWN){
 				scanKeys();
 				pressed = keysDown();
-				IRQWait(0, IRQ_VBLANK);
 			}
 		}
 		
@@ -123,7 +120,6 @@ bool ShowBrowser(char * Path, char * outBuf){
 			while(pressed&KEY_DOWN){
 				scanKeys();
 				pressed = keysDown();
-				IRQWait(0, IRQ_VBLANK);
 			}
 		}
 		
@@ -142,7 +138,6 @@ bool ShowBrowser(char * Path, char * outBuf){
 			while(pressed&KEY_LEFT){
 				scanKeys();
 				pressed = keysDown();
-				IRQWait(0, IRQ_VBLANK);
 			}
 		}
 		
@@ -161,7 +156,6 @@ bool ShowBrowser(char * Path, char * outBuf){
 			while(pressed&KEY_RIGHT){
 				scanKeys();
 				pressed = keysDown();
-				IRQWait(0, IRQ_VBLANK);
 			}
 		}
 		
@@ -170,7 +164,6 @@ bool ShowBrowser(char * Path, char * outBuf){
 			while(pressed&KEY_UP){
 				scanKeys();
 				pressed = keysDown();
-				IRQWait(0, IRQ_VBLANK);
 			}
 		}
 		
@@ -188,7 +181,6 @@ bool ShowBrowser(char * Path, char * outBuf){
 			while(pressed&KEY_UP){
 				scanKeys();
 				pressed = keysDown();
-				IRQWait(0, IRQ_VBLANK);
 			}
 		}
 		

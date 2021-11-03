@@ -1,13 +1,11 @@
 #ifdef TWLMODE
 #ifndef NO_SDMMC
 
-#include "wifi_shared.h"
 #include "biosTGDS.h"
 #include "sdmmc.h"
 #include <stddef.h>
 #include "utilsTGDS.h"
 #include "utils.twl.h"
-#include "libndsFIFO.h"
 
 //TWL SD hardware descriptor
 struct mmcdevice deviceSD;

@@ -21,8 +21,8 @@ USA
 //TGDS IPC Version: 1.3
 
 //IPC FIFO Description: 
-//		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 														// Access to TGDS internal IPC FIFO structure. 		(ipcfifoTGDS.h)
-//		struct sIPCSharedTGDSSpecific * TGDSUSERIPC = (struct sIPCSharedTGDSSpecific *)TGDSIPCUserStartAddress;		// Access to TGDS Project (User) IPC FIFO structure	(ipcfifoTGDSUser.h)
+//		getsIPCSharedTGDS() 		= 	Access to TGDS internal IPC FIFO structure. 		(ipcfifoTGDS.h)
+//		getsIPCSharedTGDSSpecific()		=	Access to TGDS Project (User) IPC FIFO structure	(ipcfifoTGDSUser.h)
 
 #ifndef __ipcfifoTGDS_h__
 #define __ipcfifoTGDS_h__
@@ -35,7 +35,6 @@ USA
 #include "usrsettingsTGDS.h"
 #include <time.h>
 #include "utilsTGDS.h"
-#include "wifi_shared.h"
 #include "soundTGDS.h"
 #include "global_settings.h"
 #include "cartHeader.h"
@@ -90,6 +89,7 @@ USA
 #define RECV_FIFO_IPC_EMPTY	(uint32)(1<<8)	
 #define RECV_FIFO_IPC_FULL	(uint32)(1<<9)	
 #define RECV_FIFO_IPC_IRQ	(uint32)(1<<10)	
+
 #define FIFO_IPC_ERROR	(uint32)(1<<14)	
 #define FIFO_IPC_ENABLE	(uint32)(1<<15)
 
@@ -97,36 +97,19 @@ USA
 #define FIFO_IRQ_LIDHASOPENED_SIGNAL	(uint32)(0xffff020E)
 #define FIFO_IRQ_LIDHASCLOSED_SIGNAL	(uint32)(0xffff020F)
 
+
+#define TGDS_ARM7_SETUPMALLOCDLDI (uint32)(0xFFFF022C)
 #define TGDS_ARM7_TURNOFF_BACKLIGHT (uint32)(0xFFFF0220)
 #define TGDS_ARM7_TURNON_BACKLIGHT (uint32)(0xFFFF0227)
-#define TGDS_ARM7_DISABLE_SLEEPMODE (uint32)(0xFFFF0221)
-#define TGDS_ARM7_ENABLE_SLEEPMODE (uint32)(0xFFFF0222)
-#define TGDS_ARM7_ENABLE_EVENT_HANDLING (uint32)(0xFFFF0223)
-#define TGDS_ARM7_DISABLE_EVENT_HANDLING (uint32)(0xFFFF0224)
-#define TGDS_ARM7_ENABLE_SLEEPMODE_TIMEOUT (uint32)(0xFFFF0225)
-#define TGDS_ARM7_SET_EVENT_HANDLING (uint32)(0xFFFF0226)
-#define TGDS_ARM7_PRINTF7SETUP (uint32)(0xFFFF0228)
-#define TGDS_ARM7_PRINTF7 (uint32)(0xFFFF0229)
 #define TGDS_ARM7_SETUPEXCEPTIONHANDLER (uint32)(0xFFFF022A)
-#define TGDS_ARM7_SETUPARMCPUMALLOCANDDLDI (uint32)(0xFFFF022C)
 #define TGDS_ARM7_DETECTTURNOFFCONSOLE (uint32)(0xFFFF022D)
 #define TGDS_ARM7_ENABLESOUNDSAMPLECTX (uint32)(0xFFFF022E)
 #define TGDS_ARM7_DISABLESOUNDSAMPLECTX (uint32)(0xFFFF022F)
 #define TGDS_ARM7_INITSTREAMSOUNDCTX (uint32)(0xFFFF0230)
+#define TGDS_ARM7_RELOADFLASH (u32)(0xFFFFABC0)
 
 #define TGDS_ARM7_REQ_SLOT1_DISABLE (uint32)(0xFFFF0231)
 #define TGDS_ARM7_REQ_SLOT1_ENABLE (uint32)(0xFFFF0232)
-
-#define TGDS_ARM7_READFLASHMEM (u32)(0xffffAAC0)		
-#define TGDS_ARM7_RELOADFLASH (u32)(0xFFFFABC0)		
-#define TGDS_ARM7DLDI_ENABLED (u32)(0xFFFFABC1)
-#define TGDS_ARM7DLDI_DISABLED (u32)(0xFFFFABC2)
-
-#define TGDS_ARMCORES_REPORT_PAYLOAD_MODE (u32)(0xFFFFABC3)
-
-
-//ARM7 FS IPC Commands
-#define TGDS_LIBNDSFIFO_COMMAND (u32)(0xFFFFAAC1)	//Bottom 8 bits act as the FIFO Channel Index
 
 //TGDS IPC Command Interrupt Index
 #define IPC_NULL_CMD					(u8)(0)	//NULL cmd is unused by TGDS, fallbacks to TGDS project IPCIRQ Handler
@@ -150,15 +133,9 @@ USA
 	
 #define IPC_TGDSUSER_START_FREE_INDEX	(u8)(10)	//TGDS User Project rely on it
 
-//TGDS -> Libnds FIFO compatibility API. Ensures the behaviour of the FIFO messaging system works.
-// FIFO_CHANNEL_BITS - number of bits used to specify the channel in a packet - default=4
-#define FIFO_CHANNEL_BITS				(int)(4)
-
-// FIFO_MAX_DATA_WORDS - maximum number of bytes that can be sent in a fifo message
-#define FIFO_MAX_DATA_BYTES				(int)(128)
-
-// FIFO_CHANNELS - fifo channel number allowed to work with
-#define FIFO_CHANNELS				(int)(16)
+//ARM7 FS Transaction Status
+#define ARM7FS_TRANSACTIONSTATUS_IDLE (int)(-1)
+#define ARM7FS_TRANSACTIONSTATUS_BUSY (int)(0)
 
 //! Enum values for the different fifo channels.
 typedef enum {
@@ -183,12 +160,6 @@ typedef enum {
 /* Standardized base handler compatible with all the others */
 typedef void (*FifoHandlerFunc)(int bufferSize, u32 userdata);
 
-struct libndsFIFOs {
-	//Libnds FIFO implementation
-	int channelBufferSize[FIFO_CHANNELS];	//if == 0: empty, if > 0: used
-	u8 channelBuffer[FIFO_CHANNELS*FIFO_MAX_DATA_BYTES];	//value: usually used as a void * address or u32 value 
-};
-
 typedef struct sIPCSharedTGDS {
     
 	//NDS Header: Set up by ARM9 on boot.
@@ -197,12 +168,10 @@ typedef struct sIPCSharedTGDS {
 	//Load firmware from FLASH
 	struct sDSFWHEADER DSFWHEADERInst;
 	
-	uint16 rawx,   rawy;   // raw x/y TSC SPI
-	sint16 touchXpx, touchYpx; // TFT x/y pixel (converted)
-	
-	sint16 touchZ1,  touchZ2;  // TSC x-panel measurements
-    uint16 tdiode1,  tdiode2;  // TSC temperature diodes
-    uint32 temperature;        // TSC computed temperature
+	uint16 buttons7;  			// X, Y, /PENIRQ buttons
+    uint16 KEYINPUT7;			//REG_KEYINPUT ARM7
+	uint32 temperature;        // TSC computed temperature
+	struct touchPosition tscIPC;
 	
 	struct tm tmInst;	//DateTime
 	ulong ndsRTCSeconds; //DateTime in epoch time (seconds) starting from January 1, 1970 (midnight UTC/GMT)
@@ -230,10 +199,14 @@ typedef struct sIPCSharedTGDS {
 	
 	uint32 WRAM_CR_ISSET;	//0 when ARM7 boots / 1 by ARM9 when its done
 	
+	//FIFO Mesagging: used when 3+ args sent between ARM cores through FIFO interrupts.
+	uint32 fifoMesaggingQueue[0x40];	//64 * 4 Words for various command handling
+	
 	//IPC Mesagging: used when 1+ args sent between ARM Cores through IPC interrupts.
 	u8 ipcMesaggingQueue[0x10];
 	
 	struct soundSampleContextList soundContextShared;
+	bool ARM7DldiEnabled;	//True: TGDS runs ARM7DLDI / False: TGDS runs ARM9DLDI	
 	int screenOrientationMainEngine;
 	int screenOrientationSubEngine;
 	bool touchScreenEnabled;
@@ -243,7 +216,8 @@ typedef struct sIPCSharedTGDS {
 	
 	//ARM7 Filesystem
 	bool initStatus;
-	u32 ARM7FSOperationStatus;	//IO busy/idle
+	int ARM7FSStatus;	//IO busy/idle
+	int ARM7FSTransactionStatus;	//Global transaction status. This one decides the whole streaming context
 	
 	//File from ARM7
 	int IR;				//Command Status. This is used as acknowledge from IR sent through IPC IRQ Index Command
@@ -253,57 +227,32 @@ typedef struct sIPCSharedTGDS {
 	int IR_ReadOffset;
 	int IR_WrittenOffset;
 	
-	//DS Firmware	Settings default set
-	struct sDSFWSETTINGS DSFWSETTINGSInst;
-	
-	u16 ARM7REG_KEYXY;	//uint16 buttons7;  // X, Y, /PENIRQ buttons
-    u16 ARM7REG_KEYINPUT; //uint16 KEYINPUT7;			//REG_KEYINPUT ARM7
-	
 	//Soundstream
 	SoundRegion soundIPC;
 	
-	struct libndsFIFOs libndsFIFO;
+	//DS Firmware	Settings default set
+	struct sDSFWSETTINGS DSFWSETTINGSInst;
+	struct sEXTKEYIN	EXTKEYINInst;
 	
-	//FIFO Mesagging: used by TGDS-multiboot loader code only.
-	uint32 fifoMesaggingQueueSharedRegion[4];	//4 Words for various command handling which can't use the NDS_CACHED_SCRATCHPAD / NDS_UNCACHED_SCRATCHPAD at the time
-	
-} IPCSharedTGDS __attribute__((aligned(4)));
-
-//FIFO Mesagging: used when 3+ args sent between ARM cores through FIFO interrupts.
-#define NDS_CACHED_SCRATCHPAD	(int)(((int)0x02400000 - (4096)) | 0x400000)
-#define NDS_UNCACHED_SCRATCHPAD	(int)(NDS_CACHED_SCRATCHPAD | 0x400000)
+} IPCSharedTGDS	__attribute__((aligned (4)));
 
 //Shared Work     027FF000h 4KB    -     -    -    R/W
+static inline uint32 getUserIPCAddress(){
+	return (uint32)(0x027FF000+sizeof(struct sIPCSharedTGDS));
+}
 #define TGDSIPCStartAddress (struct sIPCSharedTGDS*)(0x027FF000)
 #define TGDSIPCSize (int)(sizeof(struct sIPCSharedTGDS))
 #define TGDSIPCUserStartAddress (u32)( ((u32)TGDSIPCStartAddress) + TGDSIPCSize)	//u32 because it`s unknown at this point. TGDS project will override it to specific USER IPC struct. Known as GetUserIPCAddress()
 #define IPCRegionSize	(sint32)(4*1024)
 
-//TouchScreen
-struct XYTscPos{
-	uint16	rawx; 
-	uint16	rawy; 
-	uint16	touchXpx;   
-	uint16	touchYpx;
-	uint16	z1;   
-	uint16	z2;
-};
-
-struct xyCoord{
-	uint16 x;
-	uint16 y;
-};
+#define NDS_CACHED_SCRATCHPAD	(int)(((int)0x02400000 - (4096)) | 0x400000)
+#define NDS_UNCACHED_SCRATCHPAD	(int)(NDS_CACHED_SCRATCHPAD | 0x400000)
 
 static inline void sendIPCIRQOnly(){
 	REG_IPC_SYNC|=IPC_SYNC_IRQ_REQUEST;
 }
 
 //Slower
-
-static inline void sendByteIPCNOIRQ(uint8 inByte){
-	REG_IPC_SYNC = (((REG_IPC_SYNC&0xfffff0ff) | (inByte<<8)) & ~(IPC_SYNC_IRQ_REQUEST));
-}
-
 static inline void sendByteIPC(uint8 inByte){
 	REG_IPC_SYNC = ((REG_IPC_SYNC&0xfffff0ff) | (inByte<<8) | IPC_SYNC_IRQ_REQUEST);	// (1<<13) Send IRQ to remote CPU      (0=None, 1=Send IRQ)
 }
@@ -319,35 +268,20 @@ extern "C"{
 #endif
 
 //weak symbols : the implementation of these is project-defined, also abstracted from the hardware IPC FIFO Implementation for easier programming.
-extern 	void HandleFifoNotEmptyWeakRef(volatile u32 cmd1);
-extern 	void HandleFifoEmptyWeakRef(uint32 cmd1,uint32 cmd2);
+extern __attribute__((weak))	void HandleFifoNotEmptyWeakRef(uint32 cmd1,uint32 cmd2);
+extern __attribute__((weak))	void HandleFifoEmptyWeakRef(uint32 cmd1,uint32 cmd2);
 
-#ifdef ARM7
-extern void XYReadScrPos(struct XYTscPos * StouchScrPosInst);	//TSC Impl.
-extern struct xyCoord readTSC();
-#endif
-
-extern void XYReadScrPosUser(struct XYTscPos * StouchScrPosInst);	//User impl.
 extern void HandleFifoNotEmpty();
 extern void HandleFifoEmpty();
-extern void SendFIFOWords(uint32 data0);
-
-extern void ReadMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead);
-extern void SaveMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead);
-extern void ReadFirmwareARM7Ext(u32 * srcMemory);
 
 extern void Write32bitAddrExtArm(uint32 address, uint32 value);
 extern void Write16bitAddrExtArm(uint32 address, uint16 value);
 extern void Write8bitAddrExtArm(uint32 address, uint8 value);
+extern struct sIPCSharedTGDS* getsIPCSharedTGDS();
+extern void SendFIFOWordsITCM(uint32 data0, uint32 data1);
 
-//arg 0: channel
-//arg 1: arg0: handler, arg1: userdata
-extern u32 fifoFunc[FIFO_CHANNELS][2];	//context is only passed on callback prototype stage, because, the channel index generates the callee callback
-extern u8 CheckStylus();
-
-#ifdef ARM9
+extern void XYReadScrPosUser(struct touchPosition * StouchScrPosInst);
 extern u8 ARM7ReadFWVersionFromFlashByFIFOIRQ();
-#endif
 
 #ifdef __cplusplus
 }

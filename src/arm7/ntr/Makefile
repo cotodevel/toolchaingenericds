@@ -17,10 +17,10 @@
 #
 
 #Prepare ARM7 dirs
-DIRLIBS_HDR = $(foreach dirres,$(DIRS_ARM7_HEADER),-I "$(CURDIR)/$(dirres)" )	$(DIRLIBS_ALLOWED)	
-DIRLIBS_SRC = $(foreach dirres,$(DIRS_ARM7_SRC),-I "$(CURDIR)/$(dirres)" )
+DIRLIBS_HDR = $(foreach dirres,$(DIRS_ARM7_HEADER),-I "$(dirres)" )	$(DIRLIBS_ALLOWED)
+DIRLIBS_SRC = $(foreach dirres,$(DIRS_ARM7_SRC),-I "$(dirres)" )
 
-dir_arm7_src_h=  $(foreach dir,$(DIRS_ARM7_HEADER), $(wildcard $(CURDIR)/$(RELATIVE_PATH)$(dir)*.h))
+dir_arm7_src_h=  $(foreach dir,$(DIRS_ARM7_HEADER), $(wildcard $(RELATIVE_PATH)$(dir)*.h))
 file_arm7_src_c=  $(foreach dir,$(DIRS_ARM7_SRC), $(subst $(CURDIR)/$(RELATIVE_PATH)/$(dir)/,,$(wildcard $(CURDIR)/$(RELATIVE_PATH)/$(dir)/*.c))  )
 file_arm7_src_s=  $(foreach dir,$(DIRS_ARM7_SRC), $(subst $(CURDIR)/$(RELATIVE_PATH)/$(dir)/,,$(wildcard $(CURDIR)/$(RELATIVE_PATH)/$(dir)/*.s))  )
 file_arm7_src_SUPP=  $(foreach dir,$(DIRS_ARM7_SRC), $(subst $(CURDIR)/$(RELATIVE_PATH)/$(dir)/,,$(wildcard $(CURDIR)/$(RELATIVE_PATH)/$(dir)/*.S))  )
@@ -34,8 +34,8 @@ d_objs_arm7:=	${file_arm7_src_c:.c=.d}	${file_arm7_src_s:.s=.d}	${file_arm7_src_
 #ARM7 specific definitions. -fno-common so we force initialized data to rodata
 MAPFILE = $(DIR_ARM7).map
 AS_ASFLAGS		=	$(GLOBAL_SHARED_FLAGS_7)	$(SPECIFIC_AS_COMPILER_FLAGS_7)		$(GLOBAL_AS_COMPILER_FLAGS)
-CC_ASFLAGS		=	$(GLOBAL_SHARED_FLAGS_7)	$(SPECIFIC_CC_COMPILER_FLAGS_7)		$(GLOBAL_CC_COMPILER_FLAGS)	-shared
-CPP_FLAGS		=	$(GLOBAL_SHARED_FLAGS_7)	$(SPECIFIC_CXX_COMPILER_FLAGS_7)	$(GLOBAL_CXX_COMPILER_FLAGS) -shared
+CC_ASFLAGS		=	-march=armv4t	-mthumb-interwork	-mfloat-abi=soft	-mcpu=arm7tdmi	-marm	-ffunction-sections -fdata-sections	-Wall -Os -fno-common	-DARM7	-fno-exceptions	-DNDS	-shared
+CPP_FLAGS		=	$(CC_ASFLAGS) -shared
 BUILD			= 	$(BUILD_ARM7)
 DIR_SRC			= 	$(DIRS_ARM7_SRC)
 ################################################################################################
@@ -46,53 +46,9 @@ OBJDIR 	=	./$(BUILD)
 VPATH 	=	$(DIR_SRC)
 OBJPROG =	$(addprefix $(OBJDIR)/, $(TARGET_LIBRARY_FILE_7))
 
-#------------------------------------------ CLANG START
-CC := clang-8
-AR := llvm-ar
-DEP_DIR := $(BUILD_DIR)/dep
-DEP_CFLAGS := -MT $@ -MMD -MP 
-
-# CFLAGS which can provided from the CLI
-# They will be appended last and will consequently override
-# any pre-existing settings
-CLI_CFLAG_OVERRIDES ?=
-CLI_LDFLAG_OVERRIDES ?=
-
-# Note: These arguments will be used by clang to select
-# the specific architecture target when we use the
-# generic --target=arm-none-eabi
-ARCH_CFLAGS += \
-  -marm -mcpu=arm7tdmi \
-  -mfloat-abi=soft	\
-  -mfpu=none
-
-COMPILER_SPECIFIC_CFLAGS += \
-  --target=arm-none-eabi \
-  --sysroot= \
-  -Os \
-  -fno-rtti	-fno-exceptions \
-  -DARM7	\
-  -DNTRMODE
-  
-CFLAGS = \
-  -g3 \
-  -ffunction-sections -fdata-sections \
-  -Wall \
-  -nostdlib \
-  -fPIC	\
-  -fshort-enums	\
-  $(COMPILER_SPECIFIC_CFLAGS) \
-  $(ARCH_CFLAGS) \
-  $(CLI_CFLAG_OVERRIDES)
-	
-#------------------------------------------ CLANG END
-
-all: $(OBJDIR)|forceDelete	$(OBJPROG)
+all: $(OBJDIR)|$(OBJPROG)
 #all: debug
 
-forceDelete:
-	-@rm -fr ./$(BUILD)/$(TARGET_LIBRARY_FILE_7)	$(TARGET_LIBRARY_PATH)/$(TARGET_LIBRARY_FILE_7)	$(TARGET_LIBRARY_HEADERS_7)
-	
 #Check $(OBJDIR) if not exists: create it
 $(OBJDIR):
 	@echo "Folder $(OBJDIR) does not exist. Creating"
@@ -102,18 +58,18 @@ $(OBJDIR):
 $(OBJDIR)/%.o : %.bin
 	-@echo 'trying to convert .BIN ($<) -> .C output: ${@:.o=.c} : arrayName: $(subst build/,,${@:.o=})'
 	$(BIN2C)	$<	${@:.o=.c}	$(subst build/,,${@:.o=})
-	$(CC) $(DEP_CFLAGS) $(CFLAGS) $(DIRLIBS_HDR) $(DIRLIBS_SRC)	-c -o $@ $<
+	$(CC)	$(CC_ASFLAGS)	$(DIRLIBS_HDR)	$(DIRLIBS_SRC)	$(DIRLIBS_PROHIBITED)	-o $@ -c ${@:.o=.c}
 
 #Do C Compile now!
 $(OBJDIR)/%.o : %.c
 	-@echo 'C Compile start: $@'
-	$(CC) $(DEP_CFLAGS) $(CFLAGS) $(DIRLIBS_HDR) $(DIRLIBS_SRC)	-c -o $@ $< 
+	$(CC)	$(CC_ASFLAGS)	$(DIRLIBS_HDR)	$(DIRLIBS_SRC)	$(DIRLIBS_PROHIBITED)	-o $@ -c $<
 	-@echo 'C Compile End: $@'
 
 #Do C++ (CXX) Compile now!
 $(OBJDIR)/%.o : %.cpp
 	-@echo 'C++ Compile start: $@'
-	$(CC) $(DEP_CFLAGS) $(CFLAGS) $(DIRLIBS_HDR) $(DIRLIBS_SRC)	-c -o $@ $<
+	$(CPP)	$(CPP_FLAGS)	$(DIRLIBS_HDR)	$(DIRLIBS_SRC)	-o $@ -c $<
 	-@echo 'C Compile End: $@'
 
 #Coto: Special "exception" rule. Assembler (.s) support ie: .ifdef/.endif (which differs from CPP-like syntax Assembler: ie: #ifdef/#endif by .S)
@@ -135,7 +91,7 @@ $(OBJDIR)/%.o : %.S
 #Builder.
 $(OBJPROG): $(addprefix $(OBJDIR)/, $(OBJECTS))
 	-@echo 'Entering Linking phase'
-	$(AR) rc	$@	$^
+	$(AR) rvs	$@	$^
 ifeq ($(TGDS_ENV),windows)
 	-mkdir -p $(TARGET_LIBRARY_PATH) && cp	$(OBJPROG)	$(TARGET_LIBRARY_PATH)
 	-mkdir -p $(TARGET_LIBRARY_HEADERS_7) && cp $(dir_arm7_src_h) $(TARGET_LIBRARY_HEADERS_7)

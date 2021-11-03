@@ -401,7 +401,7 @@ static uint16 * savedDSFrameBuffer = NULL;
 void swapTGDSConsoleBetweenPPUEngines(u8 * currentVRAMContext){
 	//Only when default console is in use, then use CustomConsole as a current console render
 	if(globalTGDSCustomConsole == false){
-		//ConsoleInstance * DefaultSessionConsoleInst = (ConsoleInstance *)(&DefaultConsole);
+		ConsoleInstance * DefaultSessionConsoleInst = (ConsoleInstance *)(&DefaultConsole);
 		vramSetup * vramSetupDefault = (vramSetup *)&vramSetupDefaultConsole;
 		
 		vramSetup * vramSetupCustom = (vramSetup *)&vramSetupCustomConsole;
@@ -503,7 +503,7 @@ void restoreTGDSConsoleFromSwapEngines(u8 * currentVRAMContext){
 	//Only when default console is in use, restore DefaultConsole context
 	if(globalTGDSCustomConsole == false){
 		
-		//ConsoleInstance * OldEngineContextInst = (ConsoleInstance *)(&CustomConsole);
+		ConsoleInstance * OldEngineContextInst = (ConsoleInstance *)(&CustomConsole);
 		
 		//Restore (new -> current) console
 		coherent_user_range_by_size((uint32)0x06000000, 128*1024);

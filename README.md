@@ -1,6 +1,6 @@
 ![ToolchainGenericDS](img/TGDS-Logo.png)
 
-This is the ToolchainGenericDS library for NintendoDS:
+This is the ToolchainGenericDS 1.6 library for NintendoDS:
 
 [Building the devkit]:
 - Recompile Newlib 2.1 for Nintendo DS (mandatory, not on this guide). See: https://bitbucket.org/Coto88/newlib-nds
@@ -42,16 +42,10 @@ Then, only after building ToolchainGenericDS, you will be able to build a TGDS p
 Thanks to:
 - Martin Korth extensive gba/nds docs (http://problemkaputt.de/gbatek.htm) most of any DS toolchains/emus out there would not exist without such docs.
 - Darkfader for ndstool
-- Archeide for NDS printf render code (console mode)
+- Archeide for NDS printf render code
 - TricksterGuy: https://github.com/TricksterGuy/nin10kit (tool to convert ToolchainGenericDS Logo into DS BMP format)
 - freelogodesign.org (ToolchainGenericDS Logo)
 - Juglak's XMEM part of libriyo (malloc implementation)
-- ADPCM Decoder/ Audio Streamer Authors: DiscoStew
-- Simian Zombie : WoopsiUI framework and their respective developers
-https://forum.gbadev.org/viewtopic.php?f=18&t=16289
-- Michael Noland (joat) & Jason Rogers (dovoto): NDSLIB VideoGL implementation and ARM9 Math hardware registers
-- CUE : LZSS compression routines
-TWL support: Normatt (SD dldi code) / fincs (codec) / WinterMute / others (updated NDSTools, TWL hardware, VideoGL 3D code related to Texture mapping when using Call Lists )
 
 ---------------------------------------------
 
@@ -84,21 +78,6 @@ Features:
 		DLDI RAMDisk: Download http://memory.dataram.com/products-and-services/software/ramdisk#freeware, mount a RAMDisk, copy files to it. Then use Desmume, choose Slot-2 (Gba slot) -> GBA Cartridge, choose the RAMDisk!. Launch emulator, TGDS Project now works with DLDI (32MB @ 0x08000000)!
 
 Changelog:
-
-TGDS 1.64:
-- TGDS TWL Support, which means TGDS projects now work on real DSi/N2DS/N3DS using TWL hardware through SD hardware, besides NTR mode.
-
-TGDS 1.63.1:
-- Bugfixes in audioplayback that emerged between TGDS1.62 and TGDS1.63
-
-TGDS 1.63:
-- newlib-nds and ToolchainGenericDS uses Clang (v8.0.1) Compiler (C/C++)! Generates better code also allows to automate unit tests!
-
-TGDS 1.62:
-- Restored dswifi 0.4.0 sources. Fixes synchronous socket connections. TGDS now supports async/sync socket operations.
-
-TGDS 1.61:
-- Fixed IRQs and audio playback. Audio hears nicely now, no sound clicking anymore!
 
 TGDS 1.6:
 - Improved hardware IRQs, improved compatibility with nearly 99% of cards, loaders, emulators, etc. TGDS really works now.

@@ -41,7 +41,7 @@ void initSound(){
 	#endif
 	
 	#ifdef ARM9
-	SendFIFOWords(FIFO_INITSOUND);
+	SendFIFOWordsITCM(FIFO_INITSOUND, 0xFF);
 	#endif
 }
 
@@ -57,7 +57,7 @@ void startSoundSample(int sampleRate, const void* data, u32 bytes, u8 channel, u
 	fifomsg[52] = (uint32)bytes;
 	u32 packedSnd = (u32)( ((channel&0xff) << 24) | ((vol&0xff) << 16) | ((pan&0xff) << 8) | (format&0xff) );
 	fifomsg[53] = (uint32)packedSnd;
-	SendFIFOWords(FIFO_PLAYSOUND);
+	SendFIFOWordsITCM(FIFO_PLAYSOUND, (uint32)fifomsg);
 	#endif
 	
 	#ifdef ARM7
@@ -169,7 +169,7 @@ void EnableSoundSampleContext(int SndSamplemode){
 	#ifdef ARM9
 	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
 	setValueSafe(&fifomsg[60], (uint32)SndSamplemode);
-	SendFIFOWords(TGDS_ARM7_ENABLESOUNDSAMPLECTX);
+	SendFIFOWords(TGDS_ARM7_ENABLESOUNDSAMPLECTX, 0xFF);
 	#endif
 }
 
@@ -178,7 +178,7 @@ void DisableSoundSampleContext(){
 	soundSampleContextCurrentMode = SOUNDSAMPLECONTEXT_SOUND_IDLE;
 	#endif
 	#ifdef ARM9
-	SendFIFOWords(TGDS_ARM7_DISABLESOUNDSAMPLECTX);
+	SendFIFOWords(TGDS_ARM7_DISABLESOUNDSAMPLECTX, 0xFF);
 	#endif
 }
 
@@ -220,7 +220,13 @@ u32 micBufLoc = 0;
 u32 sampleLen = 0;
 int sndRate = 0;
 
-void mallocData(int size)  __attribute__ ((optnone)) 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void mallocData(int size) 
 {
     // this no longer uses malloc due to using vram bank d.
 	strpcmL0 = VRAM_D;
@@ -242,11 +248,24 @@ void mallocData(int size)  __attribute__ ((optnone))
 	}
 }
 
-void freeData()  __attribute__ ((optnone)) 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void freeData()  
 {	
 	//free(strpcmR0);
 }
-void setSwapChannel()  __attribute__ ((optnone)) 
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void setSwapChannel() 
 {
 	s16 *buf;
   
@@ -271,7 +290,13 @@ void setSwapChannel()  __attribute__ ((optnone))
 	sndCursor = 1 - sndCursor;
 }
 
-void setupSound()  __attribute__ ((optnone)) {
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void setupSound() {
 	//Init SoundSampleContext
 	initSound();
 
@@ -308,7 +333,13 @@ void setupSound()  __attribute__ ((optnone)) {
 	lastR = 0;
 }
 
-void stopSound() __attribute__ ((optnone)) {
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void stopSound() {
 	//irqSet(IRQ_TIMER1, 0);
 	TIMERXCNT(0) = 0;
 	TIMERXCNT(1) = 0;
@@ -363,7 +394,7 @@ void updateSoundContextSamplePlayback(){
 			freesoundSampleContext(curSoundSampleContext);
 			uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 			fifomsg[60] = (uint32)thisChannel;			
-			SendFIFOWords(FIFO_FLUSHSOUNDCONTEXT);
+			SendFIFOWords(FIFO_FLUSHSOUNDCONTEXT, 0xFF);
 		}
 		
 		if(SoundTGDSCurChannel > SoundSampleContextChannels){
@@ -377,7 +408,7 @@ void updateSoundContextSamplePlayback(){
 
 void TIMER1Handler(){	
 	setSwapChannel();
-	SendFIFOWords(ARM9COMMAND_UPDATE_BUFFER);
+	SendFIFOWords(ARM9COMMAND_UPDATE_BUFFER, 0xFF);
 }
 
 #endif 
@@ -480,7 +511,13 @@ void freeData()
 }
 
 __attribute__((section(".itcm")))
-void swapData() __attribute__ ((optnone)) 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void swapData() 
 {
 	m_SIWRAM = 1 - m_SIWRAM;
 	
@@ -515,12 +552,18 @@ __attribute__((section(".itcm")))
 void swapAndSend(u32 type)
 {
 	swapData();
-	SendFIFOWords(type);
+	SendFIFOWords(type, 0xFF);
 }
 
 // update function
 __attribute__((section(".itcm")))
-void updateStream() __attribute__ ((optnone)) 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void updateStream() 
 {	
 	if(!updateRequested)
 	{
@@ -593,7 +636,13 @@ void setSoundInterrupt()
 	//REG_IPC_FIFO_CR = IPC_FIFO_ENABLE | IPC_FIFO_SEND_CLEAR | IPC_FIFO_RECV_IRQ;
 }
 
-void initComplexSound() __attribute__ ((optnone)) {
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void initComplexSound() {
 	soundData.sourceFmt = SRC_NONE;
 	soundData.filePointer = NULL;
 	setVolume(4);	//Default volume
@@ -603,21 +652,21 @@ void setSoundFrequency(u32 freq)
 {
 	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
 	setValueSafe(&fifomsg[60], (uint32)freq);
-	SendFIFOWords(ARM7COMMAND_SOUND_SETRATE);
+	SendFIFOWords(ARM7COMMAND_SOUND_SETRATE, 0xFF);
 }
 
 void setSoundInterpolation(u32 mult)
 {
 	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
 	setValueSafe(&fifomsg[62], (uint32)mult);
-	SendFIFOWords(ARM7COMMAND_SOUND_SETMULT);
+	SendFIFOWords(ARM7COMMAND_SOUND_SETMULT, 0xFF);
 }
 
 void setSoundLength(u32 len)
 {
 	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
 	setValueSafe(&fifomsg[61], (uint32)len);
-	SendFIFOWords(ARM7COMMAND_SOUND_SETLEN);
+	SendFIFOWords(ARM7COMMAND_SOUND_SETLEN, 0xFF);
 	sndLen = len;
 }
 
@@ -629,14 +678,14 @@ int getSoundLength()
 void startSound9()
 {	
 	if(!playing)
-		SendFIFOWords(ARM7COMMAND_START_SOUND);
+		SendFIFOWords(ARM7COMMAND_START_SOUND, 0xFF);
 	playing = true;
 }
 
 void stopSound()
 {
 	if(playing)
-		SendFIFOWords(ARM7COMMAND_STOP_SOUND);
+		SendFIFOWords(ARM7COMMAND_STOP_SOUND, 0xFF);
 	playing = false;
 }
 
@@ -681,14 +730,26 @@ void freeSound()
 	
 }
 
-int getVolume() __attribute__ ((optnone)) 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+int getVolume() 
 {
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 
 	coherent_user_range_by_size((uint32)&TGDSIPC->soundIPC, sizeof(TGDSIPC->soundIPC));
 	return TGDSIPC->soundIPC.volume;
 }
 
-void setVolume(int volume) __attribute__ ((optnone)) 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void setVolume(int volume) 
 {
 	if(volume > 8){
 		volume = 8;
@@ -701,12 +762,24 @@ void setVolume(int volume) __attribute__ ((optnone))
 	TGDSIPC->soundIPC.volume = volume;
 }
 
-void volumeUp(int x, int y) __attribute__ ((optnone)) 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void volumeUp(int x, int y) 
 {
 	setVolume(getVolume() + 1);
 }
 
-void volumeDown(int x, int y) __attribute__ ((optnone)) 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void volumeDown(int x, int y) 
 {
 	setVolume(getVolume() - 1);
 }
@@ -737,7 +810,6 @@ u32 getWavData(void *outLoc, int amount, FILE *fh)
 	}
 }
 
-__attribute__((section(".itcm")))
 void wavDecode8Bit()
 {
 	// 8bit wav file
@@ -780,7 +852,6 @@ void wavDecode8Bit()
 	TGDSARM9Free(s8Data);
 }
 
-__attribute__((section(".itcm")))
 void wavDecode16Bit()
 {
 	// 16bit wav file
@@ -820,7 +891,6 @@ void wavDecode16Bit()
 	TGDSARM9Free(tmpData);
 }
 
-__attribute__((section(".itcm")))
 void wavDecode24Bit()
 {
 	// 24bit wav file
@@ -874,7 +944,6 @@ void wavDecode24Bit()
 	TGDSARM9Free(oldPointer);
 }
 
-__attribute__((section(".itcm")))
 void wavDecode32Bit()
 {
 	// 32bit wav file
@@ -990,7 +1059,13 @@ int parseWaveData(struct fd * fdinst, u32 u32chunkToSeek){
 
 //Usercode: Opens a .WAV or IMA-ADPCM (Intel) file and begins to stream it. Copies the file handles 
 //Returns: the stream format.
-int playSoundStream(char * audioStreamFilename, struct fd * _FileHandleVideo, struct fd * _FileHandleAudio) __attribute__ ((optnone)){
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+int playSoundStream(char * audioStreamFilename, struct fd * _FileHandleVideo, struct fd * _FileHandleAudio) {
 	
 	//If trying to play SoundStream code while Shared RAM is mapped @ ARM7, throw error
 	if((WRAM_CR & WRAM_0KARM9_32KARM7) == WRAM_0KARM9_32KARM7){
@@ -1030,7 +1105,13 @@ int playSoundStream(char * audioStreamFilename, struct fd * _FileHandleVideo, st
 
 //Internal: Stops an audiostream playback.
 //Returns: true if successfully halted, false if no audiostream available.
-bool stopSoundStream(struct fd * tgdsStructFD1, struct fd * tgdsStructFD2, int * internalCodecType) __attribute__ ((optnone)){
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+bool stopSoundStream(struct fd * tgdsStructFD1, struct fd * tgdsStructFD2, int * internalCodecType) {
 	closeSound(); 
 	*internalCodecType = SRC_NONE;
 	
@@ -1041,7 +1122,13 @@ bool stopSoundStream(struct fd * tgdsStructFD1, struct fd * tgdsStructFD2, int *
 }
 
 //Internal: Opens a .WAV file (or returns the detected header), otherwise returns SRC_NONE
-int initSoundStream(char * audioStreamFilename) __attribute__ ((optnone)){
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+int initSoundStream(char * audioStreamFilename) {
 	char tmpName[256];
 	char ext[256];
 	
@@ -1061,7 +1148,13 @@ int initSoundStream(char * audioStreamFilename) __attribute__ ((optnone)){
 	return initSoundStreamFromStructFD(tgdsfd, ext);
 }
 
-int initSoundStreamFromStructFD(struct fd * _FileHandleAudio, char * ext)  __attribute__ ((optnone)) {	//ARM9 Impl.
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+int initSoundStreamFromStructFD(struct fd * _FileHandleAudio, char * ext) {	//ARM9 Impl.
 	// try this first to prevent false positives with other streams
 	/*
 	if(isURL(fName))

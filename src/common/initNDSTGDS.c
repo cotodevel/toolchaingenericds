@@ -33,16 +33,13 @@ USA
 #include "ipcfifoTGDS.h"
 #include "soundTGDS.h"
 #include "global_settings.h"
-#include "eventsTGDS.h"
 #include "posixHandleTGDS.h"
 #include "keypadTGDS.h"
 #include "biosTGDS.h"
-#include "libndsFIFO.h"
 
 #ifdef ARM9
 #include "devoptab_devices.h"
 #include "videoTGDS.h"
-#include "wifi_arm9.h"
 #include "fatfslayerTGDS.h"
 #include "dldi.h"
 #endif
@@ -51,7 +48,13 @@ USA
 #include "utils.twl.h"
 #endif
 
-void resetMemory_ARMCores(u8 DSHardware) __attribute__ ((optnone)) {
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void resetMemory_ARMCores(u8 DSHardware) {
 	
 	//cmp r0, #0xFF		@DS Phat
 	//beq FirmwareARM7OK
@@ -151,7 +154,13 @@ void resetMemory_ARMCores(u8 DSHardware) __attribute__ ((optnone)) {
 	}
 }
 
-void initHardware(u8 DSHardware) __attribute__ ((optnone)) {
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void initHardware(u8 DSHardware) {
 //---------------------------------------------------------------------------------
 	swiDelay(15000);
 	#ifdef ARM7
@@ -268,19 +277,12 @@ void initHardware(u8 DSHardware) __attribute__ ((optnone)) {
 	setbuf(stdout, NULL);	//iprintf directs to DS Framebuffer (printf already does that)
 	//setbuf(stderr, NULL);
 	
-	printf7Setup();
 	TryToDefragmentMemory();
 	
-	fifoInit();
 	
 	//Enable TSC
 	setTouchScreenEnabled(true);	
 	
-	//Enable TGDS Event handling + Set timeout to turn off screens if idle.
-	setAndEnableSleepModeInSeconds(SLEEPMODE_SECONDS);
-	
-	//Disable it because handling ARM7 events take extra CPU power we don't really need to use.
-	disableSleepMode();
 	#endif
 	
 }

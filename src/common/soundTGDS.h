@@ -104,7 +104,13 @@ USA
 #define SRC_STREAM_OGG		(int)(13)
 #define SRC_STREAM_AAC		(int)(14)
 #define SRC_WAVADPCM		(int)(15)
+
 #define WAV_READ_SIZE 4096
+
+static inline void SendFIFOWords(uint32 data0, uint32 data1){	//format: arg0: cmd, arg1: value
+	REG_IPC_FIFO_TX = (uint32)data1;
+	REG_IPC_FIFO_TX = (uint32)data0;
+}
 
 #ifdef ARM7
 #define VRAM_D		((s16*)0x06000000)	//ARM7 128K 
@@ -212,8 +218,6 @@ struct soundPlayerContext{
 #ifdef __cplusplus
 extern "C"{
 #endif
-
-extern void SendFIFOWords(uint32 data0);
 
 #ifdef ARM7
 extern s16 *strpcmL0;

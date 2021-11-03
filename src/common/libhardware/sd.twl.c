@@ -2,10 +2,10 @@
 #include "typedefsTGDS.h"
 #include "nand.h"
 #include "dldi.h"
-#include "libndsFIFO.h"
 #include "utils.twl.h"
 #include "nds_cp15_misc.h"
 #include "debugNocash.h"
+#include "ipcfifoTGDS.h"
 
 ///////////////////////////////////TWL mode SD ARM9i DLDI Access///////////////////////////////////
 //---------------------------------------------------------------------------------
