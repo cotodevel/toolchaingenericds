@@ -261,7 +261,7 @@ void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,									
 	TGDSInitLoopCount = 0;
 	SendFIFOWords(TGDS_ARM7_SETUPMALLOCDLDI, 0xFF);	//ARM7 Setup
 	while(fifomsg[4] != 0){
-		if(TGDSInitLoopCount > 1048576){
+		if(TGDSInitLoopCount > (1048576 << 3) ){
 			u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
 			int stage = 1;
 			handleDSInitError(stage, (u32)fwNo);

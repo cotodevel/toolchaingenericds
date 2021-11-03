@@ -137,8 +137,15 @@ static bool penDown = false;
 __attribute__((section(".itcm")))
 #endif
 __attribute__((target("arm")))
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void NDS_IRQHandler(){
-	volatile uint32 REG_IE_SET = (volatile uint32)((REG_IF & REG_IE) | SWI_CHECKBITS);
+	volatile uint32 REG_IE_SET = (volatile uint32)(REG_IF & REG_IE);
 	
 	#ifdef TWLMODE
 	u32 handledIRQAUX = REG_AUXIE & REG_AUXIF;
@@ -242,7 +249,6 @@ void NDS_IRQHandler(){
 	
 	if(REG_IE_SET & IRQ_RECVFIFO_NOT_EMPTY){
 		HandleFifoNotEmpty();
-		REG_IF=IRQ_RECVFIFO_NOT_EMPTY;
 	}
 	
 	if(REG_IE_SET & IRQ_IPCSYNC){
@@ -394,7 +400,7 @@ void NDS_IRQHandler(){
 	#endif
 	
 	//Update BIOS flags
-	SWI_CHECKBITS = REG_IF;
+	SWI_CHECKBITS = REG_IE_SET;
 }
 
 

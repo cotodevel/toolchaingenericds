@@ -46,6 +46,13 @@ USA
 #include "consoleTGDS.h"
 #endif
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void Write8bitAddrExtArm(uint32 address, uint8 value){
 	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
@@ -54,6 +61,13 @@ void Write8bitAddrExtArm(uint32 address, uint8 value){
 	SendFIFOWordsITCM(WRITE_EXTARM_8, (uint32)fifomsg);
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void Write16bitAddrExtArm(uint32 address, uint16 value){
 	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
@@ -62,6 +76,13 @@ void Write16bitAddrExtArm(uint32 address, uint16 value){
 	SendFIFOWordsITCM(WRITE_EXTARM_16, (uint32)fifomsg);
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void Write32bitAddrExtArm(uint32 address, uint32 value){
 	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
@@ -83,6 +104,13 @@ struct sIPCSharedTGDS* getsIPCSharedTGDS(){
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void SendFIFOWordsITCM(uint32 data0, uint32 data1){	//format: arg0: cmd, arg1: value
 	REG_IPC_FIFO_TX = (uint32)data1;	
 	REG_IPC_FIFO_TX = (uint32)data0;	//last message should always be command
@@ -92,6 +120,13 @@ void SendFIFOWordsITCM(uint32 data0, uint32 data1){	//format: arg0: cmd, arg1: v
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void HandleFifoEmpty(){
 	HandleFifoEmptyWeakRef((uint32)0,(uint32)0);
 }
@@ -99,9 +134,18 @@ void HandleFifoEmpty(){
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void HandleFifoNotEmpty(){
+	REG_IF=IRQ_RECVFIFO_NOT_EMPTY;
 	volatile uint32 data0 = 0, data1 = 0;
 	while(!(REG_IPC_FIFO_CR & RECV_FIFO_IPC_EMPTY)){
+		
 		data0 = (u32)REG_IPC_FIFO_RX;
 		data1 = (u32)REG_IPC_FIFO_RX;
 		
@@ -616,6 +660,12 @@ void HandleFifoNotEmpty(){
 			#endif
 		}
 		HandleFifoNotEmptyWeakRef(data1, data0);	//this one follows: cmd, value order
+		
+		//FIFO Full / Error? Discard
+		if((REG_IPC_FIFO_CR & IPC_FIFO_ERROR) == IPC_FIFO_ERROR){
+			REG_IPC_FIFO_CR = (REG_IPC_FIFO_CR | IPC_FIFO_SEND_CLEAR | FIFO_IPC_ERROR);	//bit14 FIFO ERROR ACK + Flush Send FIFO
+			break;
+		}
 	}
 }
 
