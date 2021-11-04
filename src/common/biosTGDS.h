@@ -141,6 +141,8 @@ extern void handleARM9InitSVC();
 extern void handleARM9SVC();
 #endif
 
+extern bool isArm7ClosedLid;
+
 #ifdef __cplusplus
 }
 #endif

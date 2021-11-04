@@ -641,15 +641,6 @@ void HandleFifoNotEmpty(){
 				}
 			}
 			break;
-			//LID signaling open (ARM7 is hw triggered, but here, ARM9 is soft-triggered)
-			case((uint32)FIFO_IRQ_LIDHASOPENED_SIGNAL):{
-				screenLidHasOpenedhandlerUser();
-			}
-			break;
-			case((uint32)FIFO_IRQ_LIDHASCLOSED_SIGNAL):{
-				screenLidHasClosedhandlerUser();
-			}
-			break;
 			
 			case((uint32)FIFO_FLUSHSOUNDCONTEXT):{
 				int curChannelFreed = (int)data0;

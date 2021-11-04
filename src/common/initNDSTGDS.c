@@ -222,6 +222,7 @@ void initHardware(u8 DSHardware) {
 	*(u32*)0x04004008 = SFGEXT7;
 	#endif
 	
+	handleARM7InitSVC();
 	#endif
 	
 	#ifdef ARM9
@@ -279,10 +280,10 @@ void initHardware(u8 DSHardware) {
 	
 	TryToDefragmentMemory();
 	
-	
 	//Enable TSC
 	setTouchScreenEnabled(true);	
 	
+	handleARM9InitSVC();	
 	#endif
 	
 }

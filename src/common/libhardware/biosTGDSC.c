@@ -83,12 +83,21 @@ struct LZSSContext LZS_DecodeFromBuffer(unsigned char *pak_buffer, unsigned int 
 
 //TGDS Services:
 #ifdef ARM7
-void handleARM7InitSVC(){
 
+bool isArm7ClosedLid=false;
+
+void handleARM7InitSVC(){
+	isArm7ClosedLid=false;
+	handleARM7SVC();
 }
 
 void handleARM7SVC(){
-	
+	//Lid Closing + backlight events (ARM7)
+	if( ((REG_KEYXY & KEY_HINGE) == KEY_HINGE) && (isArm7ClosedLid == false)){
+		isArm7ClosedLid = true;
+		TurnOffScreens();
+		screenLidHasClosedhandlerUser();
+	}
 }
 #endif
 

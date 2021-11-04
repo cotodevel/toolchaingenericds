@@ -377,7 +377,8 @@ void NDS_IRQHandler(){
 	}
 	
 	if(REG_IE_SET & IRQ_SCREENLID){
-		SendFIFOWordsITCM(FIFO_IRQ_LIDHASOPENED_SIGNAL, 0);
+		isArm7ClosedLid=false;
+		TurnOnScreens();
 		screenLidHasOpenedhandlerUser();
 		REG_IF = IRQ_SCREENLID;
 	}
