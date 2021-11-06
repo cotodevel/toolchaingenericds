@@ -63,16 +63,13 @@ USA
 #include "consoleTGDS.h"
 #endif
 
-static u16 keys=0;
-static u16 keysold=0;
-
-//static u16 oldx=0;
-//static u16 oldy=0;
-
+static u32 keys=0;
+static u32 keysold=0;
 void scanKeys()
 {
 	keysold=keys;
-	keys=KEYS_CUR;
+	uint16 buttonsARM7 = ((struct sIPCSharedTGDS*)0x027FF000)->buttons7;
+	keys=(uint32)(( ((~KEYINPUT)&0x3ff) | (((~buttonsARM7)&3)<<10) | (((~buttonsARM7)<<6) & (KEY_TOUCH|KEY_LID) ))^KEY_LID);
 }
 
 uint32 keysHeld()
@@ -99,7 +96,7 @@ uint32 keysReleased(){
 }
 
 uint32 keysRepeated(){
-	return (uint32)( keysPressed() | keysold);
+	return (uint32)( keysPressed() & keysold);
 }
 
 void setKeys(u32 newKeys){

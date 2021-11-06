@@ -61,8 +61,6 @@ USA
 #include "dsregs_asm.h"
 #include "ipcfifoTGDS.h"
 	
-#define KEYS_CUR (( ((~REG_KEYINPUT)&0x3ff) | (((~((struct sIPCSharedTGDS*)0x027FF000)->buttons7)&3)<<10) | (((~((struct sIPCSharedTGDS*)0x027FF000)->buttons7)<<6) & (KEY_TOUCH|KEY_LID) ))^KEY_LID)
-
 #ifdef __cplusplus
 extern "C"{
 #endif

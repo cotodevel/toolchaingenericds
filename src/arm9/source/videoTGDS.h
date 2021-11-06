@@ -351,59 +351,6 @@ typedef enum
 #define	REG_BG3X		(*(vsint32*)0x4000038)
 #define	REG_BG3Y		(*(vsint32*)0x400003C)
 
-#define MAP_BASE_SHIFT 8
-#define TILE_BASE_SHIFT 2
-#define BG_TILE_BASE(base) ((base) << TILE_BASE_SHIFT)
-#define BG_MAP_BASE(base)  ((base) << MAP_BASE_SHIFT)
-#define BG_BMP_BASE(base)  ((base) << MAP_BASE_SHIFT)
-#define BG_PRIORITY(n) (n)
-#define TILE_PALETTE(n) ((n)<<12)
-#define TILE_FLIP_H 	(1<<10)
-#define TILE_FLIP_V 	(1<<11)
-
-
-////////////////////////////////////////
-#define BG_256_COLOR   (BIT(7))
-#define BG_16_COLOR    (0)
-
-#define BG_MOSAIC_ON   (BIT(6))
-#define BG_MOSAIC_OFF  (0)
-
-#define BG_PRIORITY(n) (n)
-#define BG_PRIORITY_0  (0)
-#define BG_PRIORITY_1  (1)
-#define BG_PRIORITY_2  (2)
-#define BG_PRIORITY_3  (3)
-
-#define BG_WRAP_OFF    (0)
-#define BG_WRAP_ON     (1 << 13)
-
-#define BG_32x32       (0 << 14)
-#define BG_32x64       (1 << 14)
-#define BG_64x32       (2 << 14)
-#define BG_64x64       (3 << 14)
-
-#define BG_RS_16x16    (0 << 14)
-#define BG_RS_32x32    (1 << 14)
-#define BG_RS_64x64    (2 << 14)
-#define BG_RS_128x128  (3 << 14)
-
-#define BG_BMP8_128x128 (BG_RS_16x16 | BG_256_COLOR)
-#define BG_BMP8_256x256 (BG_RS_32x32 | BG_256_COLOR)
-#define BG_BMP8_512x256 (BG_RS_64x64 | BG_256_COLOR)
-#define BG_BMP8_512x512 (BG_RS_128x128 | BG_256_COLOR)
-#define BG_BMP8_1024x512 0
-#define BG_BMP8_512x1024 BIT(14)
-
-#define BG_BMP16_128x128 (BG_RS_16x16 | BG_256_COLOR | BIT(2))
-#define BG_BMP16_256x256 (BG_RS_32x32 | BG_256_COLOR | BIT(2))
-#define BG_BMP16_512x256 (BG_RS_64x64 | BG_256_COLOR | BIT(2))
-#define BG_BMP16_512x512 (BG_RS_128x128 | BG_256_COLOR | BIT(2))
-
-
-
-//////////////////////////////////////////////////////////////////////
-
 #define BG0_X0         (*(vuint16*)0x04000010)
 #define BG0_Y0         (*(vuint16*)0x04000012)
 #define BG1_X0         (*(vuint16*)0x04000014)
@@ -572,38 +519,6 @@ typedef enum
 // Atribute 2 consists of the following:
 #define ATTR2_PRIORITY(n)     ((n)<<10)
 #define ATTR2_PALETTE(n)      ((n)<<12)
-
-//////////////////////////////////////////////////////////////////////
-// Sprite structures
-//////////////////////////////////////////////////////////////////////
-
-typedef struct sSpriteEntry {
-  uint16 attribute[3];
-  uint16 filler;
-} SpriteEntry, * pSpriteEntry;
-
-
-typedef struct sSpriteRotation {
-  uint16 filler1[3];
-  uint16 hdx;
-
-  uint16 filler2[3];
-  uint16 hdy;  
-    
-  uint16 filler3[3];
-  uint16 vdx;  
-
-  uint16 filler4[3];
-  uint16 vdy;
-} SpriteRotation, * pSpriteRotation;
-
-
-#define BACKGROUND_SUB       (*((bg_attribute *)0x04001008))
-#define BG_OFFSET_SUB ((bg_scroll *)(0x04001010))
-
-#define BACKGROUND           (*((bg_attribute *)0x04000008))
-#define BG_OFFSET ((bg_scroll *)(0x04000010))
-
 
 #endif
 
