@@ -192,7 +192,7 @@ void exception_handler(uint32 arg){
 		
 		while(1){
 			scanKeys();
-			int isdaas = keysPressed();
+			int isdaas = keysDown();
 			if (isdaas&KEY_A)
 			{
 				GDBSession =  true;

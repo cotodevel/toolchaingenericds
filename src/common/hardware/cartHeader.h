@@ -22,9 +22,7 @@ USA
 #define __cartheader_h
 
 #ifdef ARM9
-
 #include "limitsTGDS.h"
-
 #endif
 
 //NTR Header
@@ -51,103 +49,25 @@ typedef struct sDSCARTHEADER {
   //...rest don't care
 }tDSCARTHEADER;
 
-//Libnds ARGV impl.
-#ifdef ARM9
+// argv struct magic number
+#define ARGV_MAGIC 0x5f617267
 
-	// argv struct magic number
-	#define ARGV_MAGIC 0x5f617267
+//!	argv structure
+/*!	\struct __argv
 
-	//!	argv structure
-	/*!	\struct __argv
+	structure used to set up argc/argv on the DS
 
-		structure used to set up argc/argv on the DS
+*/
+struct __argv {
+	int argvMagic;		//!< argv magic number, set to 0x5f617267 ('_arg') if valid 
+	char *commandLine;	//!< base address of command line, set of null terminated strings
+	int length;		//!< total length of command line
+	int argc;		//!< internal use, number of arguments
+	char **argv;		//!< internal use, argv pointer
+};
 
-	*/
-	struct __argv {
-		int argvMagic;		//!< argv magic number, set to 0x5f617267 ('_arg') if valid 
-		char *commandLine;	//!< base address of command line, set of null terminated strings
-		int length;		//!< total length of command line
-		int argc;		//!< internal use, number of arguments
-		char **argv;		//!< internal use, argv pointer
-	};
-
-	//!	Default location for the libnds argv structure.
-	#define __system_argv		((struct __argv *)0x02FFFE70)
-	#define cmdline 			((char*)(int)0x02FFFE70 + sizeof(struct __argv))
-
-	/* 
-
-	Usage:	
-		char thisArgv[3][MAX_TGDSFILENAME_LENGTH];
-		memset(thisArgv, 0, sizeof(thisArgv));
-		strcpy(&thisArgv[0][0], "toolchaingenericds-template.nds");	//Arg0
-		strcpy(&thisArgv[1][0], "fat:/dir1/dir2/file2.zip");		//Arg1 
-		strcpy(&thisArgv[2][0], "fat:/dir1/dir2/file3.txt");		//Arg2 
-		addARGV(3, (char*)&thisArgv);
-
-	Note:
-		In order to keep compatibility between TGDS and devkitPro environment, 
-		devkitPro argv format is untouched and is used by default. 
-		TGDS binaries parse it into TGDS format internally.
-
-	Implementation:
-		https://bitbucket.org/Coto88/toolchaingenericds-argvtest/
-	*/
-
-	static inline void addARGV(int argc, char *argv){
-		if((argc <= 0) || (argv == NULL)){
-			return;
-		}
-		memset(cmdline, 0, 512);
-		int cmdlineLen = 0;
-		int i= 0;
-		for(i = 0; i < argc; i++){
-			//Libnds compatibility: If (send) addARGV 0:/ change to fat:/
-			char thisARGV[MAX_TGDSFILENAME_LENGTH+1];
-			memset(thisARGV, 0, sizeof(thisARGV));
-			strcpy(thisARGV, &argv[i*MAX_TGDSFILENAME_LENGTH]);
-			if(strlen(thisARGV) <= 3){
-				
-			}
-			else{
-				if(
-					(thisARGV[0] == '0')
-					&&
-					(thisARGV[1] == ':')
-					&&
-					(thisARGV[2] == '/')
-					){
-					char thisARGV2[MAX_TGDSFILENAME_LENGTH+1];
-					memset(thisARGV2, 0, sizeof(thisARGV2));
-					strcpy(thisARGV2, "fat:/");
-					strcat(thisARGV2, &thisARGV[3]);	//1+last
-					
-					//copy back
-					memset(&argv[i*MAX_TGDSFILENAME_LENGTH], 0, 256);
-					strcpy(&argv[i*MAX_TGDSFILENAME_LENGTH], thisARGV2);
-				}
-				
-				strcpy(cmdline + cmdlineLen, &argv[i*MAX_TGDSFILENAME_LENGTH]);
-				cmdlineLen+= strlen(&argv[i*MAX_TGDSFILENAME_LENGTH]) + 1;
-			}
-		}
-		
-		if(strlen(cmdline) <= 3){
-			strcpy(cmdline,"");
-			__system_argv->argvMagic = ARGV_MAGIC;
-			__system_argv->commandLine = cmdline;
-			__system_argv->length = 0;
-		}
-		else{
-			__system_argv->argvMagic = ARGV_MAGIC;
-			__system_argv->commandLine = cmdline;
-			__system_argv->length = cmdlineLen;
-			
-			// reserved when ARGV receives into main()
-			//__system_argv->argc = ;
-			//__system_argv->argv = ;
-		}
-	}
-	#endif
+//!	Default location for the libnds argv structure.
+#define __system_argv		((struct __argv *)0x02FFFE70)
+#define cmdline 			((char*)(int)0x02FFFE70 + sizeof(struct __argv))
 
 #endif

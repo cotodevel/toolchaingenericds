@@ -159,7 +159,9 @@ void NDS_IRQHandler(){
 	
 	if(REG_IE_SET & IRQ_TIMER1){
 		#ifdef ARM7
-		TIMER1Handler();	//Audio playback handler
+		if(SoundStreamTimerHandlerARM7LibUtilsCallback != NULL){
+			SoundStreamTimerHandlerARM7LibUtilsCallback(); //Audio playback handler
+		}
 		#endif
 		Timer1handlerUser();
 		REG_IF = IRQ_TIMER1;

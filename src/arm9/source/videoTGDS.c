@@ -152,13 +152,42 @@ vramSetup * DEFAULT_CONSOLE_VRAMSETUP(){
 	vramSetup * vramSetupDefault = (vramSetup *)&vramSetupDefaultConsole;
 	memset((u8*)vramSetupDefault, 0, sizeof(vramSetup));
 	
+	//VRAM A and B reserved for 2D Textures to-be used with the 3D Engine
+	vramSetupDefault->vramBankSetupInst[VRAM_A_INDEX].vrambankCR = VRAM_A_LCDC_MODE;	//6800000h-681FFFFh
+	vramSetupDefault->vramBankSetupInst[VRAM_A_INDEX].enabled = true;																		
+	vramSetupDefault->vramBankSetupInst[VRAM_B_INDEX].vrambankCR = VRAM_B_LCDC_MODE;	//6820000h-683FFFFh
+	vramSetupDefault->vramBankSetupInst[VRAM_B_INDEX].enabled = true;
+	
+	//VRAM C: Console / WoopsiTGDS Touchscreen UI
 	vramSetupDefault->vramBankSetupInst[VRAM_C_INDEX].vrambankCR = VRAM_C_0x06200000_ENGINE_B_BG;
 	vramSetupDefault->vramBankSetupInst[VRAM_C_INDEX].enabled = true;
 	
-	// Some memory for ARM7 (128 Ko!)
-	//vramSetBankD(VRAM_D_ARM7_0x06000000);
+	//VRAM D: ARM7 (128 K)
 	vramSetupDefault->vramBankSetupInst[VRAM_D_INDEX].vrambankCR = VRAM_D_0x06000000_ARM7;
 	vramSetupDefault->vramBankSetupInst[VRAM_D_INDEX].enabled = true;
+	
+	//144K free ARM9 mem
+	//E       64K   0    -     6880000h-688FFFFh
+	//F       16K   0    -     6890000h-6893FFFh
+	//G       16K   0    -     6894000h-6897FFFh
+	//H       32K   0    -     6898000h-689FFFFh
+	//I       16K   0    -     68A0000h-68A3FFFh
+  
+	//VRAM E,F,G,H,I: Unused and reserved
+	vramSetupDefault->vramBankSetupInst[VRAM_E_INDEX].vrambankCR = VRAM_E_LCDC_MODE;
+	vramSetupDefault->vramBankSetupInst[VRAM_E_INDEX].enabled = true;
+	
+	vramSetupDefault->vramBankSetupInst[VRAM_F_INDEX].vrambankCR = VRAM_F_LCDC_MODE;
+	vramSetupDefault->vramBankSetupInst[VRAM_F_INDEX].enabled = true;
+	
+	vramSetupDefault->vramBankSetupInst[VRAM_G_INDEX].vrambankCR = VRAM_G_LCDC_MODE;
+	vramSetupDefault->vramBankSetupInst[VRAM_G_INDEX].enabled = true;
+	
+	vramSetupDefault->vramBankSetupInst[VRAM_H_INDEX].vrambankCR = VRAM_H_LCDC_MODE;
+	vramSetupDefault->vramBankSetupInst[VRAM_H_INDEX].enabled = true;
+	
+	vramSetupDefault->vramBankSetupInst[VRAM_I_INDEX].vrambankCR = VRAM_I_LCDC_MODE;
+	vramSetupDefault->vramBankSetupInst[VRAM_I_INDEX].enabled = true;
 	
 	return vramSetupDefault;
 }
@@ -268,6 +297,7 @@ void renderFBMode3Engine(u16 * srcBuf, u16 * targetBuf, int srcWidth, int srcHei
 //Screen Rotation registers
 void setOrientation(int orientation, bool mainEngine){
 	
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 
 	switch(orientation){
 		case ORIENTATION_0:{
 			if(mainEngine == true){
@@ -277,7 +307,7 @@ void setOrientation(int orientation, bool mainEngine){
 				REG_BG3PD = 1 << 8;
 				REG_BG3X = 0;
 				REG_BG3Y = 0;
-				getsIPCSharedTGDS()->screenOrientationMainEngine = orientation;
+				TGDSIPC->screenOrientationMainEngine = orientation;
 			}
 			else{
 				REG_BG3PA_SUB = 1 << 8;
@@ -286,49 +316,49 @@ void setOrientation(int orientation, bool mainEngine){
 				REG_BG3PD_SUB = 1 << 8;
 				REG_BG3X_SUB = 0;
 				REG_BG3Y_SUB = 0;
-				getsIPCSharedTGDS()->screenOrientationSubEngine = orientation;
+				TGDSIPC->screenOrientationSubEngine = orientation;
 			}
 		}	
 		break;
 		case ORIENTATION_90:{
 			if(mainEngine == true){
 				REG_BG3PA = 0;
-				REG_BG3PB = -1 << 8;
+				REG_BG3PB = ( (sint16)((-1u)<<8) + 1);
 				REG_BG3PC = 1 << 8;
 				REG_BG3PD = 0;
 				REG_BG3X = 191 << 8;
 				REG_BG3Y = 0;
-				getsIPCSharedTGDS()->screenOrientationMainEngine = orientation;
+				TGDSIPC->screenOrientationMainEngine = orientation;
 			}
 			else{
 				REG_BG3PA_SUB = 0;
-				REG_BG3PB_SUB = -1 << 8;
+				REG_BG3PB_SUB = ( (sint16)((-1u)<<8) + 1);
 				REG_BG3PC_SUB = 1 << 8;
 				REG_BG3PD_SUB = 0;
 				REG_BG3X_SUB = 191 << 8;
 				REG_BG3Y_SUB = 0;
-				getsIPCSharedTGDS()->screenOrientationSubEngine = orientation;
+				TGDSIPC->screenOrientationSubEngine = orientation;
 			}
 		}
 		break;
 		case ORIENTATION_180:{
 			if(mainEngine == true){
-				REG_BG3PA = -1 << 8;
+				REG_BG3PA = ( (sint16)((-1u)<<8) + 1);
 				REG_BG3PB = 0;
 				REG_BG3PC = 0;
-				REG_BG3PD = -1 << 8;
+				REG_BG3PD = ( (sint16)((-1u)<<8) + 1);
 				REG_BG3X = 255 << 8;
 				REG_BG3Y = 191 << 8;
-				getsIPCSharedTGDS()->screenOrientationMainEngine = orientation;
+				TGDSIPC->screenOrientationMainEngine = orientation;
 			}
 			else{
-				REG_BG3PA_SUB = -1 << 8;
+				REG_BG3PA_SUB = ( (sint16)((-1u)<<8) + 1);
 				REG_BG3PB_SUB = 0;
 				REG_BG3PC_SUB = 0;
-				REG_BG3PD_SUB = -1 << 8;
+				REG_BG3PD_SUB = ( (sint16)((-1u)<<8) + 1);
 				REG_BG3X_SUB = 255 << 8;
 				REG_BG3Y_SUB = 191 << 8;
-				getsIPCSharedTGDS()->screenOrientationSubEngine = orientation;
+				TGDSIPC->screenOrientationSubEngine = orientation;
 			}
 		}
 		break;
@@ -336,20 +366,20 @@ void setOrientation(int orientation, bool mainEngine){
 			if(mainEngine == true){
 				REG_BG3PA = 0;
 				REG_BG3PB = 1 << 8;
-				REG_BG3PC = -1 << 8;
+				REG_BG3PC = ( (sint16)((-1u)<<8) + 1);
 				REG_BG3PD = 0;
 				REG_BG3X = 0;
 				REG_BG3Y = 255 << 8;
-				getsIPCSharedTGDS()->screenOrientationMainEngine = orientation;
+				TGDSIPC->screenOrientationMainEngine = orientation;
 			}
 			else{
 				REG_BG3PA_SUB = 0;
 				REG_BG3PB_SUB = 1 << 8;
-				REG_BG3PC_SUB = -1 << 8;
+				REG_BG3PC_SUB = ( (sint16)((-1u)<<8) + 1);
 				REG_BG3PD_SUB = 0;
 				REG_BG3X_SUB = 0;
 				REG_BG3Y_SUB = 255 << 8;
-				getsIPCSharedTGDS()->screenOrientationSubEngine = orientation;
+				TGDSIPC->screenOrientationSubEngine = orientation;
 			}
 		}
 		break;

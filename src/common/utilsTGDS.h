@@ -18,8 +18,8 @@ USA
 
 */
 
-#ifndef __toolchain_utils_h__
-#define __toolchain_utils_h__
+#ifndef __utilsTGDS_h__
+#define __utilsTGDS_h__
 
 #include "typedefsTGDS.h"
 #include "dsregs.h"
@@ -55,6 +55,49 @@ typedef	struct {
 
 //splitCustom logic
 typedef void(*splitCustom_fn)(const char *, size_t, char * ,int indexToLeftOut, char * delim);
+
+//ToolchainGenericDS-LinkedModule format: ver 0.2
+#define TGDS_LINKEDMODULE_TOPSIZE	(int)((1024*1024*1) + (256*1024))	//sint8 * is char *
+struct TGDS_Linked_Module {
+	u32 DSARMRegs[16];
+	int	TGDS_LM_Size;	//filled by the linker
+	unsigned int	TGDS_LM_Entrypoint; //filled by the linker
+	u32 returnAddressTGDSLinkedModule; //TGDS LM implementation called when LM exits (return from module). (1/2)
+	u32 returnAddressTGDSMainApp; //TGDS LM implementation called returnAddressTGDSLinkedModule reloads from RAM rather than image. (2/2)
+	//argv 
+	char args[8][MAX_TGDSFILENAME_LENGTH];
+	char *argvs[8];
+	int argCount;
+	
+	//TGDS ARM9.bin defs
+	char TGDSMainAppName[MAX_TGDSFILENAME_LENGTH]; //todo: save full name (relative path it was called from) when calling TGDS-LModules
+};
+
+//Interfaces / Callbacks to connect to libutils
+
+//FIFO
+typedef void(*HandleFifoNotEmptyWeakRefLibUtils_fn)(uint32 cmd1, uint32 cmd2);
+
+//Wifi
+typedef void(*wifiUpdateVBLANKARM7LibUtils_fn)();
+typedef void(*wifiInterruptARM7LibUtils_fn)();
+typedef void(*timerWifiInterruptARM9LibUtils_fn)();
+
+//Sound Stream / Sound sample context
+typedef void(*SoundSampleContextInitARM7LibUtils_fn)();
+typedef void(*SoundSampleContextEnableARM7LibUtils_fn)(int val);
+typedef void(*SoundSampleContextDisableARM7LibUtils_fn)();
+
+typedef void(*SoundStreamTimerHandlerARM7LibUtils_fn)();
+typedef void(*SoundStreamStopSoundARM7LibUtils_fn)();
+typedef void(*SoundStreamSetupSoundARM7LibUtils_fn)();
+
+#ifdef ARM9
+
+typedef bool(*SoundStreamStopSoundStreamARM9LibUtils_fn)(struct fd * tgdsStructFD1, struct fd * tgdsStructFD2, int * internalCodecType);
+typedef void(*SoundStreamUpdateSoundStreamARM9LibUtils_fn)();
+
+#endif
 
 #endif
 
@@ -142,6 +185,20 @@ extern int sdmmcValueHandler(u32 value, void* user_data);
 extern int PowerChip_ReadWrite(int cmd, int data);
 extern int led_state;
 extern void SetLedState(int state);
+
+extern s16 *strpcmL0;
+extern s16 *strpcmL1;
+extern s16 *strpcmR0;
+extern s16 *strpcmR1;
+
+extern int lastL;
+extern int lastR;
+extern int multRate;
+extern int pollCount;
+extern u32 sndCursor;
+extern u32 micBufLoc;
+extern u32 sampleLen;
+extern int sndRate;
 #endif
 
 
@@ -160,6 +217,54 @@ extern void leaveCriticalSection(int oldIME);
 
 extern void TurnOnScreens();
 extern void TurnOffScreens();
+
+//Interfaces / Callbacks to connect to libutils
+
+//FIFO
+extern HandleFifoNotEmptyWeakRefLibUtils_fn libutilisFifoNotEmptyCallback;
+
+//Wifi
+extern wifiUpdateVBLANKARM7LibUtils_fn wifiUpdateVBLANKARM7LibUtilsCallback;
+extern wifiInterruptARM7LibUtils_fn wifiInterruptARM7LibUtilsCallback;
+extern timerWifiInterruptARM9LibUtils_fn timerWifiInterruptARM9LibUtilsCallback;
+
+//SS
+extern SoundSampleContextInitARM7LibUtils_fn SoundSampleContextInitARM7LibUtilsCallback;
+extern SoundSampleContextEnableARM7LibUtils_fn SoundSampleContextEnableARM7LibUtilsCallback;
+extern SoundSampleContextDisableARM7LibUtils_fn SoundSampleContextDisableARM7LibUtilsCallback;
+
+extern SoundStreamTimerHandlerARM7LibUtils_fn SoundStreamTimerHandlerARM7LibUtilsCallback;
+extern SoundStreamStopSoundARM7LibUtils_fn SoundStreamStopSoundARM7LibUtilsCallback;
+
+extern SoundStreamSetupSoundARM7LibUtils_fn SoundStreamSetupSoundARM7LibUtilsCallback;
+
+#ifdef ARM9
+extern SoundStreamStopSoundStreamARM9LibUtils_fn SoundStreamStopSoundStreamARM9LibUtilsCallback;
+extern SoundStreamUpdateSoundStreamARM9LibUtils_fn SoundStreamUpdateSoundStreamARM9LibUtilsCallback;
+#endif
+
+extern void initializeLibUtils(HandleFifoNotEmptyWeakRefLibUtils_fn HandleFifoNotEmptyWeakRefLibUtilsCall, wifiUpdateVBLANKARM7LibUtils_fn wifiUpdateVBLANKARM7LibUtilsCall, wifiInterruptARM7LibUtils_fn wifiInterruptARM7LibUtilsCall, timerWifiInterruptARM9LibUtils_fn timerWifiInterruptARM9LibUtilsCall);
+
+#ifdef ARM9
+extern u32 reloadStatus;
+extern bool updateRequested;
+#endif
+
+extern void TGDSMultibootRunNDSPayload(char * filename);
+extern char * TGDSPayloadMode;
+extern void reportTGDSPayloadMode(u32 bufferSource);
+
+#ifdef ARM9
+extern char bufModeARM7[256];
+extern void addARGV(int argc, char *argv);
+#endif
+
+extern int TGDSProjectReturnFromLinkedModule();	//resides in TGDS App caller address
+	extern void TGDSProjectReturnFromLinkedModuleDeciderStub();	//resides in TGDSLinkedModule address. Called when TGDS-LM binary exceeds 1.25M
+
+extern void TGDSProjectRunLinkedModule(char * TGDSLinkedModuleFilename, int argc, char **argv, char* TGDSProjectName);
+
+extern void initSound();
 
 #ifdef __cplusplus
 }

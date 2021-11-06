@@ -48,7 +48,10 @@ struct fd * _FileHandleVideo = NULL;
 struct fd * _FileHandleAudio = NULL;
 
 bool stopSoundStreamUser(){
-	return stopSoundStream(_FileHandleVideo, _FileHandleAudio, &internalCodecType);
+	if(SoundStreamStopSoundStreamARM9LibUtilsCallback != NULL){
+		return SoundStreamStopSoundStreamARM9LibUtilsCallback(_FileHandleVideo, _FileHandleAudio, &internalCodecType);
+	}
+	return false;
 }
 
 void closeSoundUser(){

@@ -29,6 +29,7 @@ USA
 #include "posixHandleTGDS.h"
 #include "biosTGDS.h"
 #include "dldi.h"
+#include "loader.h"
 
 #ifdef ARM7
 #include <string.h>
@@ -202,11 +203,15 @@ void HandleFifoNotEmpty(){
 			break;
 			
 			case ARM7COMMAND_START_SOUND:{
-				setupSound();
+				if(SoundStreamSetupSoundARM7LibUtilsCallback != NULL){
+					SoundStreamSetupSoundARM7LibUtilsCallback();
+				}
 			}
 			break;
 			case ARM7COMMAND_STOP_SOUND:{
-				stopSound();
+				if(SoundStreamStopSoundARM7LibUtilsCallback != NULL){
+					SoundStreamStopSoundARM7LibUtilsCallback();
+				}
 			}
 			break;
 			case ARM7COMMAND_SOUND_SETRATE:{
@@ -448,11 +453,15 @@ void HandleFifoNotEmpty(){
 			break;
 			
 			case((uint32)TGDS_ARM7_ENABLESOUNDSAMPLECTX):{
-				EnableSoundSampleContext((int)data0);
+				if(SoundSampleContextEnableARM7LibUtilsCallback != NULL){
+					SoundSampleContextEnableARM7LibUtilsCallback((int)data0);
+				}
 			}
 			break;
 			case((uint32)TGDS_ARM7_DISABLESOUNDSAMPLECTX):{
-				DisableSoundSampleContext();
+				if(SoundSampleContextDisableARM7LibUtilsCallback != NULL){
+					SoundSampleContextDisableARM7LibUtilsCallback();
+				}
 			}
 			break;
 			
@@ -542,6 +551,23 @@ void HandleFifoNotEmpty(){
 			}
 			break;
 			
+			//tgds-mb loader code here (ARM7)
+						case(FIFO_ARM7_RELOAD):{	
+							struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+							uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+							u32 arm7EntryAddressPhys = getValueSafe(&fifomsg[0]);
+							int arm7BootCodeSize = getValueSafe(&fifomsg[1]);
+							u32 arm7entryaddress = getValueSafe(&fifomsg[2]);
+							memcpy((void *)arm7entryaddress,(const void *)arm7EntryAddressPhys, arm7BootCodeSize);
+							reloadARMCore((u32)arm7entryaddress);	//Run Bootstrap7 
+						}
+						break;
+						case(FIFO_TGDSMBRELOAD_SETUP):{
+							reloadNDSBootstub();
+						}
+						break;
+						
+			
 			case(TGDS_ARM7_SETUPMALLOCDLDI):{	//ARM7
 				struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
@@ -576,6 +602,13 @@ void HandleFifoNotEmpty(){
 			}
 			break;
 			
+			case TGDS_ARMCORES_REPORT_PAYLOAD_MODE:{
+				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
+				reportTGDSPayloadMode(data0);
+				setValueSafe(&fifomsg[45], (uint32)0);
+			}
+			break;
+			
 			#ifdef TWLMODE
 			case TGDS_ARM7_REQ_SLOT1_DISABLE:{
 				disableSlot1();
@@ -593,6 +626,12 @@ void HandleFifoNotEmpty(){
 			
 			//ARM9 command handler
 			#ifdef ARM9
+			//tgds-mb loader code here (ARM9)
+						case(FIFO_ARM7_RELOAD_OK):{
+							reloadStatus = 0;
+						}
+						break;
+			
 			case ARM9COMMAND_UPDATE_BUFFER:{
 				updateRequested = true;
 					
@@ -619,7 +658,9 @@ void HandleFifoNotEmpty(){
 				}
 				
 				// call immediately if the format needs it
-				updateStream();
+				if(SoundStreamUpdateSoundStreamARM9LibUtilsCallback != NULL){
+					SoundStreamUpdateSoundStreamARM9LibUtilsCallback();
+				}
 			}	
 			break;
 			case((uint32)TGDS_ARM7_DETECTTURNOFFCONSOLE):{
@@ -650,7 +691,13 @@ void HandleFifoNotEmpty(){
 			
 			#endif
 		}
-		HandleFifoNotEmptyWeakRef(data1, data0);	//this one follows: cmd, value order
+		
+		//Libutils FIFO not empty API
+		if(libutilisFifoNotEmptyCallback != NULL){
+			libutilisFifoNotEmptyCallback(data1, data0);	//Format: cmd, value order
+		}
+		
+		HandleFifoNotEmptyWeakRef(data1, data0);	//Format: cmd, value order
 		
 		//FIFO Full / Error? Discard
 		if((REG_IPC_FIFO_CR & IPC_FIFO_ERROR) == IPC_FIFO_ERROR){

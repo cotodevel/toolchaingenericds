@@ -20,6 +20,7 @@ USA
 
 #ifdef ARM9
 #include "fileBrowse.h"
+#include "loader.h"
 
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("O0")))

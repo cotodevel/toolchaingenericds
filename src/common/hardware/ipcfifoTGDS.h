@@ -93,6 +93,7 @@ USA
 #define FIFO_IPC_ERROR	(uint32)(1<<14)	
 #define FIFO_IPC_ENABLE	(uint32)(1<<15)
 
+#define TGDS_ARMCORES_REPORT_PAYLOAD_MODE (u32)(0xFFFFABC3)
 #define TGDS_ARM7_SETUPMALLOCDLDI (uint32)(0xFFFF022C)
 #define TGDS_ARM7_TURNOFF_BACKLIGHT (uint32)(0xFFFF0220)
 #define TGDS_ARM7_TURNON_BACKLIGHT (uint32)(0xFFFF0227)
@@ -228,6 +229,9 @@ typedef struct sIPCSharedTGDS {
 	//DS Firmware	Settings default set
 	struct sDSFWSETTINGS DSFWSETTINGSInst;
 	struct sEXTKEYIN	EXTKEYINInst;
+	
+	//FIFO Mesagging: used by TGDS-multiboot loader code only.
+	uint32 fifoMesaggingQueueSharedRegion[4];	//4 Words for various command handling which can't use the NDS_CACHED_SCRATCHPAD / NDS_UNCACHED_SCRATCHPAD at the time
 	
 } IPCSharedTGDS	__attribute__((aligned (4)));
 

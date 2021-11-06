@@ -49,8 +49,6 @@ USA
 #define BG_MAP_RAM(base)		((uint16*)(((base)*0x800) + 0x06000000))
 #define BG_TILE_RAM(base)		((uint16*)(((base)*0x4000) + 0x06000000))
 #define BG_BMP_RAM(base)		((uint16*)(((base)*0x4000) + 0x06000000))
-#define CHAR_BASE_BLOCK(n)			(((n)*0x4000)+ 0x06000000)
-#define SCREEN_BASE_BLOCK(n)		(((n)*0x800) + 0x06000000)
 
 //sub
 #define BG_MAP_RAM_SUB(base)	((uint16*)(((base)*0x800) + 0x06200000))
@@ -110,19 +108,6 @@ USA
 #define TGDSPrintfColor_Red		(u8)(TGDSPrintfColor_PalleteBase+9)
 #define TGDSPrintfColor_Grey		(u8)(TGDSPrintfColor_PalleteBase+10)
 #define TGDSPrintfColor_LightGrey		(u8)(TGDSPrintfColor_PalleteBase+11)
-
-
-//Console uses 2D. used by REG_DISPCNT / REG_DISPCNT_SUB
-typedef enum {
-	MODE_0_2D = 0x10000, 
-	MODE_1_2D = 0x10001, 
-	MODE_2_2D = 0x10002, 
-	MODE_3_2D = 0x10003, 
-	MODE_4_2D = 0x10004, 
-	MODE_5_2D = 0x10005, 
-	MODE_6_2D = 0x10006
-	//todo 3D and framebuffer modes
-} VideoMode;
 
 #define backgroundsPerEngine 4
 typedef struct EngineBGStatus

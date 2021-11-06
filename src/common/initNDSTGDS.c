@@ -177,7 +177,9 @@ void initHardware(u8 DSHardware) {
 	IRQInit(DSHardwareReadFromFlash);
 	
 	//Init SoundSampleContext
-	initSoundSampleContext();
+	if(SoundSampleContextInitARM7LibUtilsCallback != NULL){
+		SoundSampleContextInitARM7LibUtilsCallback();
+	}
 	initSound();
 	
 	#ifdef TWLMODE

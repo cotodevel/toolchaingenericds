@@ -49,6 +49,8 @@ export TARGET_LIBRARY_LIBNAME_9	=	l$(TARGET_LIBRARY_NAME_9)
 export DIRS_ARM9_SRCLIB = ../../libhardware	\
 			data/	\
 			build/	\
+			../../../templateCode/data/arm9/	\
+			../../../templateCode/source/	\
 			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
 			
 export DIRS_ARM9_HEADERLIB = ../../libhardware	\
@@ -72,6 +74,8 @@ export DIRS_ARM9_HEADERLIB = ../../libhardware	\
 			../../../arm9/source/ToolchainGenericDSFS/fatfs/source/	\
 			../../../arm9/source/zip/	\
 			../../../arm9/source/zlib/	\
+			../../../templateCode/data/arm9/	\
+			../../../templateCode/source/	\
 			data/	\
 			build/	\
 			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
