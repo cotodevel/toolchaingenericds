@@ -2877,3 +2877,10 @@ int str_split(char * stream, char * haystack, char * outBuf, int itemSize, int b
     return indexToLeftOut;
 }
 #endif
+
+
+#ifdef ARM9
+struct FileClassList * initFileList(){
+	return (struct FileClassList *)TGDSARM9Malloc(sizeof(struct FileClassList));
+}
+#endif

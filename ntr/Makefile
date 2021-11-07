@@ -111,11 +111,13 @@ ifeq ($(SOURCE_MAKEFILE7),default)
 	cp	-r	$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/$(DIR_ARM7)/Makefile	../src/arm7/ntr/
 endif
 	$(MAKE)	-R	-C	../src/common/libhardware/ntr7
+	$(MAKE)	-R	-C	../src/common/libutils/ntr7
 	$(MAKE)	-R	-C	../src/arm7/ntr/
 ifeq ($(SOURCE_MAKEFILE9),default)
 	cp	-r	$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/$(DIR_ARM9)/Makefile	../src/arm9/ntr/
 endif
 	$(MAKE)	-R	-C	../src/common/libhardware/ntr9
+	$(MAKE)	-R	-C	../src/common/libutils/ntr9
 	$(MAKE)	-R	-C	../src/arm9/source/ToolchainGenericDSFS/ntr
 	$(MAKE)	-R	-C	../src/arm9/ntr/
 
@@ -123,11 +125,13 @@ endif
 # Clean
 clean:
 	$(MAKE)	clean	-C	../src/common/libhardware/ntr7
+	$(MAKE)	clean	-C	../src/common/libutils/ntr7
 	$(MAKE)	clean	-C	../src/arm7/ntr/
 ifeq ($(SOURCE_MAKEFILE7),default)
 	-@rm -rf ../src/arm7/ntr/Makefile
 endif
 	$(MAKE)	clean	-C	../src/common/libhardware/ntr9
+	$(MAKE)	clean	-C	../src/common/libutils/ntr9
 	$(MAKE)	clean	-C	../src/arm9/source/ToolchainGenericDSFS/ntr
 	$(MAKE)	clean	-C	../src/arm9/ntr/
 ifeq ($(SOURCE_MAKEFILE9),default)

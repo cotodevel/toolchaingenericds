@@ -48,6 +48,7 @@ USA
 #include "dsregs.h"
 #include "nds_cp15_misc.h"
 #include "limitsTGDS.h"
+//#include "fatfslayerTGDS.h" //can't
 
 #endif
 
@@ -112,60 +113,16 @@ extern void initARMCoresMalloc(
 								u32 TargetARM7DLDIAddress //ARM7 target physical DLDI Location (ARM7DLDI runs from here)
 							);
 
+
+extern void TGDSARM9Free(void *ptr);
+extern u32 TGDSARM9MallocFreeMemory();
+extern u8 * TGDSARM9Realloc(void *ptr, int size);
+extern u8 * TGDSARM9Calloc(int blockCount, int blockSize);
+extern u8* TGDSARM9Malloc(int size);
+
 #ifdef __cplusplus
 }
 #endif
-
-static inline u8* TGDSARM9Malloc(int size){
-	if(customMallocARM9 == false){
-		return (u8*)malloc((const int)size);
-	}
-	else{
-		return (u8*)TGDSMalloc9((const int)size);
-	}
-}
-
-static inline u8 * TGDSARM9Calloc(int blockCount, int blockSize){
-	if(customMallocARM9 == false){
-		return (u8*)calloc(blockSize, blockCount);	//reverse order
-	}
-	else{
-		return (u8*)TGDSCalloc9(blockCount, blockSize);	//same order
-	}
-}
-
-static inline u8 * TGDSARM9Realloc(void *ptr, int size){
-	if(customMallocARM9 == false){
-		if(ptr != NULL){
-			free(ptr);
-		}
-		return (u8*)malloc(size);
-	}
-	else{
-		if(ptr != NULL){
-			TGDSFree9(ptr);
-		}
-		return (u8*)TGDSMalloc9(size);
-	}
-}
-
-static inline void TGDSARM9Free(void *ptr){
-	if(customMallocARM9 == false){
-		free(ptr);
-	}
-	else{
-		TGDSFree9(ptr);
-	}
-}
-
-static inline u32 TGDSARM9MallocFreeMemory(){
-	if(customMallocARM9 == false){
-		return (u32)getMaxRam();
-	}
-	else{
-		return (u32)TGDSMallocFreeMemory9();
-	}
-}
 
 #endif
 
