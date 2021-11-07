@@ -112,6 +112,13 @@ void updatePadState(int sdlKey, u16* heldKey, u16* newpressKey, u16* releasedKey
 #include <unistd.h>
 #include "biosTGDS.h"
 
+#undef BgType_Text8bpp
+#undef BgType_Text4bpp
+#undef BgType_Rotation
+#undef BgType_ExRotation
+#undef BgType_Bmp8
+#undef BgType_Bmp16
+
 //! Allowed background types, used in bgInit and bgInitSub.
 typedef enum
 {
@@ -123,6 +130,32 @@ typedef enum
 	BgType_Bmp16 		//!< Bitmap background with 16 bit color values of the form aBBBBBGGGGGRRRRR (if 'a' is set the pixel will be rendered...if not the pixel will be transparent)
 }BgType;
 
+#undef BgSize_R_128x128
+#undef BgSize_R_256x256
+#undef BgSize_R_512x512
+#undef BgSize_R_1024x1024
+
+#undef BgSize_T_256x256
+#undef BgSize_T_512x256
+#undef BgSize_T_256x512
+#undef BgSize_T_512x512
+
+#undef BgSize_ER_128x128 
+#undef BgSize_ER_256x256 
+#undef BgSize_ER_512x512 
+#undef BgSize_ER_1024x1024 
+#undef BgSize_B8_128x128 
+#undef BgSize_B8_256x256 
+#undef BgSize_B8_512x256 
+#undef BgSize_B8_512x512 
+#undef BgSize_B8_1024x512 
+#undef BgSize_B8_512x1024 
+
+#undef BgSize_B16_128x128 
+#undef BgSize_B16_256x256 
+#undef BgSize_B16_512x256 
+#undef BgSize_B16_512x512 
+	
 /**
  * \brief Allowed background Sizes
  * The lower 16 bits of these defines can be used directly to set the background control register bits

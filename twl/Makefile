@@ -119,7 +119,10 @@ export DIRS_ARM9_HEADER = ../source/	\
 			
 
 # Build Target(s)	(both processors here)
-all: compilelib	
+all: compilelib	buildWoopsiUI
+
+buildWoopsiUI:
+	$(MAKE)	-R	-C	../lib/
 
 #Make
 compilelib	:
@@ -141,6 +144,7 @@ endif
 #---------------------------------------------------------------------------------
 # Clean
 clean:
+	$(MAKE)	cleanWoopsiUI
 	$(MAKE)	clean	-C	../src/common/libhardware/twl7
 	$(MAKE)	clean	-C	../src/common/libutils/twl7
 	$(MAKE)	clean	-C	../src/arm7/twl/
@@ -156,4 +160,7 @@ ifeq ($(SOURCE_MAKEFILE9),default)
 endif
 	-@rm -fr $(EXECUTABLE_FNAME)
 	-@rm -fr	$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
+#---------------------------------------------------------------------------------
+cleanWoopsiUI:
+	$(MAKE)	clean	-C	../lib/
 #---------------------------------------------------------------------------------

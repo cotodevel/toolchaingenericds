@@ -407,11 +407,11 @@ void NDS_IRQHandler(){
 }
 
 
-void EnableIrq(uint32 IRQ){
+void irqEnable(uint32 IRQ){
 	REG_IE	|=	IRQ;
 }
 
-void DisableIrq(uint32 IRQ){
+void irqDisable(uint32 IRQ){
 	REG_IE	&=	~(IRQ);
 }
 #ifdef TWLMODE

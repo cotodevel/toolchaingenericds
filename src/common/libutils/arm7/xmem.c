@@ -132,13 +132,6 @@ void *Xmalloc(const int size) {
 		// couldnt find enough free blocks!
 		//printf("XM: Couldnt Find Mem: %d/%d ",size, XMEM_FreeMem());
 		
-		int argBuffer[MAXPRINT7ARGVCOUNT];
-		memset((unsigned char *)&argBuffer[0], 0, sizeof(argBuffer));
-		argBuffer[0] = size;
-		argBuffer[1] = XMEM_FreeMem();
-		argBuffer[2] = getTGDSARM7MallocBaseAddress();
-		writeDebugBuffer7("XM: Couldnt Find Mem:", 3, (int*)&argBuffer[0]);
-		
 		return NULL;
 	}
 	//printf("XM: SBLOCK: %d ",sblock);

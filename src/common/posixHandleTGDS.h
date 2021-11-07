@@ -139,14 +139,6 @@ extern int argvCount;
 #endif
 
 #ifdef ARM9
-//Requires first a call of:
-//int argBuffer[MAXPRINT7ARGVCOUNT];
-//memset((unsigned char *)&argBuffer[0], 0, sizeof(argBuffer));
-//argBuffer[0] = 0xc0701111;
-//argBuffer[1] = 0xc0702222;
-//argBuffer[2] = 0xc0703333;
-//writeDebugBuffer7("Write buffer 7 tests: Args: ", 3, (int*)&argBuffer[0]);
-
 extern int _unlink(const sint8 *path);
 extern void printfCoords(int x, int y, const char *fmt, ...);
 

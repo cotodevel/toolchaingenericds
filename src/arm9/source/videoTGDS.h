@@ -464,11 +464,6 @@ typedef enum
 ///
 ///BGxCNT defines ///
 #define BG_MOSAIC_ENABLE    0x40
-#define BG_COLOR_256      0x80
-#define BG_COLOR_16        0x0
-
-#define CHAR_BASE_BLOCK(n)    (((n)*0x4000)+0x6000000)
-#define SCREEN_BASE_BLOCK(n)  (((n)*0x800)+0x6000000)
 
 #define CHAR_SHIFT        2
 #define SCREEN_SHIFT      8

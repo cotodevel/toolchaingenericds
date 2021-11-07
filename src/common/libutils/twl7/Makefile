@@ -46,17 +46,20 @@ export TARGET_LIBRARY_LIBNAME_9	=	l$(TARGET_LIBRARY_NAME_9)
 .SUFFIXES: .all
 #####################################################ARM9#####################################################
 
-export DIRS_ARM9_SRCLIB = ../../libutils	\
-			../../libutils/arm7twl	\
-			../../libutils/arm7	\
+export DIRS_ARM9_SRCLIB = ../../libutils/	\
+			../../libutils/arm7twl/	\
+			../../libutils/arm7/	\
 			data/	\
 			build/	\
 			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
 			
-export DIRS_ARM9_HEADERLIB = ../../libutils	\
-			../../libutils/arm7twl	\
+export DIRS_ARM9_HEADERLIB = ../../libutils/	\
+			../../libutils/arm7twl/	\
 			../../libutils/arm7	\
-			../../	\
+			../../libutils/dswifi/	\
+			../../libutils/dswifi/arpa/	\
+			../../libutils/dswifi/netinet/	\
+			../../libutils/dswifi/sys/	\
 			../../	\
 			../../twl/	\
 			../../hardware/	\

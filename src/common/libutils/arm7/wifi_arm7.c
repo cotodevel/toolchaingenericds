@@ -170,33 +170,6 @@ void Wifi_RFWrite(int writedata) {
 	while(W_RFSIOBUSY&1);
 }
 
-int PowerChip_ReadWrite(int cmd, int data) {
-	if(cmd&0x80) data=0;
-	while(REG_SPI_CR&0x80);
-	REG_SPI_CR=0x8802;
-	REG_SPI_DATA=cmd;
-	while(REG_SPI_CR&0x80);
-	REG_SPI_CR=0x8002;
-	REG_SPI_DATA=data;
-	while(REG_SPI_CR&0x80);
-	data=REG_SPI_DATA;
-	REG_SPI_CR=0;
-	return data;
-}
-
-int led_state=0;
-void SetLedState(int state) {
-	int i;
-	if(state>3 || state<0) return;
-	if(state!=led_state) {
-		led_state=state;
-		i=PowerChip_ReadWrite(0x80,0);
-		i=i&0xCF;
-		i |= state<<4;
-		PowerChip_ReadWrite(0,i);
-	}
-}
-
 void ProxySetLedState(int state) {
 	if(WifiData->flags9&WFLAG_ARM9_USELED) SetLedState(state);
 }

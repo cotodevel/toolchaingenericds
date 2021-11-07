@@ -46,17 +46,20 @@ export TARGET_LIBRARY_LIBNAME_9	=	l$(TARGET_LIBRARY_NAME_9)
 .SUFFIXES: .all
 #####################################################ARM9#####################################################
 
-export DIRS_ARM9_SRCLIB = ../../libutils	\
-			../../libutils/arm7twl	\
-			../../libutils/arm7	\
+export DIRS_ARM9_SRCLIB = ../../libutils/	\
+			../../libutils/arm7twl/	\
+			../../libutils/arm7/	\
 			data/	\
 			build/	\
 			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
 			
-export DIRS_ARM9_HEADERLIB = ../../libutils	\
-			../../libutils/arm7twl	\
-			../../libutils/arm7	\
-			../../	\
+export DIRS_ARM9_HEADERLIB = ../../libutils/	\
+			../../libutils/arm7twl/	\
+			../../libutils/arm7/	\
+			../../libutils/dswifi/	\
+			../../libutils/dswifi/arpa/	\
+			../../libutils/dswifi/netinet/	\
+			../../libutils/dswifi/sys/	\
 			../../	\
 			../../hardware/	\
 			../../hardware/dldi/	\
@@ -77,6 +80,7 @@ RELATIVE_PATH =
 DIRLIBS_HDR = $(foreach dirres,$(DIRS_ARM9_HEADERLIB),-I "$(RELATIVE_PATH)$(dirres)" )	$(DIRLIBS_ALLOWED)	$(TARGET_LIBRARY_HEADERS_9_INC)	
 DIRLIBS_SRC = $(foreach dirres,$(DIRS_ARM9_SRCLIB),-I "/$(dirres)" )
 
+dir_arm7_src_h=  $(foreach dir,$(DIRS_ARM9_HEADERLIB), $(wildcard $(RELATIVE_PATH)$(dir)*.h))
 file_arm9_src_c=  $(foreach dir,$(DIRS_ARM9_SRCLIB), $(subst $(CURDIR)/$(RELATIVE_PATH)/$(dir)/,,$(wildcard $(CURDIR)/$(RELATIVE_PATH)/$(dir)/*.c))  )
 file_arm9_src_s=  $(foreach dir,$(DIRS_ARM9_SRCLIB), $(subst $(CURDIR)/$(RELATIVE_PATH)/$(dir)/,,$(wildcard $(CURDIR)/$(RELATIVE_PATH)/$(dir)/*.s))  )
 file_arm9_src_SUPP=  $(foreach dir,$(DIRS_ARM9_SRCLIB), $(subst $(CURDIR)/$(RELATIVE_PATH)/$(dir)/,,$(wildcard $(CURDIR)/$(RELATIVE_PATH)/$(dir)/*.S))  )
@@ -157,6 +161,7 @@ endif
 ifeq ($(TGDS_ENV),linux)
 	-sudo mkdir -p $(TARGET_LIBRARY_PATH) && sudo cp	$(OBJPROG)	$(TARGET_LIBRARY_PATH)
 endif
+	-mkdir -p $(TARGET_LIBRARY_HEADERS_7) && cp $(dir_arm7_src_h) $(TARGET_LIBRARY_HEADERS_7)
 	-@echo 'Leaving Linking phase. $(OBJPROG)'
 	
 ################################################################################################

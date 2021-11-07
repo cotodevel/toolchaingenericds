@@ -83,7 +83,7 @@ typedef void(*wifiUpdateVBLANKARM7LibUtils_fn)();
 typedef void(*wifiInterruptARM7LibUtils_fn)();
 typedef void(*timerWifiInterruptARM9LibUtils_fn)();
 
-//Sound Stream / Sound sample context
+// SoundStream / Sound Sample ctx
 typedef void(*SoundSampleContextInitARM7LibUtils_fn)();
 typedef void(*SoundSampleContextEnableARM7LibUtils_fn)(int val);
 typedef void(*SoundSampleContextDisableARM7LibUtils_fn)();
@@ -93,10 +93,8 @@ typedef void(*SoundStreamStopSoundARM7LibUtils_fn)();
 typedef void(*SoundStreamSetupSoundARM7LibUtils_fn)();
 
 #ifdef ARM9
-
 typedef bool(*SoundStreamStopSoundStreamARM9LibUtils_fn)(struct fd * tgdsStructFD1, struct fd * tgdsStructFD2, int * internalCodecType);
 typedef void(*SoundStreamUpdateSoundStreamARM9LibUtils_fn)();
-
 #endif
 
 #endif
@@ -241,11 +239,22 @@ extern SoundStreamSetupSoundARM7LibUtils_fn SoundStreamSetupSoundARM7LibUtilsCal
 #ifdef ARM9
 extern SoundStreamStopSoundStreamARM9LibUtils_fn SoundStreamStopSoundStreamARM9LibUtilsCallback;
 extern SoundStreamUpdateSoundStreamARM9LibUtils_fn SoundStreamUpdateSoundStreamARM9LibUtilsCallback;
-#endif
 
-extern void initializeLibUtils(HandleFifoNotEmptyWeakRefLibUtils_fn HandleFifoNotEmptyWeakRefLibUtilsCall, wifiUpdateVBLANKARM7LibUtils_fn wifiUpdateVBLANKARM7LibUtilsCall, wifiInterruptARM7LibUtils_fn wifiInterruptARM7LibUtilsCall, timerWifiInterruptARM9LibUtils_fn timerWifiInterruptARM9LibUtilsCall);
+extern void initializeLibUtils(
+		HandleFifoNotEmptyWeakRefLibUtils_fn HandleFifoNotEmptyWeakRefLibUtilsCall, 
+		wifiUpdateVBLANKARM7LibUtils_fn wifiUpdateVBLANKARM7LibUtilsCall, 
+		wifiInterruptARM7LibUtils_fn wifiInterruptARM7LibUtilsCall, 
+		timerWifiInterruptARM9LibUtils_fn timerWifiInterruptARM9LibUtilsCall, 
+		SoundSampleContextInitARM7LibUtils_fn SoundSampleContextInitARM7LibUtilsCall,
+		SoundSampleContextEnableARM7LibUtils_fn SoundSampleContextEnableARM7LibUtilsCall,
+		SoundSampleContextDisableARM7LibUtils_fn SoundSampleContextDisableARM7LibUtilsCall,
+		SoundStreamTimerHandlerARM7LibUtils_fn SoundStreamTimerHandlerARM7LibUtilsCall,
+		SoundStreamStopSoundARM7LibUtils_fn SoundStreamStopSoundARM7LibUtilsCall,
+		SoundStreamSetupSoundARM7LibUtils_fn SoundStreamSetupSoundARM7LibUtilsCall,
+		SoundStreamStopSoundStreamARM9LibUtils_fn SoundStreamStopSoundStreamARM9LibUtilsCall,
+		SoundStreamUpdateSoundStreamARM9LibUtils_fn SoundStreamUpdateSoundStreamARM9LibUtilsCall
+	);
 
-#ifdef ARM9
 extern u32 reloadStatus;
 extern bool updateRequested;
 #endif

@@ -20,7 +20,6 @@ USA
 #include "dsregs.h"
 #include "dsregs_asm.h"
 #include "soundTGDS.h"
-#include "soundTGDSLibUtils.h"
 #include "ipcfifoTGDS.h"
 #include "powerTGDS.h"
 #include "timerTGDS.h"
@@ -35,16 +34,6 @@ USA
 #include "ima_adpcm.h"
 #include "biosTGDS.h"
 #endif
-
-void initSound(){
-	#ifdef ARM7
-	SoundPowerON(127);		//volume
-	#endif
-	
-	#ifdef ARM9
-	SendFIFOWordsITCM(FIFO_INITSOUND, 0xFF);
-	#endif
-}
 
 //Sound Sample Context: Plays raw sound samples at VBLANK intervals
 void startSoundSample(int sampleRate, const void* data, u32 bytes, u8 channel, u8 vol,  u8 pan, u8 format)
@@ -154,11 +143,6 @@ bool setSoundSampleContext(int sampleRate, u32 * data, u32 bytes, u8 channel, u8
 		return true;
 	}
 	return false;
-}
-
-//ARM7->ARM9: Just discarded the curChannelFreed's SoundSampleContext
-void flushSoundContext(int soundContextIndex){
-	
 }
 
 #endif
@@ -448,9 +432,6 @@ bool playing = false;
 
 __attribute__((section(".dtcm")))
 bool seekSpecial = false;
-
-__attribute__((section(".dtcm")))
-bool updateRequested = false;
 
 __attribute__((section(".dtcm")))
 int sndLen = 0;

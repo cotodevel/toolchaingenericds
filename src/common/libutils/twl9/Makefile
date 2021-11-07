@@ -46,14 +46,36 @@ export TARGET_LIBRARY_LIBNAME_9	=	l$(TARGET_LIBRARY_NAME_9)
 .SUFFIXES: .all
 #####################################################ARM9#####################################################
 
-export DIRS_ARM9_SRCLIB = ../../libutils	\
+export DIRS_ARM9_SRCLIB = ../../libutils/	\
 			data/	\
 			build/	\
 			../../../templateCode/data/arm9/	\
 			../../../templateCode/source/	\
+			../../../templateCode/source/	\
+			../../../arm7/source/dswifi_arm7/	\
+			../../../arm7/source/xmalloc/	\
+			../../../arm9/source/	\
+			../../../arm9/source/console/	\
+			../../../arm9/source/dswifi_arm9/	\
+			../../../arm9/source/imadecoder/	\
+			../../../arm9/source/ToolchainGenericDSFS/	\
+			../../../arm9/source/ToolchainGenericDSFS/fatfs/source/	\
+			../arm9twl/	\
+			../arm9/source/	\
+			../arm9/source/dswifi_arm9/	\
+			../arm9/source/lzss9/	\
+			../arm9/source/zip/	\
+			../arm9/source/zlib/	\
+			../arm9/data/	\
+			../../../templateCode/data/arm9/	\
+			../../../templateCode/source/	\
+			../../libutils/dswifi/	\
+			../../libutils/dswifi/arpa/	\
+			../../libutils/dswifi/netinet/	\
+			../../libutils/dswifi/sys/	\
 			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
 			
-export DIRS_ARM9_HEADERLIB = ../libutils	\
+export DIRS_ARM9_HEADERLIB = ../libutils/	\
 			../libutils/arm9/source/	\
 			../libutils/arm9/source/dswifi_arm9/	\
 			../libutils/arm9/source/lzss9/	\
@@ -87,6 +109,17 @@ export DIRS_ARM9_HEADERLIB = ../libutils	\
 			../arm9/source/lzss9/	\
 			../arm9/source/dswifi_arm9/	\
 			../arm9/data/	\
+			../../libutils/arm9twl/	\
+			../../libutils/arm9/source/	\
+			../../libutils/arm9/source/dswifi_arm9/	\
+			../../libutils/arm9/source/lzss9/	\
+			../../libutils/arm9/source/zip/	\
+			../../libutils/arm9/source/zlib/	\
+			../../libutils/dswifi/	\
+			../../libutils/dswifi/arpa/	\
+			../../libutils/dswifi/netinet/	\
+			../../libutils/dswifi/sys/	\
+			../arm9/data/	\
 			../../../templateCode/data/arm9/	\
 			../../../templateCode/source/	\
 			data/	\
@@ -107,8 +140,8 @@ file_arm9_src_s=  $(foreach dir,$(DIRS_ARM9_SRCLIB), $(subst $(CURDIR)/$(RELATIV
 file_arm9_src_SUPP=  $(foreach dir,$(DIRS_ARM9_SRCLIB), $(subst $(CURDIR)/$(RELATIVE_PATH)/$(dir)/,,$(wildcard $(CURDIR)/$(RELATIVE_PATH)/$(dir)/*.S))  )
 file_arm9_src_cpp=  $(foreach dir,$(DIRS_ARM9_SRCLIB), $(subst $(CURDIR)/$(RELATIVE_PATH)/$(dir)/,,$(wildcard $(CURDIR)/$(RELATIVE_PATH)/$(dir)/*.cpp))  )
 file_arm9_src_bin=  $(foreach dir,$(DIRS_ARM9_SRCLIB), $(subst $(CURDIR)/$(RELATIVE_PATH)/$(dir)/,,$(wildcard $(CURDIR)/$(RELATIVE_PATH)/$(dir)/*.bin))  )
-file_arm9_src_tga=  $(foreach dir,$(DIRS_ARM9_SRC), $(subst $(CURDIR)/$(RELATIVE_PATH)/$(dir)/,,$(wildcard $(CURDIR)/$(RELATIVE_PATH)/$(dir)/*.tga))  )
-file_arm9_src_pcx=  $(foreach dir,$(DIRS_ARM9_SRC), $(subst $(CURDIR)/$(RELATIVE_PATH)/$(dir)/,,$(wildcard $(CURDIR)/$(RELATIVE_PATH)/$(dir)/*.pcx))  )
+file_arm9_src_tga=  $(foreach dir,$(DIRS_ARM9_SRCLIB), $(subst $(CURDIR)/$(RELATIVE_PATH)/$(dir)/,,$(wildcard $(CURDIR)/$(RELATIVE_PATH)/$(dir)/*.tga))  )
+file_arm9_src_pcx=  $(foreach dir,$(DIRS_ARM9_SRCLIB), $(subst $(CURDIR)/$(RELATIVE_PATH)/$(dir)/,,$(wildcard $(CURDIR)/$(RELATIVE_PATH)/$(dir)/*.pcx))  )
 
 # Object Target
 objs_arm9:=	${file_arm9_src_pcx:.pcx=.o}	${file_arm9_src_tga:.tga=.o}	${file_arm9_src_bin:.bin=.o}	${file_arm9_src_c:.c=.o}	${file_arm9_src_s:.s=.o}	${file_arm9_src_SUPP:.S=.o}		${file_arm9_src_cpp:.cpp=.o}
