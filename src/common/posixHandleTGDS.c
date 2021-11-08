@@ -1,3 +1,5 @@
+#ifdef ARM9
+
 /*
 
 			Copyright (C) 2017  Coto
@@ -28,21 +30,12 @@ USA
 #include <stdlib.h>
 #include <_ansi.h>
 #include <reent.h>
-#include <errno.h>
-
 #include "typedefsTGDS.h"
 #include "ipcfifoTGDS.h"
 #include "posixHandleTGDS.h"
 #include "linkerTGDS.h"
-#include "biosTGDS.h"
-#include "dldi.h"
-#include "busTGDS.h"
 
-#ifdef ARM7
-#include "xmem.h"
-#endif
 
-#ifdef ARM9
 #include "dsregs_asm.h"
 #include "devoptab_devices.h"
 #include "errno.h"
@@ -53,23 +46,7 @@ USA
 #include "fatfslayerTGDS.h"
 #include "utilsTGDS.h"
 #include "limitsTGDS.h"
-#include "dswnifi_lib.h"
-#endif
-#include "debugNocash.h"
-
-#ifdef ARM7
-uint32 get_iwram_start(){
-	return (uint32)(&_iwram_start);
-}
-
-sint32 get_iwram_size(){
-	return (sint32)((uint8*)(uint32*)&_iwram_end - (sint32)(&_iwram_start));
-}
-
-uint32 get_iwram_end(){
-	return (uint32)(&_iwram_end);
-}
-#endif
+#include "dldi.h"
 
 uint32 get_lma_libend(){
 	return (uint32)(&__vma_stub_end__);	//linear memory top (start)
@@ -86,7 +63,6 @@ uint32 get_lma_wramend(){
 	#endif
 }
 
-#ifdef ARM9
 uint32 get_ewram_start(){
 	return (uint32)(&_ewram_start);
 }
@@ -119,15 +95,14 @@ sint32 get_dtcm_size(){
    @param[in] incr  The number of bytes to increment the stack by.
    @return  A pointer to the start of the new block of memory                */
 /* ------------------------------------------------------------------------- */
-
-char *heap_end;		/* Previous end of heap or 0 if none */
-char *prev_heap_end;
-
 void *
 _sbrk (int  incr)
 {
 	extern char __heap_start;//set by linker
 	extern char __heap_end;//set by linker
+
+	static char *heap_end;		/* Previous end of heap or 0 if none */
+	char        *prev_heap_end;
 
 	if (0 == heap_end) {
 		heap_end = (sint8*)get_lma_libend();			/* Initialize first time round */
@@ -152,7 +127,6 @@ void * _sbrk_r (struct _reent * reent, int size){
 
 //NDS Memory Map (valid):
 //todo: detect valid maps according to MPU settings
-__attribute__((section(".itcm")))
 bool isValidMap(uint32 addr){
 	if( 
 		#ifdef ARM9
@@ -207,95 +181,29 @@ bool isValidMap(uint32 addr){
 	return false;
 }
 
-#endif
 
-//basic print ARM7 support
-#ifdef ARM7
-uint8 * arm7debugBufferShared = NULL;
-uint8 * printfBufferShared = NULL;
-int * arm7ARGVBufferShared = NULL;
-
-//args through ARM7 print debugger
-int * arm7ARGVDebugBufferShared = NULL;
-
-void printf7(char *chr, int argvCount, int * argv){
-	u8* printf7Buf = getarm7PrintfBuffer();
-	if(printf7Buf != NULL){
-		int strSize = strlen(chr) + 1;
-		memset(printf7Buf, 0, 256+1);	//MAX_TGDSFILENAME_LENGTH
-		memcpy((u8*)printf7Buf, (u8*)chr, strSize);
-		printf7Buf[strSize] = 0;
-		if((argvCount > 0) && (argvCount < MAXPRINT7ARGVCOUNT) && (arm7ARGVBufferShared != NULL)){
-			memset((u8*)arm7ARGVBufferShared, 0, MAXPRINT7ARGVCOUNT*sizeof(int));
-			int i = 0;
-			for(i = 0; i < argvCount; i++){
-				arm7ARGVBufferShared[i] = argv[i];
-			}
-		}
-		uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-		fifomsg[36] = (uint32)printf7Buf;
-		fifomsg[37] = (uint32)arm7ARGVBufferShared;
-		fifomsg[38] = (uint32)argvCount;
-		SendFIFOWords(TGDS_ARM7_PRINTF7);
-	}
-}
-
-void writeDebugBuffer7(char *chr, int argvCount, int * argv){
-	u8* debugBuf = arm7debugBufferShared;
-	if(debugBuf != NULL){
-		//Actually used here because the ARM7 Debug buffer can be read asynchronously
-		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-		TGDSIPC->argvCount = argvCount;
-		
-		int strSize = strlen(chr)+1;
-		memset(debugBuf, 0, 256+1);	//MAX_TGDSFILENAME_LENGTH
-		memcpy((u8*)debugBuf, (u8*)chr, strSize);
-		debugBuf[strSize] = 0;
-		if((argvCount > 0) && (argvCount < MAXPRINT7ARGVCOUNT) && (arm7ARGVDebugBufferShared != NULL)){
-			memset((u8*)arm7ARGVDebugBufferShared, 0, MAXPRINT7ARGVCOUNT*sizeof(int));
-			int i = 0;
-			for(i = 0; i < argvCount; i++){
-				arm7ARGVDebugBufferShared[i] = argv[i];
-			}
-		}
-	}
-}
-#endif
-
-//ARM7 malloc support. Will depend on the current memory mapped (can be either IWRAM(very scarse), EWRAM, VRAM or maybe other)
-#ifdef ARM7
-u32 ARM7MallocBaseAddress = 0;
-u32 ARM7MallocTop = 0;
-void setTGDSARM7MallocBaseAddress(u32 address) __attribute__ ((optnone)) {
-	ARM7MallocBaseAddress = address;
-}
-
-u32 getTGDSARM7MallocBaseAddress() __attribute__ ((optnone)) {
-	return ARM7MallocBaseAddress;
-}
-
-//example: u32 ARM7MallocStartaddress = 0x06000000, u32 memSize = 128*1024
-void initARM7Malloc(u32 ARM7MallocStartaddress, u32 ARM7MallocSize) __attribute__ ((optnone)) {	//ARM7 Impl.
-	setTGDSARM7MallocBaseAddress(ARM7MallocStartaddress);
-	ARM7MallocTop = XMEMTOTALSIZE = ARM7MallocSize;
-	//Init XMEM (let's see how good this one behaves...)
-	u32 xmemsize = XMEMTOTALSIZE;
-	xmemsize = xmemsize - (xmemsize/XMEM_BS) - 1024;
-	xmemsize = xmemsize - (xmemsize%1024);
-	XmemSetup(xmemsize, XMEM_BS);
-	XmemInit(ARM7MallocStartaddress, ARM7MallocSize);
-}
-
-#endif
-
-#ifdef ARM9
 //ARM9 Malloc implementation: Blocking, because several processes running on ARM7 may require ARM9 having a proper malloc impl.
 u32 ARM9MallocBaseAddress = 0;
-void setTGDSARM9MallocBaseAddress(u32 address) __attribute__ ((optnone)) {
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void setTGDSARM9MallocBaseAddress(u32 address) {
 	ARM9MallocBaseAddress = address;
 }
 
-u32 getTGDSARM9MallocBaseAddress() __attribute__ ((optnone)) {
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+u32 getTGDSARM9MallocBaseAddress() {
 	return ARM9MallocBaseAddress;
 }
 //Global
@@ -308,11 +216,17 @@ TGDSARM9MallocFreeMemoryHandler	TGDSMallocFreeMemory9;
 //Prototype
 struct AllocatorInstance CustomAllocatorInstance;
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,											//ARM7
 						u32 ARM9MallocStartaddress, u32 ARM9MallocSize, u32 * mallocHandler, u32 * callocHandler, //ARM9
 						u32 * freeHandler, u32 * MallocFreeMemoryHandler, bool customAllocator, u32 dldiMemAddress,
 						u32 TargetARM7DLDIAddress
-) __attribute__ ((optnone)) {
+) {
 	
 	if (_io_dldi_stub.ioInterface.features & FEATURE_SLOT_GBA) {
 		SetBusSLOT1ARM9SLOT2ARM7();
@@ -321,12 +235,13 @@ void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,									
 		SetBusSLOT1ARM7SLOT2ARM9();
 	}
 	
-	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
-	setValueSafe(&fifomsg[42], (uint32)ARM7MallocStartAddress);
-	setValueSafe(&fifomsg[43], (uint32)ARM7MallocSize);
-	setValueSafe(&fifomsg[44], (uint32)customAllocator);
-	setValueSafe(&fifomsg[45], (uint32)dldiMemAddress);
-	setValueSafe(&fifomsg[46], (uint32)TargetARM7DLDIAddress);
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	fifomsg[0] = (uint32)ARM7MallocStartAddress;
+	fifomsg[1] = (uint32)ARM7MallocSize;
+	fifomsg[2] = (uint32)customAllocator;
+	fifomsg[3] = (uint32)dldiMemAddress;
+	fifomsg[4] = (uint32)TargetARM7DLDIAddress;
 	
 	setTGDSARM9MallocBaseAddress(ARM9MallocStartaddress);
 	if(customAllocator == true){
@@ -344,19 +259,26 @@ void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,									
 		}
 	}
 	TGDSInitLoopCount = 0;
-	SendFIFOWords(TGDS_ARM7_SETUPARMCPUMALLOCANDDLDI);	//ARM7 Setup
-	while((u32)getValueSafe(&fifomsg[46]) != (u32)0){
-		if(TGDSInitLoopCount > 1048576){
+	setupLibUtils(); //ARM9 libUtils Setup
+	SendFIFOWords(TGDS_ARM7_SETUPMALLOCDLDI, 0xFF);	//ARM7 Setup: DLDI, and extensions if enabled through libutils
+	while(fifomsg[4] != 0){
+		if(TGDSInitLoopCount > (1048576 << 3) ){
 			u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
 			int stage = 1;
 			handleDSInitError(stage, (u32)fwNo);
 		}
-		swiDelay(1);
 		TGDSInitLoopCount++;
 	}
 }
 
-void setTGDSMemoryAllocator(struct AllocatorInstance * TGDSMemoryAllocator) __attribute__ ((optnone)) {
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void setTGDSMemoryAllocator(struct AllocatorInstance * TGDSMemoryAllocator) {
 	//Enable Default/Custom TGDS Memory Allocator
 	u32 ARM9MallocStartaddress = (u32)sbrk(0);
 	if(TGDSMemoryAllocator->customMalloc == false){
@@ -380,81 +302,8 @@ void setTGDSMemoryAllocator(struct AllocatorInstance * TGDSMemoryAllocator) __at
 	}
 	customMallocARM9 = TGDSMemoryAllocator->customMalloc;
 }
-#endif
 
-
-#ifdef ARM9
-u8 printf7Buffer[MAX_TGDSFILENAME_LENGTH+1];
-u8 arm7debugBuffer[MAX_TGDSFILENAME_LENGTH+1];
-int arm7ARGVBuffer[MAXPRINT7ARGVCOUNT];
-
-//args through ARM7 print debugger
-int arm7ARGVDebugBuffer[MAXPRINT7ARGVCOUNT];
-
-void printf7Setup(){
-	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
-	fifomsg[46] = (uint32)&printf7Buffer[0];
-	fifomsg[47] = (uint32)&arm7debugBuffer[0];
-	fifomsg[48] = (uint32)&arm7ARGVBuffer[0];
-	//ARM7 print debugger
-	fifomsg[49] = (uint32)&arm7ARGVDebugBuffer[0];
-	SendFIFOWords(TGDS_ARM7_PRINTF7SETUP);
-}
-
-void printf7(u8 * printfBufferShared, int * arm7ARGVBufferShared, int argvCount) __attribute__ ((optnone)) {
-	//argvCount can't be retrieved from here because this call comes from FIFO hardware (and with it, the argvCount value)
-	coherent_user_range_by_size((uint32)printfBufferShared, strlen((char*)printfBufferShared) + 1);
-	coherent_user_range_by_size((uint32)arm7ARGVBufferShared, sizeof(int) * MAXPRINT7ARGVCOUNT);
-	
-	char argChar[MAX_TGDSFILENAME_LENGTH+1];
-	memset(argChar, 0, sizeof(argChar)); //Big note!!!! All buffers (strings, binary, etc) must be initialized like this! Otherwise you will get undefined behaviour!!
-	int i = 0;
-	for(i = 0; i < argvCount; i++){
-		sprintf((char*)argChar, "%s %x", argChar, arm7ARGVBufferShared[i]);
-	}
-	argChar[strlen(argChar) + 1] = '\0';
-	
-	char printfTemp[MAX_TGDSFILENAME_LENGTH+1];
-	memset(printfTemp, 0, sizeof(argChar));
-	strcpy(printfTemp, (char*)printfBufferShared);
-	strcat(printfTemp, argChar);
-	printfTemp[strlen(printfTemp)+1] = '\0';
-	printf("%s", printfTemp);
-}
-
-void printarm7DebugBuffer(){
-	//add args parsing
-	u8 * arm7debugBufferShared = (u8 *)&arm7debugBuffer[0];
-	int * arm7ARGVBufferShared = (int *)&arm7ARGVDebugBuffer[0];
-	
-	coherent_user_range_by_size((uint32)arm7debugBufferShared, sizeof(arm7debugBuffer));
-	coherent_user_range_by_size((uint32)arm7ARGVBufferShared, sizeof(int) * MAXPRINT7ARGVCOUNT);
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	coherent_user_range_by_size((uint32)&TGDSIPC->argvCount, sizeof(int));
-	
-	int argvCount = TGDSIPC->argvCount;
-	
-	char argChar[MAX_TGDSFILENAME_LENGTH+1];
-	memset(argChar, 0, sizeof(argChar)); //Big note!!!! All buffers (strings, binary, etc) must be initialized like this! Otherwise you will get undefined behaviour!!
-	int i = 0;
-	for(i = 0; i < argvCount; i++){
-		sprintf((char*)argChar, "%s %x", argChar, arm7ARGVBufferShared[i]);
-	}
-	argChar[strlen(argChar) + 1] = '\0';
-	
-	char printfTemp[MAX_TGDSFILENAME_LENGTH+1];
-	memset(printfTemp, 0, sizeof(argChar));
-	strcpy(printfTemp, (char*)arm7debugBufferShared);
-	strcat(printfTemp, argChar);
-	
-	strcat(printfTemp, ">6");	//TGDS Console Font Color: TGDSPrintfColor_Yellow
-	
-	printfTemp[strlen(printfTemp)+1] = '\0';
-	printf("%s", printfTemp);
-	nocashMessage(printfTemp);
-}
-
-int printf(const char *fmt, ...) __attribute__ ((optnone)) {
+int printf(const char *fmt, ...){
 	//Indentical Implementation as GUI_printf
 	va_list args;
 	va_start (args, fmt);
@@ -488,7 +337,7 @@ int printf(const char *fmt, ...) __attribute__ ((optnone)) {
 }
 
 //same as printf but having X, Y coords (relative to char width and height)
-void printfCoords(int x, int y, const char *fmt, ...) __attribute__ ((optnone)) {
+void printfCoords(int x, int y, const char *fmt, ...){
 	va_list args;
 	va_start (args, fmt);
 	vsnprintf ((sint8*)ConsolePrintfBuf, 64, fmt, args);
@@ -520,7 +369,7 @@ void printfCoords(int x, int y, const char *fmt, ...) __attribute__ ((optnone)) 
 	TGDSARM9Free(outBuf);
 }
 
-int _vfprintf_r(struct _reent * reent, FILE *fp, const sint8 *fmt, va_list args) __attribute__ ((optnone)) {
+int _vfprintf_r(struct _reent * reent, FILE *fp, const sint8 *fmt, va_list args){
 	coherent_user_range_by_size((uint32)fmt, strlen(fmt)+1);
 	char * stringBuf = (char*)&ConsolePrintfBuf[0];
 	vsnprintf ((sint8*)stringBuf, 64, fmt, args);
@@ -560,17 +409,17 @@ int fork(){
 	return -1;
 }
 
-//UNIX/Posix programs exit like this. (TGDS works with hardware directly, thus waits for interrupts)
-void _exit (int status) __attribute__ ((optnone)) {
-	bool isTGDSCustomConsole = false;	//set default console or custom console: default console
-	GUI_init(isTGDSCustomConsole);
-	GUI_clear();
+//C++ requires this
+void _exit (int status){
 	
+	//todo: add some exception handlers to notify ARM cores program has ran	
+	
+	clrscr();
 	printf("----");
 	printf("----");
 	printf("----");
 	printf("----");
-	printf("TGDS APP Exit with code:(%d)", status);
+	printf("TGDS APP Halt: Error Status: %d", status);
 	while(1==1){
 		IRQVBlankWait();
 	}
@@ -589,7 +438,7 @@ pid_t _getpid (void){
 //read (get struct FD index from FILE * handle)
 
 //ok _read_r reentrant called
-_ssize_t _read_r ( struct _reent *ptr, int fd, void *buf, size_t cnt ) __attribute__ ((optnone)) {
+_ssize_t _read_r ( struct _reent *ptr, int fd, void *buf, size_t cnt ){
 	//Conversion here 
 	struct fd * fdinst = getStructFD(fd);
 	if((fdinst != NULL) && (fdinst->devoptabFileDescriptor != NULL) && (fdinst->devoptabFileDescriptor != (struct devoptab_t *)&devoptab_stub)){
@@ -600,7 +449,7 @@ _ssize_t _read_r ( struct _reent *ptr, int fd, void *buf, size_t cnt ) __attribu
 
 //ok _write_r reentrant called
 //write (get struct FD index from FILE * handle)
-_ssize_t _write_r ( struct _reent *ptr, int fd, const void *buf, size_t cnt ) __attribute__ ((optnone)) {
+_ssize_t _write_r ( struct _reent *ptr, int fd, const void *buf, size_t cnt ){
 	//Conversion here 
 	struct fd * fdinst = getStructFD(fd);
 	if((fdinst != NULL) && (fdinst->devoptabFileDescriptor != NULL) && (fdinst->devoptabFileDescriptor != (struct devoptab_t *)&devoptab_stub)){
@@ -609,9 +458,9 @@ _ssize_t _write_r ( struct _reent *ptr, int fd, const void *buf, size_t cnt ) __
 	return -1;
 }
 
-int _open_r ( struct _reent *ptr, const sint8 *file, int flags, int mode ) __attribute__ ((optnone)) {
+int _open_r ( struct _reent *ptr, const sint8 *file, int flags, int mode ){
 	if(file != NULL){
-		char * outBuf = (char *)TGDSARM9Malloc(256*10);
+		char * outBuf = (char *)malloc(256*10);
 		int i = 0;
 		char * token_rootpath = (char*)((char*)outBuf + (0*256));
 		str_split((char*)file, "/", outBuf, 10, 256);
@@ -622,12 +471,12 @@ int _open_r ( struct _reent *ptr, const sint8 *file, int flags, int mode ) __att
 			if(strlen(token_rootpath) > 0){
 				sprintf((sint8*)token_str,"%s%s",(char*)token_rootpath,"/");	//format properly
 				if (strcmp((sint8*)token_str,devoptab_struct[i]->name) == 0){
-					TGDSARM9Free(outBuf);
+					free(outBuf);
 					return devoptab_struct[i]->open_r( NULL, file, flags, mode ); //returns / allocates a new struct fd index with either DIR or FIL structure allocated
 				}
 			}
 		}
-		TGDSARM9Free(outBuf);
+		free(outBuf);
 	}
 	return -1;
 }
@@ -643,7 +492,7 @@ int close (int fd){
 
 //allocates a new struct fd index with either DIR or FIL structure allocated
 //not overriden, we force the call from fd_close
-int _close_r ( struct _reent *ptr, int fd ) __attribute__ ((optnone)) {
+int _close_r ( struct _reent *ptr, int fd ){
 	//Conversion here 
 	struct fd * fdinst = getStructFD(fd);	
 	if((fdinst != NULL) && (fdinst->devoptabFileDescriptor != NULL) && (fdinst->devoptabFileDescriptor != (struct devoptab_t *)&devoptab_stub)){
@@ -679,7 +528,7 @@ int	_stat_r ( struct _reent *_r, const char *file, struct stat *pstat ){
 	return fatfs_stat(file, pstat);
 }
 
-int _gettimeofday(struct timeval *tv, struct timezone *tz) __attribute__ ((optnone)) {
+int _gettimeofday(struct timeval *tv, struct timezone *tz){
 	if (tv == NULL)
     {
 		__set_errno (EINVAL);
@@ -693,10 +542,10 @@ int _gettimeofday(struct timeval *tv, struct timezone *tz) __attribute__ ((optno
 	tv->tv_usec = 0L;
 	if (tz != NULL)
     {
-		//const time_t timer = tv->tv_sec;
-		//struct tm tm;
-		//const long int save_timezone = 0; //__timezone;
-		//const long int save_daylight = 0; //__daylight;
+		const time_t timer = tv->tv_sec;
+		struct tm tm;
+		const long int save_timezone = 0; //__timezone;
+		const long int save_daylight = 0; //__daylight;
 		char *save_tzname[2];
 		save_tzname[0] = ""; //__tzname[0];
 		save_tzname[1] = "";//__tzname[1];
@@ -726,14 +575,14 @@ int lstat(const char * path, struct stat *buf){
 	return fatfs_stat((const sint8 *)path,buf);
 }
 
-int getMaxRam() __attribute__ ((optnone)) {
+int getMaxRam(){
 	int maxRam = ((int)(&_ewram_end)  - (int)sbrk(0) );
 	return (int)maxRam;
 }
 
 //Memory is too fragmented up to this point, causing to have VERY little memory left. 
 //Luckily for us this memory hack allows dmalloc to re-arrange and free more memory for us! Also fixing malloc memory fragmentation!! WTF Dude.
-void TryToDefragmentMemory() __attribute__ ((optnone)) {
+void TryToDefragmentMemory(){
 	int freeRam = getMaxRam();
 	//I'm not kidding, this allows to de-fragment memory. Relative to how much memory we have and re-allocate it
 	char * defragMalloc[1024];	//4M / 4096. DS Mem can't be higher than this
@@ -749,61 +598,7 @@ void TryToDefragmentMemory() __attribute__ ((optnone)) {
 	}
 }
 
-__attribute__((section(".itcm")))
-u8* TGDSARM9Malloc(int size){
-	if(customMallocARM9 == false){
-		return (u8*)malloc((const int)size);
-	}
-	else{
-		return (u8*)TGDSMalloc9((const int)size);
-	}
-}
 
-__attribute__((section(".itcm")))
-u8 * TGDSARM9Calloc(int blockCount, int blockSize){
-	if(customMallocARM9 == false){
-		return (u8*)calloc(blockSize, blockCount);	//reverse order
-	}
-	else{
-		return (u8*)TGDSCalloc9(blockCount, blockSize);	//same order
-	}
-}
-
-__attribute__((section(".itcm")))
-u8 * TGDSARM9Realloc(void *ptr, int size){
-	if(customMallocARM9 == false){
-		if(ptr != NULL){
-			free(ptr);
-		}
-		return (u8*)malloc(size);
-	}
-	else{
-		if(ptr != NULL){
-			TGDSFree9(ptr);
-		}
-		return (u8*)TGDSMalloc9(size);
-	}
-}
-
-__attribute__((section(".itcm")))
-void TGDSARM9Free(void *ptr){
-	if(customMallocARM9 == false){
-		free(ptr);
-	}
-	else{
-		TGDSFree9(ptr);
-	}
-}
-
-__attribute__((section(".itcm")))
-u32 TGDSARM9MallocFreeMemory(){
-	if(customMallocARM9 == false){
-		return (u32)getMaxRam();
-	}
-	else{
-		return (u32)TGDSMallocFreeMemory9();
-	}
-}
 
 
 /*
@@ -955,5 +750,61 @@ int ferror_tgds(int fd){
 	return 0;
 }
 */
+
+#endif
+
+
+#ifdef ARM9
+
+u8* TGDSARM9Malloc(int size){
+	if(customMallocARM9 == false){
+		return (u8*)malloc((const int)size);
+	}
+	else{
+		return (u8*)TGDSMalloc9((const int)size);
+	}
+}
+
+u8 * TGDSARM9Calloc(int blockCount, int blockSize){
+	if(customMallocARM9 == false){
+		return (u8*)calloc(blockSize, blockCount);	//reverse order
+	}
+	else{
+		return (u8*)TGDSCalloc9(blockCount, blockSize);	//same order
+	}
+}
+
+u8 * TGDSARM9Realloc(void *ptr, int size){
+	if(customMallocARM9 == false){
+		if(ptr != NULL){
+			free(ptr);
+		}
+		return (u8*)malloc(size);
+	}
+	else{
+		if(ptr != NULL){
+			TGDSFree9(ptr);
+		}
+		return (u8*)TGDSMalloc9(size);
+	}
+}
+
+void TGDSARM9Free(void *ptr){
+	if(customMallocARM9 == false){
+		free(ptr);
+	}
+	else{
+		TGDSFree9(ptr);
+	}
+}
+
+u32 TGDSARM9MallocFreeMemory(){
+	if(customMallocARM9 == false){
+		return (u32)getMaxRam();
+	}
+	else{
+		return (u32)TGDSMallocFreeMemory9();
+	}
+}
 
 #endif

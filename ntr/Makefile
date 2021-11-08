@@ -22,12 +22,6 @@
 export SOURCE_MAKEFILE7 = custom
 export SOURCE_MAKEFILE9 = custom
 
-#Translate paths to windows with forward slashes
-cpath := $(shell pwd)
-ifeq ($(shell uname -o), Cygwin)
-    CURDIR := '$(shell cygpath -w -p ${cpath})'
-endif
-
 #Shared
 include $(DEFAULT_GCC_PATH_WIN)/Makefile.basenewlib
 
@@ -52,39 +46,23 @@ export TARGET_LIBRARY_LIBNAME_9	=	l$(TARGET_LIBRARY_NAME_9)
 #####################################################ARM7#####################################################
 #the correct format is : ../include/sys/ otherwise recursive folders break in later bash scripts
 export DIRS_ARM7_SRC = ../source/	\
-			../source/dswifi_arm7/	\
-			../source/xmalloc/	\
-			../source/twl/	\
 			../../common/	\
-			../../common/twl/	\
-			../../common/dswifi/	\
-			../../common/dswifi/netinet/	\
-			../../common/dswifi/sys/	\
-			../../common/dswifi/arpa/	\
 			../../common/hardware/	\
 			../../common/hardware/dldi/	\
 			../../templateCode/source/	\
-			../../templateCode/data/arm7/		\
+			../../templateCode/data/		\
 			../data/	\
 			build/	\
 			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
 			
 export DIRS_ARM7_HEADER = ../source/	\
-			../source/dswifi_arm7/	\
-			../source/xmalloc/	\
-			../source/twl/	\
 			../include/	\
 			../../common/	\
 			../../common/libhardware/	\
-			../../common/twl/	\
-			../../common/dswifi/	\
-			../../common/dswifi/netinet/	\
-			../../common/dswifi/sys/	\
-			../../common/dswifi/arpa/	\
 			../../common/hardware/	\
 			../../common/hardware/dldi/	\
 			../../templateCode/source/	\
-			../../templateCode/data/arm7/		\
+			../../templateCode/data/		\
 			../data/	\
 			build/	\
 			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
@@ -92,57 +70,37 @@ export DIRS_ARM7_HEADER = ../source/	\
 #####################################################ARM9#####################################################
 
 export DIRS_ARM9_SRC = ../source/	\
+			../source/	\
 			../source/console/	\
 			../source/console/gui_draw/	\
-			../source/zlib/	\
-			../source/zip/	\
-			../source/lzss9/	\
-			../source/dswifi_arm9/	\
-			../source/wnifilib/	\
 			../source/imadecoder/	\
 			../include/	\
 			../../common/	\
-			../../common/twl/	\
-			../../common/dswifi/	\
-			../../common/dswifi/netinet/	\
-			../../common/dswifi/sys/	\
-			../../common/dswifi/arpa/	\
 			../../common/hardware/	\
 			../../common/hardware/dldi/	\
 			../../templateCode/source/	\
-			../../templateCode/data/arm9/		\
+			../../templateCode/data/		\
 			../data/	\
 			build/	\
 			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
 			
 export DIRS_ARM9_HEADER = ../source/	\
+			../source/	\
 			../source/console/	\
 			../source/console/gui_draw/	\
 			../source/ToolchainGenericDSFS/	\
 			../source/ToolchainGenericDSFS/fatfs/source/	\
-			../source/zlib/	\
-			../source/zip/	\
-			../source/lzss9/	\
-			../source/dswifi_arm9/	\
-			../source/wnifilib/	\
 			../source/imadecoder/	\
 			../include/	\
 			../../common/	\
-			../../common/libhardware/	\
-			../../common/twl/	\
-			../../common/dswifi/	\
-			../../common/dswifi/netinet/	\
-			../../common/dswifi/sys/	\
-			../../common/dswifi/arpa/	\
 			../../common/hardware/	\
 			../../common/hardware/dldi/	\
 			../../templateCode/source/	\
-			../../templateCode/data/arm9/		\
+			../../templateCode/data/		\
 			../data/	\
 			build/	\
 			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
 			
-
 # Build Target(s)	(both processors here)
 all: compilelib	
 
@@ -153,11 +111,13 @@ ifeq ($(SOURCE_MAKEFILE7),default)
 	cp	-r	$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/$(DIR_ARM7)/Makefile	../src/arm7/ntr/
 endif
 	$(MAKE)	-R	-C	../src/common/libhardware/ntr7
+	$(MAKE)	-R	-C	../src/common/libutils/ntr7
 	$(MAKE)	-R	-C	../src/arm7/ntr/
 ifeq ($(SOURCE_MAKEFILE9),default)
 	cp	-r	$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/$(DIR_ARM9)/Makefile	../src/arm9/ntr/
 endif
 	$(MAKE)	-R	-C	../src/common/libhardware/ntr9
+	$(MAKE)	-R	-C	../src/common/libutils/ntr9
 	$(MAKE)	-R	-C	../src/arm9/source/ToolchainGenericDSFS/ntr
 	$(MAKE)	-R	-C	../src/arm9/ntr/
 
@@ -165,11 +125,13 @@ endif
 # Clean
 clean:
 	$(MAKE)	clean	-C	../src/common/libhardware/ntr7
+	$(MAKE)	clean	-C	../src/common/libutils/ntr7
 	$(MAKE)	clean	-C	../src/arm7/ntr/
 ifeq ($(SOURCE_MAKEFILE7),default)
 	-@rm -rf ../src/arm7/ntr/Makefile
 endif
 	$(MAKE)	clean	-C	../src/common/libhardware/ntr9
+	$(MAKE)	clean	-C	../src/common/libutils/ntr9
 	$(MAKE)	clean	-C	../src/arm9/source/ToolchainGenericDSFS/ntr
 	$(MAKE)	clean	-C	../src/arm9/ntr/
 ifeq ($(SOURCE_MAKEFILE9),default)

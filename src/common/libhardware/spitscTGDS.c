@@ -32,7 +32,6 @@ USA
 #include "biosTGDS.h"
 #include "spiTGDS.h"
 #include "clockTGDS.h"
-#include "eventsTGDS.h"
 
 static inline void SerialWaitBusy() { while (REG_SPICNT & SPI_BUSY) swiDelay(1); }
 
@@ -84,7 +83,7 @@ typedef struct tPERSONAL_DATA {
 } PERSONAL_DATA ;
 
 //!	Default location for the user's personal data (see %PERSONAL_DATA).
-#define PersonalData ((PERSONAL_DATA*)&((struct sIPCSharedTGDS *)TGDSIPCStartAddress)->DSFWSETTINGSInst)
+#define PersonalData ((PERSONAL_DATA*)&((struct sIPCSharedTGDS *)0x027FF000)->DSFWSETTINGSInst)
 
 
 static u8 last_time_touched = 0;
@@ -95,6 +94,13 @@ static u8 range = 20;
 static u8 min_range = 20;
 
 //---------------------------------------------------------------------------------
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 u8 CheckStylus(){
 //---------------------------------------------------------------------------------
 
@@ -140,6 +146,13 @@ u8 CheckStylus(){
 }
 
 //---------------------------------------------------------------------------------
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 uint16 touchRead(uint32 command) {
 //---------------------------------------------------------------------------------
 	uint16 result, result2;
@@ -175,6 +188,13 @@ uint16 touchRead(uint32 command) {
 
 
 //---------------------------------------------------------------------------------
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 uint32 touchReadTemperature(int * t1, int * t2) {
 //---------------------------------------------------------------------------------
 	*t1 = touchRead(TSC_MEASURE_TEMP1);
@@ -188,6 +208,13 @@ s32 xscale, yscale;
 s32 xoffset, yoffset;
 
 //---------------------------------------------------------------------------------
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 sint16 readTouchValue(uint32 command, sint16 *dist_max, u8 *err){
 //---------------------------------------------------------------------------------
 	sint16 values[5];
@@ -279,6 +306,13 @@ sint16 readTouchValue(uint32 command, sint16 *dist_max, u8 *err){
 }
 
 //---------------------------------------------------------------------------------
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void UpdateRange(uint8 *this_range, sint16 last_dist_max, u8 data_error, u8 tsc_touched){
 //---------------------------------------------------------------------------------
 	//range_counter_1 = counter_0x380A98C
@@ -347,6 +381,13 @@ bool touchPenDown() {
 //---------------------------------------------------------------------------------
 // reading pixel position:
 //---------------------------------------------------------------------------------
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void touchReadXY(touchPosition *touchPos) {
 //---------------------------------------------------------------------------------	
 	if ( !touchInit ) {
@@ -369,9 +410,8 @@ void touchReadXY(touchPosition *touchPos) {
 	sint16 dist_max_y=0, dist_max_x=0, dist_max=0;
 	u8 error=0, error_where=0, first_check=0, i=0;
 	
-	/*	
-	#ifdef TWLMODE
 	if (cdcIsAvailable()) {	//TWL Mode
+		#ifdef TWLMODE
 		cdcTouchRead(touchPos);	
 		s16 px = ( touchPos->rawx * xscale - xoffset + xscale/2 ) >>19;
 		s16 py = ( touchPos->rawy * yscale - yoffset + yscale/2 ) >>19;
@@ -381,6 +421,7 @@ void touchReadXY(touchPosition *touchPos) {
 		if ( py > (SCREEN_HEIGHT -1)) py = SCREEN_HEIGHT -1;
 		touchPos->px = px;
 		touchPos->py = py;
+		#endif
 	} 
 	else {	//(NTR) DS Mode Start
 		//uint32 oldIME = REG_IME;
@@ -441,78 +482,46 @@ void touchReadXY(touchPosition *touchPos) {
 			last_time_touched = 0;
 		}
 	}
-	#endif
-	*/
 	
-	//NTR + TWL (Using backwards compatible TSC code)
-	//uint32 oldIME = REG_IME;
-	//REG_IME = 0;
-	first_check = CheckStylus();
-	if(first_check != 0){
-		error_where = 0;
-		touchPos->z1 =  readTouchValue(TSC_MEASURE_Z1 | 1, &dist_max, &error);
-		touchPos->z2 =  readTouchValue(TSC_MEASURE_Z2 | 1, &dist_max, &error);
-		touchPos->rawx = readTouchValue(TSC_MEASURE_X | 1, &dist_max_x, &error);
-		if(error==1) error_where += 1;
-
-		touchPos->rawy = readTouchValue(TSC_MEASURE_Y | 1, &dist_max_y, &error);
-		if(error==1) error_where += 2;
-
-		REG_SPICNT = SPI_ENABLE | SPI_BAUD_2MHz | SPI_DEVICE_TOUCH | SPI_CONTINUOUS;
-		for(i=0; i<12; i++){
-			REG_SPIDATA = 0;
-			SerialWaitBusy();
-		}
-
-		REG_SPICNT = SPI_ENABLE | SPI_BAUD_2MHz | SPI_DEVICE_TOUCH;
-		REG_SPIDATA = 0;
-		SerialWaitBusy();
-		if(first_check == 2) error_where = 3;
-
-		switch( CheckStylus() ){
-			case 0:
-				last_time_touched = 0;
-				break;
-			case 1:
-				last_time_touched = 1;
-
-				if(dist_max_x > dist_max_y)
-					dist_max = dist_max_x;
-				else
-					dist_max = dist_max_y;
-
-				break;
-			case 2:
-				last_time_touched = 0;
-				error_where = 3;
-
-				break;
-		}
-		s16 px = ( touchPos->rawx * xscale - xoffset + xscale/2 ) >>19;
-		s16 py = ( touchPos->rawy * yscale - yoffset + yscale/2 ) >>19;
-		if ( px < 0) px = 0;
-		if ( py < 0) py = 0;
-		if ( px > (SCREEN_WIDTH -1)) px = SCREEN_WIDTH -1;
-		if ( py > (SCREEN_HEIGHT -1)) py = SCREEN_HEIGHT -1;
-		touchPos->px = px;
-		touchPos->py = py;
-	}
-	else{
-		error_where = 3;
-		touchPos->rawx = 0;
-		touchPos->rawy = 0;
-		last_time_touched = 0;
-	}
 	
 	UpdateRange(&range, dist_max, error_where, last_time_touched);
 	//REG_IME = oldIME;
 }
 
-//Source http://problemkaputt.de/gbatek.htm
+//Source http://problemkaputt.de/gbatek.htm & devkitARM
+#ifdef ARM7
+static bool penDown = false;
+#endif
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void doSPIARM7IO(){
-	struct sIPCSharedTGDS * sIPCSharedTGDSInst = (struct sIPCSharedTGDS *)TGDSIPCStartAddress;
-	
+	#ifdef ARM7
+	struct sIPCSharedTGDS * sIPCSharedTGDSInst = (struct sIPCSharedTGDS *)0x027FF000;
 	//Handle Clock (should this one run on IRQs instead?)
-	sIPCSharedTGDSInst->ndsRTCSeconds = nds_get_time7();
+	//sIPCSharedTGDSInst->ndsRTCSeconds = nds_get_time7(); //disable clock, uneeded by snemulds
+	#endif
 }
 #endif
+
+bool penIRQread(){
+
+	#ifdef ARM7
+	if(!(REG_KEYXY & KEY_PENIRQARM7)){
+		return true;
+	}
+	else{
+		return false;
+	}
+	#endif
+	
+	#ifdef ARM9
+	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
+	return (bool)(TGDSIPC->EXTKEYINInst.PenDown);
+	#endif
+}

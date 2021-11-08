@@ -322,7 +322,7 @@ extern struct FileClass * getFileClassFromList(int FileClassListIndex, struct Fi
 extern bool setFileClass(bool iterable, char * fullPath, int FileClassListIndex, int Typ, int StructFD, struct FileClassList * lst);
 extern bool TGDSFS_detectUnicode(struct fd *pfd);
 extern bool readDirectoryIntoFileClass(char * dir, struct FileClassList * thisClassList);
-extern int getNextFileClassByExtensionFromList(struct FileClassList * thisClassList, char * filterString, int indexToStart);
+extern int buildFileClassByExtensionFromList(struct FileClassList * inputClassList, struct FileClassList * targetClassList, char ** scratchPadMemory, char * filterString);
 extern void sortFileClassListAsc(struct FileClassList * thisClassList, char ** scratchPadMemory, bool ignoreFirstFileClass);
 ////////////////////////////////////////////////////////////////////////////USER CODE END/////////////////////////////////////////////////////////////////////////////////////
 
@@ -424,17 +424,12 @@ extern int fatfs_seekDirectStructFD(struct fd * pfd, int offst);
 extern int str_split(char * stream, char * haystack, char * outBuf, int itemSize, int blockSize);
 
 extern void separateExtension(char *str, char *ext);
+extern struct FileClassList * initFileList();
 
 #ifdef __cplusplus
 }
 #endif
 
-#ifdef ARM9
-inline 
-#endif
-static struct FileClassList * initFileList(){
-	return (struct FileClassList *)TGDSARM9Malloc(sizeof(struct FileClassList));
-}
 
 //return: true if clean success
 //false if lst == NULL

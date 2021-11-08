@@ -1,6 +1,3 @@
 When accessing timing dependant memory such as the shared region, the API must implement atomic functions. 
 If otherwise you access it directly, there could be optimized code, and broken, non functional API components.
 
-Also I liked the idea of weak symbols. Projects will require extensions of this library through weak symbols.
-Toolchain part will extend definitions and override weak symbols. So you have control over the toolchain AND your project. Requires building both at least once.
-If you are not adding any ToolchainGenericDS specific code, you just compile your project. It will build fast!

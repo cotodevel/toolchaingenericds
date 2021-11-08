@@ -57,10 +57,6 @@ export DIRS_ARM7_SRC = ../source/	\
 			../source/twl/	\
 			../../common/	\
 			../../common/twl/	\
-			../../common/dswifi/	\
-			../../common/dswifi/netinet/	\
-			../../common/dswifi/sys/	\
-			../../common/dswifi/arpa/	\
 			../../common/hardware/	\
 			../../common/hardware/dldi/	\
 			../../templateCode/source/	\
@@ -78,10 +74,6 @@ export DIRS_ARM7_HEADER = ../source/	\
 			../../common/libhardware/arm7twl/	\
 			../../common/libhardware/	\
 			../../common/twl/	\
-			../../common/dswifi/	\
-			../../common/dswifi/netinet/	\
-			../../common/dswifi/sys/	\
-			../../common/dswifi/arpa/	\
 			../../common/hardware/	\
 			../../common/hardware/dldi/	\
 			../../templateCode/source/	\
@@ -95,19 +87,10 @@ export DIRS_ARM7_HEADER = ../source/	\
 export DIRS_ARM9_SRC = ../source/	\
 			../source/console/	\
 			../source/console/gui_draw/	\
-			../source/zlib/	\
-			../source/zip/	\
-			../source/lzss9/	\
-			../source/dswifi_arm9/	\
-			../source/wnifilib/	\
 			../source/imadecoder/	\
 			../include/	\
 			../../common/	\
 			../../common/twl/	\
-			../../common/dswifi/	\
-			../../common/dswifi/netinet/	\
-			../../common/dswifi/sys/	\
-			../../common/dswifi/arpa/	\
 			../../common/hardware/	\
 			../../common/hardware/dldi/	\
 			../../templateCode/source/	\
@@ -121,20 +104,11 @@ export DIRS_ARM9_HEADER = ../source/	\
 			../source/console/gui_draw/	\
 			../source/ToolchainGenericDSFS/	\
 			../source/ToolchainGenericDSFS/fatfs/source/	\
-			../source/zlib/	\
-			../source/zip/	\
-			../source/lzss9/	\
-			../source/dswifi_arm9/	\
-			../source/wnifilib/	\
 			../source/imadecoder/	\
 			../include/	\
 			../../common/	\
 			../../common/libhardware/	\
 			../../common/twl/	\
-			../../common/dswifi/	\
-			../../common/dswifi/netinet/	\
-			../../common/dswifi/sys/	\
-			../../common/dswifi/arpa/	\
 			../../common/hardware/	\
 			../../common/hardware/dldi/	\
 			../../templateCode/source/	\
@@ -157,11 +131,13 @@ ifeq ($(SOURCE_MAKEFILE7),default)
 	cp	-r	$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/$(DIR_ARM7)/Makefile	../src/arm7/twl/
 endif
 	$(MAKE)	-R	-C	../src/common/libhardware/twl7
+	$(MAKE)	-R	-C	../src/common/libutils/twl7
 	$(MAKE)	-R	-C	../src/arm7/twl/
 ifeq ($(SOURCE_MAKEFILE9),default)
 	cp	-r	$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/$(DIR_ARM9)/Makefile	../src/arm9/twl/
 endif
 	$(MAKE)	-R	-C	../src/common/libhardware/twl9
+	$(MAKE)	-R	-C	../src/common/libutils/twl9
 	$(MAKE)	-R	-C	../src/arm9/source/ToolchainGenericDSFS/twl
 	$(MAKE)	-R	-C	../src/arm9/twl/
 
@@ -170,11 +146,13 @@ endif
 clean:
 	$(MAKE)	cleanWoopsiUI
 	$(MAKE)	clean	-C	../src/common/libhardware/twl7
+	$(MAKE)	clean	-C	../src/common/libutils/twl7
 	$(MAKE)	clean	-C	../src/arm7/twl/
 ifeq ($(SOURCE_MAKEFILE7),default)
 	-@rm -rf ../src/arm7/twl/Makefile
 endif
 	$(MAKE)	clean	-C	../src/common/libhardware/twl9
+	$(MAKE)	clean	-C	../src/common/libutils/twl9
 	$(MAKE)	clean	-C	../src/arm9/source/ToolchainGenericDSFS/twl
 	$(MAKE)	clean	-C	../src/arm9/twl/
 ifeq ($(SOURCE_MAKEFILE9),default)

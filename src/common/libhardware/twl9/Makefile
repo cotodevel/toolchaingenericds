@@ -49,6 +49,8 @@ export TARGET_LIBRARY_LIBNAME_9	=	l$(TARGET_LIBRARY_NAME_9)
 export DIRS_ARM9_SRCLIB = ../../libhardware	\
 			data/	\
 			build/	\
+			../../../templateCode/data/arm9/	\
+			../../../templateCode/source/	\
 			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
 			
 export DIRS_ARM9_HEADERLIB = ../../libhardware	\
@@ -72,6 +74,8 @@ export DIRS_ARM9_HEADERLIB = ../../libhardware	\
 			../../../arm9/source/ToolchainGenericDSFS/fatfs/source/	\
 			../../../arm9/source/zip/	\
 			../../../arm9/source/zlib/	\
+			../../../templateCode/data/arm9/	\
+			../../../templateCode/source/	\
 			data/	\
 			build/	\
 			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
@@ -98,7 +102,7 @@ d_objs_arm9:=	${file_arm9_src_c:.c=.d}	${file_arm9_src_s:.s=.d}	${file_arm9_src_
 #ARM9 specific definitions. -fno-common so we force initialized data to rodata
 MAPFILE = $(DIR_ARM9).map
 AS_ASFLAGS		=	$(GLOBAL_SHARED_FLAGS_9)	$(SPECIFIC_AS_COMPILER_FLAGS_9)		$(GLOBAL_AS_COMPILER_FLAGS)
-CC_ASFLAGS		=	-march=armv5t	-mthumb-interwork	-mfloat-abi=soft	-Ofast	-marm	-Wall -ftree-vectorize	-ffast-math	-FPIC	-DNDS	-DARM9	-DTWLMODE	-fno-exceptions		-std=c99	-ffunction-sections	-fdata-sections	-DTGDSBinVersion='$(TOOLCHAIN_GENERIC_DS_VER)'
+CC_ASFLAGS		=	-march=armv5t	-mthumb-interwork	-mfloat-abi=soft	-O2	-marm	-Wall -ftree-vectorize	-ffast-math	-FPIC	-DNDS	-DARM9	-DTWLMODE	-fno-exceptions		-std=c99	-ffunction-sections	-fdata-sections	-DTGDSBinVersion='$(TOOLCHAIN_GENERIC_DS_VER)'
 CPP_FLAGS		=	$(CC_ASFLAGS)	-nostdinc++	-fno-rtti	
 BUILD			= 	$(BUILD_ARM9)
 DIR_SRC			=	$(DIRS_ARM9_SRCLIB)

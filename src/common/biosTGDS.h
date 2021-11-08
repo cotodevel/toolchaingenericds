@@ -42,7 +42,6 @@ USA
 #include "typedefsTGDS.h"
 #include "ipcfifoTGDS.h"
 #include "InterruptsARMCores_h.h"
-#include "dswnifi_lib.h"
 #include "keypadTGDS.h"
 
 #include <stdio.h>
@@ -142,6 +141,7 @@ extern void handleARM9InitSVC();
 extern void handleARM9SVC();
 #endif
 
+extern bool isArm7ClosedLid;
 
 #ifdef __cplusplus
 }

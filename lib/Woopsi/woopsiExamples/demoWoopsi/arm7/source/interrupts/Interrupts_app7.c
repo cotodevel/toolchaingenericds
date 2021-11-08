@@ -26,7 +26,6 @@ USA
 #include "interrupts.h"
 #include "wifi_arm7.h"
 #include "main.h"
-#include "eventsTGDS.h"
 
 //User Handler Definitions
 

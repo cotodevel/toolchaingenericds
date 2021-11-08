@@ -158,15 +158,15 @@ vramSetup * DEFAULT_CONSOLE_VRAMSETUP(){
 	vramSetupDefault->vramBankSetupInst[VRAM_B_INDEX].vrambankCR = VRAM_B_LCDC_MODE;	//6820000h-683FFFFh
 	vramSetupDefault->vramBankSetupInst[VRAM_B_INDEX].enabled = true;
 	
-	//VRAM C: WoopsiTGDS Touchscreen UI
+	//VRAM C: Console / WoopsiTGDS Touchscreen UI
 	vramSetupDefault->vramBankSetupInst[VRAM_C_INDEX].vrambankCR = VRAM_C_0x06200000_ENGINE_B_BG;
 	vramSetupDefault->vramBankSetupInst[VRAM_C_INDEX].enabled = true;
 	
-	//VRAM D: ARM7 (128 Ko!)
+	//VRAM D: ARM7 (128 K)
 	vramSetupDefault->vramBankSetupInst[VRAM_D_INDEX].vrambankCR = VRAM_D_0x06000000_ARM7;
 	vramSetupDefault->vramBankSetupInst[VRAM_D_INDEX].enabled = true;
 	
-	//144K free decompressor mem
+	//144K free ARM9 mem
 	//E       64K   0    -     6880000h-688FFFFh
 	//F       16K   0    -     6890000h-6893FFFh
 	//G       16K   0    -     6894000h-6897FFFh
