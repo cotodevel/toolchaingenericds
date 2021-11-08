@@ -1216,6 +1216,7 @@ void initializeLibUtils9(
 		SoundStreamUpdateSoundStreamARM9LibUtils_fn SoundStreamUpdateSoundStreamARM9LibUtilsCall //ARM9: void updateStream() 
 	){
 	libutilisFifoNotEmptyCallback = HandleFifoNotEmptyWeakRefLibUtilsCall;
+	timerWifiInterruptARM9LibUtilsCallback = timerWifiInterruptARM9LibUtilsCall;
 	SoundSampleContextEnableARM7LibUtilsCallback = SoundSampleContextEnableARM7LibUtilsCall;
 	SoundSampleContextDisableARM7LibUtilsCallback = SoundSampleContextDisableARM7LibUtilsCall;
 	SoundStreamStopSoundStreamARM9LibUtilsCallback = SoundStreamStopSoundStreamARM9LibUtilsCall;

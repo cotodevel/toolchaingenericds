@@ -13,6 +13,7 @@
 #include "dldi.h"
 #include "debugNocash.h"
 #include "libndsFIFO.h"
+#include "wifi_shared.h"
 
 #ifdef ARM9
 
@@ -124,6 +125,18 @@ void libUtilsFIFONotEmpty(u32 cmd1, u32 cmd2){
 	//Execute ToolchainGenericDS FIFO commands
 	switch (cmd1) {
 		#ifdef ARM7
+		//arm9 wants to send a WIFI context block address / userdata is always zero here
+		case((uint32)WIFI_INIT):{
+			uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
+			//	wifiAddressHandler( void * address, void * userdata )
+			wifiAddressHandler((Wifi_MainStruct *)fifomsg[60], 0);
+		}
+		break;
+		// Deinit WIFI
+		case((uint32)WIFI_DEINIT):{
+			DeInitWIFI();
+		}
+		break;
 		#endif
 		
 		#ifdef ARM9
@@ -141,6 +154,11 @@ void libUtilsFIFONotEmpty(u32 cmd1, u32 cmd2){
 			if((int)fn != 0){
 				fn(fifoCheckDatamsgLength(channel), fifoFunc[channel][1]);
 			}
+		}
+		break;
+		
+		case((uint32)WIFI_SYNC):{
+			Wifi_Sync();
 		}
 		break;
 	}

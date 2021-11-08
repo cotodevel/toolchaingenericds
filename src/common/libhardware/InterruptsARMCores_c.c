@@ -35,7 +35,7 @@ USA
 #include "soundTGDS.h"
 #include "dldi.h"
 #include "debugNocash.h"
-
+#include "utilsTGDS.h"
 
 #ifdef TWLMODE
 #include "utils.twl.h"
@@ -173,6 +173,11 @@ void NDS_IRQHandler(){
 	}
 	
 	if(REG_IE_SET & IRQ_TIMER3){
+		#ifdef ARM9
+		if(timerWifiInterruptARM9LibUtilsCallback != NULL){
+			timerWifiInterruptARM9LibUtilsCallback();	//wifi arm9 irq
+		}
+		#endif
 		Timer3handlerUser();
 		REG_IF = IRQ_TIMER3;
 	}
@@ -183,6 +188,11 @@ void NDS_IRQHandler(){
 	}
 	
 	if(REG_IE_SET & IRQ_VBLANK){
+		#ifdef ARM7
+		if(wifiUpdateVBLANKARM7LibUtilsCallback != NULL){
+			wifiUpdateVBLANKARM7LibUtilsCallback();
+		}
+		#endif
 		VblankUser();
 		REG_IF = IRQ_VBLANK;
 	}
@@ -373,6 +383,13 @@ void NDS_IRQHandler(){
 	}
 	
 	#ifdef ARM7
+	if(REG_IE_SET & IRQ_WIFI){
+		if(wifiInterruptARM7LibUtilsCallback != NULL){
+			wifiInterruptARM7LibUtilsCallback();	//arm7 wifi irq
+		}
+		REG_IF=IRQ_WIFI;
+	}
+	
 	//clock 
 	if(REG_IE_SET & IRQ_RTCLOCK){
 		REG_IF = IRQ_RTCLOCK;
