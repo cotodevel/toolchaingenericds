@@ -1181,11 +1181,7 @@ void initSound(){
 	#endif
 }
 
-
 //Interfaces / Callbacks to connect to libutils
-
-//Init
-ARM7ARM9LibUtils_fn ARM7ARM9LibUtilsCallback = NULL;
 
 //FIFO
 HandleFifoNotEmptyWeakRefLibUtils_fn libutilisFifoNotEmptyCallback = NULL;
@@ -1211,36 +1207,45 @@ SoundStreamUpdateSoundStreamARM9LibUtils_fn SoundStreamUpdateSoundStreamARM9LibU
 
 //Setup components to bse used from ARM9 TGDS project because it decides how much functionality used
 #ifdef ARM9
-void initializeLibUtils(
-		HandleFifoNotEmptyWeakRefLibUtils_fn HandleFifoNotEmptyWeakRefLibUtilsCall, 
-		wifiUpdateVBLANKARM7LibUtils_fn wifiUpdateVBLANKARM7LibUtilsCall, 
-		wifiInterruptARM7LibUtils_fn wifiInterruptARM7LibUtilsCall, 
-		timerWifiInterruptARM9LibUtils_fn timerWifiInterruptARM9LibUtilsCall, 
-		SoundSampleContextInitARM7LibUtils_fn SoundSampleContextInitARM7LibUtilsCall,
-		SoundSampleContextEnableARM7LibUtils_fn SoundSampleContextEnableARM7LibUtilsCall,
-		SoundSampleContextDisableARM7LibUtils_fn SoundSampleContextDisableARM7LibUtilsCall,
-		SoundStreamTimerHandlerARM7LibUtils_fn SoundStreamTimerHandlerARM7LibUtilsCall,
-		SoundStreamStopSoundARM7LibUtils_fn SoundStreamStopSoundARM7LibUtilsCall,
-		SoundStreamSetupSoundARM7LibUtils_fn SoundStreamSetupSoundARM7LibUtilsCall,
-		SoundStreamStopSoundStreamARM9LibUtils_fn SoundStreamStopSoundStreamARM9LibUtilsCall,
-		SoundStreamUpdateSoundStreamARM9LibUtils_fn SoundStreamUpdateSoundStreamARM9LibUtilsCall,
-		ARM7ARM9LibUtils_fn ARM7ARM9LibUtilsCall
+void initializeLibUtils9(
+		HandleFifoNotEmptyWeakRefLibUtils_fn HandleFifoNotEmptyWeakRefLibUtilsCall, //ARM7 & ARM9
+		timerWifiInterruptARM9LibUtils_fn timerWifiInterruptARM9LibUtilsCall, //ARM9 
+		SoundSampleContextEnableARM7LibUtils_fn SoundSampleContextEnableARM7LibUtilsCall, // ARM7 & ARM9: void EnableSoundSampleContext(int SndSamplemode)
+		SoundSampleContextDisableARM7LibUtils_fn SoundSampleContextDisableARM7LibUtilsCall,	//ARM7 & ARM9: void DisableSoundSampleContext()
+		SoundStreamStopSoundStreamARM9LibUtils_fn SoundStreamStopSoundStreamARM9LibUtilsCall,	//ARM9: bool stopSoundStream(struct fd * tgdsStructFD1, struct fd * tgdsStructFD2, int * internalCodecType)
+		SoundStreamUpdateSoundStreamARM9LibUtils_fn SoundStreamUpdateSoundStreamARM9LibUtilsCall //ARM9: void updateStream() 
 	){
 	libutilisFifoNotEmptyCallback = HandleFifoNotEmptyWeakRefLibUtilsCall;
-	wifiUpdateVBLANKARM7LibUtilsCallback = wifiUpdateVBLANKARM7LibUtilsCall;
-	wifiInterruptARM7LibUtilsCallback = wifiInterruptARM7LibUtilsCall;	
-	timerWifiInterruptARM9LibUtilsCallback = timerWifiInterruptARM9LibUtilsCall;
-	SoundSampleContextInitARM7LibUtilsCallback = SoundSampleContextInitARM7LibUtilsCall;
 	SoundSampleContextEnableARM7LibUtilsCallback = SoundSampleContextEnableARM7LibUtilsCall;
 	SoundSampleContextDisableARM7LibUtilsCallback = SoundSampleContextDisableARM7LibUtilsCall;
+	SoundStreamStopSoundStreamARM9LibUtilsCallback = SoundStreamStopSoundStreamARM9LibUtilsCall;
+	SoundStreamUpdateSoundStreamARM9LibUtilsCallback = SoundStreamUpdateSoundStreamARM9LibUtilsCall;
+	
+	//ARM9 libUtils component initialization
+	fifoInit();
+}
+#endif
+
+#ifdef ARM7
+void initializeLibUtils7(
+	HandleFifoNotEmptyWeakRefLibUtils_fn HandleFifoNotEmptyWeakRefLibUtilsCall, //ARM7 & ARM9
+	wifiUpdateVBLANKARM7LibUtils_fn wifiUpdateVBLANKARM7LibUtilsCall, //ARM7
+	wifiInterruptARM7LibUtils_fn wifiInterruptARM7LibUtilsCall,  //ARM7
+	SoundStreamTimerHandlerARM7LibUtils_fn SoundStreamTimerHandlerARM7LibUtilsCall, //ARM7: void TIMER1Handler()
+	SoundStreamStopSoundARM7LibUtils_fn SoundStreamStopSoundARM7LibUtilsCall, 	//ARM7: void stopSound()
+	SoundStreamSetupSoundARM7LibUtils_fn SoundStreamSetupSoundARM7LibUtilsCall,	//ARM7: void setupSound()
+	SoundSampleContextInitARM7LibUtils_fn SoundSampleContextInitARM7LibUtilsCall, //ARM7: initSoundSampleContext()
+	SoundSampleContextEnableARM7LibUtils_fn SoundSampleContextEnableARM7LibUtilsCall, // ARM7 & ARM9: void EnableSoundSampleContext(int SndSamplemode)
+	SoundSampleContextDisableARM7LibUtils_fn SoundSampleContextDisableARM7LibUtilsCall	//ARM7 & ARM9: void DisableSoundSampleContext()
+){
+	libutilisFifoNotEmptyCallback = HandleFifoNotEmptyWeakRefLibUtilsCall;
+	wifiUpdateVBLANKARM7LibUtilsCallback = wifiUpdateVBLANKARM7LibUtilsCall;
+	wifiInterruptARM7LibUtilsCallback = wifiInterruptARM7LibUtilsCall;
 	SoundStreamTimerHandlerARM7LibUtilsCallback = SoundStreamTimerHandlerARM7LibUtilsCall;
 	SoundStreamStopSoundARM7LibUtilsCallback = SoundStreamStopSoundARM7LibUtilsCall;
 	SoundStreamSetupSoundARM7LibUtilsCallback = SoundStreamSetupSoundARM7LibUtilsCall;
-	SoundStreamStopSoundStreamARM9LibUtilsCallback = SoundStreamStopSoundStreamARM9LibUtilsCall;
-	SoundStreamUpdateSoundStreamARM9LibUtilsCallback = SoundStreamUpdateSoundStreamARM9LibUtilsCall;
-	ARM7ARM9LibUtilsCallback = ARM7ARM9LibUtilsCall;
-	if(ARM7ARM9LibUtilsCallback != NULL){
-		ARM7ARM9LibUtilsCallback(); //libUtilsInit(); should be here
-	}
+	SoundSampleContextInitARM7LibUtilsCallback = SoundSampleContextInitARM7LibUtilsCall;
+	SoundSampleContextEnableARM7LibUtilsCallback = SoundSampleContextEnableARM7LibUtilsCall;
+	SoundSampleContextDisableARM7LibUtilsCallback = SoundSampleContextDisableARM7LibUtilsCall;
 }
 #endif

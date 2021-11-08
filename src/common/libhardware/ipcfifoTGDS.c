@@ -580,6 +580,8 @@ void HandleFifoNotEmpty(){
 				u32 dldiStartAddress = fifomsg[3];
 				u32 TargetARM7DLDIAddress = fifomsg[4];
 				
+				setupLibUtils(); //ARM7 libUtils Setup
+				
 				//ARM7DLDI: ONLY if NTR hardware. TWL uses SDIO instead
 				if(__dsimode == false){
 					DLDIARM7Address = (u32*)TargetARM7DLDIAddress; 

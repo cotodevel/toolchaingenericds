@@ -31,7 +31,6 @@ USA
 extern "C" {
 #endif
 
-extern void libUtilsInit();
 extern void libUtilsFIFONotEmpty(u32 cmd1, u32 cmd2);
 extern u8* TGDSARM7Malloc(int size);
 extern u8 * TGDSARM7Calloc(int blockCount, int blockSize);

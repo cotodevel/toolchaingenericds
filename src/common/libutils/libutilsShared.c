@@ -118,18 +118,6 @@ int inet_pton(int af, const char *src, void *dst){
 	return (-1);
 }
 
-//init code
-void libUtilsInit(){
-	
-	#ifdef ARM7
-	#endif
-	
-	#ifdef ARM9
-	fifoInit();
-	#endif
-	
-}
-
 #endif
 
 void libUtilsFIFONotEmpty(u32 cmd1, u32 cmd2){	

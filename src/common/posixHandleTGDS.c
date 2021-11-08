@@ -259,7 +259,8 @@ void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,									
 		}
 	}
 	TGDSInitLoopCount = 0;
-	SendFIFOWords(TGDS_ARM7_SETUPMALLOCDLDI, 0xFF);	//ARM7 Setup
+	setupLibUtils(); //ARM9 libUtils Setup
+	SendFIFOWords(TGDS_ARM7_SETUPMALLOCDLDI, 0xFF);	//ARM7 Setup: DLDI, and extensions if enabled through libutils
 	while(fifomsg[4] != 0){
 		if(TGDSInitLoopCount > (1048576 << 3) ){
 			u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
