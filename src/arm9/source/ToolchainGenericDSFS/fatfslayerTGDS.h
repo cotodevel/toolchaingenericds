@@ -431,7 +431,6 @@ extern struct FileClassList * initFileList();
 #endif
 
 
-
 //return: true if clean success
 //false if lst == NULL
 #ifdef ARM9
