@@ -189,22 +189,6 @@ void DisableSoundSampleContext(){
 
 #ifdef ARM7
 
-s16 *strpcmL0 = NULL;
-s16 *strpcmL1 = NULL;
-s16 *strpcmR0 = NULL;
-s16 *strpcmR1 = NULL;
-
-int lastL = 0;
-int lastR = 0;
-
-int multRate = 1;
-int pollCount = 100; //start with a read
-
-u32 sndCursor = 0;
-u32 micBufLoc = 0;
-u32 sampleLen = 0;
-int sndRate = 0;
-
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("O0")))
 #endif

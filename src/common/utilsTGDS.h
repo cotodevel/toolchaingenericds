@@ -75,6 +75,9 @@ struct TGDS_Linked_Module {
 
 //Interfaces / Callbacks to connect to libutils
 
+//Init
+typedef void(*ARM7ARM9LibUtils_fn)();
+
 //FIFO
 typedef void(*HandleFifoNotEmptyWeakRefLibUtils_fn)(uint32 cmd1, uint32 cmd2);
 
@@ -235,6 +238,7 @@ extern SoundStreamTimerHandlerARM7LibUtils_fn SoundStreamTimerHandlerARM7LibUtil
 extern SoundStreamStopSoundARM7LibUtils_fn SoundStreamStopSoundARM7LibUtilsCallback;
 
 extern SoundStreamSetupSoundARM7LibUtils_fn SoundStreamSetupSoundARM7LibUtilsCallback;
+extern ARM7ARM9LibUtils_fn ARM7ARM9LibUtilsCallback;
 
 #ifdef ARM9
 extern SoundStreamStopSoundStreamARM9LibUtils_fn SoundStreamStopSoundStreamARM9LibUtilsCallback;
@@ -252,7 +256,8 @@ extern void initializeLibUtils(
 		SoundStreamStopSoundARM7LibUtils_fn SoundStreamStopSoundARM7LibUtilsCall,
 		SoundStreamSetupSoundARM7LibUtils_fn SoundStreamSetupSoundARM7LibUtilsCall,
 		SoundStreamStopSoundStreamARM9LibUtils_fn SoundStreamStopSoundStreamARM9LibUtilsCall,
-		SoundStreamUpdateSoundStreamARM9LibUtils_fn SoundStreamUpdateSoundStreamARM9LibUtilsCall
+		SoundStreamUpdateSoundStreamARM9LibUtils_fn SoundStreamUpdateSoundStreamARM9LibUtilsCall,
+		ARM7ARM9LibUtils_fn ARM7ARM9LibUtilsCall
 	);
 
 extern u32 reloadStatus;

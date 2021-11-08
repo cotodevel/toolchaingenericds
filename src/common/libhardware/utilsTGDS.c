@@ -1184,6 +1184,9 @@ void initSound(){
 
 //Interfaces / Callbacks to connect to libutils
 
+//Init
+ARM7ARM9LibUtils_fn ARM7ARM9LibUtilsCallback = NULL;
+
 //FIFO
 HandleFifoNotEmptyWeakRefLibUtils_fn libutilisFifoNotEmptyCallback = NULL;
 
@@ -1220,7 +1223,8 @@ void initializeLibUtils(
 		SoundStreamStopSoundARM7LibUtils_fn SoundStreamStopSoundARM7LibUtilsCall,
 		SoundStreamSetupSoundARM7LibUtils_fn SoundStreamSetupSoundARM7LibUtilsCall,
 		SoundStreamStopSoundStreamARM9LibUtils_fn SoundStreamStopSoundStreamARM9LibUtilsCall,
-		SoundStreamUpdateSoundStreamARM9LibUtils_fn SoundStreamUpdateSoundStreamARM9LibUtilsCall
+		SoundStreamUpdateSoundStreamARM9LibUtils_fn SoundStreamUpdateSoundStreamARM9LibUtilsCall,
+		ARM7ARM9LibUtils_fn ARM7ARM9LibUtilsCall
 	){
 	libutilisFifoNotEmptyCallback = HandleFifoNotEmptyWeakRefLibUtilsCall;
 	wifiUpdateVBLANKARM7LibUtilsCallback = wifiUpdateVBLANKARM7LibUtilsCall;
@@ -1234,5 +1238,9 @@ void initializeLibUtils(
 	SoundStreamSetupSoundARM7LibUtilsCallback = SoundStreamSetupSoundARM7LibUtilsCall;
 	SoundStreamStopSoundStreamARM9LibUtilsCallback = SoundStreamStopSoundStreamARM9LibUtilsCall;
 	SoundStreamUpdateSoundStreamARM9LibUtilsCallback = SoundStreamUpdateSoundStreamARM9LibUtilsCall;
+	ARM7ARM9LibUtilsCallback = ARM7ARM9LibUtilsCall;
+	if(ARM7ARM9LibUtilsCallback != NULL){
+		ARM7ARM9LibUtilsCallback(); //libUtilsInit(); should be here
+	}
 }
 #endif

@@ -61,10 +61,6 @@ void XmemInit(unsigned int mallocLinearMemoryStart, unsigned int mallocLinearMem
 	xmem_blocks = (unsigned char *)((u8*)mallocLinearMemoryStart + XMEM_TABLESIZE);	//Size: (XMEM_BLOCKSIZE*XMEM_BLOCKCOUNT). Should not exceed the end of EWRAM
 	
 	if ((xmem_table == NULL) || (xmem_blocks == NULL)) {
-		int argBuffer[MAXPRINT7ARGVCOUNT];
-		memset((unsigned char *)&argBuffer[0], 0, sizeof(argBuffer));
-		argBuffer[0] = XMEMTOTALSIZE;
-		printf7("XMEM: Could not allocate of main ram for XMEM", 1, (int*)&argBuffer[0]);
 		while(1==1){
 			IRQVBlankWait();
 		}

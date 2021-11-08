@@ -150,7 +150,7 @@ d_objs_arm9:=	${file_arm9_src_c:.c=.d}	${file_arm9_src_s:.s=.d}	${file_arm9_src_
 #ARM9 specific definitions. -fno-common so we force initialized data to rodata
 MAPFILE = $(DIR_ARM9).map
 AS_ASFLAGS		=	$(GLOBAL_SHARED_FLAGS_9)	$(SPECIFIC_AS_COMPILER_FLAGS_9)		$(GLOBAL_AS_COMPILER_FLAGS)
-CC_ASFLAGS		=	-march=armv5t	-mthumb-interwork	-mfloat-abi=soft	-Ofast	-marm	-Wall -ftree-vectorize	-ffast-math	-FPIC	-DNDS	-DARM9	-DTWLMODE	-fno-exceptions		-std=c99	-ffunction-sections	-fdata-sections	-DTGDSBinVersion='$(TOOLCHAIN_GENERIC_DS_VER)'
+CC_ASFLAGS		=	-march=armv5t	-mthumb-interwork	-mfloat-abi=soft	-Ofast	-marm	-Wall -ftree-vectorize	-ffast-math	-FPIC	-DNDS	-DARM9	-DTWLMODE	-fno-exceptions		-std=c99	-ffunction-sections	-fdata-sections	-DTGDSBinVersion='$(TOOLCHAIN_GENERIC_DS_VER)'	-DNOCRYPT
 CPP_FLAGS		=	$(CC_ASFLAGS)	-nostdinc++	-fno-rtti	
 BUILD			= 	$(BUILD_ARM9)
 DIR_SRC			=	$(DIRS_ARM9_SRCLIB)
@@ -176,6 +176,7 @@ $(OBJDIR):
 $(OBJDIR)/%.o : %.bin
 	-@echo 'trying to convert .BIN ($<) -> .C output: ${@:.o=.c} : arrayName: $(subst build/,,${@:.o=})'
 	$(BIN2C)	$<	${@:.o=.c}	$(subst build/,,${@:.o=})
+	-mkdir -p $(TARGET_LIBRARY_HEADERS_9)	&&	cp ${@:.o=.h} $(TARGET_LIBRARY_HEADERS_9)
 	$(CC)	$(CC_ASFLAGS)	$(DIRLIBS_HDR)	$(DIRLIBS_SRC)	$(DIRLIBS_PROHIBITED)	-o $@ -c ${@:.o=.c}
 
 #convert a TGA BMP16 into a native 3D texture unit format (GL_COLOR 16bpp)
@@ -186,6 +187,7 @@ $(OBJDIR)/%.o : %.tga
 $(OBJDIR)/%.o : %.pcx	
 	-@echo 'trying to convert .BIN ($<) -> .C output: ${@:.o=.c} : arrayName: $(subst build/,,${@:.o=})'
 	$(BIN2C)	$<	${@:.o=.c}	$(subst build/,,${@:.o=})
+	-mkdir -p $(TARGET_LIBRARY_HEADERS_9)	&&	cp ${@:.o=.h} $(TARGET_LIBRARY_HEADERS_9)
 	$(CC)	$(CC_ASFLAGS)	$(DIRLIBS_HDR)	$(DIRLIBS_SRC)	$(DIRLIBS_PROHIBITED)	-o $@ -c ${@:.o=.c}
 
 #Do C Compile now!

@@ -47,10 +47,13 @@ USA
 #include "consoleTGDS.h"
 #endif
 
+//arg 0: channel
+//arg 1: arg0: handler, arg1: userdata
+u32 fifoFunc[FIFO_CHANNELS][2];	//context is only passed on callback prototype stage, because, the channel index generates the callee callback
+
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("O0")))
 #endif
-
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif

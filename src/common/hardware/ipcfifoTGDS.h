@@ -133,6 +133,18 @@ USA
 #define ARM7FS_TRANSACTIONSTATUS_IDLE (int)(-1)
 #define ARM7FS_TRANSACTIONSTATUS_BUSY (int)(0)
 
+#define TGDS_LIBNDSFIFO_COMMAND (u32)(0xFFFFAAC1)	//Bottom 8 bits act as the FIFO Channel Index
+
+//TGDS -> Libnds FIFO compatibility API. Ensures the behaviour of the FIFO messaging system works.
+// FIFO_CHANNEL_BITS - number of bits used to specify the channel in a packet - default=4
+#define FIFO_CHANNEL_BITS				(int)(4)
+
+// FIFO_MAX_DATA_WORDS - maximum number of bytes that can be sent in a fifo message
+#define FIFO_MAX_DATA_BYTES				(int)(128)
+
+// FIFO_CHANNELS - fifo channel number allowed to work with
+#define FIFO_CHANNELS				(int)(16)
+
 //! Enum values for the different fifo channels.
 typedef enum {
 	FIFO_PM			= (int)(0),	/*!< \brief fifo channel reserved for power management. */
@@ -155,6 +167,12 @@ typedef enum {
 
 /* Standardized base handler compatible with all the others */
 typedef void (*FifoHandlerFunc)(int bufferSize, u32 userdata);
+
+struct libndsFIFOs {
+	//Libnds FIFO implementation
+	int channelBufferSize[FIFO_CHANNELS];	//if == 0: empty, if > 0: used
+	u8 channelBuffer[FIFO_CHANNELS*FIFO_MAX_DATA_BYTES];	//value: usually used as a void * address or u32 value 
+};
 
 typedef struct sIPCSharedTGDS {
     
@@ -230,6 +248,8 @@ typedef struct sIPCSharedTGDS {
 	struct sDSFWSETTINGS DSFWSETTINGSInst;
 	struct sEXTKEYIN	EXTKEYINInst;
 	
+	struct libndsFIFOs libndsFIFO;
+	
 	//FIFO Mesagging: used by TGDS-multiboot loader code only.
 	uint32 fifoMesaggingQueueSharedRegion[4];	//4 Words for various command handling which can't use the NDS_CACHED_SCRATCHPAD / NDS_UNCACHED_SCRATCHPAD at the time
 	
@@ -249,6 +269,10 @@ static inline uint32 getUserIPCAddress(){
 
 static inline void sendIPCIRQOnly(){
 	REG_IPC_SYNC|=IPC_SYNC_IRQ_REQUEST;
+}
+
+static inline void sendByteIPCNOIRQ(uint8 inByte){
+	REG_IPC_SYNC = (((REG_IPC_SYNC&0xfffff0ff) | (inByte<<8)) & ~(IPC_SYNC_IRQ_REQUEST));
 }
 
 //Slower
@@ -276,6 +300,11 @@ extern void HandleFifoEmpty();
 extern void Write32bitAddrExtArm(uint32 address, uint32 value);
 extern void Write16bitAddrExtArm(uint32 address, uint16 value);
 extern void Write8bitAddrExtArm(uint32 address, uint8 value);
+
+//arg 0: channel
+//arg 1: arg0: handler, arg1: userdata
+extern u32 fifoFunc[FIFO_CHANNELS][2];	//context is only passed on callback prototype stage, because, the channel index generates the callee callback
+
 extern struct sIPCSharedTGDS* getsIPCSharedTGDS();
 extern void SendFIFOWordsITCM(uint32 data0, uint32 data1);
 
