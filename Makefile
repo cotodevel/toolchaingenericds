@@ -3,11 +3,11 @@ all: tgdsBuild
 tgdsBuild: 
 	$(MAKE)	-R	-C	ntr/
 	$(MAKE)	-R	-C	twl/
-
+	
 clean:
 	$(MAKE) -C ntr/ clean
 	$(MAKE) -C twl/ clean
-
+	
 #---------------------------------------------------------------------------------
 
 commitChanges:

@@ -164,7 +164,7 @@ void initHardware(u8 DSHardware) {
 //---------------------------------------------------------------------------------
 	swiDelay(15000);
 	#ifdef ARM7
-	//Init Shared Address Region and get NDS Heade
+	//Init Shared Address Region and get NDS Header
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	memcpy((u8*)&TGDSIPC->DSHeader,(u8*)0x027FFE00, sizeof(TGDSIPC->DSHeader));
 	

@@ -164,7 +164,7 @@ extern void RenderTGDSLogoMainEngine(u8 * compressedLZSSBMP, int compressedLZSSB
 //ARGV 
 extern int thisArgc;
 extern char thisArgv[argvItems][MAX_TGDSFILENAME_LENGTH];
-extern void mainARGV();
+extern void handleARGV();
 
 #endif
 
@@ -281,6 +281,14 @@ extern int TGDSProjectReturnFromLinkedModule();	//resides in TGDS App caller add
 extern void TGDSProjectRunLinkedModule(char * TGDSLinkedModuleFilename, int argc, char **argv, char* TGDSProjectName);
 extern void initSound();
 extern void setupLibUtils();
+
+extern void setGlobalArgc(int argcVal);
+extern int getGlobalArgc();
+extern void setGlobalArgv(char** argvVal);
+extern char** getGlobalArgv();
+
+extern int globalArgc;
+extern char **globalArgv;
 
 #ifdef __cplusplus
 }

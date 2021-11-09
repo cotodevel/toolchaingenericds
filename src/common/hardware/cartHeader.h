@@ -22,7 +22,9 @@ USA
 #define __cartheader_h
 
 #ifdef ARM9
+
 #include "limitsTGDS.h"
+
 #endif
 
 //NTR Header
@@ -49,25 +51,31 @@ typedef struct sDSCARTHEADER {
   //...rest don't care
 }tDSCARTHEADER;
 
-// argv struct magic number
-#define ARGV_MAGIC 0x5f617267
+//Libnds ARGV impl.
+#ifdef ARM9
 
-//!	argv structure
-/*!	\struct __argv
+	// argv struct magic number
+	#define ARGV_MAGIC 0x5f617267
 
-	structure used to set up argc/argv on the DS
+	//!	argv structure
+	/*!	\struct __argv
 
-*/
-struct __argv {
-	int argvMagic;		//!< argv magic number, set to 0x5f617267 ('_arg') if valid 
-	char *commandLine;	//!< base address of command line, set of null terminated strings
-	int length;		//!< total length of command line
-	int argc;		//!< internal use, number of arguments
-	char **argv;		//!< internal use, argv pointer
-};
+		structure used to set up argc/argv on the DS
 
-//!	Default location for the libnds argv structure.
-#define __system_argv		((struct __argv *)0x02FFFE70)
-#define cmdline 			((char*)(int)0x02FFFE70 + sizeof(struct __argv))
+	*/
+	struct __argv {
+		int argvMagic;		//!< argv magic number, set to 0x5f617267 ('_arg') if valid 
+		char *commandLine;	//!< base address of command line, set of null terminated strings
+		int length;		//!< total length of command line
+		int argc;		//!< internal use, number of arguments
+		char **argv;		//!< internal use, argv pointer
+	};
+
+	//!	Default location for the libnds argv structure.
+	#define __system_argv		((struct __argv *)0x02FFFE70)
+	#define cmdline 			((char*)(int)0x02FFFE70 + sizeof(struct __argv))
+
+	
+	#endif
 
 #endif
