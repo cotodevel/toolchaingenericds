@@ -715,16 +715,58 @@ void RenderTGDSLogoMainEngine(u8 * compressedLZSSBMP, int compressedLZSSBMPSize)
 	TGDSARM9Free(LZSSCtx.bufferSource);
 }
 
+int globalArgc=0; 
+char **globalArgv=NULL;
+
+void setGlobalArgc(int argcVal){
+	globalArgc = argcVal;
+}
+int getGlobalArgc(){
+	return globalArgc;
+}
+
+void setGlobalArgv(char** argvVal){
+	globalArgv = argvVal;
+}
+
+char** getGlobalArgv(){
+	return globalArgv;
+}
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 char thisArgv[argvItems][MAX_TGDSFILENAME_LENGTH];
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 int thisArgc=0;
 
-void mainARGV(){
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void handleARGV(){
+	//Command line vector. Will be reused.
+	char** cmdLineVectorPosixCompatible = ((char**)0x02FFFE70);
+	
 	if(__system_argv->length > 0){
 		//get string count (argc) from commandLine
 		int argCount=0;
 		int internalOffset = 0;
 		int i = 0;
 		for(i = 0; i < __system_argv->length; i++){
+			
+			//End of N ARGV? Pass the pointer into the command line vector
 			if(__system_argv->commandLine[i] == '\0'){
 				thisArgv[argCount][internalOffset] = '\0';
 				argCount++;
@@ -736,13 +778,17 @@ void mainARGV(){
 			}
 		}
 		
-		//Actually re-count Args, because garbage may be in ARGV code causing false positives
+		//Actually re-count Args, because garbage may be in ARGV code causing false positives.
+		//Also it is safe to trash the original __system_argv->commandLine struct
 		int argBugged = argCount;
 		argCount = 0;
-		for (i=0; i<argBugged; i++) {
+		
+		//Reset the command line vector
+		memset(cmdLineVectorPosixCompatible, 0, sizeof(struct __argv));
+		
+		for (i=0; i<argBugged; i++){
 			if (thisArgv[i]) {
 				if(strlen(thisArgv[i]) > 8){
-					
 					//Libnds compatibility: If (recv) mainARGV fat:/ change to 0:/
 					char thisARGV[MAX_TGDSFILENAME_LENGTH+1];
 					memset(thisARGV, 0, sizeof(thisARGV));
@@ -767,6 +813,9 @@ void mainARGV(){
 						//copy back
 						memset(thisArgv[i], 0, 256);
 						strcpy(thisArgv[i], thisARGV2);
+						
+						//build the command line vector
+						cmdLineVectorPosixCompatible[i] = (char *)&thisArgv[i];
 					}
 					
 					argCount++;
@@ -779,8 +828,11 @@ void mainARGV(){
 	else{
 		thisArgc = 0;
 	}
-	extern int main(int argc, char **argv);
-	main(thisArgc,  (char**)&thisArgv[0][0]);
+	
+	setGlobalArgc(thisArgc);
+	setGlobalArgv((char**)cmdLineVectorPosixCompatible);
+	//extern int main(int argc, char **argv);
+	//main(thisArgc,  (char**)cmdLineVectorPosixCompatible);
 }
 
 #endif
@@ -1024,73 +1076,7 @@ void TurnOffScreens(){
 }
 
 #ifdef ARM9
-__attribute__((section(".dtcm")))
-u32 reloadStatus = 0;
-#endif
-
-#ifdef ARM9
-//ToolchainGenericDS-multiboot NDS Binary loader: Requires tgds_multiboot_payload_ntr.bin / tgds_multiboot_payload_twl.bin (TGDS-multiboot Project) in SD root.
-__attribute__((section(".itcm")))
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-void TGDSMultibootRunNDSPayload(char * filename) {
-	char msgDebug[96];
-	memset(msgDebug, 0, sizeof(msgDebug));	
-	//switch_dswnifi_mode(dswifi_idlemode); //todo add callback here
-	strcpy((char*)(0x02280000 - (MAX_TGDSFILENAME_LENGTH+1)), filename);	//Arg0:	
-	#ifdef NTRMODE
-	char * TGDSMBPAYLOAD = "0:/tgds_multiboot_payload_ntr.bin";	//TGDS NTR SDK (ARM9 binaries) emits TGDSMultibootRunNDSPayload() which reloads into NTR TGDS-MB Reload payload
-	#endif
-	
-	#ifdef TWLMODE
-	char * TGDSMBPAYLOAD = "0:/tgds_multiboot_payload_twl.bin";	//TGDS TWL SDK (ARM9i binaries) emits TGDSMultibootRunNDSPayload() which reloads into TWL TGDS-MB Reload payload
-	#endif
-	
-	FILE * tgdsPayloadFh = fopen(TGDSMBPAYLOAD, "r");
-	if(tgdsPayloadFh != NULL){
-		fseek(tgdsPayloadFh, 0, SEEK_SET);
-		int	tgds_multiboot_payload_size = FS_getFileSizeFromOpenHandle(tgdsPayloadFh);
-		fread((u32*)0x02280000, 1, tgds_multiboot_payload_size, tgdsPayloadFh);
-		coherent_user_range_by_size(0x02280000, (int)tgds_multiboot_payload_size);
-		fclose(tgdsPayloadFh);
-		int ret=FS_deinit();
-		//Copy and relocate current TGDS DLDI section into target ARM9 binary
-		u32 dldiSrc = (u32)&_io_dldi_stub;
-		if(strncmp((char*)&dldiGet()->friendlyName[0], "TGDS RAMDISK", 12) == 0){
-			dldiSrc = (u32)&tgds_ramdisk_dldi[0];
-		}
-		bool stat = dldiPatchLoader((data_t *)0x02280000, (u32)tgds_multiboot_payload_size, (u32)dldiSrc);
-		if(stat == false){
-			sprintf(msgDebug, "%s%s", "TGDSMultibootRunNDSPayload():DLDI Patch failed. APP does not support DLDI format.", "");
-			nocashMessage((char*)&msgDebug[0]);
-		}
-		else{
-			sprintf(msgDebug, "%s%s", "TGDSMultibootRunNDSPayload():DLDI Patch OK.", "");
-			nocashMessage((char*)&msgDebug[0]);
-		}
-		REG_IME = 0;
-		typedef void (*t_bootAddr)();
-		t_bootAddr bootARM9Payload = (t_bootAddr)0x02280000;
-		bootARM9Payload();
-	}
-	else{
-		sprintf(msgDebug, "%s%s", "TGDSMultibootRunNDSPayload(): Missing Payload:", TGDSMBPAYLOAD);
-		nocashMessage((char*)&msgDebug[0]);
-		printf((char*)&msgDebug[0]);
-	}
-}
-#endif
-
-//Libnds ARGV impl.
-#ifdef ARM9
-
 /* 
-
 Usage:	
 	char thisArgv[3][MAX_TGDSFILENAME_LENGTH];
 	memset(thisArgv, 0, sizeof(thisArgv));
@@ -1107,7 +1093,6 @@ Note:
 Implementation:
 	https://bitbucket.org/Coto88/toolchaingenericds-argvtest/
 */
-
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("O0")))
 #endif
@@ -1167,6 +1152,72 @@ void addARGV(int argc, char *argv){
 		// reserved when ARGV receives into main()
 		//__system_argv->argc = ;
 		//__system_argv->argv = ;
+	}
+}
+#endif
+
+#ifdef ARM9
+__attribute__((section(".dtcm")))
+u32 reloadStatus = 0;
+#endif
+
+#ifdef ARM9
+//ToolchainGenericDS-multiboot NDS Binary loader: Requires tgds_multiboot_payload_ntr.bin / tgds_multiboot_payload_twl.bin (TGDS-multiboot Project) in SD root.
+__attribute__((section(".itcm")))
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void TGDSMultibootRunNDSPayload(char * filename) {
+	char msgDebug[96];
+	memset(msgDebug, 0, sizeof(msgDebug));	
+	//switch_dswnifi_mode(dswifi_idlemode); //todo add callback here
+	strcpy((char*)(0x02280000 - (MAX_TGDSFILENAME_LENGTH+1)), filename);	//Arg0:	
+	#ifdef NTRMODE
+	char * TGDSMBPAYLOAD = "0:/tgds_multiboot_payload_ntr.bin";	//TGDS NTR SDK (ARM9 binaries) emits TGDSMultibootRunNDSPayload() which reloads into NTR TGDS-MB Reload payload
+	#endif
+	
+	#ifdef TWLMODE
+	char * TGDSMBPAYLOAD = "0:/tgds_multiboot_payload_twl.bin";	//TGDS TWL SDK (ARM9i binaries) emits TGDSMultibootRunNDSPayload() which reloads into TWL TGDS-MB Reload payload
+	#endif
+	
+	FILE * tgdsPayloadFh = fopen(TGDSMBPAYLOAD, "r");
+	if(tgdsPayloadFh != NULL){
+		fseek(tgdsPayloadFh, 0, SEEK_SET);
+		int	tgds_multiboot_payload_size = FS_getFileSizeFromOpenHandle(tgdsPayloadFh);
+		fread((u32*)0x02280000, 1, tgds_multiboot_payload_size, tgdsPayloadFh);
+		coherent_user_range_by_size(0x02280000, (int)tgds_multiboot_payload_size);
+		fclose(tgdsPayloadFh);
+		int ret=FS_deinit();
+		//Copy and relocate current TGDS DLDI section into target ARM9 binary
+		if(strncmp((char*)&dldiGet()->friendlyName[0], "TGDS RAMDISK", 12) == 0){
+			printf("TGDS DLDI detected. Skipping DLDI patch.");
+		}
+		else{
+			bool stat = dldiPatchLoader((data_t *)0x02280000, (u32)tgds_multiboot_payload_size, (u32)&_io_dldi_stub);
+			if(stat == false){
+				sprintf(msgDebug, "%s%s", "TGDSMultibootRunNDSPayload():DLDI Patch failed. APP does not support DLDI format.", "");
+				nocashMessage((char*)&msgDebug[0]);
+			}
+			else{
+				sprintf(msgDebug, "%s%s", "TGDSMultibootRunNDSPayload():DLDI Patch OK.", "");
+				nocashMessage((char*)&msgDebug[0]);
+			}
+		}
+		
+		
+		REG_IME = 0;
+		typedef void (*t_bootAddr)();
+		t_bootAddr bootARM9Payload = (t_bootAddr)0x02280000;
+		bootARM9Payload();
+	}
+	else{
+		sprintf(msgDebug, "%s%s", "TGDSMultibootRunNDSPayload(): Missing Payload:", TGDSMBPAYLOAD);
+		nocashMessage((char*)&msgDebug[0]);
+		printf((char*)&msgDebug[0]);
 	}
 }
 #endif
