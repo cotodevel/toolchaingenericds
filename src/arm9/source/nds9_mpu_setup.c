@@ -28,7 +28,6 @@ USA
 //Use another for MPU settings : vectors @0xffff0000
 T_mpuSetting mpuSetting[2];
 
-
 uint32 EWRAMCached(uint32 address){
 	uint32 bottom_mem = (address & nds_ewram_mask);
 	return (uint32)(get_ewram_start() | bottom_mem);
@@ -39,16 +38,14 @@ uint32 EWRAMUncached(uint32 address){
 	return (uint32)(((uint32)get_ewram_start() | (uint32)get_ewram_size()) | bottom_mem);
 }
 
-
-//these functions allow to change the NDS system MPU settings as whole, preventing you to keep track of each custom MPU setting.
-// it is recomended that you use those functions for dealing with slower processes. For faster processes, just use the CP15 functions directly.
-
+//These functions allow to change the NDS system MPU settings as whole, preventing you to keep track of each custom MPU setting.
 void updateMPUSetting(T_mpuSetting * mpuSetting_inst){
-	//DrainWrite
-	DrainWriteBuffer();
 	
 	//Disable only DCACHE & ICACHE / mpu
 	CP15ControlRegisterDisable((CR_I | CR_C | CR_M));
+	
+	//DrainWrite
+	DrainWriteBuffer();
 	
 	//reset caches
 	flush_icache_all();
@@ -89,6 +86,7 @@ void updateMPUSetting(T_mpuSetting * mpuSetting_inst){
 	
 }
 
+//The default TGDS MPU Region Settings
 #ifdef EXCEPTION_VECTORS_0xffff0000
 //Sets default MPU Settings to use anytime. Uses vectors @ 0xffff0000.
 //Region0: IO 
@@ -109,7 +107,7 @@ void set0xFFFF0000FastMPUSettings(){
 	mpuSetting[VECTORS_0xFFFF0000_MPU].inst_regionSetting[5].regionsettings = (uint32)((uint32)(&_dtcm_start) | PAGE_16K | 1);
 	mpuSetting[VECTORS_0xFFFF0000_MPU].inst_regionSetting[6].regionsettings = (uint32)( PAGE_16M 	| 0x02400000 | 1);
 	mpuSetting[VECTORS_0xFFFF0000_MPU].inst_regionSetting[7].regionsettings = (uint32)( PAGE_4M 	| 0x02000000 | 1);
-	mpuSetting[VECTORS_0xFFFF0000_MPU].WriteBufferAvailabilityForRegions = 0b10000000; //EWRAM, DTCM, ITCM
+	mpuSetting[VECTORS_0xFFFF0000_MPU].WriteBufferAvailabilityForRegions = 0b11110011; //EWRAM, DTCM, ITCM
 	
 	mpuSetting[VECTORS_0xFFFF0000_MPU].DCacheAvailabilityForRegions = 0b10000000;	//DTCM & ITCM
 	mpuSetting[VECTORS_0xFFFF0000_MPU].ICacheAvailabilityForRegions = 0b10000000;	//DTCM & ITCM

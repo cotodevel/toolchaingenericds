@@ -625,17 +625,17 @@ void st_qword (BYTE* ptr, QWORD val)	/* Store an 8-byte word in little-endian */
 /*-----------------------------------------------------------------------*/
 
 /* Copy memory to memory */
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
 void mem_cpy (void* dst, const void* src, UINT cnt){
 	memcpy(dst, src, (int)cnt);
 }
 
 
 /* Fill memory block */
-#ifdef ARM9
-__attribute__((section(".itcm")))
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
 #endif
 static void mem_set (void* dst, int val, UINT cnt){
 	memset (dst, val,(int)cnt);
@@ -643,8 +643,11 @@ static void mem_set (void* dst, int val, UINT cnt){
 
 
 /* Compare memory block */
-#ifdef ARM9
-__attribute__((section(".itcm")))
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
 #endif
 static int mem_cmp (const void* dst, const void* src, UINT cnt)	/* ZR:same, NZ:different */
 {
@@ -913,8 +916,11 @@ FRESULT move_window (	/* Returns FR_OK or FR_DISK_ERR */
 /*-----------------------------------------------------------------------*/
 /* Synchronize filesystem and data on the storage                        */
 /*-----------------------------------------------------------------------*/
-#ifdef ARM9
-__attribute__((section(".itcm")))
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
 #endif
 static FRESULT sync_fs (	/* Returns FR_OK or FR_DISK_ERR */
 	FATFS* fs		/* Filesystem object */
@@ -969,9 +975,6 @@ DWORD clst2sect (	/* !=0:Sector number, 0:Failed (invalid cluster#) */
 /*-----------------------------------------------------------------------*/
 /* FAT access - Read value of a FAT entry                                */
 /*-----------------------------------------------------------------------*/
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
 DWORD get_fat (		/* 0xFFFFFFFF:Disk error, 1:Internal error, 2..0x7FFFFFFF:Cluster status */
 	FFOBJID* obj,	/* Corresponding object */
 	DWORD clst		/* Cluster number to get the value */
@@ -1049,8 +1052,11 @@ DWORD get_fat (		/* 0xFFFFFFFF:Disk error, 1:Internal error, 2..0x7FFFFFFF:Clust
 /* FAT access - Change value of a FAT entry                              */
 /*-----------------------------------------------------------------------*/
 
-#ifdef ARM9
-__attribute__((section(".itcm")))
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
 #endif
 static FRESULT put_fat (	/* FR_OK(0):succeeded, !=0:error */
 	FATFS* fs,		/* Corresponding filesystem object */
@@ -3546,9 +3552,6 @@ FRESULT f_open (
 /*-----------------------------------------------------------------------*/
 /* Read File                                                             */
 /*-----------------------------------------------------------------------*/
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
 FRESULT f_read (
 	FIL* fp, 	/* Pointer to the file object */
 	void* buff,	/* Pointer to data buffer */
@@ -4038,9 +4041,6 @@ FRESULT f_getcwd (
 /* Seek File Read/Write Pointer                                          */
 /*-----------------------------------------------------------------------*/
 
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
 FRESULT f_lseek (
 	FIL* fp,		/* Pointer to the file object */
 	FSIZE_t ofs		/* File pointer from top of file */

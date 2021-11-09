@@ -232,7 +232,7 @@ _pads Pad;
 _stylus Stylus;
 
 void woopsiUpdateInput() {
-	struct XYTscPos touch;
+	struct touchPosition touch;
 	
 	// Update held timers
 	if (Pad.Held.Left) Pad.HeldTime.Left++;
@@ -289,12 +289,12 @@ void woopsiUpdateInput() {
 		} else{
 			Stylus.oldVx = Stylus.Vx;
 			Stylus.oldVy = Stylus.Vy;
-			Stylus.Vx = touch.touchXpx - Stylus.X;
-			Stylus.Vy = touch.touchYpx - Stylus.Y;
+			Stylus.Vx = touch.px - Stylus.X;
+			Stylus.Vy = touch.py - Stylus.Y;
 		}
 		
-		Stylus.X = touch.touchXpx;
-		Stylus.Y = touch.touchYpx;
+		Stylus.X = touch.px;
+		Stylus.Y = touch.py;
 	}
 }
 

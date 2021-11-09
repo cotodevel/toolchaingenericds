@@ -4,9 +4,9 @@
 #include "typedefsTGDS.h"
 #include "nand.h"
 #include "dldi.h"
-#include "libndsFIFO.h"
 #include "utils.twl.h"
 #include "nds_cp15_misc.h"
+#include "ipcfifoTGDS.h"
 
 //---------------------------------------------------------------------------------
 bool nand_Startup() {

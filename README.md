@@ -85,6 +85,14 @@ Features:
 
 Changelog:
 
+TGDS1.65: 
+- Separate libraries into: ToolchainGenericDS having the core functionality for NTR/TWL Hardware, and libutils. Depending on the TGDS project layout, this allows to create smaller, more efficient binaries.
+  Introduce callbacks for extended functionality, stub them if unused. Check out ipcfifoTGDSUser.c's in TGDS project for details.
+- Re-introduce linux support (on Ubuntu / Xubuntu 18.04)
+- Add better initialization routines. NTR / TWL firmware detection, DLDI startup and TGDS project boot status can now be seen as debug if it didn't boot properly.
+- Merge 1.64 fixes and make everything work with default BIOS calls, which enables power saving stuff.
+- Fix older TGDS homebrew which used to work... once again.
+  
 TGDS 1.64:
 - TGDS TWL Support, which means TGDS projects now work on real DSi/N2DS/N3DS using TWL hardware through SD hardware, besides NTR mode.
 

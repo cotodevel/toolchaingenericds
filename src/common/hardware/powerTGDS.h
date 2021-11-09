@@ -18,13 +18,16 @@ USA
 
 */
 
-#ifndef __nds_power_h__
-#define __nds_power_h__
+#ifndef __powerTGDS_h__
+#define __powerTGDS_h__
 
 #include "typedefsTGDS.h"
 #include "dsregs.h"
 #include "dsregs_asm.h"
 
+#define LED_LONGBLINK	1
+#define LED_SHORTBLINK	3
+#define LED_ON			0
 
 #endif
 
@@ -38,7 +41,6 @@ extern void powerOFF(uint32 values);
 #ifdef ARM7
 extern void SoundPowerON(u8 volume); //aka : enableSound()
 #endif
-
 
 #ifdef __cplusplus
 }

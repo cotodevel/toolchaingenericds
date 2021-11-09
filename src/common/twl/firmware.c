@@ -32,7 +32,6 @@
 #include "ipcfifoTGDS.h"
 #include "memory.h"
 #include "nds_cp15_misc.h"
-#include "libndsFIFO.h"
 //---------------------------------------------------------------------------------
 void readFirmware(u32 address, void *buffer, u32 length) {
 //---------------------------------------------------------------------------------

@@ -819,6 +819,12 @@ bool getFileFILINFOfromFileClass(struct FileClass * fileInst, FILINFO * finfo){
 }
 
 //Note: Requires a fresh call to buildFileClassListFromPath prior to calling this
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 struct FileClass * getFirstDirEntryFromList(struct FileClassList * lst){
 	int i = 0;
 	struct FileClass * FileClassRet = NULL;
@@ -834,6 +840,12 @@ struct FileClass * getFirstDirEntryFromList(struct FileClassList * lst){
 }
 
 //Note: Requires a fresh call to buildFileClassListFromPath prior to calling this
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 struct FileClass * getFirstFileEntryFromList(struct FileClassList * lst){
 	int i = 0;
 	struct FileClass * FileClassRet = NULL;
@@ -860,6 +872,12 @@ bool readFileNameFromFileClassIndex(char* filename_out, struct FileClass * FileC
 }
 
 //returns:  Valid FileClass entry or NULL
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 struct FileClass * getFirstFile(char * path, struct FileClassList * lst, int startFromGivenIndex){
 	struct FileClass * fileInst = NULL;
 	//path will have the current working directory the FileClass was built around. getFirstFile builds everything, and getNextFile iterates over each file until there are no more.
@@ -902,6 +920,12 @@ struct FileClass * getFirstFile(char * path, struct FileClassList * lst, int sta
 
 //requires fullpath of the CURRENT file, it will return the next one
 //return:  Valid FileClass entry or NULL
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 struct FileClass * getNextFile(char * path, struct FileClassList * lst){
 	struct FileClass * fileInst = getFileClassFromList(lst->CurrentFileDirEntry, lst);	//NULL == invalid. Should not happen 
 	if(fileInst != NULL){
@@ -940,6 +964,12 @@ struct FileClass * getNextFile(char * path, struct FileClassList * lst){
 //	- FileClassList exceeded the FileClass items to store
 //	- FileClassList exceeded the FileClass items to store
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 int getCurrentDirectoryCount(struct FileClassList * lst){
 	if(lst != NULL){
 		return lst->FileDirCount;
@@ -947,13 +977,26 @@ int getCurrentDirectoryCount(struct FileClassList * lst){
 	return structfd_FileClassListInvalidEntry;
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void setCurrentDirectoryCount(struct FileClassList * lst, int value){
 	lst->FileDirCount = value;
 } 
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 bool readDirectoryIntoFileClass(char * dir, struct FileClassList * thisClassList){
 	//Create TGDS Dir API context
 	cleanFileList(thisClassList);
+	thisClassList->FileDirCount = 0;
 	
 	//Use TGDS Dir API context
 	int pressed = 0;
@@ -987,53 +1030,58 @@ bool readDirectoryIntoFileClass(char * dir, struct FileClassList * thisClassList
 
 	//Free TGDS Dir API context
 	freeFileList(tempfileClassList);
-
+	thisClassList->FileDirCount = startFromIndex - 1;
 	return true;
 }
 
-//Returns: current Index from playlistfileClassListCtx where a matching file extension "/exe/gif/aiff/bmp/tex/loc/snd/nds" was found.
-//Otherwise -1 if not found
+//builds a FileClass list sorted from args priority
+//returns: item count pushed to targetClassList
 
-//example:
-//int curIndex = 0;
-//bool ret = readDirectoryIntoFileClass("/", playlistfileClassListCtx);
-//if(ret == true){
-//	curIndex = getNextFileClassByExtensionFromList(playlistfileClassListCtx, "/exe/gif/aiff/bmp/tex/loc/snd/nds", curIndex); //first occurrence
-					
-//	curIndex++; //next occurence
-//	curIndex = getNextFileClassByExtensionFromList(playlistfileClassListCtx, "/exe/gif/aiff/bmp/tex/loc/snd/nds", curIndex);	
-//}
-int getNextFileClassByExtensionFromList(struct FileClassList * thisClassList, char * filterString, int indexToStart){
-	int indexFound = -1;
-	char * outBuf = (char *)TGDSARM9Malloc(256*10);
+//Usage:
+//struct FileClassList * playlistfileClassListCtx = NULL;
+//playlistfileClassListCtx = initFileList();
+//cleanFileList(playlistfileClassListCtx);
+//bool ret = readDirectoryIntoFileClass("/music", playlistfileClassListCtx);
+//char scratchPadMem[256*40];
+//#define pattern "/ima/wav/it/mod/s3m/xm/mp3/mp2/mpa/ogg/aac/m4a/m4b/flac/sid/nsf/spc/sndh/snd/sc68/gbs"
+//struct FileClassList * foundPlayList = NULL;
+//foundPlayList = initFileList();
+//cleanFileList(foundPlayList);
+//int itemsFound = buildFileClassByExtensionFromList(playlistfileClassListCtx, foundPlayList, (char**)&scratchPadMem, pattern);
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+int buildFileClassByExtensionFromList(struct FileClassList * inputClassList, struct FileClassList * targetClassList, char ** scratchPadMemory, char * filterString){
+	char * outBuf = (char *)scratchPadMemory;
 	int i = 0, j = 0;
-	int matchCount = str_split((char*)filterString, "/", outBuf, 10, 256);
-	for(i = 1; i < (matchCount + 1); i++){
+	int matchCount = str_split((char*)filterString, "/", outBuf, 50, 256); //30 items
+	for(i = 0; i < (matchCount + 3); i++){
 		char * token_rootpath = (char*)&outBuf[256*i];
 		char extToFind[256];
 		strcpy(extToFind, ".");
 		strcat(extToFind, token_rootpath);
-		int fileClassListSize = getCurrentDirectoryCount(thisClassList);
-		for(j = indexToStart; j < fileClassListSize; j++){
+		int fileClassListSize = getCurrentDirectoryCount(inputClassList) + 1; 
+		for(j = 0; j < fileClassListSize; j++){
 			if(j < fileClassListSize){
-				FileClass * curFile = (FileClass *)&thisClassList->fileList[j];
-				//current playlist only allows known audio formats
+				FileClass * curFile = (FileClass *)&inputClassList->fileList[j];
 				char tmpName[MAX_TGDSFILENAME_LENGTH+1];
 				char extInFile[MAX_TGDSFILENAME_LENGTH+1];
 				strcpy(tmpName, curFile->fd_namefullPath);	
 				separateExtension(tmpName, extInFile);
 				strlwr(extInFile);		
 				if(
-					(strcmp(extToFind, extInFile) == 0)
+					(strcmpi(extToFind, extInFile) == 0)
 					){
-					indexFound = j;
-					break;
+					pushEntryToFileClassList(true, curFile->fd_namefullPath, curFile->type, -1, targetClassList);
 				}
 			}
 		}
 	}
-	TGDSARM9Free(outBuf);
-	return indexFound;
+	return targetClassList->FileDirCount;
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -1070,7 +1118,7 @@ void sortFileClassListAsc(struct FileClassList * thisClassList, char ** scratchP
 	if(ignoreFirstFileClass == true){
 		startOffset = 1;
 	}
-	for(int i = 0; i < thisClassList->FileDirCount - startOffset; i++){
+	for(int i = 0; i < thisClassList->FileDirCount + startOffset; i++){
 		FileClass * curFile = (FileClass *)&thisClassList->fileList[i + startOffset];
 		FileClass * curFileDest = (FileClass *)&playlistfileClassListCtx->fileList[i];
 		if(curFile->fd_namefullPath[0] != '\0'){
@@ -1085,11 +1133,11 @@ void sortFileClassListAsc(struct FileClassList * thisClassList, char ** scratchP
 		strcpy(listItemsArg[i], curFile->fd_namefullPath);
 	}
 	qsort( listItemsArg, playlistfileClassListCtx->FileDirCount, sizeof(char*), pcmpstr);
-	for (int n = 0; n < playlistfileClassListCtx->FileDirCount; n++){
+	for (int n = 0; n < playlistfileClassListCtx->FileDirCount + startOffset; n++){
 		FileClass * curFile = (FileClass *)&playlistfileClassListCtx->fileList[n];
 		strcpy((char*)&curFile->fd_namefullPath[0], listItemsArg[n]);
 	}
-	for(int i = 0; i < playlistfileClassListCtx->FileDirCount; i++){
+	for(int i = 0; i < playlistfileClassListCtx->FileDirCount + startOffset; i++){
 		FileClass * curFile = (FileClass *)&playlistfileClassListCtx->fileList[i]; 
 		FileClass * curFileDest = (FileClass *)&thisClassList->fileList[i + startOffset];
 		if(curFile->fd_namefullPath[0] != '\0'){
@@ -2601,8 +2649,11 @@ bool closeDualTGDSFileHandleFromFile(struct fd * tgdsStructFD1, struct fd * tgds
 }
 ///////////////////////////////////////////////TGDS FileDescriptor Callbacks Implementation End ///////////////////////////////////////////////
 
-#ifdef ARM9
-__attribute__((optnone))
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
 #endif
 void separateExtension(char *str, char *ext)
 {
@@ -2662,7 +2713,19 @@ static bool cv_snprintf(char* buf, int len, const char* fmt, ...)
 
 //taken from https://stackoverflow.com/questions/9052490/find-the-count-of-substring-in-string
 //modified by Coto
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 static int indexParse = 0;
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 int count_substr(const char *str, const char* substr, bool overlap) {
   if (strlen(substr) == 0) return -1; // forbid empty substr
 
@@ -2675,6 +2738,12 @@ int count_substr(const char *str, const char* substr, bool overlap) {
 }
 
 typedef void(*splitCustom_fn)(const char *, size_t, char * ,int indexToLeftOut, char * delim);
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void splitCustom(const char *str, char sep, splitCustom_fn fun, char * outBuf, int indexToLeftOut)
 {
     unsigned int start = 0, stop = 0;
@@ -2700,6 +2769,12 @@ void print(const char *str, size_t len, char * outBuf, int indexToLeftOut, char 
 */
 
 //this callback builds an output path (outBuf) and filters out the desired index. (used as a trim last directory callback)
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void buildPath(const char *str, size_t len, char * outBuf, int indexToLeftOut, char * delim){
     if(indexParse != indexToLeftOut){
         if(strlen(outBuf) == 0){
@@ -2715,11 +2790,23 @@ void buildPath(const char *str, size_t len, char * outBuf, int indexToLeftOut, c
 }
 
 //this callback splits the haystack found in a stream, in the outBuf
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void splitCallback(const char *str, size_t len, char * outBuf, int indexToLeftOut, char * delim){
     cv_snprintf( ((char*)outBuf + (indexParse*256)), len+1, "%s", str);
     indexParse++;
 } 
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 int getLastDirFromPath(char * stream, char * haystack, char * outBuf){
     indexParse = 0;
     //leading / always src stream
@@ -2772,6 +2859,12 @@ int getLastDirFromPath(char * stream, char * haystack, char * outBuf){
     return indexToLeftOut;
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 int str_split(char * stream, char * haystack, char * outBuf, int itemSize, int blockSize){
 	int i = 0;
 	for(i = 0; i < itemSize; i++){
@@ -2784,3 +2877,7 @@ int str_split(char * stream, char * haystack, char * outBuf, int itemSize, int b
     return indexToLeftOut;
 }
 #endif
+
+struct FileClassList * initFileList(){
+	return (struct FileClassList *)TGDSARM9Malloc(sizeof(struct FileClassList));
+}

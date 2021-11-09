@@ -189,15 +189,6 @@ typedef struct vramSetup
 #define ORIENTATION_180 (int)(2)
 #define ORIENTATION_270 (int)(3)
 
-
-
-
-
-
-
-
-
-	
 //////////////////////////////////////////////////////////////////////
 
 // macro creates a 15 bit color from 3x5 bit components
@@ -266,27 +257,6 @@ typedef enum
 	VRAM_E_LCD			=0,
 	VRAM_E_TEX_PALETTE = 3
 }VRAM_E_TYPE;
-
-//////////////////////////////////////////////////
-  uint32 vramSetMainBanks(VRAM_A_TYPE a, VRAM_B_TYPE b, VRAM_C_TYPE c, VRAM_D_TYPE d);
-
-
-  void vramRestorMainBanks(uint32 vramTemp);
-
-//////////////////////////////////////////////////
-  void vramSetBankA(VRAM_A_TYPE a);
-
-//////////////////////////////////////////////////
-  void vramSetBankB(VRAM_B_TYPE b);
-
-//////////////////////////////////////////////////
-  void vramSetBankC(VRAM_C_TYPE c);
-
-///////////////////////////////////////////////////
-  void vramSetBankD(VRAM_D_TYPE d);
-
-////////////////////////////////////////////////////
-  void vramSetBankE(VRAM_E_TYPE e);
 
 //////////////////////////////////////////////////////////////////////
 // Display control registers
@@ -380,68 +350,6 @@ typedef enum
 #define	REG_BG3PD		(*(vsint16*)0x4000036)
 #define	REG_BG3X		(*(vsint32*)0x4000038)
 #define	REG_BG3Y		(*(vsint32*)0x400003C)
-
-#define MAP_BASE_SHIFT 8
-#define TILE_BASE_SHIFT 2
-#define BG_TILE_BASE(base) ((base) << TILE_BASE_SHIFT)
-#define BG_MAP_BASE(base)  ((base) << MAP_BASE_SHIFT)
-#define BG_BMP_BASE(base)  ((base) << MAP_BASE_SHIFT)
-#define BG_PRIORITY(n) (n)
-#define TILE_PALETTE(n) ((n)<<12)
-#define TILE_FLIP_H 	(1<<10)
-#define TILE_FLIP_V 	(1<<11)
-
-
-////////////////////////////////////////
-#define BG_256_COLOR   (BIT(7))
-#define BG_16_COLOR    (0)
-
-#define BG_MOSAIC_ON   (BIT(6))
-#define BG_MOSAIC_OFF  (0)
-
-#define BG_PRIORITY(n) (n)
-#define BG_PRIORITY_0  (0)
-#define BG_PRIORITY_1  (1)
-#define BG_PRIORITY_2  (2)
-#define BG_PRIORITY_3  (3)
-
-#define BG_MAP_RAM(base)  (((base)*0x800) + 0x06000000)
-#define BG_MAP_RAM_SUB(base) (((base)*0x800) + 0x06200000)
-
-#define BG_TILE_RAM(base) (((base)*0x4000) + 0x06000000)
-#define BG_TILE_RAM_SUB(base) (((base)*0x4000) + 0x06200000)
-
-#define BG_BMP_RAM(base)  (((base)*0x4000) + 0x06000000)
-#define BG_BMP_RAM_SUB(base) (((base)*0x4000) + 0x06200000)
-
-#define BG_WRAP_OFF    (0)
-#define BG_WRAP_ON     (1 << 13)
-
-#define BG_32x32       (0 << 14)
-#define BG_32x64       (1 << 14)
-#define BG_64x32       (2 << 14)
-#define BG_64x64       (3 << 14)
-
-#define BG_RS_16x16    (0 << 14)
-#define BG_RS_32x32    (1 << 14)
-#define BG_RS_64x64    (2 << 14)
-#define BG_RS_128x128  (3 << 14)
-
-#define BG_BMP8_128x128 (BG_RS_16x16 | BG_256_COLOR)
-#define BG_BMP8_256x256 (BG_RS_32x32 | BG_256_COLOR)
-#define BG_BMP8_512x256 (BG_RS_64x64 | BG_256_COLOR)
-#define BG_BMP8_512x512 (BG_RS_128x128 | BG_256_COLOR)
-#define BG_BMP8_1024x512 0
-#define BG_BMP8_512x1024 BIT(14)
-
-#define BG_BMP16_128x128 (BG_RS_16x16 | BG_256_COLOR | BIT(2))
-#define BG_BMP16_256x256 (BG_RS_32x32 | BG_256_COLOR | BIT(2))
-#define BG_BMP16_512x256 (BG_RS_64x64 | BG_256_COLOR | BIT(2))
-#define BG_BMP16_512x512 (BG_RS_128x128 | BG_256_COLOR | BIT(2))
-
-
-
-//////////////////////////////////////////////////////////////////////
 
 #define BG0_X0         (*(vuint16*)0x04000010)
 #define BG0_Y0         (*(vuint16*)0x04000012)
@@ -556,13 +464,6 @@ typedef enum
 ///
 ///BGxCNT defines ///
 #define BG_MOSAIC_ENABLE    0x40
-#define BG_COLOR_256      0x80
-#define BG_COLOR_16        0x0
-
-#define CHAR_BASE_BLOCK(n)    (((n)*0x4000)+0x6000000)
-#define CHAR_BASE_BLOCK_SUB(n)    (((n)*0x4000)+0x6200000)
-#define SCREEN_BASE_BLOCK(n)  (((n)*0x800)+0x6000000)
-#define SCREEN_BASE_BLOCK_SUB(n)  (((n)*0x800)+0x6200000)
 
 #define CHAR_SHIFT        2
 #define SCREEN_SHIFT      8
@@ -614,38 +515,6 @@ typedef enum
 #define ATTR2_PRIORITY(n)     ((n)<<10)
 #define ATTR2_PALETTE(n)      ((n)<<12)
 
-//////////////////////////////////////////////////////////////////////
-// Sprite structures
-//////////////////////////////////////////////////////////////////////
-
-typedef struct sSpriteEntry {
-  uint16 attribute[3];
-  uint16 filler;
-} SpriteEntry, * pSpriteEntry;
-
-
-typedef struct sSpriteRotation {
-  uint16 filler1[3];
-  uint16 hdx;
-
-  uint16 filler2[3];
-  uint16 hdy;  
-    
-  uint16 filler3[3];
-  uint16 vdx;  
-
-  uint16 filler4[3];
-  uint16 vdy;
-} SpriteRotation, * pSpriteRotation;
-
-
-#define BACKGROUND_SUB       (*((bg_attribute *)0x04001008))
-#define BG_OFFSET_SUB ((bg_scroll *)(0x04001010))
-
-#define BACKGROUND           (*((bg_attribute *)0x04000008))
-#define BG_OFFSET ((bg_scroll *)(0x04000010))
-
-
 #endif
 
 #ifdef __cplusplus
@@ -682,7 +551,7 @@ extern vramSetup vramSetupCustomConsole;
 extern bool VRAM_SETUP(vramSetup * vramSetupInst);
 
 //weak symbols : the implementation of this is project-defined
-extern  	vramSetup * getProjectSpecificVRAMSetup();
+extern  vramSetup * getProjectSpecificVRAMSetup();
 
 
 //Default console VRAM layout setup

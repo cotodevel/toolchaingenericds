@@ -38,6 +38,13 @@ USA
 //  7      Hinge/folded (0=Open, 1=Closed)
 //  2,4,5  Unknown / set
 //  8..15  Unknown / zero
+struct sEXTKEYIN{
+	bool butX;	//true pressed/ false not
+	bool butY;	//true pressed/ false not
+	bool debugButton;	//ignored
+	bool PenDown;	//true pressed	/ false not
+	bool	hinge_folded;	//true folded / false open
+} ;
 
 //40001C0 | BIT_SPICLK_2MHZ | BIT_SPICNT_TSCCNT
 
@@ -104,8 +111,9 @@ extern bool touchPenDown();
 extern bool touchInit;
 extern s32 xscale, yscale;
 extern s32 xoffset, yoffset;
-
 #endif
+
+extern bool penIRQread();
 
 #ifdef __cplusplus
 }

@@ -48,7 +48,10 @@ struct fd * _FileHandleVideo = NULL;
 struct fd * _FileHandleAudio = NULL;
 
 bool stopSoundStreamUser(){
-	return stopSoundStream(_FileHandleVideo, _FileHandleAudio, &internalCodecType);
+	if(SoundStreamStopSoundStreamARM9LibUtilsCallback != NULL){
+		return SoundStreamStopSoundStreamARM9LibUtilsCallback(_FileHandleVideo, _FileHandleAudio, &internalCodecType);
+	}
+	return false;
 }
 
 void closeSoundUser(){
@@ -77,7 +80,6 @@ static inline void menuShow(){
 		printf("Player Inactive");
 	}
 	printf("Available heap memory: %d >%d", getMaxRam(), TGDSPrintfColor_Cyan);
-	printarm7DebugBuffer();
 }
 
 //ToolchainGenericDS-LinkedModule User implementation: Called if TGDS-LinkedModule fails to reload ARM9.bin from DLDI.
