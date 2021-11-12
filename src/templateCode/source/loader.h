@@ -30,7 +30,8 @@ USA
 #define FIFO_TGDSMBRELOAD_SETUP (u32)(0xFFFFABC8)
 #define FIFO_ARM7_RELOAD_OK (u32)(0xFFFFABC9)
 #define FIFO_ARM7_RELOAD (u32)(0xFFFFABCA)
-#define ARM7_PAYLOAD (u32)((int)0x02400000 - 0x18000)
+#define ARM7_PAYLOAD (u32)((int)0x02400000 - 0x18000)	//0x23E8000
+#define ARM7_BOOTSTUB (u32)((int)ARM7_PAYLOAD - 0xC000) //48K arm7 reloadcode: 0x023DC000. Used by TGDS-MB
 
 static inline void reloadARMCore(u32 targetAddress){
 	REG_IF = REG_IF;	// Acknowledge interrupt
