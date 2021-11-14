@@ -597,7 +597,11 @@ void HandleFifoNotEmpty(){
 					}
 				}
 				
-				//initARM7Malloc(ARM7MallocStartaddress, ARM7MallocSize);				
+				//ARM7 custom Malloc libutils implementation
+				if(initMallocARM7LibUtilsCallback != NULL){
+					initMallocARM7LibUtilsCallback(ARM7MallocStartaddress, ARM7MallocSize);
+				}
+				
 				fifomsg[0] = 0;
 				fifomsg[1] = 0;
 				fifomsg[2] = 0;

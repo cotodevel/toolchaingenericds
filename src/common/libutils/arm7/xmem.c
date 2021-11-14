@@ -239,3 +239,72 @@ unsigned int XMEM_FreeMem(void) {
 
 	return j*XMEM_BLOCKSIZE;
 }
+
+//////////////////////////////////////////////////
+
+//TGDS Malloc implementation, before using them requires a call from ARM9: void initARM7Malloc(u32 ARM7MallocStartaddress, u32 memSizeBytes)
+u8* TGDSARM7Malloc(int size){
+	return (u8*)Xmalloc((const int)size);
+}
+
+u8 * TGDSARM7Calloc(int blockCount, int blockSize){
+	return (u8*)Xcalloc((const int)blockSize, (const int)blockCount);
+}
+
+void TGDSARM7Free(void *ptr){
+	Xfree((const void *)ptr);
+}
+
+u8 * TGDSARM7Realloc(void *ptr, int size){
+	if(ptr != NULL){
+		TGDSARM7Free(ptr);
+	}
+	return (u8*)TGDSARM7Malloc(size);
+}
+
+u32 TGDSARM7MallocFreeMemory(){
+	return (u32)XMEM_FreeMem();
+}
+
+//////////////////////////////////////////////////
+
+//ARM7 malloc support. Will depend on the current memory mapped (can be either IWRAM(very scarse), EWRAM, VRAM or maybe other)
+u32 ARM7MallocBaseAddress = 0;
+u32 ARM7MallocTop = 0;
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void setTGDSARM7MallocBaseAddress(u32 address) {
+	ARM7MallocBaseAddress = address;
+}
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+u32 getTGDSARM7MallocBaseAddress() {
+	return ARM7MallocBaseAddress;
+}
+
+//example: u32 ARM7MallocStartaddress = 0x06000000, u32 memSize = 128*1024
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void initARM7Malloc(u32 ARM7MallocStartaddress, u32 ARM7MallocSize) {	//ARM7 Impl.
+	setTGDSARM7MallocBaseAddress(ARM7MallocStartaddress);
+	ARM7MallocTop = XMEMTOTALSIZE = ARM7MallocSize;
+	//Init XMEM (let's see how good this one behaves...)
+	u32 xmemsize = XMEMTOTALSIZE;
+	xmemsize = xmemsize - (xmemsize/XMEM_BS) - 1024;
+	xmemsize = xmemsize - (xmemsize%1024);
+	XmemSetup(xmemsize, XMEM_BS);
+	XmemInit(ARM7MallocStartaddress, ARM7MallocSize);
+}

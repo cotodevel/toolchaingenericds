@@ -163,31 +163,3 @@ void libUtilsFIFONotEmpty(u32 cmd1, u32 cmd2){
 		break;
 	}
 }
-
-
-#ifdef ARM7
-//TGDS Malloc implementation, before using them requires a call from ARM9: void initARM7Malloc(u32 ARM7MallocStartaddress, u32 memSizeBytes)
-u8* TGDSARM7Malloc(int size){
-	return (u8*)Xmalloc((const int)size);
-}
-
-u8 * TGDSARM7Calloc(int blockCount, int blockSize){
-	return (u8*)Xcalloc((const int)blockSize, (const int)blockCount);
-}
-
-void TGDSARM7Free(void *ptr){
-	Xfree((const void *)ptr);
-}
-
-u8 * TGDSARM7Realloc(void *ptr, int size){
-	if(ptr != NULL){
-		TGDSARM7Free(ptr);
-	}
-	return (u8*)TGDSARM7Malloc(size);
-}
-
-u32 TGDSARM7MallocFreeMemory(){
-	return (u32)XMEM_FreeMem();
-}
-
-#endif
