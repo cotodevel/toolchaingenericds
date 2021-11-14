@@ -1251,6 +1251,10 @@ SoundStreamTimerHandlerARM7LibUtils_fn SoundStreamTimerHandlerARM7LibUtilsCallba
 SoundStreamStopSoundARM7LibUtils_fn SoundStreamStopSoundARM7LibUtilsCallback = NULL;
 SoundStreamSetupSoundARM7LibUtils_fn SoundStreamSetupSoundARM7LibUtilsCallback = NULL;
 
+#ifdef ARM7
+initMallocARM7LibUtils_fn initMallocARM7LibUtilsCallback = NULL;
+#endif
+
 #ifdef ARM9
 SoundStreamStopSoundStreamARM9LibUtils_fn SoundStreamStopSoundStreamARM9LibUtilsCallback = NULL;
 SoundStreamUpdateSoundStreamARM9LibUtils_fn SoundStreamUpdateSoundStreamARM9LibUtilsCallback = NULL;
@@ -1288,7 +1292,8 @@ void initializeLibUtils7(
 	SoundStreamSetupSoundARM7LibUtils_fn SoundStreamSetupSoundARM7LibUtilsCall,	//ARM7: void setupSound()
 	SoundSampleContextInitARM7LibUtils_fn SoundSampleContextInitARM7LibUtilsCall, //ARM7: initSoundSampleContext()
 	SoundSampleContextEnableARM7LibUtils_fn SoundSampleContextEnableARM7LibUtilsCall, // ARM7 & ARM9: void EnableSoundSampleContext(int SndSamplemode)
-	SoundSampleContextDisableARM7LibUtils_fn SoundSampleContextDisableARM7LibUtilsCall	//ARM7 & ARM9: void DisableSoundSampleContext()
+	SoundSampleContextDisableARM7LibUtils_fn SoundSampleContextDisableARM7LibUtilsCall,	//ARM7 & ARM9: void DisableSoundSampleContext()
+	initMallocARM7LibUtils_fn initMallocARM7LibUtilsCall	//ARM7: void initARM7Malloc(u32 ARM7MallocStartaddress, u32 ARM7MallocSize);
 ){
 	libutilisFifoNotEmptyCallback = HandleFifoNotEmptyWeakRefLibUtilsCall;
 	wifiUpdateVBLANKARM7LibUtilsCallback = wifiUpdateVBLANKARM7LibUtilsCall;
@@ -1299,5 +1304,6 @@ void initializeLibUtils7(
 	SoundSampleContextInitARM7LibUtilsCallback = SoundSampleContextInitARM7LibUtilsCall;
 	SoundSampleContextEnableARM7LibUtilsCallback = SoundSampleContextEnableARM7LibUtilsCall;
 	SoundSampleContextDisableARM7LibUtilsCallback = SoundSampleContextDisableARM7LibUtilsCall;
+	initMallocARM7LibUtilsCallback = initMallocARM7LibUtilsCall;
 }
 #endif

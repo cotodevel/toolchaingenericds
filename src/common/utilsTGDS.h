@@ -92,6 +92,10 @@ typedef void(*SoundStreamTimerHandlerARM7LibUtils_fn)();
 typedef void(*SoundStreamStopSoundARM7LibUtils_fn)();
 typedef void(*SoundStreamSetupSoundARM7LibUtils_fn)();
 
+//ARM7 Malloc
+typedef void(*initMallocARM7LibUtils_fn)(u32 ARM7MallocStartaddress, u32 ARM7MallocSize);
+
+
 #ifdef ARM9
 typedef bool(*SoundStreamStopSoundStreamARM9LibUtils_fn)(struct fd * tgdsStructFD1, struct fd * tgdsStructFD2, int * internalCodecType);
 typedef void(*SoundStreamUpdateSoundStreamARM9LibUtils_fn)();
@@ -235,6 +239,9 @@ extern SoundStreamTimerHandlerARM7LibUtils_fn SoundStreamTimerHandlerARM7LibUtil
 extern SoundStreamStopSoundARM7LibUtils_fn SoundStreamStopSoundARM7LibUtilsCallback;
 extern SoundStreamSetupSoundARM7LibUtils_fn SoundStreamSetupSoundARM7LibUtilsCallback;
 
+//ARM7 custom malloc
+extern initMallocARM7LibUtils_fn initMallocARM7LibUtilsCallback;
+
 #ifdef ARM7
 extern void initializeLibUtils7(
 	HandleFifoNotEmptyWeakRefLibUtils_fn HandleFifoNotEmptyWeakRefLibUtilsCall, //ARM7 & ARM9
@@ -245,7 +252,8 @@ extern void initializeLibUtils7(
 	SoundStreamSetupSoundARM7LibUtils_fn SoundStreamSetupSoundARM7LibUtilsCall,	//ARM7: void setupSound()
 	SoundSampleContextInitARM7LibUtils_fn SoundSampleContextInitARM7LibUtilsCall, //ARM7: initSoundSampleContext()
 	SoundSampleContextEnableARM7LibUtils_fn SoundSampleContextEnableARM7LibUtilsCall, // ARM7 & ARM9: void EnableSoundSampleContext(int SndSamplemode)
-	SoundSampleContextDisableARM7LibUtils_fn SoundSampleContextDisableARM7LibUtilsCall	//ARM7 & ARM9: void DisableSoundSampleContext()
+	SoundSampleContextDisableARM7LibUtils_fn SoundSampleContextDisableARM7LibUtilsCall,	//ARM7 & ARM9: void DisableSoundSampleContext()
+	initMallocARM7LibUtils_fn initMallocARM7LibUtilsCall	//ARM7: void initARM7Malloc(u32 ARM7MallocStartaddress, u32 ARM7MallocSize);
 );
 #endif
 

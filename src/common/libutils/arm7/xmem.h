@@ -61,6 +61,17 @@ extern unsigned int XMEM_BLOCKCOUNT;
 // Size of Table in bytes
 extern unsigned int XMEM_TABLESIZE;
 
+extern u8* TGDSARM7Malloc(int size);
+extern u8 * TGDSARM7Calloc(int blockCount, int blockSize);
+extern void TGDSARM7Free(void *ptr);
+extern u8 * TGDSARM7Realloc(void *ptr, int size);
+extern u32 TGDSARM7MallocFreeMemory();
+
+extern u32 ARM7MallocBaseAddress;
+extern u32 ARM7MallocTop;
+extern void setTGDSARM7MallocBaseAddress(u32 address);
+extern u32 getTGDSARM7MallocBaseAddress();
+extern void initARM7Malloc(u32 ARM7MallocStartaddress, u32 ARM7MallocSize);
 
 #ifdef __cplusplus
 }
