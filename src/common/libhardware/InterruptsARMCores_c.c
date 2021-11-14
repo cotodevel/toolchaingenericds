@@ -112,6 +112,8 @@ void IRQInit(u8 DSHardware)  {
 			REG_AUXIE = 0;
 			REG_AUXIF = ~0;
 			irqEnableAUX(GPIO33_2);
+			//TGDS-Projects -> legacy NTR TSC compatibility
+			TWLSetTouchscreenNTRMode();
 			#endif
 			
 			#ifdef ARM9

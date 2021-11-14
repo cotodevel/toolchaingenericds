@@ -114,6 +114,12 @@ extern s32 xoffset, yoffset;
 #endif
 
 extern bool penIRQread();
+extern bool useTWLTSC;
+
+#ifdef TWLMODE
+extern void TWLSetTouchscreenTWLMode();
+extern void TWLSetTouchscreenNTRMode();
+#endif
 
 #ifdef __cplusplus
 }
