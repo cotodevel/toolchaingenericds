@@ -191,7 +191,7 @@ void initHardware(u8 DSHardware) {
 	//3-6   Unused (0)
 	//7     Revised Card Interface Circuit (0=NITRO, 1=Revised) (set via ARM9) (R)
 	//8     Extended ARM7 Interrupts      (0=NITRO, 1=Extended) (4000218h) = TWL
-	//9     Extended SPI Clock (8MHz)     (0=NITRO, 1=Extended) (40001C0h) = TWL
+	//9     Extended SPI Clock (8MHz)     (0=NITRO, 1=Extended) (40001C0h) = TGDS Project decides it
 	//10    Extended Sound DMA        ?   (0=NITRO, 1=Extended) (?) = NTR
 
 	//Revised ARM7 DMA Circuit       (0=NITRO, 1=Revised)
@@ -206,8 +206,6 @@ void initHardware(u8 DSHardware) {
 	//Extended ARM7 Interrupts      (0=NITRO, 1=Extended) (4000218h)
 	SFGEXT7 = (SFGEXT7 & ~(0x1 << 8)) | (0x1 << 8);
 	
-	//Extended SPI Clock (8MHz)     (0=NITRO, 1=Extended) (40001C0h)
-	SFGEXT7 = (SFGEXT7 & ~(0x1 << 9)) | (0x1 << 9);
 	
 	//Extended Sound DMA        ?   (0=NITRO, 1=Extended) (?)
 	SFGEXT7 = (SFGEXT7 & ~(0x1 << 10)) | (0x0 << 10);

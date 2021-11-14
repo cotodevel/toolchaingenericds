@@ -107,6 +107,9 @@ USA
 #define TGDS_ARM7_REQ_SLOT1_DISABLE (uint32)(0xFFFF0231)
 #define TGDS_ARM7_REQ_SLOT1_ENABLE (uint32)(0xFFFF0232)
 
+#define TGDS_ARM7_TWL_SET_TSC_TWLMODE (uint32)(0xFFFF0233)
+#define TGDS_ARM7_TWL_SET_TSC_NTRMODE (uint32)(0xFFFF0234)
+
 //TGDS IPC Command Interrupt Index
 #define IPC_NULL_CMD					(u8)(0)	//NULL cmd is unused by TGDS, fallbacks to TGDS project IPCIRQ Handler
 #define IPC_SEND_MULTIPLE_CMDS			(u8)(1)

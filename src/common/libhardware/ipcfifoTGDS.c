@@ -629,6 +629,16 @@ void HandleFifoNotEmpty(){
 			}
 			break;
 			
+			case TGDS_ARM7_TWL_SET_TSC_NTRMODE:{
+				TWLSetTouchscreenNTRMode();	//resets TSC controller
+			}
+			break;
+			
+			case TGDS_ARM7_TWL_SET_TSC_TWLMODE:{
+				TWLSetTouchscreenTWLMode(); //resets TSC controller
+			}
+			break;
+			
 			#endif
 			
 			#endif

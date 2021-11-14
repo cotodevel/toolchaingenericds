@@ -364,7 +364,7 @@ bool touchPenDown() {
 	bool down;
 	//int oldIME = enterCriticalSection();
 	#ifdef TWLMODE
-	if (cdcIsAvailable()) {
+	if (cdcIsAvailable() && (useTWLTSC == true)) {
 		down = cdcTouchPenDown();
 	} 
 	else {
@@ -377,6 +377,8 @@ bool touchPenDown() {
 	//leaveCriticalSection(oldIME);
 	return down;
 }
+
+bool useTWLTSC = false;
 
 //---------------------------------------------------------------------------------
 // reading pixel position:
@@ -397,7 +399,7 @@ void touchReadXY(touchPosition *touchPos) {
 		yoffset = ((PersonalData->calY1 + PersonalData->calY2) * yscale  - ((PersonalData->calY1px + PersonalData->calY2px) << 19) ) / 2;
 		
 		#ifdef TWLMODE
-		if (cdcIsAvailable()) {
+		if (cdcIsAvailable() && (useTWLTSC == true)) {
 			//int oldIME = enterCriticalSection();
 			cdcTouchInit();
 			//leaveCriticalSection(oldIME);
@@ -410,7 +412,7 @@ void touchReadXY(touchPosition *touchPos) {
 	sint16 dist_max_y=0, dist_max_x=0, dist_max=0;
 	u8 error=0, error_where=0, first_check=0, i=0;
 	
-	if (cdcIsAvailable()) {	//TWL Mode
+	if (cdcIsAvailable() && (useTWLTSC == true)) {	//TWL Mode
 		#ifdef TWLMODE
 		cdcTouchRead(touchPos);	
 		s16 px = ( touchPos->rawx * xscale - xoffset + xscale/2 ) >>19;
@@ -523,5 +525,54 @@ bool penIRQread(){
 	#ifdef ARM9
 	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	return (bool)(TGDSIPC->EXTKEYINInst.PenDown);
+	#endif
+}
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void TWLSetTouchscreenTWLMode(){
+	#ifdef TWLMODE
+	#ifdef ARM7
+	touchInit = false;
+	useTWLTSC = true; //force TWL TSC readings
+	
+	//Extended SPI Clock (8MHz)     (0=NITRO, 1=Extended) (40001C0h)
+	u32 SFGEXT7 = *(u32*)0x04004008;
+	SFGEXT7 = (SFGEXT7 & ~(0x1 << 9)) | (0x1 << 9); //TWL / Extended
+	*(u32*)0x04004008 = SFGEXT7;
+	#endif
+	#ifdef ARM9
+	SendFIFOWords(TGDS_ARM7_TWL_SET_TSC_TWLMODE, 0xFF);
+	#endif
+	#endif
+}
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void TWLSetTouchscreenNTRMode(){
+	#ifdef TWLMODE
+	#ifdef ARM7
+	touchInit = false;
+	useTWLTSC = false; //force NTR TSC readings
+	
+	//Extended SPI Clock (8MHz)     (0=NITRO, 1=Extended) (40001C0h)
+	u32 SFGEXT7 = *(u32*)0x04004008;
+	SFGEXT7 = (SFGEXT7 & ~(0x1 << 9)) | (0x0 << 9); //NTR / NITRO
+	*(u32*)0x04004008 = SFGEXT7;
+	
+	#endif
+	#ifdef ARM9
+	SendFIFOWords(TGDS_ARM7_TWL_SET_TSC_NTRMODE, 0xFF);
+	#endif
 	#endif
 }
