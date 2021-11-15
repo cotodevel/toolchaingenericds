@@ -1307,3 +1307,104 @@ void initializeLibUtils7(
 	initMallocARM7LibUtilsCallback = initMallocARM7LibUtilsCall;
 }
 #endif
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+int isNTROrTWLBinary(char * filename){
+	int mode = notTWLOrNTRBinary;
+	FILE * fh = fopen(filename, "r+");
+	int headerSize = sizeof(struct sDSCARTHEADER);
+	u8 * NDSHeader = (u8 *)TGDSARM9Malloc(headerSize*sizeof(u8));
+	u8 passmeRead[16];
+	memset(passmeRead, 0, sizeof(passmeRead));
+	if (fread(NDSHeader, 1, headerSize, fh) != headerSize){
+		TGDSARM9Free(NDSHeader);
+		fclose(fh);
+		return notTWLOrNTRBinary;
+	}
+	else{
+		fseek(fh, 0xA0, SEEK_SET);
+		fread(&passmeRead[0], 1, sizeof(passmeRead), fh);
+	}
+	struct sDSCARTHEADER * NDSHdr = (struct sDSCARTHEADER *)NDSHeader;
+	u32 arm9EntryAddress = NDSHdr->arm9entryaddress;
+	u32 arm7EntryAddress = NDSHdr->arm7entryaddress;
+	int checkCounter = 0;
+	int i = 0;
+	for(i = 0; i < sizeof(NDSHdr->reserved1); i++){
+		checkCounter += NDSHdr->reserved1[i];
+	}
+	checkCounter += NDSHdr->reserved2;
+	//NTR: (02000000-023FFFFF) 4M
+	//TWL: (02000000- 02FFFFFF) 16M
+	if(
+		(checkCounter == 0) &&
+		(arm9EntryAddress >= 0x02000000) && (arm9EntryAddress < 0x02400000) 
+		&&
+		(
+			//passme v1 (pre 2008 NTR homebrew)
+			(0x00 == passmeRead[0x0])
+			&&	(0x00 == passmeRead[0x1])
+			&&	(0x00 == passmeRead[0x2])
+			&&	(0x00 == passmeRead[0x3])
+			&&	(0x00 == passmeRead[0x4])
+			&&	(0x00 == passmeRead[0x5])
+			&&	(0x00 == passmeRead[0x6])
+			&&	(0x00 == passmeRead[0x7])
+			&&	(0x00 == passmeRead[0x8])
+			&&	(0x00 == passmeRead[0x9])
+			&&	(0x00 == passmeRead[0xA])
+			&&	(0x00 == passmeRead[0xB])
+			&&	(0x50 == passmeRead[0xC])
+			&&	(0x41 == passmeRead[0xD])
+			&&	(0x53 == passmeRead[0xE])
+			&&	(0x53 == passmeRead[0xF])
+		)
+	){
+		mode = isNDSBinaryV1;
+	}
+	else if(
+		(checkCounter == 0) &&
+		(arm9EntryAddress >= 0x02000000) && (arm9EntryAddress < 0x02400000) 
+		&&
+		(
+			//passme v2 (2009+ NTR homebrew)
+			(0x53 == passmeRead[0x0])
+			&&	(0x52 == passmeRead[0x1])
+			&&	(0x41 == passmeRead[0x2])
+			&&	(0x4D == passmeRead[0x3])
+			&&	(0x5F == passmeRead[0x4])
+			&&	(0x56 == passmeRead[0x5])
+			&&	(0x31 == passmeRead[0x6])
+			&&	(0x31 == passmeRead[0x7])
+			&&	(0x30 == passmeRead[0x8])
+			&&	(0x00 == passmeRead[0x9])
+			&&	(0x00 == passmeRead[0xA])
+			&&	(0x00 == passmeRead[0xB])
+		)
+	){
+		mode = isNDSBinaryV2;
+	}
+	
+	//TWL validates both ARM7 and ARM9 entry address
+	else if( 
+		(checkCounter >= 0) && (arm9EntryAddress >= 0x02000000) && (arm9EntryAddress <= 0x02FFFFFF) &&
+		(
+			((arm7EntryAddress >= 0x02000000) && (arm7EntryAddress <= 0x02FFFFFF))
+			||
+			((arm7EntryAddress >= 0x037F8000) && (arm7EntryAddress <= 0x03810000))
+		)
+	){
+		mode = isTWLBinary;
+	}
+	TGDSARM9Free(NDSHeader);
+	fclose(fh);
+	return mode;
+}
+#endif
