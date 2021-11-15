@@ -73,6 +73,12 @@ struct TGDS_Linked_Module {
 	char TGDSMainAppName[MAX_TGDSFILENAME_LENGTH]; //todo: save full name (relative path it was called from) when calling TGDS-LModules
 };
 
+//NTR/TWL Binary descriptors
+#define isNDSBinaryV1 ((int)0)
+#define isNDSBinaryV2 ((int)1)
+#define isTWLBinary ((int)2)
+#define notTWLOrNTRBinary ((int)-1)
+
 //Interfaces / Callbacks to connect to libutils
 
 //FIFO
@@ -274,13 +280,14 @@ extern u32 reloadStatus;
 extern bool updateRequested;
 #endif
 
-extern void TGDSMultibootRunNDSPayload(char * filename);
+extern bool TGDSMultibootRunNDSPayload(char * filename);
 extern char * TGDSPayloadMode;
 extern void reportTGDSPayloadMode(u32 bufferSource);
 
 #ifdef ARM9
 extern char bufModeARM7[256];
 extern void addARGV(int argc, char *argv);
+extern int isNTROrTWLBinary(char * filename);
 #endif
 
 extern int TGDSProjectReturnFromLinkedModule();	//resides in TGDS App caller address
