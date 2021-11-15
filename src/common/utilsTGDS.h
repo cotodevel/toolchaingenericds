@@ -280,7 +280,7 @@ extern u32 reloadStatus;
 extern bool updateRequested;
 #endif
 
-extern void TGDSMultibootRunNDSPayload(char * filename);
+extern bool TGDSMultibootRunNDSPayload(char * filename);
 extern char * TGDSPayloadMode;
 extern void reportTGDSPayloadMode(u32 bufferSource);
 

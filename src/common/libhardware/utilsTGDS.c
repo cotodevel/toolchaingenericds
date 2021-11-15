@@ -1171,54 +1171,66 @@ __attribute__((optimize("O0")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-void TGDSMultibootRunNDSPayload(char * filename) {
+bool TGDSMultibootRunNDSPayload(char * filename) {
 	char msgDebug[96];
-	memset(msgDebug, 0, sizeof(msgDebug));	
-	//switch_dswnifi_mode(dswifi_idlemode); //todo add callback here
-	strcpy((char*)(0x02280000 - (MAX_TGDSFILENAME_LENGTH+1)), filename);	//Arg0:	
-	#ifdef NTRMODE
-	char * TGDSMBPAYLOAD = "0:/tgds_multiboot_payload_ntr.bin";	//TGDS NTR SDK (ARM9 binaries) emits TGDSMultibootRunNDSPayload() which reloads into NTR TGDS-MB Reload payload
-	#endif
-	
-	#ifdef TWLMODE
-	char * TGDSMBPAYLOAD = "0:/tgds_multiboot_payload_twl.bin";	//TGDS TWL SDK (ARM9i binaries) emits TGDSMultibootRunNDSPayload() which reloads into TWL TGDS-MB Reload payload
-	#endif
-	
-	FILE * tgdsPayloadFh = fopen(TGDSMBPAYLOAD, "r");
-	if(tgdsPayloadFh != NULL){
-		fseek(tgdsPayloadFh, 0, SEEK_SET);
-		int	tgds_multiboot_payload_size = FS_getFileSizeFromOpenHandle(tgdsPayloadFh);
-		fread((u32*)0x02280000, 1, tgds_multiboot_payload_size, tgdsPayloadFh);
-		coherent_user_range_by_size(0x02280000, (int)tgds_multiboot_payload_size);
-		fclose(tgdsPayloadFh);
-		int ret=FS_deinit();
-		//Copy and relocate current TGDS DLDI section into target ARM9 binary
-		if(strncmp((char*)&dldiGet()->friendlyName[0], "TGDS RAMDISK", 12) == 0){
-			printf("TGDS DLDI detected. Skipping DLDI patch.");
-		}
-		else{
-			bool stat = dldiPatchLoader((data_t *)0x02280000, (u32)tgds_multiboot_payload_size, (u32)&_io_dldi_stub);
-			if(stat == false){
-				sprintf(msgDebug, "%s%s", "TGDSMultibootRunNDSPayload():DLDI Patch failed. APP does not support DLDI format.", "");
-				nocashMessage((char*)&msgDebug[0]);
-			}
-			else{
-				sprintf(msgDebug, "%s%s", "TGDSMultibootRunNDSPayload():DLDI Patch OK.", "");
-				nocashMessage((char*)&msgDebug[0]);
-			}
-		}
-		
-		
-		REG_IME = 0;
-		typedef void (*t_bootAddr)();
-		t_bootAddr bootARM9Payload = (t_bootAddr)0x02280000;
-		bootARM9Payload();
+	memset(msgDebug, 0, sizeof(msgDebug));
+	int isNTRTWLBinary = isNTROrTWLBinary(filename);
+	//NTR mode? Can only boot valid NTR binaries, the rest is skipped.
+	if((__dsimode == false) && !(isNTRTWLBinary == isNDSBinaryV1) && !(isNTRTWLBinary == isNDSBinaryV2) ){
+		return false;
+	}
+	//TWL mode? Can only boot valid NTR and TWL binaries, the rest is skipped.
+	else if((__dsimode == true) && !(isNTRTWLBinary == isNDSBinaryV1) && !(isNTRTWLBinary == isNDSBinaryV2) && !(isNTRTWLBinary == isTWLBinary) ){
+		return false;
 	}
 	else{
-		sprintf(msgDebug, "%s%s", "TGDSMultibootRunNDSPayload(): Missing Payload:", TGDSMBPAYLOAD);
-		nocashMessage((char*)&msgDebug[0]);
-		printf((char*)&msgDebug[0]);
+		strcpy((char*)(0x02280000 - (MAX_TGDSFILENAME_LENGTH+1)), filename);	//Arg0:	
+		#ifdef NTRMODE
+		char * TGDSMBPAYLOAD = "0:/tgds_multiboot_payload_ntr.bin";	//TGDS NTR SDK (ARM9 binaries) emits TGDSMultibootRunNDSPayload() which reloads into NTR TGDS-MB Reload payload
+		#endif
+		
+		#ifdef TWLMODE
+		char * TGDSMBPAYLOAD = "0:/tgds_multiboot_payload_twl.bin";	//TGDS TWL SDK (ARM9i binaries) emits TGDSMultibootRunNDSPayload() which reloads into TWL TGDS-MB Reload payload
+		#endif
+		
+		FILE * tgdsPayloadFh = fopen(TGDSMBPAYLOAD, "r");
+		if(tgdsPayloadFh != NULL){
+			fseek(tgdsPayloadFh, 0, SEEK_SET);
+			int	tgds_multiboot_payload_size = FS_getFileSizeFromOpenHandle(tgdsPayloadFh);
+			fread((u32*)0x02280000, 1, tgds_multiboot_payload_size, tgdsPayloadFh);
+			coherent_user_range_by_size(0x02280000, (int)tgds_multiboot_payload_size);
+			fclose(tgdsPayloadFh);
+			int ret=FS_deinit();
+			//Copy and relocate current TGDS DLDI section into target ARM9 binary
+			if(strncmp((char*)&dldiGet()->friendlyName[0], "TGDS RAMDISK", 12) == 0){
+				printf("TGDS DLDI detected. Skipping DLDI patch.");
+			}
+			else{
+				bool stat = dldiPatchLoader((data_t *)0x02280000, (u32)tgds_multiboot_payload_size, (u32)&_io_dldi_stub);
+				if(stat == false){
+					sprintf(msgDebug, "%s%s", "TGDSMultibootRunNDSPayload():DLDI Patch failed. APP does not support DLDI format.", "");
+					nocashMessage((char*)&msgDebug[0]);
+				}
+				else{
+					sprintf(msgDebug, "%s%s", "TGDSMultibootRunNDSPayload():DLDI Patch OK.", "");
+					nocashMessage((char*)&msgDebug[0]);
+				}
+			}
+			
+			REG_IME = 0;
+			typedef void (*t_bootAddr)();
+			t_bootAddr bootARM9Payload = (t_bootAddr)0x02280000;
+			bootARM9Payload();
+			
+			return true; //should never jump here
+		}
+		else{
+			sprintf(msgDebug, "%s%s", "TGDSMultibootRunNDSPayload(): Missing Payload:", TGDSMBPAYLOAD);
+			nocashMessage((char*)&msgDebug[0]);
+			printf((char*)&msgDebug[0]);
+		}
 	}
+	return false;
 }
 #endif
 
