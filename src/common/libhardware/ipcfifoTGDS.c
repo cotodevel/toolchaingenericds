@@ -582,19 +582,19 @@ void HandleFifoNotEmpty(){
 				
 				setupLibUtils(); //ARM7 libUtils Setup
 				
-				//ARM7DLDI: ONLY if NTR hardware. TWL uses SDIO instead
-				if(__dsimode == false){
+				//ARM7DLDI: Prepare DLDI mem if needed
+				if((__dsimode == false) && (TargetARM7DLDIAddress != 0)){
 					DLDIARM7Address = (u32*)TargetARM7DLDIAddress; 
 					memcpy (DLDIARM7Address, dldiStartAddress, 16*1024);
-					
-					bool DLDIARM7InitStatus = dldi_handler_init();	//Init DLDI: ARM7 version
-					if(DLDIARM7InitStatus == true){
-						//setValueSafe(&fifomsg[45], (uint32)0xFAFAFAFA);
-						//after this (if ret status true) it's safe to call dldi read and write sectors from ARM9 (ARM7 DLDI mode)
-					}
-					else{
-						//setValueSafe(&fifomsg[45], (uint32)0xFCFCFCFC);
-					}
+				}
+				
+				bool DLDIARM7InitStatus = dldi_handler_init();	//ARM7: DLDI and SDIO mode init
+				if(DLDIARM7InitStatus == true){
+					//setValueSafe(&fifomsg[45], (uint32)0xFAFAFAFA);
+					//after this (if ret status true) it's safe to call dldi read and write sectors from ARM9 (ARM7 DLDI mode)
+				}
+				else{
+					//setValueSafe(&fifomsg[45], (uint32)0xFCFCFCFC);
 				}
 				
 				//ARM7 custom Malloc libutils implementation
@@ -606,8 +606,7 @@ void HandleFifoNotEmpty(){
 				fifomsg[1] = 0;
 				fifomsg[2] = 0;
 				fifomsg[3] = 0;
-				fifomsg[4] = 0;
-				
+				fifomsg[4] = DLDIARM7InitStatus;
 			}
 			break;
 			
