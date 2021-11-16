@@ -58,10 +58,10 @@ LIB_NAME := libwoopsi
 
 #Prepare ARM9 dirs
 
-DIRLIBS_HDR = $(foreach dirres,$(DIR_LIB_HDR_CWD),-I "$(CURDIR)/$(dirres)" )	$(DIRLIBS_ALLOWED)	$(DIRLIBS_PROHIBITED)	$(TARGET_LIBRARY_HEADERS_9_INC)
-DIRLIBS_SRC = $(foreach dirres,$(DIR_LIB_SRC_CWD),-I "$(CURDIR)/$(dirres)" )
+DIRLIBS_HDR = $(foreach dirres,$(DIR_LIB_HDR_CWD),-I "$(dirres)" )	$(DIRLIBS_ALLOWED)	$(DIRLIBS_PROHIBITED)	$(TARGET_LIBRARY_HEADERS_9_INC)
+DIRLIBS_SRC = $(foreach dirres,$(DIR_LIB_SRC_CWD),-I "$(dirres)" )
 
-dir_arm9_src_h=  $(foreach dir,$(DIR_LIB_HDR_CWD), $(wildcard $(CURDIR)/$(RELATIVE_PATH)$(dir)*.h))	$(foreach dir,$(DIRS_ARM9_HEADER), $(wildcard $(CURDIR)/$(RELATIVE_PATH)$(dir)*.h))
+dir_arm9_src_h=  $(foreach dir,$(DIR_LIB_HDR_CWD), $(wildcard $(RELATIVE_PATH)$(dir)*.h))	$(foreach dir,$(DIRS_ARM9_HEADER), $(wildcard $(CURDIR)/$(RELATIVE_PATH)$(dir)*.h))
 
 
 file_arm9_src_c=  $(foreach dir,$(DIR_LIB_SRC_CWD), $(subst $(CURDIR)/$(RELATIVE_PATH)/$(dir)/,,$(wildcard $(CURDIR)/$(RELATIVE_PATH)/$(dir)/*.c))  )
@@ -89,45 +89,6 @@ OBJDIR 	=	./$(BUILD)
 VPATH 	=	$(DIR_SRC)
 OBJPROG = 	$(addprefix $(OBJDIR)/, $(LIB_NAME))
 
-#------------------------------------------ CLANG START
-CC := clang-8
-AR2 := llvm-ar
-DEP_DIR := $(BUILD_DIR)/dep
-DEP_CFLAGS := -MT $@ -MMD -MP 
-
-# CFLAGS which can provided from the CLI
-# They will be appended last and will consequently override
-# any pre-existing settings
-CLI_CFLAG_OVERRIDES ?=
-CLI_LDFLAG_OVERRIDES ?=
-
-# Note: These arguments will be used by clang to select
-# the specific architecture target when we use the
-# generic --target=arm-none-eabi
-ARCH_CFLAGS += \
-  -marm 	\
-  -mcpu=arm946e-s \
-  -mfloat-abi=soft	\
-  -mfpu=none	
-
-COMPILER_SPECIFIC_CFLAGS += \
-  --target=arm-none-eabi \
-  --sysroot= \
-  -Oz	\
-  -DARM9
-  
-CFLAGS = \
-  -g3 \
-  -ffunction-sections -fdata-sections \
-  -nostdlib \
-  -fshort-enums	\
-  $(COMPILER_SPECIFIC_CFLAGS) \
-  $(ARCH_CFLAGS) \
-  $(NEWLIB_NANO_COMPILE_FLAGS_C_9)	\
-  $(CLI_CFLAG_OVERRIDES)
-	
-#------------------------------------------ CLANG END
-
 all: $(OBJDIR)|$(OBJPROG).a
 #all: debug
 
@@ -140,18 +101,18 @@ $(OBJDIR):
 $(OBJDIR)/%.o : %.bin
 	-@echo 'trying to convert .BIN ($<) -> .C output: ${@:.o=.c} : arrayName: $(subst build/,,${@:.o=})'
 	$(BIN2C)	$<	${@:.o=.c}	$(subst build/,,${@:.o=})
-	$(CC) $(DEP_CFLAGS) $(CFLAGS) $(DIRLIBS_HDR) $(DIRLIBS_SRC)	-c -o $@ ${@:.o=.c}
+	$(CC)	$(CC_ASFLAGS)	$(DIRLIBS_HDR)	$(DIRLIBS_SRC)	$(DIRLIBS_PROHIBITED)	-o $@ -c ${@:.o=.c}
 
 #Do C Compile now!
 $(OBJDIR)/%.o : %.c
 	-@echo 'C Compile start: $@'
-	$(CC) $(DEP_CFLAGS) $(CFLAGS) $(DIRLIBS_HDR) $(DIRLIBS_SRC)	-c -o $@ $< 
+	$(CC)	$(CC_ASFLAGS)	$(DIRLIBS_HDR)	$(DIRLIBS_SRC)	$(DIRLIBS_PROHIBITED)	-o $@ -c $<
 	-@echo 'C Compile End: $@'
 
 #Do C++ (CXX) Compile now!
 $(OBJDIR)/%.o : %.cpp
 	-@echo 'C++ Compile start: $@'
-	$(CC) $(DEP_CFLAGS) $(CFLAGS) $(DIRLIBS_HDR) $(DIRLIBS_SRC)	-c -o $@ $< 
+	$(CPP)	$(CPP_FLAGS)	$(DIRLIBS_HDR)	$(DIRLIBS_SRC)	-o $@ -c $<
 	-@echo 'C Compile End: $@'
 
 #Coto: Special "exception" rule. Assembler (.s) support ie: .ifdef/.endif (which differs from CPP-like syntax Assembler: ie: #ifdef/#endif by .S)
@@ -172,15 +133,26 @@ $(OBJDIR)/%.o : %.S
 
 #Builder.
 $(OBJPROG).a: $(addprefix $(OBJDIR)/, $(OBJECTS))
-	$(AR2) rc	$@	$^
+	$(AR) rvs	$@	$^
+ifeq ($(TGDS_ENV),windows)
 	-mv	$@	$(TARGET_LIBRARY_PATH)/$(LIB_NAME).a
 	-cp -R includeWoopsi/	$(TARGET_LIBRARY_PATH)
+endif
+ifeq ($(TGDS_ENV),linux)
+	-sudo 	mv	$@	$(TARGET_LIBRARY_PATH)/$(LIB_NAME).a
+	-sudo	cp -R includeWoopsi/	$(TARGET_LIBRARY_PATH)
+endif
 	
 ################################################################################################
 clean:
 	-@echo 'cleanup $(OBJPROG).a'
+ifeq ($(TGDS_ENV),windows)
 	-@rm -fr $(OBJDIR)	$(OBJPROG).a	$(TARGET_LIBRARY_PATH)/$(LIB_NAME).a	$(TARGET_LIBRARY_PATH)/includeWoopsi/
-	
+endif
+ifeq ($(TGDS_ENV),linux)
+	-@sudo -@rm -fr $(OBJDIR)	$(OBJPROG).a	$(TARGET_LIBRARY_PATH)/$(LIB_NAME).a	$(TARGET_LIBRARY_PATH)/includeWoopsi/
+endif
+
 debug:
 	-@echo 'files: $(objs_arm9)'
 	
