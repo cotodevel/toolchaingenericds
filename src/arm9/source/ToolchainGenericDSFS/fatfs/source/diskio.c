@@ -28,6 +28,12 @@
 
 //coto: support for dldi driver (:
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 /*-----------------------------------------------------------------------*/
 /* Get Drive Status                                                      */
 /*-----------------------------------------------------------------------*/
@@ -46,7 +52,12 @@ DSTATUS disk_status (
 /*-----------------------------------------------------------------------*/
 /* Inidialize a Drive                                                    */
 /*-----------------------------------------------------------------------*/
-
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 DSTATUS disk_initialize (
 	BYTE pdrv				/* Physical drive nmuber to identify the drive */
 )
@@ -73,14 +84,19 @@ DSTATUS disk_initialize (
 		ret = (!(sdmmcInitResult & 2)) ? 0 : STA_NOINIT;
 		*/
 		
-		//DS/DSi DLDI init
-		if(dldi_handler_init() == true){	//Init DLDI: ARM9 version
-			ret = 0;	//init OK!
-		}
-		else{
-			ret = STA_NOINIT;
+		//Init DLDI: 
+		//NTR Mode: Already taken care by ARM7 DLDI
+		//TWL Mode: Initialize DLDI from ARM9 regardless.
+		if(__dsimode == true){
+			if(dldi_handler_init() == true){	//Init DLDI: ARM9 version
+				ret = 0;	//init OK!
+			}
+			else{
+				ret = STA_NOINIT;
+			}
 		}
 		
+		ret = 0;	//init OK!
 	return ret;
 }
 
@@ -89,7 +105,12 @@ DSTATUS disk_initialize (
 /*-----------------------------------------------------------------------*/
 /* Read Sector(s)                                                        */
 /*-----------------------------------------------------------------------*/
-
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 DRESULT disk_read (
 	BYTE pdrv,		/* Physical drive number to identify the drive */
 	BYTE *buff,		/* Data buffer to store read data */
@@ -108,7 +129,12 @@ DRESULT disk_read (
 /*-----------------------------------------------------------------------*/
 /* Write Sector(s)                                                       */
 /*-----------------------------------------------------------------------*/
-
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 DRESULT disk_write (
 	BYTE pdrv,			/* Physical drive nmuber to identify the drive */
 	const BYTE *buff,	/* Data to be written */
@@ -127,7 +153,12 @@ DRESULT disk_write (
 /*-----------------------------------------------------------------------*/
 /* Miscellaneous Functions                                               */
 /*-----------------------------------------------------------------------*/
-
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 DRESULT disk_ioctl (
 	BYTE pdrv,		/* Physical drive nmuber (0..) */
 	BYTE cmd,		/* Control code */

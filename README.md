@@ -35,8 +35,6 @@ Then:
  - make clean 
  - make
 
-
-
 Then, only after building ToolchainGenericDS, you will be able to build a TGDS project. (Not covered here, go to the specific project supporting this toolchain)
 
 Thanks to:
@@ -54,7 +52,13 @@ https://forum.gbadev.org/viewtopic.php?f=18&t=16289
 TWL support: Normatt (SD dldi code) / fincs (codec) / WinterMute / others (updated NDSTools, TWL hardware, VideoGL 3D code related to Texture mapping when using Call Lists )
 
 ---------------------------------------------
+Guidelines:
 
+- If TGDS homebrew doesn't boot, wait for an error screen to happen, if it does happen, notify me.
+- If TGDS homebrew doesn't initialize filesystem, make sure you use FAT32 32K/16/4K, or FAT16 32K/16/4K, anything else is untested and unsupported
+- Make sure to DLDI patch TGDS homebrew. For TGDS homebrew development, you can use TGDS-RAMDISK DLDI or others
+
+---------------------------------------------
 Developers:
 
 I have been working on this for at least 2 years, but development started circa 2014. I just needed the "motivation" to gather the pieces together, and I am glad I wrote this.

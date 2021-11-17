@@ -23,7 +23,7 @@ export SOURCE_MAKEFILE7 = custom
 export SOURCE_MAKEFILE9 = custom
 
 #Shared
-include $(DEFAULT_GCC_PATH_WIN)/Makefile.basenewlib
+include $(DEFAULT_GCC_PATH)/Makefile.basenewlib
 
 #Custom
 export BINSTRIP_RULE_7 =	arm7.bin
@@ -106,7 +106,7 @@ all: compilelib
 
 #Make
 compilelib	:
-	cp	-r	$(CURDIR)/../src/templateCode/	$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/
+	-mkdir -p $(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/ && cp	-r	$(CURDIR)/../src/templateCode/	$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/
 ifeq ($(SOURCE_MAKEFILE7),default)
 	cp	-r	$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/$(DIR_ARM7)/Makefile	../src/arm7/ntr/
 endif

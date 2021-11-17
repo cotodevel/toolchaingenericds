@@ -23,7 +23,7 @@ export SOURCE_MAKEFILE7 = custom
 export SOURCE_MAKEFILE9 = custom
 
 #Shared
-include $(DEFAULT_GCC_PATH_WIN)/Makefile.basenewlib
+include $(DEFAULT_GCC_PATH)/Makefile.basenewlib
 
 #Custom
 export BINSTRIP_RULE_7 =	arm7.bin
