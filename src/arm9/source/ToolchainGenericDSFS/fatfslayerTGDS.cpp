@@ -1108,6 +1108,7 @@ __attribute__((optimize("O0")))
 __attribute__ ((optnone))
 #endif
 void sortFileClassListAsc(struct FileClassList * thisClassList, char ** scratchPadMemory, bool ignoreFirstFileClass){
+	/* //code segfaults randomly. Must be reimplemented without using qsort
 	struct FileClassList * playlistfileClassListCtx = NULL;
 	playlistfileClassListCtx = initFileList();
 	cleanFileList(playlistfileClassListCtx);
@@ -1156,6 +1157,7 @@ void sortFileClassListAsc(struct FileClassList * thisClassList, char ** scratchP
 		thisClassList->FileDirCount--;
 	}
 	freeFileList(playlistfileClassListCtx);
+	*/
 }
 
 ///////////////////////////////////////////////////////TGDS FS API extension end. /////////////////////////////////////////////////////
