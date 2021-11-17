@@ -55,8 +55,8 @@ TWL support: Normatt (SD dldi code) / fincs (codec) / WinterMute / others (updat
 Guidelines:
 
 - If TGDS homebrew doesn't boot, wait for an error screen to happen, if it does happen, notify me.
-- If TGDS homebrew doesn't initialize filesystem, make sure you use FAT32 32K/16/4K, or FAT16 32K/16/4K, anything else is untested and unsupported
-- Make sure to DLDI patch TGDS homebrew. For TGDS homebrew development, you can use TGDS-RAMDISK DLDI or others
+- If TGDS homebrew doesn't initialize filesystem, make sure you use FAT32 64K/32K/16K/4K, or FAT16 64K/32K/16K/4K, anything else is untested and unsupported.
+- NTR Mode: Make sure to DLDI patch TGDS homebrew. For TGDS homebrew development, you can use TGDS-RAMDISK DLDI or others. TWL mode doesn't care because it maps the internal SD as filesystem.
 
 ---------------------------------------------
 Developers:
