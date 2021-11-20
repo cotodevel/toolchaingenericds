@@ -1,1 +1,0 @@
-bin2c.exe for windows x64 must be set here.
