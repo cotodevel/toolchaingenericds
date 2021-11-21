@@ -150,7 +150,7 @@ ifeq ($(TGDS_ENV),windows)
 	-@rm -fr $(OBJDIR)	$(OBJPROG).a	$(TARGET_LIBRARY_PATH)/$(LIB_NAME).a	$(TARGET_LIBRARY_PATH)/includeWoopsi/
 endif
 ifeq ($(TGDS_ENV),linux)
-	-@sudo -@rm -fr $(OBJDIR)	$(OBJPROG).a	$(TARGET_LIBRARY_PATH)/$(LIB_NAME).a	$(TARGET_LIBRARY_PATH)/includeWoopsi/
+	-@sudo rm -fr $(OBJDIR)	$(OBJPROG).a	$(TARGET_LIBRARY_PATH)/$(LIB_NAME).a	$(TARGET_LIBRARY_PATH)/includeWoopsi/	$(CURDIR)/build/
 endif
 
 debug:

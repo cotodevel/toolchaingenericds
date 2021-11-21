@@ -7,6 +7,7 @@ tgdsBuild:
 clean:
 	$(MAKE) -C ntr/ clean
 	$(MAKE) -C twl/ clean
+	$(MAKE) -C lib/ clean
 	
 #---------------------------------------------------------------------------------
 
