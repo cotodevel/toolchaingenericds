@@ -32,7 +32,7 @@
 //////////////////////////////////////////////////////////////////////
 
 #include <typedefsTGDS.h>
-#include "videoGL.h"
+#include "VideoGL.h"
 #include "videoTGDS.h"
 #include "arm9math.h"
 #include "dsregs.h"
