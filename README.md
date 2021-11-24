@@ -146,16 +146,9 @@ TGDS 1.0:
 - Adds a template system, where TGDS projects hook to a standard TGDS codebase. Improves scalability from the start.
 
 
-The environment uses GCC 4.9.2 to build Newlib 2.1 for Nintendo DS, and ToolchainGenericDS.
-
+The environment uses Windows GCC 4.9.3 ARM-EABI / Linux GCC 4.9.1 ARM-EABI to build Newlib 2.1 for Nintendo DS, and ToolchainGenericDS.
 
 How to code things:
 -	Once you follow [Building the devkit], you can grab a TGDS Project template such as: https://bitbucket.org/Coto88/toolchaingenericds-template/ and rebuild it (a TGDS Project Makefile has some properties you can override).
-
-Note: the Windows environment seems to build faster TGDS Binaries (ARM-EABI). 
-Linux builds TGDS binaries, but these may be 30% slower (ARM-NONE-EABI).
-
-More info:
-https://forums.nesdev.com/viewtopic.php?f=23&t=18659#p237701
 
 Coto.
