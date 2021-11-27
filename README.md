@@ -37,7 +37,7 @@ Then:
 
 Then, only after building ToolchainGenericDS, you will be able to build a TGDS project. (Not covered here, go to the specific project supporting this toolchain)
 
-Thanks to:
+Thanks to (in no particular order):
 - Martin Korth extensive gba/nds docs (http://problemkaputt.de/gbatek.htm) most of any DS toolchains/emus out there would not exist without such docs.
 - Darkfader for ndstool
 - Archeide for NDS printf render code (console mode)
@@ -50,6 +50,7 @@ https://forum.gbadev.org/viewtopic.php?f=18&t=16289
 - Michael Noland (joat) & Jason Rogers (dovoto): NDSLIB VideoGL implementation and ARM9 Math hardware registers
 - CUE : LZSS compression routines
 TWL support: Normatt (SD dldi code) / fincs (codec) / WinterMute / others (updated NDSTools, TWL hardware, VideoGL 3D code related to Texture mapping when using Call Lists )
+- lifehackerhansol: Testing and debugging a lot of TGDS compatibility across different NTR / TWL hardware.
 
 ---------------------------------------------
 Guidelines:
@@ -59,7 +60,7 @@ Guidelines:
 - NTR Mode: Make sure to DLDI patch TGDS homebrew. For TGDS homebrew development, you can use TGDS-RAMDISK DLDI or others. TWL mode doesn't care because it maps the internal SD as filesystem.
 
 ---------------------------------------------
-Developers:
+Devs:
 
 I have been working on this for at least 2 years, but development started circa 2014. I just needed the "motivation" to gather the pieces together, and I am glad I wrote this.
 You are free to do almost whatever you want with it, just release the source codes so we all can benefit from it.

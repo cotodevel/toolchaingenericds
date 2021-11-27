@@ -269,6 +269,9 @@ void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,									
 		}
 		TGDSInitLoopCount++;
 	}
+	
+	__dsimode = (bool)fifomsg[2];
+	TWLModeInternalSDAccess = fifomsg[3]; //ARM7 DLDI decides the current TGDS FS mode
 	bool dldiInitStatus = (bool)fifomsg[4]; //DLDI / SDIO init: true: OK, false: error
 }
 

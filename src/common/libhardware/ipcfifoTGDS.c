@@ -554,7 +554,7 @@ void HandleFifoNotEmpty(){
 			}
 			break;
 			
-			//tgds-mb loader code here (ARM7)
+			//ARM7 TGDS-Multiboot loader code here
 						case(FIFO_ARM7_RELOAD):{	
 							struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 							uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
@@ -582,19 +582,31 @@ void HandleFifoNotEmpty(){
 				
 				setupLibUtils(); //ARM7 libUtils Setup
 				
-				//ARM7DLDI: Prepare DLDI mem if needed
-				if((__dsimode == false) && (TargetARM7DLDIAddress != 0)){
-					DLDIARM7Address = (u32*)TargetARM7DLDIAddress; 
-					memcpy (DLDIARM7Address, dldiStartAddress, 16*1024);
-				}
-				
-				bool DLDIARM7InitStatus = dldi_handler_init();	//ARM7: DLDI and SDIO mode init
-				if(DLDIARM7InitStatus == true){
-					//setValueSafe(&fifomsg[45], (uint32)0xFAFAFAFA);
-					//after this (if ret status true) it's safe to call dldi read and write sectors from ARM9 (ARM7 DLDI mode)
+				//DSi in NTR mode throws false positives about TWL mode, enforce DSi SD initialization to define, NTR or TWL mode.
+				int detectedTWLModeInternalSDAccess = 0;
+				bool DLDIARM7FSInitStatus = false;
+					
+				if( (!sdio_Startup()) || (!sdio_IsInserted()) ){
+					detectedTWLModeInternalSDAccess = TWLModeDLDIAccessDisabledInternalSDDisabled;
+					__dsimode = false;
 				}
 				else{
-					//setValueSafe(&fifomsg[45], (uint32)0xFCFCFCFC);
+					detectedTWLModeInternalSDAccess = TWLModeDLDIAccessDisabledInternalSDEnabled;
+					__dsimode = true;
+					DLDIARM7FSInitStatus = true;
+				}
+				
+				//NTR mode: define DLDI initialization and ARM7DLDI operating mode
+				if((detectedTWLModeInternalSDAccess == TWLModeDLDIAccessDisabledInternalSDDisabled) && (TargetARM7DLDIAddress != 0)){
+					DLDIARM7Address = (u32*)TargetARM7DLDIAddress; 
+					memcpy (DLDIARM7Address, dldiStartAddress, 16*1024);
+					DLDIARM7FSInitStatus = dldi_handler_init();
+					if(DLDIARM7FSInitStatus == true){
+						detectedTWLModeInternalSDAccess = TWLModeDLDIAccessEnabledInternalSDDisabled;
+					}
+					else{
+						detectedTWLModeInternalSDAccess = TWLModeDLDIAccessDisabledInternalSDDisabled;
+					}					
 				}
 				
 				//ARM7 custom Malloc libutils implementation
@@ -604,9 +616,9 @@ void HandleFifoNotEmpty(){
 				
 				fifomsg[0] = 0;
 				fifomsg[1] = 0;
-				fifomsg[2] = 0;
-				fifomsg[3] = 0;
-				fifomsg[4] = DLDIARM7InitStatus;
+				fifomsg[2] = (u32)__dsimode;
+				fifomsg[3] = TWLModeInternalSDAccess = detectedTWLModeInternalSDAccess;
+				fifomsg[4] = DLDIARM7FSInitStatus;
 			}
 			break;
 			

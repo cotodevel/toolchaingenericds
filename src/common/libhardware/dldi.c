@@ -38,6 +38,8 @@ const uint32  DLDI_MAGIC_NUMBER =
 const sint8 DLDI_MAGIC_STRING_BACKWARDS [DLDI_MAGIC_STRING_LEN] =
 	{'\0', 'm', 'h', 's', 'i', 'h', 'C', ' '} ;
 
+int TWLModeInternalSDAccess = 0;
+
 // 2/2 : once DLDI has been setup
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("O0")))
@@ -97,33 +99,20 @@ __attribute__((optimize("O0")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-bool dldi_handler_init() {
-	//DS
-	if(__dsimode == false){
-		#if defined(ARM7) || defined(ARM9)
-		struct DLDI_INTERFACE* dldiInit = dldiGet();	//NTR Mode + Emu = ARM9DLDI: Ensures SLOT-1 / SLOT-2 is mapped to ARM7/ARM9 now
-		if( (!dldiInit->ioInterface.startup()) || (!dldiInit->ioInterface.isInserted()) ){
-			return false;
-		}
-		#endif
-		#if defined(WIN32)
-		fseek(virtualDLDIDISKImg, 0, SEEK_SET);
-		int res = ftell(virtualDLDIDISKImg);
-		if(res != 0){
-			return false;
-		}
-		#endif
+bool dldi_handler_init() {	
+	#if defined(ARM7) || defined(ARM9)
+	struct DLDI_INTERFACE* dldiInit = dldiGet();	//NTR Mode
+	if( (!dldiInit->ioInterface.startup()) || (!dldiInit->ioInterface.isInserted()) ){
+		return false;
 	}
-	//DSi
-	else{
-		#ifdef TWLMODE
-		#ifdef ARM9
-		if( (!sdio_Startup()) || (!sdio_IsInserted()) ){
-			return false;
-		}
-		#endif
-		#endif
+	#endif
+	#if defined(WIN32)
+	fseek(virtualDLDIDISKImg, 0, SEEK_SET);
+	int res = ftell(virtualDLDIDISKImg);
+	if(res != 0){
+		return false;
 	}
+	#endif
 	return true;
 }
 
@@ -134,32 +123,25 @@ __attribute__((optimize("O0")))
 __attribute__ ((optnone))
 #endif
 void dldi_handler_deinit() {
-	//DS
-	if(__dsimode == false){
-		#ifdef ARM7
-		struct DLDI_INTERFACE* dldiInit = dldiGet();	//ensures SLOT-1 / SLOT-2 is mapped to ARM7/ARM9 now
-		dldiInit->ioInterface.clearStatus();
-		dldiInit->ioInterface.shutdown();
-		#endif
-		#ifdef ARM9
-		//send dldi deinit cmd		
-		uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
-		fifomsg[27] = (uint32)0xFFFFFFFF;
-		SendFIFOWords(TGDS_DLDI_ARM7_STATUS_DEINIT, 0);
-		while(fifomsg[27] != (uint32)0){
-			swiDelay(1);
-		}
-		#endif
+	//DLDI & SDIO: Deinit
+	sdio_ClearStatus();
+	sdio_Shutdown();
+	
+	#ifdef ARM7
+	struct DLDI_INTERFACE* dldiInit = dldiGet();	//ensures SLOT-1 / SLOT-2 is mapped to ARM7/ARM9 now
+	dldiInit->ioInterface.clearStatus();
+	dldiInit->ioInterface.shutdown();
+	#endif
+	
+	#ifdef ARM9
+	//send dldi deinit cmd		
+	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
+	fifomsg[27] = (uint32)0xFFFFFFFF;
+	SendFIFOWords(TGDS_DLDI_ARM7_STATUS_DEINIT, 0);
+	while(fifomsg[27] != (uint32)0){
+		swiDelay(1);
 	}
-	//DSi
-	else{
-		#ifdef TWLMODE
-		#ifdef ARM9
-		sdio_ClearStatus();
-		sdio_Shutdown();
-		#endif
-		#endif
-	}
+	#endif
 }
 
 /////////////////////////////////////////////////// (EWRAM DLDI) RAM Disk DLDI Implementation ////////////////////////////////////////////
@@ -223,8 +205,8 @@ __attribute__ ((optnone))
 __attribute__((section(".itcm")))
 #endif
 bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer) {
-	//NTR hardware: ARM7DLDI
-	if(__dsimode == false){
+	//DLDI Mode
+	if(TWLModeInternalSDAccess == TWLModeDLDIAccessEnabledInternalSDDisabled){
 		#ifdef ARM7
 		struct  DLDI_INTERFACE* dldiInterface = (struct DLDI_INTERFACE*)DLDIARM7Address;
 		return dldiInterface->ioInterface.readSectors(sector, numSectors, buffer);
@@ -249,34 +231,17 @@ bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer) {
 		if(fetch != (512*numSectors)){
 			return false;
 		}
+		return true;
 		#endif
 	}
 	
-	//TWL hardware: ARM7DLDI
-	else{
-		#ifdef ARM7
-			#ifdef TWLMODE
-			sdmmc_readsectors(&deviceSD, sector, numSectors, buffer);
-			return true;
-			#endif
-			
-			#ifndef TWLMODE
-			return false;
-			#endif
-		#endif
-		
-		#ifdef ARM9			
-			#ifdef TWLMODE
-			sdio_ReadSectors(sector, numSectors, buffer);
-			return true;
-			#endif
-			
-			#ifndef TWLMODE
-			return false;
-			#endif
-		#endif
+	//SDIO Mode
+	else if (TWLModeInternalSDAccess == TWLModeDLDIAccessDisabledInternalSDEnabled){
+		#ifdef TWLMODE
+		return sdio_ReadSectors(sector, numSectors, buffer);
+		#endif		
 	}
-	return true;
+	return false;
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -290,8 +255,8 @@ __attribute__ ((optnone))
 __attribute__((section(".itcm")))
 #endif
 bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buffer) {
-	//NTR hardware: ARM7DLDI
-	if(__dsimode == false){
+	//DLDI Mode
+	if(TWLModeInternalSDAccess == TWLModeDLDIAccessEnabledInternalSDDisabled){
 		#ifdef ARM7
 		struct  DLDI_INTERFACE* dldiInterface = (struct DLDI_INTERFACE*)DLDIARM7Address;
 		return dldiInterface->ioInterface.writeSectors(sector, numSectors, buffer);
@@ -319,30 +284,13 @@ bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buff
 		#endif
 	}
 	
-	//TWL hardware: ARM7DLDI
-	else{
-		#ifdef ARM7
-			#ifdef TWLMODE
-			sdmmc_writesectors(&deviceSD, sector, numSectors, (void*)buffer);
-			return true;
-			#endif
-			
-			#ifndef TWLMODE
-			return false;
-			#endif
-		#endif
-		
-		#ifdef ARM9			
-			#ifdef TWLMODE
-			sdio_WriteSectors(sector, numSectors, buffer);
-			return true;
-			#endif
-			#ifndef TWLMODE
-			return false;
-			#endif
-		#endif
+	//SDIO Mode
+	else if (TWLModeInternalSDAccess == TWLModeDLDIAccessDisabledInternalSDEnabled){	
+		#ifdef TWLMODE
+		return sdio_WriteSectors(sector, numSectors, buffer);
+		#endif		
 	}
-	return true;
+	return false;
 }
 
 static const data_t dldiMagicString[12] = "\xED\xA5\x8D\xBF Chishm";	// Normal DLDI file
