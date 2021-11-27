@@ -100,6 +100,12 @@ typedef struct DLDI_INTERFACE {
 
 #define DEVICE_TYPE_DSI_SD ('_') | ('S' << 8) | ('D' << 16) | ('_' << 24)
 
+//ARM7DLDI operating mode: Internal SD / DLDI bits used by int TWLModeInternalSDAccess
+#define TWLModeDLDIAccessDisabledInternalSDDisabled ((int)-1) //TWL Mode: neither DLDI or SDIO access (default at startup)
+#define TWLModeDLDIAccessEnabledInternalSDDisabled ((int)1) //TWL Mode: DLDI access only
+#define TWLModeDLDIAccessDisabledInternalSDEnabled ((int)2) //TWL Mode: SDIO access only
+#define TWLModeDLDIAccessEnabledInternalSDEnabled ((int)3) //TWL Mode: DLDI + SDIO access
+
 #endif
 
 
@@ -151,7 +157,6 @@ extern bool dldiPatchLoader(data_t *binData, u32 binSize, u32 physDLDIAddress);
 #endif
 
 ///////////////////////////////////TWL mode SD ARM9i DLDI Access///////////////////////////////////
-#ifdef ARM9
 extern const struct DISC_INTERFACE_STRUCT __io_dsisd;
 extern const struct DISC_INTERFACE_STRUCT* get_io_dsisd (void);
 extern bool sdio_Startup();
@@ -160,7 +165,7 @@ extern bool sdio_ReadSectors(sec_t sector, sec_t numSectors,void* buffer);
 extern bool sdio_WriteSectors(sec_t sector, sec_t numSectors,const void* buffer);
 extern bool sdio_ClearStatus();
 extern bool sdio_Shutdown();
-#endif
+extern int TWLModeInternalSDAccess;
 
 #ifdef __cplusplus
 }

@@ -80,7 +80,6 @@ void flushSoundContext(int soundContextIndex){
 #endif
 
 bool __dsimode = false; // set by detecting DS model from firmware
-
 #ifdef NTRMODE
 char * TGDSPayloadMode = "NTRModePayload";
 #endif

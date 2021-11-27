@@ -335,7 +335,7 @@ void NDS_IRQHandler(){
 						int sector = getValueSafeInt(&fifomsg[20]);
 						int numSectors = getValueSafeInt(&fifomsg[21]);
 						uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[22]);
-						u32 retval = (u32)sdmmc_readsectors(&deviceSD, sector, numSectors, (void*)targetMem);
+						bool retval = sdio_ReadSectors(sector, numSectors, (void*)targetMem);
 						setValueSafe(&fifomsg[23], (u32)retval);	//last value has ret status & release ARM9 dldi cmd
 					}
 					break;
@@ -345,33 +345,24 @@ void NDS_IRQHandler(){
 						uint32 sector = getValueSafe(&fifomsg[24]);
 						uint32 numSectors = getValueSafe(&fifomsg[25]);
 						uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[26]);
-						u32 retval = (u32)sdmmc_writesectors(&deviceSD, sector, numSectors, (void*)targetMem);
+						bool retval = sdio_WriteSectors(sector, numSectors, (void*)targetMem);
 						setValueSafe(&fifomsg[27], (u32)retval);	//last value has ret status & release ARM9 dldi cmd
 					}
 					break;
 					
 					case(IPC_STARTUP_ARM7_TWLSD_REQBYIRQ):{
 						uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-						int result = sdmmc_sd_startup();
-						if(result == 0){ //success?
-							
-						}
-						else{
-							while(1==1){
-								*(u32*)0x02000000 = 0xEAEAEAEA;
-								swiDelay(1);
-							}
-						}
+						bool result = sdio_Startup();
 						setValueSafe(&fifomsg[23], (u32)result);	//last value has ret status	
 					}
 					break;
 					
 					case(IPC_SD_IS_INSERTED_ARM7_TWLSD_REQBYIRQ):{
 						uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-						setValueSafe(&fifomsg[23], (u32)0);	//last value has ret status
+						bool result = sdio_IsInserted();
+						setValueSafe(&fifomsg[23], (u32)result);	//last value has ret status
 					}
 					break;
-					
 				#endif
 				
 			#endif

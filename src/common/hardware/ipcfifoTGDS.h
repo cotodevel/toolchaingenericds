@@ -223,7 +223,6 @@ typedef struct sIPCSharedTGDS {
 	u8 ipcMesaggingQueue[0x10];
 	
 	struct soundSampleContextList soundContextShared;
-	bool ARM7DldiEnabled;	//True: TGDS runs ARM7DLDI / False: TGDS runs ARM9DLDI	
 	int screenOrientationMainEngine;
 	int screenOrientationSubEngine;
 	bool touchScreenEnabled;
