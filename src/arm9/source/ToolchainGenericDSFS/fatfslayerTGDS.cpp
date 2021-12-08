@@ -24,7 +24,10 @@ USA
 //newlib libc ARM Toolchain. <dirent.h> implementation is platform-specific, thus, implemented for ToolchainGenericDS.
 
 #include "fatfslayerTGDS.h"
+#include "typedefsTGDS.h"
+
 #ifdef ARM9
+#include "ff.h"
 #include "dldi.h"
 #include "clockTGDS.h"
 #endif
@@ -1402,7 +1405,7 @@ int fatfs_open_file(const sint8 *pathname, int flags, const FILINFO *fno){
 				//file was deleted
 			}
 			else{
-				//file doesn´t exist
+				//file does not exist
 			}
 		}
 		mode = posixToFatfsAttrib(flags);
@@ -1668,7 +1671,7 @@ int fatfs_open_fileIntoTargetStructFD(const sint8 *pathname, char * posixFlags, 
 				//file was deleted
 			}
 			else{
-				//file doesn´t exist
+				//file does not exist
 			}
 		}
 		mode = posixToFatfsAttrib(flags);

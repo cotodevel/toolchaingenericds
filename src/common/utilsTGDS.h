@@ -101,12 +101,6 @@ typedef void(*SoundStreamSetupSoundARM7LibUtils_fn)();
 //ARM7 Malloc
 typedef void(*initMallocARM7LibUtils_fn)(u32 ARM7MallocStartaddress, u32 ARM7MallocSize);
 
-
-#ifdef ARM9
-typedef bool(*SoundStreamStopSoundStreamARM9LibUtils_fn)(struct fd * tgdsStructFD1, struct fd * tgdsStructFD2, int * internalCodecType);
-typedef void(*SoundStreamUpdateSoundStreamARM9LibUtils_fn)();
-#endif
-
 #endif
 
 #ifdef __cplusplus
@@ -264,18 +258,6 @@ extern void initializeLibUtils7(
 #endif
 
 #ifdef ARM9
-extern SoundStreamStopSoundStreamARM9LibUtils_fn SoundStreamStopSoundStreamARM9LibUtilsCallback;
-extern SoundStreamUpdateSoundStreamARM9LibUtils_fn SoundStreamUpdateSoundStreamARM9LibUtilsCallback;
-
-extern void initializeLibUtils9(
-	HandleFifoNotEmptyWeakRefLibUtils_fn HandleFifoNotEmptyWeakRefLibUtilsCall, //ARM7 & ARM9
-	timerWifiInterruptARM9LibUtils_fn timerWifiInterruptARM9LibUtilsCall, //ARM9 
-	SoundSampleContextEnableARM7LibUtils_fn SoundSampleContextEnableARM7LibUtilsCall, // ARM7 & ARM9: void EnableSoundSampleContext(int SndSamplemode)
-	SoundSampleContextDisableARM7LibUtils_fn SoundSampleContextDisableARM7LibUtilsCall,	//ARM7 & ARM9: void DisableSoundSampleContext()
-	SoundStreamStopSoundStreamARM9LibUtils_fn SoundStreamStopSoundStreamARM9LibUtilsCall,	//ARM9: bool stopSoundStream(struct fd * tgdsStructFD1, struct fd * tgdsStructFD2, int * internalCodecType)
-	SoundStreamUpdateSoundStreamARM9LibUtils_fn SoundStreamUpdateSoundStreamARM9LibUtilsCall //ARM9: void updateStream() 
-);
-
 extern u32 reloadStatus;
 extern bool updateRequested;
 #endif

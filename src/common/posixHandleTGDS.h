@@ -87,6 +87,7 @@ struct AllocatorInstance
 #ifdef __cplusplus
 extern "C"{
 #endif
+
 //POSIX Malloc implementation
 extern int getMaxRam();
 

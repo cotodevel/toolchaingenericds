@@ -206,6 +206,12 @@ struct fd {
 	//filehandle -> fileSize;	//use f_size(filPtr)
 };
 
+
+#ifdef ARM9
+typedef bool(*SoundStreamStopSoundStreamARM9LibUtils_fn)(struct fd * tgdsStructFD1, struct fd * tgdsStructFD2, int * internalCodecType);
+typedef void(*SoundStreamUpdateSoundStreamARM9LibUtils_fn)();
+#endif
+
 //This should be implemented in newlib, but it's not exposed 
 #ifdef ARM9
 inline 
@@ -240,6 +246,20 @@ static int charPosixToFlagPosix(char * flags){
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#ifdef ARM9
+extern SoundStreamStopSoundStreamARM9LibUtils_fn SoundStreamStopSoundStreamARM9LibUtilsCallback;
+extern SoundStreamUpdateSoundStreamARM9LibUtils_fn SoundStreamUpdateSoundStreamARM9LibUtilsCallback;
+
+extern void initializeLibUtils9(
+	HandleFifoNotEmptyWeakRefLibUtils_fn HandleFifoNotEmptyWeakRefLibUtilsCall, //ARM7 & ARM9
+	timerWifiInterruptARM9LibUtils_fn timerWifiInterruptARM9LibUtilsCall, //ARM9 
+	SoundSampleContextEnableARM7LibUtils_fn SoundSampleContextEnableARM7LibUtilsCall, // ARM7 & ARM9: void EnableSoundSampleContext(int SndSamplemode)
+	SoundSampleContextDisableARM7LibUtils_fn SoundSampleContextDisableARM7LibUtilsCall,	//ARM7 & ARM9: void DisableSoundSampleContext()
+	SoundStreamStopSoundStreamARM9LibUtils_fn SoundStreamStopSoundStreamARM9LibUtilsCall,	//ARM9: bool stopSoundStream(struct fd * tgdsStructFD1, struct fd * tgdsStructFD2, int * internalCodecType)
+	SoundStreamUpdateSoundStreamARM9LibUtils_fn SoundStreamUpdateSoundStreamARM9LibUtilsCall //ARM9: void updateStream() 
+);
 #endif
 
 // Function prototypes 

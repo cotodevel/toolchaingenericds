@@ -7,20 +7,21 @@
 /* storage control modules to the FatFs module with a defined API.       */
 /*-----------------------------------------------------------------------*/
 
-#if defined(WIN32)
 #include "diskio.h"		/* FatFs lower layer API */
+
+#if defined(WIN32)
 #include "..\..\dldiWin32.h"
 #include "..\..\..\ToolchainGenericDSFS\fatfslayerTGDS.h"
 #include "..\..\..\misc\vs2012TGDS-FS\TGDSFSVS2012\TGDSFSVS2012\TGDSTypes.h"
 #endif
 
 #if defined(ARM9)
-#include "diskio.h"		/* FatFs lower layer API */
 #include "dldi.h"
 #include <stdbool.h>
 #include "global_settings.h"
 #endif
 
+#include "ff.h"
 /* Definitions of physical drive number for each media */
 //#define SDCARD        0
 //#define CTRNAND       1

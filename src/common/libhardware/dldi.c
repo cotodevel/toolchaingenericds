@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "dldi.h"
-
+#include "typedefsTGDS.h"
 #if defined(WIN32) || defined(ARM9)
 #include "fatfslayerTGDS.h"
 #endif
