@@ -87,6 +87,7 @@ Features:
 	- DLDI RAMDISK Support. DLDI in emulator environment.
 		Notes:
 		DLDI RAMDisk: Download http://memory.dataram.com/products-and-services/software/ramdisk#freeware, mount a RAMDisk, copy files to it. Then use Desmume, choose Slot-2 (Gba slot) -> GBA Cartridge, choose the RAMDisk!. Launch emulator, TGDS Project now works with DLDI (32MB @ 0x08000000)!
+	- Optional VSCode IDE: See https://bitbucket.org/Coto88/toolchaingenericds-ide
 
 Changelog:
 
