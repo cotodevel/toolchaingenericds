@@ -646,7 +646,7 @@ extern u16 lastVertexColor;
 
 extern void glColor3b(uint8 red, uint8 green, uint8 blue);
 extern void glVertex2i(int x, int y); 
-
+extern void GLInitExt();
 #ifdef __cplusplus
 }
 #endif

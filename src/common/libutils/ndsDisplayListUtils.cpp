@@ -20,7 +20,7 @@ USA
 
 */
 
-//ndsDisplayListUtils version: 0.2. src: https://bitbucket.org/Coto88/ndsdisplaylistutils/src
+//ndsDisplayListUtils version: 0.3. src: https://bitbucket.org/Coto88/ndsdisplaylistutils/src
 
 #ifdef WIN32
 #include "winDir.h"
@@ -36,6 +36,7 @@ USA
 #endif
 //disable _CRT_SECURE_NO_WARNINGS message to build this in VC++
 #pragma warning(disable:4996)
+#include "VideoGLExt.h"
 #endif
 
 #include <stdio.h>
@@ -639,6 +640,9 @@ int BuildNDSGXDisplayListObjectFromFile(char * filename, struct ndsDisplayListDe
 //Unit Test (WIN32): reads a NDS GX Display List / Call List payload emmited from (https://bitbucket.org/Coto88/blender-nds-exporter/src/master/)
 //Translates to an NDS GX Display List / Call List object, and then builds it again into the original payload.
 int main(int argc, char** argv){
+
+	//Unit Test: NDS GX DL object and building
+	/*
 	char cwdPath[256];
 	getCWDWin(cwdPath, "\\cv\\");
 	std::vector<std::string> BinFilesRead = findFiles(std::string(cwdPath), std::string("bin"));
@@ -720,7 +724,12 @@ int main(int argc, char** argv){
 		printf("NDS DisplayList creation fail");
 	}
 	TGDSARM9Free(NDSDL);
-	
+	*/
+
+	//Unit Test: Tests OpenGL DisplayLists functionality
+
+	GLInitExt();
+	int genLists = glGenLists(10);
 	return 0;
 }
 #endif

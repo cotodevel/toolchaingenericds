@@ -19,7 +19,7 @@ USA
 
 */
 
-//ndsDisplayListUtils version: 0.2. src: https://bitbucket.org/Coto88/ndsdisplaylistutils/src
+//ndsDisplayListUtils version: 0.3. src: https://bitbucket.org/Coto88/ndsdisplaylistutils/src
 
 #ifndef __ndsDisplayListUtils_h__
 #define __ndsDisplayListUtils_h__
@@ -88,7 +88,7 @@ struct unpackedCmd {
 #define DL_TYPE_FIFO_PACKED_COMMAND_V1 (u32)(DL_TYPE_SIZE+1)	//FIFO_COMMAND_PACK( FIFO_BEGIN , FIFO_COLOR , FIFO_TEX_COORD , FIFO_NORMAL )
 #define DL_TYPE_FIFO_PACKED_COMMAND_V2 (u32)(DL_TYPE_FIFO_PACKED_COMMAND_V1+1)	//FIFO_COMMAND_PACK( FIFO_VERTEX16 , FIFO_COLOR , FIFO_TEX_COORD , FIFO_NORMAL )
 #define DL_TYPE_FIFO_PACKED_COMMAND_END (u32)(DL_TYPE_FIFO_PACKED_COMMAND_V2+1)	//FIFO_COMMAND_PACK( FIFO_VERTEX16 , FIFO_END , FIFO_NOP , FIFO_NOP )
-#define DL_MAX_ITEMS (int)(4000)
+#define DL_MAX_ITEMS (int)(256) //256 NDS GX commands(words, 4 bytes each) = 1024 per DisplayList object
 
 struct ndsDisplayList {
 	int index;
@@ -103,6 +103,8 @@ __attribute__((packed)) ;
 #endif
 
 struct ndsDisplayListDescriptor {
+	int DisplayListAssignedIndex; //Used by the GL List API as internal current DL set index
+	bool isDisplayListAssigned;
 	int ndsDisplayListSize;
 	struct ndsDisplayList DL[DL_MAX_ITEMS];
 }

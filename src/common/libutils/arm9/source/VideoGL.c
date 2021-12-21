@@ -965,6 +965,7 @@ void glColor3f(float red, float green, float blue){
 void glInit(){
 	memset((u8*)&globalGLCtx, 0, sizeof(struct GLContext));
 	glShadeModel(GL_SMOOTH);
+	GLInitExt();
 }
 
 //Open GL 1.1 Implementation: Texture Objects support
