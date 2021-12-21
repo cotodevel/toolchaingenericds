@@ -103,8 +103,9 @@ __attribute__((packed)) ;
 #endif
 
 struct ndsDisplayListDescriptor {
-	int DisplayListAssignedIndex; //Used by the GL List API as internal current DL set index
+	int DisplayListNameAssigned; //Used by the GL List API as a display-list name
 	bool isDisplayListAssigned;
+	u32	mode; //GLenum mode: //Specifies the compilation mode, which can be GL_COMPILE or GL_COMPILE_AND_EXECUTE. Set up by glNewList()
 	int ndsDisplayListSize;
 	struct ndsDisplayList DL[DL_MAX_ITEMS];
 }

@@ -726,10 +726,22 @@ int main(int argc, char** argv){
 	TGDSARM9Free(NDSDL);
 	*/
 
-	//Unit Test: Tests OpenGL DisplayLists functionality
+	//Unit Test: Tests OpenGL DisplayLists components functionality then emitting proper GX displaylists
 
 	GLInitExt();
-	int genLists = glGenLists(10);
+	int base = glGenLists(10);
+	glListBase(base);
+
+	bool ret = glIsList(base); //should return false (DL generated, but no displaylist-name was generated)
+
+	glNewList(base, GL_COMPILE);
+	
+	ret = glIsList(base); //should return true (DL generated, and displaylist-name was generated)
+
+	glEndList();
+
+
+
 	return 0;
 }
 #endif
