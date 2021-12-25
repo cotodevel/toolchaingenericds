@@ -48,7 +48,7 @@ USA
 #include "ndsDisplayListUtils.h"
 
 #ifdef ARM9
-#include "videoGL.h"
+#include "VideoGL.h"
 #include "posixHandleTGDS.h"
 #endif
 

@@ -30,7 +30,7 @@ USA
 
 #ifdef ARM9
 #include "typedefsTGDS.h"
-#include "videoGL.h"
+#include "VideoGL.h"
 #endif
 
 #define RGB15(r,g,b)  ((r)|((g)<<5)|((b)<<10))
