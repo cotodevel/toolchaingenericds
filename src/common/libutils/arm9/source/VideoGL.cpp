@@ -31,20 +31,31 @@
 //	 0.4: Update GL specs from OpenGL 1.0 to OpenGL 1.1 which enables Textures Objects (Coto)
 //////////////////////////////////////////////////////////////////////
 
-#include <typedefsTGDS.h>
 #include "VideoGL.h"
-#include "videoTGDS.h"
+#include "VideoGLExt.h"
 #include "arm9math.h"
-#include "dsregs.h"
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
 
+#ifdef ARM9
+#include <typedefsTGDS.h>
+#include "dsregs.h"
+#include "videoTGDS.h"
+#endif
+
+#ifdef WIN32
+#include "TGDSTypes.h"
+#endif
 //lut resolution for trig functions (must be power of two and must be the same as LUT resolution)
 //in other words dont change unless you also change your LUTs
 #define LUT_SIZE (512)
 #define LUT_MASK (0x1FF)
 
+#ifdef ARM9
+__attribute__((section(".dtcm")))
+#endif
+bool isNdsDisplayListUtilsCallList;
 struct GLContext globalGLCtx;
 
 #ifdef NO_GL_INLINE
@@ -116,16 +127,29 @@ void glColor(rgb color)
 
 //////////////////////////////////////////////////////////////////////
 
-  void glPushMatrix(void)
-{
-  MATRIX_PUSH = 0;
+void glPushMatrix(void){
+	if((isNdsDisplayListUtilsCallList == true) && (curDLinternalCompiledDL != NULL)){
+		curDLinternalCompiledDL->displayListType = getMTX_PUSH();
+		curDLinternalCompiledDL->value = FIFO_COMMAND_PACK_C(getMTX_PUSH(), getFIFO_NOP(), getFIFO_NOP(), getFIFO_NOP());
+		curDLinternalCompiledDL++;
+	}
+	else{
+		MATRIX_PUSH = 0;
+	}
 }
 
 //////////////////////////////////////////////////////////////////////
 
-  void glPopMatrix(sint32 index)
+void glPopMatrix(sint32 index)
 {
-  MATRIX_POP = index;
+	if((isNdsDisplayListUtilsCallList == true) && (curDLinternalCompiledDL != NULL)){
+		curDLinternalCompiledDL->displayListType = getMTX_POP();
+		curDLinternalCompiledDL->value = FIFO_COMMAND_PACK_C(getMTX_POP(), getFIFO_NOP(), getFIFO_NOP(), getFIFO_NOP());
+		curDLinternalCompiledDL++;
+	}
+	else{
+		MATRIX_POP = index;
+	}
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -164,9 +188,19 @@ void glColor(rgb color)
 
   void glTranslate3f32(f32 x, f32 y, f32 z)
 {
-  MATRIX_TRANSLATE = x;
-  MATRIX_TRANSLATE = y;
-  MATRIX_TRANSLATE = z;
+
+	if((isNdsDisplayListUtilsCallList == true) && (curDLinternalCompiledDL != NULL)){
+		curDLinternalCompiledDL->displayListType = getMTX_TRANS();
+		curDLinternalCompiledDL->value = FIFO_COMMAND_PACK_C(getMTX_TRANS(), getFIFO_NOP(), getFIFO_NOP(), getFIFO_NOP());
+		curDLinternalCompiledDL++;
+
+		//Todo: MTX_TRANS: Sets C=M*C. Parameters: 3, m[0..2] (x,y,z position)
+	}
+	else{
+		MATRIX_TRANSLATE = x;
+		MATRIX_TRANSLATE = y;
+		MATRIX_TRANSLATE = z;
+	}
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -243,8 +277,9 @@ void glMaterialShinnyness(void)
 	for (i = 0; i < 128 * 2; i += 2)
 		shiny8[i>>1] = i;
 
-	for (i = 0; i < 128 / 4; i++)
+	for (i = 0; i < 128 / 4; i++){
 		GFX_SHININESS = shiny32[i];
+	}
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -662,8 +697,9 @@ void glSetOutlineColor(int id, rgb color)
 void glSetToonTable(uint16 *table)
 {
 	int i;
-	for( i = 0; i < 32; i++ )
+	for( i = 0; i < 32; i++ ){
 		GFX_TOON_TABLE[i] = table[i];
+	}
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -671,8 +707,9 @@ void glSetToonTable(uint16 *table)
 void glSetToonTableRange(int start, int end, rgb color)
 {
 	int i;
-	for( i = start; i <= end; i++ )
+	for( i = start; i <= end; i++ ){
 		GFX_TOON_TABLE[i] = color;
+	}
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -761,6 +798,7 @@ void glTexParameter(uint8 sizeX, uint8 sizeY, uint32* addr, uint8 mode, uint32 p
 
 uint16* vramGetBank(uint16 *addr)
 {
+	#ifdef ARM9
 	if(addr >= VRAM_A && addr < VRAM_B)
 		return VRAM_A;
 	else if(addr >= VRAM_B && addr < VRAM_C)
@@ -778,12 +816,16 @@ uint16* vramGetBank(uint16 *addr)
 	else if(addr >= VRAM_H && addr < VRAM_I)
 		return VRAM_H;
 	else return VRAM_I;
+	#endif
+	#ifdef WIN32
+	return NULL;
+	#endif
 }
 
 int vramIsTextureBank(uint16 *addr)
 {
 	uint16* vram = vramGetBank(addr);
-
+	#ifdef ARM9
 	if(vram == VRAM_A)
 	{
 		if((VRAM_A_CR & 3) == VRAM_A_TEXTURE)
@@ -810,10 +852,15 @@ int vramIsTextureBank(uint16 *addr)
 	}
 	else 
 		return 0;
-	
+	#endif
+	#ifdef WIN32
+	return 0;
+	#endif
 }
+
 uint32* getNextTextureSlot(int size)
 {
+	#ifdef ARM9
 	uint32* result = nextBlock;
 	nextBlock += size >> 2;
 
@@ -829,7 +876,10 @@ uint32* getNextTextureSlot(int size)
 		return 0;
 
 	else return result;	
-
+	#endif
+	#ifdef WIN32
+	return 0;
+	#endif
 }
 
 ///////////////////////////////////////
@@ -882,10 +932,11 @@ int glTexImage2D(int target, int empty1, int type, int sizeX, int sizeY, int emp
 	GFX_TEX_FORMAT = (sizeX << 20) | (sizeY << 23) | ((type == GL_RGB ? GL_RGBA : type ) << 26);
 	
 	//unlock texture memory
+	#ifdef ARM9
 	vramTemp = VRAM_CR; //vramTemp = vramSetMainBanks(VRAM_A_LCD,VRAM_B_LCD,VRAM_C_LCD,VRAM_D_LCD);
 	VRAMBLOCK_SETBANK_A(VRAM_A_LCDC_MODE);	
 	VRAMBLOCK_SETBANK_B(VRAM_B_LCDC_MODE);	
-
+	
 	//Make RGB visible
 	uint16 *src = (uint16*)texture;
 	uint16 *dest = (uint16*)addr;
@@ -906,6 +957,8 @@ int glTexImage2D(int target, int empty1, int type, int sizeX, int sizeY, int emp
 		vramSetBankE(VRAM_E_TEX_PALETTE);
 	}
 	*/
+	#endif
+	
 	return 1;
 }
 
@@ -946,7 +999,7 @@ void glShadeModel(GLenum mode){
 	lastVertexColor = 0;
 }
 
-static inline int float2int(float valor)
+int float2int(float valor)
 {
     float f1,f2;
     int i1,i2;
@@ -1012,3 +1065,67 @@ void glCopyTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffse
 void glPrioritizeTextures (GLsizei n, const GLuint *textures, const GLclampf *priorities){
 	//DS 3D GPU does not support texture priority. There may be a way by sorting them by color but
 }
+
+////////////////////////////////////////////////////////////
+void glCallListGX(const u32* list) {
+	#ifdef ARM9
+	u32 count = *list++;
+
+	// flush the area that we are going to DMA
+	coherent_user_range_by_size((uint32)list, count*4);
+	
+	// don't start DMAing while anything else is being DMAed because FIFO DMA is touchy as hell
+	//    If anyone can explain this better that would be great. -- gabebear
+	while((DMAXCNT(0) & DMAENABLED)||(DMAXCNT(1) & DMAENABLED)||(DMAXCNT(2) & DMAENABLED)||(DMAXCNT(3) & DMAENABLED));
+
+	// send the packed list asynchronously via DMA to the FIFO
+	DMAXSAD(0) = (u32)list;
+	DMAXDAD(0) = 0x4000400;
+	DMAXCNT(0) = DMA_FIFO | count;
+	while(DMAXCNT(0) & DMAENABLED);
+	#endif
+}
+
+//Valid GX commands:
+//Geometry Commands (can be invoked by Port Address, or by Command ID)
+//Table shows Port Address, Command ID, Number of Parameters, and Clock Cycles.
+//  Address  Cmd Pa.Cy.
+//  N/A      00h -  -   NOP - No Operation (for padding packed GXFIFO commands)
+//  4000440h 10h 1  1   MTX_MODE - Set Matrix Mode (W)
+//  4000444h 11h -  17  MTX_PUSH - Push Current Matrix on Stack (W)
+//  4000448h 12h 1  36  MTX_POP - Pop Current Matrix from Stack (W)
+//  400044Ch 13h 1  17  MTX_STORE - Store Current Matrix on Stack (W)
+//  4000450h 14h 1  36  MTX_RESTORE - Restore Current Matrix from Stack (W)
+//  4000454h 15h -  19  MTX_IDENTITY - Load Unit Matrix to Current Matrix (W)
+//  4000458h 16h 16 34  MTX_LOAD_4x4 - Load 4x4 Matrix to Current Matrix (W)
+//  400045Ch 17h 12 30  MTX_LOAD_4x3 - Load 4x3 Matrix to Current Matrix (W)
+//  4000460h 18h 16 35* MTX_MULT_4x4 - Multiply Current Matrix by 4x4 Matrix (W)
+//  4000464h 19h 12 31* MTX_MULT_4x3 - Multiply Current Matrix by 4x3 Matrix (W)
+//  4000468h 1Ah 9  28* MTX_MULT_3x3 - Multiply Current Matrix by 3x3 Matrix (W)
+//  400046Ch 1Bh 3  22  MTX_SCALE - Multiply Current Matrix by Scale Matrix (W)
+//  4000470h 1Ch 3  22* MTX_TRANS - Mult. Curr. Matrix by Translation Matrix (W)
+//  4000480h 20h 1  1   COLOR - Directly Set Vertex Color (W)
+//  4000484h 21h 1  9*  NORMAL - Set Normal Vector (W)
+//  4000488h 22h 1  1   TEXCOORD - Set Texture Coordinates (W)
+//  400048Ch 23h 2  9   VTX_16 - Set Vertex XYZ Coordinates (W)
+//  4000490h 24h 1  8   VTX_10 - Set Vertex XYZ Coordinates (W)
+//  4000494h 25h 1  8   VTX_XY - Set Vertex XY Coordinates (W)
+//  4000498h 26h 1  8   VTX_XZ - Set Vertex XZ Coordinates (W)
+//  400049Ch 27h 1  8   VTX_YZ - Set Vertex YZ Coordinates (W)
+//  40004A0h 28h 1  8   VTX_DIFF - Set Relative Vertex Coordinates (W)
+//  40004A4h 29h 1  1   POLYGON_ATTR - Set Polygon Attributes (W)
+//  40004A8h 2Ah 1  1   TEXIMAGE_PARAM - Set Texture Parameters (W)
+//  40004ACh 2Bh 1  1   PLTT_BASE - Set Texture Palette Base Address (W)
+//  40004C0h 30h 1  4   DIF_AMB - MaterialColor0 - Diffuse/Ambient Reflect. (W)
+//  40004C4h 31h 1  4   SPE_EMI - MaterialColor1 - Specular Ref. & Emission (W)
+//  40004C8h 32h 1  6   LIGHT_VECTOR - Set Light's Directional Vector (W)
+//  40004CCh 33h 1  1   LIGHT_COLOR - Set Light Color (W)
+//  40004D0h 34h 32 32  SHININESS - Specular Reflection Shininess Table (W)
+//  4000500h 40h 1  1   BEGIN_VTXS - Start of Vertex List (W)
+//  4000504h 41h -  1   END_VTXS - End of Vertex List (W)
+//  4000540h 50h 1  392 SWAP_BUFFERS - Swap Rend|ering Engine Buffer (W)
+//  4000580h 60h 1  1   VIEWPORT - Set Viewport (W)
+//  40005C0h 70h 3  103 BOX_TEST - Test if Cuboid Sits inside View Volume (W)
+//  40005C4h 71h 2  9   POS_TEST - Set Position Coordinates for Test (W)
+//  40005C8h 72h 1  5   VEC_TEST - Set Directional Vector for Test (W)
+

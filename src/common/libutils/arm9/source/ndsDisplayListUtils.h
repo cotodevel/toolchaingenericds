@@ -30,13 +30,9 @@ USA
 
 #ifdef ARM9
 #include "typedefsTGDS.h"
-#include "VideoGL.h"
 #endif
 
-#define RGB15(r,g,b)  ((r)|((g)<<5)|((b)<<10))
-#define RGB5(r,g,b)  ((r)|((g)<<5)|((b)<<10))
-#define RGB8(r,g,b)  (((r)>>3)|(((g)>>3)<<5)|(((b)>>3)<<10))
-#define ARGB16(a, r, g, b) ( ((a) << 15) | (r)|((g)<<5)|((b)<<10))
+#include "VideoGL.h"
 
 //NDS GX C Display List defines
 struct unpackedCmd {
@@ -45,42 +41,6 @@ struct unpackedCmd {
 	u8 cmd3;
 	u8 cmd4;
 };
-
-#define GFX_CONTROL_ADDR           ((vuint32) 0x04000060)
-
-#define GFX_FIFO_ADDR              ((vuint32) 0x04000400)  
-#define GFX_STATUS_ADDR            ((vuint32) 0x04000600)
-#define GFX_COLOR_ADDR             ((vuint32) 0x04000480)
-
-#define GFX_VERTEX10_ADDR          ((vuint32) 0x04000490)
-#define GFX_VERTEX_XY_ADDR          ((vuint32) 0x04000494)
-#define GFX_VERTEX_XZ_ADDR          ((vuint32) 0x04000498)
-#define GFX_VERTEX_YZ_ADDR          ((vuint32) 0x0400049C)
-#define GFX_VERTEX_DIFF_ADDR          ((vuint32) 0x040004A0)
-
-#define GFX_VERTEX16_ADDR          ((vuint32) 0x0400048C)
-#define GFX_TEX_COORD_ADDR         ((vuint32) 0x04000488)
-#define GFX_TEX_FORMAT_ADDR        ((vuint32) 0x040004A8)
-
-#define GFX_CLEAR_COLOR_ADDR       ((vuint32) 0x04000350)
-#define GFX_CLEAR_DEPTH_ADDR       ((vuint32) 0x04000354)
-
-#define GFX_LIGHT_VECTOR_ADDR      ((vuint32) 0x040004C8)
-#define GFX_LIGHT_COLOR_ADDR       ((vuint32) 0x040004CC)
-#define GFX_NORMAL_ADDR            ((vuint32) 0x04000484)
-
-#define GFX_DIFFUSE_AMBIENT_ADDR   ((vuint32) 0x040004C0)
-#define GFX_SPECULAR_EMISSION_ADDR ((vuint32) 0x040004C4)
-#define GFX_SHININESS_ADDR         ((vuint32) 0x040004D0)
-
-#define GFX_POLY_FORMAT_ADDR       ((vuint32) 0x040004A4)
-
-#define GFX_BEGIN_ADDR             ((vuint32) 0x04000500)
-#define GFX_END_ADDR               ((vuint32) 0x04000504)
-#define GFX_FLUSH_ADDR             ((vuint32) 0x04000540)
-#define GFX_VIEWPORT_ADDR          ((vuint32) 0x04000580)
-#define GFX_TOON_TABLE_ADDR		  ((vuint32)  0x04000380)
-#define GFX_EDGE_TABLE_ADDR		  ((vuint32)  0x04000330)
 
 //Display List Descriptor
 #define DL_INVALID (u32)(-1)
@@ -116,19 +76,6 @@ __attribute__((packed)) ;
 ;
 #endif
 
-#ifdef WIN32
-
-typedef enum {
-	GL_TRIANGLES      = 0, /*!< draw triangles with each 3 vertices defining a triangle */
-	GL_QUADS          = 1, /*!< draw quads with each 4 vertices defining a quad */
-	GL_TRIANGLE_STRIP = 2, /*!< draw triangles with the first triangle defined by 3 vertices, then each additional triangle being defined by one additional vertex */
-	GL_QUAD_STRIP     = 3, /*!< draw quads with the first quad being defined by 4 vertices, then each additional triangle being defined by 2 vertices. */
-	GL_TRIANGLE       = 0, /*!< same as GL_TRIANGLES, old non-OpenGL version */
-	GL_QUAD           = 1  /*!< same as GL_QUADS, old non-OpenGL version */
-} GL_GLBEGIN_ENUM;
-
-#endif
-
 #endif
 
 #ifdef __cplusplus 
@@ -157,6 +104,9 @@ extern u8 getFIFO_BEGIN();
 extern u8 getFIFO_END();
 extern u8 getFIFO_FLUSH();
 extern u8 getFIFO_VIEWPORT();
+extern u8 getMTX_PUSH();
+extern u8 getMTX_POP();
+extern u8 getMTX_TRANS();
 extern struct unpackedCmd FIFO_COMMAND_UNPACK(u32 cmd);
 extern int CompileNDSGXDisplayListFromObject(u32 * bufOut, struct ndsDisplayListDescriptor * dlInst);
 extern int BuildNDSGXDisplayListObjectFromFile(char * filename, struct ndsDisplayListDescriptor * dlInst);

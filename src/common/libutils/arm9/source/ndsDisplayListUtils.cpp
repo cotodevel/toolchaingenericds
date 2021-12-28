@@ -46,9 +46,9 @@ USA
 #include <stdio.h>
 #include <string.h>
 #include "ndsDisplayListUtils.h"
+#include "VideoGL.h"
 
 #ifdef ARM9
-#include "VideoGL.h"
 #include "posixHandleTGDS.h"
 #endif
 
@@ -208,6 +208,42 @@ __attribute__ ((optnone))
 #endif
 u8 getFIFO_LIGHT_COLOR(){
 	return REG2ID_C(GFX_LIGHT_COLOR_ADDR);
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
+u8 getMTX_PUSH(){
+	return REG2ID_C(GFX_MTX_PUSH_ADDR);
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
+u8 getMTX_POP(){
+	return REG2ID_C(GFX_MTX_POP_ADDR);
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
+u8 getMTX_TRANS(){
+	return REG2ID_C(GFX_MTX_TRANS_ADDR);
 }
 
 #ifdef ARM9
