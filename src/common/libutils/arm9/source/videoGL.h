@@ -37,21 +37,95 @@
 #ifndef VIDEOGL_ARM9_INCLUDE
 #define VIDEOGL_ARM9_INCLUDE
 
-#undef NO_GL_INLINE
+#ifdef ARM9
+#undef NO_GL_INLINE //NDS
+#endif
 
-//////////////////////////////////////////////////////////////////////
-
-#ifndef ARM9
-#error 3D hardware is only available from the ARM9
+#ifdef WIN32
+#define NO_GL_INLINE //WIN32 debugger
 #endif
 
 //////////////////////////////////////////////////////////////////////
 
+//#ifndef ARM9
+//#error 3D hardware is only available from the ARM9
+//#endif
+
+//////////////////////////////////////////////////////////////////////
+#ifdef ARM9
 #include <typedefsTGDS.h>
 #include "videoTGDS.h"
 #include "dmaTGDS.h"
-#include "arm9math.h"
 #include "nds_cp15_misc.h"
+#endif
+
+#ifdef WIN32
+#include "TGDSTypes.h"
+#endif
+
+#include "arm9math.h"
+
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+// 3D core control
+//////////////////////////////////////////////////////////////////////
+#define GFX_CONTROL_ADDR           ((vuint32) 0x04000060)
+
+#define GFX_FIFO_ADDR              ((vuint32) 0x04000400)  
+#define GFX_STATUS_ADDR            ((vuint32) 0x04000600)
+#define GFX_COLOR_ADDR             ((vuint32) 0x04000480)
+
+#define GFX_VERTEX10_ADDR          ((vuint32) 0x04000490)
+#define GFX_VERTEX_XY_ADDR          ((vuint32) 0x04000494)
+#define GFX_VERTEX_XZ_ADDR          ((vuint32) 0x04000498)
+#define GFX_VERTEX_YZ_ADDR          ((vuint32) 0x0400049C)
+#define GFX_VERTEX_DIFF_ADDR          ((vuint32) 0x040004A0)
+
+#define GFX_VERTEX16_ADDR          ((vuint32) 0x0400048C)
+#define GFX_TEX_COORD_ADDR         ((vuint32) 0x04000488)
+#define GFX_TEX_FORMAT_ADDR        ((vuint32) 0x040004A8)
+
+#define GFX_CLEAR_COLOR_ADDR       ((vuint32) 0x04000350)
+#define GFX_CLEAR_DEPTH_ADDR       ((vuint32) 0x04000354)
+
+#define GFX_LIGHT_VECTOR_ADDR      ((vuint32) 0x040004C8)
+#define GFX_LIGHT_COLOR_ADDR       ((vuint32) 0x040004CC)
+#define GFX_NORMAL_ADDR            ((vuint32) 0x04000484)
+
+#define GFX_MTX_PUSH_ADDR            ((vuint32) 0x04000444)
+#define GFX_MTX_POP_ADDR            ((vuint32) 0x04000448)
+#define GFX_MTX_TRANS_ADDR            ((vuint32) 0x04000470)
+
+#define GFX_DIFFUSE_AMBIENT_ADDR   ((vuint32) 0x040004C0)
+#define GFX_SPECULAR_EMISSION_ADDR ((vuint32) 0x040004C4)
+#define GFX_SHININESS_ADDR         ((vuint32) 0x040004D0)
+
+#define GFX_POLY_FORMAT_ADDR       ((vuint32) 0x040004A4)
+
+#define GFX_BEGIN_ADDR             ((vuint32) 0x04000500)
+#define GFX_END_ADDR               ((vuint32) 0x04000504)
+#define GFX_FLUSH_ADDR             ((vuint32) 0x04000540)
+#define GFX_VIEWPORT_ADDR          ((vuint32) 0x04000580)
+#define GFX_TOON_TABLE_ADDR		  ((vuint32)  0x04000380)
+#define GFX_EDGE_TABLE_ADDR		  ((vuint32)  0x04000330)
+
+//////////////////////////////////////////////////////////////////////
+// Matrix processor control
+//////////////////////////////////////////////////////////////////////
+
+#define MATRIX_CONTROL_ADDR    (0x04000440)
+#define MATRIX_PUSH_ADDR       (0x04000444)
+#define MATRIX_POP_ADDR        (0x04000448)
+#define MATRIX_SCALE_ADDR      (0x0400046C)
+#define MATRIX_TRANSLATE_ADDR  (0x04000470)
+#define MATRIX_RESTORE_ADDR    (0x04000450)
+#define MATRIX_STORE_ADDR      (0x0400044C)
+#define MATRIX_IDENTITY_ADDR   (0x04000454)
+#define MATRIX_LOAD4x4_ADDR    (0x04000458)
+#define MATRIX_LOAD4x3_ADDR    (0x0400045C)
+#define MATRIX_MULT4x4_ADDR    (0x04000460)
+#define MATRIX_MULT4x3_ADDR    (0x04000464)
+#define MATRIX_MULT3x3_ADDR    (0x04000468)
 
 //////////////////////////////////////////////////////////////////////
 
@@ -132,12 +206,17 @@ typedef void GLvoid;
 
 struct GLContext{
 	GLenum primitiveShadeModelMode;	//glShadeModel(GLenum mode: [GL_FLAT/GL_SMOOTH]);
-
-} __attribute__((aligned (4)));
+} 
+#ifdef ARM9
+__attribute__((aligned (4)));
+#endif
+#ifdef WIN32
+;
+#endif
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
-// 3D core control
+// 3D core control (NDS bits)
 //////////////////////////////////////////////////////////////////////
 
 #define GFX_CONTROL           (*(vuint16*) 0x04000060)
@@ -193,7 +272,6 @@ struct GLContext{
 #define MATRIX_MULT4x4    (*(vfixed*) 0x04000460)
 #define MATRIX_MULT4x3    (*(vfixed*) 0x04000464)
 #define MATRIX_MULT3x3    (*(vfixed*) 0x04000468)
-
 typedef enum {
 	GL_TRIANGLES      = 0, /*!< draw triangles with each 3 vertices defining a triangle */
 	GL_QUADS          = 1, /*!< draw quads with each 4 vertices defining a quad */
@@ -278,7 +356,7 @@ typedef enum {
 //////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////
-//Fifo commands
+//Fifo commands (NDS bits)
 
 #define FIFO_COMMAND_PACK(c1,c2,c3,c4) (((c4) << 24) | ((c3) << 16) | ((c2) << 8) | (c1)) /*!< \brief packs four packed commands into a 32bit command for sending to the GFX FIFO */
 #define REG2ID(r)						(u8)( ( ((u32)(&(r)))-0x04000400 ) >> 2 )
@@ -308,11 +386,9 @@ typedef enum {
 #define FIFO_END				REG2ID(GFX_END)               
 #define FIFO_FLUSH				REG2ID(GFX_FLUSH)             
 #define FIFO_VIEWPORT			REG2ID(GFX_VIEWPORT)          
-
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 //////////////////////////////////////////////////////////////////////
 
@@ -614,24 +690,6 @@ static inline void glPolyFmt(int alpha) // obviously more to this
   GFX_POLY_FORMAT = alpha;
 }
 
-////////////////////////////////////////////////////////////
-static inline void glCallList(const u32* list) {
-	u32 count = *list++;
-
-	// flush the area that we are going to DMA
-	coherent_user_range_by_size((uint32)list, count*4);
-	
-	// don't start DMAing while anything else is being DMAed because FIFO DMA is touchy as hell
-	//    If anyone can explain this better that would be great. -- gabebear
-	while((DMAXCNT(0) & DMAENABLED)||(DMAXCNT(1) & DMAENABLED)||(DMAXCNT(2) & DMAENABLED)||(DMAXCNT(3) & DMAENABLED));
-
-	// send the packed list asynchronously via DMA to the FIFO
-	DMAXSAD(0) = (u32)list;
-	DMAXDAD(0) = 0x4000400;
-	DMAXCNT(0) = DMA_FIFO | count;
-	while(DMAXCNT(0) & DMAENABLED);
-}
-
 #endif  //endif #no inline
 extern void glRotate(int angle, float x, float y, float z);
 
@@ -646,6 +704,10 @@ extern u16 lastVertexColor;
 
 extern void glColor3b(uint8 red, uint8 green, uint8 blue);
 extern void glVertex2i(int x, int y); 
+extern void GLInitExt();
+extern bool isNdsDisplayListUtilsCallList;
+extern void glCallListGX(const u32* list);
+extern int float2int(float valor);
 
 #ifdef __cplusplus
 }
