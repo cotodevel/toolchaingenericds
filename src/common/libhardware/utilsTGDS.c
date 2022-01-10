@@ -813,10 +813,10 @@ void handleARGV(){
 						memset(thisArgv[i], 0, 256);
 						strcpy(thisArgv[i], thisARGV2);
 						
-						//build the command line vector
-						cmdLineVectorPosixCompatible[i] = (char *)&thisArgv[i];
 					}
 					
+					//build the command line vector
+					cmdLineVectorPosixCompatible[i] = (char *)&thisArgv[i];
 					argCount++;
 				}
 			}
