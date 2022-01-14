@@ -128,10 +128,9 @@ void glColor(rgb color)
 //////////////////////////////////////////////////////////////////////
 
 void glPushMatrix(void){
-	if((isNdsDisplayListUtilsCallList == true) && (curDLinternalCompiledDL != NULL)){
-		curDLinternalCompiledDL->displayListType = getMTX_PUSH();
-		curDLinternalCompiledDL->value = FIFO_COMMAND_PACK_C(getMTX_PUSH(), getFIFO_NOP(), getFIFO_NOP(), getFIFO_NOP());
-		curDLinternalCompiledDL++;
+	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
+		Compiled_DL_Binary[interCompiled_DLPtr] = getMTX_PUSH();
+		interCompiled_DLPtr++;
 	}
 	else{
 		MATRIX_PUSH = 0;
@@ -142,10 +141,12 @@ void glPushMatrix(void){
 
 void glPopMatrix(sint32 index)
 {
-	if((isNdsDisplayListUtilsCallList == true) && (curDLinternalCompiledDL != NULL)){
-		curDLinternalCompiledDL->displayListType = getMTX_POP();
-		curDLinternalCompiledDL->value = FIFO_COMMAND_PACK_C(getMTX_POP(), getFIFO_NOP(), getFIFO_NOP(), getFIFO_NOP());
-		curDLinternalCompiledDL++;
+	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
+		Compiled_DL_Binary[interCompiled_DLPtr] = getMTX_POP();
+		interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)index;
+		interCompiled_DLPtr++;
+
 	}
 	else{
 		MATRIX_POP = index;
@@ -186,15 +187,14 @@ void glPopMatrix(sint32 index)
 
 //////////////////////////////////////////////////////////////////////
 
-  void glTranslate3f32(f32 x, f32 y, f32 z)
-{
-
-	if((isNdsDisplayListUtilsCallList == true) && (curDLinternalCompiledDL != NULL)){
-		curDLinternalCompiledDL->displayListType = getMTX_TRANS();
-		curDLinternalCompiledDL->value = FIFO_COMMAND_PACK_C(getMTX_TRANS(), getFIFO_NOP(), getFIFO_NOP(), getFIFO_NOP());
-		curDLinternalCompiledDL++;
-
-		//Todo: MTX_TRANS: Sets C=M*C. Parameters: 3, m[0..2] (x,y,z position)
+void glTranslate3f32(f32 x, f32 y, f32 z){
+	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
+		//MTX_TRANS: Sets C=M*C. Parameters: 3, m[0..2] (x,y,z position)
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getMTX_TRANS(); //Unpacked Command format
+		interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)x; interCompiled_DLPtr++; //Unpacked Command format
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)y; interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)z; interCompiled_DLPtr++;
 	}
 	else{
 		MATRIX_TRANSLATE = x;
@@ -212,6 +212,10 @@ void glPopMatrix(sint32 index)
   MATRIX_SCALE = factor;
 }
 
+//////////////////////////////////////////////////////////////////////
+void glTranslatef(float x, float y, float z){
+	glTranslate3f32(floattof32(x), floattof32(y), floattof32(z));
+}
 //////////////////////////////////////////////////////////////////////
 
 void glTranslatef32(int x, int y, int z) {
@@ -416,43 +420,99 @@ void glMultMatrix4x3(m4x3* m)
 //////////////////////////////////////////////////////////////////////
 // Integer rotation (not gl standard)
 //	based on 512 degree circle
-void glRotateZi(int angle)
-{
+void glRotateZi(int angle){
+	f32 sine = SIN[angle &  LUT_MASK];
+	f32 cosine = COS[angle & LUT_MASK];
+	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
+		//Rotate Z DL:
+		//Identity Matrix
+		//The MTX_IDENTITY command can be used to initialize the Position Matrix before doing any Translation/Scaling/Rotation, for example:
+		//  Load(Identity), Mul(Rotate), Mul(Scale)  ;rotation/scaling (not so efficient)
+		//Rotation Matrices
+		//Rotation can be performed with MTX_MULT_3x3 command, simple examples are:
+		//Around Z-Axis
+		//| cos   sin   0   |
+		//| -sin  cos   0   |
+		//| 0     0     1.0 |
 
-  f32 sine = SIN[angle &  LUT_MASK];
-  f32 cosine = COS[angle & LUT_MASK];
-
-  MATRIX_MULT3x3 = cosine;
-  MATRIX_MULT3x3 = sine;
-  MATRIX_MULT3x3 = 0;
-
-  MATRIX_MULT3x3 = - sine;
-  MATRIX_MULT3x3 = cosine;
-  MATRIX_MULT3x3 = 0;
-  
-  MATRIX_MULT3x3 = 0;
-  MATRIX_MULT3x3 = 0;
-  MATRIX_MULT3x3 = inttof32(1);
+		//Load(Identity)
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getMTX_IDENTITY(); //Unpacked Command format
+		interCompiled_DLPtr++;
+		
+		//Mul(Rotate)
+		//4000468h - Cmd 1Ah - MTX_MULT_3x3 - Multiply Current Matrix by 3x3 Matrix (W)
+		//Sets C=M*C. Parameters: 9, m[0..8]
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getMTX_MULT_3x3(); interCompiled_DLPtr++; //Unpacked Command format
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)cosine; interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)sine; interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)0; interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)-sine; interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)cosine; interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)0; interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)0; interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)0; interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)inttof32(1); interCompiled_DLPtr++;
+	}
+	else{
+		MATRIX_MULT3x3 = cosine;
+		MATRIX_MULT3x3 = sine;
+		MATRIX_MULT3x3 = 0;
+		MATRIX_MULT3x3 = - sine;
+		MATRIX_MULT3x3 = cosine;
+		MATRIX_MULT3x3 = 0;
+		MATRIX_MULT3x3 = 0;
+		MATRIX_MULT3x3 = 0;
+		MATRIX_MULT3x3 = inttof32(1);
+	}
 }
 
 //////////////////////////////////////////////////////////////////////
 
 void glRotateYi(int angle)
 {
-  f32 sine = SIN[angle &  LUT_MASK];
-  f32 cosine = COS[angle & LUT_MASK];
+	f32 sine = SIN[angle &  LUT_MASK];
+	f32 cosine = COS[angle & LUT_MASK];
+	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
+		//Rotate Y DL:
+		//Identity Matrix
+		//The MTX_IDENTITY command can be used to initialize the Position Matrix before doing any Translation/Scaling/Rotation, for example:
+		//  Load(Identity), Mul(Rotate), Mul(Scale)  ;rotation/scaling (not so efficient)
+		//Rotation Matrices
+		//Rotation can be performed with MTX_MULT_3x3 command, simple examples are:
+		//Around Y-Axis
+		//| cos   0    sin |
+		//| 0     1.0  0   |
+		//| -sin  0    cos |
 
-  MATRIX_MULT3x3 = cosine;
-  MATRIX_MULT3x3 = 0;
-  MATRIX_MULT3x3 = -sine;
-  
-  MATRIX_MULT3x3 = 0;
-  MATRIX_MULT3x3 = inttof32(1);
-  MATRIX_MULT3x3 = 0;
-  
-  MATRIX_MULT3x3 = sine;
-  MATRIX_MULT3x3 = 0;
-  MATRIX_MULT3x3 = cosine;
+		//Load(Identity)
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getMTX_IDENTITY(); //Unpacked Command format
+		interCompiled_DLPtr++;
+		
+		//Mul(Rotate)
+		//4000468h - Cmd 1Ah - MTX_MULT_3x3 - Multiply Current Matrix by 3x3 Matrix (W)
+		//Sets C=M*C. Parameters: 9, m[0..8]
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getMTX_MULT_3x3(); interCompiled_DLPtr++; //Unpacked Command format
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)cosine; interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)0; interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)-sine; interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)0; interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)inttof32(1); interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)0; interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)sine; interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)0; interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)cosine; interCompiled_DLPtr++;
+	}
+	else{
+		MATRIX_MULT3x3 = cosine;
+		MATRIX_MULT3x3 = 0;
+		MATRIX_MULT3x3 = -sine;
+		MATRIX_MULT3x3 = 0;
+		MATRIX_MULT3x3 = inttof32(1);
+		MATRIX_MULT3x3 = 0;
+		MATRIX_MULT3x3 = sine;
+		MATRIX_MULT3x3 = 0;
+		MATRIX_MULT3x3 = cosine;
+	}
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -462,17 +522,47 @@ void glRotateXi(int angle)
   f32 sine = SIN[angle &  LUT_MASK];
   f32 cosine = COS[angle & LUT_MASK];
 
-  MATRIX_MULT3x3 = inttof32(1);
-  MATRIX_MULT3x3 = 0;
-  MATRIX_MULT3x3 = 0;
+  if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
+		//Rotate X DL:
+		//Identity Matrix
+		//The MTX_IDENTITY command can be used to initialize the Position Matrix before doing any Translation/Scaling/Rotation, for example:
+		//  Load(Identity), Mul(Rotate), Mul(Scale)  ;rotation/scaling (not so efficient)
+		//Rotation Matrices
+		//Rotation can be performed with MTX_MULT_3x3 command, simple examples are:
+		//Around X-Axis          
+		//| 1.0  0     0   |
+		//| 0    cos   sin |
+		//| 0    -sin  cos |
 
-  MATRIX_MULT3x3 = 0;
-  MATRIX_MULT3x3 = cosine;
-  MATRIX_MULT3x3 = sine;
-  
-  MATRIX_MULT3x3 = 0;
-  MATRIX_MULT3x3 = -sine;
-  MATRIX_MULT3x3 = cosine;
+		//Load(Identity)
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getMTX_IDENTITY(); //Unpacked Command format
+		interCompiled_DLPtr++;
+		
+		//Mul(Rotate)
+		//4000468h - Cmd 1Ah - MTX_MULT_3x3 - Multiply Current Matrix by 3x3 Matrix (W)
+		//Sets C=M*C. Parameters: 9, m[0..8]
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getMTX_MULT_3x3(); interCompiled_DLPtr++; //Unpacked Command format
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)inttof32(1); interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)0; interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)0; interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)0; interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)cosine; interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)sine; interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)0; interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)-sine; interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)cosine; interCompiled_DLPtr++;
+	}
+	else{
+		MATRIX_MULT3x3 = inttof32(1);
+		MATRIX_MULT3x3 = 0;
+		MATRIX_MULT3x3 = 0;
+		MATRIX_MULT3x3 = 0;
+		MATRIX_MULT3x3 = cosine;
+		MATRIX_MULT3x3 = sine;  
+		MATRIX_MULT3x3 = 0;
+		MATRIX_MULT3x3 = -sine;
+		MATRIX_MULT3x3 = cosine;
+	}
 }
 //////////////////////////////////////////////////////////////////////
 //	rotations wrapped in float...mainly for testing
@@ -1084,48 +1174,8 @@ void glCallListGX(const u32* list) {
 	DMAXCNT(0) = DMA_FIFO | count;
 	while(DMAXCNT(0) & DMAENABLED);
 	#endif
+
+	#ifdef WIN32
+	printf("glCallListGX: Executing DL List. Size: %d", list[0]);
+	#endif
 }
-
-//Valid GX commands:
-//Geometry Commands (can be invoked by Port Address, or by Command ID)
-//Table shows Port Address, Command ID, Number of Parameters, and Clock Cycles.
-//  Address  Cmd Pa.Cy.
-//  N/A      00h -  -   NOP - No Operation (for padding packed GXFIFO commands)
-//  4000440h 10h 1  1   MTX_MODE - Set Matrix Mode (W)
-//  4000444h 11h -  17  MTX_PUSH - Push Current Matrix on Stack (W)
-//  4000448h 12h 1  36  MTX_POP - Pop Current Matrix from Stack (W)
-//  400044Ch 13h 1  17  MTX_STORE - Store Current Matrix on Stack (W)
-//  4000450h 14h 1  36  MTX_RESTORE - Restore Current Matrix from Stack (W)
-//  4000454h 15h -  19  MTX_IDENTITY - Load Unit Matrix to Current Matrix (W)
-//  4000458h 16h 16 34  MTX_LOAD_4x4 - Load 4x4 Matrix to Current Matrix (W)
-//  400045Ch 17h 12 30  MTX_LOAD_4x3 - Load 4x3 Matrix to Current Matrix (W)
-//  4000460h 18h 16 35* MTX_MULT_4x4 - Multiply Current Matrix by 4x4 Matrix (W)
-//  4000464h 19h 12 31* MTX_MULT_4x3 - Multiply Current Matrix by 4x3 Matrix (W)
-//  4000468h 1Ah 9  28* MTX_MULT_3x3 - Multiply Current Matrix by 3x3 Matrix (W)
-//  400046Ch 1Bh 3  22  MTX_SCALE - Multiply Current Matrix by Scale Matrix (W)
-//  4000470h 1Ch 3  22* MTX_TRANS - Mult. Curr. Matrix by Translation Matrix (W)
-//  4000480h 20h 1  1   COLOR - Directly Set Vertex Color (W)
-//  4000484h 21h 1  9*  NORMAL - Set Normal Vector (W)
-//  4000488h 22h 1  1   TEXCOORD - Set Texture Coordinates (W)
-//  400048Ch 23h 2  9   VTX_16 - Set Vertex XYZ Coordinates (W)
-//  4000490h 24h 1  8   VTX_10 - Set Vertex XYZ Coordinates (W)
-//  4000494h 25h 1  8   VTX_XY - Set Vertex XY Coordinates (W)
-//  4000498h 26h 1  8   VTX_XZ - Set Vertex XZ Coordinates (W)
-//  400049Ch 27h 1  8   VTX_YZ - Set Vertex YZ Coordinates (W)
-//  40004A0h 28h 1  8   VTX_DIFF - Set Relative Vertex Coordinates (W)
-//  40004A4h 29h 1  1   POLYGON_ATTR - Set Polygon Attributes (W)
-//  40004A8h 2Ah 1  1   TEXIMAGE_PARAM - Set Texture Parameters (W)
-//  40004ACh 2Bh 1  1   PLTT_BASE - Set Texture Palette Base Address (W)
-//  40004C0h 30h 1  4   DIF_AMB - MaterialColor0 - Diffuse/Ambient Reflect. (W)
-//  40004C4h 31h 1  4   SPE_EMI - MaterialColor1 - Specular Ref. & Emission (W)
-//  40004C8h 32h 1  6   LIGHT_VECTOR - Set Light's Directional Vector (W)
-//  40004CCh 33h 1  1   LIGHT_COLOR - Set Light Color (W)
-//  40004D0h 34h 32 32  SHININESS - Specular Reflection Shininess Table (W)
-//  4000500h 40h 1  1   BEGIN_VTXS - Start of Vertex List (W)
-//  4000504h 41h -  1   END_VTXS - End of Vertex List (W)
-//  4000540h 50h 1  392 SWAP_BUFFERS - Swap Rend|ering Engine Buffer (W)
-//  4000580h 60h 1  1   VIEWPORT - Set Viewport (W)
-//  40005C0h 70h 3  103 BOX_TEST - Test if Cuboid Sits inside View Volume (W)
-//  40005C4h 71h 2  9   POS_TEST - Set Position Coordinates for Test (W)
-//  40005C8h 72h 1  5   VEC_TEST - Set Directional Vector for Test (W)
-

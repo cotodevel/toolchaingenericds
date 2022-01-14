@@ -218,6 +218,42 @@ __attribute__((optimize("O0")))
 __attribute__ ((optnone))
 #endif
 #endif
+u8 getMTX_MULT_3x3(){
+	return REG2ID_C(MATRIX_MULT3x3_ADDR);
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
+u8 getMTX_IDENTITY(){
+	return REG2ID_C(MATRIX_IDENTITY_ADDR);
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
+u8 getMTX_SCALE(){
+	return REG2ID_C(MATRIX_SCALE_ADDR);
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
 u8 getMTX_PUSH(){
 	return REG2ID_C(GFX_MTX_PUSH_ADDR);
 }
@@ -362,7 +398,7 @@ __attribute__((optimize("O0")))
 __attribute__ ((optnone))
 #endif
 #endif
-struct unpackedCmd FIFO_COMMAND_UNPACK(u32 cmd){
+struct unpackedCmd FIFO_COMMAND_PACKED_FMT_UNPACK(u32 cmd){
 	struct unpackedCmd out;
 	out.cmd1 = ((cmd >> 0) & 0xFF);
 	out.cmd2 = ((cmd >> 8) & 0xFF);
@@ -371,7 +407,7 @@ struct unpackedCmd FIFO_COMMAND_UNPACK(u32 cmd){
 	return out;
 }
 
-//Compiles a NDS GX Display List / CallList binary from an object one. Understood by the GX hardware.
+//Compiles a NDS GX Display List / CallList binary using the Command Packed format, from an object one. Understood by the GX hardware.
 //Returns: List count (multiplied by 4 is the file size), DL_INVALID if fails.
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -381,7 +417,7 @@ __attribute__((optimize("O0")))
 __attribute__ ((optnone))
 #endif
 #endif
-int CompileNDSGXDisplayListFromObject(u32 * bufOut, struct ndsDisplayListDescriptor * dlInst){
+int CompilePackedNDSGXDisplayListFromObject(u32 * bufOut, struct ndsDisplayListDescriptor * dlInst){
 	if( (dlInst != NULL) && (bufOut != NULL)){
 		*(bufOut) = dlInst->ndsDisplayListSize;
 		bufOut++;
@@ -517,7 +553,7 @@ bool getDisplayListFilterByCommand(struct ndsDisplayListDescriptor * dlInst, str
 			int indexOurCommandIs = (int)DL_INVALID;
 			u8 lastCmd = (u8)DL_INVALID;
 			//Find said command here
-			struct unpackedCmd unpacked = FIFO_COMMAND_UNPACK(thisDL->value);
+			struct unpackedCmd unpacked = FIFO_COMMAND_PACKED_FMT_UNPACK(thisDL->value);
 			if(unpacked.cmd1 == targetCommand){
 				indexOurCommandIs=1;
 			}
@@ -561,6 +597,7 @@ bool getDisplayListFilterByCommand(struct ndsDisplayListDescriptor * dlInst, str
 
 //Builds a NDS GX DisplayList / CallList object from a compiled one through the Filesystem.
 //Returns: Display List size, DL_INVALID if fails.
+//Notes: Currently reads a Packed Format Display List, todo: add Unpacked Format Display List
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("O0")))
@@ -671,6 +708,41 @@ int BuildNDSGXDisplayListObjectFromFile(char * filename, struct ndsDisplayListDe
 	return ret;
 }
 
+//Defines if it's a GX command or not
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+bool isAGXCommand(u32 val){
+	bool isAGXCommand = false;
+	if (val == (u32)getFIFO_BEGIN()) {
+		isAGXCommand = true;
+	}
+	else if (val == (u32)getMTX_PUSH()) {
+		isAGXCommand = true;
+	}
+	else if (val == (u32)getMTX_POP()) {
+		isAGXCommand = true;
+	}
+	else if (val == (u32)getMTX_IDENTITY()) {
+		isAGXCommand = true;
+	}
+	else if (val == (u32)getMTX_TRANS()) {
+		isAGXCommand = true;
+	}
+	else if (val == (u32)getMTX_MULT_3x3()) {
+		isAGXCommand = true;
+	}
+	else if (val == (u32)getFIFO_END()) {
+		isAGXCommand = true;
+	}
+	return isAGXCommand;
+}
+
 #ifdef WIN32
 
 //Unit Test (WIN32): reads a NDS GX Display List / Call List payload emmited from (https://bitbucket.org/Coto88/blender-nds-exporter/src/master/)
@@ -734,7 +806,7 @@ int main(int argc, char** argv){
 		//Build it
 		u32 * builtDisplayList = (u32*)TGDSARM9Malloc(displayListSize);
 		memset(builtDisplayList, 0, displayListSize);
-		int builtDisplayListSize = CompileNDSGXDisplayListFromObject(builtDisplayList, NDSDL) + 1;
+		int builtDisplayListSize = CompilePackedNDSGXDisplayListFromObject(builtDisplayList, NDSDL) + 1;
 		
 		if(dlReadSize != builtDisplayListSize){
 			printf("\nNDS DisplayList Build failed\n");
@@ -762,21 +834,193 @@ int main(int argc, char** argv){
 	TGDSARM9Free(NDSDL);
 	*/
 
-	//Unit Test: Tests OpenGL DisplayLists components functionality then emitting proper GX displaylists
-
+	//Unit Test #1: Tests OpenGL DisplayLists components functionality then emitting proper GX displaylists, unpacked format.
 	GLInitExt();
-	int base = glGenLists(10);
-	glListBase(base);
+	int list = glGenLists(10);
+	if(list){
+		glListBase(list);
+		bool ret = glIsList(list); //should return false (DL generated, but no displaylist-name was generated)
+		glNewList(list, GL_COMPILE);
+		ret = glIsList(list); //should return true (DL generated, and displaylist-name was generated)
+		if(ret == true){
+			for (int i = 0; i <10; i ++){ //Draw 10 cubes
+				glPushMatrix();
+				glRotate(36*i,0.0,0.0,1.0);
+				glTranslatef(10.0,0.0,0.0);
+				glPopMatrix(1);
+			}
+		}
+		glEndList();
+		
+		glListBase(list + 1);
+		glNewList (list + 1, GL_COMPILE);//Create a second display list and execute it
+        ret = glIsList(list + 1); //should return true (DL generated, and displaylist-name was generated)
+		if(ret == true){
+			for (int i = 0; i <20; i ++){ //Draw 20 triangles
+				glPushMatrix();
+				glRotate(18*i,0.0,0.0,1.0);
+				glTranslatef(15.0,0.0,0.0);
+				glPopMatrix(1);
+			}
+		}
+		glEndList();//The second display list is created
+	}
 
-	bool ret = glIsList(base); //should return false (DL generated, but no displaylist-name was generated)
-
-	glNewList(base, GL_COMPILE);
+	//Unit Test #2:
+	//Convert Compiled_DL from unpacked format to packed format exported as C source code (.h)
+	//should resemble the structure at: Cube.h
 	
-	ret = glIsList(base); //should return true (DL generated, and displaylist-name was generated)
+	char cwdPath[256];
+	getCWDWin(cwdPath, "\\cv\\");
+	char outPath[256];
+		sprintf(outPath, "%s%s", cwdPath, "PackedDLEmitted.h");
+		FILE * fout = fopen(outPath, "w+b");
+		if(fout != NULL){
+			u32 * listPtr = (u32*)&Compiled_DL_Binary[0];
+			int listSize = (int)*listPtr;
+			listPtr++;
+			int currentCmdCount = 0;
+			fprintf(fout, "u32 PackedDLEmitted[] = { \n%d,\n", listSize);
 
-	glEndList();
+
+			u32 * rawARGBuffer = (u32 *)malloc(listSize); //raw, linear buffer args from all GX commands (without GX commands)
+			u32* curRawARGBufferSave = (u32*)rawARGBuffer; //used to save args
+			u32* curRawARGBufferRestore = (u32*)rawARGBuffer; //used to read and consume args 
+
+			int curRawARGBufferCount = 0; //incremented from the args parsing part, consumed when adding args to fout stream
+
+			for(int i = 0; i < (listSize / 4); i++){
+				
+				//build command(s)
+				if (((currentCmdCount) % 4) == 0) {
+					fprintf(fout, "FIFO_COMMAND_PACK( ");
+				}
+
+				//Note: All commands implemented here must be replicated to isAGXCommand() method
+				u32 cmd = *listPtr;
+				int cmdOffset = 0;
+				bool isCmd = false;
+				if (cmd == getFIFO_BEGIN()){
+					fprintf(fout, "FIFO_BEGIN");
+					currentCmdCount++;
+					isCmd = true;
+
+					//no args used by this GX command
+				}
+
+				else if(cmd == getMTX_PUSH()){
+					fprintf(fout, "MTX_PUSH");
+					currentCmdCount++;
+					isCmd = true;
+
+					//no args used by this GX command
+				}
+				
+				else if(cmd == getMTX_POP()){
+					fprintf(fout, "MTX_POP");
+					currentCmdCount++;
+					isCmd = true;
+
+					//4000448h 12h 1  36  MTX_POP - Pop Current Matrix from Stack(W)
+					u32 * curListPtr = listPtr;
+					curListPtr++;
+					u32 curVal = *curListPtr;
+					while (isAGXCommand(curVal) == false) {
+						*curRawARGBufferSave = curVal;
+						curRawARGBufferSave++;
+						curListPtr++;
+						curVal = *curListPtr;
+						curRawARGBufferCount++;
+					}
+				}
+
+				else if (cmd == getMTX_IDENTITY()) {
+					fprintf(fout, "MTX_IDENTITY");
+					currentCmdCount++;
+					isCmd = true;
+
+					//4000454h 15h - 19  MTX_IDENTITY - Load Unit Matrix to Current Matrix(W)
+					//no args used by this GX command
+				}
+
+				else if (cmd == getMTX_TRANS()) {
+					fprintf(fout, "MTX_TRANS");
+					currentCmdCount++;
+					isCmd = true;
+
+					//4000470h 1Ch 3  22 * MTX_TRANS - Mult.Curr.Matrix by Translation Matrix(W)
+					u32* curListPtr = listPtr;
+					curListPtr++;
+					u32 curVal = *curListPtr;
+					while (isAGXCommand(curVal) == false) {
+						*curRawARGBufferSave = curVal;
+						curRawARGBufferSave++;
+						curListPtr++;
+						curVal = *curListPtr;
+						curRawARGBufferCount++;
+					}
+				}
+
+				else if (cmd == getMTX_MULT_3x3()) {
+					fprintf(fout, "MTX_MULT_3x3");
+					currentCmdCount++;
+					isCmd = true;
+
+					//4000468h 1Ah 9  28 * MTX_MULT_3x3 - Multiply Current Matrix by 3x3 Matrix(W)
+					u32* curListPtr = listPtr;
+					curListPtr++;
+					u32 curVal = *curListPtr;
+					while (isAGXCommand(curVal) == false) {
+						*curRawARGBufferSave = curVal;
+						curRawARGBufferSave++;
+						curListPtr++;
+						curVal = *curListPtr;
+						curRawARGBufferCount++;
+					}
+				}
+
+				else if (cmd == getFIFO_END()) {
+					fprintf(fout, "FIFO_END");
+					currentCmdCount++;
+					isCmd = true;
+				}
+
+				//add comma if next command is not closing
+				if ( (((currentCmdCount) % 4) != 0) ) {
+					if (isCmd == true) {
+						fprintf(fout, ", ");
+					}
+				}
+				else {
+					//close command
+					fprintf(fout, "),\n");
 
 
+					//for each command found, add params(s)
+					//curRawARGBufferCount consumed here
+					if (curRawARGBufferCount > 0) {
+						int j = 0;
+						for (j = 0; j < curRawARGBufferCount; j++) {
+							u32 curArg = curRawARGBufferRestore[j];
+							fprintf(fout, "%d,\n", curArg);
+						}
+						curRawARGBufferRestore += curRawARGBufferCount;
+						curRawARGBufferCount = 0;
+					}
+
+					//i = (listSize / 4); //debug
+				}
+				listPtr++;
+			}
+
+			
+			
+			fprintf(fout, "FIFO_COMMAND_PACK( FIFO_END, FIFO_NOP, FIFO_NOP, FIFO_NOP )\n};");
+			fclose(fout);
+
+
+			free(rawARGBuffer);
+		}
 
 	return 0;
 }
@@ -842,7 +1086,7 @@ bool ndsDisplayListUtilsTestCaseARM9(char * filename, char * outNDSGXBuiltDispla
 		//Build it
 		u32 * builtDisplayList = (u32*)TGDSARM9Malloc(displayListSize);
 		memset(builtDisplayList, 0, displayListSize);
-		int builtDisplayListSize = CompileNDSGXDisplayListFromObject(builtDisplayList, NDSDL) + 1;
+		int builtDisplayListSize = CompilePackedNDSGXDisplayListFromObject(builtDisplayList, NDSDL) + 1;
 		
 		if(dlReadSize != builtDisplayListSize){
 			printf("NDS DisplayList Build failed");

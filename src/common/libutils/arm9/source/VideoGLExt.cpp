@@ -32,87 +32,90 @@ USA
 #include "dsregs.h"
 #endif
 
-//DL object workspace
-struct ndsDisplayListDescriptor Internal_DL[MAX_Internal_DisplayList_Count];
+//DL Notes: Are sent using unpacked format.
+//Unpacked Command format:
+//Opcodes that write more than one 32bit value (ie. STRD and STM) can be used to send ONE UNPACKED command, 
+//plus any parameters which belong to that command. 
+//After that, there must be a 1 cycle delay before sending the next command 
+//(ie. one cannot sent more than one command at once with a single opcode, each command must be invoked by a new opcode).
 
-//DL compiled workspace
-struct ndsDisplayListDescriptor Compiled_DL;
-u8 Compiled_DL_Binary[MAX_Internal_DisplayList_Count*4];
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//GX hardware object descriptor: Holds current callList GL context from a GL index
+//struct ndsDisplayListDescriptor Internal_DL[MAX_Internal_DisplayList_Count];
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+u32 interCompiled_DLPtr=0;	//interCompiled_DLPtr is the base list index surrounding multiple CallLists. 
+//GX hardware DL Commands, GL index is above descriptor
+u32 Compiled_DL_Binary[DL_MAX_ITEMS*MAX_Internal_DisplayList_Count]; //Packed / Unpacked FIFO Format
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	//Current ndsDisplayList offset used by dynamic DL builder
-	struct ndsDisplayList * curDLinternalCompiledDL;
-	//Get Binary filesize
-	//int displayListSize = getRawFileSizefromNDSGXDisplayListObject(NDSDL);
-
-//listBaseOffset is the base list index surrounding multiple CallLists. 
-GLsizei listBaseOffset;
-
-//Indices in the indiceOffset array are counter by considering that listBaseOffset is 0.
-GLsizei indiceOffset;
+//OpenGL DL internal Display Lists enumerator, holds current DL index pointed by internal interCompiled_DLPtr, starting from 0.
+GLsizei GLDLEnumerator[MAX_Internal_DisplayList_Count];
 
 //listBase
 GLsizei currentListPointer = DL_INVALID;
 void GLInitExt(){
-	memset((char*)&Internal_DL[0], 0, sizeof(Internal_DL));
+	//memset((char*)&Internal_DL[0], 0, sizeof(Internal_DL));
+	globalGLCtx.mode = GL_COMPILE;
+	
+	/*
 	int i = 0;
 	for(i = 0; i < MAX_Internal_DisplayList_Count; i++ ){
 		Internal_DL[i].DisplayListNameAssigned = DL_INVALID;
 		Internal_DL[i].isDisplayListAssigned = false;
         Internal_DL[i].ndsDisplayListSize = DL_MAX_ITEMS;
-		Internal_DL[i].mode = DL_INVALID;
-        int j = 0;
+		int j = 0;
         for(j = 0; j < Internal_DL[i].ndsDisplayListSize; j++){
             Internal_DL[i].DL[j].displayListType = DL_INVALID;
             Internal_DL[i].DL[j].index = j;
             Internal_DL[i].DL[j].value = DL_INVALID;
         }
-	}
-    listBaseOffset = 0;
-	isNdsDisplayListUtilsCallList = false;
-	curVec_packed = (GLint*)&vec_packed[0]; 
+	}*/
+    isNdsDisplayListUtilsCallList = false;
 }
 
 //glGenLists returns the first list name in a range of the length you pass to glGenLists.
 GLuint glGenLists(GLsizei	range){
-    if((listBaseOffset + range - 1) < range){
-        int firstItem = listBaseOffset + 1; //starts from range of said length
+    if(range < MAX_Internal_DisplayList_Count){
         int i = 0;
-        for(i = 0; i < (range-1); i++ ){
-            Internal_DL[i].DisplayListNameAssigned = DL_INVALID;//glNewList() assigns the index (name of a display list) //=i;
+        interCompiled_DLPtr = 1; //GL index 0 is reserved for DL size
+		for(i = 0; i < (range-1); i++ ){
+            /*
+			Internal_DL[i].DisplayListNameAssigned = DL_INVALID;//glNewList() assigns the index (name of a display list) //=i;
             Internal_DL[i].isDisplayListAssigned = true;
             Internal_DL[i].ndsDisplayListSize = DL_MAX_ITEMS;
-			Internal_DL[i].mode = DL_INVALID;
-            int j = 0;
+			int j = 0;
             for(j = 0; j < Internal_DL[i].ndsDisplayListSize; j++){
                 Internal_DL[i].DL[j].displayListType = DL_INVALID;
                 Internal_DL[i].DL[j].index = j;
                 Internal_DL[i].DL[j].value = DL_INVALID;
             }
-        }
-
-        listBaseOffset=(firstItem-1);
-        return firstItem;
+			*/
+			GLDLEnumerator[i] = DL_INVALID; //GLDLEnumerator[i] = interCompiled_DLPtr; //only mapped from glNewList()
+		}
+        return interCompiled_DLPtr; //starts from range of said length
     }
     return 0;
 }
 
 //Specifies the offset that's added to the display-list indices in glCallLists() to obtain the final display-list indices. The default display-list base is 0. The list base has no effect on glCallList(), which executes only one display list or on glNewList().
+//Internally, if a new base is set, a pointer to a new section is updated
 void glListBase(GLuint base){
-	listBaseOffset=base;
-	if(listBaseOffset>=1){
-		listBaseOffset--;
+	if(base > 0){
+		base--;
 	}
+	interCompiled_DLPtr = interCompiled_DLPtr + base;
 }
 
 //glIsList returns GL_TRUE if list is the name of a display list and returns GL_FALSE if it is not, or if an error occurs.
 //A name returned by glGenLists, but not yet associated with a display list by calling glNewList, is not the name of a display list.
 GLboolean glIsList(GLuint list){
-	if(list >= 1){
+	if(list > 0){
 		list--;
 	}
-	if((Internal_DL[list].isDisplayListAssigned == true) && (Internal_DL[list].DisplayListNameAssigned != DL_INVALID)){
+	if(GLDLEnumerator[list] != DL_INVALID){
 		return GL_TRUE;
 	}
+
 	return GL_FALSE;
 	//Todo: GL_INVALID_OPERATION;
 }
@@ -121,40 +124,37 @@ GLboolean glIsList(GLuint list){
 //mode:Specifies the compilation mode, which can be GL_COMPILE or GL_COMPILE_AND_EXECUTE.
 void glNewList(GLuint list, GLenum mode){
 	if(list >= 1){
-		list--;
+		list--; //assign current interCompiled_DLPtr (new) to a List
 	}
-
-	listBaseOffset = listBaseOffset + list;
-	Internal_DL[listBaseOffset].mode = (u32)mode;
-	Internal_DL[listBaseOffset].DisplayListNameAssigned = (listBaseOffset + 1);
+	GLDLEnumerator[list] = interCompiled_DLPtr;
+	globalGLCtx.mode = (u32)mode;
 	isNdsDisplayListUtilsCallList = true;
-
-	curDLinternalCompiledDL = &Compiled_DL.DL[0];
-
-	//Prepare for upcoming FIFO_PACK_COMMAND
-	curDLinternalCompiledDL++;
+	memset((char*)&Compiled_DL_Binary[interCompiled_DLPtr], 0, DL_MAX_ITEMS - ((interCompiled_DLPtr*4) % DL_MAX_ITEMS) );
 }
 
 //When glEndList is encountered, the display-list definition is completed 
 //by associating the list with the unique name list (specified in the glNewList command). 
 //If a display list with name list already exists, it is replaced only when glEndList is called.
 void glEndList(void){
-	//Todo: 
-		//If LAST display-list name is GL_COMPILE: actually builds ALL the Display-list generated through the LAST display-list name generated from glNewList(), then compiles it into a GX binary DL. Such binary will be manually executed when glCallList(display-list name) is called 
-		//Else If LAST display-list name is GL_COMPILE_AND_EXECUTE: actually builds ALL the Display-list generated through the LAST display-list name generated from glNewList(), then compiles it into a GX binary DL and executes it inmediately through GX GLCallList()
+	//If LAST display-list name is GL_COMPILE: actually builds ALL the Display-list generated through the LAST display-list name generated from glNewList(), then compiles it into a GX binary DL. Such binary will be manually executed when glCallList(display-list name) is called 
+	//Else If LAST display-list name is GL_COMPILE_AND_EXECUTE: actually builds ALL the Display-list generated through the LAST display-list name generated from glNewList(), then compiles it into a GX binary DL and executes it inmediately through GX GLCallList()
 	
 	//define List Size
-	int listSize = ((curDLinternalCompiledDL->index * 4) + 4);
-	Compiled_DL.DL[0].index = 0;
-	Compiled_DL.DL[0].value = (u32)listSize;
+	int listSize = (interCompiled_DLPtr * 4) + 4;
+	Compiled_DL_Binary[0] = (u32)listSize;
 
 	//Close the list, build the list, execute it if needed
-	curDLinternalCompiledDL->value = FIFO_COMMAND_PACK_C(getFIFO_END(), getFIFO_NOP(), getFIFO_NOP(), getFIFO_NOP());
-	int builtDisplayListSize = CompileNDSGXDisplayListFromObject((u32*)&Compiled_DL_Binary[0], &Compiled_DL) + 1;
-	if(Internal_DL[listBaseOffset].mode == GL_COMPILE_AND_EXECUTE){
-		glCallListGX((const u32*)&Compiled_DL_Binary[0]);
+	Compiled_DL_Binary[interCompiled_DLPtr] = getFIFO_END();
+	interCompiled_DLPtr++;
+
+	//not using Packed Command... int builtDisplayListSize = CompilePackedNDSGXDisplayListFromObject((u32*)&Compiled_DL_Binary[0], &Compiled_DL) + 1;
+	if(globalGLCtx.mode == GL_COMPILE_AND_EXECUTE){
+		glCallListGX((const u32*)&Compiled_DL_Binary[0]); //Using Unpacked Command instead
+
+		//List already consumed. Reset GX Compiled Display List
+		interCompiled_DLPtr = 1;
+		memset((char*)&Compiled_DL_Binary[0], 0, sizeof(Compiled_DL_Binary));
 	}
-	
 	isNdsDisplayListUtilsCallList = false;
 }
 
@@ -192,25 +192,13 @@ void glNormal3s(const GLshort v){
 	glNormal3i((const GLint )v);
 }
 
-GLint vec_packed[3]; //packed FIFO_NORMAL
-GLint * curVec_packed; //Offset
-
 void glNormal3i(const GLint v){
-	*curVec_packed = v;
-
-	if((GLint *)curVec_packed != (GLint *)&vec_packed[2]){
-		curVec_packed++;
-	}
-	else{
-		curVec_packed = (GLint *)&vec_packed[0];
-		if((isNdsDisplayListUtilsCallList == true) && (curDLinternalCompiledDL != NULL)){
-			double intpart;
-			double fractpart0 = modf((double)curVec_packed[0], &intpart);
-			double fractpart1 = modf((double)curVec_packed[1], &intpart);
-			double fractpart2 = modf((double)curVec_packed[2], &intpart);
-			curDLinternalCompiledDL->displayListType = getFIFO_NORMAL();
-			curDLinternalCompiledDL->value = NORMAL_PACK(floattov10(fractpart0),floattov10(fractpart1),floattov10(fractpart2));
-		}
+	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
+		double intpart;
+		double fractpart = modf((double)v, &intpart);
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getFIFO_NORMAL(); //Unpacked Command format
+		interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)floattov10(fractpart); interCompiled_DLPtr++; //Unpacked Command format
 	}
 }
 
