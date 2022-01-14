@@ -682,18 +682,23 @@ enum {
 
 };
 
-#define MAX_Internal_DisplayList_Count ((int)256) //256 x struct ndsDisplayListDescriptor (DL Objects) = 789504 bytes
+//Max GL Lists allocated in the OpenGL API
+#define MAX_Internal_DisplayList_Count ((int)128) //128 x struct ndsDisplayListDescriptor (DL Objects) = 789504 bytes
 #endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+//Object Format: Unpacked / Packed
 extern struct ndsDisplayListDescriptor Internal_DL[MAX_Internal_DisplayList_Count];
-extern struct ndsDisplayListDescriptor Compiled_DL;
-extern u8 Compiled_DL_Binary[MAX_Internal_DisplayList_Count*4];
-	//Current ndsDisplayList offset
-	extern struct ndsDisplayList * curDLinternalCompiledDL;
+
+//Binary Format: Unpacked / Packed
+extern u32 interCompiled_DLPtr;
+extern u32 Compiled_DL_Binary[DL_MAX_ITEMS*MAX_Internal_DisplayList_Count];
+
+//OpenGL DL internal Display Lists enumerator, holds current DL index pointed by internal interCompiled_DLPtr, starting from 0.
+extern GLsizei GLDLEnumerator[MAX_Internal_DisplayList_Count];
 
 extern GLsizei currentListPointer;
 extern void GLInitExt();
@@ -708,8 +713,6 @@ extern void glNormal3d(const GLdouble v);
 extern void glNormal3f(const GLfloat v);
 extern void glNormal3i(const GLint v);
 extern void glNormal3s(const GLshort v);
-	extern GLint vec_packed[3]; //packed FIFO_NORMAL
-	extern GLint * curVec_packed; //Offset;
 
 #ifdef __cplusplus
 }

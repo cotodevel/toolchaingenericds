@@ -206,6 +206,7 @@ typedef void GLvoid;
 
 struct GLContext{
 	GLenum primitiveShadeModelMode;	//glShadeModel(GLenum mode: [GL_FLAT/GL_SMOOTH]);
+	u32	mode; //GLenum mode: //Specifies the compilation mode, which can be GL_COMPILE or GL_COMPILE_AND_EXECUTE. Set up by glNewList()
 } 
 #ifdef ARM9
 __attribute__((aligned (4)));
@@ -708,6 +709,7 @@ extern void GLInitExt();
 extern bool isNdsDisplayListUtilsCallList;
 extern void glCallListGX(const u32* list);
 extern int float2int(float valor);
+extern void glTranslatef(float x, float y, float z);
 
 #ifdef __cplusplus
 }

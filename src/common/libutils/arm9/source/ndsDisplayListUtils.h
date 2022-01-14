@@ -65,7 +65,6 @@ __attribute__((packed)) ;
 struct ndsDisplayListDescriptor {
 	int DisplayListNameAssigned; //Used by the GL List API as a display-list name
 	bool isDisplayListAssigned;
-	u32	mode; //GLenum mode: //Specifies the compilation mode, which can be GL_COMPILE or GL_COMPILE_AND_EXECUTE. Set up by glNewList()
 	int ndsDisplayListSize;
 	struct ndsDisplayList DL[DL_MAX_ITEMS];
 }
@@ -104,11 +103,15 @@ extern u8 getFIFO_BEGIN();
 extern u8 getFIFO_END();
 extern u8 getFIFO_FLUSH();
 extern u8 getFIFO_VIEWPORT();
+extern u8 getMTX_MULT_3x3();
+extern u8 getMTX_IDENTITY();
+extern u8 getMTX_SCALE();
+
 extern u8 getMTX_PUSH();
 extern u8 getMTX_POP();
 extern u8 getMTX_TRANS();
-extern struct unpackedCmd FIFO_COMMAND_UNPACK(u32 cmd);
-extern int CompileNDSGXDisplayListFromObject(u32 * bufOut, struct ndsDisplayListDescriptor * dlInst);
+extern struct unpackedCmd FIFO_COMMAND_PACKED_FMT_UNPACK(u32 cmd);
+extern int CompilePackedNDSGXDisplayListFromObject(u32 * bufOut, struct ndsDisplayListDescriptor * dlInst);
 extern int BuildNDSGXDisplayListObjectFromFile(char * filename, struct ndsDisplayListDescriptor * dlInst);
 extern int getRawFileSizefromNDSGXDisplayListObject(struct ndsDisplayListDescriptor * dlInst);
 extern GL_GLBEGIN_ENUM getDisplayListGLType(struct ndsDisplayListDescriptor * dlInst);
@@ -123,6 +126,8 @@ extern bool getDisplayListFIFO_END(struct ndsDisplayListDescriptor * dlInst, str
 #ifdef ARM9
 extern bool ndsDisplayListUtilsTestCaseARM9(char * filename, char * outNDSGXBuiltDisplayList);
 #endif
+
+extern bool isAGXCommand(u32 val);
 
 #ifdef __cplusplus 
 }
