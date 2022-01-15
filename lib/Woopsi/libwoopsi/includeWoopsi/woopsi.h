@@ -33,6 +33,13 @@ namespace WoopsiUI {
 
 	public:
 		/**
+		 * Toggles the wait for vblank hardware call, or skips it where timing is required.
+		 */
+		bool _waitForHardwareVblank;
+		void enableWaitForVblank();
+		void disableWaitForVblank();
+		
+		/**
 		 * The singleton provides an instance of Woopsi that should be instantiated and
 		 * used as the only Woopsi instance.  The Debug class in particular interacts
 		 * with this singleton.

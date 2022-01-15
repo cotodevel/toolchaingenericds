@@ -79,6 +79,8 @@ Woopsi::Woopsi(GadgetStyle* style) : Gadget(0, 0, SCREEN_WIDTH, TOP_SCREEN_Y_OFF
 
 	screen = new Screen("", GADGET_DECORATION);
 	addGadget(screen);
+	
+	enableWaitForVblank();
 }
 
 Woopsi::~Woopsi() {
@@ -106,7 +108,11 @@ void Woopsi::processOneVBL(Gadget* gadget) {
 	handleStylus(gadget);
 	handleKeys();
 	ApplicationMainLoop();	//handleLid();
-	woopsiWaitVBL();
+	
+	handleARM9SVC();	/* Do not remove, handles TGDS services */
+	if(_waitForHardwareVblank == true){
+		IRQWait(0, IRQ_VBLANK);
+	}
 
 #ifdef USING_SDL
 
@@ -131,6 +137,15 @@ void Woopsi::processOneVBL(Gadget* gadget) {
 
 #endif
 }
+
+void Woopsi::enableWaitForVblank() {
+	_waitForHardwareVblank = true;
+}
+
+void Woopsi::disableWaitForVblank() {
+	_waitForHardwareVblank = false;
+}
+
 
 __attribute__((section(".itcm")))
 void Woopsi::handleVBL() {
