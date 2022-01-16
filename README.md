@@ -60,6 +60,17 @@ Guidelines:
 - NTR Mode: Make sure to DLDI patch TGDS homebrew. For TGDS homebrew development, you can use TGDS-RAMDISK DLDI or others. TWL mode doesn't care because it maps the internal SD as filesystem.
 
 ---------------------------------------------
+Development guidelines:
+
+POSIX File Operation flags:
+"r" = Read File
+"w" = Write File (one way, must not exist, otherwise returns error)
+"w+" = Force Write File (creates a blank file if not exists, if exists, it's wiped, then created as blank file again)
+"r+" = Opens an existing file for read / write operations, file pointer MUST be manually set through fseek() right after. If not exists an error is returned.
+
+---------------------------------------------
+
+
 Devs:
 
 I have been working on this for at least 2 years, but development started circa 2014. I just needed the "motivation" to gather the pieces together, and I am glad I wrote this.
