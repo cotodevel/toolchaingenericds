@@ -261,7 +261,7 @@ void sec2tm(ulong secs, struct tm *tmInst)
 
 //Shared:
 
-ulong getNDSRTCInSeconds(){
+ulong getNDSRTCInSeconds(){ //DateTime in epoch time (seconds) starting from January 1, 1970 (midnight UTC/GMT)
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	return(ulong)(TGDSIPC->ndsRTCSeconds);
 }
