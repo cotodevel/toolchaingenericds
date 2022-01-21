@@ -101,10 +101,10 @@ void Debug::printf(const char *fmt, ...) {
 void Debug::busyWait() {
 	if (DEBUG_ACTIVE) {
 		while (!Pad.Held.B) {
-			woopsiWaitVBL();
+			woopsiWaitVBL(woopsiApplication->_waitForHardwareVblank);
 		}
 		while (Pad.Held.B) {
-			woopsiWaitVBL();
+			woopsiWaitVBL(woopsiApplication->_waitForHardwareVblank);
 		}
 	}
 }

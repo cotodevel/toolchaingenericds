@@ -108,11 +108,7 @@ void Woopsi::processOneVBL(Gadget* gadget) {
 	handleStylus(gadget);
 	handleKeys();
 	ApplicationMainLoop();	//handleLid();
-	
-	handleARM9SVC();	/* Do not remove, handles TGDS services */
-	if(_waitForHardwareVblank == true){
-		IRQWait(0, IRQ_VBLANK);
-	}
+	woopsiWaitVBL(_waitForHardwareVblank);
 
 #ifdef USING_SDL
 
