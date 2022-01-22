@@ -455,6 +455,16 @@ void HandleFifoNotEmpty(){
 			}
 			break;
 			
+			case ARM7COMMAND_SND_COMMAND:{
+				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 	
+				SCHANNEL_CR(TGDSIPC->soundIPC.psgChannel) = TGDSIPC->soundIPC.cr;
+				SCHANNEL_TIMER(TGDSIPC->soundIPC.psgChannel) = TGDSIPC->soundIPC.timer;
+				SCHANNEL_SOURCE(TGDSIPC->soundIPC.psgChannel) = (u32)TGDSIPC->soundIPC.arm9L;
+				SCHANNEL_LENGTH(TGDSIPC->soundIPC.psgChannel) = (TGDSIPC->soundIPC.volume >> 2); //volume == size
+				TGDSIPC->soundIPC.volume = 0;
+			}
+			break;
+			
 			case((uint32)TGDS_ARM7_ENABLESOUNDSAMPLECTX):{
 				if(SoundSampleContextEnableARM7LibUtilsCallback != NULL){
 					SoundSampleContextEnableARM7LibUtilsCallback((int)data0);

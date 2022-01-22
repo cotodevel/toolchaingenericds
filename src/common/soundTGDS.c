@@ -21,8 +21,16 @@ USA
 #include "typedefsTGDS.h"
 #include "soundTGDS.h"
 #include "ipcfifoTGDS.h"
+#include "utilsTGDS.h"
 
 #ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void writeARM7SoundChannel(int channel, u32 cnt, u16 freq){
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	TGDSIPC->soundIPC.psgChannel = channel;
@@ -30,4 +38,26 @@ void writeARM7SoundChannel(int channel, u32 cnt, u16 freq){
 	TGDSIPC->soundIPC.timer = SOUND_FREQ(freq);
 	SendFIFOWords(ARM7COMMAND_PSG_COMMAND, 0xFF);
 }
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void writeARM7SoundChannelFromSource(int channel, u32 cnt, u16 freq, u32 dataSrc, u32 dataSize){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	TGDSIPC->soundIPC.psgChannel = channel;
+	TGDSIPC->soundIPC.cr = cnt;
+	TGDSIPC->soundIPC.timer = SOUND_FREQ(freq);
+	TGDSIPC->soundIPC.arm9L = (u32)dataSrc;
+	TGDSIPC->soundIPC.volume = (int)dataSize; //volume == size
+	SendFIFOWords(ARM7COMMAND_SND_COMMAND, 0xFF);
+	
+	while(getValueSafe((u32)&TGDSIPC->soundIPC.volume) != (u32)0){
+		swiDelay(1);
+	}
+}
+
 #endif
