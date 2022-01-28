@@ -204,7 +204,7 @@ void woopsiVblFunc() {
 	}
 }
 
-void woopsiWaitVBL() {
+void woopsiWaitVBL(bool needsToWaitForHardwareVblank) {
 	woopsiVblFunc();
 }
 
@@ -333,9 +333,11 @@ void initWoopsiGfxMode() {
 }
 
 __attribute__((section(".itcm")))
-void woopsiWaitVBL() {
+void woopsiWaitVBL(bool needsToWaitForHardwareVblank) {
 	handleARM9SVC();	/* Do not remove, handles TGDS services */
-	IRQWait(0, IRQ_VBLANK);
+	if(needsToWaitForHardwareVblank == true){
+		IRQWait(0, IRQ_VBLANK);
+	}
 }
 
 #endif

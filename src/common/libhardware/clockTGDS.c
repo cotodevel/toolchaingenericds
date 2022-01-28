@@ -34,7 +34,13 @@ USA
 //Clock: 
 
 #ifdef ARM7
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
 
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void rtcTransaction(uchar *cmd, ulong cmdlen, uchar *res, ulong reslen)
 {
 	uchar bit = 0;
@@ -75,11 +81,25 @@ void rtcTransaction(uchar *cmd, ulong cmdlen, uchar *res, ulong reslen)
 	swiDelay(RTC_DELAY);
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 uchar BCDToInt(uchar data)
 {
 	return ((data & 0xF) + ((data & 0xF0) >> 4) * 10);
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 ulong get_nds_seconds(uchar *time)
 {
 	struct tm tmInst;
@@ -112,7 +132,13 @@ ulong get_nds_seconds(uchar *time)
 	return tm2sec(&tmInst);	
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
 
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 ulong nds_get_time7(void){
 	uchar cmd;
 	uchar time[8];
@@ -126,6 +152,13 @@ ulong nds_get_time7(void){
 	return get_nds_seconds(&(time[1]));
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void nds_set_time7(ulong secs){
 	/* TODO: revise */
 	struct tm tmInst;
@@ -161,6 +194,13 @@ static	int	ldmsize[] =
 /*
  *  return the days/month for the given year
  */
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 int * yrsize(int yr)
 {
 	if( (yr % 4 == 0) && (yr % 100 != 0 || yr % 400 == 0))
@@ -170,6 +210,13 @@ int * yrsize(int yr)
 }
 
 // taken from emu/Nt/ie-os.c
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 long tm2sec(struct tm *tmInst)
 {
 	long secs;
@@ -208,6 +255,13 @@ long tm2sec(struct tm *tmInst)
 	return secs;
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void sec2tm(ulong secs, struct tm *tmInst)
 {
 	int d;
@@ -260,18 +314,37 @@ void sec2tm(ulong secs, struct tm *tmInst)
 #endif
 
 //Shared:
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
 
-ulong getNDSRTCInSeconds(){
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+ulong getNDSRTCInSeconds(){ //DateTime in epoch time (seconds) starting from January 1, 1970 (midnight UTC/GMT)
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	return(ulong)(TGDSIPC->ndsRTCSeconds);
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
 
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 struct tm * getTime(){
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	return(struct tm *)(&TGDSIPC->tmInst);
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 uint8 TGDSgetDayOfWeek(){
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	#ifdef ARM9
@@ -281,6 +354,13 @@ uint8 TGDSgetDayOfWeek(){
 	return (uint8)TGDSIPC->dayOfWeek;
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void TGDSsetDayOfWeek(uint8 DayOfWeek){
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	#ifdef ARM9

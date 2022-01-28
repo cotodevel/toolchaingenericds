@@ -54,7 +54,8 @@ USA
 #define ARM7COMMAND_SOUND_SETLEN (uint32)(0xFEFEFF14)
 #define ARM7COMMAND_SOUND_COPY (uint32)(0xFEFEFF15)
 #define ARM7COMMAND_SOUND_DEINTERLACE (uint32)(0xFEFEFF16)
-#define ARM7COMMAND_PSG_COMMAND (uint32)(0xFEFEFF23)
+#define ARM7COMMAND_PSG_COMMAND (uint32)(0xF0F0FF22)
+#define ARM7COMMAND_SND_COMMAND (uint32)(0xF0F0FF23)
 
 //Linear sound sample playback: Sound Sample Context cmds (ARM9 -> ARM7)
 #define FIFO_PLAYSOUND	(uint32)(0xffff0203)
@@ -186,9 +187,10 @@ typedef struct
 	u32 tX;
 	u32 tY;
 	
+	//PSG
 	int psgChannel;
 	u32 cr;
-	u32 timer;
+	u16 timer;
 } SoundRegion __attribute__((aligned (4)));
 
 //ARM7: PTR to EWRAM
@@ -383,6 +385,11 @@ static inline int getSoundSampleContextEnabledStatus(){
 	return soundSampleContextCurrentMode;
 }
 
+#endif
+
+#ifdef ARM9
+extern void writeARM7SoundChannel(int channel, u32 cnt, u16 freq);
+extern void writeARM7SoundChannelFromSource(int channel, u32 cnt, u16 freq, u32 dataSrc, u32 dataSize);
 #endif
 
 #endif

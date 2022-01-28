@@ -233,7 +233,7 @@ extern void woopsiFreeFrameBuffers();
 /**
  * Wait for a VBL.  Switches into a wait state if the lid is closed.
  */
-extern void woopsiWaitVBL();
+extern void woopsiWaitVBL(bool needsToWaitForHardwareVblank);
 
 
 extern void woopsiVblFunc();
@@ -241,7 +241,7 @@ extern void woopsiVblFunc();
 /**
  * Update the pad and stylus structs with the latest physical status.  Called
  * every frame by the VBL function.
- * @see woopsiWaitVBL().
+ * @see woopsiWaitVBL(bool needsToWaitForHardwareVblank).
  */
 extern void woopsiUpdateInput();
 

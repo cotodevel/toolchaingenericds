@@ -1,14 +1,15 @@
 ![ToolchainGenericDS](img/TGDS-Logo.png)
 
 This is the ToolchainGenericDS library for NintendoDS:
+Environment: Windows GCC 4.9.3 ARM-EABI / Linux GCC 4.9.1 ARM-EABI to build Newlib 2.1 for Nintendo DS, and ToolchainGenericDS.
 
+---------------------------------------------
 [Building the devkit]:
 - Recompile Newlib for Nintendo DS (mandatory, not on this guide). See: https://bitbucket.org/Coto88/newlib-nds
 - Recompile ToolchainGenericDS (this guide)
 - Recompile ToolchainGenericDS Project (optional, not on this guide)
 
 After you followed "Recompile Newlib for Nintendo DS" you can follow the upcoming steps.
-
 
 Build Steps:
 
@@ -37,6 +38,7 @@ Then:
 
 Then, only after building ToolchainGenericDS, you will be able to build a TGDS project. (Not covered here, go to the specific project supporting this toolchain)
 
+---------------------------------------------
 Thanks to (in no particular order):
 - Martin Korth extensive gba/nds docs (http://problemkaputt.de/gbatek.htm) most of any DS toolchains/emus out there would not exist without such docs.
 - Darkfader for ndstool
@@ -60,13 +62,37 @@ Guidelines:
 - NTR Mode: Make sure to DLDI patch TGDS homebrew. For TGDS homebrew development, you can use TGDS-RAMDISK DLDI or others. TWL mode doesn't care because it maps the internal SD as filesystem.
 
 ---------------------------------------------
-Devs:
+Development guidelines:
 
-I have been working on this for at least 2 years, but development started circa 2014. I just needed the "motivation" to gather the pieces together, and I am glad I wrote this.
-You are free to do almost whatever you want with it, just release the source codes so we all can benefit from it.
+POSIX File Operation flags:
+"r" = Read File
+"w" = Write File (one way, must not exist, otherwise returns error)
+"w+" = Force Write File (creates a blank file if not exists, if exists, it's wiped, then created as blank file again)
+"r+" = Opens an existing file for read / write operations, file pointer MUST be manually set through fseek() right after. If not exists an error is returned.
 
-The idea is to have a toolchain that is GNU GPL v2+ (so you can either re-release your sources as GNU GPL v2, GNU GPL v2+ or GNU GPL v3).
+POSIX File Operation misc:
+- fwrite to SD/DSi SD MUST BE in chunks of 256 bytes, if it's a larger number doesn't matter, but MUST BE a multiple of 256. Same rules apply if you perform multiple fwrites.
+- filename example: FILE * fileHandle = fopen("0:/somedir/somefile.ext", "r"); //same as "POSIX File Operation flags".
 
+ARGV Support:
+- If you call TGDS homebrew from libnds homebrew and send arguments, make sure the arguments use the standard libnds format: "fat:/somedir/somefile.ext" for BOTH NTR/TWL modes. 
+	This way, TGDS homebrew understands ARGVs perfectly and converts it into TGDS argument format: ("0:/somedir/somefile.ext") on the fly.
+	Even if you call libnds homebrew from TGDS, the same ARGV format is converted back to "fat:/somedir/somefile.ext" for BOTH NTR/TWL modes.
+
+TGDS Project whitescreens:
+- If for some reason, you're getting whitescreens on compiled TGDS homebrew, first make sure you are not corrupting homebrew itself. If you are sure about that, then possibly the homebrew got
+  relocated incorrectly. An easy workaround is to build TGDS project once, open the TGDS binary on a debugger (like DesMuME), and see which core is executing garbage.
+  Do NOT clean it, then refer to TGDS Project Makefile on project root folder. SOURCE_MAKEFILE7 or SOURCE_MAKEFILE9 (depending on which core is running garbage), needs to be changed from "default"
+  to "custom". Then open the processor folder: /arm7 or /arm9 depending on the above SOURCE_MAKEFILE setting, open the Makefile inside it, and change CPU processor flags at CC_ASFLAGS between:
+  -Os, -O1, -Ofast, -O2, then save Makefile, clean TGDS project and rebuild it again, until you have a working TGDS Project again. Repeat these steps to ensure compatibility in NTR and TWL modes!
+
+---------------------------------------------
+License guidelines:
+
+Since I use GPLv2 (not GPLv2+) you can relicense your homebrew as GPLv2 or as GPLv2+ or as GPLv3, and if you want to use custom stuff and not add the source code, 
+yet link against the library, it's possible to distribute TGDS through a LGPL license. All I can ask from you is to release the source code so people can learn and improve their coding as well, through education.
+
+---------------------------------------------
 Features:
 
 - Linkers
@@ -89,6 +115,7 @@ Features:
 		DLDI RAMDisk: Download http://memory.dataram.com/products-and-services/software/ramdisk#freeware, mount a RAMDisk, copy files to it. Then use Desmume, choose Slot-2 (Gba slot) -> GBA Cartridge, choose the RAMDisk!. Launch emulator, TGDS Project now works with DLDI (32MB @ 0x08000000)!
 	- Optional VSCode IDE: See https://bitbucket.org/Coto88/toolchaingenericds-ide
 
+---------------------------------------------
 Changelog:
 
 TGDS1.65: 
@@ -147,9 +174,7 @@ TGDS 1.0:
 - Makefiles / linkers / and newlib-nds support through a GPL v2 license
 - Adds a template system, where TGDS projects hook to a standard TGDS codebase. Improves scalability from the start.
 
-
-The environment uses Windows GCC 4.9.3 ARM-EABI / Linux GCC 4.9.1 ARM-EABI to build Newlib 2.1 for Nintendo DS, and ToolchainGenericDS.
-
+---------------------------------------------
 How to code things:
 -	Once you follow [Building the devkit], you can grab a TGDS Project template such as: https://bitbucket.org/Coto88/toolchaingenericds-template/ and rebuild it (a TGDS Project Makefile has some properties you can override).
 
