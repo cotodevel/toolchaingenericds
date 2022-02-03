@@ -50,6 +50,7 @@ USA
 
 #ifdef ARM9
 #include "posixHandleTGDS.h"
+extern  char * itoa ( int value, char * str, int base );
 #endif
 
 //NDS GX C Display List implementation
