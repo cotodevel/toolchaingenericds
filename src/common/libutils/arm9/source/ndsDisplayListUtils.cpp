@@ -764,140 +764,11 @@ u8 clzero(u32 var){
 	return cnt;
 }
 
-#ifdef WIN32
-
-//Unit Test (WIN32): reads a NDS GX Display List / Call List payload emmited from (https://bitbucket.org/Coto88/blender-nds-exporter/src/master/)
-//Translates to an NDS GX Display List / Call List object, and then builds it again into the original payload.
-int main(int argc, char** argv){
-
-	//Unit Test: NDS GX DL object and building
-	/*
-	char cwdPath[256];
-	getCWDWin(cwdPath, "\\cv\\");
-	std::vector<std::string> BinFilesRead = findFiles(std::string(cwdPath), std::string("bin"));
-	printf("\nPath: %s \nbin files read: %d\n", cwdPath, BinFilesRead.size());
-	
-	struct ndsDisplayListDescriptor * NDSDL = (struct ndsDisplayListDescriptor *)TGDSARM9Malloc(sizeof(struct ndsDisplayListDescriptor));
-	int dlReadSize = BuildNDSGXDisplayListObjectFromFile((char*)BinFilesRead.at(0).c_str(), NDSDL);
-	if(dlReadSize != DL_INVALID){
-
-		GL_GLBEGIN_ENUM type = getDisplayListGLType(NDSDL);
-		if(type == GL_TRIANGLES){
-			printf("\nGX DisplayListType: GL_TRIANGLES\n");
-		}
-		else if (type == GL_QUADS){
-			printf("\nGX DisplayListType: GL_QUADS\n");
-		}
-		else if (type == GL_TRIANGLE_STRIP){
-			printf("\nGX DisplayListType: GL_TRIANGLE_STRIP\n");
-		}
-		else if (type == GL_QUAD_STRIP){
-			printf("\nGX DisplayListType: GL_QUAD_STRIP\n");
-		}
-		else{
-			printf("\nGX DisplayListType: ERROR\n");
-		}
-
-		//Get Binary filesize
-		int displayListSize = getRawFileSizefromNDSGXDisplayListObject(NDSDL);
-
-		//List commands
-		struct ndsDisplayListDescriptor * NDSDLColorCmds = (struct ndsDisplayListDescriptor *)TGDSARM9Malloc(sizeof(struct ndsDisplayListDescriptor));
-		getDisplayListFIFO_BEGIN(NDSDL, NDSDLColorCmds);
-		int FIFO_BEGINCount = NDSDLColorCmds->ndsDisplayListSize;
-		printf("\nGX DisplayList (%d): FIFO_BEGIN commands \n", FIFO_BEGINCount);
-		getDisplayListFIFO_COLOR(NDSDL, NDSDLColorCmds);
-		printf("\nGX DisplayList (%d): FIFO_COLOR commands \n", NDSDLColorCmds->ndsDisplayListSize);
-		getDisplayListFIFO_TEX_COORD(NDSDL, NDSDLColorCmds);
-		printf("\nGX DisplayList (%d): FIFO_TEX_COORD commands \n", NDSDLColorCmds->ndsDisplayListSize);
-		getDisplayListFIFO_VERTEX16(NDSDL, NDSDLColorCmds);
-		printf("\nGX DisplayList (%d): FIFO_VERTEX16 commands \n", NDSDLColorCmds->ndsDisplayListSize);
-		getDisplayListFIFO_END(NDSDL, NDSDLColorCmds);
-		int FIFO_ENDCount = NDSDLColorCmds->ndsDisplayListSize;
-		printf("\nGX DisplayList (%d): FIFO_END commands \n", FIFO_ENDCount);
-		
-		if((FIFO_BEGINCount != 0) && (FIFO_ENDCount != 0) && (FIFO_BEGINCount == FIFO_ENDCount) ){
-			printf("\n(%d) GX DisplayList detected \n", FIFO_BEGINCount);
-		}
-		else{
-			printf("\nBROKEN GX DisplayList: It won't work as expected on real Nintendo DS!\n");
-		}
-		TGDSARM9Free(NDSDLColorCmds);
-
-		//Build it
-		u32 * builtDisplayList = (u32*)TGDSARM9Malloc(displayListSize);
-		memset(builtDisplayList, 0, displayListSize);
-		int builtDisplayListSize = CompilePackedNDSGXDisplayListFromObject(builtDisplayList, NDSDL) + 1;
-		
-		if(dlReadSize != builtDisplayListSize){
-			printf("\nNDS DisplayList Build failed\n");
-			return 0;
-		}
-		char outPath[256];
-		sprintf(outPath, "%s%s", cwdPath, "out.bin");
-		printf("Rebuilding DisplayList at: %s", outPath);
-		FILE * fout = fopen(outPath, "w+b");
+bool packAndExportSourceCodeFromRawUnpackedDisplayListFormat(char * filenameOut, u32 * rawUnpackedDisplayList){
+	if( (filenameOut != NULL) && (rawUnpackedDisplayList != NULL) ){
+		FILE * fout = fopen(filenameOut, "w+b");
 		if(fout != NULL){
-			if(fwrite(builtDisplayList, 1, displayListSize, fout) > 0){
-				fclose(fout);
-				printf("\nRebuild OK \n");
-			}
-			else{
-				printf("\nRebuild ERROR \n");
-				return 0;
-			}
-		}
-		TGDSARM9Free(builtDisplayList);
-	}
-	else{
-		printf("NDS DisplayList creation fail");
-	}
-	TGDSARM9Free(NDSDL);
-	*/
-
-	//Unit Test #1: Tests OpenGL DisplayLists components functionality then emitting proper GX displaylists, unpacked format.
-	GLInitExt();
-	int list = glGenLists(10);
-	if(list){
-		glListBase(list);
-		bool ret = glIsList(list); //should return false (DL generated, but no displaylist-name was generated)
-		glNewList(list, GL_COMPILE);
-		ret = glIsList(list); //should return true (DL generated, and displaylist-name was generated)
-		if(ret == true){
-			for (int i = 0; i <10; i ++){ //Draw 10 cubes
-				glPushMatrix();
-				glRotate(36*i,0.0,0.0,1.0);
-				glTranslatef(10.0,0.0,0.0);
-				glPopMatrix(1);
-			}
-		}
-		glEndList();
-		
-		glListBase(list + 1);
-		glNewList (list + 1, GL_COMPILE);//Create a second display list and execute it
-        ret = glIsList(list + 1); //should return true (DL generated, and displaylist-name was generated)
-		if(ret == true){
-			for (int i = 0; i <20; i ++){ //Draw 20 triangles
-				glPushMatrix();
-				glRotate(18*i,0.0,0.0,1.0);
-				glTranslatef(15.0,0.0,0.0);
-				glPopMatrix(1);
-			}
-		}
-		glEndList();//The second display list is created
-	}
-
-	//Unit Test #2:
-	//Convert Compiled_DL from unpacked format to packed format exported as C source code (.h)
-	//should resemble the structure at: Cube.h
-	
-	char cwdPath[256];
-	getCWDWin(cwdPath, "\\cv\\");
-	char outPath[256];
-		sprintf(outPath, "%s%s", cwdPath, "PackedDLEmitted.h");
-		FILE * fout = fopen(outPath, "w+b");
-		if(fout != NULL){
-			u32 * listPtr = (u32*)&Compiled_DL_Binary[0];
+			u32 * listPtr = rawUnpackedDisplayList;
 			int listSize = (int)*listPtr;
 			listPtr++;
 			int currentCmdCount = 0;
@@ -1101,7 +972,6 @@ int main(int argc, char** argv){
 				char * looker = (char *)&readBuf[j * leadingZeroes-1];
 				if(strncmp (looker, (const char *)&listSizeChar[0], leadingZeroes) == 0){
 					foundOffset--;
-					printf("debug");
 
 					//erase the value
 					fseek(fout, foundOffset, SEEK_SET);
@@ -1123,6 +993,148 @@ int main(int argc, char** argv){
 			fclose(fout);
 			free(rawARGBuffer);
 		}
+
+		return true;
+	}
+	return false;
+}
+
+#ifdef WIN32
+
+//Unit Test (WIN32): reads a NDS GX Display List / Call List payload emmited from (https://bitbucket.org/Coto88/blender-nds-exporter/src/master/)
+//Translates to an NDS GX Display List / Call List object, and then builds it again into the original payload.
+int main(int argc, char** argv){
+
+	//Unit Test: NDS GX DL object and building
+	/*
+	char cwdPath[256];
+	getCWDWin(cwdPath, "\\cv\\");
+	std::vector<std::string> BinFilesRead = findFiles(std::string(cwdPath), std::string("bin"));
+	printf("\nPath: %s \nbin files read: %d\n", cwdPath, BinFilesRead.size());
+	
+	struct ndsDisplayListDescriptor * NDSDL = (struct ndsDisplayListDescriptor *)TGDSARM9Malloc(sizeof(struct ndsDisplayListDescriptor));
+	int dlReadSize = BuildNDSGXDisplayListObjectFromFile((char*)BinFilesRead.at(0).c_str(), NDSDL);
+	if(dlReadSize != DL_INVALID){
+
+		GL_GLBEGIN_ENUM type = getDisplayListGLType(NDSDL);
+		if(type == GL_TRIANGLES){
+			printf("\nGX DisplayListType: GL_TRIANGLES\n");
+		}
+		else if (type == GL_QUADS){
+			printf("\nGX DisplayListType: GL_QUADS\n");
+		}
+		else if (type == GL_TRIANGLE_STRIP){
+			printf("\nGX DisplayListType: GL_TRIANGLE_STRIP\n");
+		}
+		else if (type == GL_QUAD_STRIP){
+			printf("\nGX DisplayListType: GL_QUAD_STRIP\n");
+		}
+		else{
+			printf("\nGX DisplayListType: ERROR\n");
+		}
+
+		//Get Binary filesize
+		int displayListSize = getRawFileSizefromNDSGXDisplayListObject(NDSDL);
+
+		//List commands
+		struct ndsDisplayListDescriptor * NDSDLColorCmds = (struct ndsDisplayListDescriptor *)TGDSARM9Malloc(sizeof(struct ndsDisplayListDescriptor));
+		getDisplayListFIFO_BEGIN(NDSDL, NDSDLColorCmds);
+		int FIFO_BEGINCount = NDSDLColorCmds->ndsDisplayListSize;
+		printf("\nGX DisplayList (%d): FIFO_BEGIN commands \n", FIFO_BEGINCount);
+		getDisplayListFIFO_COLOR(NDSDL, NDSDLColorCmds);
+		printf("\nGX DisplayList (%d): FIFO_COLOR commands \n", NDSDLColorCmds->ndsDisplayListSize);
+		getDisplayListFIFO_TEX_COORD(NDSDL, NDSDLColorCmds);
+		printf("\nGX DisplayList (%d): FIFO_TEX_COORD commands \n", NDSDLColorCmds->ndsDisplayListSize);
+		getDisplayListFIFO_VERTEX16(NDSDL, NDSDLColorCmds);
+		printf("\nGX DisplayList (%d): FIFO_VERTEX16 commands \n", NDSDLColorCmds->ndsDisplayListSize);
+		getDisplayListFIFO_END(NDSDL, NDSDLColorCmds);
+		int FIFO_ENDCount = NDSDLColorCmds->ndsDisplayListSize;
+		printf("\nGX DisplayList (%d): FIFO_END commands \n", FIFO_ENDCount);
+		
+		if((FIFO_BEGINCount != 0) && (FIFO_ENDCount != 0) && (FIFO_BEGINCount == FIFO_ENDCount) ){
+			printf("\n(%d) GX DisplayList detected \n", FIFO_BEGINCount);
+		}
+		else{
+			printf("\nBROKEN GX DisplayList: It won't work as expected on real Nintendo DS!\n");
+		}
+		TGDSARM9Free(NDSDLColorCmds);
+
+		//Build it
+		u32 * builtDisplayList = (u32*)TGDSARM9Malloc(displayListSize);
+		memset(builtDisplayList, 0, displayListSize);
+		int builtDisplayListSize = CompilePackedNDSGXDisplayListFromObject(builtDisplayList, NDSDL) + 1;
+		
+		if(dlReadSize != builtDisplayListSize){
+			printf("\nNDS DisplayList Build failed\n");
+			return 0;
+		}
+		char outPath[256];
+		sprintf(outPath, "%s%s", cwdPath, "out.bin");
+		printf("Rebuilding DisplayList at: %s", outPath);
+		FILE * fout = fopen(outPath, "w+b");
+		if(fout != NULL){
+			if(fwrite(builtDisplayList, 1, displayListSize, fout) > 0){
+				fclose(fout);
+				printf("\nRebuild OK \n");
+			}
+			else{
+				printf("\nRebuild ERROR \n");
+				return 0;
+			}
+		}
+		TGDSARM9Free(builtDisplayList);
+	}
+	else{
+		printf("NDS DisplayList creation fail");
+	}
+	TGDSARM9Free(NDSDL);
+	*/
+
+	//Unit Test #1: Tests OpenGL DisplayLists components functionality then emitting proper GX displaylists, unpacked format.
+	GLInitExt();
+	int list = glGenLists(10);
+	if(list){
+		glListBase(list);
+		bool ret = glIsList(list); //should return false (DL generated, but no displaylist-name was generated)
+		glNewList(list, GL_COMPILE);
+		ret = glIsList(list); //should return true (DL generated, and displaylist-name was generated)
+		if(ret == true){
+			for (int i = 0; i <10; i ++){ //Draw 10 cubes
+				glPushMatrix();
+				glRotate(36*i,0.0,0.0,1.0);
+				glTranslatef(10.0,0.0,0.0);
+				glPopMatrix(1);
+			}
+		}
+		glEndList();
+		
+		glListBase(list + 1);
+		glNewList (list + 1, GL_COMPILE);//Create a second display list and execute it
+        ret = glIsList(list + 1); //should return true (DL generated, and displaylist-name was generated)
+		if(ret == true){
+			for (int i = 0; i <20; i ++){ //Draw 20 triangles
+				glPushMatrix();
+				glRotate(18*i,0.0,0.0,1.0);
+				glTranslatef(15.0,0.0,0.0);
+				glPopMatrix(1);
+			}
+		}
+		glEndList();//The second display list is created
+	}
+
+	//Unit Test #2:
+	//Takes an unpacked format display list, gets converted into packed format then exported as C Header file source code
+	char cwdPath[256];
+	getCWDWin(cwdPath, "\\cv\\");
+	char outPath[256];
+	sprintf(outPath, "%s%s", cwdPath, "PackedDisplayList.h");
+	bool result = packAndExportSourceCodeFromRawUnpackedDisplayListFormat(outPath, (u32*)&Compiled_DL_Binary[0]);
+	if(result == true){
+		printf("Unpacked Display List successfully packed and exported as C source file at: \n%s", outPath);
+	}
+	else{
+		printf("Unpacked Display List generation failure");
+	}
 
 	return 0;
 }

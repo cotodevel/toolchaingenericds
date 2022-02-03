@@ -129,6 +129,8 @@ extern bool ndsDisplayListUtilsTestCaseARM9(char * filename, char * outNDSGXBuil
 
 extern bool isAGXCommand(u32 val);
 extern u8 clzero(u32 var);
+extern bool packAndExportSourceCodeFromRawUnpackedDisplayListFormat(char * filenameOut, u32 * rawUnpackedDisplayList);
+
 #ifdef __cplusplus 
 }
 #endif
