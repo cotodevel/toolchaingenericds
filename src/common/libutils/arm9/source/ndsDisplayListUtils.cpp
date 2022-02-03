@@ -743,6 +743,27 @@ bool isAGXCommand(u32 val){
 	return isAGXCommand;
 }
 
+//counts leading zeroes :)
+u8 clzero(u32 var){   
+    u8 cnt=0;
+    u32 var3;
+    if (var>0xffffffff) return 0;
+   
+    var3=var; //copy
+    var=0xFFFFFFFF-var;
+    while((var>>cnt)&1){
+        cnt++;
+    }
+    if ( (((var3&0xf0000000)>>28) >0x7) && (((var3&0xff000000)>>24)<0xf)){
+        var=((var3&0xf0000000)>>28);
+        var-=8; //bit 31 can't count to zero up to this point
+            while(var&1) {
+                cnt++; var=var>>1;
+            }
+    }
+	return cnt;
+}
+
 #ifdef WIN32
 
 //Unit Test (WIN32): reads a NDS GX Display List / Call List payload emmited from (https://bitbucket.org/Coto88/blender-nds-exporter/src/master/)
@@ -886,6 +907,7 @@ int main(int argc, char** argv){
 			u32* curRawARGBufferSave = (u32*)rawARGBuffer; //used to save args
 			u32* curRawARGBufferRestore = (u32*)rawARGBuffer; //used to read and consume args 
 			int curRawARGBufferCount = 0; //incremented from the args parsing part, consumed when adding args to fout stream
+			int packedCommandCount = 0;
 
 			for(int i = 0; i < (listSize / 4); i++){
 				//Note: All commands implemented here must be replicated to isAGXCommand() method
@@ -993,6 +1015,8 @@ int main(int argc, char** argv){
 								//curRawARGBufferCount consumed here
 								if (curRawARGBufferCount > 0) {
 									fprintf(fout, "),\n");
+									packedCommandCount++; //a whole packed command is 4 bytes
+
 									int j = 0;
 									for (j = 0; j < curRawARGBufferCount; j++) {
 										u32 curArg = curRawARGBufferRestore[j];
@@ -1001,6 +1025,7 @@ int main(int argc, char** argv){
 											fprintf(fout, ",");
 										}
 										fprintf(fout, "\n");
+										packedCommandCount++; //each param is 4 bytes
 									}
 									curRawARGBufferRestore += curRawARGBufferCount;
 									curRawARGBufferCount = 0;
@@ -1024,6 +1049,7 @@ int main(int argc, char** argv){
 						}
 						fseek(fout, pos, SEEK_SET);
 						fprintf(fout, "\n};");
+						packedCommandCount++; //a whole packed command is 4 bytes
 					}
 				}
 				//NOT closing cmd!...  
@@ -1038,6 +1064,7 @@ int main(int argc, char** argv){
 						//close command
 						if (isAGXCommand(cmd) == true){
 							fprintf(fout, "),\n");
+							packedCommandCount++; //a whole packed command is 4 bytes
 						}
 						//NOT LAST CMD BATCH: for each command found, add params(s): curRawARGBufferCount consumed here
 						if (curRawARGBufferCount > 0) {
@@ -1045,6 +1072,7 @@ int main(int argc, char** argv){
 							for (j = 0; j < curRawARGBufferCount; j++) {
 								u32 curArg = curRawARGBufferRestore[j];
 								fprintf(fout, "%d,\n", curArg);
+								packedCommandCount++; //each param is 4 bytes
 							}
 							curRawARGBufferRestore += curRawARGBufferCount;
 							curRawARGBufferCount = 0;
@@ -1054,6 +1082,44 @@ int main(int argc, char** argv){
 				
 				listPtr++;
 			}
+
+			//Now find listSize inside file handle, and replace it with new count
+			fseek(fout, 0, SEEK_SET);
+			char readBuf[128];
+			fread(readBuf, 1, sizeof(readBuf), fout);
+			int j = 0;
+			
+			u8 leadingZeroes = clzero((u32)listSize)/4; //bit -> decimal zeroes
+			leadingZeroes++; //count last decimal
+
+			char listSizeChar[128];
+			memset(listSizeChar, 0, leadingZeroes);
+			itoa (listSize, (char*)&listSizeChar[0], 10);
+			int foundOffset = 0;
+
+			for(j = 0; j < 128/leadingZeroes; j++){
+				char * looker = (char *)&readBuf[j * leadingZeroes-1];
+				if(strncmp (looker, (const char *)&listSizeChar[0], leadingZeroes) == 0){
+					foundOffset--;
+					printf("debug");
+
+					//erase the value
+					fseek(fout, foundOffset, SEEK_SET);
+					int k = 0;
+					for(k = 0; k < (int)leadingZeroes + 1; k++){ //+1 the comma
+						fprintf(fout, " ");
+					}
+
+					//set packed count
+					fseek(fout, foundOffset, SEEK_SET);
+					fprintf(fout, "%d,\n", packedCommandCount*4);
+
+				}
+				else{
+					foundOffset+=leadingZeroes;
+				}
+			}
+
 			fclose(fout);
 			free(rawARGBuffer);
 		}
