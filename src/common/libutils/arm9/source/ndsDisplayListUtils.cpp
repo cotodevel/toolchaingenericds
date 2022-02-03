@@ -880,24 +880,21 @@ int main(int argc, char** argv){
 			int listSize = (int)*listPtr;
 			listPtr++;
 			int currentCmdCount = 0;
-			fprintf(fout, "u32 PackedDLEmitted[] = { \n%d,\n", listSize);
-
+			fprintf(fout, "#include \"VideoGL.h\"\n#include \"VideoGLExt.h\"\n\nu32 PackedDLEmitted[] = { \n%d,\n", listSize);
 
 			u32 * rawARGBuffer = (u32 *)malloc(listSize); //raw, linear buffer args from all GX commands (without GX commands)
 			u32* curRawARGBufferSave = (u32*)rawARGBuffer; //used to save args
 			u32* curRawARGBufferRestore = (u32*)rawARGBuffer; //used to read and consume args 
-
 			int curRawARGBufferCount = 0; //incremented from the args parsing part, consumed when adding args to fout stream
 
 			for(int i = 0; i < (listSize / 4); i++){
-				
-				//build command(s)
-				if (((currentCmdCount) % 4) == 0) {
-					fprintf(fout, "FIFO_COMMAND_PACK( ");
-				}
-
 				//Note: All commands implemented here must be replicated to isAGXCommand() method
 				u32 cmd = *listPtr;
+				//build command(s)
+				if ( (isAGXCommand(cmd) == true)  && (((currentCmdCount) % 4) == 0) ) {
+					fprintf(fout, "FIFO_COMMAND_PACK(");
+				}
+
 				int cmdOffset = 0;
 				bool isCmd = false;
 				if (cmd == getFIFO_BEGIN()){
@@ -907,7 +904,6 @@ int main(int argc, char** argv){
 
 					//no args used by this GX command
 				}
-
 				else if(cmd == getMTX_PUSH()){
 					fprintf(fout, "MTX_PUSH");
 					currentCmdCount++;
@@ -915,7 +911,6 @@ int main(int argc, char** argv){
 
 					//no args used by this GX command
 				}
-				
 				else if(cmd == getMTX_POP()){
 					fprintf(fout, "MTX_POP");
 					currentCmdCount++;
@@ -933,7 +928,6 @@ int main(int argc, char** argv){
 						curRawARGBufferCount++;
 					}
 				}
-
 				else if (cmd == getMTX_IDENTITY()) {
 					fprintf(fout, "MTX_IDENTITY");
 					currentCmdCount++;
@@ -942,7 +936,6 @@ int main(int argc, char** argv){
 					//4000454h 15h - 19  MTX_IDENTITY - Load Unit Matrix to Current Matrix(W)
 					//no args used by this GX command
 				}
-
 				else if (cmd == getMTX_TRANS()) {
 					fprintf(fout, "MTX_TRANS");
 					currentCmdCount++;
@@ -960,7 +953,6 @@ int main(int argc, char** argv){
 						curRawARGBufferCount++;
 					}
 				}
-
 				else if (cmd == getMTX_MULT_3x3()) {
 					fprintf(fout, "MTX_MULT_3x3");
 					currentCmdCount++;
@@ -978,47 +970,91 @@ int main(int argc, char** argv){
 						curRawARGBufferCount++;
 					}
 				}
-
 				else if (cmd == getFIFO_END()) {
 					fprintf(fout, "FIFO_END");
 					currentCmdCount++;
 					isCmd = true;
 				}
 
-				//add comma if next command is not closing
-				if ( (((currentCmdCount) % 4) != 0) ) {
-					if (isCmd == true) {
-						fprintf(fout, ", ");
-					}
-				}
-				else {
-					//close command
-					fprintf(fout, "),\n");
 
+				//IS closing cmd... Process all remaining FIFO commands, then stub out the rest as FIFO_NOPs
+				if( i == ((listSize / 4) - 1)){
+					int currentCommandOffset = (currentCmdCount % 4);
+					int currentCommandOffsetCopy = currentCommandOffset;
+					int j = 0;
+					
+					//FIFO_END not last aligned command? Fill it with FIFO_NOP
+					if (currentCommandOffset > 0){
+						for (j = 0; j < currentCommandOffset; j++) {
+							fprintf(fout, "FIFO_NOP");
+							currentCommandOffsetCopy++;
+							if((currentCommandOffsetCopy % 4) == 0){
+								//LAST CMD BATCH: for each command found, add params(s)
+								//curRawARGBufferCount consumed here
+								if (curRawARGBufferCount > 0) {
+									fprintf(fout, "),\n");
+									int j = 0;
+									for (j = 0; j < curRawARGBufferCount; j++) {
+										u32 curArg = curRawARGBufferRestore[j];
+										fprintf(fout, "%d", curArg);
+										if( j != (curRawARGBufferCount - 1)){
+											fprintf(fout, ",");
+										}
+										fprintf(fout, "\n");
+									}
+									curRawARGBufferRestore += curRawARGBufferCount;
+									curRawARGBufferCount = 0;
+								}
+								else{
+									fprintf(fout, ")\n");
+								}
 
-					//for each command found, add params(s)
-					//curRawARGBufferCount consumed here
-					if (curRawARGBufferCount > 0) {
-						int j = 0;
-						for (j = 0; j < curRawARGBufferCount; j++) {
-							u32 curArg = curRawARGBufferRestore[j];
-							fprintf(fout, "%d,\n", curArg);
+								fprintf(fout, "};");
+							}
+							else{
+								fprintf(fout, ", ");
+							}
 						}
-						curRawARGBufferRestore += curRawARGBufferCount;
-						curRawARGBufferCount = 0;
 					}
-
-					//i = (listSize / 4); //debug
+					//FIFO_END IS last aligned command. Close bracket and remove last comma
+					else{
+						int pos = ftell(fout) - 2;
+						if(pos <= 0){
+							pos = 0;
+						}
+						fseek(fout, pos, SEEK_SET);
+						fprintf(fout, "\n};");
+					}
 				}
+				//NOT closing cmd!...  
+				else{
+					//add comma if next command is not closing
+					if ( (((currentCmdCount) % 4) != 0) ) {
+						if (isCmd == true) {
+							fprintf(fout, ", ");
+						}
+					}
+					else {
+						//close command
+						if (isAGXCommand(cmd) == true){
+							fprintf(fout, "),\n");
+						}
+						//NOT LAST CMD BATCH: for each command found, add params(s): curRawARGBufferCount consumed here
+						if (curRawARGBufferCount > 0) {
+							int j = 0;
+							for (j = 0; j < curRawARGBufferCount; j++) {
+								u32 curArg = curRawARGBufferRestore[j];
+								fprintf(fout, "%d,\n", curArg);
+							}
+							curRawARGBufferRestore += curRawARGBufferCount;
+							curRawARGBufferCount = 0;
+						}
+					}
+				}
+				
 				listPtr++;
 			}
-
-			
-			
-			fprintf(fout, "FIFO_COMMAND_PACK( FIFO_END, FIFO_NOP, FIFO_NOP, FIFO_NOP )\n};");
 			fclose(fout);
-
-
 			free(rawARGBuffer);
 		}
 
