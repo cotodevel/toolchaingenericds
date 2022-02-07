@@ -386,7 +386,22 @@ typedef enum {
 #define FIFO_BEGIN				REG2ID(GFX_BEGIN)             
 #define FIFO_END				REG2ID(GFX_END)               
 #define FIFO_FLUSH				REG2ID(GFX_FLUSH)             
-#define FIFO_VIEWPORT			REG2ID(GFX_VIEWPORT)          
+#define FIFO_VIEWPORT			REG2ID(GFX_VIEWPORT)     
+
+//Extended NDS bits
+#define MTX_PUSH		REG2ID(MATRIX_PUSH)  
+#define MTX_POP			REG2ID(MATRIX_POP)
+#define MTX_IDENTITY	REG2ID(MATRIX_IDENTITY)
+#define MTX_TRANS		REG2ID(MATRIX_TRANSLATE)
+
+#define MTX_MULT_4x4		REG2ID(MATRIX_MULT4x4)
+#define MTX_MULT_4x3		REG2ID(MATRIX_MULT4x3)
+#define MTX_MULT_3x3		REG2ID(MATRIX_MULT3x3)
+
+
+
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif

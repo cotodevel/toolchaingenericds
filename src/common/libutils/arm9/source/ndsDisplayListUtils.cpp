@@ -50,6 +50,7 @@ USA
 
 #ifdef ARM9
 #include "posixHandleTGDS.h"
+extern  char * itoa ( int value, char * str, int base );
 #endif
 
 //NDS GX C Display List implementation
@@ -743,6 +744,262 @@ bool isAGXCommand(u32 val){
 	return isAGXCommand;
 }
 
+//counts leading zeroes :)
+u8 clzero(u32 var){   
+    u8 cnt=0;
+    u32 var3;
+    if (var>0xffffffff) return 0;
+   
+    var3=var; //copy
+    var=0xFFFFFFFF-var;
+    while((var>>cnt)&1){
+        cnt++;
+    }
+    if ( (((var3&0xf0000000)>>28) >0x7) && (((var3&0xff000000)>>24)<0xf)){
+        var=((var3&0xf0000000)>>28);
+        var-=8; //bit 31 can't count to zero up to this point
+            while(var&1) {
+                cnt++; var=var>>1;
+            }
+    }
+	return cnt;
+}
+
+bool packAndExportSourceCodeFromRawUnpackedDisplayListFormat(char * filenameOut, u32 * rawUnpackedDisplayList){
+	if( (filenameOut != NULL) && (rawUnpackedDisplayList != NULL) ){
+		FILE * fout = fopen(filenameOut, "w+b");
+		if(fout != NULL){
+			u32 * listPtr = rawUnpackedDisplayList;
+			int listSize = (int)*listPtr;
+			listPtr++;
+			int currentCmdCount = 0;
+			fprintf(fout, "#include \"VideoGL.h\"\n#include \"VideoGLExt.h\"\n\nu32 PackedDLEmitted[] = { \n%d,\n", listSize);
+
+			u32 * rawARGBuffer = (u32 *)malloc(listSize); //raw, linear buffer args from all GX commands (without GX commands)
+			u32* curRawARGBufferSave = (u32*)rawARGBuffer; //used to save args
+			u32* curRawARGBufferRestore = (u32*)rawARGBuffer; //used to read and consume args 
+			int curRawARGBufferCount = 0; //incremented from the args parsing part, consumed when adding args to fout stream
+			int packedCommandCount = 0;
+
+			for(int i = 0; i < (listSize / 4); i++){
+				//Note: All commands implemented here must be replicated to isAGXCommand() method
+				u32 cmd = *listPtr;
+				//build command(s)
+				if ( (isAGXCommand(cmd) == true)  && (((currentCmdCount) % 4) == 0) ) {
+					fprintf(fout, "FIFO_COMMAND_PACK(");
+				}
+
+				int cmdOffset = 0;
+				bool isCmd = false;
+				if (cmd == getFIFO_BEGIN()){
+					fprintf(fout, "FIFO_BEGIN");
+					currentCmdCount++;
+					isCmd = true;
+
+					//no args used by this GX command
+				}
+				else if(cmd == getMTX_PUSH()){
+					fprintf(fout, "MTX_PUSH");
+					currentCmdCount++;
+					isCmd = true;
+
+					//no args used by this GX command
+				}
+				else if(cmd == getMTX_POP()){
+					fprintf(fout, "MTX_POP");
+					currentCmdCount++;
+					isCmd = true;
+
+					//4000448h 12h 1  36  MTX_POP - Pop Current Matrix from Stack(W)
+					u32 * curListPtr = listPtr;
+					curListPtr++;
+					u32 curVal = *curListPtr;
+					while (isAGXCommand(curVal) == false) {
+						*curRawARGBufferSave = curVal;
+						curRawARGBufferSave++;
+						curListPtr++;
+						curVal = *curListPtr;
+						curRawARGBufferCount++;
+					}
+				}
+				else if (cmd == getMTX_IDENTITY()) {
+					fprintf(fout, "MTX_IDENTITY");
+					currentCmdCount++;
+					isCmd = true;
+
+					//4000454h 15h - 19  MTX_IDENTITY - Load Unit Matrix to Current Matrix(W)
+					//no args used by this GX command
+				}
+				else if (cmd == getMTX_TRANS()) {
+					fprintf(fout, "MTX_TRANS");
+					currentCmdCount++;
+					isCmd = true;
+
+					//4000470h 1Ch 3  22 * MTX_TRANS - Mult.Curr.Matrix by Translation Matrix(W)
+					u32* curListPtr = listPtr;
+					curListPtr++;
+					u32 curVal = *curListPtr;
+					while (isAGXCommand(curVal) == false) {
+						*curRawARGBufferSave = curVal;
+						curRawARGBufferSave++;
+						curListPtr++;
+						curVal = *curListPtr;
+						curRawARGBufferCount++;
+					}
+				}
+				else if (cmd == getMTX_MULT_3x3()) {
+					fprintf(fout, "MTX_MULT_3x3");
+					currentCmdCount++;
+					isCmd = true;
+
+					//4000468h 1Ah 9  28 * MTX_MULT_3x3 - Multiply Current Matrix by 3x3 Matrix(W)
+					u32* curListPtr = listPtr;
+					curListPtr++;
+					u32 curVal = *curListPtr;
+					while (isAGXCommand(curVal) == false) {
+						*curRawARGBufferSave = curVal;
+						curRawARGBufferSave++;
+						curListPtr++;
+						curVal = *curListPtr;
+						curRawARGBufferCount++;
+					}
+				}
+				else if (cmd == getFIFO_END()) {
+					fprintf(fout, "FIFO_END");
+					currentCmdCount++;
+					isCmd = true;
+				}
+
+
+				//IS closing cmd... Process all remaining FIFO commands, then stub out the rest as FIFO_NOPs
+				if( i == ((listSize / 4) - 1)){
+					int currentCommandOffset = (currentCmdCount % 4);
+					int currentCommandOffsetCopy = currentCommandOffset;
+					int j = 0;
+					
+					//FIFO_END not last aligned command? Fill it with FIFO_NOP
+					if (currentCommandOffset > 0){
+						for (j = 0; j < currentCommandOffset; j++) {
+							fprintf(fout, "FIFO_NOP");
+							currentCommandOffsetCopy++;
+							if((currentCommandOffsetCopy % 4) == 0){
+								//LAST CMD BATCH: for each command found, add params(s)
+								//curRawARGBufferCount consumed here
+								if (curRawARGBufferCount > 0) {
+									fprintf(fout, "),\n");
+									packedCommandCount++; //a whole packed command is 4 bytes
+
+									int j = 0;
+									for (j = 0; j < curRawARGBufferCount; j++) {
+										u32 curArg = curRawARGBufferRestore[j];
+										fprintf(fout, "%d", curArg);
+										if( j != (curRawARGBufferCount - 1)){
+											fprintf(fout, ",");
+										}
+										fprintf(fout, "\n");
+										packedCommandCount++; //each param is 4 bytes
+									}
+									curRawARGBufferRestore += curRawARGBufferCount;
+									curRawARGBufferCount = 0;
+								}
+								else{
+									fprintf(fout, ")\n");
+								}
+
+								fprintf(fout, "};");
+							}
+							else{
+								fprintf(fout, ", ");
+							}
+						}
+					}
+					//FIFO_END IS last aligned command. Close bracket and remove last comma
+					else{
+						int pos = ftell(fout) - 2;
+						if(pos <= 0){
+							pos = 0;
+						}
+						fseek(fout, pos, SEEK_SET);
+						fprintf(fout, "\n};");
+						packedCommandCount++; //a whole packed command is 4 bytes
+					}
+				}
+				//NOT closing cmd!...  
+				else{
+					//add comma if next command is not closing
+					if ( (((currentCmdCount) % 4) != 0) ) {
+						if (isCmd == true) {
+							fprintf(fout, ", ");
+						}
+					}
+					else {
+						//close command
+						if (isAGXCommand(cmd) == true){
+							fprintf(fout, "),\n");
+							packedCommandCount++; //a whole packed command is 4 bytes
+						}
+						//NOT LAST CMD BATCH: for each command found, add params(s): curRawARGBufferCount consumed here
+						if (curRawARGBufferCount > 0) {
+							int j = 0;
+							for (j = 0; j < curRawARGBufferCount; j++) {
+								u32 curArg = curRawARGBufferRestore[j];
+								fprintf(fout, "%d,\n", curArg);
+								packedCommandCount++; //each param is 4 bytes
+							}
+							curRawARGBufferRestore += curRawARGBufferCount;
+							curRawARGBufferCount = 0;
+						}
+					}
+				}
+				
+				listPtr++;
+			}
+
+			//Now find listSize inside file handle, and replace it with new count
+			fseek(fout, 0, SEEK_SET);
+			char readBuf[128];
+			fread(readBuf, 1, sizeof(readBuf), fout);
+			int j = 0;
+			
+			u8 leadingZeroes = clzero((u32)listSize)/4; //bit -> decimal zeroes
+			leadingZeroes++; //count last decimal
+
+			char listSizeChar[128];
+			memset(listSizeChar, 0, leadingZeroes);
+			itoa (listSize, (char*)&listSizeChar[0], 10);
+			int foundOffset = 0;
+
+			for(j = 0; j < 128/leadingZeroes; j++){
+				char * looker = (char *)&readBuf[j * leadingZeroes-1];
+				if(strncmp (looker, (const char *)&listSizeChar[0], leadingZeroes) == 0){
+					foundOffset--;
+
+					//erase the value
+					fseek(fout, foundOffset, SEEK_SET);
+					int k = 0;
+					for(k = 0; k < (int)leadingZeroes + 1; k++){ //+1 the comma
+						fprintf(fout, " ");
+					}
+
+					//set packed count
+					fseek(fout, foundOffset, SEEK_SET);
+					fprintf(fout, "%d,\n", packedCommandCount*4);
+
+				}
+				else{
+					foundOffset+=leadingZeroes;
+				}
+			}
+
+			fclose(fout);
+			free(rawARGBuffer);
+		}
+
+		return true;
+	}
+	return false;
+}
+
 #ifdef WIN32
 
 //Unit Test (WIN32): reads a NDS GX Display List / Call List payload emmited from (https://bitbucket.org/Coto88/blender-nds-exporter/src/master/)
@@ -867,160 +1124,18 @@ int main(int argc, char** argv){
 	}
 
 	//Unit Test #2:
-	//Convert Compiled_DL from unpacked format to packed format exported as C source code (.h)
-	//should resemble the structure at: Cube.h
-	
+	//Takes an unpacked format display list, gets converted into packed format then exported as C Header file source code
 	char cwdPath[256];
 	getCWDWin(cwdPath, "\\cv\\");
 	char outPath[256];
-		sprintf(outPath, "%s%s", cwdPath, "PackedDLEmitted.h");
-		FILE * fout = fopen(outPath, "w+b");
-		if(fout != NULL){
-			u32 * listPtr = (u32*)&Compiled_DL_Binary[0];
-			int listSize = (int)*listPtr;
-			listPtr++;
-			int currentCmdCount = 0;
-			fprintf(fout, "u32 PackedDLEmitted[] = { \n%d,\n", listSize);
-
-
-			u32 * rawARGBuffer = (u32 *)malloc(listSize); //raw, linear buffer args from all GX commands (without GX commands)
-			u32* curRawARGBufferSave = (u32*)rawARGBuffer; //used to save args
-			u32* curRawARGBufferRestore = (u32*)rawARGBuffer; //used to read and consume args 
-
-			int curRawARGBufferCount = 0; //incremented from the args parsing part, consumed when adding args to fout stream
-
-			for(int i = 0; i < (listSize / 4); i++){
-				
-				//build command(s)
-				if (((currentCmdCount) % 4) == 0) {
-					fprintf(fout, "FIFO_COMMAND_PACK( ");
-				}
-
-				//Note: All commands implemented here must be replicated to isAGXCommand() method
-				u32 cmd = *listPtr;
-				int cmdOffset = 0;
-				bool isCmd = false;
-				if (cmd == getFIFO_BEGIN()){
-					fprintf(fout, "FIFO_BEGIN");
-					currentCmdCount++;
-					isCmd = true;
-
-					//no args used by this GX command
-				}
-
-				else if(cmd == getMTX_PUSH()){
-					fprintf(fout, "MTX_PUSH");
-					currentCmdCount++;
-					isCmd = true;
-
-					//no args used by this GX command
-				}
-				
-				else if(cmd == getMTX_POP()){
-					fprintf(fout, "MTX_POP");
-					currentCmdCount++;
-					isCmd = true;
-
-					//4000448h 12h 1  36  MTX_POP - Pop Current Matrix from Stack(W)
-					u32 * curListPtr = listPtr;
-					curListPtr++;
-					u32 curVal = *curListPtr;
-					while (isAGXCommand(curVal) == false) {
-						*curRawARGBufferSave = curVal;
-						curRawARGBufferSave++;
-						curListPtr++;
-						curVal = *curListPtr;
-						curRawARGBufferCount++;
-					}
-				}
-
-				else if (cmd == getMTX_IDENTITY()) {
-					fprintf(fout, "MTX_IDENTITY");
-					currentCmdCount++;
-					isCmd = true;
-
-					//4000454h 15h - 19  MTX_IDENTITY - Load Unit Matrix to Current Matrix(W)
-					//no args used by this GX command
-				}
-
-				else if (cmd == getMTX_TRANS()) {
-					fprintf(fout, "MTX_TRANS");
-					currentCmdCount++;
-					isCmd = true;
-
-					//4000470h 1Ch 3  22 * MTX_TRANS - Mult.Curr.Matrix by Translation Matrix(W)
-					u32* curListPtr = listPtr;
-					curListPtr++;
-					u32 curVal = *curListPtr;
-					while (isAGXCommand(curVal) == false) {
-						*curRawARGBufferSave = curVal;
-						curRawARGBufferSave++;
-						curListPtr++;
-						curVal = *curListPtr;
-						curRawARGBufferCount++;
-					}
-				}
-
-				else if (cmd == getMTX_MULT_3x3()) {
-					fprintf(fout, "MTX_MULT_3x3");
-					currentCmdCount++;
-					isCmd = true;
-
-					//4000468h 1Ah 9  28 * MTX_MULT_3x3 - Multiply Current Matrix by 3x3 Matrix(W)
-					u32* curListPtr = listPtr;
-					curListPtr++;
-					u32 curVal = *curListPtr;
-					while (isAGXCommand(curVal) == false) {
-						*curRawARGBufferSave = curVal;
-						curRawARGBufferSave++;
-						curListPtr++;
-						curVal = *curListPtr;
-						curRawARGBufferCount++;
-					}
-				}
-
-				else if (cmd == getFIFO_END()) {
-					fprintf(fout, "FIFO_END");
-					currentCmdCount++;
-					isCmd = true;
-				}
-
-				//add comma if next command is not closing
-				if ( (((currentCmdCount) % 4) != 0) ) {
-					if (isCmd == true) {
-						fprintf(fout, ", ");
-					}
-				}
-				else {
-					//close command
-					fprintf(fout, "),\n");
-
-
-					//for each command found, add params(s)
-					//curRawARGBufferCount consumed here
-					if (curRawARGBufferCount > 0) {
-						int j = 0;
-						for (j = 0; j < curRawARGBufferCount; j++) {
-							u32 curArg = curRawARGBufferRestore[j];
-							fprintf(fout, "%d,\n", curArg);
-						}
-						curRawARGBufferRestore += curRawARGBufferCount;
-						curRawARGBufferCount = 0;
-					}
-
-					//i = (listSize / 4); //debug
-				}
-				listPtr++;
-			}
-
-			
-			
-			fprintf(fout, "FIFO_COMMAND_PACK( FIFO_END, FIFO_NOP, FIFO_NOP, FIFO_NOP )\n};");
-			fclose(fout);
-
-
-			free(rawARGBuffer);
-		}
+	sprintf(outPath, "%s%s", cwdPath, "PackedDisplayList.h");
+	bool result = packAndExportSourceCodeFromRawUnpackedDisplayListFormat(outPath, (u32*)&Compiled_DL_Binary[0]);
+	if(result == true){
+		printf("Unpacked Display List successfully packed and exported as C source file at: \n%s", outPath);
+	}
+	else{
+		printf("Unpacked Display List generation failure");
+	}
 
 	return 0;
 }
