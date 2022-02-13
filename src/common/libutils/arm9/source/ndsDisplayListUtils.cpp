@@ -145,10 +145,37 @@ __attribute__((optimize("O0")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
+#endif  
+u8 getFIFO_VERTEX10(){
+	return REG2ID_C(GFX_VERTEX10_ADDR);
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 #endif
 u8 getFIFO_TEX_COORD(){
 	return REG2ID_C(GFX_TEX_COORD_ADDR);
 }
+
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
+u8 getFIFO_VTX_XY(){
+	return REG2ID_C(GFX_VERTEX_XY_ADDR);
+}
+
+
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))

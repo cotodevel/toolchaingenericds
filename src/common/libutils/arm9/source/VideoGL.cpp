@@ -74,22 +74,6 @@ struct GLContext globalGLCtx;
 
 //////////////////////////////////////////////////////////////////////
 
-  void glVertex3v16(v16 x, v16 y, v16 z)
-{
-  GFX_VERTEX16 = (y << 16) | (x & 0xFFFF);
-  GFX_VERTEX16 = ((uint32)(uint16)z);
-}
-
-//////////////////////////////////////////////////////////////////////
-
-  void glVertex2v16(int yx, v16 z)
-{
-  GFX_VERTEX16 = yx;
-  GFX_VERTEX16 = (z);
-}
-
-//////////////////////////////////////////////////////////////////////
-
 void glPushMatrix(void){
 	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
 		Compiled_DL_Binary[interCompiled_DLPtr] = getMTX_PUSH();
@@ -1016,10 +1000,16 @@ int glTexImage2D(int target, int empty1, int type, int sizeX, int sizeY, int emp
 	return 1;
 }
 
-//2d point in v16 coords
+//x , y vertex coords in v16 format
 void glVertex2i(int x, int y) {
-    glVertex3v16((v16)x, (v16)y, (v16)0);
+    glVertex2v16((v16)x, (v16)y);
 }
+
+//x , y , z vertex coords in v16 format
+void glVertex3f(GLfloat x, GLfloat y, GLfloat z){
+	glVertex3v16(floattov16(x), floattov16(y), floattov16(z));
+}
+
 
 void glShadeModel(GLenum mode){
 	globalGLCtx.primitiveShadeModelMode = mode;

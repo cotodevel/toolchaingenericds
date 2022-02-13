@@ -317,3 +317,54 @@ void glNormal3i(const GLint v){
 		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)floattov10(fractpart); interCompiled_DLPtr++; //Unpacked Command format
 	}
 }
+
+//////////////////////////////////////////////////////////////////////
+
+void glVertex3v16(v16 x, v16 y, v16 z){
+	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
+		//400048Ch 23h 2  9   VTX_16 - Set Vertex XYZ Coordinates (W)
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getFIFO_VERTEX16(); //Unpacked Command format
+		interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)VERTEX_PACK(x, y); interCompiled_DLPtr++; //Unpacked Command format
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)VERTEX_PACK(z, 0); interCompiled_DLPtr++; //Unpacked Command format
+	}
+	else{
+		GFX_VERTEX16 = (y << 16) | (x & 0xFFFF);
+		GFX_VERTEX16 = ((uint32)(uint16)z);
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void glVertex3v10(v10 x, v10 y, v10 z){
+	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
+		//4000490h 24h 1  8   VTX_10 - Set Vertex XYZ Coordinates (W)
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getFIFO_VERTEX10(); //Unpacked Command format
+		interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)VERTEX_PACKv10(x, y, z); interCompiled_DLPtr++; //Unpacked Command format
+	}
+	else{
+		GFX_VERTEX16 = (y << 16) | (x & 0xFFFF);
+		GFX_VERTEX16 = ((uint32)(uint16)z);
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+//Parameters. x. Specifies the x-coordinate of a vertex. y. Specifies the y-coordinate of a vertex
+void glVertex2v16(v16 x, v16 y){
+	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
+		//4000494h 25h 1  8   VTX_XY - Set Vertex XY Coordinates (W)
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getFIFO_VTX_XY(); //Unpacked Command format
+		interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)VERTEX_PACK(x, y); interCompiled_DLPtr++; //Unpacked Command format
+	}
+	else{
+		GFX_VERTEX16 = (y << 16) | (x & 0xFFFF);
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+//Todo
+//4000498h 26h 1  8   VTX_XZ - Set Vertex XZ Coordinates (W)
+//400049Ch 27h 1  8   VTX_YZ - Set Vertex YZ Coordinates (W)
+//40004A0h 28h 1  8   VTX_DIFF - Set Relative Vertex Coordinates (W)
