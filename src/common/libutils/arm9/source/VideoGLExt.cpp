@@ -217,15 +217,77 @@ void glTexCoord2t16(t16 u, t16 v){
 }
 //////////////////////////////////////////////////////////////////////
 
-void glBegin(int mode)
-{
-  GFX_BEGIN = mode;
+//Primitive types
+//0  Separate Triangle(s)    ;3*N vertices per N triangles
+//1  Separate Quadliteral(s) ;4*N vertices per N quads
+//2  Triangle Strips         ;3+(N-1) vertices per N triangles
+//3  Quadliteral Strips      ;4+(N-1)*2 vertices per N quads
+void glBegin(int primitiveType){
+	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
+		//4000500h 40h 1  1   BEGIN_VTXS - Start of Vertex List (W)
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getFIFO_BEGIN(); //Unpacked Command format
+		interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)primitiveType; interCompiled_DLPtr++; //Unpacked Command format
+	}
+	else{
+		GFX_BEGIN = (u32)primitiveType;
+	}
 }
 
 //////////////////////////////////////////////////////////////////////
-void glEnd( void)
-{
-  GFX_END = 0;
+void glEnd( void){
+	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
+		//4000504h 41h -  1   END_VTXS - End of Vertex List (W)
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getFIFO_END(); //Unpacked Command format
+		interCompiled_DLPtr++;
+		//no args used by this GX command
+	}
+	else{
+		GFX_END = 0;
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+
+u16 lastVertexColor = 0;
+//set the current color
+//4000480h - Cmd 20h - COLOR - Directly Set Vertex Color (W)
+//Parameter 1, Bit 0-4    Red
+//Parameter 1, Bit 5-9    Green
+//Parameter 1, Bit 10-14  Blue
+
+void glColor3b(uint8 red, uint8 green, uint8 blue){
+	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
+		//4000480h 20h 1  1   COLOR - Directly Set Vertex Color (W)
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getFIFO_COLOR(); //Unpacked Command format
+		interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)RGB15(red, green, blue); interCompiled_DLPtr++; //Unpacked Command format
+	}
+	else{
+		switch(globalGLCtx.primitiveShadeModelMode){
+			//light vectors are todo
+			case(GL_FLAT):{
+				//otherwise override all colors to be the same subset of whatever color was passed here
+				if(lastVertexColor == 0){
+					lastVertexColor = RGB15(red, green, blue);
+				}
+				GFX_COLOR = lastVertexColor;
+			}
+			break;
+			
+			case(GL_SMOOTH):{
+				//Smooth shading, the default by DS, causes the computed colors of vertices to be interpolated as the primitive is rasterized, 
+				//typically assigning different colors to each resulting pixel fragment. 
+				GFX_COLOR = (vuint32)RGB15(red, green, blue);			
+			}
+			break;
+			
+			default:{
+				//error! call glInit(); first
+			}
+			break;
+		}
+	}
 }
 
 //////////////////////////////////////////////////////////////////////

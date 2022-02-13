@@ -454,8 +454,6 @@ void glReset(void);
 /////////////////////////////////////////////////////////////////////
   void glColor3b(uint8 red, uint8 green, uint8 blue);
 //////////////////////////////////////////////////////////////////////
-  void glColor(rgb color);
-//////////////////////////////////////////////////////////////////////
   void glVertex3v16(v16 x, v16 y, v16 z);
 //////////////////////////////////////////////////////////////////////
   void glVertex2v16(int yx, v16 z);  
@@ -509,13 +507,6 @@ void glMaterialShinnyness(void);
   static inline void glClearDepth(uint16 depth)
 {
   GFX_CLEAR_DEPTH = depth;
-}
-
-//////////////////////////////////////////////////////////////////////
-
-  static inline void glColor(rgb color)
-{
-  GFX_COLOR = (vuint32)color;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -684,9 +675,7 @@ extern void glColor3f(float red, float green, float blue);
 extern struct GLContext globalGLCtx;
 extern void glShadeModel(GLenum mode);
 extern void glInit();
-extern u16 lastVertexColor;
 
-extern void glColor3b(uint8 red, uint8 green, uint8 blue);
 extern void glVertex2i(int x, int y); 
 extern void GLInitExt();
 extern bool isNdsDisplayListUtilsCallList;

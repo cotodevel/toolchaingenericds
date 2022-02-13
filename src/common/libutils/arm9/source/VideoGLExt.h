@@ -715,12 +715,15 @@ extern void glNormal3f(const GLfloat v);
 extern void glNormal3i(const GLint v);
 extern void glNormal3s(const GLshort v);
 
-extern void glBegin(int mode);
+extern void glBegin(int primitiveType);
 extern void glEnd( void);
 
 extern void glTexCoord2t16(t16 u, t16 v);
 extern void glTexCoord2f(GLfloat s, GLfloat t);
 extern void glTexCoord1i(uint32 uv);
+
+extern u16 lastVertexColor;
+extern void glColor3b(uint8 red, uint8 green, uint8 blue);
 
 #ifdef __cplusplus
 }

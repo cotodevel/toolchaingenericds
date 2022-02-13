@@ -72,14 +72,6 @@ struct GLContext globalGLCtx;
   GFX_CLEAR_DEPTH = depth;
 }
 
-
-//////////////////////////////////////////////////////////////////////
-
-void glColor(rgb color)
-{
-  GFX_COLOR = (vuint32)color;
-}
-
 //////////////////////////////////////////////////////////////////////
 
   void glVertex3v16(v16 x, v16 y, v16 z)
@@ -1022,33 +1014,6 @@ int glTexImage2D(int target, int empty1, int type, int sizeX, int sizeY, int emp
 	#endif
 	
 	return 1;
-}
-
-u16 lastVertexColor = 0;
-void glColor3b(uint8 red, uint8 green, uint8 blue){
-	switch(globalGLCtx.primitiveShadeModelMode){
-		//light vectors are todo
-		case(GL_FLAT):{
-			//otherwise override all colors to be the same subset of whatever color was passed here
-			if(lastVertexColor == 0){
-				lastVertexColor = RGB15(red, green, blue);
-			}
-			GFX_COLOR = lastVertexColor;
-		}
-		break;
-		
-		case(GL_SMOOTH):{
-			//Smooth shading, the default by DS, causes the computed colors of vertices to be interpolated as the primitive is rasterized, 
-			//typically assigning different colors to each resulting pixel fragment. 
-			GFX_COLOR = (vuint32)RGB15(red, green, blue);			
-		}
-		break;
-		
-		default:{
-			//error! call glInit(); first
-		}
-		break;
-	}
 }
 
 //2d point in v16 coords
