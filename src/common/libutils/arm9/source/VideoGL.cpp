@@ -60,21 +60,6 @@ struct GLContext globalGLCtx;
 
 #ifdef NO_GL_INLINE
 //////////////////////////////////////////////////////////////////////
-
-void glBegin(int mode)
-{
-  GFX_BEGIN = mode;
-}
-
-//////////////////////////////////////////////////////////////////////
-
-  void glEnd( void)
-{
-  GFX_END = 0;
-}
-
-//////////////////////////////////////////////////////////////////////
-
   void glClearColor(uint8 red, uint8 green, uint8 blue)
 {
   GFX_CLEAR_COLOR = RGB15(red, green, blue);
@@ -109,20 +94,6 @@ void glColor(rgb color)
 {
   GFX_VERTEX16 = yx;
   GFX_VERTEX16 = (z);
-}
-
-//////////////////////////////////////////////////////////////////////
-
-  void glTexCoord2t16(t16 u, t16 v)
-{
-  GFX_TEX_COORD = (u << 16) + v;
-}
-
-//////////////////////////////////////////////////////////////////////
-
-  void glTexCoord1i(uint32 uv)
-{
-  GFX_TEX_COORD = uv;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -297,7 +268,6 @@ void glTranslatef(float x, float y, float z){
 	glTranslate3f32(floattof32(x), floattof32(y), floattof32(z));
 }
 //////////////////////////////////////////////////////////////////////
-
 
 static uint16 enable_bits = GL_TEXTURE_2D | (1<<13) | (1<<14);
 

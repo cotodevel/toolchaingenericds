@@ -117,7 +117,7 @@ GLboolean glIsList(GLuint list){
 	if(list > 0){
 		list--;
 	}
-	if(GLDLEnumerator[list] != DL_INVALID){
+	if((u32)GLDLEnumerator[list] != (u32)DL_INVALID){
 		return GL_TRUE;
 	}
 
@@ -178,9 +178,58 @@ type is the type of information stored in referenceOffsets. It is typically : GL
 indiceOffset is an array that holds offset reference to the desired list to call by comparison to listBase (Ex: if listBase = 100 and you want to draw a list refered by 103, its offset reference is 3).
 */
 
+void glTexCoord2f(GLfloat s, GLfloat t){
+	glTexCoord2t16(floattot16(s), floattot16(t));
+}
 
-//verbs implemented so far: glNormal3f
-//verbs missing: glTexCoord2f, glEnd, glEndList
+//////////////////////////////////////////////////////////////////////
+//glTexCoord specifies texture coordinates in one, two, three, or four dimensions. 
+//glTexCoord1 sets the current texture coordinates to s 0 0 1 ; 
+//glTexCoord2 sets them to s t 0 1 . 
+//glTexCoord3 specifies the texture coordinates as s t r 1
+//glTexCoord4 defines all four components explicitly as s t r q .
+
+//Note: uv == ((u << 16) | (v & 0xFFFF))
+void glTexCoord1i(uint32 uv){
+	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
+		//4000488h 22h 1  1   TEXCOORD - Set Texture Coordinates (W)
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getFIFO_TEX_COORD(); //Unpacked Command format
+		interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)TEXTURE_PACK((uv >> 16), 0); interCompiled_DLPtr++; //Unpacked Command format
+	}
+	else{
+		GFX_TEX_COORD = uv;
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void glTexCoord2t16(t16 u, t16 v){
+	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
+		//4000488h 22h 1  1   TEXCOORD - Set Texture Coordinates (W)
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getFIFO_TEX_COORD(); //Unpacked Command format
+		interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)TEXTURE_PACK(u, v); interCompiled_DLPtr++; //Unpacked Command format
+	}
+	else{
+		GFX_TEX_COORD = (u << 16) + v;
+	}
+}
+//////////////////////////////////////////////////////////////////////
+
+void glBegin(int mode)
+{
+  GFX_BEGIN = mode;
+}
+
+//////////////////////////////////////////////////////////////////////
+void glEnd( void)
+{
+  GFX_END = 0;
+}
+
+//////////////////////////////////////////////////////////////////////
+
 void glNormal3b(const GLbyte v){
 	glNormal3i((const GLint )v);
 }
@@ -206,32 +255,3 @@ void glNormal3i(const GLint v){
 		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)floattov10(fractpart); interCompiled_DLPtr++; //Unpacked Command format
 	}
 }
-
-//Todo: Implement special Test Case (below) which also happens to be the same as https://community.khronos.org/t/glcalllist-not-working/58999
-/*
-GLuint list;
-void CreateLists(){
-    list = glGenLists (2);//Generate two display lists,
-    if(list){
-        glNewList (list, GL_COMPILE);//Create the first display list
-        for (int i = 0; i <10; i ++){ //Draw 10 cubes
-            glPushMatrix();
-            glRotatef(36*i,0.0,0.0,1.0);
-            glTranslatef(10.0,0.0,0.0);
-            DrawCube();
-            glPopMatrix(1);
-        }
-        glEndList ();//The first display list is created
-
-        glNewList (list + 1, GL_COMPILE);//Create a second display list
-        for (int i = 0; i <20; i ++)//Draw 20 triangles{
-            glPushMatrix() ;
-            glRotatef(18*i,0.0,0.0,1.0) ;
-            glTranslatef(15.0,0.0,0.0) ;
-            DrawPyramid ();//DrawPyramid () was introduced in the previous chapter
-            glPopMatrix(1);
-        }
-        glEndList ();//The second display list is created
-    }
-}
-*/
