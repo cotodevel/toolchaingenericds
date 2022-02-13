@@ -83,7 +83,7 @@ GLuint glGenLists(GLsizei	range){
     if(range < MAX_Internal_DisplayList_Count){
         int i = 0;
         interCompiled_DLPtr = 1; //GL index 0 is reserved for DL size
-		for(i = 0; i < (range-1); i++ ){
+		for(i = 0; i < /*(range-1)*/ sizeof(GLDLEnumerator); i++ ){
             /*
 			Internal_DL[i].DisplayListNameAssigned = DL_INVALID;//glNewList() assigns the index (name of a display list) //=i;
             Internal_DL[i].isDisplayListAssigned = true;
@@ -161,6 +161,139 @@ void glEndList(void){
 		memset((char*)&Compiled_DL_Binary[0], 0, sizeof(Compiled_DL_Binary));
 	}
 	isNdsDisplayListUtilsCallList = false;
+}
+
+/*
+OpenGL Display List execution which implements the lower level GX hardware Display Lists execution.
+
+params: 
+list
+Specifies the integer name of the display list to be executed.
+*/
+void glCallList(GLuint list){
+	u32 * InternalDL = getInternalDisplayListBuffer();
+	int curDLInCompiledDLOffset = GLDLEnumerator[list];
+	if((u32)curDLInCompiledDLOffset != DL_INVALID){
+		u32 * currentPhysicalDisplayListStart = (u32 *)&InternalDL[curDLInCompiledDLOffset];
+		u32 * currentPhysicalDisplayListEnd = NULL;
+
+		int nextDLInCompiledDLOffset = GLDLEnumerator[list+1];
+		if((u32)nextDLInCompiledDLOffset != DL_INVALID){
+			currentPhysicalDisplayListEnd = (u32 *)&InternalDL[nextDLInCompiledDLOffset];
+		}
+		//means we are at the last list. Copy everything until getFIFO_END()
+		else{
+			u32 * currentPhysicalDisplayListEndCopy = currentPhysicalDisplayListStart;
+			while( ((u32)*(currentPhysicalDisplayListEndCopy)) != (u32)getFIFO_END() ){
+				currentPhysicalDisplayListEndCopy++;
+			}
+			currentPhysicalDisplayListEnd = currentPhysicalDisplayListEndCopy;
+		}
+
+		int singleListSize = (currentPhysicalDisplayListEnd - currentPhysicalDisplayListStart) * 4;
+		//Run a single GX Display List, having proper DL size
+		u32 singleOpenGLCompiledDisplayList[2048]; //2048 cmds per a single List should be enough
+		memcpy((u8*)&singleOpenGLCompiledDisplayList[1], currentPhysicalDisplayListStart, singleListSize);
+		singleOpenGLCompiledDisplayList[0] = (u32)singleListSize;
+		glCallListGX((const u32*)&singleOpenGLCompiledDisplayList[0]);
+	}
+}
+
+/*
+OpenGL Display Lists collection execution. For each list it'll be executed as a single OpenGL Display List
+
+params:
+n
+Specifies the number of display lists to be executed.
+
+type
+Specifies the type of values in lists. Symbolic constants GL_BYTE, GL_UNSIGNED_BYTE, GL_SHORT, GL_UNSIGNED_SHORT, GL_INT, GL_UNSIGNED_INT, GL_FLOAT are accepted.
+
+lists
+Specifies the address of an array of name offsets in the display list. The pointer type is void because the offsets can be bytes, shorts, ints, or floats, depending on the value of type.
+*/
+void glCallLists(GLsizei n, GLenum type, const void * lists){
+	int offsetSize = -1;
+	u8 * u8array = NULL;
+	u16 * u16array = NULL;
+	u32 * u32array = NULL;
+
+	switch(type){
+		//C Type	Bitdepth	Description								Common Enum
+		
+		//GLbyte	8			Signed, 2's complement binary integer	GL_BYTE
+		case(GL_BYTE):{
+			offsetSize = 1;
+			u8array = (u8 *)lists;
+		}
+		break;
+
+		//GLubyte	8			Unsigned binary integer					GL_UNSIGNED_BYTE
+		case(GL_UNSIGNED_BYTE):{
+			offsetSize = 1;
+			u8array = (u8 *)lists;
+		}
+		break;
+
+		//GLshort	16			Signed, 2's complement binary integer	GL_SHORT
+		case(GL_SHORT):{
+			offsetSize = 2;
+			u16array = (u16 *)lists;
+		}
+		break;
+
+		//GLushort	16			Unsigned binary integer					GL_UNSIGNED_SHORT
+		case(GL_UNSIGNED_SHORT):{
+			offsetSize = 2;
+			u16array = (u16 *)lists;
+		}
+		break;
+
+		//GLint		32			Signed, 2's complement binary integer	GL_INT
+		case(GL_INT):{
+			offsetSize = 4;
+			u32array = (u32 *)lists;
+		}
+		break;
+
+		//GLuint	32			Unsigned binary integer					GL_UNSIGNED_INT
+		case(GL_UNSIGNED_INT):{
+			offsetSize = 4;
+			u32array = (u32 *)lists;
+		}
+		break;
+
+		//GLfloat	32			An IEEE-754 floating-point value		GL_FLOAT
+		case(GL_FLOAT):{
+			offsetSize = 4;
+			u32array = (u32 *)lists;
+		}
+		break;
+	}
+
+	//Valid? Run each one of them
+	if((n > 0) && (offsetSize != -1)){
+		int i = 0;
+		for(i = 0; i < n; i++){
+			GLuint listName = (GLuint)-1;
+			if(u8array != NULL){
+				listName = (GLuint)u8array[i];
+			}
+			else if(u16array != NULL){
+				listName = (GLuint)u16array[i];
+			}
+			else if(u32array != NULL){
+				listName = (GLuint)u32array[i];
+			}
+			if((GLuint)listName != (GLuint)-1){
+				glCallList(listName);
+			}
+		}
+	}
+}
+
+void glDeleteLists(GLuint list, GLsizei range){
+	
 }
 
 /*

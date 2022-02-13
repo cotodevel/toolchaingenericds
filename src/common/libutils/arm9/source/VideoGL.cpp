@@ -1103,6 +1103,6 @@ void glCallListGX(const u32* list) {
 	#endif
 
 	#ifdef WIN32
-	printf("glCallListGX: Executing DL List. Size: %d", list[0]);
+	printf("\nglCallListGX: Executing DL List. Size: %d\n", list[0]);
 	#endif
 }

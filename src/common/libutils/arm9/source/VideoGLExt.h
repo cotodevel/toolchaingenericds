@@ -717,6 +717,9 @@ extern void glNormal3s(const GLshort v);
 
 extern void glBegin(int primitiveType);
 extern void glEnd( void);
+extern void glCallList(GLuint list);
+extern void glCallLists(GLsizei n, GLenum type, const void * lists);
+extern void glDeleteLists(GLuint list, GLsizei range);
 
 extern void glTexCoord2t16(t16 u, t16 v);
 extern void glTexCoord2f(GLfloat s, GLfloat t);

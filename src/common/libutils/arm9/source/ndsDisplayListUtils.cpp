@@ -1437,6 +1437,23 @@ int main(int argc, char** argv){
 	else{
 		printf("Unpacked Display List into packed format: failure!\n");
 	}
+
+	//Unit Test #4: glCallLists test
+	GLuint index = glGenLists(10);  // create 10 display lists
+	GLubyte lists[10];              // allow maximum 10 lists to be rendered
+
+	//Compile 10 display lists
+	int DLCount = 0;
+	for(DLCount = 0; DLCount < 10; DLCount++){
+		glNewList(index + DLCount, GL_COMPILE);   // compile each one until the 10th
+		glEndList();
+	}
+	// draw odd placed display lists names only (1st, 3rd, 5th, 7th, 9th)
+	lists[0]=0; lists[1]=2; lists[2]=4; lists[3]=6; lists[4]=8;
+	glListBase(index);              // set base offset
+	glCallLists(10, GL_UNSIGNED_BYTE, lists); //only OpenGL Display List names set earlier will run!
+
+
 	return 0;
 }
 #endif
