@@ -293,7 +293,34 @@ void glCallLists(GLsizei n, GLenum type, const void * lists){
 }
 
 void glDeleteLists(GLuint list, GLsizei range){
+	if(list >= 1){
+		list--; //assign current interCompiled_DLPtr (new) to a List
+	}
+	if (list >= sizeof(GLDLEnumerator)){
+		return;
+	}
+
+	int lowestCurDLInCompiledDLOffset = -1;
+	int i = 0;
+	for(i = 0; i < range; i++){
+		u32 * InternalDL = getInternalDisplayListBuffer();
+		int curDLInCompiledDLOffset = GLDLEnumerator[list + i];
+		if((u32)curDLInCompiledDLOffset != DL_INVALID){
+			u32 * currentPhysicalDisplayListStart = (u32 *)&InternalDL[curDLInCompiledDLOffset];
+			GLDLEnumerator[list + i] = DL_INVALID;
+
+			if(lowestCurDLInCompiledDLOffset < curDLInCompiledDLOffset){
+				lowestCurDLInCompiledDLOffset = curDLInCompiledDLOffset;
+			}
+		}
+	}
+	globalGLCtx.mode = (u32)GL_NONE;
+	isNdsDisplayListUtilsCallList = false;
 	
+	//Find the lowest internal buffer offset assigned, just deleted, and rewind it so it points to unallocated Internal DL memory
+	if(lowestCurDLInCompiledDLOffset != -1){
+		interCompiled_DLPtr = lowestCurDLInCompiledDLOffset;
+	}
 }
 
 /*

@@ -1453,6 +1453,8 @@ int main(int argc, char** argv){
 	glListBase(index);              // set base offset
 	glCallLists(10, GL_UNSIGNED_BYTE, lists); //only OpenGL Display List names set earlier will run!
 
+	//Unit Test #5: glDeleteLists test
+	glDeleteLists(index, 5); //remove 5 of them
 
 	return 0;
 }
