@@ -696,6 +696,7 @@ extern struct ndsDisplayListDescriptor Internal_DL[MAX_Internal_DisplayList_Coun
 //Binary Format: Unpacked / Packed
 extern u32 interCompiled_DLPtr;
 extern u32 Compiled_DL_Binary[DL_MAX_ITEMS*MAX_Internal_DisplayList_Count];
+extern u32 * getInternalDisplayListBuffer();
 
 //OpenGL DL internal Display Lists enumerator, holds current DL index pointed by internal interCompiled_DLPtr, starting from 0.
 extern GLsizei GLDLEnumerator[MAX_Internal_DisplayList_Count];

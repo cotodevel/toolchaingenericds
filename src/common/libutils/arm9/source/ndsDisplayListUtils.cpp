@@ -50,7 +50,6 @@ USA
 
 #ifdef ARM9
 #include "posixHandleTGDS.h"
-extern  char * itoa ( int value, char * str, int base );
 #endif
 
 //NDS GX C Display List implementation
@@ -530,6 +529,72 @@ bool getDisplayListFIFO_COLOR(struct ndsDisplayListDescriptor * dlInst, struct n
 	return getDisplayListFilterByCommand(dlInst, dlInstOut, (u8)getFIFO_COLOR());	
 }
 
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+#include <stdio.h>
+#include <stdlib.h>
+ 
+// Function to swap two numbers
+void swap1(char *x, char *y) {
+    char t = *x; *x = *y; *y = t;
+}
+ 
+// Function to reverse `buffer[i…j]`
+char* reverse1(char *buffer, int i, int j)
+{
+    while (i < j) {
+        swap1(&buffer[i++], &buffer[j--]);
+    }
+ 
+    return buffer;
+}
+ 
+// Iterative function to implement `itoa()` function in C
+char* itoa1(int value, char* buffer, int base)
+{
+    // invalid input
+    if (base < 2 || base > 32) {
+        return buffer;
+    }
+ 
+    // consider the absolute value of the number
+    int n = abs(value);
+ 
+    int i = 0;
+    while (n)
+    {
+        int r = n % base;
+ 
+        if (r >= 10) {
+            buffer[i++] = 65 + (r - 10);
+        }
+        else {
+            buffer[i++] = 48 + r;
+        }
+ 
+        n = n / base;
+    }
+ 
+    // if the number is 0
+    if (i == 0) {
+        buffer[i++] = '0';
+    }
+ 
+    // If the base is 10 and the value is negative, the resulting string
+    // is preceded with a minus sign (-)
+    // With any other base, value is always considered unsigned
+    if (value < 0 && base == 10) {
+        buffer[i++] = '-';
+    }
+ 
+    buffer[i] = '\0'; // null terminate string
+ 
+    // reverse the string and return it
+    return reverse1(buffer, 0, i - 1);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("O0")))
@@ -637,7 +702,7 @@ int BuildNDSGXDisplayListObjectFromFile(char * filename, struct ndsDisplayListDe
 			fseek(outFileGen, 0, SEEK_END);
 			int FileSize = ftell(outFileGen);
 			fseek(outFileGen, 0, SEEK_SET);
-			binDisplayList = (char*)malloc(FileSize);
+			binDisplayList = (char*)TGDSARM9Malloc(FileSize);
 			readFileSize = fread(binDisplayList, 1, FileSize, outFileGen);
 			printf("DisplayList readSize: %d", readFileSize);
 			startPtr = curPtr = (u32*)binDisplayList;
@@ -701,7 +766,7 @@ int BuildNDSGXDisplayListObjectFromFile(char * filename, struct ndsDisplayListDe
 				val = *(curPtr);
 				curPtr++;
 			}
-			free(binDisplayList);
+			TGDSARM9Free(binDisplayList);
 			fclose(outFileGen);
 		}
 	}
@@ -744,7 +809,59 @@ bool isAGXCommand(u32 val){
 	return isAGXCommand;
 }
 
+//returns: -1 if ain't a command, or command count
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+int getAGXParamsCountFromCommand(u32 val){
+	//same as above method
+	int AGXParamsCount = -1;
+	if (val == (u32)getFIFO_BEGIN()) {
+		//no args used by this GX command
+		AGXParamsCount = 0;
+	}
+	else if (val == (u32)getMTX_PUSH()) {
+		//no args used by this GX command
+		AGXParamsCount = 0;
+	}
+	else if (val == (u32)getMTX_POP()) {
+		//4000448h 12h 1  36  MTX_POP - Pop Current Matrix from Stack(W)
+		AGXParamsCount = 1;
+	}
+	else if (val == (u32)getMTX_IDENTITY()) {
+		//4000454h 15h - 19  MTX_IDENTITY - Load Unit Matrix to Current Matrix(W)
+		//no args used by this GX command
+		AGXParamsCount = 0;
+	}
+	else if (val == (u32)getMTX_TRANS()) {
+		//  4000470h 1Ch 3  22* MTX_TRANS - Mult. Curr. Matrix by Translation Matrix (W)
+		AGXParamsCount = 3;
+	}
+	else if (val == (u32)getMTX_MULT_3x3()) {
+		//  4000468h 1Ah 9  28* MTX_MULT_3x3 - Multiply Current Matrix by 3x3 Matrix (W)
+		AGXParamsCount = 9;
+	}
+	else if (val == (u32)getFIFO_END()) {
+		//no args used by this GX command
+		AGXParamsCount = 0;
+	}
+	return AGXParamsCount;
+}
+
 //counts leading zeroes :)
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
 u8 clzero(u32 var){   
     u8 cnt=0;
     u32 var3;
@@ -765,9 +882,25 @@ u8 clzero(u32 var){
 	return cnt;
 }
 
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
 bool packAndExportSourceCodeFromRawUnpackedDisplayListFormat(char * filenameOut, u32 * rawUnpackedDisplayList){
 	if( (filenameOut != NULL) && (rawUnpackedDisplayList != NULL) ){
+		
+		#ifdef WIN32
 		FILE * fout = fopen(filenameOut, "w+b");
+		#endif
+		
+		#ifdef ARM9
+		FILE * fout = fopen(filenameOut, "w+");
+		#endif
+		
 		if(fout != NULL){
 			u32 * listPtr = rawUnpackedDisplayList;
 			int listSize = (int)*listPtr;
@@ -775,7 +908,7 @@ bool packAndExportSourceCodeFromRawUnpackedDisplayListFormat(char * filenameOut,
 			int currentCmdCount = 0;
 			fprintf(fout, "#include \"VideoGL.h\"\n#include \"VideoGLExt.h\"\n\nu32 PackedDLEmitted[] = { \n%d,\n", listSize);
 
-			u32 * rawARGBuffer = (u32 *)malloc(listSize); //raw, linear buffer args from all GX commands (without GX commands)
+			u32 * rawARGBuffer = (u32 *)TGDSARM9Malloc(listSize); //raw, linear buffer args from all GX commands (without GX commands)
 			u32* curRawARGBufferSave = (u32*)rawARGBuffer; //used to save args
 			u32* curRawARGBufferRestore = (u32*)rawARGBuffer; //used to read and consume args 
 			int curRawARGBufferCount = 0; //incremented from the args parsing part, consumed when adding args to fout stream
@@ -868,6 +1001,7 @@ bool packAndExportSourceCodeFromRawUnpackedDisplayListFormat(char * filenameOut,
 					fprintf(fout, "FIFO_END");
 					currentCmdCount++;
 					isCmd = true;
+					//no args used by this GX command
 				}
 
 
@@ -966,7 +1100,7 @@ bool packAndExportSourceCodeFromRawUnpackedDisplayListFormat(char * filenameOut,
 
 			char listSizeChar[128];
 			memset(listSizeChar, 0, leadingZeroes);
-			itoa (listSize, (char*)&listSizeChar[0], 10);
+			itoa1(listSize, (char*)&listSizeChar[0], 10);
 			int foundOffset = 0;
 
 			for(j = 0; j < 128/leadingZeroes; j++){
@@ -992,7 +1126,7 @@ bool packAndExportSourceCodeFromRawUnpackedDisplayListFormat(char * filenameOut,
 			}
 
 			fclose(fout);
-			free(rawARGBuffer);
+			TGDSARM9Free(rawARGBuffer);
 		}
 
 		return true;
@@ -1000,97 +1134,210 @@ bool packAndExportSourceCodeFromRawUnpackedDisplayListFormat(char * filenameOut,
 	return false;
 }
 
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+bool rawUnpackedToRawPackedDisplayListFormat(u32 * inRawUnpackedDisplayList, u32 * outRawPackedDisplayList){
+	if( (inRawUnpackedDisplayList != NULL) && (outRawPackedDisplayList != NULL) ){
+		u32 * listPtr = inRawUnpackedDisplayList;
+		u32 * listPtrOut = outRawPackedDisplayList;
+
+		listPtrOut++; //reserved: packed DL Size: index 0
+		int listSize = (int)*listPtr;
+		listPtr++;
+		int currentCmdCount = 0;
+		u32 * rawARGBuffer = (u32 *)TGDSARM9Malloc(listSize); //raw, linear buffer args from all GX commands (without GX commands)
+		u32* curRawARGBufferSave = (u32*)rawARGBuffer; //used to save args
+		u32* curRawARGBufferRestore = (u32*)rawARGBuffer; //used to read and consume args 
+		
+		u32 * rawStandaloneCmdBuffer = (u32 *)TGDSARM9Malloc(listSize); //raw, linear buffer args from all GX commands (without GX commands)
+		u32 * rawStandaloneCmdBufferCopy = rawStandaloneCmdBuffer;
+		u32 * rawStandaloneArgBuffer = (u32 *)TGDSARM9Malloc(listSize); //raw, linear buffer args from all GX commands (without GX commands)
+		u32 * rawStandaloneArgBufferCopy = rawStandaloneArgBuffer;
+
+		int curRawARGBufferCount = 0; //incremented from the args parsing part, consumed when adding args to fout stream
+		int packedCommandCount = 0;
+		
+		for(int i = 0; i < (listSize / 4); i++){
+			//Note: All commands implemented here must be replicated to isAGXCommand() method
+			u32 cmd = *listPtr;
+			bool iscmdEnd = false;
+			int cmdOffset = 0;
+			bool isCmd = false;
+			if (cmd == getFIFO_BEGIN()){
+				//fprintf(fout, "FIFO_BEGIN");
+				currentCmdCount++;
+				isCmd = true;
+
+				//no args used by this GX command
+			}
+			else if(cmd == getMTX_PUSH()){
+				//fprintf(fout, "MTX_PUSH");
+				currentCmdCount++;
+				isCmd = true;
+
+				//no args used by this GX command
+			}
+			else if(cmd == getMTX_POP()){
+				//fprintf(fout, "MTX_POP");
+				currentCmdCount++;
+				isCmd = true;
+
+				//4000448h 12h 1  36  MTX_POP - Pop Current Matrix from Stack(W)
+				u32 * curListPtr = listPtr;
+				curListPtr++;
+				u32 curVal = *curListPtr;
+				while (isAGXCommand(curVal) == false) {
+					*curRawARGBufferSave = curVal;
+					curRawARGBufferSave++;
+					curListPtr++;
+					curVal = *curListPtr;
+					curRawARGBufferCount++;
+				}
+			}
+			else if (cmd == getMTX_IDENTITY()) {
+				//fprintf(fout, "MTX_IDENTITY");
+				currentCmdCount++;
+				isCmd = true;
+
+				//4000454h 15h - 19  MTX_IDENTITY - Load Unit Matrix to Current Matrix(W)
+				//no args used by this GX command
+			}
+			else if (cmd == getMTX_TRANS()) {
+				//fprintf(fout, "MTX_TRANS");
+				currentCmdCount++;
+				isCmd = true;
+
+				//4000470h 1Ch 3  22 * MTX_TRANS - Mult.Curr.Matrix by Translation Matrix(W)
+				u32* curListPtr = listPtr;
+				curListPtr++;
+				u32 curVal = *curListPtr;
+				while (isAGXCommand(curVal) == false) {
+					*curRawARGBufferSave = curVal;
+					curRawARGBufferSave++;
+					curListPtr++;
+					curVal = *curListPtr;
+					curRawARGBufferCount++;
+				}
+			}
+			else if (cmd == getMTX_MULT_3x3()) {
+				//fprintf(fout, "MTX_MULT_3x3");
+				currentCmdCount++;
+				isCmd = true;
+
+				//4000468h 1Ah 9  28 * MTX_MULT_3x3 - Multiply Current Matrix by 3x3 Matrix(W)
+				u32* curListPtr = listPtr;
+				curListPtr++;
+				u32 curVal = *curListPtr;
+				while (isAGXCommand(curVal) == false) {
+					*curRawARGBufferSave = curVal;
+					curRawARGBufferSave++;
+					curListPtr++;
+					curVal = *curListPtr;
+					curRawARGBufferCount++;
+				}
+			}
+			else if (cmd == getFIFO_END()) {
+				//fprintf(fout, "FIFO_END");
+				currentCmdCount++;
+				isCmd = true;
+			}
+
+			if(isCmd == true){
+				*(rawStandaloneCmdBufferCopy) = cmd;
+				rawStandaloneCmdBufferCopy++;
+				
+				//save args
+				if (curRawARGBufferCount > 0) {
+
+					int j = 0;
+					for (j = 0; j < curRawARGBufferCount; j++) {
+						u32 curArg = curRawARGBufferRestore[j];
+						*(rawStandaloneArgBufferCopy) = curArg;
+						rawStandaloneArgBufferCopy++;
+					}
+					curRawARGBufferRestore += curRawARGBufferCount;
+					curRawARGBufferCount = 0;
+				}
+			}
+			
+			listPtr++;
+		}
+
+		//enumerate commands & enumerate args:
+		//for each command take n args from the current arg stack and build each packed command accordingly
+		int detectedCmdCount = (rawStandaloneCmdBufferCopy - rawStandaloneCmdBuffer);
+
+		//reset rawStandaloneArgBufferCopy so we can re-use it
+		rawStandaloneArgBufferCopy = rawStandaloneArgBuffer;
+
+		int j = 0;
+		for(j = 0; j < detectedCmdCount; j+=4){
+			*listPtrOut = FIFO_COMMAND_PACK_C(rawStandaloneCmdBuffer[j + 0], rawStandaloneCmdBuffer[j + 1], rawStandaloneCmdBuffer[j + 2], rawStandaloneCmdBuffer[j + 3]); 
+			listPtrOut++;
+			packedCommandCount++; //a whole packed command is 4 bytes
+
+			int curCmdparamsCount0 = getAGXParamsCountFromCommand(rawStandaloneCmdBuffer[j + 0]);
+			int k = 0;
+			for(k = 0; k < curCmdparamsCount0; k++){
+				*(listPtrOut) = *(rawStandaloneArgBufferCopy);
+				listPtrOut++;
+				rawStandaloneArgBufferCopy++;
+				packedCommandCount++; //each param is 4 bytes
+			}
+
+			int curCmdparamsCount1 = getAGXParamsCountFromCommand(rawStandaloneCmdBuffer[j + 1]);
+			for(k = 0; k < curCmdparamsCount1; k++){
+				*(listPtrOut) = *(rawStandaloneArgBufferCopy);
+				listPtrOut++;
+				rawStandaloneArgBufferCopy++;
+				packedCommandCount++; //each param is 4 bytes
+			}
+
+			int curCmdparamsCount2 = getAGXParamsCountFromCommand(rawStandaloneCmdBuffer[j + 2]);
+			for(k = 0; k < curCmdparamsCount2; k++){
+				*(listPtrOut) = *(rawStandaloneArgBufferCopy);
+				listPtrOut++;
+				rawStandaloneArgBufferCopy++;
+				packedCommandCount++; //each param is 4 bytes
+			}
+
+			int curCmdparamsCount3 = getAGXParamsCountFromCommand(rawStandaloneCmdBuffer[j + 3]);
+			for(k = 0; k < curCmdparamsCount3; k++){
+				*(listPtrOut) = *(rawStandaloneArgBufferCopy);
+				listPtrOut++;
+				rawStandaloneArgBufferCopy++;
+				packedCommandCount++; //each param is 4 bytes
+			}
+		}
+
+		//copy last param
+		*(listPtrOut) = *(rawStandaloneArgBufferCopy);
+		listPtrOut++;
+		rawStandaloneArgBufferCopy++;
+		packedCommandCount++; //each param is 4 bytes
+
+		
+		//Update Packed Command + args count
+		*outRawPackedDisplayList = (u32)(packedCommandCount*4);
+		
+		TGDSARM9Free(rawStandaloneCmdBuffer);
+		TGDSARM9Free(rawStandaloneArgBuffer);
+		TGDSARM9Free(rawARGBuffer);
+		return true;
+	}
+	return false;
+}
+
+
 #ifdef WIN32
-
-//Unit Test (WIN32): reads a NDS GX Display List / Call List payload emmited from (https://bitbucket.org/Coto88/blender-nds-exporter/src/master/)
-//Translates to an NDS GX Display List / Call List object, and then builds it again into the original payload.
-int main(int argc, char** argv){
-
-	//Unit Test: NDS GX DL object and building
-	/*
-	char cwdPath[256];
-	getCWDWin(cwdPath, "\\cv\\");
-	std::vector<std::string> BinFilesRead = findFiles(std::string(cwdPath), std::string("bin"));
-	printf("\nPath: %s \nbin files read: %d\n", cwdPath, BinFilesRead.size());
-	
-	struct ndsDisplayListDescriptor * NDSDL = (struct ndsDisplayListDescriptor *)TGDSARM9Malloc(sizeof(struct ndsDisplayListDescriptor));
-	int dlReadSize = BuildNDSGXDisplayListObjectFromFile((char*)BinFilesRead.at(0).c_str(), NDSDL);
-	if(dlReadSize != DL_INVALID){
-
-		GL_GLBEGIN_ENUM type = getDisplayListGLType(NDSDL);
-		if(type == GL_TRIANGLES){
-			printf("\nGX DisplayListType: GL_TRIANGLES\n");
-		}
-		else if (type == GL_QUADS){
-			printf("\nGX DisplayListType: GL_QUADS\n");
-		}
-		else if (type == GL_TRIANGLE_STRIP){
-			printf("\nGX DisplayListType: GL_TRIANGLE_STRIP\n");
-		}
-		else if (type == GL_QUAD_STRIP){
-			printf("\nGX DisplayListType: GL_QUAD_STRIP\n");
-		}
-		else{
-			printf("\nGX DisplayListType: ERROR\n");
-		}
-
-		//Get Binary filesize
-		int displayListSize = getRawFileSizefromNDSGXDisplayListObject(NDSDL);
-
-		//List commands
-		struct ndsDisplayListDescriptor * NDSDLColorCmds = (struct ndsDisplayListDescriptor *)TGDSARM9Malloc(sizeof(struct ndsDisplayListDescriptor));
-		getDisplayListFIFO_BEGIN(NDSDL, NDSDLColorCmds);
-		int FIFO_BEGINCount = NDSDLColorCmds->ndsDisplayListSize;
-		printf("\nGX DisplayList (%d): FIFO_BEGIN commands \n", FIFO_BEGINCount);
-		getDisplayListFIFO_COLOR(NDSDL, NDSDLColorCmds);
-		printf("\nGX DisplayList (%d): FIFO_COLOR commands \n", NDSDLColorCmds->ndsDisplayListSize);
-		getDisplayListFIFO_TEX_COORD(NDSDL, NDSDLColorCmds);
-		printf("\nGX DisplayList (%d): FIFO_TEX_COORD commands \n", NDSDLColorCmds->ndsDisplayListSize);
-		getDisplayListFIFO_VERTEX16(NDSDL, NDSDLColorCmds);
-		printf("\nGX DisplayList (%d): FIFO_VERTEX16 commands \n", NDSDLColorCmds->ndsDisplayListSize);
-		getDisplayListFIFO_END(NDSDL, NDSDLColorCmds);
-		int FIFO_ENDCount = NDSDLColorCmds->ndsDisplayListSize;
-		printf("\nGX DisplayList (%d): FIFO_END commands \n", FIFO_ENDCount);
-		
-		if((FIFO_BEGINCount != 0) && (FIFO_ENDCount != 0) && (FIFO_BEGINCount == FIFO_ENDCount) ){
-			printf("\n(%d) GX DisplayList detected \n", FIFO_BEGINCount);
-		}
-		else{
-			printf("\nBROKEN GX DisplayList: It won't work as expected on real Nintendo DS!\n");
-		}
-		TGDSARM9Free(NDSDLColorCmds);
-
-		//Build it
-		u32 * builtDisplayList = (u32*)TGDSARM9Malloc(displayListSize);
-		memset(builtDisplayList, 0, displayListSize);
-		int builtDisplayListSize = CompilePackedNDSGXDisplayListFromObject(builtDisplayList, NDSDL) + 1;
-		
-		if(dlReadSize != builtDisplayListSize){
-			printf("\nNDS DisplayList Build failed\n");
-			return 0;
-		}
-		char outPath[256];
-		sprintf(outPath, "%s%s", cwdPath, "out.bin");
-		printf("Rebuilding DisplayList at: %s", outPath);
-		FILE * fout = fopen(outPath, "w+b");
-		if(fout != NULL){
-			if(fwrite(builtDisplayList, 1, displayListSize, fout) > 0){
-				fclose(fout);
-				printf("\nRebuild OK \n");
-			}
-			else{
-				printf("\nRebuild ERROR \n");
-				return 0;
-			}
-		}
-		TGDSARM9Free(builtDisplayList);
-	}
-	else{
-		printf("NDS DisplayList creation fail");
-	}
-	TGDSARM9Free(NDSDL);
-	*/
-
+int main(int argc, char** argv){	
 	//Unit Test #1: Tests OpenGL DisplayLists components functionality then emitting proper GX displaylists, unpacked format.
 	GLInitExt();
 	int list = glGenLists(10);
@@ -1122,21 +1369,47 @@ int main(int argc, char** argv){
 		}
 		glEndList();//The second display list is created
 	}
-
+	
+	u32 * CompiledDisplayListsBuffer = getInternalDisplayListBuffer(); //Lists called earlier are written to this buffer, using the unpacked GX command format.
 	//Unit Test #2:
 	//Takes an unpacked format display list, gets converted into packed format then exported as C Header file source code
 	char cwdPath[256];
 	getCWDWin(cwdPath, "\\cv\\");
 	char outPath[256];
 	sprintf(outPath, "%s%s", cwdPath, "PackedDisplayList.h");
-	bool result = packAndExportSourceCodeFromRawUnpackedDisplayListFormat(outPath, (u32*)&Compiled_DL_Binary[0]);
+	bool result = packAndExportSourceCodeFromRawUnpackedDisplayListFormat(outPath, CompiledDisplayListsBuffer);
 	if(result == true){
 		printf("Unpacked Display List successfully packed and exported as C source file at: \n%s", outPath);
 	}
 	else{
 		printf("Unpacked Display List generation failure");
 	}
-
+	
+	//Unit Test #3: Using rawUnpackedToRawPackedDisplayListFormat() in target platform builds a packed Display List from an unpacked one IN MEMORY.
+	//Resembles the same behaviour as if C source file generated in Unit Test #2 was then built through ToolchainGenericDS and embedded into the project.
+	u32 Packed_DL_Binary[4096];
+	memset(Packed_DL_Binary, 0, sizeof(Packed_DL_Binary));
+	bool result2 = rawUnpackedToRawPackedDisplayListFormat(CompiledDisplayListsBuffer, (u32*)&Packed_DL_Binary[0]);
+	if(result2 == true){
+		printf("Unpacked Display List into packed format: success!\n");
+		//Save to file
+		sprintf(outPath, "%s%s", cwdPath, "PackedDisplayListCompiled.bin");
+		#ifdef WIN32
+		FILE * fout = fopen(outPath, "w+b");
+		#endif
+		#ifdef ARM9
+		FILE * fout = fopen(outPath, "w+");
+		#endif
+		if(fout != NULL){
+			int packedSize = Packed_DL_Binary[0];
+			int written = fwrite((u8*)&Packed_DL_Binary[0], 1, packedSize, fout);
+			printf("Written: %d bytes", packedSize);
+			fclose(fout);
+		}
+	}
+	else{
+		printf("Unpacked Display List into packed format: failure!\n");
+	}
 	return 0;
 }
 #endif

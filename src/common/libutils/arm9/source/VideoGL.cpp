@@ -213,10 +213,6 @@ void glTranslate3f32(f32 x, f32 y, f32 z){
 }
 
 //////////////////////////////////////////////////////////////////////
-void glTranslatef(float x, float y, float z){
-	glTranslate3f32(floattof32(x), floattof32(y), floattof32(z));
-}
-//////////////////////////////////////////////////////////////////////
 
 void glTranslatef32(int x, int y, int z) {
 	MATRIX_TRANSLATE = x;
@@ -294,6 +290,12 @@ void glMaterialShinnyness(void)
 }
 
 #endif  //endif #no inline
+
+
+//////////////////////////////////////////////////////////////////////
+void glTranslatef(float x, float y, float z){
+	glTranslate3f32(floattof32(x), floattof32(y), floattof32(z));
+}
 //////////////////////////////////////////////////////////////////////
 
 

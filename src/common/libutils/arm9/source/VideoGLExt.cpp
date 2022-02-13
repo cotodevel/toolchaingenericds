@@ -51,6 +51,11 @@ u32 Compiled_DL_Binary[DL_MAX_ITEMS*MAX_Internal_DisplayList_Count]; //Packed / 
 //OpenGL DL internal Display Lists enumerator, holds current DL index pointed by internal interCompiled_DLPtr, starting from 0.
 GLsizei GLDLEnumerator[MAX_Internal_DisplayList_Count];
 
+//Gets the internal Display List buffer used by Display Lists Open GL opcodes.
+u32 * getInternalDisplayListBuffer(){
+	return (u32 *)&Compiled_DL_Binary[0];
+}
+
 //listBase
 GLsizei currentListPointer = DL_INVALID;
 void GLInitExt(){
