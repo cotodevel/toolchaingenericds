@@ -355,7 +355,7 @@ void glTexCoord1i(uint32 uv){
 		//4000488h 22h 1  1   TEXCOORD - Set Texture Coordinates (W)
 		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getFIFO_TEX_COORD(); //Unpacked Command format
 		interCompiled_DLPtr++;
-		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)TEXTURE_PACK((uv >> 16), 0); interCompiled_DLPtr++; //Unpacked Command format
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)uv; interCompiled_DLPtr++; //Unpacked Command format
 	}
 	else{
 		GFX_TEX_COORD = uv;
