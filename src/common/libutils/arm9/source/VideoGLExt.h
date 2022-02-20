@@ -696,6 +696,7 @@ extern struct ndsDisplayListDescriptor Internal_DL[MAX_Internal_DisplayList_Coun
 //Binary Format: Unpacked / Packed
 extern u32 interCompiled_DLPtr;
 extern u32 Compiled_DL_Binary[DL_MAX_ITEMS*MAX_Internal_DisplayList_Count];
+extern u32 * getInternalDisplayListBuffer();
 
 //OpenGL DL internal Display Lists enumerator, holds current DL index pointed by internal interCompiled_DLPtr, starting from 0.
 extern GLsizei GLDLEnumerator[MAX_Internal_DisplayList_Count];
@@ -713,6 +714,22 @@ extern void glNormal3d(const GLdouble v);
 extern void glNormal3f(const GLfloat v);
 extern void glNormal3i(const GLint v);
 extern void glNormal3s(const GLshort v);
+
+extern void glBegin(int primitiveType);
+extern void glEnd( void);
+extern void glCallList(GLuint list);
+extern void glCallLists(GLsizei n, GLenum type, const void * lists);
+extern void glDeleteLists(GLuint list, GLsizei range);
+
+extern void glTexCoord2t16(t16 u, t16 v);
+extern void glTexCoord2f(GLfloat s, GLfloat t);
+extern void glTexCoord1i(uint32 uv);
+
+extern u16 lastVertexColor;
+extern void glColor3b(uint8 red, uint8 green, uint8 blue);
+extern void glVertex3v16(v16 x, v16 y, v16 z);
+extern void glVertex3v10(v10 x, v10 y, v10 z);
+extern void glVertex2v16(v16 x, v16 y);
 
 #ifdef __cplusplus
 }

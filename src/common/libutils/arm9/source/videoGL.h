@@ -153,7 +153,8 @@ typedef short int v16;       /*!< \brief vertex 4.12 fixed format */
 #define f32tov16(n)          (n) /*!< \brief f32 to v16 */
 #define v16toint(n)          ((n) >> 12) /*!< \brief convert v16 to int */
 #define floattov16(n)        ((v16)((n) * (1 << 12))) /*!< \brief convert float to v16 */
-#define VERTEX_PACK(x,y)     (u32)(((x) & 0xFFFF) | ((y) << 16)) /*!< \brief Pack to v16 values into one 32bit value */
+#define VERTEX_PACK(x,y)     (u32)(((x) & 0xFFFF) | ((y) << 16)) /*!< \brief Pack 2x v16 values into one 32bit value */
+#define VERTEX_PACKv10(x, y, z)     (u32)(((x) & 0x3FF) | ((y & 0x3FF) << 10) | ((z & 0x3FF) << 20)) /*!< \brief Pack 3x v10 values into one 32bit value */
 
 typedef short int v10;       /*!< \brief normal .10 fixed point, NOT USED FOR 10bit VERTEXES!!!*/
 #define inttov10(n)          ((n) << 9) /*!< \brief convert int to v10 */
@@ -454,16 +455,6 @@ void glReset(void);
 /////////////////////////////////////////////////////////////////////
   void glColor3b(uint8 red, uint8 green, uint8 blue);
 //////////////////////////////////////////////////////////////////////
-  void glColor(rgb color);
-//////////////////////////////////////////////////////////////////////
-  void glVertex3v16(v16 x, v16 y, v16 z);
-//////////////////////////////////////////////////////////////////////
-  void glVertex2v16(int yx, v16 z);
-//////////////////////////////////////////////////////////////////////
-  void glTexCoord2t16(t16 u, t16 v);
-//////////////////////////////////////////////////////////////////////
-  void glTexCoord1i(uint32 uv);
-//////////////////////////////////////////////////////////////////////
   void glPushMatrix(void);
 //////////////////////////////////////////////////////////////////////
   void glPopMatrix(sint32 index);
@@ -503,20 +494,6 @@ void glMaterialShinnyness(void);
 #ifndef NO_GL_INLINE
 //////////////////////////////////////////////////////////////////////
 
-  static inline void glBegin(int mode)
-{
-  GFX_BEGIN = mode;
-}
-
-//////////////////////////////////////////////////////////////////////
-
-  static inline void glEnd( void)
-{
-  GFX_END = 0;
-}
-
-//////////////////////////////////////////////////////////////////////
-
   static inline void glClearColor(uint8 red, uint8 green, uint8 blue)
 {
   GFX_CLEAR_COLOR = RGB15(red, green, blue);
@@ -528,44 +505,6 @@ void glMaterialShinnyness(void);
 {
   GFX_CLEAR_DEPTH = depth;
 }
-
-//////////////////////////////////////////////////////////////////////
-
-  static inline void glColor(rgb color)
-{
-  GFX_COLOR = (vuint32)color;
-}
-
-//////////////////////////////////////////////////////////////////////
-
-  static inline void glVertex3v16(v16 x, v16 y, v16 z)
-{
-  GFX_VERTEX16 = (y << 16) | (x & 0xFFFF);
-  GFX_VERTEX16 = ((uint32)(uint16)z);
-}
-
-//////////////////////////////////////////////////////////////////////
-
-  static inline void glVertex2v16(int yx, v16 z)
-{
-  GFX_VERTEX16 = yx;
-  GFX_VERTEX16 = (z);
-}
-
-//////////////////////////////////////////////////////////////////////
-
-  static inline void glTexCoord2t16(t16 u, t16 v)
-{
-  GFX_TEX_COORD = (u << 16) + v;
-}
-
-//////////////////////////////////////////////////////////////////////
-
-  static inline void glTexCoord1i(uint32 uv)
-{
-  GFX_TEX_COORD = uv;
-}
-
 //////////////////////////////////////////////////////////////////////
 
   static inline void glPushMatrix(void)
@@ -716,10 +655,10 @@ extern void glColor3f(float red, float green, float blue);
 extern struct GLContext globalGLCtx;
 extern void glShadeModel(GLenum mode);
 extern void glInit();
-extern u16 lastVertexColor;
 
-extern void glColor3b(uint8 red, uint8 green, uint8 blue);
 extern void glVertex2i(int x, int y); 
+extern void glVertex3f(GLfloat x, GLfloat y, GLfloat z);
+
 extern void GLInitExt();
 extern bool isNdsDisplayListUtilsCallList;
 extern void glCallListGX(const u32* list);

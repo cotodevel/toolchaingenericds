@@ -50,6 +50,8 @@ struct unpackedCmd {
 #define DL_TYPE_FIFO_PACKED_COMMAND_END (u32)(DL_TYPE_FIFO_PACKED_COMMAND_V2+1)	//FIFO_COMMAND_PACK( FIFO_VERTEX16 , FIFO_END , FIFO_NOP , FIFO_NOP )
 #define DL_MAX_ITEMS (int)(256) //256 NDS GX commands(words, 4 bytes each) = 1024 per DisplayList object
 
+#define GX_TOP_PARAMS_SIZE (int)(32)	//32  SHININESS - Specular Reflection Shininess Table (W) -- would be the command having the most parameter count
+
 struct ndsDisplayList {
 	int index;
 	u32 displayListType; //Display List Descriptor: FIFO_BEGIN, FIFO_COLOR, FIFO_TEX_COORD, FIFO_NORMAL, FIFO_VERTEX16, FIFO_END, FIFO_NOP, etc... 
@@ -87,8 +89,10 @@ extern u32 FIFO_COMMAND_PACK_C(u8 c1, u8 c2, u8 c3, u8 c4);
 extern u8 getFIFO_NOP();
 extern u8 getFIFO_STATUS();
 extern u8 getFIFO_COLOR();
+extern u8 getFIFO_VERTEX10();
 extern u8 getFIFO_VERTEX16();
 extern u8 getFIFO_TEX_COORD();
+extern u8 getFIFO_VTX_XY();
 extern u8 getFIFO_TEX_FORMAT();
 extern u8 getFIFO_CLEAR_COLOR();
 extern u8 getFIFO_CLEAR_DEPTH();
@@ -130,6 +134,12 @@ extern bool ndsDisplayListUtilsTestCaseARM9(char * filename, char * outNDSGXBuil
 extern bool isAGXCommand(u32 val);
 extern u8 clzero(u32 var);
 extern bool packAndExportSourceCodeFromRawUnpackedDisplayListFormat(char * filenameOut, u32 * rawUnpackedDisplayList);
+extern bool rawUnpackedToRawPackedDisplayListFormat(u32 * inRawUnpackedDisplayList, u32 * outRawPackedDisplayList);
+extern int getAGXParamsCountFromCommand(u32 command);
+
+extern void swap1(char *x, char *y);
+extern char* reverse1(char *buffer, int i, int j);
+extern char* itoa1(int value, char* buffer, int base);
 
 #ifdef __cplusplus 
 }

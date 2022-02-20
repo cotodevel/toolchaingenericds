@@ -51,6 +51,11 @@ u32 Compiled_DL_Binary[DL_MAX_ITEMS*MAX_Internal_DisplayList_Count]; //Packed / 
 //OpenGL DL internal Display Lists enumerator, holds current DL index pointed by internal interCompiled_DLPtr, starting from 0.
 GLsizei GLDLEnumerator[MAX_Internal_DisplayList_Count];
 
+//Gets the internal Display List buffer used by Display Lists Open GL opcodes.
+u32 * getInternalDisplayListBuffer(){
+	return (u32 *)&Compiled_DL_Binary[0];
+}
+
 //listBase
 GLsizei currentListPointer = DL_INVALID;
 void GLInitExt(){
@@ -78,7 +83,7 @@ GLuint glGenLists(GLsizei	range){
     if(range < MAX_Internal_DisplayList_Count){
         int i = 0;
         interCompiled_DLPtr = 1; //GL index 0 is reserved for DL size
-		for(i = 0; i < (range-1); i++ ){
+		for(i = 0; i < /*(range-1)*/ sizeof(GLDLEnumerator); i++ ){
             /*
 			Internal_DL[i].DisplayListNameAssigned = DL_INVALID;//glNewList() assigns the index (name of a display list) //=i;
             Internal_DL[i].isDisplayListAssigned = true;
@@ -112,7 +117,7 @@ GLboolean glIsList(GLuint list){
 	if(list > 0){
 		list--;
 	}
-	if(GLDLEnumerator[list] != DL_INVALID){
+	if((u32)GLDLEnumerator[list] != (u32)DL_INVALID){
 		return GL_TRUE;
 	}
 
@@ -159,6 +164,166 @@ void glEndList(void){
 }
 
 /*
+OpenGL Display List execution which implements the lower level GX hardware Display Lists execution.
+
+params: 
+list
+Specifies the integer name of the display list to be executed.
+*/
+void glCallList(GLuint list){
+	u32 * InternalDL = getInternalDisplayListBuffer();
+	int curDLInCompiledDLOffset = GLDLEnumerator[list];
+	if((u32)curDLInCompiledDLOffset != DL_INVALID){
+		u32 * currentPhysicalDisplayListStart = (u32 *)&InternalDL[curDLInCompiledDLOffset];
+		u32 * currentPhysicalDisplayListEnd = NULL;
+
+		int nextDLInCompiledDLOffset = GLDLEnumerator[list+1];
+		if((u32)nextDLInCompiledDLOffset != DL_INVALID){
+			currentPhysicalDisplayListEnd = (u32 *)&InternalDL[nextDLInCompiledDLOffset];
+		}
+		//means we are at the last list. Copy everything until getFIFO_END()
+		else{
+			u32 * currentPhysicalDisplayListEndCopy = currentPhysicalDisplayListStart;
+			while( ((u32)*(currentPhysicalDisplayListEndCopy)) != (u32)getFIFO_END() ){
+				currentPhysicalDisplayListEndCopy++;
+			}
+			currentPhysicalDisplayListEnd = currentPhysicalDisplayListEndCopy;
+		}
+
+		int singleListSize = (currentPhysicalDisplayListEnd - currentPhysicalDisplayListStart) * 4;
+		//Run a single GX Display List, having proper DL size
+		u32 singleOpenGLCompiledDisplayList[2048]; //2048 cmds per a single List should be enough
+		memcpy((u8*)&singleOpenGLCompiledDisplayList[1], currentPhysicalDisplayListStart, singleListSize);
+		singleOpenGLCompiledDisplayList[0] = (u32)singleListSize;
+		glCallListGX((const u32*)&singleOpenGLCompiledDisplayList[0]);
+	}
+}
+
+/*
+OpenGL Display Lists collection execution. For each list it'll be executed as a single OpenGL Display List
+
+params:
+n
+Specifies the number of display lists to be executed.
+
+type
+Specifies the type of values in lists. Symbolic constants GL_BYTE, GL_UNSIGNED_BYTE, GL_SHORT, GL_UNSIGNED_SHORT, GL_INT, GL_UNSIGNED_INT, GL_FLOAT are accepted.
+
+lists
+Specifies the address of an array of name offsets in the display list. The pointer type is void because the offsets can be bytes, shorts, ints, or floats, depending on the value of type.
+*/
+void glCallLists(GLsizei n, GLenum type, const void * lists){
+	int offsetSize = -1;
+	u8 * u8array = NULL;
+	u16 * u16array = NULL;
+	u32 * u32array = NULL;
+
+	switch(type){
+		//C Type	Bitdepth	Description								Common Enum
+		
+		//GLbyte	8			Signed, 2's complement binary integer	GL_BYTE
+		case(GL_BYTE):{
+			offsetSize = 1;
+			u8array = (u8 *)lists;
+		}
+		break;
+
+		//GLubyte	8			Unsigned binary integer					GL_UNSIGNED_BYTE
+		case(GL_UNSIGNED_BYTE):{
+			offsetSize = 1;
+			u8array = (u8 *)lists;
+		}
+		break;
+
+		//GLshort	16			Signed, 2's complement binary integer	GL_SHORT
+		case(GL_SHORT):{
+			offsetSize = 2;
+			u16array = (u16 *)lists;
+		}
+		break;
+
+		//GLushort	16			Unsigned binary integer					GL_UNSIGNED_SHORT
+		case(GL_UNSIGNED_SHORT):{
+			offsetSize = 2;
+			u16array = (u16 *)lists;
+		}
+		break;
+
+		//GLint		32			Signed, 2's complement binary integer	GL_INT
+		case(GL_INT):{
+			offsetSize = 4;
+			u32array = (u32 *)lists;
+		}
+		break;
+
+		//GLuint	32			Unsigned binary integer					GL_UNSIGNED_INT
+		case(GL_UNSIGNED_INT):{
+			offsetSize = 4;
+			u32array = (u32 *)lists;
+		}
+		break;
+
+		//GLfloat	32			An IEEE-754 floating-point value		GL_FLOAT
+		case(GL_FLOAT):{
+			offsetSize = 4;
+			u32array = (u32 *)lists;
+		}
+		break;
+	}
+
+	//Valid? Run each one of them
+	if((n > 0) && (offsetSize != -1)){
+		int i = 0;
+		for(i = 0; i < n; i++){
+			GLuint listName = (GLuint)-1;
+			if(u8array != NULL){
+				listName = (GLuint)u8array[i];
+			}
+			else if(u16array != NULL){
+				listName = (GLuint)u16array[i];
+			}
+			else if(u32array != NULL){
+				listName = (GLuint)u32array[i];
+			}
+			if((GLuint)listName != (GLuint)-1){
+				glCallList(listName);
+			}
+		}
+	}
+}
+
+void glDeleteLists(GLuint list, GLsizei range){
+	if(list >= 1){
+		list--; //assign current interCompiled_DLPtr (new) to a List
+	}
+	if (list >= sizeof(GLDLEnumerator)){
+		return;
+	}
+
+	int lowestCurDLInCompiledDLOffset = -1;
+	int i = 0;
+	for(i = 0; i < range; i++){
+		u32 * InternalDL = getInternalDisplayListBuffer();
+		int curDLInCompiledDLOffset = GLDLEnumerator[list + i];
+		if((u32)curDLInCompiledDLOffset != DL_INVALID){
+			u32 * currentPhysicalDisplayListStart = (u32 *)&InternalDL[curDLInCompiledDLOffset];
+			GLDLEnumerator[list + i] = DL_INVALID;
+
+			if(lowestCurDLInCompiledDLOffset < curDLInCompiledDLOffset){
+				lowestCurDLInCompiledDLOffset = curDLInCompiledDLOffset;
+			}
+		}
+	}
+	globalGLCtx.mode = (u32)GL_NONE;
+	isNdsDisplayListUtilsCallList = false;
+	
+	//Find the lowest internal buffer offset assigned, just deleted, and rewind it so it points to unallocated Internal DL memory
+	if(lowestCurDLInCompiledDLOffset != -1){
+		interCompiled_DLPtr = lowestCurDLInCompiledDLOffset;
+	}
+}
+
+/*
  Using display lists
 We have seen how to creates a display list.
 You should now want to use it :
@@ -173,9 +338,120 @@ type is the type of information stored in referenceOffsets. It is typically : GL
 indiceOffset is an array that holds offset reference to the desired list to call by comparison to listBase (Ex: if listBase = 100 and you want to draw a list refered by 103, its offset reference is 3).
 */
 
+void glTexCoord2f(GLfloat s, GLfloat t){
+	glTexCoord2t16(floattot16(s), floattot16(t));
+}
 
-//verbs implemented so far: glNormal3f
-//verbs missing: glTexCoord2f, glEnd, glEndList
+//////////////////////////////////////////////////////////////////////
+//glTexCoord specifies texture coordinates in one, two, three, or four dimensions. 
+//glTexCoord1 sets the current texture coordinates to s 0 0 1 ; 
+//glTexCoord2 sets them to s t 0 1 . 
+//glTexCoord3 specifies the texture coordinates as s t r 1
+//glTexCoord4 defines all four components explicitly as s t r q .
+
+//Note: uv == ((u << 16) | (v & 0xFFFF))
+void glTexCoord1i(uint32 uv){
+	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
+		//4000488h 22h 1  1   TEXCOORD - Set Texture Coordinates (W)
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getFIFO_TEX_COORD(); //Unpacked Command format
+		interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)uv; interCompiled_DLPtr++; //Unpacked Command format
+	}
+	else{
+		GFX_TEX_COORD = uv;
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void glTexCoord2t16(t16 u, t16 v){
+	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
+		//4000488h 22h 1  1   TEXCOORD - Set Texture Coordinates (W)
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getFIFO_TEX_COORD(); //Unpacked Command format
+		interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)TEXTURE_PACK(u, v); interCompiled_DLPtr++; //Unpacked Command format
+	}
+	else{
+		GFX_TEX_COORD = (u << 16) + v;
+	}
+}
+//////////////////////////////////////////////////////////////////////
+
+//Primitive types
+//0  Separate Triangle(s)    ;3*N vertices per N triangles
+//1  Separate Quadliteral(s) ;4*N vertices per N quads
+//2  Triangle Strips         ;3+(N-1) vertices per N triangles
+//3  Quadliteral Strips      ;4+(N-1)*2 vertices per N quads
+void glBegin(int primitiveType){
+	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
+		//4000500h 40h 1  1   BEGIN_VTXS - Start of Vertex List (W)
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getFIFO_BEGIN(); //Unpacked Command format
+		interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)primitiveType; interCompiled_DLPtr++; //Unpacked Command format
+	}
+	else{
+		GFX_BEGIN = (u32)primitiveType;
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+void glEnd( void){
+	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
+		//4000504h 41h -  1   END_VTXS - End of Vertex List (W)
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getFIFO_END(); //Unpacked Command format
+		interCompiled_DLPtr++;
+		//no args used by this GX command
+	}
+	else{
+		GFX_END = 0;
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+
+u16 lastVertexColor = 0;
+//set the current color
+//4000480h - Cmd 20h - COLOR - Directly Set Vertex Color (W)
+//Parameter 1, Bit 0-4    Red
+//Parameter 1, Bit 5-9    Green
+//Parameter 1, Bit 10-14  Blue
+
+void glColor3b(uint8 red, uint8 green, uint8 blue){
+	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
+		//4000480h 20h 1  1   COLOR - Directly Set Vertex Color (W)
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getFIFO_COLOR(); //Unpacked Command format
+		interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)RGB15(red, green, blue); interCompiled_DLPtr++; //Unpacked Command format
+	}
+	else{
+		switch(globalGLCtx.primitiveShadeModelMode){
+			//light vectors are todo
+			case(GL_FLAT):{
+				//otherwise override all colors to be the same subset of whatever color was passed here
+				if(lastVertexColor == 0){
+					lastVertexColor = RGB15(red, green, blue);
+				}
+				GFX_COLOR = lastVertexColor;
+			}
+			break;
+			
+			case(GL_SMOOTH):{
+				//Smooth shading, the default by DS, causes the computed colors of vertices to be interpolated as the primitive is rasterized, 
+				//typically assigning different colors to each resulting pixel fragment. 
+				GFX_COLOR = (vuint32)RGB15(red, green, blue);			
+			}
+			break;
+			
+			default:{
+				//error! call glInit(); first
+			}
+			break;
+		}
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+
 void glNormal3b(const GLbyte v){
 	glNormal3i((const GLint )v);
 }
@@ -202,31 +478,53 @@ void glNormal3i(const GLint v){
 	}
 }
 
-//Todo: Implement special Test Case (below) which also happens to be the same as https://community.khronos.org/t/glcalllist-not-working/58999
-/*
-GLuint list;
-void CreateLists(){
-    list = glGenLists (2);//Generate two display lists,
-    if(list){
-        glNewList (list, GL_COMPILE);//Create the first display list
-        for (int i = 0; i <10; i ++){ //Draw 10 cubes
-            glPushMatrix();
-            glRotatef(36*i,0.0,0.0,1.0);
-            glTranslatef(10.0,0.0,0.0);
-            DrawCube();
-            glPopMatrix(1);
-        }
-        glEndList ();//The first display list is created
+//////////////////////////////////////////////////////////////////////
 
-        glNewList (list + 1, GL_COMPILE);//Create a second display list
-        for (int i = 0; i <20; i ++)//Draw 20 triangles{
-            glPushMatrix() ;
-            glRotatef(18*i,0.0,0.0,1.0) ;
-            glTranslatef(15.0,0.0,0.0) ;
-            DrawPyramid ();//DrawPyramid () was introduced in the previous chapter
-            glPopMatrix(1);
-        }
-        glEndList ();//The second display list is created
-    }
+void glVertex3v16(v16 x, v16 y, v16 z){
+	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
+		//400048Ch 23h 2  9   VTX_16 - Set Vertex XYZ Coordinates (W)
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getFIFO_VERTEX16(); //Unpacked Command format
+		interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)VERTEX_PACK(x, y); interCompiled_DLPtr++; //Unpacked Command format
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)VERTEX_PACK(z, 0); interCompiled_DLPtr++; //Unpacked Command format
+	}
+	else{
+		GFX_VERTEX16 = (y << 16) | (x & 0xFFFF);
+		GFX_VERTEX16 = ((uint32)(uint16)z);
+	}
 }
-*/
+
+//////////////////////////////////////////////////////////////////////
+
+void glVertex3v10(v10 x, v10 y, v10 z){
+	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
+		//4000490h 24h 1  8   VTX_10 - Set Vertex XYZ Coordinates (W)
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getFIFO_VERTEX10(); //Unpacked Command format
+		interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)VERTEX_PACKv10(x, y, z); interCompiled_DLPtr++; //Unpacked Command format
+	}
+	else{
+		GFX_VERTEX16 = (y << 16) | (x & 0xFFFF);
+		GFX_VERTEX16 = ((uint32)(uint16)z);
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+//Parameters. x. Specifies the x-coordinate of a vertex. y. Specifies the y-coordinate of a vertex
+void glVertex2v16(v16 x, v16 y){
+	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
+		//4000494h 25h 1  8   VTX_XY - Set Vertex XY Coordinates (W)
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getFIFO_VTX_XY(); //Unpacked Command format
+		interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)VERTEX_PACK(x, y); interCompiled_DLPtr++; //Unpacked Command format
+	}
+	else{
+		GFX_VERTEX16 = (y << 16) | (x & 0xFFFF);
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+//Todo
+//4000498h 26h 1  8   VTX_XZ - Set Vertex XZ Coordinates (W)
+//400049Ch 27h 1  8   VTX_YZ - Set Vertex YZ Coordinates (W)
+//40004A0h 28h 1  8   VTX_DIFF - Set Relative Vertex Coordinates (W)

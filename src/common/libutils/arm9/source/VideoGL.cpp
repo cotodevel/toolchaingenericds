@@ -60,21 +60,6 @@ struct GLContext globalGLCtx;
 
 #ifdef NO_GL_INLINE
 //////////////////////////////////////////////////////////////////////
-
-void glBegin(int mode)
-{
-  GFX_BEGIN = mode;
-}
-
-//////////////////////////////////////////////////////////////////////
-
-  void glEnd( void)
-{
-  GFX_END = 0;
-}
-
-//////////////////////////////////////////////////////////////////////
-
   void glClearColor(uint8 red, uint8 green, uint8 blue)
 {
   GFX_CLEAR_COLOR = RGB15(red, green, blue);
@@ -85,44 +70,6 @@ void glBegin(int mode)
   void glClearDepth(uint16 depth)
 {
   GFX_CLEAR_DEPTH = depth;
-}
-
-
-//////////////////////////////////////////////////////////////////////
-
-void glColor(rgb color)
-{
-  GFX_COLOR = (vuint32)color;
-}
-
-//////////////////////////////////////////////////////////////////////
-
-  void glVertex3v16(v16 x, v16 y, v16 z)
-{
-  GFX_VERTEX16 = (y << 16) | (x & 0xFFFF);
-  GFX_VERTEX16 = ((uint32)(uint16)z);
-}
-
-//////////////////////////////////////////////////////////////////////
-
-  void glVertex2v16(int yx, v16 z)
-{
-  GFX_VERTEX16 = yx;
-  GFX_VERTEX16 = (z);
-}
-
-//////////////////////////////////////////////////////////////////////
-
-  void glTexCoord2t16(t16 u, t16 v)
-{
-  GFX_TEX_COORD = (u << 16) + v;
-}
-
-//////////////////////////////////////////////////////////////////////
-
-  void glTexCoord1i(uint32 uv)
-{
-  GFX_TEX_COORD = uv;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -213,10 +160,6 @@ void glTranslate3f32(f32 x, f32 y, f32 z){
 }
 
 //////////////////////////////////////////////////////////////////////
-void glTranslatef(float x, float y, float z){
-	glTranslate3f32(floattof32(x), floattof32(y), floattof32(z));
-}
-//////////////////////////////////////////////////////////////////////
 
 void glTranslatef32(int x, int y, int z) {
 	MATRIX_TRANSLATE = x;
@@ -294,8 +237,13 @@ void glMaterialShinnyness(void)
 }
 
 #endif  //endif #no inline
-//////////////////////////////////////////////////////////////////////
 
+
+//////////////////////////////////////////////////////////////////////
+void glTranslatef(float x, float y, float z){
+	glTranslate3f32(floattof32(x), floattof32(y), floattof32(z));
+}
+//////////////////////////////////////////////////////////////////////
 
 static uint16 enable_bits = GL_TEXTURE_2D | (1<<13) | (1<<14);
 
@@ -1052,37 +1000,16 @@ int glTexImage2D(int target, int empty1, int type, int sizeX, int sizeY, int emp
 	return 1;
 }
 
-u16 lastVertexColor = 0;
-void glColor3b(uint8 red, uint8 green, uint8 blue){
-	switch(globalGLCtx.primitiveShadeModelMode){
-		//light vectors are todo
-		case(GL_FLAT):{
-			//otherwise override all colors to be the same subset of whatever color was passed here
-			if(lastVertexColor == 0){
-				lastVertexColor = RGB15(red, green, blue);
-			}
-			GFX_COLOR = lastVertexColor;
-		}
-		break;
-		
-		case(GL_SMOOTH):{
-			//Smooth shading, the default by DS, causes the computed colors of vertices to be interpolated as the primitive is rasterized, 
-			//typically assigning different colors to each resulting pixel fragment. 
-			GFX_COLOR = (vuint32)RGB15(red, green, blue);			
-		}
-		break;
-		
-		default:{
-			//error! call glInit(); first
-		}
-		break;
-	}
+//x , y vertex coords in v16 format
+void glVertex2i(int x, int y) {
+    glVertex2v16((v16)x, (v16)y);
 }
 
-//2d point in v16 coords
-void glVertex2i(int x, int y) {
-    glVertex3v16((v16)x, (v16)y, (v16)0);
+//x , y , z vertex coords in v16 format
+void glVertex3f(GLfloat x, GLfloat y, GLfloat z){
+	glVertex3v16(floattov16(x), floattov16(y), floattov16(z));
 }
+
 
 void glShadeModel(GLenum mode){
 	globalGLCtx.primitiveShadeModelMode = mode;
@@ -1176,6 +1103,6 @@ void glCallListGX(const u32* list) {
 	#endif
 
 	#ifdef WIN32
-	printf("glCallListGX: Executing DL List. Size: %d", list[0]);
+	printf("\nglCallListGX: Executing DL List. Size: %d\n", list[0]);
 	#endif
 }
