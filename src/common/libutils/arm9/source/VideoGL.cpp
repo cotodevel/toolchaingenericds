@@ -855,9 +855,7 @@ uint16* vramGetBank(uint16 *addr)
 		return VRAM_H;
 	else return VRAM_I;
 	#endif
-	#ifdef WIN32
 	return NULL;
-	#endif
 }
 
 int vramIsTextureBank(uint16 *addr)
@@ -888,12 +886,8 @@ int vramIsTextureBank(uint16 *addr)
 			return 1;
 		else return 0;
 	}
-	else 
-		return 0;
 	#endif
-	#ifdef WIN32
 	return 0;
-	#endif
 }
 
 uint32* getNextTextureSlot(int size)
@@ -915,9 +909,7 @@ uint32* getNextTextureSlot(int size)
 
 	else return result;	
 	#endif
-	#ifdef WIN32
 	return 0;
-	#endif
 }
 
 ///////////////////////////////////////
@@ -1103,6 +1095,6 @@ void glCallListGX(const u32* list) {
 	#endif
 
 	#ifdef WIN32
-	printf("\nglCallListGX: Executing DL List. Size: %d\n", list[0]);
+	printf("\nglCallListGX: Executing DL List. Size: %d\n", (int)list[0]);
 	#endif
 }
