@@ -176,10 +176,6 @@ void initHardware(u8 DSHardware) {
 	resetMemory_ARMCores(DSHardwareReadFromFlash);
 	IRQInit(DSHardwareReadFromFlash);
 	
-	//Init SoundSampleContext
-	if(SoundSampleContextInitARM7LibUtilsCallback != NULL){
-		SoundSampleContextInitARM7LibUtilsCallback();
-	}
 	initSound();
 	
 	#ifdef TWLMODE

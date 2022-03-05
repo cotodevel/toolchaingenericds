@@ -83,7 +83,7 @@ GLuint glGenLists(GLsizei	range){
     if(range < MAX_Internal_DisplayList_Count){
         int i = 0;
         interCompiled_DLPtr = 1; //GL index 0 is reserved for DL size
-		for(i = 0; i < /*(range-1)*/ sizeof(GLDLEnumerator); i++ ){
+		for(i = 0; i < 128; i++ ){
             /*
 			Internal_DL[i].DisplayListNameAssigned = DL_INVALID;//glNewList() assigns the index (name of a display list) //=i;
             Internal_DL[i].isDisplayListAssigned = true;

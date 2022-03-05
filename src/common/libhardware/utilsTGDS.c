@@ -72,11 +72,10 @@ int sndRate = 0;
 #endif
 
 #ifdef ARM9
+__attribute__((section(".dtcm")))
 struct soundPlayerContext soundData;
+
 bool updateRequested = false;
-void flushSoundContext(int soundContextIndex){
-	
-}
 #endif
 
 bool __dsimode = false; // set by detecting DS model from firmware
@@ -1253,13 +1252,10 @@ wifiUpdateVBLANKARM7LibUtils_fn wifiUpdateVBLANKARM7LibUtilsCallback = NULL;
 wifiInterruptARM7LibUtils_fn wifiInterruptARM7LibUtilsCallback = NULL;
 timerWifiInterruptARM9LibUtils_fn timerWifiInterruptARM9LibUtilsCallback = NULL;
 
-// SoundStream / Sound Sample ctx
-SoundSampleContextInitARM7LibUtils_fn SoundSampleContextInitARM7LibUtilsCallback = NULL;
-SoundSampleContextEnableARM7LibUtils_fn SoundSampleContextEnableARM7LibUtilsCallback = NULL;
-SoundSampleContextDisableARM7LibUtils_fn SoundSampleContextDisableARM7LibUtilsCallback = NULL;
-
+// SoundStream
 SoundStreamTimerHandlerARM7LibUtils_fn SoundStreamTimerHandlerARM7LibUtilsCallback = NULL;
-SoundStreamStopSoundARM7LibUtils_fn SoundStreamStopSoundARM7LibUtilsCallback = NULL;
+SoundStreamStopSoundARM7LibUtils_fn SoundStreamStopSoundARM7LibUtilsCallback = NULL; //so far here
+
 SoundStreamSetupSoundARM7LibUtils_fn SoundStreamSetupSoundARM7LibUtilsCallback = NULL;
 
 #ifdef ARM7
@@ -1276,15 +1272,11 @@ SoundStreamUpdateSoundStreamARM9LibUtils_fn SoundStreamUpdateSoundStreamARM9LibU
 void initializeLibUtils9(
 		HandleFifoNotEmptyWeakRefLibUtils_fn HandleFifoNotEmptyWeakRefLibUtilsCall, //ARM7 & ARM9
 		timerWifiInterruptARM9LibUtils_fn timerWifiInterruptARM9LibUtilsCall, //ARM9 
-		SoundSampleContextEnableARM7LibUtils_fn SoundSampleContextEnableARM7LibUtilsCall, // ARM7 & ARM9: void EnableSoundSampleContext(int SndSamplemode)
-		SoundSampleContextDisableARM7LibUtils_fn SoundSampleContextDisableARM7LibUtilsCall,	//ARM7 & ARM9: void DisableSoundSampleContext()
 		SoundStreamStopSoundStreamARM9LibUtils_fn SoundStreamStopSoundStreamARM9LibUtilsCall,	//ARM9: bool stopSoundStream(struct fd * tgdsStructFD1, struct fd * tgdsStructFD2, int * internalCodecType)
 		SoundStreamUpdateSoundStreamARM9LibUtils_fn SoundStreamUpdateSoundStreamARM9LibUtilsCall //ARM9: void updateStream() 
 	){
 	libutilisFifoNotEmptyCallback = HandleFifoNotEmptyWeakRefLibUtilsCall;
 	timerWifiInterruptARM9LibUtilsCallback = timerWifiInterruptARM9LibUtilsCall;
-	SoundSampleContextEnableARM7LibUtilsCallback = SoundSampleContextEnableARM7LibUtilsCall;
-	SoundSampleContextDisableARM7LibUtilsCallback = SoundSampleContextDisableARM7LibUtilsCall;
 	SoundStreamStopSoundStreamARM9LibUtilsCallback = SoundStreamStopSoundStreamARM9LibUtilsCall;
 	SoundStreamUpdateSoundStreamARM9LibUtilsCallback = SoundStreamUpdateSoundStreamARM9LibUtilsCall;
 	
@@ -1301,9 +1293,6 @@ void initializeLibUtils7(
 	SoundStreamTimerHandlerARM7LibUtils_fn SoundStreamTimerHandlerARM7LibUtilsCall, //ARM7: void TIMER1Handler()
 	SoundStreamStopSoundARM7LibUtils_fn SoundStreamStopSoundARM7LibUtilsCall, 	//ARM7: void stopSound()
 	SoundStreamSetupSoundARM7LibUtils_fn SoundStreamSetupSoundARM7LibUtilsCall,	//ARM7: void setupSound()
-	SoundSampleContextInitARM7LibUtils_fn SoundSampleContextInitARM7LibUtilsCall, //ARM7: initSoundSampleContext()
-	SoundSampleContextEnableARM7LibUtils_fn SoundSampleContextEnableARM7LibUtilsCall, // ARM7 & ARM9: void EnableSoundSampleContext(int SndSamplemode)
-	SoundSampleContextDisableARM7LibUtils_fn SoundSampleContextDisableARM7LibUtilsCall,	//ARM7 & ARM9: void DisableSoundSampleContext()
 	initMallocARM7LibUtils_fn initMallocARM7LibUtilsCall	//ARM7: void initARM7Malloc(u32 ARM7MallocStartaddress, u32 ARM7MallocSize);
 ){
 	libutilisFifoNotEmptyCallback = HandleFifoNotEmptyWeakRefLibUtilsCall;
@@ -1312,9 +1301,6 @@ void initializeLibUtils7(
 	SoundStreamTimerHandlerARM7LibUtilsCallback = SoundStreamTimerHandlerARM7LibUtilsCall;
 	SoundStreamStopSoundARM7LibUtilsCallback = SoundStreamStopSoundARM7LibUtilsCall;
 	SoundStreamSetupSoundARM7LibUtilsCallback = SoundStreamSetupSoundARM7LibUtilsCall;
-	SoundSampleContextInitARM7LibUtilsCallback = SoundSampleContextInitARM7LibUtilsCall;
-	SoundSampleContextEnableARM7LibUtilsCallback = SoundSampleContextEnableARM7LibUtilsCall;
-	SoundSampleContextDisableARM7LibUtilsCallback = SoundSampleContextDisableARM7LibUtilsCall;
 	initMallocARM7LibUtilsCallback = initMallocARM7LibUtilsCall;
 }
 #endif

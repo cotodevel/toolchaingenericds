@@ -465,24 +465,6 @@ void HandleFifoNotEmpty(){
 			}
 			break;
 			
-			case((uint32)TGDS_ARM7_ENABLESOUNDSAMPLECTX):{
-				if(SoundSampleContextEnableARM7LibUtilsCallback != NULL){
-					SoundSampleContextEnableARM7LibUtilsCallback((int)data0);
-				}
-			}
-			break;
-			case((uint32)TGDS_ARM7_DISABLESOUNDSAMPLECTX):{
-				if(SoundSampleContextDisableARM7LibUtilsCallback != NULL){
-					SoundSampleContextDisableARM7LibUtilsCallback();
-				}
-			}
-			break;
-			
-			case((uint32)TGDS_ARM7_INITSTREAMSOUNDCTX):{
-				//initSoundStream(data0);
-			}
-			break;
-			
 			case((uint32)TGDS_ARM7_SETUPEXCEPTIONHANDLER):{
 				exceptionArmRegsShared = (uint8*)data0;		//data0 == ARM9's exceptionArmRegs
 				memset(exceptionArmRegsShared, 0, 0x20);	//same as exceptionArmRegs[0x20]
@@ -492,37 +474,6 @@ void HandleFifoNotEmpty(){
 			
 			case((uint32)FIFO_INITSOUND):{
 				initSound();
-			}
-			break;
-			
-			case((uint32)FIFO_PLAYSOUND):{
-				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg					
-				int sampleRate = (uint32)fifomsg[50];
-				u32* data = (u32*)fifomsg[51];
-				u32 bytes = (uint32)fifomsg[52];
-				u32 packedSnd = (uint32)fifomsg[53];
-	
-				u8 channel = (u8)((packedSnd >> 24)&0xff);
-				u8 vol = (u8)((packedSnd >> 16)&0xff);
-				u8 pan = (u8)((packedSnd >> 8)&0xff);
-				u8 format = (u8)(packedSnd&0xff);
-				
-				//Try to play the sample through the specified channel
-				s32 chan = isFreeSoundChannel(channel);
-				if(chan != -1){ //means free channel / or channel is not auto (-1)
-					//startSound(sampleRate, (const void*)data, bytes, chan, vol, pan, format);
-				}
-				//Otherwise, use a random alloc'd channel
-				else{
-					chan = getFreeSoundChannel();
-					if (chan >= 0){
-						//startSound(sampleRate, (const void*)data, bytes, chan, vol, pan, format);
-					}
-				}
-				fifomsg[50] = 0;
-				fifomsg[51] = 0;
-				fifomsg[52] = 0;
-				fifomsg[53] = 0;
 			}
 			break;
 			
@@ -720,12 +671,6 @@ void HandleFifoNotEmpty(){
 					}
 					break;
 				}
-			}
-			break;
-			
-			case((uint32)FIFO_FLUSHSOUNDCONTEXT):{
-				int curChannelFreed = (int)data0;
-				flushSoundContext(curChannelFreed);
 			}
 			break;
 			

@@ -57,7 +57,7 @@ TWL support: Normatt (SD dldi code) / fincs (codec) / WinterMute / others (updat
 ---------------------------------------------
 Guidelines:
 - TGDS homebrew fully implements NTR (DS mode) and TWL (DSi mode) support. All programs compiled for NTR mode will automatically generate a TWL binary counterpart. Both scenarios having support for DLDI or internal SD through SDK functions.  
-- If TGDS homebrew doesn't boot, wait for an error screen to happen, if it does happen, notify me.
+- If TGDS homebrew doesn't boot, or boots incorrectly (dead touchscreen, no audio, etc), first try to reload such homebrew through ToolchainGenericDS-multiboot, otherwise, notify me.
 - If TGDS homebrew doesn't initialize filesystem, make sure you use FAT32 64K/32K/16K/4K, or FAT16 64K/32K/16K/4K, anything else is untested and unsupported.
 - NTR Mode: Make sure to DLDI patch TGDS homebrew. For TGDS homebrew development, you can use TGDS-RAMDISK DLDI or others. TWL mode doesn't care because it maps the internal SD as filesystem.
 
@@ -106,8 +106,8 @@ Features:
 	-GDB Debugger (allows to read NDS memory real-time through TCP!)
 	-WIP other features.
 - TGDS drivers: 
-	- ARM9DLDI and ARM7DLDI (DSi), basic sound playback, FIFO, interrupt handlers, keypad, touchscreen through the TGDS driver (embedded in all TGDS Projects) so you can focus right into coding rather than NDS hardware.
-	- TGDS Sound API: Mono / Stereo WAV 8-bit signed -- 16-bit signed -- 24-bit signed -- 32-bit signed sound streaming support + sound samples (sound samples should load onto memory, play them then be deallocated). 
+	- Default ARM7 DLDI driver, FIFO, interrupt handlers, keypad, touchscreen through the TGDS driver (embedded in all TGDS Projects) so you can focus right into coding rather than NDS hardware.
+	- TGDS Sound API: WAV Mono - Stereo 8-bit signed -- 16-bit signed -- 24-bit signed -- 32-bit signed sound streaming support + sound samples. ADPCM sound stream decoding.
 	- TGDS Events: Allow to set several events (like screen power off, keypress or sound play samples, etc depending on scripted files). WIP: Add record event methods.
 	- WIP: 3D Support
 	- DLDI RAMDISK Support. DLDI in emulator environment.

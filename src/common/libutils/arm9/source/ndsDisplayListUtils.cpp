@@ -796,8 +796,8 @@ int BuildNDSGXDisplayListObjectFromFile(char * filename, struct ndsDisplayListDe
 			TGDSARM9Free(binDisplayList);
 			fclose(outFileGen);
 		}
+		ret = ((int)(curPtr - startPtr) - 1);
 	}
-	ret = ((int)(curPtr - startPtr) - 1);
 	return ret;
 }
 
@@ -1529,13 +1529,13 @@ bool ndsDisplayListUtilsTestCaseARM9(char * filename, char * outNDSGXBuiltDispla
 		FILE * fout = fopen(outNDSGXBuiltDisplayList, "w+");
 		if(fout != NULL){
 			if(fwrite(builtDisplayList, 1, displayListSize, fout) > 0){
-				fclose(fout);
 				printf("Rebuild OK");
 				retStatus = true;
 			}
 			else{
 				printf("Rebuild ERROR");
 			}
+			fclose(fout);
 		}
 		TGDSARM9Free(builtDisplayList);
 	}

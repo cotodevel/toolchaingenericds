@@ -575,8 +575,6 @@ int IMA_Adpcm_Player::play( FILE * ADFileHandle, bool loop_audio, bool automatic
 	cutOff = false;
 	sndPaused = false;
 	
-	DisableSoundSampleContext();	//Disable ARM7 TGDS Sound stuff because decoders require a lot of power.
-	
 	// IMA-ADPCM file
 	int fsize = FS_getFileSizeFromOpenHandle(ADFileHandle);
 	ADPCMchunksize = buffer_length;
