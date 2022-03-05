@@ -31,6 +31,7 @@ __attribute__((optimize("Os")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
+//Writes to ARM7 Sound Channel through direct interrupt, PSG mode.
 void writeARM7SoundChannel(int channel, u32 cnt, u16 freq){
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	TGDSIPC->soundIPC.psgChannel = channel;
@@ -46,6 +47,7 @@ __attribute__((optimize("Os")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
+//Writes to ARM7 Sound Channel through direct interrupt, dataSrc must be in EWRAM.
 void writeARM7SoundChannelFromSource(int channel, u32 cnt, u16 freq, u32 dataSrc, u32 dataSize){
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	TGDSIPC->soundIPC.psgChannel = channel;

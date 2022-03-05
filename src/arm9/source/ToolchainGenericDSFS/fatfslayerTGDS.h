@@ -255,8 +255,6 @@ extern SoundStreamUpdateSoundStreamARM9LibUtils_fn SoundStreamUpdateSoundStreamA
 extern void initializeLibUtils9(
 	HandleFifoNotEmptyWeakRefLibUtils_fn HandleFifoNotEmptyWeakRefLibUtilsCall, //ARM7 & ARM9
 	timerWifiInterruptARM9LibUtils_fn timerWifiInterruptARM9LibUtilsCall, //ARM9 
-	SoundSampleContextEnableARM7LibUtils_fn SoundSampleContextEnableARM7LibUtilsCall, // ARM7 & ARM9: void EnableSoundSampleContext(int SndSamplemode)
-	SoundSampleContextDisableARM7LibUtils_fn SoundSampleContextDisableARM7LibUtilsCall,	//ARM7 & ARM9: void DisableSoundSampleContext()
 	SoundStreamStopSoundStreamARM9LibUtils_fn SoundStreamStopSoundStreamARM9LibUtilsCall,	//ARM9: bool stopSoundStream(struct fd * tgdsStructFD1, struct fd * tgdsStructFD2, int * internalCodecType)
 	SoundStreamUpdateSoundStreamARM9LibUtils_fn SoundStreamUpdateSoundStreamARM9LibUtilsCall //ARM9: void updateStream() 
 );

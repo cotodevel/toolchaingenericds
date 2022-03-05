@@ -35,138 +35,6 @@ USA
 #include "biosTGDS.h"
 #endif
 
-//Sound Sample Context: Plays raw sound samples at VBLANK intervals
-void startSoundSample(int sampleRate, const void* data, u32 bytes, u8 channel, u8 vol,  u8 pan, u8 format)
-{
-	#ifdef ARM9
-	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
-	coherent_user_range_by_size((uint32)data, bytes);	//coherent sound buffer if within cached EWRAM
-	
-	fifomsg[50] = (uint32)sampleRate;
-	fifomsg[51] = (uint32)data;
-	fifomsg[52] = (uint32)bytes;
-	u32 packedSnd = (u32)( ((channel&0xff) << 24) | ((vol&0xff) << 16) | ((pan&0xff) << 8) | (format&0xff) );
-	fifomsg[53] = (uint32)packedSnd;
-	SendFIFOWordsITCM(FIFO_PLAYSOUND, (uint32)fifomsg);
-	#endif
-	
-	#ifdef ARM7
-	//If channel busy, allocate it and play later.
-	if(isFreeSoundChannel(channel) == -1){
-		channel = (u8)getFreeSoundChannel();
-		struct soundSampleContext * curSoundSampleContext = getsoundSampleContextByIndex(channel);
-		curSoundSampleContext->sampleRate = (int)sampleRate;
-		curSoundSampleContext->arm9data = (s16 *)data;//
-		curSoundSampleContext->arm9LInterpolated = NULL;
-		curSoundSampleContext->bytes = bytes;
-		curSoundSampleContext->channel = channel;
-		curSoundSampleContext->vol = vol;
-		curSoundSampleContext->pan = pan;
-		curSoundSampleContext->format = format;
-		curSoundSampleContext->status = SOUNDSAMPLECONTEXT_PENDING;
-		return;
-	}
-	
-	SCHANNEL_TIMER(channel)  = SOUND_FREQ(sampleRate);
-	SCHANNEL_SOURCE(channel) = (u32)data;
-	SCHANNEL_LENGTH(channel) = bytes >> 2;
-	SCHANNEL_CR(channel)     = SCHANNEL_ENABLE | SOUND_ONE_SHOT | SOUND_VOL(vol) | SOUND_PAN(pan) | (format << 29);
-	#endif
-}
-
-
-#ifdef ARM7
-int SoundTGDSCurChannel = 0;
-int soundSampleContextCurrentMode = SOUNDSAMPLECONTEXT_SOUND_IDLE;
-void initSoundSampleContext(){
-	int i = 0;
-	for(i = 0; i < SoundSampleContextChannels; i++){
-		struct soundSampleContext * soundSampleCtx = getsoundSampleContextByIndex(i);
-		freesoundSampleContext(soundSampleCtx);
-	}
-	EnableSoundSampleContext(SOUNDSAMPLECONTEXT_SOUND_SAMPLEPLAYBACK);
-}
-#endif
-
-struct soundSampleContext * getsoundSampleContextByIndex(int index){
-	if((index < 0) || (index > SoundSampleContextChannels)){
-		return NULL;
-	}
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	return(struct soundSampleContext *)&TGDSIPC->soundContextShared.soundSampleCxt[index];
-}
-
-bool freesoundSampleContext(struct soundSampleContext * sampleInst){
-	if(sampleInst != NULL){
-		memset(sampleInst, 0, sizeof(struct soundSampleContext));		
-		sampleInst->sampleRate = -1;
-		sampleInst->arm9data = NULL;
-		sampleInst->bytes = -1;
-		sampleInst->channel = -1;
-		sampleInst->vol = -1;
-		sampleInst->pan = -1;
-		sampleInst->status = -1;
-		sampleInst->format = -1;
-		sampleInst->status = SOUNDSAMPLECONTEXT_IDLE;
-		return true;
-	}
-	return false;
-}
-
-//Returns any available SoundSampleContext, or NULL
-struct soundSampleContext * getFreeSoundSampleContext(){
-	int i = 0;
-	for(i = 0; i < SoundSampleContextChannels; i++){
-		struct soundSampleContext * thisSoundSampleCtx = getsoundSampleContextByIndex(i);
-		if(thisSoundSampleCtx->status == SOUNDSAMPLECONTEXT_IDLE){
-			return thisSoundSampleCtx;
-		}
-	}
-	return NULL;
-}
-
-#ifdef ARM9
-
-//Allocates by free sampleContext. Sound Sample Context is queued
-//Returns: true if success, false if full samples alloc'ed
-bool setSoundSampleContext(int sampleRate, u32 * data, u32 bytes, u8 channel, u8 vol, u8 pan, u8 format){
-	struct soundSampleContext * sampleInst = getFreeSoundSampleContext();
-	if(sampleInst != NULL){
-		sampleInst->sampleRate = sampleRate;
-		sampleInst->arm9data = (s16*)data;
-		sampleInst->bytes = bytes;
-		sampleInst->channel = channel;
-		sampleInst->vol = vol;
-		sampleInst->pan = pan;
-		sampleInst->format = format;
-		sampleInst->status = SOUNDSAMPLECONTEXT_PENDING;
-		return true;
-	}
-	return false;
-}
-
-#endif
-
-void EnableSoundSampleContext(int SndSamplemode){
-	#ifdef ARM7
-	soundSampleContextCurrentMode = SndSamplemode;
-	#endif
-	#ifdef ARM9
-	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
-	setValueSafe(&fifomsg[60], (uint32)SndSamplemode);
-	SendFIFOWords(TGDS_ARM7_ENABLESOUNDSAMPLECTX, 0xFF);
-	#endif
-}
-
-void DisableSoundSampleContext(){
-	#ifdef ARM7
-	soundSampleContextCurrentMode = SOUNDSAMPLECONTEXT_SOUND_IDLE;
-	#endif
-	#ifdef ARM9
-	SendFIFOWords(TGDS_ARM7_DISABLESOUNDSAMPLECTX, 0xFF);
-	#endif
-}
-
 //Sound stream code taken from DSOrganize because it works 100% through interrupts and that's wonderful
 /***************************************************************************
  *                                                                         *
@@ -325,56 +193,6 @@ void stopSound() {
 	REG_IE &= ~IRQ_TIMER1;
 }
 
-//ARM7: Sample Playback handler
-void updateSoundContextSamplePlayback(){
-	bool playSample = false;
-	switch(getSoundSampleContextEnabledStatus()){
-		//Samples
-		case(SOUNDSAMPLECONTEXT_SOUND_SAMPLEPLAYBACK):
-		{
-			playSample = true;
-		}
-		break;
-		
-		case(SOUNDSAMPLECONTEXT_SOUND_STREAMPLAYBACK):{
-			//Only play sound samples when SRC_WAV or SRC_WAVADPCM streams
-			/*	//todo
-			if(soundData.sourceFmt == SRC_WAV){
-				playSample = true;
-			}
-			*/
-		}
-		break;
-	}
-	
-	if(playSample == true){
-		//VBLANK intervals: Look out for assigned channels, playing.
-		struct soundSampleContext * curSoundSampleContext = getsoundSampleContextByIndex(SoundTGDSCurChannel);
-		int thisChannel = curSoundSampleContext->channel;
-		
-		//Returns -1 if channel is busy, or channel if idle
-		if( (isFreeSoundChannel(thisChannel) == thisChannel) && (curSoundSampleContext->status == SOUNDSAMPLECONTEXT_PENDING) ){	//Play sample?
-			startSoundSample(curSoundSampleContext->sampleRate, curSoundSampleContext->arm9data, curSoundSampleContext->bytes, thisChannel, curSoundSampleContext->vol,  curSoundSampleContext->pan, curSoundSampleContext->format);
-			curSoundSampleContext->status = SOUNDSAMPLECONTEXT_PLAYING;
-		}
-		
-		//Returns -1 if channel is busy, or channel if idle
-		if( (isFreeSoundChannel(thisChannel) == thisChannel) && (curSoundSampleContext->status == SOUNDSAMPLECONTEXT_PLAYING) ){	//Idle? free context
-			freesoundSampleContext(curSoundSampleContext);
-			uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-			fifomsg[60] = (uint32)thisChannel;			
-			SendFIFOWords(FIFO_FLUSHSOUNDCONTEXT, 0xFF);
-		}
-		
-		if(SoundTGDSCurChannel > SoundSampleContextChannels){
-			SoundTGDSCurChannel = 0;
-		}
-		else{
-			SoundTGDSCurChannel++;
-		}
-	}
-}
-
 void TIMER1Handler(){	
 	setSwapChannel();
 	SendFIFOWords(ARM9COMMAND_UPDATE_BUFFER, 0xFF);
@@ -389,9 +207,6 @@ bool soundLoaded = false;
 
 __attribute__((section(".dtcm")))
 bool canSend = false;
-
-__attribute__((section(".dtcm")))
-struct soundPlayerContext soundData;
 
 __attribute__((section(".dtcm")))
 int bufCursor;

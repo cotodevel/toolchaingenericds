@@ -89,11 +89,7 @@ typedef void(*wifiUpdateVBLANKARM7LibUtils_fn)();
 typedef void(*wifiInterruptARM7LibUtils_fn)();
 typedef void(*timerWifiInterruptARM9LibUtils_fn)();
 
-// SoundStream / Sound Sample ctx
-typedef void(*SoundSampleContextInitARM7LibUtils_fn)();
-typedef void(*SoundSampleContextEnableARM7LibUtils_fn)(int val);
-typedef void(*SoundSampleContextDisableARM7LibUtils_fn)();
-
+// SoundStream
 typedef void(*SoundStreamTimerHandlerARM7LibUtils_fn)();
 typedef void(*SoundStreamStopSoundARM7LibUtils_fn)();
 typedef void(*SoundStreamSetupSoundARM7LibUtils_fn)();
@@ -231,10 +227,6 @@ extern wifiInterruptARM7LibUtils_fn wifiInterruptARM7LibUtilsCallback;
 extern timerWifiInterruptARM9LibUtils_fn timerWifiInterruptARM9LibUtilsCallback;
 
 //SS
-extern SoundSampleContextInitARM7LibUtils_fn SoundSampleContextInitARM7LibUtilsCallback;
-extern SoundSampleContextEnableARM7LibUtils_fn SoundSampleContextEnableARM7LibUtilsCallback;
-extern SoundSampleContextDisableARM7LibUtils_fn SoundSampleContextDisableARM7LibUtilsCallback;
-
 extern SoundStreamTimerHandlerARM7LibUtils_fn SoundStreamTimerHandlerARM7LibUtilsCallback;
 extern SoundStreamStopSoundARM7LibUtils_fn SoundStreamStopSoundARM7LibUtilsCallback;
 extern SoundStreamSetupSoundARM7LibUtils_fn SoundStreamSetupSoundARM7LibUtilsCallback;
@@ -250,14 +242,12 @@ extern void initializeLibUtils7(
 	SoundStreamTimerHandlerARM7LibUtils_fn SoundStreamTimerHandlerARM7LibUtilsCall, //ARM7: void TIMER1Handler()
 	SoundStreamStopSoundARM7LibUtils_fn SoundStreamStopSoundARM7LibUtilsCall, 	//ARM7: void stopSound()
 	SoundStreamSetupSoundARM7LibUtils_fn SoundStreamSetupSoundARM7LibUtilsCall,	//ARM7: void setupSound()
-	SoundSampleContextInitARM7LibUtils_fn SoundSampleContextInitARM7LibUtilsCall, //ARM7: initSoundSampleContext()
-	SoundSampleContextEnableARM7LibUtils_fn SoundSampleContextEnableARM7LibUtilsCall, // ARM7 & ARM9: void EnableSoundSampleContext(int SndSamplemode)
-	SoundSampleContextDisableARM7LibUtils_fn SoundSampleContextDisableARM7LibUtilsCall,	//ARM7 & ARM9: void DisableSoundSampleContext()
 	initMallocARM7LibUtils_fn initMallocARM7LibUtilsCall	//ARM7: void initARM7Malloc(u32 ARM7MallocStartaddress, u32 ARM7MallocSize);
 );
 #endif
 
 #ifdef ARM9
+extern struct soundPlayerContext soundData;
 extern u32 reloadStatus;
 extern bool updateRequested;
 #endif
