@@ -1092,9 +1092,10 @@ void glCallListGX(const u32* list) {
 	DMAXDAD(0) = 0x4000400;
 	DMAXCNT(0) = DMA_FIFO | count;
 	while(DMAXCNT(0) & DMAENABLED);
+	//printf("(NDS)glCallListGX: Executing DL List. Size: %d", (int)count);
 	#endif
 
 	#ifdef WIN32
-	printf("\nglCallListGX: Executing DL List. Size: %d\n", (int)list[0]);
+	printf("\n(WIN32)glCallListGX: Executing DL List. Size: %d\n", (int)list[0]);
 	#endif
 }

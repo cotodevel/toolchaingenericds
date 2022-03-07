@@ -52,12 +52,29 @@ u32 Compiled_DL_Binary[DL_MAX_ITEMS*MAX_Internal_DisplayList_Count]; //Packed / 
 GLsizei GLDLEnumerator[MAX_Internal_DisplayList_Count];
 
 //Gets the internal Display List buffer used by Display Lists Open GL opcodes.
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
 u32 * getInternalDisplayListBuffer(){
 	return (u32 *)&Compiled_DL_Binary[0];
 }
 
 //listBase
 GLsizei currentListPointer = DL_INVALID;
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
 void GLInitExt(){
 	//memset((char*)&Internal_DL[0], 0, sizeof(Internal_DL));
 	globalGLCtx.mode = GL_COMPILE;
@@ -79,6 +96,14 @@ void GLInitExt(){
 }
 
 //glGenLists returns the first list name in a range of the length you pass to glGenLists.
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
 GLuint glGenLists(GLsizei	range){
     if(range < MAX_Internal_DisplayList_Count){
         int i = 0;
@@ -104,6 +129,14 @@ GLuint glGenLists(GLsizei	range){
 
 //Specifies the offset that's added to the display-list indices in glCallLists() to obtain the final display-list indices. The default display-list base is 0. The list base has no effect on glCallList(), which executes only one display list or on glNewList().
 //Internally, if a new base is set, a pointer to a new section is updated
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
 void glListBase(GLuint base){
 	if(base > 0){
 		base--;
@@ -113,6 +146,14 @@ void glListBase(GLuint base){
 
 //glIsList returns GL_TRUE if list is the name of a display list and returns GL_FALSE if it is not, or if an error occurs.
 //A name returned by glGenLists, but not yet associated with a display list by calling glNewList, is not the name of a display list.
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
 GLboolean glIsList(GLuint list){
 	if(list > 0){
 		list--;
@@ -127,6 +168,14 @@ GLboolean glIsList(GLuint list){
 
 //list:Specifies the display-list name.
 //mode:Specifies the compilation mode, which can be GL_COMPILE or GL_COMPILE_AND_EXECUTE.
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
 void glNewList(GLuint list, GLenum mode){
 	if(list >= 1){
 		list--; //assign current interCompiled_DLPtr (new) to a List
@@ -140,6 +189,14 @@ void glNewList(GLuint list, GLenum mode){
 //When glEndList is encountered, the display-list definition is completed 
 //by associating the list with the unique name list (specified in the glNewList command). 
 //If a display list with name list already exists, it is replaced only when glEndList is called.
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
 void glEndList(void){
 	//If LAST display-list name is GL_COMPILE: actually builds ALL the Display-list generated through the LAST display-list name generated from glNewList(), then compiles it into a GX binary DL. Such binary will be manually executed when glCallList(display-list name) is called 
 	//Else If LAST display-list name is GL_COMPILE_AND_EXECUTE: actually builds ALL the Display-list generated through the LAST display-list name generated from glNewList(), then compiles it into a GX binary DL and executes it inmediately through GX GLCallList()
@@ -170,6 +227,16 @@ params:
 list
 Specifies the integer name of the display list to be executed.
 */
+#ifdef ARM9
+u32 singleOpenGLCompiledDisplayList[2048]; //2048 cmds per a single List should be enough
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
 void glCallList(GLuint list){
 	u32 * InternalDL = getInternalDisplayListBuffer();
 	int curDLInCompiledDLOffset = GLDLEnumerator[list];
@@ -178,7 +245,11 @@ void glCallList(GLuint list){
 		u32 * currentPhysicalDisplayListEnd = NULL;
 
 		int nextDLInCompiledDLOffset = GLDLEnumerator[list+1];
-		if((u32)nextDLInCompiledDLOffset != DL_INVALID){
+		if(
+			((u32)nextDLInCompiledDLOffset != DL_INVALID)
+			||
+			( (u32)InternalDL[nextDLInCompiledDLOffset] == (u32)getFIFO_END() ) //means no last cmd End
+			){
 			currentPhysicalDisplayListEnd = (u32 *)&InternalDL[nextDLInCompiledDLOffset];
 		}
 		//means we are at the last list. Copy everything until getFIFO_END()
@@ -187,15 +258,21 @@ void glCallList(GLuint list){
 			while( ((u32)*(currentPhysicalDisplayListEndCopy)) != (u32)getFIFO_END() ){
 				currentPhysicalDisplayListEndCopy++;
 			}
-			currentPhysicalDisplayListEnd = currentPhysicalDisplayListEndCopy;
+			currentPhysicalDisplayListEnd = currentPhysicalDisplayListEndCopy + 1; //a whole packed command is 4 bytes
+			//printf("[List: %d]got end of list: %x", list, currentPhysicalDisplayListEnd);
+			//printf("liststart: %x", currentPhysicalDisplayListStart);			
 		}
-
 		int singleListSize = (currentPhysicalDisplayListEnd - currentPhysicalDisplayListStart) * 4;
-		//Run a single GX Display List, having proper DL size
-		u32 singleOpenGLCompiledDisplayList[2048]; //2048 cmds per a single List should be enough
-		memcpy((u8*)&singleOpenGLCompiledDisplayList[1], currentPhysicalDisplayListStart, singleListSize);
-		singleOpenGLCompiledDisplayList[0] = (u32)singleListSize;
-		glCallListGX((const u32*)&singleOpenGLCompiledDisplayList[0]);
+		if(singleListSize > 0){
+			//Run a single GX Display List, having proper DL size
+			memcpy((u8*)&singleOpenGLCompiledDisplayList[1], currentPhysicalDisplayListStart, singleListSize);
+			singleOpenGLCompiledDisplayList[0] = (u32)singleListSize;
+			glCallListGX((const u32*)&singleOpenGLCompiledDisplayList[0]);
+			printf("glCallList():glCallListGX() List(%d) exec. OK", list);
+		}
+		else{
+			//printf("glCallList():This OpenGL list name(%d)'s InternalDL offset points to InternalDL GX end (no more GX DL after this)", (u32)list);
+		}
 	}
 }
 
@@ -212,9 +289,17 @@ Specifies the type of values in lists. Symbolic constants GL_BYTE, GL_UNSIGNED_B
 lists
 Specifies the address of an array of name offsets in the display list. The pointer type is void because the offsets can be bytes, shorts, ints, or floats, depending on the value of type.
 */
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
 void glCallLists(GLsizei n, GLenum type, const void * lists){
 	int offsetSize = -1;
-	u8 * u8array = NULL;
+	GLubyte * u8array = NULL;
 	u16 * u16array = NULL;
 	u32 * u32array = NULL;
 
@@ -224,14 +309,14 @@ void glCallLists(GLsizei n, GLenum type, const void * lists){
 		//GLbyte	8			Signed, 2's complement binary integer	GL_BYTE
 		case(GL_BYTE):{
 			offsetSize = 1;
-			u8array = (u8 *)lists;
+			u8array = (GLubyte *)lists;
 		}
 		break;
 
 		//GLubyte	8			Unsigned binary integer					GL_UNSIGNED_BYTE
 		case(GL_UNSIGNED_BYTE):{
 			offsetSize = 1;
-			u8array = (u8 *)lists;
+			u8array = (GLubyte *)lists;
 		}
 		break;
 
@@ -276,6 +361,7 @@ void glCallLists(GLsizei n, GLenum type, const void * lists){
 		int i = 0;
 		for(i = 0; i < n; i++){
 			GLuint listName = (GLuint)-1;
+			
 			if(u8array != NULL){
 				listName = (GLuint)u8array[i];
 			}
@@ -285,13 +371,29 @@ void glCallLists(GLsizei n, GLenum type, const void * lists){
 			else if(u32array != NULL){
 				listName = (GLuint)u32array[i];
 			}
-			if((GLuint)listName != (GLuint)-1){
+			
+			if(
+				((GLuint)listName != (GLuint)-1)
+				&&
+				(n > listName) 	//	//
+				&&				//	|| Prevent out-of-bound lists
+				(listName >= 0)	//
+			){
+				//printf("glCallLists(): trying list: %d", listName);
 				glCallList(listName);
 			}
 		}
 	}
 }
 
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
 void glDeleteLists(GLuint list, GLsizei range){
 	if(list >= 1){
 		list--; //assign current interCompiled_DLPtr (new) to a List
@@ -337,7 +439,14 @@ nbLists is the number of lists that should be called.
 type is the type of information stored in referenceOffsets. It is typically : GL_UNSIGNED_BYTE, GL_SHORT, GL_UNSIGNED_SHORT, GL_INT or GL_UNSIGNED_INT.
 indiceOffset is an array that holds offset reference to the desired list to call by comparison to listBase (Ex: if listBase = 100 and you want to draw a list refered by 103, its offset reference is 3).
 */
-
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
 void glTexCoord2f(GLfloat s, GLfloat t){
 	glTexCoord2t16(floattot16(s), floattot16(t));
 }
@@ -350,6 +459,14 @@ void glTexCoord2f(GLfloat s, GLfloat t){
 //glTexCoord4 defines all four components explicitly as s t r q .
 
 //Note: uv == ((u << 16) | (v & 0xFFFF))
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
 void glTexCoord1i(uint32 uv){
 	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
 		//4000488h 22h 1  1   TEXCOORD - Set Texture Coordinates (W)
@@ -363,7 +480,14 @@ void glTexCoord1i(uint32 uv){
 }
 
 //////////////////////////////////////////////////////////////////////
-
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
 void glTexCoord2t16(t16 u, t16 v){
 	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
 		//4000488h 22h 1  1   TEXCOORD - Set Texture Coordinates (W)
@@ -382,6 +506,14 @@ void glTexCoord2t16(t16 u, t16 v){
 //1  Separate Quadliteral(s) ;4*N vertices per N quads
 //2  Triangle Strips         ;3+(N-1) vertices per N triangles
 //3  Quadliteral Strips      ;4+(N-1)*2 vertices per N quads
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
 void glBegin(int primitiveType){
 	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
 		//4000500h 40h 1  1   BEGIN_VTXS - Start of Vertex List (W)
@@ -395,6 +527,14 @@ void glBegin(int primitiveType){
 }
 
 //////////////////////////////////////////////////////////////////////
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
 void glEnd( void){
 	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
 		//4000504h 41h -  1   END_VTXS - End of Vertex List (W)
@@ -416,6 +556,14 @@ u16 lastVertexColor = 0;
 //Parameter 1, Bit 5-9    Green
 //Parameter 1, Bit 10-14  Blue
 
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
 void glColor3b(uint8 red, uint8 green, uint8 blue){
 	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
 		//4000480h 20h 1  1   COLOR - Directly Set Vertex Color (W)
@@ -451,23 +599,62 @@ void glColor3b(uint8 red, uint8 green, uint8 blue){
 }
 
 //////////////////////////////////////////////////////////////////////
-
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
 void glNormal3b(const GLbyte v){
 	glNormal3i((const GLint )v);
 }
- 
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
 void glNormal3d(const GLdouble v){
 	glNormal3i((const GLint )v);
 }
- 
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
 void glNormal3f(const GLfloat v){
 	glNormal3i((const GLint )v);
 }
 
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
 void glNormal3s(const GLshort v){
 	glNormal3i((const GLint )v);
 }
 
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
 void glNormal3i(const GLint v){
 	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
 		double intpart;
@@ -479,7 +666,14 @@ void glNormal3i(const GLint v){
 }
 
 //////////////////////////////////////////////////////////////////////
-
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
 void glVertex3v16(v16 x, v16 y, v16 z){
 	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
 		//400048Ch 23h 2  9   VTX_16 - Set Vertex XYZ Coordinates (W)
@@ -495,7 +689,14 @@ void glVertex3v16(v16 x, v16 y, v16 z){
 }
 
 //////////////////////////////////////////////////////////////////////
-
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
 void glVertex3v10(v10 x, v10 y, v10 z){
 	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
 		//4000490h 24h 1  8   VTX_10 - Set Vertex XYZ Coordinates (W)
@@ -511,6 +712,14 @@ void glVertex3v10(v10 x, v10 y, v10 z){
 
 //////////////////////////////////////////////////////////////////////
 //Parameters. x. Specifies the x-coordinate of a vertex. y. Specifies the y-coordinate of a vertex
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
 void glVertex2v16(v16 x, v16 y){
 	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
 		//4000494h 25h 1  8   VTX_XY - Set Vertex XY Coordinates (W)
