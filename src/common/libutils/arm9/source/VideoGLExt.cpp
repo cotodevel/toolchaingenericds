@@ -248,7 +248,7 @@ void glCallList(GLuint list){
 		if(
 			((u32)nextDLInCompiledDLOffset != DL_INVALID)
 			||
-			( (u32)InternalDL[nextDLInCompiledDLOffset] == (u32)getFIFO_END() ) //means no last cmd End
+			( (u32)InternalDL[nextDLInCompiledDLOffset] == (u32)getFIFO_END() ) //Means no last cmd End. Commands are processed in unpacked format
 			){
 			currentPhysicalDisplayListEnd = (u32 *)&InternalDL[nextDLInCompiledDLOffset];
 		}
