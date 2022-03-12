@@ -206,13 +206,6 @@ void glTranslatef32(int x, int y, int z) {
 
 //////////////////////////////////////////////////////////////////////
 
-  void glFlush(void)
-{
-  GFX_FLUSH = 2;
-}
-
-//////////////////////////////////////////////////////////////////////
-
 void glMaterialShinnyness(void)
 
 {
@@ -240,6 +233,7 @@ void glMaterialShinnyness(void)
 
 
 //////////////////////////////////////////////////////////////////////
+
 void glTranslatef(float x, float y, float z){
 	glTranslate3f32(floattof32(x), floattof32(y), floattof32(z));
 }
@@ -261,6 +255,21 @@ void glDisable(int bits)
 {
 	enable_bits &= ~(bits & (GL_TEXTURE_2D|GL_TOON_HIGHLIGHT|GL_OUTLINE|GL_ANTIALIAS));
 	GFX_CONTROL = enable_bits;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void glFlush(void){
+	GFX_FLUSH = 2;
+}
+
+//////////////////////////////////////////////////////////////////////
+//OpenGL states this behaves the same as glFlush but also CPU waits for all commands to be executed by the GPU
+void glFinish(void){
+	glFlush();
+	while( (vu32)(*((vu32*)GFX_STATUS_ADDR)) & (1 << 27) ){ //27    Geometry Engine Busy (0=No, 1=Yes; Busy; Commands are executing)
+		
+	}
 }
 
 //////////////////////////////////////////////////////////////////////

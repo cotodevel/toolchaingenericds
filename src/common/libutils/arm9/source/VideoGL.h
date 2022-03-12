@@ -482,8 +482,6 @@ void glReset(void);
   void glMatrixMode(int mode);
 //////////////////////////////////////////////////////////////////////
   void glViewPort(uint8 x1, uint8 y1, uint8 x2, uint8 y2);
-////////////////////////////////////////////////////////////////////
-  void glFlush(void);
 //////////////////////////////////////////////////////////////////////
 void glMaterialShinnyness(void);
 //////////////////////////////////////////////////////////////////////
@@ -616,13 +614,6 @@ static inline void glTranslatef32(int x, int y, int z) {
 
 //////////////////////////////////////////////////////////////////////
 
-  static inline void glFlush(void)
-{
-  GFX_FLUSH = 2;
-}
-
-//////////////////////////////////////////////////////////////////////
-
 static inline void glMaterialShinnyness(void)
 
 {
@@ -665,7 +656,9 @@ extern bool isNdsDisplayListUtilsCallList;
 extern void glCallListGX(const u32* list);
 extern int float2int(float valor);
 extern void glTranslatef(float x, float y, float z);
-
+extern void glFlush(void);
+extern void glFinish(void);
+  
 #ifdef __cplusplus
 }
 #endif
