@@ -992,12 +992,17 @@ int glTexImage2D(int target, int empty1, int type, int sizeX, int sizeY, int emp
 	return 1;
 }
 
-//x , y vertex coords in v16 format
+//integer x , y vertex coords in v16 format
 void glVertex2i(int x, int y) {
     glVertex2v16((v16)x, (v16)y);
 }
 
-//x , y , z vertex coords in v16 format
+//float x , y vertex coords in v16 format
+void glVertex2f(float x, float y) {
+    glVertex2v16(floattov16(x), floattov16(y));
+}
+
+//float x , y , z vertex coords in v16 format
 void glVertex3f(GLfloat x, GLfloat y, GLfloat z){
 	glVertex3v16(floattov16(x), floattov16(y), floattov16(z));
 }

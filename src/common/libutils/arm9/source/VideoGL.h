@@ -657,6 +657,7 @@ extern void glShadeModel(GLenum mode);
 extern void glInit();
 
 extern void glVertex2i(int x, int y); 
+extern void glVertex2f(float x, float y);
 extern void glVertex3f(GLfloat x, GLfloat y, GLfloat z);
 
 extern void GLInitExt();
