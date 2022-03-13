@@ -733,11 +733,31 @@ extern GLboolean glIsList(GLuint list);
 extern void glNewList(GLuint list, GLenum mode);
 extern void glEndList(void);
 
-extern void glNormal3b(const GLbyte v);
-extern void glNormal3d(const GLdouble v);
-extern void glNormal3f(const GLfloat v);
-extern void glNormal3i(const GLint v);
-extern void glNormal3s(const GLshort v);
+extern void glNormal3b(
+	GLbyte nx,
+ 	GLbyte ny,
+ 	GLbyte nz
+);
+extern void glNormal3d(
+	GLdouble nx,
+ 	GLdouble ny,
+ 	GLdouble nz
+);
+extern void glNormal3f(
+	GLfloat nx,
+ 	GLfloat ny,
+ 	GLfloat nz
+);
+extern void glNormal3s(
+	GLshort nx,
+ 	GLshort ny,
+ 	GLshort nz
+);
+extern void glNormal3i(
+	GLint nx,
+ 	GLint ny,
+ 	GLint nz
+);
 
 extern void glBegin(int primitiveType);
 extern void glEnd( void);
