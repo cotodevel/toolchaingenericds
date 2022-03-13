@@ -447,11 +447,7 @@ void glReset(void);
 
   void glBegin(int mode);
 //////////////////////////////////////////////////////////////////////
-  void glEnd( void);
-//////////////////////////////////////////////////////////////////////
-  void glClearColor(uint8 red, uint8 green, uint8 blue);
-//////////////////////////////////////////////////////////////////////
-  void glClearDepth(uint16 depth);
+  void glEnd( void);  
 /////////////////////////////////////////////////////////////////////
   void glColor3b(uint8 red, uint8 green, uint8 blue);
 //////////////////////////////////////////////////////////////////////
@@ -491,20 +487,6 @@ void glMaterialShinnyness(void);
 
 #ifndef NO_GL_INLINE
 //////////////////////////////////////////////////////////////////////
-
-  static inline void glClearColor(uint8 red, uint8 green, uint8 blue)
-{
-  GFX_CLEAR_COLOR = RGB15(red, green, blue);
-}
-
-//////////////////////////////////////////////////////////////////////
-
-  static inline void glClearDepth(uint16 depth)
-{
-  GFX_CLEAR_DEPTH = depth;
-}
-//////////////////////////////////////////////////////////////////////
-
   static inline void glPushMatrix(void)
 {
   MATRIX_PUSH = 0;
@@ -658,7 +640,15 @@ extern int float2int(float valor);
 extern void glTranslatef(float x, float y, float z);
 extern void glFlush(void);
 extern void glFinish(void);
-  
+
+extern u8 defaultglClearColorR;
+extern u8 defaultglClearColorG;
+extern u8 defaultglClearColorB;
+extern u16 defaultglClearDepth;
+extern void glClear( GLbitfield mask );
+extern void glClearColor(uint8 red, uint8 green, uint8 blue);
+extern void glClearDepth(uint16 depth);
+
 #ifdef __cplusplus
 }
 #endif

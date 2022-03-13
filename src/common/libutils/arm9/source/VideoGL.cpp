@@ -60,19 +60,6 @@ struct GLContext globalGLCtx;
 
 #ifdef NO_GL_INLINE
 //////////////////////////////////////////////////////////////////////
-  void glClearColor(uint8 red, uint8 green, uint8 blue)
-{
-  GFX_CLEAR_COLOR = RGB15(red, green, blue);
-}
-
-//////////////////////////////////////////////////////////////////////
-
-  void glClearDepth(uint16 depth)
-{
-  GFX_CLEAR_DEPTH = depth;
-}
-
-//////////////////////////////////////////////////////////////////////
 
 void glPushMatrix(void){
 	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
@@ -231,6 +218,42 @@ void glMaterialShinnyness(void)
 
 #endif  //endif #no inline
 
+//////////////////////////////////////////////////////////////////////
+u8 defaultglClearColorR=0;
+u8 defaultglClearColorG=0;
+u8 defaultglClearColorB=0;
+u16 defaultglClearDepth=0;
+
+//////////////////////////////////////////////////////////////////////
+void glClearColor(uint8 red, uint8 green, uint8 blue){
+	defaultglClearColorR = red;
+	defaultglClearColorG = green;
+	defaultglClearColorB = blue;
+	GFX_CLEAR_COLOR = RGB15(red, green, blue);
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void glClearDepth(uint16 depth){
+	defaultglClearDepth = depth;
+	GFX_CLEAR_DEPTH = depth;
+}
+
+void glClear( GLbitfield mask ){
+	if((mask & GL_COLOR_BUFFER_BIT) == GL_COLOR_BUFFER_BIT){
+		glClearColor(defaultglClearColorR, defaultglClearColorG, defaultglClearColorB);
+	}
+	
+	if((mask & GL_DEPTH_BUFFER_BIT) == GL_DEPTH_BUFFER_BIT){
+		glClearDepth(defaultglClearDepth);
+	}
+	
+	if((mask & GL_STENCIL_BUFFER_BIT) == GL_STENCIL_BUFFER_BIT){
+		//glClearStencil //stencil buffer depends on polygon attributes since DS does not feature a standalone stencilbuffer
+	}
+	
+	//todo: GL_INVALID_VALUE
+}
 
 //////////////////////////////////////////////////////////////////////
 
