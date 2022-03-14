@@ -475,9 +475,7 @@ void glReset(void);
 //////////////////////////////////////////////////////////////////////
   void glLoadIdentity(void);
 //////////////////////////////////////////////////////////////////////
-  void glMatrixMode(int mode);
-//////////////////////////////////////////////////////////////////////
-  void glViewPort(uint8 x1, uint8 y1, uint8 x2, uint8 y2);
+  void glMatrixMode(int mode); 
 //////////////////////////////////////////////////////////////////////
 void glMaterialShinnyness(void);
 //////////////////////////////////////////////////////////////////////
@@ -589,13 +587,6 @@ static inline void glTranslatef32(int x, int y, int z) {
 
 //////////////////////////////////////////////////////////////////////
 
-  static inline void glViewPort(uint8 x1, uint8 y1, uint8 x2, uint8 y2)
-{
-  GFX_VIEWPORT = (x1) + (y1 << 8) + (x2 << 16) + (y2 << 24);
-}
-
-//////////////////////////////////////////////////////////////////////
-
 static inline void glMaterialShinnyness(void)
 
 {
@@ -648,6 +639,7 @@ extern u16 defaultglClearDepth;
 extern void glClear( GLbitfield mask );
 extern void glClearColor(uint8 red, uint8 green, uint8 blue);
 extern void glClearDepth(uint16 depth);
+extern void glViewport(uint8 x1, uint8 y1, uint8 x2, uint8 y2);
 
 #ifdef __cplusplus
 }

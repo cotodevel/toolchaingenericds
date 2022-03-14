@@ -186,13 +186,6 @@ void glTranslatef32(int x, int y, int z) {
 
 //////////////////////////////////////////////////////////////////////
 
-  void glViewPort(uint8 x1, uint8 y1, uint8 x2, uint8 y2)
-{
-  GFX_VIEWPORT = (x1) + (y1 << 8) + (x2 << 16) + (y2 << 24);
-}
-
-//////////////////////////////////////////////////////////////////////
-
 void glMaterialShinnyness(void)
 
 {
@@ -217,6 +210,12 @@ void glMaterialShinnyness(void)
 }
 
 #endif  //endif #no inline
+
+//////////////////////////////////////////////////////////////////////
+
+void glViewport(uint8 x1, uint8 y1, uint8 x2, uint8 y2){
+	GFX_VIEWPORT = (x1) + (y1 << 8) + (x2 << 16) + (y2 << 24);
+}
 
 //////////////////////////////////////////////////////////////////////
 u8 defaultglClearColorR=0;
