@@ -268,7 +268,7 @@ void glCallList(GLuint list){
 			memcpy((u8*)&singleOpenGLCompiledDisplayList[1], currentPhysicalDisplayListStart, singleListSize);
 			singleOpenGLCompiledDisplayList[0] = (u32)singleListSize;
 			glCallListGX((const u32*)&singleOpenGLCompiledDisplayList[0]);
-			printf("glCallList():glCallListGX() List(%d) exec. OK", list);
+			//printf("glCallList():glCallListGX() List(%d) exec. OK", list);
 		}
 		else{
 			//printf("glCallList():This OpenGL list name(%d)'s InternalDL offset points to InternalDL GX end (no more GX DL after this)", (u32)list);
