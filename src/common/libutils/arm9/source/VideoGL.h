@@ -615,6 +615,7 @@ extern void glRotatef(int angle, float x, float y, float z);
 extern void glOrthof32(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far);
 extern void glOrtho(float left, float right, float bottom, float top, float near, float far);
 extern void glColor3f(float red, float green, float blue);
+extern void glColor3fv(const GLfloat * v);
 
 extern struct GLContext globalGLCtx;
 extern void glShadeModel(GLenum mode);
@@ -627,7 +628,6 @@ extern void glVertex3f(GLfloat x, GLfloat y, GLfloat z);
 extern void GLInitExt();
 extern bool isNdsDisplayListUtilsCallList;
 extern void glCallListGX(const u32* list);
-extern int float2int(float valor);
 extern void glTranslatef(float x, float y, float z);
 extern void glFlush(void);
 extern void glFinish(void);

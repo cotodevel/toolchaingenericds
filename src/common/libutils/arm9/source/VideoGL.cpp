@@ -1044,19 +1044,8 @@ void glShadeModel(GLenum mode){
 	lastVertexColor = 0;
 }
 
-int float2int(float valor)
-{
-    float f1,f2;
-    int i1,i2;
-    f1=floor(valor);
-    f2=valor - f1;
-    i1 = (int)f1;
-    i2 = (int)100*f2;
-    return i1;
-}
-
 void glColor3f(float red, float green, float blue){
-	glColor3b(float2int(red), float2int(green), float2int(blue));
+	glColor3b(f32toint(floattof32(red)), f32toint(floattof32(green)), f32toint(floattof32(blue)));
 }
 
 //Must be called everytime a new videoGL context starts
@@ -1134,4 +1123,13 @@ void glCallListGX(const u32* list) {
 	#ifdef WIN32
 	printf("\n(WIN32)glCallListGX: Executing DL List. Size: %d\n", (int)list[0]);
 	#endif
+}
+
+void glColor3fv(const GLfloat * v){
+	if(v != NULL){
+		float red = v[0];
+		float green = v[1];
+		float blue = v[2];
+		glColor3f(red, green, blue);
+	}
 }
