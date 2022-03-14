@@ -1376,7 +1376,7 @@ int main(int argc, char** argv){
 		if(ret == true){
 			for (int i = 0; i <10; i ++){ //Draw 10 cubes
 				glPushMatrix();
-				glRotate(36*i,0.0,0.0,1.0);
+				glRotatef(36*i,0.0,0.0,1.0);
 				glTranslatef(10.0,0.0,0.0);
 				glPopMatrix(1);
 			}
@@ -1389,7 +1389,7 @@ int main(int argc, char** argv){
 		if(ret == true){
 			for (int i = 0; i <20; i ++){ //Draw 20 triangles
 				glPushMatrix();
-				glRotate(18*i,0.0,0.0,1.0);
+				glRotatef(18*i,0.0,0.0,1.0);
 				glTranslatef(15.0,0.0,0.0);
 				glPopMatrix(1);
 			}

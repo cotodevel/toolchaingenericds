@@ -561,7 +561,7 @@ void glRotateZ(float angle)
 	glRotateZi((int)(angle * LUT_SIZE / 360.0));
 }
 
-void glRotate(int angle, float x, float y, float z){ //resembles glRotatef
+void glRotatef(int angle, float x, float y, float z){
 	if(x > 0){
 		glRotateX(angle); 
 	}

@@ -610,7 +610,7 @@ static inline void glPolyFmt(int alpha) // obviously more to this
 }
 
 #endif  //endif #no inline
-extern void glRotate(int angle, float x, float y, float z);
+extern void glRotatef(int angle, float x, float y, float z);
 
 extern void glOrthof32(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far);
 extern void glOrtho(float left, float right, float bottom, float top, float near, float far);
