@@ -1025,7 +1025,7 @@ int glTexImage2D(int target, int empty1, int type, int sizeX, int sizeY, int emp
 
 //integer x , y vertex coords in v16 format
 void glVertex2i(int x, int y) {
-    glVertex2v16((v16)x, (v16)y);
+    glVertex2v16(inttov16(x), inttov16(y));
 }
 
 //float x , y vertex coords in v16 format
