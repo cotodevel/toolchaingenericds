@@ -182,9 +182,6 @@ extern void set0xFFFF0000FastMPUSettings();
 extern void setitcm();
 extern void setdtcm();
 
-
-//todo
-
 //instruction cache CP15
 extern void setitcmbase(); //@ ITCM base = 0 , size = 32 MB
 extern void icacheenable(int);

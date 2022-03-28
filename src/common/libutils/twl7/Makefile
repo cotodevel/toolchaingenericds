@@ -64,6 +64,7 @@ export DIRS_ARM9_HEADERLIB = ../../libutils/	\
 			../../twl/	\
 			../../hardware/	\
 			../../hardware/dldi/	\
+			../../libhardware/	\
 			../../dswifi/	\
 			../../../arm7/source/dswifi_arm7/	\
 			../../../arm7/source/twl/	\

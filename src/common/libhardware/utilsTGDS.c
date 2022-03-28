@@ -51,6 +51,7 @@ USA
 #include "dldi.h"
 #include "tgds_ramdisk_dldi.h"
 #include "cartHeader.h"
+#include "dswnifi_lib.h"
 #endif
 
 #ifdef ARM7
@@ -124,7 +125,9 @@ __attribute__ ((optnone))
 #endif
 void TGDSProjectRunLinkedModule(char * TGDSLinkedModuleFilename, int argc, char **argv, char* TGDSProjectName) {
 	
-	//switch_dswnifi_mode(dswifi_idlemode); //todo: use callback
+	if(wifiswitchDsWnifiModeARM9LibUtilsCallback != NULL){
+		wifiswitchDsWnifiModeARM9LibUtilsCallback(dswifi_idlemode);
+	}
 	
 	FILE * tgdsPayloadFh = fopen(TGDSLinkedModuleFilename, "r");
 	if(tgdsPayloadFh != NULL){
@@ -151,7 +154,9 @@ void TGDSProjectRunLinkedModule(char * TGDSLinkedModuleFilename, int argc, char 
 		REG_IME = 0;
 		
 		//Shut down Wifi context so it can re-enabled by upcoming binary.
-		//DeInitWIFI(); //todo: use callback
+		if(wifiDeinitARM7ARM9LibUtilsCallback != NULL){
+			wifiDeinitARM7ARM9LibUtilsCallback();
+		}
 		
 		//Generate TGDS-LM context
 		struct TGDS_Linked_Module * TGDSLinkedModuleCtx = (struct TGDS_Linked_Module *)((int)0x02200000 - 0x1000);
@@ -1247,14 +1252,20 @@ void initSound(){
 //FIFO
 HandleFifoNotEmptyWeakRefLibUtils_fn libutilisFifoNotEmptyCallback = NULL;
 
-//Wifi
+//Wifi (Shared)
+wifiDeinitARM7ARM9LibUtils_fn wifiDeinitARM7ARM9LibUtilsCallback = NULL;
+
+//Wifi (ARM7)
 wifiUpdateVBLANKARM7LibUtils_fn wifiUpdateVBLANKARM7LibUtilsCallback = NULL;
 wifiInterruptARM7LibUtils_fn wifiInterruptARM7LibUtilsCallback = NULL;
 timerWifiInterruptARM9LibUtils_fn timerWifiInterruptARM9LibUtilsCallback = NULL;
 
+//Wifi (ARM9)
+wifiswitchDsWnifiModeARM9LibUtils_fn wifiswitchDsWnifiModeARM9LibUtilsCallback = NULL;
+
 // SoundStream
 SoundStreamTimerHandlerARM7LibUtils_fn SoundStreamTimerHandlerARM7LibUtilsCallback = NULL;
-SoundStreamStopSoundARM7LibUtils_fn SoundStreamStopSoundARM7LibUtilsCallback = NULL; //so far here
+SoundStreamStopSoundARM7LibUtils_fn SoundStreamStopSoundARM7LibUtilsCallback = NULL;
 
 SoundStreamSetupSoundARM7LibUtils_fn SoundStreamSetupSoundARM7LibUtilsCallback = NULL;
 
@@ -1273,12 +1284,17 @@ void initializeLibUtils9(
 		HandleFifoNotEmptyWeakRefLibUtils_fn HandleFifoNotEmptyWeakRefLibUtilsCall, //ARM7 & ARM9
 		timerWifiInterruptARM9LibUtils_fn timerWifiInterruptARM9LibUtilsCall, //ARM9 
 		SoundStreamStopSoundStreamARM9LibUtils_fn SoundStreamStopSoundStreamARM9LibUtilsCall,	//ARM9: bool stopSoundStream(struct fd * tgdsStructFD1, struct fd * tgdsStructFD2, int * internalCodecType)
-		SoundStreamUpdateSoundStreamARM9LibUtils_fn SoundStreamUpdateSoundStreamARM9LibUtilsCall //ARM9: void updateStream() 
+		SoundStreamUpdateSoundStreamARM9LibUtils_fn SoundStreamUpdateSoundStreamARM9LibUtilsCall, //ARM9: void updateStream() 
+		wifiDeinitARM7ARM9LibUtils_fn wifiDeinitARM7ARM9LibUtilsCall, //ARM7 & ARM9: DeInitWIFI()
+		wifiswitchDsWnifiModeARM9LibUtils_fn wifiswitchDsWnifiModeARM9LibUtilsCall //ARM9: bool switch_dswnifi_mode(sint32 mode)
 	){
 	libutilisFifoNotEmptyCallback = HandleFifoNotEmptyWeakRefLibUtilsCall;
 	timerWifiInterruptARM9LibUtilsCallback = timerWifiInterruptARM9LibUtilsCall;
 	SoundStreamStopSoundStreamARM9LibUtilsCallback = SoundStreamStopSoundStreamARM9LibUtilsCall;
 	SoundStreamUpdateSoundStreamARM9LibUtilsCallback = SoundStreamUpdateSoundStreamARM9LibUtilsCall;
+	
+	wifiDeinitARM7ARM9LibUtilsCallback = wifiDeinitARM7ARM9LibUtilsCall; 
+	wifiswitchDsWnifiModeARM9LibUtilsCallback = wifiswitchDsWnifiModeARM9LibUtilsCall;
 	
 	//ARM9 libUtils component initialization
 	fifoInit();
@@ -1293,7 +1309,8 @@ void initializeLibUtils7(
 	SoundStreamTimerHandlerARM7LibUtils_fn SoundStreamTimerHandlerARM7LibUtilsCall, //ARM7: void TIMER1Handler()
 	SoundStreamStopSoundARM7LibUtils_fn SoundStreamStopSoundARM7LibUtilsCall, 	//ARM7: void stopSound()
 	SoundStreamSetupSoundARM7LibUtils_fn SoundStreamSetupSoundARM7LibUtilsCall,	//ARM7: void setupSound()
-	initMallocARM7LibUtils_fn initMallocARM7LibUtilsCall	//ARM7: void initARM7Malloc(u32 ARM7MallocStartaddress, u32 ARM7MallocSize);
+	initMallocARM7LibUtils_fn initMallocARM7LibUtilsCall,	//ARM7: void initARM7Malloc(u32 ARM7MallocStartaddress, u32 ARM7MallocSize);
+	wifiDeinitARM7ARM9LibUtils_fn wifiDeinitARM7ARM9LibUtilsCall //ARM7 & ARM9: DeInitWIFI()
 ){
 	libutilisFifoNotEmptyCallback = HandleFifoNotEmptyWeakRefLibUtilsCall;
 	wifiUpdateVBLANKARM7LibUtilsCallback = wifiUpdateVBLANKARM7LibUtilsCall;
@@ -1302,6 +1319,7 @@ void initializeLibUtils7(
 	SoundStreamStopSoundARM7LibUtilsCallback = SoundStreamStopSoundARM7LibUtilsCall;
 	SoundStreamSetupSoundARM7LibUtilsCallback = SoundStreamSetupSoundARM7LibUtilsCall;
 	initMallocARM7LibUtilsCallback = initMallocARM7LibUtilsCall;
+	wifiDeinitARM7ARM9LibUtilsCallback = wifiDeinitARM7ARM9LibUtilsCall; 
 }
 #endif
 

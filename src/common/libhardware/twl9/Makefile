@@ -59,10 +59,11 @@ export DIRS_ARM9_HEADERLIB = ../../libhardware	\
 			../../hardware/	\
 			../../twl/	\
 			../../hardware/dldi/	\
-			../../dswifi/	\
-			../../dswifi/arpa/	\
-			../../dswifi/netinet/	\
-			../../dswifi/sys/	\
+			../../libutils/dswifi/	\
+			../../libutils/dswifi/arpa/	\
+			../../libutils/dswifi/netinet/	\
+			../../libutils/dswifi/sys/	\
+			../../libutils/arm9/source/dswifi_arm9/	\
 			../../../templateCode/source/	\
 			../../../arm7/source/dswifi_arm7/	\
 			../../../arm7/source/xmalloc/	\

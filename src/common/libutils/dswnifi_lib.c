@@ -21,7 +21,6 @@ USA
 //DSWNifi Library 1.4 (update: 3/11/2019)	(dd/mm/yyyy)
 
 // Shared
-#include "dswnifi_lib.h"
 #include "typedefsTGDS.h"
 #include "dsregs.h"
 #include "dsregs_asm.h"
@@ -35,6 +34,7 @@ USA
 
 // ARM9
 #ifdef ARM9
+#include "dswnifi_lib.h"
 #include "videoTGDS.h"
 #include "timerTGDS.h"
 #include "sgIP_sockets.h"
