@@ -248,7 +248,7 @@ void glCallList(GLuint list){
 		if(
 			((u32)nextDLInCompiledDLOffset != DL_INVALID)
 			||
-			( (u32)InternalDL[nextDLInCompiledDLOffset] == (u32)getFIFO_END() ) //means no last cmd End
+			( (u32)InternalDL[nextDLInCompiledDLOffset] == (u32)getFIFO_END() ) //Means no last cmd End. Commands are processed in unpacked format
 			){
 			currentPhysicalDisplayListEnd = (u32 *)&InternalDL[nextDLInCompiledDLOffset];
 		}
@@ -268,7 +268,7 @@ void glCallList(GLuint list){
 			memcpy((u8*)&singleOpenGLCompiledDisplayList[1], currentPhysicalDisplayListStart, singleListSize);
 			singleOpenGLCompiledDisplayList[0] = (u32)singleListSize;
 			glCallListGX((const u32*)&singleOpenGLCompiledDisplayList[0]);
-			printf("glCallList():glCallListGX() List(%d) exec. OK", list);
+			//printf("glCallList():glCallListGX() List(%d) exec. OK", list);
 		}
 		else{
 			//printf("glCallList():This OpenGL list name(%d)'s InternalDL offset points to InternalDL GX end (no more GX DL after this)", (u32)list);
@@ -598,7 +598,7 @@ void glColor3b(uint8 red, uint8 green, uint8 blue){
 	}
 }
 
-//////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////// glNormal — set the current normal vector //////////////////////////////////////////////////////////////////////
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("O0")))
@@ -607,8 +607,12 @@ __attribute__((optimize("O0")))
 __attribute__((optnone))
 #endif
 #endif
-void glNormal3b(const GLbyte v){
-	glNormal3i((const GLint )v);
+void glNormal3b(
+	GLbyte nx,
+ 	GLbyte ny,
+ 	GLbyte nz
+){
+	glNormal3i((GLint)nx, (GLint)ny,(GLint)nz);
 }
 
 #ifdef ARM9
@@ -619,8 +623,12 @@ __attribute__((optimize("O0")))
 __attribute__((optnone))
 #endif
 #endif
-void glNormal3d(const GLdouble v){
-	glNormal3i((const GLint )v);
+void glNormal3d(
+	GLdouble nx,
+ 	GLdouble ny,
+ 	GLdouble nz
+){
+	glNormal3f((GLfloat)nx, (GLfloat)ny, (GLfloat)nz);
 }
 
 #ifdef ARM9
@@ -631,41 +639,56 @@ __attribute__((optimize("O0")))
 __attribute__((optnone))
 #endif
 #endif
-void glNormal3f(const GLfloat v){
-	glNormal3i((const GLint )v);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__((optnone))
-#endif
-#endif
-void glNormal3s(const GLshort v){
-	glNormal3i((const GLint )v);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__((optnone))
-#endif
-#endif
-void glNormal3i(const GLint v){
+void glNormal3f(
+	GLfloat nx,
+ 	GLfloat ny,
+ 	GLfloat nz
+){
 	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
-		double intpart;
-		double fractpart = modf((double)v, &intpart);
 		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getFIFO_NORMAL(); //Unpacked Command format
 		interCompiled_DLPtr++;
-		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)floattov10(fractpart); interCompiled_DLPtr++; //Unpacked Command format
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)NORMAL_PACK(floattov10(nx),floattov10(ny),floattov10(nz)); interCompiled_DLPtr++; //Unpacked Command format
 	}
 }
 
-//////////////////////////////////////////////////////////////////////
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glNormal3s(
+	GLshort nx,
+ 	GLshort ny,
+ 	GLshort nz
+){
+	glNormal3i((GLint)nx, (GLint)ny,(GLint)nz);
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glNormal3i(
+	GLint nx,
+ 	GLint ny,
+ 	GLint nz
+){
+	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getFIFO_NORMAL(); //Unpacked Command format
+		interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)NORMAL_PACK(inttov10(nx),inttov10(ny),inttov10(nz)); interCompiled_DLPtr++; //Unpacked Command format
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("O0")))

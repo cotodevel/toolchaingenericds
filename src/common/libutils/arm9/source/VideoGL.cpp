@@ -60,19 +60,6 @@ struct GLContext globalGLCtx;
 
 #ifdef NO_GL_INLINE
 //////////////////////////////////////////////////////////////////////
-  void glClearColor(uint8 red, uint8 green, uint8 blue)
-{
-  GFX_CLEAR_COLOR = RGB15(red, green, blue);
-}
-
-//////////////////////////////////////////////////////////////////////
-
-  void glClearDepth(uint16 depth)
-{
-  GFX_CLEAR_DEPTH = depth;
-}
-
-//////////////////////////////////////////////////////////////////////
 
 void glPushMatrix(void){
 	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
@@ -199,20 +186,6 @@ void glTranslatef32(int x, int y, int z) {
 
 //////////////////////////////////////////////////////////////////////
 
-  void glViewPort(uint8 x1, uint8 y1, uint8 x2, uint8 y2)
-{
-  GFX_VIEWPORT = (x1) + (y1 << 8) + (x2 << 16) + (y2 << 24);
-}
-
-//////////////////////////////////////////////////////////////////////
-
-  void glFlush(void)
-{
-  GFX_FLUSH = 2;
-}
-
-//////////////////////////////////////////////////////////////////////
-
 void glMaterialShinnyness(void)
 
 {
@@ -238,8 +211,51 @@ void glMaterialShinnyness(void)
 
 #endif  //endif #no inline
 
+//////////////////////////////////////////////////////////////////////
+
+void glViewport(uint8 x1, uint8 y1, uint8 x2, uint8 y2){
+	GFX_VIEWPORT = (x1) + (y1 << 8) + (x2 << 16) + (y2 << 24);
+}
 
 //////////////////////////////////////////////////////////////////////
+u8 defaultglClearColorR=0;
+u8 defaultglClearColorG=0;
+u8 defaultglClearColorB=0;
+u16 defaultglClearDepth=0;
+
+//////////////////////////////////////////////////////////////////////
+void glClearColor(uint8 red, uint8 green, uint8 blue){
+	defaultglClearColorR = red;
+	defaultglClearColorG = green;
+	defaultglClearColorB = blue;
+	GFX_CLEAR_COLOR = RGB15(red, green, blue);
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void glClearDepth(uint16 depth){
+	defaultglClearDepth = depth;
+	GFX_CLEAR_DEPTH = depth;
+}
+
+void glClear( GLbitfield mask ){
+	if((mask & GL_COLOR_BUFFER_BIT) == GL_COLOR_BUFFER_BIT){
+		glClearColor(defaultglClearColorR, defaultglClearColorG, defaultglClearColorB);
+	}
+	
+	if((mask & GL_DEPTH_BUFFER_BIT) == GL_DEPTH_BUFFER_BIT){
+		glClearDepth(defaultglClearDepth);
+	}
+	
+	if((mask & GL_STENCIL_BUFFER_BIT) == GL_STENCIL_BUFFER_BIT){
+		//glClearStencil //stencil buffer depends on polygon attributes since DS does not feature a standalone stencilbuffer
+	}
+	
+	//todo: GL_INVALID_VALUE
+}
+
+//////////////////////////////////////////////////////////////////////
+
 void glTranslatef(float x, float y, float z){
 	glTranslate3f32(floattof32(x), floattof32(y), floattof32(z));
 }
@@ -261,6 +277,21 @@ void glDisable(int bits)
 {
 	enable_bits &= ~(bits & (GL_TEXTURE_2D|GL_TOON_HIGHLIGHT|GL_OUTLINE|GL_ANTIALIAS));
 	GFX_CONTROL = enable_bits;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void glFlush(void){
+	GFX_FLUSH = 2;
+}
+
+//////////////////////////////////////////////////////////////////////
+//OpenGL states this behaves the same as glFlush but also CPU waits for all commands to be executed by the GPU
+void glFinish(void){
+	glFlush();
+	while( (vu32)(*((vu32*)GFX_STATUS_ADDR)) & (1 << 27) ){ //27    Geometry Engine Busy (0=No, 1=Yes; Busy; Commands are executing)
+		
+	}
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -530,7 +561,7 @@ void glRotateZ(float angle)
 	glRotateZi((int)(angle * LUT_SIZE / 360.0));
 }
 
-void glRotate(int angle, float x, float y, float z){ //resembles glRotatef
+void glRotatef(int angle, float x, float y, float z){
 	if(x > 0){
 		glRotateX(angle); 
 	}
@@ -992,12 +1023,17 @@ int glTexImage2D(int target, int empty1, int type, int sizeX, int sizeY, int emp
 	return 1;
 }
 
-//x , y vertex coords in v16 format
+//integer x , y vertex coords in v16 format
 void glVertex2i(int x, int y) {
-    glVertex2v16((v16)x, (v16)y);
+    glVertex2v16(inttov16(x), inttov16(y));
 }
 
-//x , y , z vertex coords in v16 format
+//float x , y vertex coords in v16 format
+void glVertex2f(float x, float y) {
+    glVertex2v16(floattov16(x), floattov16(y));
+}
+
+//float x , y , z vertex coords in v16 format
 void glVertex3f(GLfloat x, GLfloat y, GLfloat z){
 	glVertex3v16(floattov16(x), floattov16(y), floattov16(z));
 }
@@ -1008,19 +1044,8 @@ void glShadeModel(GLenum mode){
 	lastVertexColor = 0;
 }
 
-int float2int(float valor)
-{
-    float f1,f2;
-    int i1,i2;
-    f1=floor(valor);
-    f2=valor - f1;
-    i1 = (int)f1;
-    i2 = (int)100*f2;
-    return i1;
-}
-
 void glColor3f(float red, float green, float blue){
-	glColor3b(float2int(red), float2int(green), float2int(blue));
+	glColor3b(f32toint(floattof32(red)), f32toint(floattof32(green)), f32toint(floattof32(blue)));
 }
 
 //Must be called everytime a new videoGL context starts
@@ -1098,4 +1123,13 @@ void glCallListGX(const u32* list) {
 	#ifdef WIN32
 	printf("\n(WIN32)glCallListGX: Executing DL List. Size: %d\n", (int)list[0]);
 	#endif
+}
+
+void glColor3fv(const GLfloat * v){
+	if(v != NULL){
+		float red = v[0];
+		float green = v[1];
+		float blue = v[2];
+		glColor3f(red, green, blue);
+	}
 }

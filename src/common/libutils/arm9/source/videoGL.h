@@ -447,11 +447,7 @@ void glReset(void);
 
   void glBegin(int mode);
 //////////////////////////////////////////////////////////////////////
-  void glEnd( void);
-//////////////////////////////////////////////////////////////////////
-  void glClearColor(uint8 red, uint8 green, uint8 blue);
-//////////////////////////////////////////////////////////////////////
-  void glClearDepth(uint16 depth);
+  void glEnd( void);  
 /////////////////////////////////////////////////////////////////////
   void glColor3b(uint8 red, uint8 green, uint8 blue);
 //////////////////////////////////////////////////////////////////////
@@ -479,11 +475,7 @@ void glReset(void);
 //////////////////////////////////////////////////////////////////////
   void glLoadIdentity(void);
 //////////////////////////////////////////////////////////////////////
-  void glMatrixMode(int mode);
-//////////////////////////////////////////////////////////////////////
-  void glViewPort(uint8 x1, uint8 y1, uint8 x2, uint8 y2);
-////////////////////////////////////////////////////////////////////
-  void glFlush(void);
+  void glMatrixMode(int mode); 
 //////////////////////////////////////////////////////////////////////
 void glMaterialShinnyness(void);
 //////////////////////////////////////////////////////////////////////
@@ -493,20 +485,6 @@ void glMaterialShinnyness(void);
 
 #ifndef NO_GL_INLINE
 //////////////////////////////////////////////////////////////////////
-
-  static inline void glClearColor(uint8 red, uint8 green, uint8 blue)
-{
-  GFX_CLEAR_COLOR = RGB15(red, green, blue);
-}
-
-//////////////////////////////////////////////////////////////////////
-
-  static inline void glClearDepth(uint16 depth)
-{
-  GFX_CLEAR_DEPTH = depth;
-}
-//////////////////////////////////////////////////////////////////////
-
   static inline void glPushMatrix(void)
 {
   MATRIX_PUSH = 0;
@@ -609,20 +587,6 @@ static inline void glTranslatef32(int x, int y, int z) {
 
 //////////////////////////////////////////////////////////////////////
 
-  static inline void glViewPort(uint8 x1, uint8 y1, uint8 x2, uint8 y2)
-{
-  GFX_VIEWPORT = (x1) + (y1 << 8) + (x2 << 16) + (y2 << 24);
-}
-
-//////////////////////////////////////////////////////////////////////
-
-  static inline void glFlush(void)
-{
-  GFX_FLUSH = 2;
-}
-
-//////////////////////////////////////////////////////////////////////
-
 static inline void glMaterialShinnyness(void)
 
 {
@@ -646,24 +610,36 @@ static inline void glPolyFmt(int alpha) // obviously more to this
 }
 
 #endif  //endif #no inline
-extern void glRotate(int angle, float x, float y, float z);
+extern void glRotatef(int angle, float x, float y, float z);
 
 extern void glOrthof32(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far);
 extern void glOrtho(float left, float right, float bottom, float top, float near, float far);
 extern void glColor3f(float red, float green, float blue);
+extern void glColor3fv(const GLfloat * v);
 
 extern struct GLContext globalGLCtx;
 extern void glShadeModel(GLenum mode);
 extern void glInit();
 
 extern void glVertex2i(int x, int y); 
+extern void glVertex2f(float x, float y);
 extern void glVertex3f(GLfloat x, GLfloat y, GLfloat z);
 
 extern void GLInitExt();
 extern bool isNdsDisplayListUtilsCallList;
 extern void glCallListGX(const u32* list);
-extern int float2int(float valor);
 extern void glTranslatef(float x, float y, float z);
+extern void glFlush(void);
+extern void glFinish(void);
+
+extern u8 defaultglClearColorR;
+extern u8 defaultglClearColorG;
+extern u8 defaultglClearColorB;
+extern u16 defaultglClearDepth;
+extern void glClear( GLbitfield mask );
+extern void glClearColor(uint8 red, uint8 green, uint8 blue);
+extern void glClearDepth(uint16 depth);
+extern void glViewport(uint8 x1, uint8 y1, uint8 x2, uint8 y2);
 
 #ifdef __cplusplus
 }
