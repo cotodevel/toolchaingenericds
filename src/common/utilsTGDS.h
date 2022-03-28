@@ -84,10 +84,16 @@ struct TGDS_Linked_Module {
 //FIFO
 typedef void(*HandleFifoNotEmptyWeakRefLibUtils_fn)(uint32 cmd1, uint32 cmd2);
 
-//Wifi
+//Wifi (Shared)
+typedef void(*wifiDeinitARM7ARM9LibUtils_fn)(); 
+
+//Wifi (ARM7)
 typedef void(*wifiUpdateVBLANKARM7LibUtils_fn)();
 typedef void(*wifiInterruptARM7LibUtils_fn)();
 typedef void(*timerWifiInterruptARM9LibUtils_fn)();
+
+//Wifi (ARM9)
+typedef bool(*wifiswitchDsWnifiModeARM9LibUtils_fn)(sint32 dswnifi_mode); 
 
 // SoundStream
 typedef void(*SoundStreamTimerHandlerARM7LibUtils_fn)();
@@ -221,10 +227,16 @@ extern void TurnOffScreens();
 //FIFO
 extern HandleFifoNotEmptyWeakRefLibUtils_fn libutilisFifoNotEmptyCallback;
 
-//Wifi
+//Wifi (Shared)
+extern wifiDeinitARM7ARM9LibUtils_fn wifiDeinitARM7ARM9LibUtilsCallback; //new
+
+//Wifi (ARM7)
 extern wifiUpdateVBLANKARM7LibUtils_fn wifiUpdateVBLANKARM7LibUtilsCallback;
 extern wifiInterruptARM7LibUtils_fn wifiInterruptARM7LibUtilsCallback;
 extern timerWifiInterruptARM9LibUtils_fn timerWifiInterruptARM9LibUtilsCallback;
+
+//Wifi (ARM9)
+extern wifiswitchDsWnifiModeARM9LibUtils_fn wifiswitchDsWnifiModeARM9LibUtilsCallback; //new
 
 //SS
 extern SoundStreamTimerHandlerARM7LibUtils_fn SoundStreamTimerHandlerARM7LibUtilsCallback;
@@ -242,7 +254,8 @@ extern void initializeLibUtils7(
 	SoundStreamTimerHandlerARM7LibUtils_fn SoundStreamTimerHandlerARM7LibUtilsCall, //ARM7: void TIMER1Handler()
 	SoundStreamStopSoundARM7LibUtils_fn SoundStreamStopSoundARM7LibUtilsCall, 	//ARM7: void stopSound()
 	SoundStreamSetupSoundARM7LibUtils_fn SoundStreamSetupSoundARM7LibUtilsCall,	//ARM7: void setupSound()
-	initMallocARM7LibUtils_fn initMallocARM7LibUtilsCall	//ARM7: void initARM7Malloc(u32 ARM7MallocStartaddress, u32 ARM7MallocSize);
+	initMallocARM7LibUtils_fn initMallocARM7LibUtilsCall,	//ARM7: void initARM7Malloc(u32 ARM7MallocStartaddress, u32 ARM7MallocSize);
+	wifiDeinitARM7ARM9LibUtils_fn wifiDeinitARM7ARM9LibUtilsCall //ARM7: DeInitWIFI()
 );
 #endif
 

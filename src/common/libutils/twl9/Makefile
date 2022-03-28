@@ -85,6 +85,7 @@ export DIRS_ARM9_HEADERLIB = ../libutils/	\
 			../../libutils/dswifi/arpa/	\
 			../../libutils/dswifi/netinet/	\
 			../../libutils/dswifi/sys/	\
+			../../libhardware/	\
 			../	\
 			../../	\
 			../../hardware/	\
