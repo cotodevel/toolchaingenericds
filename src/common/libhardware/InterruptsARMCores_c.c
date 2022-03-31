@@ -48,7 +48,7 @@ USA
 #endif
 
 void IRQInit(u8 DSHardware)  {
-	
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	#ifdef ARM9
 	//DrainWrite
 	DrainWriteBuffer();
@@ -77,10 +77,12 @@ void IRQInit(u8 DSHardware)  {
 	volatile uint32 interrupts_to_wait_armX = 0;	
 	#ifdef ARM7
 	interrupts_to_wait_armX = IRQ_TIMER1 | IRQ_VBLANK | IRQ_VCOUNT | IRQ_IPCSYNC | IRQ_RECVFIFO_NOT_EMPTY | IRQ_SCREENLID;
+	TGDSIPC->TGDSLMARM7Flags = readToolchainGenericDSLinkedModuleFlagsFromARMPayload(); //TGDS-LM flags from payload
 	#endif
 	
 	#ifdef ARM9
 	interrupts_to_wait_armX = IRQ_VBLANK | IRQ_VCOUNT | IRQ_IPCSYNC | IRQ_RECVFIFO_NOT_EMPTY;
+	TGDSIPC->TGDSLMARM9Flags = readToolchainGenericDSLinkedModuleFlagsFromARMPayload(); //TGDS-LM flags from payload
 	#endif
 	
 	REG_IE = interrupts_to_wait_armX; 
@@ -128,6 +130,8 @@ void IRQInit(u8 DSHardware)  {
 		handleDSInitError(stage, (u32)DSHardware);
 		#endif
 	}
+	
+	
 }
 
 #ifdef ARM7
