@@ -115,6 +115,8 @@ char ** getArgvFromTGDSLinkedModule(struct TGDS_Linked_Module * TGDSLMCtx){
 	return (char **)&TGDSLMCtx->argvs;
 }
 
+#define TGDS_LM_ADDR (u32)(0x02300000)
+
 //Usage: char * TGDSLinkedModuleFilename = "0:/ToolchainGenericDS-linkedmodule.bin"
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("Os")))
@@ -123,7 +125,7 @@ __attribute__((optimize("Os")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-void TGDSProjectRunLinkedModule(char * TGDSLinkedModuleFilename, int argc, char **argv, char* TGDSProjectName) {
+void TGDSProjectRunLinkedModule(char * TGDSLinkedModuleFilename, int argc, char **argv, char* TGDSProjectName, u8 * arm7payloadLZSSSourceBuffer, int arm7payloadLZSSSize, u32 arm7EntryAddress, u32 arm7BootCodeSize){
 	if(wifiswitchDsWnifiModeARM9LibUtilsCallback != NULL){
 		wifiswitchDsWnifiModeARM9LibUtilsCallback(dswifi_idlemode);
 	}
@@ -140,8 +142,8 @@ void TGDSProjectRunLinkedModule(char * TGDSLinkedModuleFilename, int argc, char 
 		
 		f_lseek(&file, 0);
 		UINT nbytes_read = 0;
-		if(f_read(&file, (unsigned int)0x02200000, tgds_multiboot_payload_size, &nbytes_read) == FR_OK){
-			coherent_user_range_by_size(0x02200000, (int)tgds_multiboot_payload_size);
+		if(f_read(&file, (unsigned int)TGDS_LM_ADDR, tgds_multiboot_payload_size, &nbytes_read) == FR_OK){
+			coherent_user_range_by_size(TGDS_LM_ADDR, (int)tgds_multiboot_payload_size);
 		}
 		else{
 			bool isTGDSCustomConsole = false;	//set default console or custom console: default console
@@ -160,7 +162,7 @@ void TGDSProjectRunLinkedModule(char * TGDSLinkedModuleFilename, int argc, char 
 	int ret=FS_deinit();
 	//Copy and relocate current TGDS DLDI section into target ARM9 binary if not TGDS DLDI
 	if(strncmp((char*)&dldiGet()->friendlyName[0], "TGDS RAMDISK", 12) != 0){
-		bool stat = dldiPatchLoader((data_t *)0x02200000, (u32)tgds_multiboot_payload_size, (u32)&_io_dldi_stub);
+		bool stat = dldiPatchLoader((data_t *)TGDS_LM_ADDR, (u32)tgds_multiboot_payload_size, (u32)&_io_dldi_stub);
 		if(stat == false){
 			//printf("DLDI Patch failed. APP does not support DLDI format.");
 		}
@@ -173,15 +175,29 @@ void TGDSProjectRunLinkedModule(char * TGDSLinkedModuleFilename, int argc, char 
 	}
 	
 	//Generate TGDS-LM context
-	struct TGDS_Linked_Module * TGDSLinkedModuleCtx = (struct TGDS_Linked_Module *)((int)0x02200000 - 0x1000);
-	memset((u8*)TGDSLinkedModuleCtx, 0, 4096);
+	struct TGDS_Linked_Module * TGDSLinkedModuleCtx = (struct TGDS_Linked_Module *)((int)TGDS_LM_ADDR - (0x8000  + 0x1000));
+	memset((u8*)TGDSLinkedModuleCtx, 0, (0x8000  + 0x1000));
+	
+	//copy arm7 lzss compressed payload
+	if(arm7payloadLZSSSourceBuffer != NULL){
+		memcpy((void *)&TGDSLinkedModuleCtx->TGDS_LM_ARM7PAYLOADLZSS[0], (const void *)arm7payloadLZSSSourceBuffer, arm7payloadLZSSSize);
+	}
+	TGDSLinkedModuleCtx->TGDS_LM_ARM7PAYLOADLZSSSize = arm7payloadLZSSSize;
+	TGDSLinkedModuleCtx->arm7EntryAddress = arm7EntryAddress;
+	TGDSLinkedModuleCtx->arm7BootCodeSize = arm7BootCodeSize;
 	
 	*(u32*)0x02000000 = (u32)ARM7ReadFWVersionFromFlashByFIFOIRQ();
 
 	TGDSLinkedModuleCtx->TGDS_LM_Size = tgds_multiboot_payload_size;
-	TGDSLinkedModuleCtx->TGDS_LM_Entrypoint = 0x02200000;
+	TGDSLinkedModuleCtx->TGDS_LM_Entrypoint = TGDS_LM_ADDR;
 	TGDSLinkedModuleCtx->returnAddressTGDSLinkedModule = 0;	//Implemented when TGDS-LM boots
 	TGDSLinkedModuleCtx->returnAddressTGDSMainApp = (u32)&TGDSProjectReturnFromLinkedModule;	//Implemented in Parent TGDS App
+	
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	coherent_user_range_by_size((uint32)TGDSIPC, sizeof(struct sIPCSharedTGDS));
+	TGDSLinkedModuleCtx->TGDSLMARM7Flags = TGDSIPC->TGDSLMARM7Flags;
+	TGDSLinkedModuleCtx->TGDSLMARM9Flags = TGDSIPC->TGDSLMARM9Flags;
+	
 	//TGDS-LM ARGV
 	int i = 0;
 	for(i = 0; i < argc; i++){
@@ -192,10 +208,8 @@ void TGDSProjectRunLinkedModule(char * TGDSLinkedModuleFilename, int argc, char 
 	strcpy((char*)&TGDSLinkedModuleCtx->TGDSMainAppName, TGDSProjectName);
 	
 	typedef void (*t_bootAddr)();
-	t_bootAddr bootARM9Payload = (t_bootAddr)0x02200000;
+	t_bootAddr bootARM9Payload = (t_bootAddr)TGDS_LM_ADDR;
 	bootARM9Payload();
-	
-	//swiSoftResetByAddress((u32)0x02200000);
 }
 #endif
 
@@ -1440,3 +1454,63 @@ int isNTROrTWLBinary(char * filename){
 	return mode;
 }
 #endif
+
+//Reads the set of libutils features from a precompiled TGDS binary. 
+//This is important to acknowledge, because host payload may not have all the features required in the TGDS-LinkedModule payload
+u32 readToolchainGenericDSLinkedModuleFlagsFromARMPayload(){
+	u32 flags=0;
+	#ifdef ARM7
+	if(
+		(libutilisFifoNotEmptyCallback != NULL)
+	){
+		flags|=TGDS_LM_EXTENDEDFIFO_ABILITY;
+	}
+	
+	if(
+		(wifiUpdateVBLANKARM7LibUtilsCallback != NULL) &&
+		(wifiInterruptARM7LibUtilsCallback != NULL) &&
+		(wifiDeinitARM7ARM9LibUtilsCallback != NULL) 
+	){
+		flags|=TGDS_LM_WIFI_ABILITY;
+	}
+	
+	if(
+		(initMallocARM7LibUtilsCallback != NULL)
+	){
+		flags|=TGDS_LM_ARM7MALLOC_ABILITY;
+	}
+	
+	if(
+		(SoundStreamTimerHandlerARM7LibUtilsCallback != NULL) &&
+		(SoundStreamStopSoundARM7LibUtilsCallback != NULL) &&
+		(SoundStreamSetupSoundARM7LibUtilsCallback != NULL) 
+	){
+		flags|=TGDS_LM_SOUNDSTREAM_ABILITY;
+	}
+	
+	#endif
+	
+	#ifdef ARM9
+	if(
+		(wifiDeinitARM7ARM9LibUtilsCallback != NULL) &&
+		(wifiswitchDsWnifiModeARM9LibUtilsCallback != NULL) &&
+		(timerWifiInterruptARM9LibUtilsCallback != NULL)
+	){
+		flags|=TGDS_LM_WIFI_ABILITY;
+	}
+	
+	if(
+		(SoundStreamStopSoundStreamARM9LibUtilsCallback != NULL) &&
+		(SoundStreamUpdateSoundStreamARM9LibUtilsCallback != NULL) 
+	){
+		flags|=TGDS_LM_SOUNDSTREAM_ABILITY;
+	}
+	
+	if(
+		(libutilisFifoNotEmptyCallback != NULL)
+	){
+		flags|=TGDS_LM_EXTENDEDFIFO_ABILITY;
+	}
+	#endif
+	return flags;
+}

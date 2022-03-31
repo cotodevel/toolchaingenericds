@@ -176,7 +176,6 @@ struct libndsFIFOs {
 };
 
 typedef struct sIPCSharedTGDS {
-    
 	//NDS Header: Set up by ARM9 on boot.
 	struct sDSCARTHEADER DSHeader;
 	
@@ -253,6 +252,8 @@ typedef struct sIPCSharedTGDS {
 	//FIFO Mesagging: used by TGDS-multiboot loader code only.
 	uint32 fifoMesaggingQueueSharedRegion[4];	//4 Words for various command handling which can't use the NDS_CACHED_SCRATCHPAD / NDS_UNCACHED_SCRATCHPAD at the time
 	
+	u32 TGDSLMARM7Flags;
+	u32 TGDSLMARM9Flags;
 } IPCSharedTGDS	__attribute__((aligned (4)));
 
 //Shared Work     027FF000h 4KB    -     -    -    R/W

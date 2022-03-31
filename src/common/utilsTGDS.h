@@ -56,8 +56,14 @@ typedef	struct {
 //splitCustom logic
 typedef void(*splitCustom_fn)(const char *, size_t, char * ,int indexToLeftOut, char * delim);
 
-//ToolchainGenericDS-LinkedModule format: ver 0.2
-#define TGDS_LINKEDMODULE_TOPSIZE	(int)((1024*1024*1) + (256*1024))	//sint8 * is char *
+//ToolchainGenericDS-LinkedModule format: ver 0.3
+#define TGDS_LINKEDMODULE_TOPSIZE	(int)((1024*1024*1) + (256*1024))
+//TGDSLMFlags
+#define TGDS_LM_WIFI_ABILITY (u32)(1<<0)
+#define TGDS_LM_SOUNDSTREAM_ABILITY (u32)(1<<1)
+#define TGDS_LM_EXTENDEDFIFO_ABILITY (u32)(1<<2)
+#define TGDS_LM_ARM7MALLOC_ABILITY (u32)(1<<3)
+
 struct TGDS_Linked_Module {
 	u32 DSARMRegs[16];
 	int	TGDS_LM_Size;	//filled by the linker
@@ -71,6 +77,16 @@ struct TGDS_Linked_Module {
 	
 	//TGDS ARM9.bin defs
 	char TGDSMainAppName[MAX_TGDSFILENAME_LENGTH]; //todo: save full name (relative path it was called from) when calling TGDS-LModules
+	
+	//These flags are copied from IPC, of which are generated at payload boot time
+	u32 TGDSLMARM7Flags;
+	u32 TGDSLMARM9Flags;
+	
+	//LZSS compressed ARM7 TGDS-LM
+	u32 arm7EntryAddress;	//TGDS-LM ARM7 payload entrypoint
+	u32 arm7BootCodeSize;	//TGDS-LM ARM7 uncompressed payload size
+	int TGDS_LM_ARM7PAYLOADLZSSSize;	//TGDS-LM ARM7 LZSS compressed payload size, if zero, it doesn't get copied and the default is used
+	u8 TGDS_LM_ARM7PAYLOADLZSS[0x8000]; //a whole 56KB ARM7 NTR Binary is compressed to 21KB. Only 64K ARM7 Binaries allowed.
 };
 
 //NTR/TWL Binary descriptors
@@ -228,7 +244,7 @@ extern void TurnOffScreens();
 extern HandleFifoNotEmptyWeakRefLibUtils_fn libutilisFifoNotEmptyCallback;
 
 //Wifi (Shared)
-extern wifiDeinitARM7ARM9LibUtils_fn wifiDeinitARM7ARM9LibUtilsCallback; //new
+extern wifiDeinitARM7ARM9LibUtils_fn wifiDeinitARM7ARM9LibUtilsCallback;
 
 //Wifi (ARM7)
 extern wifiUpdateVBLANKARM7LibUtils_fn wifiUpdateVBLANKARM7LibUtilsCallback;
@@ -236,7 +252,7 @@ extern wifiInterruptARM7LibUtils_fn wifiInterruptARM7LibUtilsCallback;
 extern timerWifiInterruptARM9LibUtils_fn timerWifiInterruptARM9LibUtilsCallback;
 
 //Wifi (ARM9)
-extern wifiswitchDsWnifiModeARM9LibUtils_fn wifiswitchDsWnifiModeARM9LibUtilsCallback; //new
+extern wifiswitchDsWnifiModeARM9LibUtils_fn wifiswitchDsWnifiModeARM9LibUtilsCallback;
 
 //SS
 extern SoundStreamTimerHandlerARM7LibUtils_fn SoundStreamTimerHandlerARM7LibUtilsCallback;
@@ -278,7 +294,7 @@ extern int isNTROrTWLBinary(char * filename);
 extern int TGDSProjectReturnFromLinkedModule();	//resides in TGDS App caller address
 	extern void TGDSProjectReturnFromLinkedModuleDeciderStub();	//resides in TGDSLinkedModule address. Called when TGDS-LM binary exceeds 1.25M
 
-extern void TGDSProjectRunLinkedModule(char * TGDSLinkedModuleFilename, int argc, char **argv, char* TGDSProjectName);
+extern void TGDSProjectRunLinkedModule(char * TGDSLinkedModuleFilename, int argc, char **argv, char* TGDSProjectName, u8 * arm7payloadLZSSSourceBuffer, int arm7payloadLZSSSize, u32 arm7EntryAddress, u32 arm7BootCodeSize);
 extern void initSound();
 extern void setupLibUtils();
 
@@ -289,6 +305,7 @@ extern char** getGlobalArgv();
 
 extern int globalArgc;
 extern char **globalArgv;
+extern u32 readToolchainGenericDSLinkedModuleFlagsFromARMPayload();
 
 #ifdef __cplusplus
 }
