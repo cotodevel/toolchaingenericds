@@ -252,6 +252,7 @@ typedef struct sIPCSharedTGDS {
 	//FIFO Mesagging: used by TGDS-multiboot loader code only.
 	uint32 fifoMesaggingQueueSharedRegion[4];	//4 Words for various command handling which can't use the NDS_CACHED_SCRATCHPAD / NDS_UNCACHED_SCRATCHPAD at the time
 	
+	//TGDS-LM Shared Context
 	u32 TGDSLMARM7Flags;
 	u32 TGDSLMARM9Flags;
 } IPCSharedTGDS	__attribute__((aligned (4)));
