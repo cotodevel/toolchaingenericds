@@ -57,6 +57,10 @@ typedef	struct {
 typedef void(*splitCustom_fn)(const char *, size_t, char * ,int indexToLeftOut, char * delim);
 
 //ToolchainGenericDS-LinkedModule format: ver 0.3
+#define TGDS_LM_ADDR (u32)(0x02300000)
+#define TGDS_LM_CTX ((struct TGDS_Linked_Module *)((int)TGDS_LM_ADDR - (0x8000  + 0x1000)))
+#define TGDS_LM_SIZE (int)(sizeof(struct TGDS_Linked_Module))
+
 #define TGDS_LINKEDMODULE_TOPSIZE	(int)((1024*1024*1) + (256*1024))
 //TGDSLMFlags
 #define TGDS_LM_WIFI_ABILITY (u32)(1<<0)

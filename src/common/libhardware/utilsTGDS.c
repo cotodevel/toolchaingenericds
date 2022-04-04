@@ -115,8 +115,6 @@ char ** getArgvFromTGDSLinkedModule(struct TGDS_Linked_Module * TGDSLMCtx){
 	return (char **)&TGDSLMCtx->argvs;
 }
 
-#define TGDS_LM_ADDR (u32)(0x02300000)
-
 //Usage: char * TGDSLinkedModuleFilename = "0:/ToolchainGenericDS-linkedmodule.bin"
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("Os")))
@@ -175,7 +173,7 @@ void TGDSProjectRunLinkedModule(char * TGDSLinkedModuleFilename, int argc, char 
 	}
 	
 	//Generate TGDS-LM context
-	struct TGDS_Linked_Module * TGDSLinkedModuleCtx = (struct TGDS_Linked_Module *)((int)TGDS_LM_ADDR - (0x8000  + 0x1000));
+	struct TGDS_Linked_Module * TGDSLinkedModuleCtx = TGDS_LM_CTX;
 	memset((u8*)TGDSLinkedModuleCtx, 0, (0x8000  + 0x1000));
 	
 	//copy arm7 lzss compressed payload
