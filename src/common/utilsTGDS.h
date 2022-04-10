@@ -56,43 +56,6 @@ typedef	struct {
 //splitCustom logic
 typedef void(*splitCustom_fn)(const char *, size_t, char * ,int indexToLeftOut, char * delim);
 
-//ToolchainGenericDS-LinkedModule format: ver 0.3
-#define TGDS_LM_ADDR (u32)(0x02300000)
-#define TGDS_LM_CTX ((struct TGDS_Linked_Module *)((int)TGDS_LM_ADDR - (0x8000  + 0x1000)))
-#define TGDS_LM_SIZE (int)(sizeof(struct TGDS_Linked_Module))
-
-#define TGDS_LINKEDMODULE_TOPSIZE	(int)((1024*1024*1) + (256*1024))
-//TGDSLMFlags
-#define TGDS_LM_WIFI_ABILITY (u32)(1<<0)
-#define TGDS_LM_SOUNDSTREAM_ABILITY (u32)(1<<1)
-#define TGDS_LM_EXTENDEDFIFO_ABILITY (u32)(1<<2)
-#define TGDS_LM_ARM7MALLOC_ABILITY (u32)(1<<3)
-
-struct TGDS_Linked_Module {
-	u32 DSARMRegs[16];
-	int	TGDS_LM_Size;	//filled by the linker
-	unsigned int	TGDS_LM_Entrypoint; //filled by the linker
-	u32 returnAddressTGDSLinkedModule; //TGDS LM implementation called when LM exits (return from module). (1/2)
-	u32 returnAddressTGDSMainApp; //TGDS LM implementation called returnAddressTGDSLinkedModule reloads from RAM rather than image. (2/2)
-	//argv 
-	char args[8][MAX_TGDSFILENAME_LENGTH];
-	char *argvs[8];
-	int argCount;
-	
-	//TGDS ARM9.bin defs
-	char TGDSMainAppName[MAX_TGDSFILENAME_LENGTH]; //todo: save full name (relative path it was called from) when calling TGDS-LModules
-	
-	//These flags are copied from IPC, of which are generated at payload boot time
-	u32 TGDSLMARM7Flags;
-	u32 TGDSLMARM9Flags;
-	
-	//LZSS compressed ARM7 TGDS-LM
-	u32 arm7EntryAddress;	//TGDS-LM ARM7 payload entrypoint
-	u32 arm7BootCodeSize;	//TGDS-LM ARM7 uncompressed payload size
-	int TGDS_LM_ARM7PAYLOADLZSSSize;	//TGDS-LM ARM7 LZSS compressed payload size, if zero, it doesn't get copied and the default is used
-	u8 TGDS_LM_ARM7PAYLOADLZSS[0x8000]; //a whole 56KB ARM7 NTR Binary is compressed to 21KB. Only 64K ARM7 Binaries allowed.
-};
-
 //NTR/TWL Binary descriptors
 #define isNDSBinaryV1 ((int)0)
 #define isNDSBinaryV2 ((int)1)
@@ -295,10 +258,6 @@ extern void addARGV(int argc, char *argv);
 extern int isNTROrTWLBinary(char * filename);
 #endif
 
-extern int TGDSProjectReturnFromLinkedModule();	//resides in TGDS App caller address
-	extern void TGDSProjectReturnFromLinkedModuleDeciderStub();	//resides in TGDSLinkedModule address. Called when TGDS-LM binary exceeds 1.25M
-
-extern void TGDSProjectRunLinkedModule(char * TGDSLinkedModuleFilename, int argc, char **argv, char* TGDSProjectName, u8 * arm7payloadLZSSSourceBuffer, int arm7payloadLZSSSize, u32 arm7EntryAddress, u32 arm7BootCodeSize);
 extern void initSound();
 extern void setupLibUtils();
 
@@ -309,7 +268,6 @@ extern char** getGlobalArgv();
 
 extern int globalArgc;
 extern char **globalArgv;
-extern u32 readToolchainGenericDSLinkedModuleFlagsFromARMPayload();
 
 #ifdef __cplusplus
 }
