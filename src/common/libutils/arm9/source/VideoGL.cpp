@@ -32,21 +32,23 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "VideoGL.h"
-#include "VideoGLExt.h"
 #include "arm9math.h"
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include "ndsDisplayListUtils.h"
 
 #ifdef ARM9
 #include <typedefsTGDS.h>
 #include "dsregs.h"
 #include "videoTGDS.h"
+#include "dsregs.h"
 #endif
 
 #ifdef WIN32
 #include "TGDSTypes.h"
 #endif
+
 //lut resolution for trig functions (must be power of two and must be the same as LUT resolution)
 //in other words dont change unless you also change your LUTs
 #define LUT_SIZE (512)
@@ -58,9 +60,6 @@ __attribute__((section(".dtcm")))
 bool isNdsDisplayListUtilsCallList;
 struct GLContext globalGLCtx;
 
-#ifdef NO_GL_INLINE
-//////////////////////////////////////////////////////////////////////
-
 void glPushMatrix(void){
 	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
 		Compiled_DL_Binary[interCompiled_DLPtr] = getMTX_PUSH();
@@ -71,10 +70,7 @@ void glPushMatrix(void){
 	}
 }
 
-//////////////////////////////////////////////////////////////////////
-
-void glPopMatrix(sint32 index)
-{
+void glPopMatrix(sint32 index){
 	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
 		Compiled_DL_Binary[interCompiled_DLPtr] = getMTX_POP();
 		interCompiled_DLPtr++;
@@ -87,39 +83,25 @@ void glPopMatrix(sint32 index)
 	}
 }
 
-//////////////////////////////////////////////////////////////////////
-
-  void glRestoreMatrix(sint32 index)
-{
+void glRestoreMatrix(sint32 index){
   MATRIX_RESTORE = index;
 }
 
-//////////////////////////////////////////////////////////////////////
-
-  void glStoreMatrix(sint32 index)
-{
+void glStoreMatrix(sint32 index){
   MATRIX_STORE = index;
 }
 
-//////////////////////////////////////////////////////////////////////
-
-  void glScalev(GLvector* v)
-{
+void glScalev(GLvector* v){
   MATRIX_SCALE = v->x;
   MATRIX_SCALE = v->y;
   MATRIX_SCALE = v->z;
 }
 
-//////////////////////////////////////////////////////////////////////
-
-  void glTranslatev(GLvector* v)
-{
+void glTranslatev(GLvector* v){
   MATRIX_TRANSLATE = v->x;
   MATRIX_TRANSLATE = v->y;
   MATRIX_TRANSLATE = v->z;
 }
-
-//////////////////////////////////////////////////////////////////////
 
 void glTranslate3f32(f32 x, f32 y, f32 z){
 	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
@@ -137,16 +119,11 @@ void glTranslate3f32(f32 x, f32 y, f32 z){
 	}
 }
 
-//////////////////////////////////////////////////////////////////////
-
-  void glScalef32(f32 factor)
-{
+void glScalef32(f32 factor){
   MATRIX_SCALE = factor;
   MATRIX_SCALE = factor;
   MATRIX_SCALE = factor;
 }
-
-//////////////////////////////////////////////////////////////////////
 
 void glTranslatef32(int x, int y, int z) {
 	MATRIX_TRANSLATE = x;
@@ -154,41 +131,25 @@ void glTranslatef32(int x, int y, int z) {
 	MATRIX_TRANSLATE = z;
 }
 
-//////////////////////////////////////////////////////////////////////
-
-  void glLight(int id, rgb color, v10 x, v10 y, v10 z)
-{
+void glLight(int id, rgb color, v10 x, v10 y, v10 z){
   id = (id & 3) << 30;
   GFX_LIGHT_VECTOR = id | ((z & 0x3FF) << 20) | ((y & 0x3FF) << 10) | (x & 0x3FF);
   GFX_LIGHT_COLOR = id | color;
 }
 
-//////////////////////////////////////////////////////////////////////
-
-  void glNormal(uint32 normal)
-{
+void glNormal(uint32 normal){
   GFX_NORMAL = normal;
 }
 
-//////////////////////////////////////////////////////////////////////
-
-  void glLoadIdentity(void)
-{
+void glLoadIdentity(void){
   MATRIX_IDENTITY = 0;
 }
 
-//////////////////////////////////////////////////////////////////////
-
-  void glMatrixMode(int mode)
-{
+void glMatrixMode(int mode){
   MATRIX_CONTROL = mode;
 }
 
-//////////////////////////////////////////////////////////////////////
-
-void glMaterialShinnyness(void)
-
-{
+void glMaterialShinnyness(void){
 	uint32 shiny32[128/4];
 	uint8  *shiny8 = (uint8*)shiny32;
 
@@ -202,36 +163,25 @@ void glMaterialShinnyness(void)
 	}
 }
 
-//////////////////////////////////////////////////////////////////////
-
-  void glPolyFmt(int alpha) // obviously more to this
-{
+void glPolyFmt(int alpha){ // obviously more to this
   GFX_POLY_FORMAT = alpha;
 }
-
-#endif  //endif #no inline
-
-//////////////////////////////////////////////////////////////////////
 
 void glViewport(uint8 x1, uint8 y1, uint8 x2, uint8 y2){
 	GFX_VIEWPORT = (x1) + (y1 << 8) + (x2 << 16) + (y2 << 24);
 }
 
-//////////////////////////////////////////////////////////////////////
 u8 defaultglClearColorR=0;
 u8 defaultglClearColorG=0;
 u8 defaultglClearColorB=0;
 u16 defaultglClearDepth=0;
 
-//////////////////////////////////////////////////////////////////////
 void glClearColor(uint8 red, uint8 green, uint8 blue){
 	defaultglClearColorR = red;
 	defaultglClearColorG = green;
 	defaultglClearColorB = blue;
 	GFX_CLEAR_COLOR = RGB15(red, green, blue);
 }
-
-//////////////////////////////////////////////////////////////////////
 
 void glClearDepth(uint16 depth){
 	defaultglClearDepth = depth;
@@ -254,32 +204,21 @@ void glClear( GLbitfield mask ){
 	//todo: GL_INVALID_VALUE
 }
 
-//////////////////////////////////////////////////////////////////////
-
 void glTranslatef(float x, float y, float z){
 	glTranslate3f32(floattof32(x), floattof32(y), floattof32(z));
 }
-//////////////////////////////////////////////////////////////////////
 
 static uint16 enable_bits = GL_TEXTURE_2D | (1<<13) | (1<<14);
 
-//////////////////////////////////////////////////////////////////////
-
-void glEnable(int bits)
-{
+void glEnable(int bits){
 	enable_bits |= bits & (GL_TEXTURE_2D|GL_TOON_HIGHLIGHT|GL_OUTLINE|GL_ANTIALIAS);
 	GFX_CONTROL = enable_bits;
 }
 
-//////////////////////////////////////////////////////////////////////
-
-void glDisable(int bits)
-{
+void glDisable(int bits){
 	enable_bits &= ~(bits & (GL_TEXTURE_2D|GL_TOON_HIGHLIGHT|GL_OUTLINE|GL_ANTIALIAS));
 	GFX_CONTROL = enable_bits;
 }
-
-//////////////////////////////////////////////////////////////////////
 
 void glFlush(void){
 	GFX_FLUSH = 2;
@@ -289,15 +228,12 @@ void glFlush(void){
 //OpenGL states this behaves the same as glFlush but also CPU waits for all commands to be executed by the GPU
 void glFinish(void){
 	glFlush();
-	while( (vu32)(*((vu32*)GFX_STATUS_ADDR)) & (1 << 27) ){ //27    Geometry Engine Busy (0=No, 1=Yes; Busy; Commands are executing)
+	while( (volatile u32)(*((volatile u32*)GFX_STATUS_ADDR)) & (1 << 27) ){ //27    Geometry Engine Busy (0=No, 1=Yes; Busy; Commands are executing)
 		
 	}
 }
 
-//////////////////////////////////////////////////////////////////////
-
-void glLoadMatrix4x4(m4x4 * m)
-{
+void glLoadMatrix4x4(m4x4 * m){
   MATRIX_LOAD4x4 = m->m[0];
   MATRIX_LOAD4x4 = m->m[1];
   MATRIX_LOAD4x4 = m->m[2];
@@ -319,10 +255,7 @@ void glLoadMatrix4x4(m4x4 * m)
   MATRIX_LOAD4x4 = m->m[15];
 }
 
-//////////////////////////////////////////////////////////////////////
-
-void glLoadMatrix4x3(m4x3* m)
-{
+void glLoadMatrix4x3(m4x3* m){
   MATRIX_LOAD4x3 = m->m[0];
   MATRIX_LOAD4x3 = m->m[1];
   MATRIX_LOAD4x3 = m->m[2];
@@ -339,10 +272,7 @@ void glLoadMatrix4x3(m4x3* m)
   MATRIX_LOAD4x3 = m->m[11];
 }
 
-//////////////////////////////////////////////////////////////////////
-
-void glMultMatrix4x4(m4x4* m)
-{
+void glMultMatrix4x4(m4x4* m){
   MATRIX_LOAD4x4 = m->m[0];
   MATRIX_LOAD4x4 = m->m[1];
   MATRIX_LOAD4x4 = m->m[2];
@@ -364,10 +294,7 @@ void glMultMatrix4x4(m4x4* m)
   MATRIX_LOAD4x4 = m->m[15];
 }
 
-//////////////////////////////////////////////////////////////////////
-
-void glMultMatrix4x3(m4x3* m)
-{
+void glMultMatrix4x3(m4x3* m){
   MATRIX_MULT4x3 = m->m[0];
   MATRIX_MULT4x3 = m->m[1];
   MATRIX_MULT4x3 = m->m[2];
@@ -396,7 +323,6 @@ void glMultMatrix4x3(m4x3* m)
   MATRIX_MULT3x3 = m->m[8];
 }
 
-//////////////////////////////////////////////////////////////////////
 // Integer rotation (not gl standard)
 //	based on 512 degree circle
 void glRotateZi(int angle){
@@ -445,10 +371,7 @@ void glRotateZi(int angle){
 	}
 }
 
-//////////////////////////////////////////////////////////////////////
-
-void glRotateYi(int angle)
-{
+void glRotateYi(int angle){
 	f32 sine = SIN[angle &  LUT_MASK];
 	f32 cosine = COS[angle & LUT_MASK];
 	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
@@ -494,10 +417,7 @@ void glRotateYi(int angle)
 	}
 }
 
-//////////////////////////////////////////////////////////////////////
-
-void glRotateXi(int angle)
-{
+void glRotateXi(int angle){
   f32 sine = SIN[angle &  LUT_MASK];
   f32 cosine = COS[angle & LUT_MASK];
 
@@ -543,21 +463,17 @@ void glRotateXi(int angle)
 		MATRIX_MULT3x3 = cosine;
 	}
 }
-//////////////////////////////////////////////////////////////////////
+
 //	rotations wrapped in float...mainly for testing
-void glRotateX(float angle)
-{
+void glRotateX(float angle){
 	glRotateXi((int)(angle * LUT_SIZE / 360.0));
 }
-//////////////////////////////////////////////////////////////////////
 
-void glRotateY(float angle)
-{
+void glRotateY(float angle){
 	glRotateYi((int)(angle * LUT_SIZE / 360.0));
 }
-///////////////////////////////////////////////////////////////////////
-void glRotateZ(float angle)
-{
+
+void glRotateZ(float angle){
 	glRotateZi((int)(angle * LUT_SIZE / 360.0));
 }
 
@@ -573,11 +489,9 @@ void glRotatef(int angle, float x, float y, float z){
 	}
 }
 
-//////////////////////////////////////////////////////////////////////
 // Fixed point look at function, it appears to work as expected although 
 //	testing is recomended
-void gluLookAtf32(f32 eyex, f32 eyey, f32 eyez, f32 lookAtx, f32 lookAty, f32 lookAtz, f32 upx, f32 upy, f32 upz)
-{
+void gluLookAtf32(f32 eyex, f32 eyey, f32 eyez, f32 lookAtx, f32 lookAty, f32 lookAtz, f32 upx, f32 upy, f32 upz){
 	f32 x[3], y[3], z[3], up[3];
 
 	z[0] = eyex - lookAtx;
@@ -616,14 +530,13 @@ void gluLookAtf32(f32 eyex, f32 eyey, f32 eyez, f32 lookAtx, f32 lookAty, f32 lo
 
 	glTranslate3f32(-eyex, -eyey, -eyez);
 }
-///////////////////////////////////////
+
 //  glu wrapper for standard float call
-void gluLookAt(float eyex, float eyey, float eyez, float lookAtx, float lookAty, float lookAtz, float upx, float upy, float upz)
-{
+void gluLookAt(float eyex, float eyey, float eyez, float lookAtx, float lookAty, float lookAtz, float upx, float upy, float upz){
 	gluLookAtf32(floattof32(eyex), floattof32(eyey), floattof32(eyez), floattof32(lookAtx), floattof32(lookAty), floattof32(lookAtz),
 					floattof32(upx), floattof32(upy), floattof32(upz));
 }
-//////////////////////////////////////////////////////////////////////////////////////////////////////
+
 //	frustrum has only been tested as part of perspective
 void gluFrustumf32(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far){
    glMatrixMode(GL_PROJECTION);
@@ -655,7 +568,6 @@ void glOrtho(float left, float right, float bottom, float top, float near, float
 	glOrthof32(floattof32(left), floattof32(right), floattof32(bottom), floattof32(top), floattof32(near), floattof32(far));
 }
 
-///////////////////////////////////////
 void glOrthof32(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far){
    glMatrixMode(GL_PROJECTION);
 
@@ -681,17 +593,14 @@ void glOrthof32(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far){
 	
    glStoreMatrix(0);
 }
-///////////////////////////////////////
 
 //  Frustrum wrapper
 void gluFrustum(float left, float right, float bottom, float top, float near, float far){
 	gluFrustumf32(floattof32(left), floattof32(right), floattof32(bottom), floattof32(top), floattof32(near), floattof32(far));
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////
 //	Fixed point perspective setting
-void gluPerspectivef32(int fovy, f32 aspect, f32 zNear, f32 zFar)
-{
+void gluPerspectivef32(int fovy, f32 aspect, f32 zNear, f32 zFar){
    f32 xmin, xmax, ymin, ymax;
 
    ymax = mulf32(zNear, TAN[fovy & LUT_MASK]);
@@ -702,15 +611,13 @@ void gluPerspectivef32(int fovy, f32 aspect, f32 zNear, f32 zFar)
    gluFrustumf32(xmin, xmax, ymin, ymax, zNear, zFar);
 }
 
-///////////////////////////////////////
 //  glu wrapper for floating point
 void gluPerspective(float fovy, float aspect, float zNear, float zFar){
 	gluPerspectivef32((int)(fovy * LUT_SIZE / 360.0), floattof32(aspect), floattof32(zNear), floattof32(zFar));    
 }
 
 
-void glMaterialf(int mode, rgb color)
-{
+void glMaterialf(int mode, rgb color){
   static uint32 diffuse_ambient = 0;
   static uint32 specular_emission = 0;
 
@@ -738,10 +645,7 @@ void glMaterialf(int mode, rgb color)
   GFX_SPECULAR_EMISSION = specular_emission;
 }
 
-//////////////////////////////////////////////////////////////////////
-
-void glResetMatrixStack(void)
-{
+void glResetMatrixStack(void){
   // stack overflow ack ?
   GFX_STATUS |= 1 << 15;
 
@@ -754,34 +658,23 @@ void glResetMatrixStack(void)
   glPopMatrix((GFX_STATUS >> 8) & 0x1F);
 }
 
-//////////////////////////////////////////////////////////////////////
-
-void glSetOutlineColor(int id, rgb color)
-{
+void glSetOutlineColor(int id, rgb color){
 	GFX_EDGE_TABLE[id] = color;
 }
 
-//////////////////////////////////////////////////////////////////////
-
-void glSetToonTable(uint16 *table)
-{
+void glSetToonTable(uint16 *table){
 	int i;
 	for( i = 0; i < 32; i++ ){
 		GFX_TOON_TABLE[i] = table[i];
 	}
 }
 
-//////////////////////////////////////////////////////////////////////
-
-void glSetToonTableRange(int start, int end, rgb color)
-{
+void glSetToonTableRange(int start, int end, rgb color){
 	int i;
 	for( i = start; i <= end; i++ ){
 		GFX_TOON_TABLE[i] = color;
 	}
 }
-
-//////////////////////////////////////////////////////////////////////
 
 void glReset(void){
   while (GFX_STATUS & (1<<27)); // wait till gfx engine is not busy
@@ -811,24 +704,19 @@ void glReset(void){
 // Texture globals
 
 uint32 textures[MAX_TEXTURES];
-
 uint32 activeTexture = 0;
-
-
 uint32* nextBlock = (uint32*)0x06800000;
-////////////////////////////////////
-void glResetTextures(void)
-{
+
+void glResetTextures(void){
 	activeTexture = 0;
 	nextBlock = (uint32*)0x06800000;
 }
-///////////////////////////////////////
+
 // glGenTextures creates intiger names for your table
 //	takes n as the number of textures to generate and 
 //	a pointer to the names array that it needs to fill.
 //  Returns 1 if succesful and 0 if out of texture names
-int glGenTextures(int n, int *names)
-{
+int glGenTextures(int n, int *names){
 	static int name = 0;
 
 	int index = 0;
@@ -844,29 +732,24 @@ int glGenTextures(int n, int *names)
 	return 1;
 }
 
-///////////////////////////////////////
 // glBindTexure sets the current named
 //	texture to the active texture.  Target 
 //	is ignored as all DS textures are 2D
-void glBindTexture(int target, int name)
-{
+void glBindTexture(int target, int name){
 	GFX_TEX_FORMAT = textures[name];
 	
 	activeTexture = name;
 }
 
-///////////////////////////////////////
 // glTexParameter although named the same 
 //	as its gl counterpart it is not compatible
 //	Effort may be made in the future to make it so.
-void glTexParameter(uint8 sizeX, uint8 sizeY, uint32* addr, uint8 mode, uint32 param)
-{
+void glTexParameter(uint8 sizeX, uint8 sizeY, uint32* addr, uint8 mode, uint32 param){
 	textures[activeTexture] = param | (sizeX << 20) | (sizeY << 23) | (((uint32)addr >> 3) & 0xFFFF) | (mode << 26);
 }
 
 
-uint16* vramGetBank(uint16 *addr)
-{
+uint16* vramGetBank(uint16 *addr){
 	#ifdef ARM9
 	if(addr >= VRAM_A && addr < VRAM_B)
 		return VRAM_A;
@@ -889,8 +772,7 @@ uint16* vramGetBank(uint16 *addr)
 	return NULL;
 }
 
-int vramIsTextureBank(uint16 *addr)
-{
+int vramIsTextureBank(uint16 *addr){
 	uint16* vram = vramGetBank(addr);
 	#ifdef ARM9
 	if(vram == VRAM_A)
@@ -921,8 +803,7 @@ int vramIsTextureBank(uint16 *addr)
 	return 0;
 }
 
-uint32* getNextTextureSlot(int size)
-{
+uint32* getNextTextureSlot(int size){
 	#ifdef ARM9
 	uint32* result = nextBlock;
 	nextBlock += size >> 2;
@@ -943,12 +824,10 @@ uint32* getNextTextureSlot(int size)
 	return 0;
 }
 
-///////////////////////////////////////
 // Similer to glTextImage2D from gl it takes a pointer to data
 //	Empty fields and target are unused but provided for code compatibility.
 //	type is simply the texture type (GL_RGB, GL_RGB8 ect...)
-int glTexImage2D(int target, int empty1, int type, int sizeX, int sizeY, int empty2, int param, uint8* texture)
-{
+int glTexImage2D(int target, int empty1, int type, int sizeX, int sizeY, int empty2, int param, uint8* texture){
 	uint16 alpha = 0;
 	uint32 size = 0;
 	uint16 palette = 0;
@@ -1100,7 +979,6 @@ void glPrioritizeTextures (GLsizei n, const GLuint *textures, const GLclampf *pr
 	//DS 3D GPU does not support texture priority. There may be a way by sorting them by color but
 }
 
-////////////////////////////////////////////////////////////
 void glCallListGX(const u32* list) {
 	#ifdef ARM9
 	u32 count = *list++;
@@ -1133,3 +1011,774 @@ void glColor3fv(const GLfloat * v){
 		glColor3f(red, green, blue);
 	}
 }
+
+/////////////////////////////////////////////////////////// Extension Start /////////////////////////////////////////////////////////// 
+//DL Notes: Are sent using unpacked format.
+//Unpacked Command format:
+//Opcodes that write more than one 32bit value (ie. STRD and STM) can be used to send ONE UNPACKED command, 
+//plus any parameters which belong to that command. 
+//After that, there must be a 1 cycle delay before sending the next command 
+//(ie. one cannot sent more than one command at once with a single opcode, each command must be invoked by a new opcode).
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//GX hardware object descriptor: Holds current callList GL context from a GL index
+//struct ndsDisplayListDescriptor Internal_DL[MAX_Internal_DisplayList_Count];
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+u32 interCompiled_DLPtr=0;	//interCompiled_DLPtr is the base list index surrounding multiple CallLists. 
+//GX hardware DL Commands, GL index is above descriptor
+u32 Compiled_DL_Binary[DL_MAX_ITEMS*MAX_Internal_DisplayList_Count]; //Packed / Unpacked FIFO Format
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//OpenGL DL internal Display Lists enumerator, holds current DL index pointed by internal interCompiled_DLPtr, starting from 0.
+GLsizei GLDLEnumerator[MAX_Internal_DisplayList_Count];
+
+//Gets the internal Display List buffer used by Display Lists Open GL opcodes.
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+u32 * getInternalDisplayListBuffer(){
+	return (u32 *)&Compiled_DL_Binary[0];
+}
+
+//listBase
+GLsizei currentListPointer = DL_INVALID;
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void GLInitExt(){
+	//memset((char*)&Internal_DL[0], 0, sizeof(Internal_DL));
+	globalGLCtx.mode = GL_COMPILE;
+	
+	/*
+	int i = 0;
+	for(i = 0; i < MAX_Internal_DisplayList_Count; i++ ){
+		Internal_DL[i].DisplayListNameAssigned = DL_INVALID;
+		Internal_DL[i].isDisplayListAssigned = false;
+        Internal_DL[i].ndsDisplayListSize = DL_MAX_ITEMS;
+		int j = 0;
+        for(j = 0; j < Internal_DL[i].ndsDisplayListSize; j++){
+            Internal_DL[i].DL[j].displayListType = DL_INVALID;
+            Internal_DL[i].DL[j].index = j;
+            Internal_DL[i].DL[j].value = DL_INVALID;
+        }
+	}*/
+    isNdsDisplayListUtilsCallList = false;
+}
+
+//glGenLists returns the first list name in a range of the length you pass to glGenLists.
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+GLuint glGenLists(GLsizei	range){
+    if(range < MAX_Internal_DisplayList_Count){
+        int i = 0;
+        interCompiled_DLPtr = 1; //GL index 0 is reserved for DL size
+		for(i = 0; i < 128; i++ ){
+            /*
+			Internal_DL[i].DisplayListNameAssigned = DL_INVALID;//glNewList() assigns the index (name of a display list) //=i;
+            Internal_DL[i].isDisplayListAssigned = true;
+            Internal_DL[i].ndsDisplayListSize = DL_MAX_ITEMS;
+			int j = 0;
+            for(j = 0; j < Internal_DL[i].ndsDisplayListSize; j++){
+                Internal_DL[i].DL[j].displayListType = DL_INVALID;
+                Internal_DL[i].DL[j].index = j;
+                Internal_DL[i].DL[j].value = DL_INVALID;
+            }
+			*/
+			GLDLEnumerator[i] = DL_INVALID; //GLDLEnumerator[i] = interCompiled_DLPtr; //only mapped from glNewList()
+		}
+        return interCompiled_DLPtr; //starts from range of said length
+    }
+    return 0;
+}
+
+//Specifies the offset that's added to the display-list indices in glCallLists() to obtain the final display-list indices. The default display-list base is 0. The list base has no effect on glCallList(), which executes only one display list or on glNewList().
+//Internally, if a new base is set, a pointer to a new section is updated
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glListBase(GLuint base){
+	if(base > 0){
+		base--;
+	}
+	interCompiled_DLPtr = interCompiled_DLPtr + base;
+}
+
+//glIsList returns GL_TRUE if list is the name of a display list and returns GL_FALSE if it is not, or if an error occurs.
+//A name returned by glGenLists, but not yet associated with a display list by calling glNewList, is not the name of a display list.
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+GLboolean glIsList(GLuint list){
+	if(list > 0){
+		list--;
+	}
+	if((u32)GLDLEnumerator[list] != (u32)DL_INVALID){
+		return GL_TRUE;
+	}
+
+	return GL_FALSE;
+	//Todo: GL_INVALID_OPERATION;
+}
+
+//list:Specifies the display-list name.
+//mode:Specifies the compilation mode, which can be GL_COMPILE or GL_COMPILE_AND_EXECUTE.
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glNewList(GLuint list, GLenum mode){
+	if(list >= 1){
+		list--; //assign current interCompiled_DLPtr (new) to a List
+	}
+	GLDLEnumerator[list] = interCompiled_DLPtr;
+	globalGLCtx.mode = (u32)mode;
+	isNdsDisplayListUtilsCallList = true;
+	memset((char*)&Compiled_DL_Binary[interCompiled_DLPtr], 0, DL_MAX_ITEMS - ((interCompiled_DLPtr*4) % DL_MAX_ITEMS) );
+}
+
+//When glEndList is encountered, the display-list definition is completed 
+//by associating the list with the unique name list (specified in the glNewList command). 
+//If a display list with name list already exists, it is replaced only when glEndList is called.
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glEndList(void){
+	//If LAST display-list name is GL_COMPILE: actually builds ALL the Display-list generated through the LAST display-list name generated from glNewList(), then compiles it into a GX binary DL. Such binary will be manually executed when glCallList(display-list name) is called 
+	//Else If LAST display-list name is GL_COMPILE_AND_EXECUTE: actually builds ALL the Display-list generated through the LAST display-list name generated from glNewList(), then compiles it into a GX binary DL and executes it inmediately through GX GLCallList()
+	
+	//define List Size
+	int listSize = (interCompiled_DLPtr * 4) + 4;
+	Compiled_DL_Binary[0] = (u32)listSize;
+
+	//Close the list, build the list, execute it if needed
+	Compiled_DL_Binary[interCompiled_DLPtr] = getFIFO_END();
+	interCompiled_DLPtr++;
+
+	//not using Packed Command... int builtDisplayListSize = CompilePackedNDSGXDisplayListFromObject((u32*)&Compiled_DL_Binary[0], &Compiled_DL) + 1;
+	if(globalGLCtx.mode == GL_COMPILE_AND_EXECUTE){
+		glCallListGX((const u32*)&Compiled_DL_Binary[0]); //Using Unpacked Command instead
+
+		//List already consumed. Reset GX Compiled Display List
+		interCompiled_DLPtr = 1;
+		memset((char*)&Compiled_DL_Binary[0], 0, sizeof(Compiled_DL_Binary));
+	}
+	isNdsDisplayListUtilsCallList = false;
+}
+
+/*
+OpenGL Display List execution which implements the lower level GX hardware Display Lists execution.
+
+params: 
+list
+Specifies the integer name of the display list to be executed.
+*/
+u32 singleOpenGLCompiledDisplayList[2048]; //2048 cmds per a single List should be enough
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glCallList(GLuint list){
+	u32 * InternalDL = getInternalDisplayListBuffer();
+	int curDLInCompiledDLOffset = GLDLEnumerator[list];
+	if((u32)curDLInCompiledDLOffset != DL_INVALID){
+		u32 * currentPhysicalDisplayListStart = (u32 *)&InternalDL[curDLInCompiledDLOffset];
+		u32 * currentPhysicalDisplayListEnd = NULL;
+
+		int nextDLInCompiledDLOffset = GLDLEnumerator[list+1];
+		if(
+			((u32)nextDLInCompiledDLOffset != DL_INVALID)
+			||
+			( (u32)InternalDL[nextDLInCompiledDLOffset] == (u32)getFIFO_END() ) //Means no last cmd End. Commands are processed in unpacked format
+			){
+			currentPhysicalDisplayListEnd = (u32 *)&InternalDL[nextDLInCompiledDLOffset];
+		}
+		//means we are at the last list. Copy everything until getFIFO_END()
+		else{
+			u32 * currentPhysicalDisplayListEndCopy = currentPhysicalDisplayListStart;
+			while( ((u32)*(currentPhysicalDisplayListEndCopy)) != (u32)getFIFO_END() ){
+				currentPhysicalDisplayListEndCopy++;
+			}
+			currentPhysicalDisplayListEnd = currentPhysicalDisplayListEndCopy + 1; //a whole packed command is 4 bytes
+			//printf("[List: %d]got end of list: %x", list, currentPhysicalDisplayListEnd);
+			//printf("liststart: %x", currentPhysicalDisplayListStart);			
+		}
+		int singleListSize = (currentPhysicalDisplayListEnd - currentPhysicalDisplayListStart) * 4;
+		if(singleListSize > 0){
+			//Run a single GX Display List, having proper DL size
+			memcpy((u8*)&singleOpenGLCompiledDisplayList[1], currentPhysicalDisplayListStart, singleListSize);
+			singleOpenGLCompiledDisplayList[0] = (u32)singleListSize;
+			glCallListGX((const u32*)&singleOpenGLCompiledDisplayList[0]);
+			//printf("glCallList():glCallListGX() List(%d) exec. OK", list);
+		}
+		else{
+			//printf("glCallList():This OpenGL list name(%d)'s InternalDL offset points to InternalDL GX end (no more GX DL after this)", (u32)list);
+		}
+	}
+}
+
+/*
+OpenGL Display Lists collection execution. For each list it'll be executed as a single OpenGL Display List
+
+params:
+n
+Specifies the number of display lists to be executed.
+
+type
+Specifies the type of values in lists. Symbolic constants GL_BYTE, GL_UNSIGNED_BYTE, GL_SHORT, GL_UNSIGNED_SHORT, GL_INT, GL_UNSIGNED_INT, GL_FLOAT are accepted.
+
+lists
+Specifies the address of an array of name offsets in the display list. The pointer type is void because the offsets can be bytes, shorts, ints, or floats, depending on the value of type.
+*/
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glCallLists(GLsizei n, GLenum type, const void * lists){
+	int offsetSize = -1;
+	GLubyte * u8array = NULL;
+	u16 * u16array = NULL;
+	u32 * u32array = NULL;
+
+	switch(type){
+		//C Type	Bitdepth	Description								Common Enum
+		
+		//GLbyte	8			Signed, 2's complement binary integer	GL_BYTE
+		case(GL_BYTE):{
+			offsetSize = 1;
+			u8array = (GLubyte *)lists;
+		}
+		break;
+
+		//GLubyte	8			Unsigned binary integer					GL_UNSIGNED_BYTE
+		case(GL_UNSIGNED_BYTE):{
+			offsetSize = 1;
+			u8array = (GLubyte *)lists;
+		}
+		break;
+
+		//GLshort	16			Signed, 2's complement binary integer	GL_SHORT
+		case(GL_SHORT):{
+			offsetSize = 2;
+			u16array = (u16 *)lists;
+		}
+		break;
+
+		//GLushort	16			Unsigned binary integer					GL_UNSIGNED_SHORT
+		case(GL_UNSIGNED_SHORT):{
+			offsetSize = 2;
+			u16array = (u16 *)lists;
+		}
+		break;
+
+		//GLint		32			Signed, 2's complement binary integer	GL_INT
+		case(GL_INT):{
+			offsetSize = 4;
+			u32array = (u32 *)lists;
+		}
+		break;
+
+		//GLuint	32			Unsigned binary integer					GL_UNSIGNED_INT
+		case(GL_UNSIGNED_INT):{
+			offsetSize = 4;
+			u32array = (u32 *)lists;
+		}
+		break;
+
+		//GLfloat	32			An IEEE-754 floating-point value		GL_FLOAT
+		case(GL_FLOAT):{
+			offsetSize = 4;
+			u32array = (u32 *)lists;
+		}
+		break;
+	}
+
+	//Valid? Run each one of them
+	if((n > 0) && (offsetSize != -1)){
+		int i = 0;
+		for(i = 0; i < n; i++){
+			GLuint listName = (GLuint)-1;
+			
+			if(u8array != NULL){
+				listName = (GLuint)u8array[i];
+			}
+			else if(u16array != NULL){
+				listName = (GLuint)u16array[i];
+			}
+			else if(u32array != NULL){
+				listName = (GLuint)u32array[i];
+			}
+			
+			if(
+				((GLuint)listName != (GLuint)-1)
+				&&
+				(n > listName) 	//	//
+				&&				//	|| Prevent out-of-bound lists
+				(listName >= 0)	//
+			){
+				//printf("glCallLists(): trying list: %d", listName);
+				glCallList(listName);
+			}
+		}
+	}
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glDeleteLists(GLuint list, GLsizei range){
+	if(list >= 1){
+		list--; //assign current interCompiled_DLPtr (new) to a List
+	}
+	if (list >= sizeof(GLDLEnumerator)){
+		return;
+	}
+
+	int lowestCurDLInCompiledDLOffset = -1;
+	int i = 0;
+	for(i = 0; i < range; i++){
+		u32 * InternalDL = getInternalDisplayListBuffer();
+		int curDLInCompiledDLOffset = GLDLEnumerator[list + i];
+		if((u32)curDLInCompiledDLOffset != DL_INVALID){
+			u32 * currentPhysicalDisplayListStart = (u32 *)&InternalDL[curDLInCompiledDLOffset];
+			GLDLEnumerator[list + i] = DL_INVALID;
+
+			if(lowestCurDLInCompiledDLOffset < curDLInCompiledDLOffset){
+				lowestCurDLInCompiledDLOffset = curDLInCompiledDLOffset;
+			}
+		}
+	}
+	globalGLCtx.mode = (u32)GL_NONE;
+	isNdsDisplayListUtilsCallList = false;
+	
+	//Find the lowest internal buffer offset assigned, just deleted, and rewind it so it points to unallocated Internal DL memory
+	if(lowestCurDLInCompiledDLOffset != -1){
+		interCompiled_DLPtr = lowestCurDLInCompiledDLOffset;
+	}
+}
+
+/*
+ Using display lists
+We have seen how to creates a display list.
+You should now want to use it :
+    gl.glCallList(list)
+
+You probably wants to call multiple lists :
+    gl.glListBase(listBase)
+    gl.glCallLists(nbLists, type, referenceOffsets)
+The first method select the display list refered by listBase as the base list. Indices in the referenceOffsets array are counter by considering that listBase is 0.
+nbLists is the number of lists that should be called.
+type is the type of information stored in referenceOffsets. It is typically : GL_UNSIGNED_BYTE, GL_SHORT, GL_UNSIGNED_SHORT, GL_INT or GL_UNSIGNED_INT.
+indiceOffset is an array that holds offset reference to the desired list to call by comparison to listBase (Ex: if listBase = 100 and you want to draw a list refered by 103, its offset reference is 3).
+*/
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glTexCoord2f(GLfloat s, GLfloat t){
+	glTexCoord2t16(floattot16(s), floattot16(t));
+}
+
+//////////////////////////////////////////////////////////////////////
+//glTexCoord specifies texture coordinates in one, two, three, or four dimensions. 
+//glTexCoord1 sets the current texture coordinates to s 0 0 1 ; 
+//glTexCoord2 sets them to s t 0 1 . 
+//glTexCoord3 specifies the texture coordinates as s t r 1
+//glTexCoord4 defines all four components explicitly as s t r q .
+
+//Note: uv == ((u << 16) | (v & 0xFFFF))
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glTexCoord1i(uint32 uv){
+	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
+		//4000488h 22h 1  1   TEXCOORD - Set Texture Coordinates (W)
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getFIFO_TEX_COORD(); //Unpacked Command format
+		interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)uv; interCompiled_DLPtr++; //Unpacked Command format
+	}
+	else{
+		GFX_TEX_COORD = uv;
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glTexCoord2t16(t16 u, t16 v){
+	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
+		//4000488h 22h 1  1   TEXCOORD - Set Texture Coordinates (W)
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getFIFO_TEX_COORD(); //Unpacked Command format
+		interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)TEXTURE_PACK(u, v); interCompiled_DLPtr++; //Unpacked Command format
+	}
+	else{
+		GFX_TEX_COORD = (u << 16) + v;
+	}
+}
+//////////////////////////////////////////////////////////////////////
+
+//Primitive types
+//0  Separate Triangle(s)    ;3*N vertices per N triangles
+//1  Separate Quadliteral(s) ;4*N vertices per N quads
+//2  Triangle Strips         ;3+(N-1) vertices per N triangles
+//3  Quadliteral Strips      ;4+(N-1)*2 vertices per N quads
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glBegin(int primitiveType){
+	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
+		//4000500h 40h 1  1   BEGIN_VTXS - Start of Vertex List (W)
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getFIFO_BEGIN(); //Unpacked Command format
+		interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)primitiveType; interCompiled_DLPtr++; //Unpacked Command format
+	}
+	else{
+		GFX_BEGIN = (u32)primitiveType;
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glEnd( void){
+	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
+		//4000504h 41h -  1   END_VTXS - End of Vertex List (W)
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getFIFO_END(); //Unpacked Command format
+		interCompiled_DLPtr++;
+		//no args used by this GX command
+	}
+	else{
+		GFX_END = 0;
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+
+u16 lastVertexColor = 0;
+//set the current color
+//4000480h - Cmd 20h - COLOR - Directly Set Vertex Color (W)
+//Parameter 1, Bit 0-4    Red
+//Parameter 1, Bit 5-9    Green
+//Parameter 1, Bit 10-14  Blue
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glColor3b(uint8 red, uint8 green, uint8 blue){
+	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
+		//4000480h 20h 1  1   COLOR - Directly Set Vertex Color (W)
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getFIFO_COLOR(); //Unpacked Command format
+		interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)RGB15(red, green, blue); interCompiled_DLPtr++; //Unpacked Command format
+	}
+	else{
+		switch(globalGLCtx.primitiveShadeModelMode){
+			//light vectors are todo
+			case(GL_FLAT):{
+				//otherwise override all colors to be the same subset of whatever color was passed here
+				if(lastVertexColor == 0){
+					lastVertexColor = RGB15(red, green, blue);
+				}
+				GFX_COLOR = lastVertexColor;
+			}
+			break;
+			
+			case(GL_SMOOTH):{
+				//Smooth shading, the default by DS, causes the computed colors of vertices to be interpolated as the primitive is rasterized, 
+				//typically assigning different colors to each resulting pixel fragment. 
+				GFX_COLOR = (vuint32)RGB15(red, green, blue);			
+			}
+			break;
+			
+			default:{
+				//error! call glInit(); first
+			}
+			break;
+		}
+	}
+}
+
+////////////////////////////////////////////////////////////////////// glNormal — set the current normal vector //////////////////////////////////////////////////////////////////////
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glNormal3b(
+	GLbyte nx,
+ 	GLbyte ny,
+ 	GLbyte nz
+){
+	glNormal3i((GLint)nx, (GLint)ny,(GLint)nz);
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glNormal3d(
+	GLdouble nx,
+ 	GLdouble ny,
+ 	GLdouble nz
+){
+	glNormal3f((GLfloat)nx, (GLfloat)ny, (GLfloat)nz);
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glNormal3f(
+	GLfloat nx,
+ 	GLfloat ny,
+ 	GLfloat nz
+){
+	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getFIFO_NORMAL(); //Unpacked Command format
+		interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)NORMAL_PACK(floattov10(nx),floattov10(ny),floattov10(nz)); interCompiled_DLPtr++; //Unpacked Command format
+	}
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glNormal3s(
+	GLshort nx,
+ 	GLshort ny,
+ 	GLshort nz
+){
+	glNormal3i((GLint)nx, (GLint)ny,(GLint)nz);
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glNormal3i(
+	GLint nx,
+ 	GLint ny,
+ 	GLint nz
+){
+	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getFIFO_NORMAL(); //Unpacked Command format
+		interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)NORMAL_PACK(inttov10(nx),inttov10(ny),inttov10(nz)); interCompiled_DLPtr++; //Unpacked Command format
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glVertex3v16(v16 x, v16 y, v16 z){
+	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
+		//400048Ch 23h 2  9   VTX_16 - Set Vertex XYZ Coordinates (W)
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getFIFO_VERTEX16(); //Unpacked Command format
+		interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)VERTEX_PACK(x, y); interCompiled_DLPtr++; //Unpacked Command format
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)VERTEX_PACK(z, 0); interCompiled_DLPtr++; //Unpacked Command format
+	}
+	else{
+		GFX_VERTEX16 = (y << 16) | (x & 0xFFFF);
+		GFX_VERTEX16 = ((uint32)(uint16)z);
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glVertex3v10(v10 x, v10 y, v10 z){
+	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
+		//4000490h 24h 1  8   VTX_10 - Set Vertex XYZ Coordinates (W)
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getFIFO_VERTEX10(); //Unpacked Command format
+		interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)VERTEX_PACKv10(x, y, z); interCompiled_DLPtr++; //Unpacked Command format
+	}
+	else{
+		GFX_VERTEX16 = (y << 16) | (x & 0xFFFF);
+		GFX_VERTEX16 = ((uint32)(uint16)z);
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+//Parameters. x. Specifies the x-coordinate of a vertex. y. Specifies the y-coordinate of a vertex
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glVertex2v16(v16 x, v16 y){
+	if((isNdsDisplayListUtilsCallList == true) && ((int)(interCompiled_DLPtr+1) < (int)(DL_MAX_ITEMS*MAX_Internal_DisplayList_Count)) ){
+		//4000494h 25h 1  8   VTX_XY - Set Vertex XY Coordinates (W)
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)getFIFO_VTX_XY(); //Unpacked Command format
+		interCompiled_DLPtr++;
+		Compiled_DL_Binary[interCompiled_DLPtr] = (u32)VERTEX_PACK(x, y); interCompiled_DLPtr++; //Unpacked Command format
+	}
+	else{
+		GFX_VERTEX16 = (y << 16) | (x & 0xFFFF);
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+//Todo
+//4000498h 26h 1  8   VTX_XZ - Set Vertex XZ Coordinates (W)
+//400049Ch 27h 1  8   VTX_YZ - Set Vertex YZ Coordinates (W)
+//40004A0h 28h 1  8   VTX_DIFF - Set Relative Vertex Coordinates (W)
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
+GL_GLBEGIN_ENUM getDisplayListGLType(struct ndsDisplayListDescriptor * dlInst){
+	if(dlInst != NULL){
+		return (GL_GLBEGIN_ENUM)dlInst->DL[1].value;
+	}
+	return (GL_GLBEGIN_ENUM)DL_INVALID;
+}
+
+//Compiles a NDS GX Display List / CallList binary using the Command Packed format, from an object one. Understood by the GX hardware.
+//Returns: List count (multiplied by 4 is the file size), DL_INVALID if fails.
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
+int CompilePackedNDSGXDisplayListFromObject(u32 * bufOut, struct ndsDisplayListDescriptor * dlInst){
+	if( (dlInst != NULL) && (bufOut != NULL)){
+		*(bufOut) = dlInst->ndsDisplayListSize;
+		bufOut++;
+		int i = 0; 
+		for(i = 0; i < dlInst->ndsDisplayListSize; i++){
+			struct ndsDisplayList * curDL = &dlInst->DL[i];
+			*(bufOut) = curDL->value;
+			bufOut++;
+		}
+		return i;
+	}
+
+	return DL_INVALID;
+}
+/////////////////////////////////////////////////////////// Extension End /////////////////////////////////////////////////////////// 

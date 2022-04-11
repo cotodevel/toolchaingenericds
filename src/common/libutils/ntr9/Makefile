@@ -75,16 +75,16 @@ export DIRS_ARM9_SRCLIB = ../../libutils/	\
 			../../libutils/dswifi/sys/	\
 			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
 			
-export DIRS_ARM9_HEADERLIB = ../libutils/	\
-			../libutils/arm9/source/	\
-			../libutils/arm9/source/dswifi_arm9/	\
-			../libutils/arm9/source/lzss9/	\
-			../libutils/arm9/source/zip/	\
-			../libutils/arm9/source/zlib/	\
-			../../libutils/dswifi/	\
-			../../libutils/dswifi/arpa/	\
-			../../libutils/dswifi/netinet/	\
-			../../libutils/dswifi/sys/	\
+export DIRS_ARM9_HEADERLIB = ../	\
+			../arm9/source/	\
+			../arm9/source/dswifi_arm9/	\
+			../arm9/source/lzss9/	\
+			../arm9/source/zip/	\
+			../arm9/source/zlib/	\
+			../../dswifi/	\
+			../../dswifi/arpa/	\
+			../../dswifi/netinet/	\
+			../../dswifi/sys/	\
 			../../libhardware/	\
 			../	\
 			../../	\

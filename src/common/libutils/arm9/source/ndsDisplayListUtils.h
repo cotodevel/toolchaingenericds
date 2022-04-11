@@ -1,4 +1,3 @@
-#if defined (WIN32) || defined(ARM9)
 /*
 
 			Copyright (C) 2017  Coto
@@ -42,45 +41,6 @@ struct unpackedCmd {
 	u8 cmd4;
 };
 
-//Display List Descriptor
-#define DL_INVALID (u32)(-1)
-#define DL_TYPE_SIZE (u32)(1)
-#define DL_TYPE_FIFO_PACKED_COMMAND_V1 (u32)(DL_TYPE_SIZE+1)	//FIFO_COMMAND_PACK( FIFO_BEGIN , FIFO_COLOR , FIFO_TEX_COORD , FIFO_NORMAL )
-#define DL_TYPE_FIFO_PACKED_COMMAND_V2 (u32)(DL_TYPE_FIFO_PACKED_COMMAND_V1+1)	//FIFO_COMMAND_PACK( FIFO_VERTEX16 , FIFO_COLOR , FIFO_TEX_COORD , FIFO_NORMAL )
-#define DL_TYPE_FIFO_PACKED_COMMAND_END (u32)(DL_TYPE_FIFO_PACKED_COMMAND_V2+1)	//FIFO_COMMAND_PACK( FIFO_VERTEX16 , FIFO_END , FIFO_NOP , FIFO_NOP )
-#define DL_MAX_ITEMS (int)(256) //256 NDS GX commands(words, 4 bytes each) = 1024 per DisplayList object
-
-#define GX_TOP_PARAMS_SIZE (int)(32)	//32  SHININESS - Specular Reflection Shininess Table (W) -- would be the command having the most parameter count
-
-struct ndsDisplayList {
-	int index;
-	u32 displayListType; //Display List Descriptor: FIFO_BEGIN, FIFO_COLOR, FIFO_TEX_COORD, FIFO_NORMAL, FIFO_VERTEX16, FIFO_END, FIFO_NOP, etc... 
-	u32 value; //RGB15(31,31,31), TEXTURE_PACK(floattot16(0.000000),floattot16(128.000000)), NORMAL_PACK(floattov10(0.577349),floattov10(0.577349),floattov10(-0.577349)), VERTEX_PACK(floattov16(1.000000),floattov16(1.000000)) , VERTEX_PACK(floattov16(-1.000000),0), FIFO_END (no value after), FIFO_NOP (no value)
-} 
-#ifdef ARM9
-__attribute__((packed)) ;
-#endif
-#ifdef WIN32
-;
-#endif
-
-struct ndsDisplayListDescriptor {
-	int DisplayListNameAssigned; //Used by the GL List API as a display-list name
-	bool isDisplayListAssigned;
-	int ndsDisplayListSize;
-	struct ndsDisplayList DL[DL_MAX_ITEMS];
-}
-#ifdef ARM9
-__attribute__((packed)) ;
-#endif
-#ifdef WIN32
-;
-#endif
-
-#endif
-
-#ifdef __cplusplus 
-extern "C" {
 #endif
 
 extern u32 ID2REG_C(u8 val);
@@ -115,11 +75,8 @@ extern u8 getMTX_PUSH();
 extern u8 getMTX_POP();
 extern u8 getMTX_TRANS();
 extern struct unpackedCmd FIFO_COMMAND_PACKED_FMT_UNPACK(u32 cmd);
-extern int CompilePackedNDSGXDisplayListFromObject(u32 * bufOut, struct ndsDisplayListDescriptor * dlInst);
 extern int BuildNDSGXDisplayListObjectFromFile(char * filename, struct ndsDisplayListDescriptor * dlInst);
 extern int getRawFileSizefromNDSGXDisplayListObject(struct ndsDisplayListDescriptor * dlInst);
-extern GL_GLBEGIN_ENUM getDisplayListGLType(struct ndsDisplayListDescriptor * dlInst);
-
 extern bool getDisplayListFilterByCommand(struct ndsDisplayListDescriptor * dlInst, struct ndsDisplayListDescriptor * dlInstOut, u8 targetCommand);
 extern bool getDisplayListFIFO_COLOR(struct ndsDisplayListDescriptor * dlInst, struct ndsDisplayListDescriptor * dlInstOut);
 extern bool getDisplayListFIFO_TEX_COORD(struct ndsDisplayListDescriptor * dlInst, struct ndsDisplayListDescriptor * dlInstOut);
@@ -140,9 +97,3 @@ extern int getAGXParamsCountFromCommand(u32 command);
 extern void swap1(char *x, char *y);
 extern char* reverse1(char *buffer, int i, int j);
 extern char* itoa1(int value, char* buffer, int base);
-
-#ifdef __cplusplus 
-}
-#endif
-
-#endif
