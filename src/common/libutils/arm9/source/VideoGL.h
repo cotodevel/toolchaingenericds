@@ -1093,6 +1093,12 @@ __attribute__((packed)) ;
 ;
 #endif
 
+#ifdef ARM9
+#ifdef __cplusplus
+extern "C" {
+#endif
+#endif
+
 extern void glEnable(int bits);
 extern void glDisable(int bits);
 extern void glLoadMatrix4x4(m4x4 * m);
@@ -1234,5 +1240,11 @@ extern u32 singleOpenGLCompiledDisplayList[2048];
 extern u32 Compiled_DL_Binary[DL_MAX_ITEMS*MAX_Internal_DisplayList_Count];
 extern enum GL_GLBEGIN_ENUM getDisplayListGLType(struct ndsDisplayListDescriptor * dlInst);
 extern int CompilePackedNDSGXDisplayListFromObject(u32 * bufOut, struct ndsDisplayListDescriptor * dlInst);
+
+#ifdef ARM9
+#ifdef __cplusplus
+}
+#endif
+#endif
 
 #endif
