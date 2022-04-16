@@ -923,7 +923,14 @@ __attribute__ ((optnone))
 #endif
 void Wifi_Init(u32 wifidata) {
 	WifiData = (Wifi_MainStruct *)wifidata;
-
+	
+	//thanks to fincs for the TWL mode, NTR WIFI switch: https://github.com/devkitPro/dswifi/commit/2afb800ed0faa99bb938ab7798bc0823915cea90
+	#define REG_GPIOWTF (*(vu16*)0x4004C04)
+	if ((__dsimode == true) & !(REG_GPIOWTF & BIT(8))) {
+		REG_GPIOWTF = (REG_GPIOWTF&1) | BIT(8);
+		swiDelay(0xA3A47); //5ms
+	}
+	
 	POWERCNT7 |= 2; // enable power for the wifi
 	*((volatile u16 *)0x04000206) = 0x30; // ???
 

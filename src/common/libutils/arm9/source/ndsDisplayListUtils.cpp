@@ -1,5 +1,3 @@
-#if defined (WIN32) || defined(ARM9)
-
 /*
 
 			Copyright (C) 2017  Coto
@@ -36,7 +34,6 @@ USA
 #endif
 //disable _CRT_SECURE_NO_WARNINGS message to build this in VC++
 #pragma warning(disable:4996)
-#include "VideoGLExt.h"
 #endif
 
 #include <stdio.h>
@@ -45,8 +42,8 @@ USA
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include "ndsDisplayListUtils.h"
 #include "VideoGL.h"
+#include "ndsDisplayListUtils.h"
 
 #ifdef ARM9
 #include "posixHandleTGDS.h"
@@ -434,32 +431,6 @@ struct unpackedCmd FIFO_COMMAND_PACKED_FMT_UNPACK(u32 cmd){
 	return out;
 }
 
-//Compiles a NDS GX Display List / CallList binary using the Command Packed format, from an object one. Understood by the GX hardware.
-//Returns: List count (multiplied by 4 is the file size), DL_INVALID if fails.
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-int CompilePackedNDSGXDisplayListFromObject(u32 * bufOut, struct ndsDisplayListDescriptor * dlInst){
-	if( (dlInst != NULL) && (bufOut != NULL)){
-		*(bufOut) = dlInst->ndsDisplayListSize;
-		bufOut++;
-		int i = 0; 
-		for(i = 0; i < dlInst->ndsDisplayListSize; i++){
-			struct ndsDisplayList * curDL = &dlInst->DL[i];
-			*(bufOut) = curDL->value;
-			bufOut++;
-		}
-		return i;
-	}
-
-	return DL_INVALID;
-}
-
 //Returns: Display List raw binary filesize.
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -474,21 +445,6 @@ int getRawFileSizefromNDSGXDisplayListObject(struct ndsDisplayListDescriptor * d
 		return (dlInst->ndsDisplayListSize * 4) + 4;
 	}
 	return DL_INVALID;
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-GL_GLBEGIN_ENUM getDisplayListGLType(struct ndsDisplayListDescriptor * dlInst){
-	if(dlInst != NULL){
-		return (GL_GLBEGIN_ENUM)dlInst->DL[1].value;
-	}
-	return (GL_GLBEGIN_ENUM)DL_INVALID;
 }
 
 //Lists: All "FIFO_BEGIN" commands inside dlInst
@@ -567,7 +523,7 @@ void swap1(char *x, char *y) {
     char t = *x; *x = *y; *y = t;
 }
  
-// Function to reverse `buffer[i…j]`
+// Function to reverse `buffer[iï¿½j]`
 char* reverse1(char *buffer, int i, int j)
 {
     while (i < j) {
@@ -933,7 +889,7 @@ bool packAndExportSourceCodeFromRawUnpackedDisplayListFormat(char * filenameOut,
 			int listSize = (int)*listPtr;
 			listPtr++;
 			int currentCmdCount = 0;
-			fprintf(fout, "#include \"VideoGL.h\"\n#include \"VideoGLExt.h\"\n\nu32 PackedDLEmitted[] = { \n%d,\n", listSize);
+			fprintf(fout, "#include \"VideoGL.h\"\n\nu32 PackedDLEmitted[] = { \n%d,\n", listSize);
 
 			u32 * rawARGBuffer = (u32 *)TGDSARM9Malloc(listSize); //raw, linear buffer args from all GX commands (without GX commands)
 			u32* curRawARGBufferSave = (u32*)rawARGBuffer; //used to save args
@@ -1545,6 +1501,4 @@ bool ndsDisplayListUtilsTestCaseARM9(char * filename, char * outNDSGXBuiltDispla
 	TGDSARM9Free(NDSDL);
 	return retStatus;
 }
-#endif
-
 #endif
