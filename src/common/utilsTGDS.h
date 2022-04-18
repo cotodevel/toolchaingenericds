@@ -25,7 +25,6 @@ USA
 #include "dsregs.h"
 #include "limitsTGDS.h"
 
-
 #include <stdio.h>
 #include <unistd.h>
 #include <stdbool.h>
@@ -95,7 +94,6 @@ extern "C"{
 extern size_t ucs2tombs(uint8* dst, const unsigned short* src, size_t len);
 
 #ifdef ARM9
-
 //reserved for project appVersion
 extern volatile char app_version_static[256];
 

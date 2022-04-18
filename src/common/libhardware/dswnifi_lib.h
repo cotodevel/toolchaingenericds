@@ -18,7 +18,14 @@ USA
 
 */
 
-//DSWNifi Library 1.4 (update: 2/18/2020)	(mm/dd/yyyy)
+//DSWNifi Library 1.4.1 (update: 04/17/2022)	(mm/dd/yyyy)
+//Changelog:
+//1.1: TGDS1.65 SDK Fix, works 100% of the time now (udp nifi), as long wifi network isn't convoluted. Local nifi works regardless.
+//1.4: Added Hardware WIFI GDBStub
+//1.3: Added UDP Nifi 
+//1.2: Added Local Nifi 
+//1.1: Add template code across TGDS Projects
+//1.0: Transcribe original design into an API
 
 #ifndef __dswnifi_lib_h__
 #define __dswnifi_lib_h__
@@ -85,7 +92,7 @@ USA
 #define ds_netplay_guest (sint32)(13)
 
 //Standard Frame Size
-#define frameDSsize (sint32)((512)+sizeof(volatile uint16))	//512 bytes
+#define frameDSsize (sint32)((256)+sizeof(volatile uint16))	//256 bytes
 #define frameDSBufferSize (sint32)(256 + 104)	//remaining struct dsnwifisrvStr size within a frameDSsize
 
 //remoteStubMain retcodes
@@ -97,7 +104,6 @@ USA
 //DSWNIFI:
 
 //process status
-#define proc_idle (sint32)(0)
 #define proc_connect (sint32)(1)
 #define proc_execution (sint32)(2)
 #define proc_shutdown (sint32)(3)
@@ -149,11 +155,11 @@ struct client_http_handler{
 struct dsnwifisrvStr {
 	struct client_http_handler client_http_handler_context;	//Handles UDP DSWNIFI
 	sint32 dsnwifisrv_mode;	//dswifi_idlemode / dswifi_localnifimode / dswifi_udpnifimode / dswifi_gdbstubmode		//used by setMULTIMode() getMULTIMode()
-	sint32	connectionStatus;	//proc_idle / proc_connect / proc_execution / proc_shutdown	//used by getConnectionStatus() setConnectionStatus()
+	sint32	connectionStatus;	//proc_connect / proc_execution / proc_shutdown	//used by getConnectionStatus() setConnectionStatus()
 	sint32 	dsnwifisrv_stat;	//MULTI: inter DS Connect status: ds_multi_notrunning / ds_searching_for_multi / (ds_multiplay): ds_netplay_host ds_netplay_guest
 	bool dswifi_setup;	//false: not setup / true: setup already	//used by getWIFISetup() / setWIFISetup()
-	bool incoming_packet;	//when any of the above methods received a packet == true / no == false
 	bool GDBStubEnable;
+	bool handleExtendedNifiCommands;
 	
 	//Session bits
 	int DSIndexInNetwork;
@@ -171,6 +177,7 @@ struct frameBlock{
     uint8 * framebuffer;
 	sint32	frameSize;
 };
+ 
 
 #ifdef __cplusplus
 extern "C"{
@@ -200,10 +207,7 @@ extern struct frameBlock * FrameSenderUser;	//if !NULL, then must sendFrame. Han
 
 //the process that runs on vblank and ensures DS - DS Comms
 //code that runs from ITCM
-extern sint32 doMULTIDaemonStage1();
-//code can't run from ITCM
-extern sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus);
-
+extern sint32 doMULTIDaemon();
 extern struct frameBlock FrameSenderBlock;	//used by the user sender process, must be valid so the ToolchainGenericDS library sends proper frame data.
 extern struct frameBlock FrameRecvBlock;	//used by the user receiver process, can be NULL if no data frame was received.
 
@@ -219,7 +223,7 @@ extern struct frameBlock * HandleSendUserspace(uint8 * databuf_src, int bufsize)
 //userCode must override, provide these functions.
 
 //As long you define this ReceiveHandler, everytime the outter connected DS to this DS sends a packet, it will be received here.
-extern bool TGDSRecvHandler(struct frameBlock * frameBlockRecv);	//called by receiveDSWNIFIFrame(); when a frame is valid. TGDS layer. //Returns: Current DSWnifi mode
+extern bool TGDSRecvHandler(struct frameBlock * frameBlockRecv, int DSWnifiMode);	//called by receiveDSWNIFIFrame(); when a frame is valid. TGDS layer. //Returns: Current DSWnifi mode
 extern 	bool TGDSRecvHandlerUser(struct frameBlock * frameBlockRecv, int DSWnifiMode);	//called by TGDSRecvHandler when cmd is User implemented. TGDS User layer
 
 //Callback that runs upon setting DSWNIFI mode to dswifi_localnifimode
@@ -236,7 +240,6 @@ extern 	void OnDSWIFIGDBStubEnable();
 
 extern bool sentReq;
 extern sint32 LastDSWnifiMode;
-extern struct dsnwifisrvStr * getDSWNIFIStr();
 extern bool connectDSWIFIAP(int DSWNIFI_MODE);
 
 //GDB stub
@@ -359,34 +362,19 @@ extern bool getGDBStubEnabled();
 extern void onGDBStubConnect();
 extern void onGDBStubDisconnected();
 
+extern void setMULTIMode(sint32 flag);
+extern sint32 getMULTIMode();
+extern bool getWIFISetup();
+extern void setWIFISetup(bool flag);
+extern void setConnectionStatus(sint32 flag);
+extern sint32 getConnectionStatus();
+
+extern void enableSpecialNifiCommands();
+extern void disableSpecialNifiCommands();
+extern bool specialNifiCommandMode();
 #ifdef __cplusplus
 }
 #endif
-
-static inline void setMULTIMode(sint32 flag){
-	dswifiSrv.dsnwifisrv_mode = (sint32)flag;
-}
-
-static inline sint32 getMULTIMode(){
-	return (sint32)dswifiSrv.dsnwifisrv_mode;
-}
-
-static inline bool getWIFISetup(){
-	return (bool)dswifiSrv.dswifi_setup;
-}
-
-static inline void setWIFISetup(bool flag){
-	dswifiSrv.dswifi_setup = (bool)flag;
-}
-
-static inline void setConnectionStatus(sint32 flag){
-	dswifiSrv.connectionStatus = (sint32)flag;
-}
-
-static inline sint32 getConnectionStatus(){
-	return (sint32)dswifiSrv.connectionStatus;
-}
-
 
 //GDB Stub part
 #define debuggerWriteMemory(addr, value) \

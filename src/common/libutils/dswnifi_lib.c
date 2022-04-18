@@ -18,7 +18,14 @@ USA
 
 */
 
-//DSWNifi Library 1.4 (update: 3/11/2019)	(dd/mm/yyyy)
+//DSWNifi Library 1.4.1 (update: 04/17/2022)	(mm/dd/yyyy)
+//Changelog:
+//1.1: TGDS1.65 SDK Fix, works 100% of the time now (udp nifi), as long wifi network isn't convoluted. Local nifi works regardless.
+//1.4: Added Hardware WIFI GDBStub
+//1.3: Added UDP Nifi 
+//1.2: Added Local Nifi 
+//1.1: Add template code across TGDS Projects
+//1.0: Transcribe original design into an API
 
 // Shared
 #include "typedefsTGDS.h"
@@ -46,14 +53,20 @@ extern int write(int fd, const void *buf, int count);
 __attribute__((section(".dtcm")))
 struct dsnwifisrvStr dswifiSrv;
 
+//Todo: Must be in non-cached ewram or make it coherent everytime it's written to
 volatile 	uint8 data[4096];			//receiver frame, data + frameheader. Used by NIFI Mode
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 void Handler(int packetID, int readlength){
-	switch(getMULTIMode()){
+	int dswnifiMode = getMULTIMode();
+	switch(dswnifiMode){
 		case (dswifi_localnifimode):{
 			Wifi_RxRawReadPacket(packetID, readlength, (unsigned short *)data);
 			struct frameBlock * frameHandled = receiveDSWNIFIFrame((uint8*)(data+frame_header_size),readlength);	//sender always cut off 2 bytes for crc16 we use	
 			if(frameHandled != NULL){	//LOCAL:Valid Frame?, then User Recv Process here
-				TGDSRecvHandler(frameHandled);
+				TGDSRecvHandler(frameHandled, dswnifiMode);
 			}
 		}
 		break;
@@ -61,7 +74,9 @@ void Handler(int packetID, int readlength){
 	}
 }
 
-
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 void initNiFi(){
 	Wifi_InitDefault(false);
 	Wifi_SetPromiscuousMode(1);
@@ -78,10 +93,13 @@ void initNiFi(){
 }
 
 /////////////////////////////////UDP DSWNIFI Part////////////////////////////////////
-sint8 server_ip[MAX_TGDSFILENAME_LENGTH+1]; //(sint8*)"192.168.43.220";
+sint8 server_ip[MAX_TGDSFILENAME_LENGTH+1]; 
 //SOCK_STREAM = TCP / SOCK_DGRAM = UDP
 
 //true == sends and frees the queued frame / false == didn't send, no frame
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 bool sendDSWNIFIFame(struct frameBlock * frameInst){
 	uint8 * databuf_src = 	frameInst->framebuffer;
 	sint32 sizetoSend 		= 	frameInst->frameSize;
@@ -111,8 +129,83 @@ struct frameBlock FrameSenderBlock;	//used by the user sender process, must be v
 __attribute__((section(".dtcm")))
 struct frameBlock FrameRecvBlock;	//used by the user receiver process, can be NULL if no data frame was received.
 
+__attribute__((section(".itcm")))
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+void setMULTIMode(sint32 flag){
+	dswifiSrv.dsnwifisrv_mode = (sint32)flag;
+}
+
+__attribute__((section(".itcm")))
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+sint32 getMULTIMode(){
+	return (sint32)dswifiSrv.dsnwifisrv_mode;
+}
+
+__attribute__((section(".itcm")))
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+bool getWIFISetup(){
+	return (bool)dswifiSrv.dswifi_setup;
+}
+
+__attribute__((section(".itcm")))
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+void setWIFISetup(bool flag){
+	dswifiSrv.dswifi_setup = (bool)flag;
+}
+
+__attribute__((section(".itcm")))
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+void setConnectionStatus(sint32 flag){
+	dswifiSrv.connectionStatus = (sint32)flag;
+}
+
+__attribute__((section(".itcm")))
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+sint32 getConnectionStatus(){
+	return (sint32)dswifiSrv.connectionStatus;
+}
+
+__attribute__((section(".itcm")))
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+void enableSpecialNifiCommands(){
+	dswifiSrv.handleExtendedNifiCommands = true;
+}
+
+__attribute__((section(".itcm")))
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+void disableSpecialNifiCommands(){
+	dswifiSrv.handleExtendedNifiCommands = false;
+}
+
+__attribute__((section(".itcm")))
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+bool specialNifiCommandMode(){
+	return dswifiSrv.handleExtendedNifiCommands;
+}
+
 //reads raw packet (and raw read size) and defines if valid frame or not. 
 //must be called from either localnifi handler or udp nifi/wifi on-receive-packet handler
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 struct frameBlock * receiveDSWNIFIFrame(uint8 * databuf_src, int frameSizeRecv){
 	struct frameBlock * frameRecvInst =  NULL;
 	if(databuf_src != NULL){
@@ -140,8 +233,9 @@ struct frameBlock * receiveDSWNIFIFrame(uint8 * databuf_src, int frameSizeRecv){
 		
 		//crc-valid dswnifi_frame?
 		if(crc16_frame_gen == crc16_recv_frame){
+			memcpy((u8*)&dswifiSrv.sharedBuffer[0], (u8*)databuf_src, frameSizeRecv);
 			frameRecvInst = (struct frameBlock *)&FrameRecvBlock;
-			frameRecvInst->framebuffer = databuf_src-1;
+			frameRecvInst->framebuffer = (u8*)&dswifiSrv.sharedBuffer[0];
 			frameRecvInst->frameSize = frameSizeRecv;
 		}
 	}
@@ -159,7 +253,12 @@ __attribute__((optimize("O0")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 bool switch_dswnifi_mode(sint32 mode)  {
+	//Register Nifi service so it can be invoked from libhardware9
+	HandledoMULTIDaemonWeakRefLibHardware9Callback = (HandledoMULTIDaemonWeakRefLibHardware9_fn)&doMULTIDaemon;
 	swiDelay(12000);
 	//save last DSWnifiMode
 	if(mode != LastDSWnifiMode){
@@ -167,6 +266,7 @@ bool switch_dswnifi_mode(sint32 mode)  {
 	}
 	//Raw Network Packet Nifi
 	if (mode == (sint32)dswifi_localnifimode){
+		disableSpecialNifiCommands(); //a normal Local Nifi session does not implement special nifi commands
 		if(connectDSWIFIAP(DSWNIFI_ENTER_NIFIMODE) == true){	//setWIFISetup set inside
 			dswifiSrv.dsnwifisrv_stat	= ds_searching_for_multi_servernotaware;
 			setMULTIMode(mode);
@@ -182,6 +282,7 @@ bool switch_dswnifi_mode(sint32 mode)  {
 	}
 	//UDP Nifi (wifi AP)
 	else if (mode == (sint32)dswifi_udpnifimode){
+		disableSpecialNifiCommands(); //a normal Udp Nifi session does not implement special nifi commands
 		dswifiSrv.dsnwifisrv_stat = ds_searching_for_multi_servernotaware;
 		//bool useWIFIAP = true;
 		if(connectDSWIFIAP(DSWNIFI_ENTER_WIFIMODE) == true){	//setWIFISetup set inside
@@ -231,19 +332,9 @@ struct frameBlock * FrameSenderUser = NULL;
 __attribute__((section(".dtcm")))
 sint32 LastDSWnifiMode = dswifi_idlemode;
 
-//DSWNifi Daemon: Performs connect, execute and disconnect phases of a local/udp session between DS's (for now it's 2 DS)
-//ret: dswifi_idlemode (not connected) / dswifi_udpnifimode (UDP NIFI) / dswifi_localnifimode (LOCAL NIFI)
-
-sint32 doMULTIDaemonStage1(){
-	sint32 DSWnifiConnectionStatus =	getConnectionStatus();
-	if(DSWnifiConnectionStatus == proc_idle){
-		return dswifi_idlemode;	//nothing to do for : LOCAL / UDP NIFI
-	}
-	else{
-		return doMULTIDaemonStage2(DSWnifiConnectionStatus);
-	}
-}
-
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 bool isValidIpAddress(char *ipAddress)
 {
     struct sockaddr_in sa;
@@ -251,15 +342,53 @@ bool isValidIpAddress(char *ipAddress)
     return result != 0;
 }
 
-//
-sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
+//DSWNifi Daemon: Performs connect, execute and disconnect phases of a local/udp session between DS's (for now it's 2 DS)
+//ret: dswifi_idlemode (not connected) / dswifi_udpnifimode (UDP NIFI) / dswifi_localnifimode (LOCAL NIFI)
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+sint32 doMULTIDaemon(){
 	sint32 retDaemonCode = 0;
-	switch(ThisConnectionStatus){
+	switch(getConnectionStatus()){
 		case (proc_connect):{
 			//UDP NIFI
 			if(getMULTIMode() == dswifi_udpnifimode){
 				
-				//Before calling this function, a keyboard method must fill a proper IP into char server_ip buffer!
+				//Ask for Server Input IP here:
+				printf("Connecting to UDP TGDS Server Companion: ");
+				printf("Write down the IP then <Enter>, or tap <ESC> to quit. ");
+				
+				//Todo: add TGDS project method adding manual IP
+				/*
+				//Start keyboard
+				initKeyboard();	
+				SETDISPCNT_SUB(MODE_0_2D | DISPLAY_BG0_ACTIVE);	//Keyboard show
+				char str[MAX_TGDSFILENAME_LENGTH+1] = "";
+				bool validIPv4 = false;
+				while(1==1){
+					char keyPress = processKeyboard(&str[0], MAX_TGDSFILENAME_LENGTH+1, ECHO_ON, (int)strlen(str) );
+					if(keyPress == (char)RET)
+					{
+						// process input
+						validIPv4 = isValidIpAddress(str);
+						if(validIPv4 == true){
+							break;
+						}
+						printf("Invalid IP: %s",str);
+						strcpy(str, "");	//clean string if invalid
+					}
+					else if (keyPress == (char)ESC){
+						break;
+					}
+				}
+				move_console_to_bottom_screen();
+				if(validIPv4 == false){					
+					printf("Invalid IP address");
+					return dswifi_udpnifimodeFailConnectStage;
+				}
+				//strcpy(server_ip,str);
+				*/
+				strcpy(server_ip, (char*)"192.168.43.22");
 				
 				//UDP: DSClient - Server IP / Desktop Server UDP companion Listener.
 				dswifiSrv.client_http_handler_context.socket_id__multi_notconnected=socket(AF_INET,SOCK_DGRAM,0);	
@@ -450,7 +579,7 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 							//Valid Frame?
 							if(frameHandled != NULL){
 								//trigger the User Recv Process here
-								TGDSRecvHandler(frameHandled);
+								TGDSRecvHandler(frameHandled, getMULTIMode());
 							}
 						}
 					}
@@ -478,7 +607,7 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 				close(dswifiSrv.client_http_handler_context.socket_id__multi_notconnected);
 			}
 			sentReq = false;
-			setConnectionStatus(proc_idle);
+			setConnectionStatus(proc_connect);
 			retDaemonCode = dswifi_idlemode;
 		}
 		break;
@@ -487,6 +616,9 @@ sint32 doMULTIDaemonStage2(sint32 ThisConnectionStatus){
 }
 
 // datalen = size of packet from beginning of 802.11 header to end, but not including CRC.
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 int Wifi_RawTxFrame_NIFI(sint32 datalen, uint16 rate, uint16 * data) {
 	int base,framelen, hdrlen, writelen;
 	int copytotal, copyexpect;
@@ -570,6 +702,9 @@ int Wifi_RawTxFrame_NIFI(sint32 datalen, uint16 rate, uint16 * data) {
 	return 0;
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 int Wifi_RawTxFrame_WIFI(sint32 datalen, uint8 * data) {
 	switch(dswifiSrv.dsnwifisrv_stat){	//sender phase: only send packets if we are in UDP DSWNifi mode
 		case(ds_netplay_host):case(ds_netplay_guest):{
@@ -583,6 +718,9 @@ int Wifi_RawTxFrame_WIFI(sint32 datalen, uint8 * data) {
 }
 
 //UserCodeHandlers that belong to TGDS
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 struct frameBlock * HandleSendUserspace(uint8 * databuf_src, int bufsize){
 	if(!databuf_src){
 		return NULL;
@@ -600,84 +738,74 @@ struct frameBlock * HandleSendUserspace(uint8 * databuf_src, int bufsize){
 	return frameSenderInst;
 }
 
-struct dsnwifisrvStr * getDSWNIFIStr(){
-	return (struct dsnwifisrvStr *)&dswifiSrv;
-}
-
-bool TGDSRecvHandler(struct frameBlock * frameBlockRecv){
+//Implements DS-to-DS transfer commands.
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+bool TGDSRecvHandler(struct frameBlock * frameBlockRecv, int DSWnifiMode){
 	//frameBlockRecv->framebuffer	//Pointer to received Frame
 	//frameBlockRecv->frameSize		//Size of received Frame
-	int DSWnifiMode = getMULTIMode();
 	switch(DSWnifiMode){
 		//single player, has no access to shared buffers.
 		case(dswifi_idlemode):{
 			//DSWNIFIStatus:SinglePlayer
-			
 			return false;
 		}
 		break;
 		
-		//NIFI local
-		case(dswifi_localnifimode):{
-			struct dsnwifisrvStr * dsnwifisrvStrInstWireless = (struct dsnwifisrvStr *)frameBlockRecv->framebuffer;	
-			//Sender command implementation
-			
-			switch(dsnwifisrvStrInstWireless->nifiCommand){				
-				//TotalDSConnected: Sender cmd
-				case(NIFI_SENDER_TOTAL_CONNECTED_DS):{
-					//Handle cmd
-					int TotalCount = 1;
-					u32 * shBuf = (u32*)&dsnwifisrvStrInstWireless->sharedBuffer[0];
-					shBuf[0] = (u32)TotalCount;
-					dsnwifisrvStrInstWireless->nifiCommand = NIFI_ACK_TOTAL_CONNECTED_DS;
-					FrameSenderUser = HandleSendUserspace((uint8*)dsnwifisrvStrInstWireless, frameBlockRecv->frameSize);
+		//Local Nifi / UDP Nifi
+		case(dswifi_localnifimode):
+		case(dswifi_udpnifimode):{
+			if(specialNifiCommandMode() == true){
+				struct dsnwifisrvStr * dsnwifisrvStrInstWireless = (struct dsnwifisrvStr *)frameBlockRecv->framebuffer;	
+				//Sender command implementation
+				switch(dsnwifisrvStrInstWireless->nifiCommand){				
+					//TotalDSConnected: Sender cmd
+					case(NIFI_SENDER_TOTAL_CONNECTED_DS):{
+						//Handle cmd
+						int TotalCount = 1;
+						u32 * shBuf = (u32*)&dsnwifisrvStrInstWireless->sharedBuffer[0];
+						shBuf[0] = (u32)TotalCount;
+						dsnwifisrvStrInstWireless->nifiCommand = NIFI_ACK_TOTAL_CONNECTED_DS;
+						FrameSenderUser = HandleSendUserspace((uint8*)dsnwifisrvStrInstWireless, frameBlockRecv->frameSize);
+					}
+					break;
+					//TotalDSConnected: Process Recv -> Sender ACK cmd
+					case(NIFI_ACK_TOTAL_CONNECTED_DS):{
+						struct dsnwifisrvStr * dsnwifisrvStrInst = &dswifiSrv;
+						memcpy((u8*)&dsnwifisrvStrInst->sharedBuffer[0], (u8*)&dsnwifisrvStrInstWireless->sharedBuffer[0], sizeof(dsnwifisrvStrInst->sharedBuffer));
+						dsnwifisrvStrInst->nifiCommand = dsnwifisrvStrInstWireless->nifiCommand;
+					}
+					break;
+					//SendBinary: Sender cmd
+					case(NIFI_SENDER_SEND_BINARY):{
+						struct dsnwifisrvStr * dsnwifisrvStrInst = &dswifiSrv;
+						dsnwifisrvStrInst->frameIndex = dsnwifisrvStrInstWireless->frameIndex;
+						dsnwifisrvStrInst->BinarySize = dsnwifisrvStrInstWireless->BinarySize;
+						memcpy((u8*)&dsnwifisrvStrInst->sharedBuffer[0], (u8*)&dsnwifisrvStrInstWireless->sharedBuffer[0], sizeof(dsnwifisrvStrInst->sharedBuffer));
+						dsnwifisrvStrInst->nifiCommand = dsnwifisrvStrInstWireless->nifiCommand;	//wait for recv in main() to copy these arriving packets					
+					}
+					break;
+					//SendBinary: Process Recv -> Sender ACK cmd
+					case(NIFI_ACK_SEND_BINARY):{
+						struct dsnwifisrvStr * dsnwifisrvStrInst = &dswifiSrv;
+						dsnwifisrvStrInst->nifiCommand = dsnwifisrvStrInstWireless->nifiCommand;	//SendDSBinary() continue next frame
+					}
+					break;
+					//SendBinary: Process Recv -> Sender Finish transfer cmd
+					case(NIFI_ACK_SEND_BINARY_FINISH):{
+						struct dsnwifisrvStr * dsnwifisrvStrInst = &dswifiSrv;
+						dsnwifisrvStrInst->nifiCommand = dsnwifisrvStrInstWireless->nifiCommand;	//wait for recv in main() to copy these arriving packets
+					}
+					break;
 				}
-				break;
-				//TotalDSConnected: Process Recv -> Sender ACK cmd
-				case(NIFI_ACK_TOTAL_CONNECTED_DS):{
-					struct dsnwifisrvStr * dsnwifisrvStrInst = getDSWNIFIStr();
-					memcpy((u8*)&dsnwifisrvStrInst->sharedBuffer[0], (u8*)&dsnwifisrvStrInstWireless->sharedBuffer[0], sizeof(dsnwifisrvStrInst->sharedBuffer));
-					dsnwifisrvStrInst->nifiCommand = dsnwifisrvStrInstWireless->nifiCommand;
-				}
-				break;
-				//SendBinary: Sender cmd
-				case(NIFI_SENDER_SEND_BINARY):{
-					struct dsnwifisrvStr * dsnwifisrvStrInst = getDSWNIFIStr();
-					dsnwifisrvStrInst->frameIndex = dsnwifisrvStrInstWireless->frameIndex;
-					dsnwifisrvStrInst->BinarySize = dsnwifisrvStrInstWireless->BinarySize;
-					memcpy((u8*)&dsnwifisrvStrInst->sharedBuffer[0], (u8*)&dsnwifisrvStrInstWireless->sharedBuffer[0], sizeof(dsnwifisrvStrInst->sharedBuffer));
-					dsnwifisrvStrInst->nifiCommand = dsnwifisrvStrInstWireless->nifiCommand;	//wait for recv in main() to copy these arriving packets					
-				}
-				break;
-				//SendBinary: Process Recv -> Sender ACK cmd
-				case(NIFI_ACK_SEND_BINARY):{
-					struct dsnwifisrvStr * dsnwifisrvStrInst = getDSWNIFIStr();
-					dsnwifisrvStrInst->nifiCommand = dsnwifisrvStrInstWireless->nifiCommand;	//SendDSBinary() continue next frame
-				}
-				break;
-				//SendBinary: Process Recv -> Sender Finish transfer cmd
-				case(NIFI_ACK_SEND_BINARY_FINISH):{
-					struct dsnwifisrvStr * dsnwifisrvStrInst = getDSWNIFIStr();
-					dsnwifisrvStrInst->nifiCommand = dsnwifisrvStrInstWireless->nifiCommand;	//wait for recv in main() to copy these arriving packets
-				}
-				break;
-				
-				default:{
-					return TGDSRecvHandlerUser(frameBlockRecv, DSWnifiMode);
-				}
-				break;
+			}
+			else{
+				return TGDSRecvHandlerUser(frameBlockRecv, DSWnifiMode);
 			}
 			return true;
 		}
 		break;
-		
-		//UDP NIFI
-		case(dswifi_udpnifimode):{
-			//Todo: replicate the same stuff from LocalNifi
-			return true;
-		}
-		break;
-		
 	}
 	return false;
 }
@@ -716,6 +844,9 @@ bool remoteResumed = false;
 int reconnectCount = 0;
 
 //this one performs the actual connection and toggles the connected status.
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 bool connectDSWIFIAP(int DSWNIFI_MODE){
 	if(WNifi_InitSafeDefault(DSWNIFI_MODE) == true){
 		setWIFISetup(true);
@@ -730,6 +861,9 @@ static u32 ARM7IOAddress = 0x03800000;
 static int ARM7IOSize = (64*1024);
 static u8 * ARM7BufferedAddress = NULL;
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 bool gdbNdsStart(){
 	setGDBStubEnabled(false);
 	dswifiSrv.GDBStubEnable = false;
@@ -750,24 +884,39 @@ bool gdbNdsStart(){
 	return false; //ARM7 IO Mapping error or WIFI connection error
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 bool getGDBStubEnabled(){
 	return GDBEnabled;
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 void setGDBStubEnabled(bool state){
 	GDBEnabled = state;
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 int remoteTcpSend(char *data, int len)
 {
 	return send(remoteSocket, data, len, 0);
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 int remoteTcpRecv(char *data, int len)
 {
 	return recv(remoteSocket, data, len, 0);
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 bool remoteTcpInit()
 {
 	if(remoteSocket == -1) {
@@ -821,6 +970,9 @@ bool remoteTcpInit()
 	return true;
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 void remoteTcpCleanUp()
 {
 	if(remoteSocket > 0) {
@@ -835,18 +987,27 @@ void remoteTcpCleanUp()
 	}
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 int remotePipeSend(char *data, int len)
 {
 	int res = write(1, data, len);
 	return res;
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 int remotePipeRecv(char *data, int len)
 {
 	int res = read(0, data, len);
 	return res;
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 bool remotePipeInit()
 {
 	char dummy;
@@ -858,15 +1019,24 @@ bool remotePipeInit()
 	return true;
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 void remotePipeCleanUp()
 {
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 void remoteSetPort(int port)
 {
 	remotePort = port;
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 void remoteSetProtocol(int p)
 {
   if(p == 0) {
@@ -882,6 +1052,9 @@ void remoteSetProtocol(int p)
   }
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 void remoteInit()
 {
 	remoteSetProtocol(0);	//use TCP
@@ -890,6 +1063,9 @@ void remoteInit()
 	}
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 void remotePutPacket(char *packet)
 {
   char *hex = "0123456789abcdef";
@@ -923,8 +1099,9 @@ void remotePutPacket(char *packet)
   TGDSARM9Free(buffer);
 }
 
-
-
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 void remoteOutput(char *s, u32 addr)
 {
   char * buffer = (char *)TGDSARM9Malloc(16384);
@@ -952,6 +1129,9 @@ void remoteOutput(char *s, u32 addr)
   TGDSARM9Free(buffer);
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 void remoteSendSignal()
 {
     char * buffer = (char *)TGDSARM9Malloc(1024);
@@ -960,6 +1140,9 @@ void remoteSendSignal()
 	TGDSARM9Free(buffer);
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 void remoteSendStatus()
 {
   char * buffer = (char *)TGDSARM9Malloc(1024);
@@ -995,6 +1178,9 @@ void remoteSendStatus()
   TGDSARM9Free(buffer);
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 void remoteBinaryWrite(char *p)
 {
   u32 address = 0;
@@ -1023,6 +1209,9 @@ void remoteBinaryWrite(char *p)
   remotePutPacket("OK");
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 void remoteMemoryWrite(char *p)
 {
   u32 address = 0;
@@ -1052,6 +1241,9 @@ void remoteMemoryWrite(char *p)
   remotePutPacket("OK");
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 void remoteMemoryRead(char *p)
 {
   u32 address = 0;
@@ -1072,6 +1264,9 @@ void remoteMemoryRead(char *p)
   TGDSARM9Free(buffer);
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 void remoteStepOverRange(char *p)
 {
   u32 address = 0;
@@ -1091,6 +1286,9 @@ void remoteStepOverRange(char *p)
   remoteSendStatus();
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 void remoteWriteWatch(char *p, bool active)
 {
   u32 address = 0;
@@ -1130,6 +1328,9 @@ void remoteWriteWatch(char *p, bool active)
   remotePutPacket("OK");
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 void remoteReadRegisters(char *p)
 {
   char * buffer = (char *)TGDSARM9Malloc(1024);
@@ -1168,6 +1369,9 @@ void remoteReadRegisters(char *p)
   TGDSARM9Free(buffer);
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 void remoteWriteRegister(char *p)
 {
 	//todo
@@ -1213,6 +1417,9 @@ void remoteWriteRegister(char *p)
   remotePutPacket("OK");
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 sint32 remoteStubMain(){
 
 	if( (getMULTIMode() == dswifi_gdbstubmode) && (getWIFISetup() == true) && (dswifiSrv.GDBStubEnable == true) ){
@@ -1327,13 +1534,24 @@ sint32 remoteStubMain(){
 
 //Shared for GDBFile and GDBBuffer map modes.
 uint32 GDBMapFileAddress = (uint32)0x00000000;
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 void setCurrentRelocatableGDBFileAddress(uint32 addrInput){
 	GDBMapFileAddress = addrInput;
 }
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 uint32 getCurrentRelocatableGDBFileAddress(){
 	return GDBMapFileAddress;
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 void remoteStubSignal(int sig, int number)
 {
   remoteSignal = sig;
@@ -1341,6 +1559,9 @@ void remoteStubSignal(int sig, int number)
   remoteSendStatus();
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 void remoteCleanUp()
 {
   if(remoteCleanUpFnc)
@@ -1348,6 +1569,9 @@ void remoteCleanUp()
 	dswifiSrv.GDBStubEnable = false;
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 u32 debuggerReadMemory(u32 addr){
 	if((gdbStubMapMethod == GDBSTUB_METHOD_GDBBUFFER) && ( !(addr >= 0x037f8000) && !(addr < 0x03810000) ) ){
 		return (u32)readu32GDBMapBuffer(addr);
@@ -1366,6 +1590,9 @@ u32 debuggerReadMemory(u32 addr){
 	return (u32)(0xffffffff);
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 u16 debuggerReadHalfWord(u32 addr){
 	if((gdbStubMapMethod == GDBSTUB_METHOD_GDBBUFFER) && ( !(addr >= 0x037f8000) && !(addr < 0x03810000) ) ){
 		return (u16)(readu32GDBMapBuffer(addr)&0xffff);
@@ -1384,6 +1611,9 @@ u16 debuggerReadHalfWord(u32 addr){
 	return (u16)(0xffff);
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 u8 debuggerReadByte(u32 addr){
 	if((gdbStubMapMethod == GDBSTUB_METHOD_GDBBUFFER) && ( !(addr >= 0x037f8000) && !(addr < 0x03810000) ) ){
 		return (u8)(readu32GDBMapBuffer(addr)&0xff);
@@ -1406,9 +1636,17 @@ u8 debuggerReadByte(u32 addr){
 int gdbStubMapMethod = 0;
 //GDBMap: File impl.
 struct gdbStubMapFile globalGdbStubMapFile;
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 struct gdbStubMapFile * getGDBMapFile(){
 	return (struct gdbStubMapFile *)&globalGdbStubMapFile;
 }
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 bool initGDBMapFile(char * filename, uint32 newRelocatableAddr){
 	closeGDBMapFile();
 	switch_dswnifi_mode(dswifi_idlemode);
@@ -1436,12 +1674,20 @@ bool initGDBMapFile(char * filename, uint32 newRelocatableAddr){
 	}
 	return false;
 }
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 void closeGDBMapFile(){
 	struct gdbStubMapFile * gdbStubMapFileInst = getGDBMapFile();
 	if(gdbStubMapFileInst->GDBFileHandle != NULL){ 
 		fclose(gdbStubMapFileInst->GDBFileHandle);
 	}
 }
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 uint32 readu32GDBMapFile(uint32 address){
 	u32 readVal = 0;
 	struct gdbStubMapFile * gdbStubMapFileInst = getGDBMapFile();
@@ -1469,10 +1715,17 @@ uint32 readu32GDBMapFile(uint32 address){
 
 //GDBMap: Buffer impl.
 struct gdbStubMapBuffer globalGdbStubMapBuffer;
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 struct gdbStubMapBuffer * getGDBMapBuffer(){
 	return (struct gdbStubMapBuffer *)&globalGdbStubMapBuffer;
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 bool initGDBMapBuffer(u32 * bufferStart, int GDBMapBufferSize, uint32 newRelocatableAddr){
 	closeGDBMapBuffer();
 	switch_dswnifi_mode(dswifi_idlemode);
@@ -1490,10 +1743,18 @@ bool initGDBMapBuffer(u32 * bufferStart, int GDBMapBufferSize, uint32 newRelocat
 	}
 	return false;
 }
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 void closeGDBMapBuffer(){
 	struct gdbStubMapBuffer * gdbStubMapBufferInst = getGDBMapBuffer();
 	memset((uint8*)gdbStubMapBufferInst, 0, sizeof(struct gdbStubMapBuffer));
 }
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 uint32 readu32GDBMapBuffer(uint32 address){
 	struct gdbStubMapBuffer * gdbStubMapBufferInst = getGDBMapBuffer();
 	int FSize = gdbStubMapBufferInst->GDBMapBufferSize;
@@ -1514,6 +1775,9 @@ uint32 readu32GDBMapBuffer(uint32 address){
 	return (uint32)0xffffffff;
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 void resetGDBSession(){
 	setCurrentRelocatableGDBFileAddress(0);
 	gdbStubMapMethod = GDBSTUB_METHOD_DEFAULT;
@@ -1526,7 +1790,9 @@ void resetGDBSession(){
 //Client:
 //opens and returns a new socket >= 0 ready to be used with connectAsync(); method, writes to sockaddr_in the current client (NDS) settings so it needs a valid sockaddr_in structure.
 //Otherwise -1 if an error happened, such as server could not be resolved (ie: using custom DNS server), or if the AP isn't set in the firmware.
-
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 int openAsyncConn(char * dnsOrIpAddr, int asyncPort, struct sockaddr_in * sain){
 	// Find the IP address of the server, with gethostbyname
     struct hostent * myhost = gethostbyname( dnsOrIpAddr );
@@ -1563,6 +1829,9 @@ int openAsyncConn(char * dnsOrIpAddr, int asyncPort, struct sockaddr_in * sain){
 	return my_socket;
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 bool connectAsync(int sock, struct sockaddr_in * sain){
 	//Connect
 	int retVal = 0;
@@ -1576,6 +1845,9 @@ bool connectAsync(int sock, struct sockaddr_in * sain){
 
 //Server:
 //Open a port and listen through it. Synchronous/blocking.
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 int openServerSyncConn(int SyncPort, struct sockaddr_in * sain){
 	int srv_len = sizeof(struct sockaddr_in);
 	memset(sain, 0, srv_len);
@@ -1605,7 +1877,9 @@ int openServerSyncConn(int SyncPort, struct sockaddr_in * sain){
 	return my_socket;
 }
 
-
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 bool disconnectAsync(int sock){
 	shutdown(sock,0); // good practice to shutdown the socket.
 	forceclosesocket(sock); // remove the socket.
@@ -1616,13 +1890,16 @@ bool disconnectAsync(int sock){
 //Synchronous Bi-directional NIFI commands: The DS Sender waits until the command was executed in Remote DS.
 
 //Host gets total of connected DSes. 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 int getTotalConnectedDSinNetwork(){
 	int TotalCount = 0;
 	switch(getMULTIMode()){
 		case (dswifi_localnifimode):
 		case (dswifi_udpnifimode):{
 			int retryCount = 0;
-			struct dsnwifisrvStr * dsnwifisrvStrInst = getDSWNIFIStr();
+			struct dsnwifisrvStr * dsnwifisrvStrInst = &dswifiSrv;
 			dsnwifisrvStrInst->DSIndexInNetwork = 0;
 			dsnwifisrvStrInst->nifiCommand = NIFI_SENDER_TOTAL_CONNECTED_DS;
 			char frame[frameDSsize];	//use frameDSsize as the sender buffer size, any other size won't be sent.
@@ -1653,6 +1930,9 @@ int getTotalConnectedDSinNetwork(){
 
 
 //Send a Binary over DS Wireless: Returns frames sent
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 int SendDSBinary(u8 * binBuffer, int binSize){
 	int s = 0;
 	switch(getMULTIMode()){
@@ -1660,7 +1940,7 @@ int SendDSBinary(u8 * binBuffer, int binSize){
 		case (dswifi_udpnifimode):{
 			//defaults
 			int retryCount = 0;
-			struct dsnwifisrvStr * dsnwifisrvStrInst = getDSWNIFIStr();
+			struct dsnwifisrvStr * dsnwifisrvStrInst = &dswifiSrv;
 			dsnwifisrvStrInst->nifiCommand = NIFI_SENDER_SEND_BINARY;
 			dsnwifisrvStrInst->frameIndex = 0;
 			dsnwifisrvStrInst->BinarySize = binSize;
@@ -1695,12 +1975,15 @@ int SendDSBinary(u8 * binBuffer, int binSize){
 }
 
 //Receive a Binary over DS Wireless: Returns frames received
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 int ReceiveDSBinary(u8 * inBuffer, int * inBinSize){
 	int receiveCount = 0;
 	switch(getMULTIMode()){
 		case (dswifi_localnifimode):
 		case (dswifi_udpnifimode):{
-			struct dsnwifisrvStr * dsnwifisrvStrInst = getDSWNIFIStr();			
+			struct dsnwifisrvStr * dsnwifisrvStrInst = &dswifiSrv;
 			//defaults
 			int binSize = 0;
 			dsnwifisrvStrInst->nifiCommand = NIFI_ACK_SEND_BINARY;
