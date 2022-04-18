@@ -95,6 +95,10 @@ struct LZSSContext {
 //LZSS end
 // CUE Author Code End
 
+#ifdef ARM9
+//Callbacks to use libutil's components in libhardware 7 or 9
+typedef sint32(*HandledoMULTIDaemonWeakRefLibHardware9_fn)(); //doMULTIDaemon()
+#endif
 
 #endif
 
@@ -139,6 +143,9 @@ extern void handleARM7SVC();
 #ifdef ARM9
 extern void handleARM9InitSVC();
 extern void handleARM9SVC();
+
+extern HandledoMULTIDaemonWeakRefLibHardware9_fn HandledoMULTIDaemonWeakRefLibHardware9Callback;
+
 #endif
 
 extern bool isArm7ClosedLid;

@@ -93,7 +93,6 @@ char bufModeARM7[256];
 #endif
 
 //reportTGDSPayloadMode(&bufModeARM7[0]); //usage
-
 void reportTGDSPayloadMode(u32 bufferSource){
 	#ifdef ARM7
 	char dbgMsg[64];
@@ -188,7 +187,6 @@ size_t ucs2tombs(uint8* dst, const unsigned short* src, size_t len) {
 #include <reent.h>
 #include <sys/lock.h>
 #include <fcntl.h>
-
 
 //Coto: These functions allow to export ARM code to plaintext and backwards, so handlers can be added to config file.
 //Note: each handler albeit exported, is ONLY compatible with the current emuCore version + timestamp it was compiled for. Do not try to

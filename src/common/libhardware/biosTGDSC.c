@@ -29,6 +29,7 @@ USA
 
 #ifdef ARM9
 #include "dldi.h"
+#include "dswnifi_lib.h"
 #endif
 
 //NDS BIOS Routines C code
@@ -53,6 +54,8 @@ void swiFastCopy(uint32 * source, uint32 * dest, int flags){
 }
 
 #ifdef ARM9
+HandledoMULTIDaemonWeakRefLibHardware9_fn HandledoMULTIDaemonWeakRefLibHardware9Callback = NULL;
+
 //Once called, you consume the struct LZSSContext and then call free(struct LZSSContext.bufferSource)
 struct LZSSContext LZS_DecodeFromBuffer(unsigned char *pak_buffer, unsigned int   pak_len){
 	struct LZSSContext LZSSCtx;
@@ -110,6 +113,9 @@ void handleARM9InitSVC(){
 __attribute__((section(".itcm")))
 #endif
 void handleARM9SVC(){
-	
+	//handles Local/UDP Nifi
+	if(HandledoMULTIDaemonWeakRefLibHardware9Callback != NULL){
+		sint32 currentDSWNIFIMode = HandledoMULTIDaemonWeakRefLibHardware9Callback();
+	}	
 }
 #endif
