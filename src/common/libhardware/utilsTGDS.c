@@ -95,11 +95,7 @@ char bufModeARM7[256];
 //reportTGDSPayloadMode(&bufModeARM7[0]); //usage
 void reportTGDSPayloadMode(u32 bufferSource){
 	#ifdef ARM7
-	char dbgMsg[64];
-	memset(dbgMsg, 0, sizeof(dbgMsg));
-	strcpy(dbgMsg, "TGDS ARM7.bin Payload Mode: ");
-	strcat(dbgMsg, TGDSPayloadMode);
-	strcpy((char*)bufferSource, dbgMsg);
+	strcpy((char*)bufferSource, TGDSPayloadMode);
 	#endif
 	
 	#ifdef ARM9
@@ -1179,6 +1175,7 @@ SoundStreamSetupSoundARM7LibUtils_fn SoundStreamSetupSoundARM7LibUtilsCallback =
 
 #ifdef ARM7
 initMallocARM7LibUtils_fn initMallocARM7LibUtilsCallback = NULL;
+MicInterruptARM7LibUtils_fn MicInterruptARM7LibUtilsCallback = NULL;
 #endif
 
 #ifdef ARM9
@@ -1218,7 +1215,8 @@ void initializeLibUtils7(
 	SoundStreamStopSoundARM7LibUtils_fn SoundStreamStopSoundARM7LibUtilsCall, 	//ARM7: void stopSound()
 	SoundStreamSetupSoundARM7LibUtils_fn SoundStreamSetupSoundARM7LibUtilsCall,	//ARM7: void setupSound()
 	initMallocARM7LibUtils_fn initMallocARM7LibUtilsCall,	//ARM7: void initARM7Malloc(u32 ARM7MallocStartaddress, u32 ARM7MallocSize);
-	wifiDeinitARM7ARM9LibUtils_fn wifiDeinitARM7ARM9LibUtilsCall //ARM7 & ARM9: DeInitWIFI()
+	wifiDeinitARM7ARM9LibUtils_fn wifiDeinitARM7ARM9LibUtilsCall, //ARM7 & ARM9: DeInitWIFI()
+	MicInterruptARM7LibUtils_fn MicInterruptARM7LibUtilsCall //ARM7: micInterrupt()
 ){
 	libutilisFifoNotEmptyCallback = HandleFifoNotEmptyWeakRefLibUtilsCall;
 	wifiUpdateVBLANKARM7LibUtilsCallback = wifiUpdateVBLANKARM7LibUtilsCall;
@@ -1228,6 +1226,7 @@ void initializeLibUtils7(
 	SoundStreamSetupSoundARM7LibUtilsCallback = SoundStreamSetupSoundARM7LibUtilsCall;
 	initMallocARM7LibUtilsCallback = initMallocARM7LibUtilsCall;
 	wifiDeinitARM7ARM9LibUtilsCallback = wifiDeinitARM7ARM9LibUtilsCall; 
+	MicInterruptARM7LibUtilsCallback = MicInterruptARM7LibUtilsCall;
 }
 #endif
 
@@ -1249,7 +1248,7 @@ int isNTROrTWLBinary(char * filename){
 	if (fread(NDSHeader, 1, headerSize, fh) != headerSize){
 		TGDSARM9Free(NDSHeader);
 		fclose(fh);
-		return notTWLOrNTRBinary;
+		return mode;
 	}
 	else{
 		fseek(fh, 0xA0, SEEK_SET);

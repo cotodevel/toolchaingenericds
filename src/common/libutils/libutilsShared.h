@@ -23,6 +23,18 @@ USA
 
 #include "typedefsTGDS.h"
 #include "dsregs.h"
+#include "SoundTGDS.h"
+
+//Mic
+#define TGDS_SAVE_MIC_DATA	(uint32)(0xffff03AA)
+#define ARM7COMMAND_START_RECORDING (uint32)(0xffff03A6)
+#define ARM7COMMAND_STOP_RECORDING (uint32)(0xffff03A7)
+
+//Lower quality
+#define MIC_8
+
+//Better quality. Segfaults!!
+//#define MIC_16
 
 #endif
 
@@ -37,6 +49,8 @@ extern u8 * TGDSARM7Calloc(int blockCount, int blockSize);
 extern void TGDSARM7Free(void *ptr);
 extern u8 * TGDSARM7Realloc(void *ptr, int size);
 extern u32 TGDSARM7MallocFreeMemory();
+
+extern SoundRegion * getSoundIPC();
 
 #ifdef __cplusplus
 }

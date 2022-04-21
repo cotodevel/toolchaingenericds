@@ -15,6 +15,11 @@
 #include "libndsFIFO.h"
 #include "wifi_shared.h"
 
+SoundRegion * getSoundIPC(){
+	struct sIPCSharedTGDS * TGDSIPC = (struct sIPCSharedTGDS *)TGDSIPCStartAddress;
+	return &TGDSIPC->soundIPC;
+}
+
 #ifdef ARM9
 
 /*
@@ -125,6 +130,15 @@ void libUtilsFIFONotEmpty(u32 cmd1, u32 cmd2){
 	//Execute ToolchainGenericDS FIFO commands
 	switch (cmd1) {
 		#ifdef ARM7
+		case ARM7COMMAND_START_RECORDING:{
+			micStartRecording();
+		}
+		break;				
+		case ARM7COMMAND_STOP_RECORDING:{
+			micStopRecording();
+		}
+		break;
+		
 		//arm9 wants to send a WIFI context block address / userdata is always zero here
 		case((uint32)WIFI_INIT):{
 			uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
@@ -140,6 +154,10 @@ void libUtilsFIFONotEmpty(u32 cmd1, u32 cmd2){
 		#endif
 		
 		#ifdef ARM9
+		case ((uint32)TGDS_SAVE_MIC_DATA):{
+			copyChunk();
+		}
+		break;
 		#endif
 		
 		//Shared
