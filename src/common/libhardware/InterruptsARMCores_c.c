@@ -172,6 +172,11 @@ void NDS_IRQHandler(){
 	}
 	
 	if(REG_IE_SET & IRQ_TIMER2){
+		#ifdef ARM7
+		if(MicInterruptARM7LibUtilsCallback != NULL){
+			MicInterruptARM7LibUtilsCallback(); //Microphone recording handler
+		}
+		#endif
 		Timer2handlerUser();
 		REG_IF = IRQ_TIMER2;
 	}
