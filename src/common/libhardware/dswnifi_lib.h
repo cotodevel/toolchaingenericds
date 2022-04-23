@@ -20,7 +20,7 @@ USA
 
 //DSWNifi Library 1.4.1 (update: 04/17/2022)	(mm/dd/yyyy)
 //Changelog:
-//1.1: TGDS1.65 SDK Fix, works 100% of the time now (udp nifi), as long wifi network isn't convoluted. Local nifi works regardless.
+//1.4.1: TGDS1.65 SDK Fix, works 100% of the time now (udp nifi), as long wifi network isn't convoluted. Local nifi works regardless.
 //1.4: Added Hardware WIFI GDBStub
 //1.3: Added UDP Nifi 
 //1.2: Added Local Nifi 
@@ -214,7 +214,7 @@ extern struct frameBlock FrameRecvBlock;	//used by the user receiver process, ca
 //frame receiver implementation, has all receiver-like modes here. Returns true if correct frame received from TCP/UDP
 extern struct frameBlock * 	receiveDSWNIFIFrame(uint8 * databuf_src,int frameSizeRecv);	//framesize is calculated inside (crc over udp requires framesize previously to here calculated anyway)
 extern bool sendDSWNIFIFame(struct frameBlock * frameInst);
-extern sint8 server_ip[MAX_TGDSFILENAME_LENGTH+1];
+extern sint8 server_ip[MAX_TGDSFILENAME_LENGTH];
 extern bool isValidIpAddress(char *ipAddress);
 
 //Send a frame to the other connected DS
@@ -237,6 +237,16 @@ extern 	void OnDSWIFIudpnifiEnable();
 
 //Callback that runs upon setting DSWNIFI mode to dswifi_gdbstubmode
 extern 	void OnDSWIFIGDBStubEnable();
+
+//UDP Nifi:
+//Step 1: TGDS Project is asked for Remote Companion's IP (AKA: WAN Remote TCP/IP)
+extern void ONDSWIFI_UDPNifiInvalidIP(char * targetIP);
+
+//Step 2: TGDS Project connected successfully to Remote Companion
+extern void ONDSWIFI_UDPNifiRemoteServerConnected(char * targetIP);
+
+//Step 3: TGDS Project connected successfully to another DS implementing the DSWNFI protocol
+extern void ONDSWIFI_UDPNifiExternalDSConnected(char * externalDSIP);
 
 extern bool sentReq;
 extern sint32 LastDSWnifiMode;
