@@ -20,7 +20,7 @@ USA
 
 //DSWNifi Library 1.4.1 (update: 04/17/2022)	(mm/dd/yyyy)
 //Changelog:
-//1.1: TGDS1.65 SDK Fix, works 100% of the time now (udp nifi), as long wifi network isn't convoluted. Local nifi works regardless.
+//1.4.1: TGDS1.65 SDK Fix, works 100% of the time now (udp nifi), as long wifi network isn't convoluted. Local nifi works regardless.
 //1.4: Added Hardware WIFI GDBStub
 //1.3: Added UDP Nifi 
 //1.2: Added Local Nifi 
@@ -93,7 +93,7 @@ void initNiFi(){
 }
 
 /////////////////////////////////UDP DSWNIFI Part////////////////////////////////////
-sint8 server_ip[MAX_TGDSFILENAME_LENGTH+1]; 
+sint8 server_ip[MAX_TGDSFILENAME_LENGTH]; 
 //SOCK_STREAM = TCP / SOCK_DGRAM = UDP
 
 //true == sends and frees the queued frame / false == didn't send, no frame
@@ -285,14 +285,15 @@ bool switch_dswnifi_mode(sint32 mode)  {
 		disableSpecialNifiCommands(); //a normal Udp Nifi session does not implement special nifi commands
 		dswifiSrv.dsnwifisrv_stat = ds_searching_for_multi_servernotaware;
 		//bool useWIFIAP = true;
-		if(connectDSWIFIAP(DSWNIFI_ENTER_WIFIMODE) == true){	//setWIFISetup set inside
+		if((isValidIpAddress((char*)&server_ip[0]) == true) && (connectDSWIFIAP(DSWNIFI_ENTER_WIFIMODE) == true)){	//setWIFISetup set inside
 			setConnectionStatus(proc_connect);
 			setMULTIMode(mode);
 			OnDSWIFIudpnifiEnable();
 			return true;
 		}
 		else{
-			//Could not connect
+			//Add IP and retry again
+			ONDSWIFI_UDPNifiInvalidIP((char*)&server_ip[0]);
 			switch_dswnifi_mode(dswifi_idlemode);
 			return false;
 		}
@@ -354,41 +355,7 @@ sint32 doMULTIDaemon(){
 			//UDP NIFI
 			if(getMULTIMode() == dswifi_udpnifimode){
 				
-				//Ask for Server Input IP here:
-				printf("Connecting to UDP TGDS Server Companion: ");
-				printf("Write down the IP then <Enter>, or tap <ESC> to quit. ");
-				
-				//Todo: add TGDS project method adding manual IP
-				/*
-				//Start keyboard
-				initKeyboard();	
-				SETDISPCNT_SUB(MODE_0_2D | DISPLAY_BG0_ACTIVE);	//Keyboard show
-				char str[MAX_TGDSFILENAME_LENGTH+1] = "";
-				bool validIPv4 = false;
-				while(1==1){
-					char keyPress = processKeyboard(&str[0], MAX_TGDSFILENAME_LENGTH+1, ECHO_ON, (int)strlen(str) );
-					if(keyPress == (char)RET)
-					{
-						// process input
-						validIPv4 = isValidIpAddress(str);
-						if(validIPv4 == true){
-							break;
-						}
-						printf("Invalid IP: %s",str);
-						strcpy(str, "");	//clean string if invalid
-					}
-					else if (keyPress == (char)ESC){
-						break;
-					}
-				}
-				move_console_to_bottom_screen();
-				if(validIPv4 == false){					
-					printf("Invalid IP address");
-					return dswifi_udpnifimodeFailConnectStage;
-				}
-				//strcpy(server_ip,str);
-				*/
-				strcpy(server_ip, (char*)"192.168.43.22");
+				//IP input used to be here, not anymore.
 				
 				//UDP: DSClient - Server IP / Desktop Server UDP companion Listener.
 				dswifiSrv.client_http_handler_context.socket_id__multi_notconnected=socket(AF_INET,SOCK_DGRAM,0);	
@@ -405,6 +372,7 @@ sint32 doMULTIDaemon(){
 				}
 				else{
 					//binding OK
+					ONDSWIFI_UDPNifiRemoteServerConnected(&server_ip[0]);
 				}
 				//UDP: DSClient - Server IP / Desktop Server UDP companion Sender
 				memset((uint8*)&dswifiSrv.client_http_handler_context.server_addr, 0, sizeof(struct sockaddr_in));
@@ -520,6 +488,7 @@ sint32 doMULTIDaemon(){
 									//stop sending data, server got it already.
 									dswifiSrv.dsnwifisrv_stat = ds_netplay_guest_servercheck;
 								}
+								ONDSWIFI_UDPNifiExternalDSConnected(token_extip);
 								sentReq = false;	//prepare next issuer msg
 							}
 							TGDSARM9Free(outBuf);
@@ -607,6 +576,7 @@ sint32 doMULTIDaemon(){
 				close(dswifiSrv.client_http_handler_context.socket_id__multi_notconnected);
 			}
 			sentReq = false;
+			strcpy(server_ip, "ffffff"); //clear IP so it's asked everytime we connect to UDP Nifi
 			setConnectionStatus(proc_connect);
 			retDaemonCode = dswifi_idlemode;
 		}

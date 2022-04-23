@@ -451,7 +451,7 @@ void Woopsi::setClickedGadget(Gadget* gadget) {
 	if (_clickedGadget != NULL) {
 
 		// Ensure that the existing clicked gadget is released *outside* its bounds
-		//_clickedGadget->release(_clickedGadget->getX() - 10, 0); //Causes issues in TGDS, so disabled
+		_clickedGadget->release(_clickedGadget->getX() - 10, 0); //Causes issues in TGDS, so disabled
 	}
 	
 	// Update the pointer

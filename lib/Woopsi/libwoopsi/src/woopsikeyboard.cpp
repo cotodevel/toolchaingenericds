@@ -115,7 +115,11 @@ WoopsiKeyboard::WoopsiKeyboard(s16 x, s16 y, u32 flags, GadgetStyle* style) : Ga
 	addGadget(new WoopsiKey(buttonX + (11 * (1 + buttonWidth)), buttonY, buttonWidth, buttonHeight, "\\", "|", "\\", "|", "\\", "\\"));
 
 	// Create the timer
-	_timer = NULL;
+	_initialRepeatTime = KEY_INITIAL_REPEAT_TIME;
+	_secondaryRepeatTime = KEY_SECONDARY_REPEAT_TIME;
+	_timer = new WoopsiTimer(_initialRepeatTime, true);
+	addGadget(_timer);
+
 	// Set event handlers
 	for (s32 i = getDecorationCount(); i < _gadgets.size(); i++) {
 		_gadgets[i]->addGadgetEventHandler(this);
@@ -134,7 +138,18 @@ void WoopsiKeyboard::drawBorder(GraphicsPort* port) {
 void WoopsiKeyboard::handleActionEvent(const GadgetEventArgs& e) {
 
 	if (e.getSource() != NULL) {
-		
+
+		// Check if the event was fired by the timer (key repeat)
+		if (e.getSource() == _timer) {
+
+			// Event is a key repeat, so raise repeat event
+			raiseKeyboardRepeatEvent((WoopsiKey*)getFocusedGadget());
+
+			// Ensure that subsequent repeats are faster
+			_timer->setTimeout(_secondaryRepeatTime);
+
+			return;
+		}
 	}
 }
 
@@ -282,13 +297,12 @@ void WoopsiKeyboard::handleClickEvent(const GadgetEventArgs& e) {
 					// Update the keyboard
 					showCorrectKeys();
 					break;
-				default:{
-					
-					// Update the keyboard
-					showCorrectKeys();
-				
-				}
-				break;
+				default:
+
+					// Start the timer
+					_timer->setTimeout(_initialRepeatTime);
+					_timer->start();
+					break;
 			}
 
 			return;
