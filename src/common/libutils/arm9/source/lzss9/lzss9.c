@@ -63,12 +63,12 @@ int           dad[LZS_N + 1], lson[LZS_N + 1], rson[LZS_N + 1 + 256];
 int           pos_ring, len_ring, lzs_vram;
 
 void Title(void) {
-  printf(
-    ""
-    "LZSS - (c) CUE 2011"
-    "LZSS coding for Nintendo GBA/DS"
-    ""
-  ); 
+  //printf(
+  //  ""
+  // "LZSS - (c) CUE 2011"
+  // "LZSS coding for Nintendo GBA/DS"
+  //  ""
+  //); 
 }
 
 /*----------------------------------------------------------------------------*/
@@ -137,14 +137,14 @@ bool LZS_Decode(const char *filenameIn, const  char *filenameOut) {
   unsigned char *pak_buffer, *raw_buffer;
   unsigned int   pak_len, raw_len, header;
   
-  printf("- decompressing... '%s' ", filenameIn);
+  //printf("- decompressing... '%s' ", filenameIn);
 
   pak_buffer = Load(filenameIn, &pak_len, LZS_MINIM, LZS_MAXIM);
 
   header = *pak_buffer;
   if (header != CMD_CODE_10) {
     TGDSARM9Free(pak_buffer);
-    printf("ERROR: file is not LZSS encoded!");
+    //printf("ERROR: file is not LZSS encoded!");
 	return false;
   }
   
@@ -157,7 +157,8 @@ bool LZS_Decode(const char *filenameIn, const  char *filenameOut) {
   TGDSARM9Free(raw_buffer);
   TGDSARM9Free(pak_buffer);
 
-  printf("LZS_Decode() end.");
+  //printf("LZS_Decode() end.");
+  return true;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -168,7 +169,7 @@ void LZS_Encode(const char *filenameIn, const char *filenameOut) {
 
   lzs_vram = mode & 0xF;
 
-  printf("- compressing... '%s' ", filenameIn);
+  //printf("- compressing... '%s' ", filenameIn);
 
   raw_buffer = Load(filenameIn, &raw_len, RAW_MINIM, RAW_MAXIM);
   pak_buffer = NULL;
@@ -191,7 +192,7 @@ void LZS_Encode(const char *filenameIn, const char *filenameOut) {
   TGDSARM9Free(pak_buffer);
   TGDSARM9Free(raw_buffer);
 
-  printf("LZS_Encode end.");
+  //printf("LZS_Encode end.");
 }
 
 /*----------------------------------------------------------------------------*/

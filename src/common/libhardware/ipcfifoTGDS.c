@@ -585,7 +585,7 @@ void HandleFifoNotEmpty(){
 			
 			case TGDS_ARMCORES_REPORT_PAYLOAD_MODE:{
 				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-				reportTGDSPayloadMode(data0);
+				reportTGDSPayloadMode7(data0);
 				setValueSafe(&fifomsg[45], (uint32)0);
 			}
 			break;

@@ -92,13 +92,14 @@ char * TGDSPayloadMode = "TWLModePayload";
 char bufModeARM7[256];
 #endif
 
-//reportTGDSPayloadMode(&bufModeARM7[0]); //usage
-void reportTGDSPayloadMode(u32 bufferSource){
-	#ifdef ARM7
+#ifdef ARM7
+void reportTGDSPayloadMode7(u32 bufferSource){
 	strcpy((char*)bufferSource, TGDSPayloadMode);
-	#endif
-	
-	#ifdef ARM9
+}
+#endif
+
+#ifdef ARM9
+void reportTGDSPayloadMode(u32 bufferSource, char * ARM7OutLog, char * ARM9OutLog){
 	//send ARM7 signal, wait for it to be ready, then continue
 	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
 	setValueSafe(&fifomsg[45], (u32)0xFFFFFFFF);
@@ -106,16 +107,13 @@ void reportTGDSPayloadMode(u32 bufferSource){
 	while((u32)getValueSafe(&fifomsg[45]) == (u32)0xFFFFFFFF){
 		swiDelay(1);
 	}
-	printf("TGDS ARM7.bin Payload Mode: %s", (char*)bufferSource);
-	printf("TGDS ARM9.bin Payload Mode: %s", (char*)TGDSPayloadMode);
+	sprintf(ARM7OutLog, "TGDS ARM7.bin Payload Mode: %s", (char*)bufferSource);
+	sprintf(ARM9OutLog, "TGDS ARM9.bin Payload Mode: %s", (char*)TGDSPayloadMode);
 	
-	char dbgMsg[64];
-	memset(dbgMsg, 0, sizeof(dbgMsg));
-	strcpy(dbgMsg, "TGDS ARM9.bin Payload Mode:");
-	strcat(dbgMsg, TGDSPayloadMode);
-	nocashMessage(dbgMsg);
-	#endif
+	nocashMessage(ARM7OutLog);
+	nocashMessage(ARM9OutLog);
 }
+#endif
 
 //!	Checks whether the application is running in DSi mode.
 bool isDSiMode() {

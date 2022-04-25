@@ -308,6 +308,7 @@ extern void SendFIFOWordsITCM(uint32 data0, uint32 data1);
 
 extern void XYReadScrPosUser(struct touchPosition * StouchScrPosInst);
 extern u8 ARM7ReadFWVersionFromFlashByFIFOIRQ();
+extern void ReadMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead);
 
 #ifdef __cplusplus
 }
