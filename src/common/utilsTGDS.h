@@ -255,7 +255,14 @@ extern bool updateRequested;
 
 extern bool TGDSMultibootRunNDSPayload(char * filename);
 extern char * TGDSPayloadMode;
-extern void reportTGDSPayloadMode(u32 bufferSource);
+
+#ifdef ARM7
+extern void reportTGDSPayloadMode7(u32 bufferSource);
+#endif
+
+#ifdef ARM9
+extern void reportTGDSPayloadMode(u32 bufferSource, char * ARM7OutLog, char * ARM9OutLog);
+#endif
 
 #ifdef ARM9
 extern char bufModeARM7[256];

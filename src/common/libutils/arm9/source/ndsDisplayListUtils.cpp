@@ -670,7 +670,7 @@ int BuildNDSGXDisplayListObjectFromFile(char * filename, struct ndsDisplayListDe
 		}
 		struct ndsDisplayList * curDL = (struct ndsDisplayList *)&dlInst->DL[0];
 		int curDLIndex = 0;
-		printf("ReadFile: %s", filename);
+		//printf("ReadFile: %s", filename);
 		
 		#ifdef WIN32
 		FILE * outFileGen = fopen(filename, "rb");
@@ -687,7 +687,7 @@ int BuildNDSGXDisplayListObjectFromFile(char * filename, struct ndsDisplayListDe
 			fseek(outFileGen, 0, SEEK_SET);
 			binDisplayList = (char*)TGDSARM9Malloc(FileSize);
 			readFileSize = fread(binDisplayList, 1, FileSize, outFileGen);
-			printf("DisplayList readSize: %d", readFileSize);
+			//printf("DisplayList readSize: %d", readFileSize);
 			startPtr = curPtr = (u32*)binDisplayList;
 			dlInst->ndsDisplayListSize = (int)*curPtr;
 			curPtr++;
@@ -1362,10 +1362,10 @@ int main(int argc, char** argv){
 	sprintf(outPath, "%s%s", cwdPath, "PackedDisplayList.h");
 	bool result = packAndExportSourceCodeFromRawUnpackedDisplayListFormat(outPath, CompiledDisplayListsBuffer);
 	if(result == true){
-		printf("Unpacked Display List successfully packed and exported as C source file at: \n%s", outPath);
+		//printf("Unpacked Display List successfully packed and exported as C source file at: \n%s", outPath);
 	}
 	else{
-		printf("Unpacked Display List generation failure");
+		//printf("Unpacked Display List generation failure");
 	}
 	
 	//Unit Test #3: Using rawUnpackedToRawPackedDisplayListFormat() in target platform builds a packed Display List from an unpacked one IN MEMORY.
@@ -1374,7 +1374,7 @@ int main(int argc, char** argv){
 	memset(Packed_DL_Binary, 0, sizeof(Packed_DL_Binary));
 	bool result2 = rawUnpackedToRawPackedDisplayListFormat(CompiledDisplayListsBuffer, (u32*)&Packed_DL_Binary[0]);
 	if(result2 == true){
-		printf("Unpacked Display List into packed format: success!\n");
+		//printf("Unpacked Display List into packed format: success!\n");
 		//Save to file
 		sprintf(outPath, "%s%s", cwdPath, "PackedDisplayListCompiled.bin");
 		#ifdef WIN32
@@ -1386,12 +1386,12 @@ int main(int argc, char** argv){
 		if(fout != NULL){
 			int packedSize = Packed_DL_Binary[0];
 			int written = fwrite((u8*)&Packed_DL_Binary[0], 1, packedSize, fout);
-			printf("Written: %d bytes", packedSize);
+			//printf("Written: %d bytes", packedSize);
 			fclose(fout);
 		}
 	}
 	else{
-		printf("Unpacked Display List into packed format: failure!\n");
+		//printf("Unpacked Display List into packed format: failure!\n");
 	}
 
 	//Unit Test #4: glCallLists test
@@ -1432,19 +1432,19 @@ bool ndsDisplayListUtilsTestCaseARM9(char * filename, char * outNDSGXBuiltDispla
 	if((u32)dlReadSize != DL_INVALID){
 		GL_GLBEGIN_ENUM type = getDisplayListGLType(NDSDL);
 		if(type == GL_TRIANGLES){
-			printf("GX DisplayListType: GL_TRIANGLES");
+			//printf("GX DisplayListType: GL_TRIANGLES");
 		}
 		else if (type == GL_QUADS){
-			printf("GX DisplayListType: GL_QUADS");
+			//printf("GX DisplayListType: GL_QUADS");
 		}
 		else if (type == GL_TRIANGLE_STRIP){
-			printf("GX DisplayListType: GL_TRIANGLE_STRIP");
+			//printf("GX DisplayListType: GL_TRIANGLE_STRIP");
 		}
 		else if (type == GL_QUAD_STRIP){
-			printf("GX DisplayListType: GL_QUAD_STRIP");
+			//printf("GX DisplayListType: GL_QUAD_STRIP");
 		}
 		else{
-			printf("GX DisplayListType: ERROR");
+			//printf("GX DisplayListType: ERROR");
 		}
 
 		//Get Binary filesize
@@ -1454,22 +1454,22 @@ bool ndsDisplayListUtilsTestCaseARM9(char * filename, char * outNDSGXBuiltDispla
 		struct ndsDisplayListDescriptor * NDSDLColorCmds = (struct ndsDisplayListDescriptor *)TGDSARM9Malloc(sizeof(struct ndsDisplayListDescriptor));
 		getDisplayListFIFO_BEGIN(NDSDL, NDSDLColorCmds);
 		int FIFO_BEGINCount = NDSDLColorCmds->ndsDisplayListSize;
-		printf("GX DisplayList (%d): FIFO_BEGIN commands ", FIFO_BEGINCount);
+		//printf("GX DisplayList (%d): FIFO_BEGIN commands ", FIFO_BEGINCount);
 		getDisplayListFIFO_COLOR(NDSDL, NDSDLColorCmds);
-		printf("GX DisplayList (%d): FIFO_COLOR commands", NDSDLColorCmds->ndsDisplayListSize);
+		//printf("GX DisplayList (%d): FIFO_COLOR commands", NDSDLColorCmds->ndsDisplayListSize);
 		getDisplayListFIFO_TEX_COORD(NDSDL, NDSDLColorCmds);
-		printf("GX DisplayList (%d): FIFO_TEX_COORD commands", NDSDLColorCmds->ndsDisplayListSize);
+		//printf("GX DisplayList (%d): FIFO_TEX_COORD commands", NDSDLColorCmds->ndsDisplayListSize);
 		getDisplayListFIFO_VERTEX16(NDSDL, NDSDLColorCmds);
-		printf("GX DisplayList (%d): FIFO_VERTEX16 commands", NDSDLColorCmds->ndsDisplayListSize);
+		//printf("GX DisplayList (%d): FIFO_VERTEX16 commands", NDSDLColorCmds->ndsDisplayListSize);
 		getDisplayListFIFO_END(NDSDL, NDSDLColorCmds);
 		int FIFO_ENDCount = NDSDLColorCmds->ndsDisplayListSize;
-		printf("GX DisplayList (%d): FIFO_END commands", FIFO_ENDCount);
+		//printf("GX DisplayList (%d): FIFO_END commands", FIFO_ENDCount);
 		
 		if((FIFO_BEGINCount != 0) && (FIFO_ENDCount != 0) && (FIFO_BEGINCount == FIFO_ENDCount) ){
-			printf("(%d) GX DisplayList detected", FIFO_BEGINCount);
+			//printf("(%d) GX DisplayList detected", FIFO_BEGINCount);
 		}
 		else{
-			printf("BROKEN GX DisplayList: It won't work as expected on real Nintendo DS!");
+			//printf("BROKEN GX DisplayList: It won't work as expected on real Nintendo DS!");
 		}
 		TGDSARM9Free(NDSDLColorCmds);
 
@@ -1479,24 +1479,24 @@ bool ndsDisplayListUtilsTestCaseARM9(char * filename, char * outNDSGXBuiltDispla
 		int builtDisplayListSize = CompilePackedNDSGXDisplayListFromObject(builtDisplayList, NDSDL) + 1;
 		
 		if(dlReadSize != builtDisplayListSize){
-			printf("NDS DisplayList Build failed");
+			//printf("NDS DisplayList Build failed");
 		}
-		printf("Rebuilding DisplayList at: %s", outNDSGXBuiltDisplayList);
+		//printf("Rebuilding DisplayList at: %s", outNDSGXBuiltDisplayList);
 		FILE * fout = fopen(outNDSGXBuiltDisplayList, "w+");
 		if(fout != NULL){
 			if(fwrite(builtDisplayList, 1, displayListSize, fout) > 0){
-				printf("Rebuild OK");
+				//printf("Rebuild OK");
 				retStatus = true;
 			}
 			else{
-				printf("Rebuild ERROR");
+				//printf("Rebuild ERROR");
 			}
 			fclose(fout);
 		}
 		TGDSARM9Free(builtDisplayList);
 	}
 	else{
-		printf("NDS DisplayList creation fail");
+		//printf("NDS DisplayList creation fail");
 	}
 	TGDSARM9Free(NDSDL);
 	return retStatus;
