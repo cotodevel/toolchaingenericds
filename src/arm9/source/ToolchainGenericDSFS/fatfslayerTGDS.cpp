@@ -1774,7 +1774,7 @@ off_t fatfs_lseek(int structFDIndex, off_t offset, int whence){	//(FileDescripto
 					offset = 0;
 				}
 				if(offset > (topFile - 1)){
-					offset = (topFile - 1);	//offset starts from 0 so -1 here
+					offset = (topFile - 1);	//Mapped SEEK_SET is treated as inmediate offset, which starts from 0 so -1 here
 				}
 				pos = offset;
 				validArg = true;
@@ -1788,8 +1788,8 @@ off_t fatfs_lseek(int structFDIndex, off_t offset, int whence){	//(FileDescripto
 				if((int)pos < 0){
 					pos = 0;
 				}
-				if((int)pos >= (topFile - 1)){
-					pos = (topFile - 1);	//offset starts from 0 so -1 here
+				if((int)pos > topFile){
+					pos = topFile;	//Mapped SEEK_CUR is treated as inmediate offset, which starts from 0, BUT (current) ahead offset-by-1 must not exceed physical filesize
 				}
 				validArg = true;
 			}
