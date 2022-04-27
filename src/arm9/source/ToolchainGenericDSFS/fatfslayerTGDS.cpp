@@ -24,15 +24,16 @@ USA
 //newlib libc ARM Toolchain. <dirent.h> implementation is platform-specific, thus, implemented for ToolchainGenericDS.
 
 #include "fatfslayerTGDS.h"
-#include "typedefsTGDS.h"
 
 #ifdef ARM9
 #include "ff.h"
 #include "dldi.h"
 #include "clockTGDS.h"
+#include "typedefsTGDS.h"
 #endif
 
 #if defined(WIN32)
+#include "..\misc\vs2012TGDS-FS\TGDSFSVS2012\TGDSFSVS2012\TGDSTypes.h"
 #include "dldiWin32.h"
 #include "fatfs\source\ff.h"
 #endif
