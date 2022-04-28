@@ -47,6 +47,7 @@ USA
 
 #ifdef ARM9
 #include "posixHandleTGDS.h"
+#include "PackedDisplayListCompiledVS2012.h"
 #endif
 
 //NDS GX C Display List implementation
@@ -591,7 +592,7 @@ bool getDisplayListFilterByCommand(struct ndsDisplayListDescriptor * dlInst, str
 		int outCmdCount = 0;
 		//Initialize
 		dlInstOut->ndsDisplayListSize = 0;
-		for(int i = 0; i < DL_MAX_ITEMS; i++){
+		for(int i = 0; i < DL_DESCRIPTOR_MAX_ITEMS; i++){
 			struct ndsDisplayList * DLOut = (struct ndsDisplayList *)&dlInstOut->DL[i];
 			DLOut->displayListType = DL_INVALID;
 			DLOut->index = 0;
@@ -662,7 +663,7 @@ int BuildNDSGXDisplayListObjectFromFile(char * filename, struct ndsDisplayListDe
 	u32 * startPtr = NULL;
 	if( (filename != NULL) && (strlen(filename) > 0) && (dlInst != NULL) ){
 		//Initialize
-		for(int i = 0; i < DL_MAX_ITEMS; i++){
+		for(int i = 0; i < DL_DESCRIPTOR_MAX_ITEMS; i++){
 			struct ndsDisplayList * initDL = (struct ndsDisplayList *)&dlInst->DL[i];
 			initDL->displayListType = DL_INVALID;
 			initDL->index = 0;
@@ -670,7 +671,6 @@ int BuildNDSGXDisplayListObjectFromFile(char * filename, struct ndsDisplayListDe
 		}
 		struct ndsDisplayList * curDL = (struct ndsDisplayList *)&dlInst->DL[0];
 		int curDLIndex = 0;
-		//printf("ReadFile: %s", filename);
 		
 		#ifdef WIN32
 		FILE * outFileGen = fopen(filename, "rb");
@@ -1318,9 +1318,102 @@ bool rawUnpackedToRawPackedDisplayListFormat(u32 * inRawUnpackedDisplayList, u32
 	return false;
 }
 
+//returns:
+//	true: ndsDisplayListUtils behaves 1:1 on NDS hardware and Visual Studio, and it's 100% guaranteed to work in this session.
+//	false: ndsDisplayListUtils on NDS hardware was wrongly compiled in this session, rebuild again.
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+bool isNDSDLUtilsAPIStable(){
+	bool ret = false;
+	unsigned int crc32source = 0;
+	int sourceFileSize = 0;
+	#ifdef WIN32
+	char cwdPathMP4[256];
+	getCWDWin(cwdPathMP4, testSourceFileLocation);
+	FILE * outFileGen = fopen(cwdPathMP4, "rb");
+	if(outFileGen != NULL){
+		fseek(outFileGen, 0, SEEK_END);
+		sourceFileSize = ftell(outFileGen);
+		fseek(outFileGen, 0, SEEK_SET);
+
+		crc32source = -1;
+		int err = crc32file(outFileGen, &crc32source);
+		fclose(outFileGen);
+	}
+	#endif
+	
+	#ifdef ARM9
+	crc32source = 0;
+	sourceFileSize = PackedDisplayListCompiledVS2012_size;	//(int)PackedDisplayListCompiledVS2012[0]; //<--- this is PACKED SIZE, SINCE IT'S PACKED, IT DOESN'T GENERATE THE SAME UNPACKED OUTPUT AS NORMAL NDSDLUTILSCALLS
+	crc32source = crc32(&crc32source, (u8*)&PackedDisplayListCompiledVS2012[0], PackedDisplayListCompiledVS2012_size);
+	#endif
+	//Packed GX Command list generated from VS2012 must be the same as the one dinamically generated on runtime (NDS/VS2012)
+	if(sourceFileSize > InternalUnpackedGX_DL_Size){
+		sourceFileSize = InternalUnpackedGX_DL_Size;
+	}
+	GLInitExt();
+	int list = glGenLists(10);
+	if(list){
+		glListBase(list);
+		bool ret = glIsList(list); //should return false (DL generated, but no displaylist-name was generated)
+		glNewList(list, GL_COMPILE);
+		ret = glIsList(list); //should return true (DL generated, and displaylist-name was generated)
+		if(ret == true){
+			for (int i = 0; i <10; i ++){ //Draw 10 cubes
+				glPushMatrix();
+				glRotatef(36*i,0.0,0.0,1.0);
+				glTranslatef(10.0,0.0,0.0);
+				glPopMatrix(1);
+			}
+		}
+		glEndList();
+		
+		glListBase(list + 1);
+		glNewList (list + 1, GL_COMPILE);//Create a second display list and execute it
+		ret = glIsList(list + 1); //should return true (DL generated, and displaylist-name was generated)
+		if(ret == true){
+			for (int i = 0; i <20; i ++){ //Draw 20 triangles
+				glPushMatrix();
+				glRotatef(18*i,0.0,0.0,1.0);
+				glTranslatef(15.0,0.0,0.0);
+				glPopMatrix(1);
+			}
+		}
+		glEndList();//The second display list is created
+	}
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	u32 * CompiledDisplayListsBuffer = getInternalUnpackedDisplayListBuffer(); //Lists called earlier are written to this buffer, using the unpacked GX command format.
+	u32 TestPacked_DL_Binary[InternalUnpackedGX_DL_Size];
+	memset((u8*)&TestPacked_DL_Binary[0], 0, sourceFileSize);
+	bool result2 = rawUnpackedToRawPackedDisplayListFormat(CompiledDisplayListsBuffer, (u32*)TestPacked_DL_Binary);
+	if(result2 == true){
+		unsigned int crc32dest = 0;
+		int packedSize = (int)TestPacked_DL_Binary[0];
+		crc32dest = crc32(&crc32dest, (u8*)&TestPacked_DL_Binary[0], packedSize);
+		if(crc32source == crc32dest){
+			ret = true;
+		}
+	}
+	return ret;
+}
 
 #ifdef WIN32
-int main(int argc, char** argv){	
+int main(int argc, char** argv){
+	//Unit Test #0: nds DisplayList utils safety checks.
+	bool ret = isNDSDLUtilsAPIStable();
+	if(ret == false){
+		printf("NDSDisplayListUtilsAPI was badly compiled. Rebuild again.");
+		while(1==1){
+
+		}
+	}
+	
 	//Unit Test #1: Tests OpenGL DisplayLists components functionality then emitting proper GX displaylists, unpacked format.
 	GLInitExt();
 	int list = glGenLists(10);
@@ -1353,7 +1446,7 @@ int main(int argc, char** argv){
 		glEndList();//The second display list is created
 	}
 	
-	u32 * CompiledDisplayListsBuffer = getInternalDisplayListBuffer(); //Lists called earlier are written to this buffer, using the unpacked GX command format.
+	u32 * CompiledDisplayListsBuffer = getInternalUnpackedDisplayListBuffer(); //Lists called earlier are written to this buffer, using the unpacked GX command format.
 	//Unit Test #2:
 	//Takes an unpacked format display list, gets converted into packed format then exported as C Header file source code
 	char cwdPath[256];
@@ -1415,6 +1508,107 @@ int main(int argc, char** argv){
 	return 0;
 }
 #endif
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
+void init_crc_table (void *table, unsigned int polynomial){ // works for crc16 and crc32
+  unsigned int crc, i, j;
+
+  for (i = 0; i < 256; i++)
+    {
+      crc = i;
+      for (j = 8; j > 0; j--)
+        if (crc & 1)
+          crc = (crc >> 1) ^ polynomial;
+        else
+          crc >>= 1;
+
+      if (polynomial == CRC32_POLYNOMIAL)
+        ((unsigned int *) table)[i] = crc;
+      else
+        ((unsigned short *) table)[i] = (unsigned short) crc;
+    }
+}
+
+unsigned int *crc32_table = NULL;
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
+void free_crc32_table (void){
+	TGDSARM9Free(crc32_table);
+	crc32_table = NULL;
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
+unsigned int crc32 (unsigned int *crc, const void *buffer, unsigned int size){
+	unsigned char *p = (unsigned char *)buffer;
+	if (!crc32_table){
+		crc32_table = (unsigned int *) TGDSARM9Malloc(256 * 4);
+		init_crc_table (crc32_table, CRC32_POLYNOMIAL);
+	}
+	*crc = ~(*crc);
+	while (size--){
+		*crc = ((*crc) >> 8) ^ crc32_table[((*crc) ^ *p++) & 0xff];
+	}
+	free_crc32_table();
+	return ~(*crc);
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
+int crc32file( FILE *file, unsigned int *outCrc32){
+	#define CRC_BUFFER_SIZE  (int)(1024*64)
+    char * buf = (char *)TGDSARM9Malloc(CRC_BUFFER_SIZE);
+	size_t bufLen;
+    /** accumulate crc32 from file **/
+    *outCrc32 = 0;
+    while (1) {
+        bufLen = fread(buf, 1, CRC_BUFFER_SIZE, file);
+        if (bufLen == 0) {
+			/*
+            if (ferror(file)) {
+                fprintf( stderr, "error reading file\n" );
+                goto ERR_EXIT;
+            }
+			*/
+            break;
+        }
+        *outCrc32 = crc32(outCrc32, buf, bufLen );
+    }
+	TGDSARM9Free(buf);
+    return( 0 );
+
+    /* error exit 
+ERR_EXIT:
+    return( -1 );
+	*/
+}
+
 
 #ifdef ARM9
 //Unit Test (NDS): reads a NDS GX Display List / Call List payload emmited from (https://bitbucket.org/Coto88/blender-nds-exporter/src/master/)
