@@ -1057,7 +1057,7 @@ enum {
 };
 
 //Max GL Lists allocated in the OpenGL API
-#define MAX_Internal_DisplayList_Count ((int)128) //128 x struct ndsDisplayListDescriptor (DL Objects) = 789504 bytes
+#define InternalUnpackedGX_DL_Size ((int)2048) //Max internal DL unpacked GX command/arguments count: 2048*4 = 8192 bytes
 
 //Display List Descriptor
 #define DL_INVALID (u32)(-1)
@@ -1066,7 +1066,7 @@ enum {
 #define DL_TYPE_FIFO_PACKED_COMMAND_V2 (u32)(DL_TYPE_FIFO_PACKED_COMMAND_V1+1)	//FIFO_COMMAND_PACK( FIFO_VERTEX16 , FIFO_COLOR , FIFO_TEX_COORD , FIFO_NORMAL )
 #define DL_TYPE_FIFO_PACKED_COMMAND_END (u32)(DL_TYPE_FIFO_PACKED_COMMAND_V2+1)	//FIFO_COMMAND_PACK( FIFO_VERTEX16 , FIFO_END , FIFO_NOP , FIFO_NOP )
 #define GX_TOP_PARAMS_SIZE (int)(32)	//32  SHININESS - Specular Reflection Shininess Table (W) -- would be the command having the most parameter count
-#define DL_MAX_ITEMS (int)(256) //256 NDS GX commands(words, 4 bytes each) = 1024 per DisplayList object
+#define DL_DESCRIPTOR_MAX_ITEMS (int)(256) //NDS GX commands descriptor format, which is not compiled. 
 
 struct ndsDisplayList {
 	int index;
@@ -1084,7 +1084,7 @@ struct ndsDisplayListDescriptor {
 	int DisplayListNameAssigned; //Used by the GL List API as a display-list name
 	bool isDisplayListAssigned;
 	int ndsDisplayListSize;
-	struct ndsDisplayList DL[DL_MAX_ITEMS];
+	struct ndsDisplayList DL[DL_DESCRIPTOR_MAX_ITEMS];
 }
 #ifdef ARM9
 __attribute__((packed)) ;
@@ -1178,14 +1178,15 @@ extern void glClearDepth(uint16 depth);
 extern void glViewport(uint8 x1, uint8 y1, uint8 x2, uint8 y2);
 
 //Object Format: Unpacked / Packed
-extern struct ndsDisplayListDescriptor Internal_DL[MAX_Internal_DisplayList_Count];
+//extern struct ndsDisplayListDescriptor Internal_Descriptor_DL[InternalUnpackedGX_DL_Size];
 
-//Binary Format: Unpacked / Packed
-extern u32 interCompiled_DLPtr;
-extern u32 * getInternalDisplayListBuffer();
+//OpenGL DL internal Display Lists enumerator, holds current DL index pointed by internal InternalUnpackedGX_DL_BinaryPtr, starting from 0.
+extern u32 InternalUnpackedGX_DL_BinaryPtr;
+extern u32 * getInternalUnpackedDisplayListBuffer();
+extern int getInternalUnpackedDisplayListBufferSize();
+extern u32 InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_Size];
 
-//OpenGL DL internal Display Lists enumerator, holds current DL index pointed by internal interCompiled_DLPtr, starting from 0.
-extern GLsizei GLDLEnumerator[MAX_Internal_DisplayList_Count];
+extern GLsizei Compiled_DL_Binary_Descriptor[InternalUnpackedGX_DL_Size];
 
 extern GLsizei currentListPointer;
 extern void GLInitExt();
@@ -1237,7 +1238,6 @@ extern void glVertex3v16(v16 x, v16 y, v16 z);
 extern void glVertex3v10(v10 x, v10 y, v10 z);
 extern void glVertex2v16(v16 x, v16 y);
 extern u32 singleOpenGLCompiledDisplayList[2048];
-extern u32 Compiled_DL_Binary[DL_MAX_ITEMS*MAX_Internal_DisplayList_Count];
 extern enum GL_GLBEGIN_ENUM getDisplayListGLType(struct ndsDisplayListDescriptor * dlInst);
 extern int CompilePackedNDSGXDisplayListFromObject(u32 * bufOut, struct ndsDisplayListDescriptor * dlInst);
 

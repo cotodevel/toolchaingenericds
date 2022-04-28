@@ -23,12 +23,18 @@ USA
 #ifndef __ndsDisplayListUtils_h__
 #define __ndsDisplayListUtils_h__
 
+//GX Payload source sample: PackedDisplayListCompiled.bin: 
+//Packed Display List commands generated from VS2012 by running unit tests 1,2,3,4 and 5 
+//(emited DL unpacked, then packed to a GX binary, whose dump ends up being this file)
+
 #ifdef WIN32
 #include "TGDSTypes.h"
+#define testSourceFileLocation (char*)"\\cv\\PackedDisplayListCompiled.bin"
 #endif
 
 #ifdef ARM9
 #include "typedefsTGDS.h"
+//testSourceFileLocation is embedded into ARM9
 #endif
 
 #include "VideoGL.h"
@@ -40,6 +46,9 @@ struct unpackedCmd {
 	u8 cmd3;
 	u8 cmd4;
 };
+
+#define CRC16_POLYNOMIAL 0xa001
+#define CRC32_POLYNOMIAL 0xedb88320
 
 #endif
 
@@ -97,3 +106,11 @@ extern int getAGXParamsCountFromCommand(u32 command);
 extern void swap1(char *x, char *y);
 extern char* reverse1(char *buffer, int i, int j);
 extern char* itoa1(int value, char* buffer, int base);
+extern bool isNDSDLUtilsAPIStable();
+
+//crc32 bits
+extern void init_crc_table (void *table, unsigned int polynomial);
+extern unsigned int *crc32_table;
+extern void free_crc32_table (void);
+extern unsigned int crc32 (unsigned int *crc, const void *buffer, unsigned int size);
+extern int crc32file( FILE *file, unsigned int *outCrc32);
