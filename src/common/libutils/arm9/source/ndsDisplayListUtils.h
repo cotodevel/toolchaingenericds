@@ -77,12 +77,19 @@ extern u8 getFIFO_END();
 extern u8 getFIFO_FLUSH();
 extern u8 getFIFO_VIEWPORT();
 extern u8 getMTX_MULT_3x3();
-extern u8 getMTX_IDENTITY();
+extern u8 getMTX_MULT_4x4();
 extern u8 getMTX_SCALE();
 
 extern u8 getMTX_PUSH();
 extern u8 getMTX_POP();
+extern u8 getNOP();
 extern u8 getMTX_TRANS();
+extern u8 getMTX_STORE();
+extern u8 getMTX_IDENTITY();
+extern u8 getMTX_LOAD_4x4();
+extern u8 getMTX_LOAD_4x3();
+extern u8 getMTX_MODE();
+extern u8 getVIEWPORT();
 extern struct unpackedCmd FIFO_COMMAND_PACKED_FMT_UNPACK(u32 cmd);
 extern int BuildNDSGXDisplayListObjectFromFile(char * filename, struct ndsDisplayListDescriptor * dlInst);
 extern int getRawFileSizefromNDSGXDisplayListObject(struct ndsDisplayListDescriptor * dlInst);
@@ -114,3 +121,26 @@ extern unsigned int *crc32_table;
 extern void free_crc32_table (void);
 extern unsigned int crc32 (unsigned int *crc, const void *buffer, unsigned int size);
 extern int crc32file( FILE *file, unsigned int *outCrc32);
+
+//debug
+extern GLvoid BuildLists();
+extern GLvoid ReSizeGLScene(GLsizei width, GLsizei height);
+extern int InitGL();
+extern int DrawGLScene();
+
+
+extern GLuint	texture[1];			// Storage For 1 Texture
+extern GLuint	box;				// Storage For The Box Display List
+extern GLuint	top;				// Storage For The Top Display List
+extern GLuint	xloop;				// Loop For X Axis
+extern GLuint	yloop;				// Loop For Y Axis
+
+extern GLfloat	xrot;				// Rotates Cube On The X Axis
+extern GLfloat	yrot;				// Rotates Cube On The Y Axis
+
+extern GLfloat boxcol[5][3];
+extern GLfloat topcol[5][3];
+extern GLvoid BuildLists();
+extern GLvoid ReSizeGLScene(GLsizei width, GLsizei height);
+extern int InitGL();
+extern int DrawGLScene();

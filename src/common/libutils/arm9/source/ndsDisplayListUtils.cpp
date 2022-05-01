@@ -255,9 +255,10 @@ __attribute__((optimize("O0")))
 __attribute__ ((optnone))
 #endif
 #endif
-u8 getMTX_IDENTITY(){
-	return REG2ID_C(MATRIX_IDENTITY_ADDR);
+u8 getMTX_MULT_4x4(){
+	return REG2ID_C(MATRIX_MULT4x4_ADDR);
 }
+
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -291,6 +292,18 @@ __attribute__((optimize("O0")))
 __attribute__ ((optnone))
 #endif
 #endif
+u8 getNOP(){
+	return REG2ID_C(GFX_NOP_ADDR);
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
 u8 getMTX_POP(){
 	return REG2ID_C(GFX_MTX_POP_ADDR);
 }
@@ -305,6 +318,78 @@ __attribute__ ((optnone))
 #endif
 u8 getMTX_TRANS(){
 	return REG2ID_C(GFX_MTX_TRANS_ADDR);
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
+u8 getMTX_STORE(){
+	return REG2ID_C(GFX_MTX_STORE_ADDR);
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
+u8 getMTX_IDENTITY(){
+	return REG2ID_C(GFX_MTX_IDENTITY_ADDR);
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
+u8 getMTX_LOAD_4x4(){
+	return REG2ID_C(GFX_MTX_LOAD_4x4_ADDR);
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
+u8 getMTX_LOAD_4x3(){
+	return REG2ID_C(GFX_MTX_LOAD_4x3_ADDR);
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
+u8 getMTX_MODE(){
+	return REG2ID_C(GFX_MTX_MODE_ADDR);
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
+u8 getVIEWPORT(){
+	return REG2ID_C(GFX_VIEWPORT_ADDR);
 }
 
 #ifdef ARM9
@@ -645,9 +730,8 @@ bool getDisplayListFilterByCommand(struct ndsDisplayListDescriptor * dlInst, str
 }
 
 
-//Builds a NDS GX DisplayList / CallList object from a compiled one through the Filesystem.
+//Builds a PACKED DISPLAY LIST (GX binary to be used with CallList command)/ CallList object from a compiled one through the Filesystem.
 //Returns: Display List size, DL_INVALID if fails.
-//Notes: Currently reads a Packed Format Display List, todo: add Unpacked Format Display List
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("O0")))
@@ -768,7 +852,44 @@ __attribute__((optnone))
 #endif
 bool isAGXCommand(u32 val){
 	bool isAGXCommand = false;
-	if (val == (u32)getFIFO_BEGIN()) {
+	
+	if (val == (u32)getMTX_STORE()) {
+		isAGXCommand = true;
+	}
+	else if (val == (u32)getMTX_TRANS()) {
+		isAGXCommand = true;
+	}
+	else if (val == (u32)getMTX_IDENTITY()) {
+		isAGXCommand = true;
+	}
+	else if (val == (u32)getMTX_MODE()) {
+		isAGXCommand = true;
+	}
+	else if (val == (u32)getVIEWPORT()) {
+		isAGXCommand = true;
+	}
+	else if (val == (u32)getFIFO_TEX_COORD()) {
+		isAGXCommand = true;
+	}
+	else if (val == (u32)getFIFO_BEGIN()) {
+		isAGXCommand = true;
+	}
+	else if (val == (u32)getFIFO_END()) {
+		isAGXCommand = true;
+	}
+	else if (val == (u32)getFIFO_COLOR()) {
+		isAGXCommand = true;
+	}
+	else if (val == (u32)getFIFO_NORMAL()) {
+		isAGXCommand = true;
+	}
+	else if (val == (u32)getFIFO_VERTEX16()) {
+		isAGXCommand = true;
+	}
+	else if (val == (u32)getFIFO_VERTEX10()) {
+		isAGXCommand = true;
+	}
+	else if (val == (u32)getFIFO_VTX_XY()) {
 		isAGXCommand = true;
 	}
 	else if (val == (u32)getMTX_PUSH()) {
@@ -777,16 +898,19 @@ bool isAGXCommand(u32 val){
 	else if (val == (u32)getMTX_POP()) {
 		isAGXCommand = true;
 	}
-	else if (val == (u32)getMTX_IDENTITY()) {
-		isAGXCommand = true;
-	}
-	else if (val == (u32)getMTX_TRANS()) {
-		isAGXCommand = true;
-	}
 	else if (val == (u32)getMTX_MULT_3x3()) {
 		isAGXCommand = true;
 	}
-	else if (val == (u32)getFIFO_END()) {
+	else if (val == (u32)getMTX_MULT_4x4()) {
+		isAGXCommand = true;
+	}
+	else if (val == (u32)getMTX_LOAD_4x4()) {
+		isAGXCommand = true;
+	}
+	else if (val == (u32)getMTX_LOAD_4x3()) {
+		isAGXCommand = true;
+	}
+	else if (val == (u32)getNOP()) {
 		isAGXCommand = true;
 	}
 	return isAGXCommand;
@@ -804,35 +928,94 @@ __attribute__((optnone))
 int getAGXParamsCountFromCommand(u32 val){
 	//same as above method
 	int AGXParamsCount = -1;
-	if (val == (u32)getFIFO_BEGIN()) {
-		//no args used by this GX command
-		AGXParamsCount = 0;
-	}
-	else if (val == (u32)getMTX_PUSH()) {
-		//no args used by this GX command
-		AGXParamsCount = 0;
-	}
-	else if (val == (u32)getMTX_POP()) {
-		//4000448h 12h 1  36  MTX_POP - Pop Current Matrix from Stack(W)
+	if (val == (u32)getMTX_STORE()) {
+		//400044Ch 13h 1  17  MTX_STORE - Store Current Matrix on Stack (W)
 		AGXParamsCount = 1;
+	}
+	else if (val == (u32)getMTX_TRANS()) {
+		//  4000470h 1Ch 3  22* MTX_TRANS - Mult. Curr. Matrix by Translation Matrix (W)
+		AGXParamsCount = 3;
 	}
 	else if (val == (u32)getMTX_IDENTITY()) {
 		//4000454h 15h - 19  MTX_IDENTITY - Load Unit Matrix to Current Matrix(W)
 		//no args used by this GX command
 		AGXParamsCount = 0;
 	}
-	else if (val == (u32)getMTX_TRANS()) {
-		//  4000470h 1Ch 3  22* MTX_TRANS - Mult. Curr. Matrix by Translation Matrix (W)
-		AGXParamsCount = 3;
+	else if (val == (u32)getMTX_MODE()) {
+		//4000440h 10h 1  1   MTX_MODE - Set Matrix Mode (W)
+		AGXParamsCount = 1;
+	}
+	else if (val == (u32)getVIEWPORT()) {
+		//4000580h 60h 1  1   VIEWPORT - Set Viewport (W)
+		AGXParamsCount = 1;
+	}
+	else if (val == (u32)getFIFO_TEX_COORD()) {
+		//4000488h 22h 1  1   TEXCOORD - Set Texture Coordinates (W)
+		AGXParamsCount = 1;
+	}
+	else if (val == (u32)getFIFO_BEGIN()) {
+		//4000500h 40h 1  1   BEGIN_VTXS - Start of Vertex List (W)
+		AGXParamsCount = 1;
+	}
+	else if (val == (u32)getFIFO_END()) {
+		//4000504h 41h -  1   END_VTXS - End of Vertex List (W)
+		//no args used by this GX command
+		AGXParamsCount = 0;
+	}
+	else if (val == (u32)getFIFO_COLOR()) {
+		//4000480h 20h 1  1   COLOR - Directly Set Vertex Color (W)
+		AGXParamsCount = 1;
+	}
+	else if (val == (u32)getFIFO_NORMAL()) {
+		//4000484h 21h 1  9*  NORMAL - Set Normal Vector (W)
+		AGXParamsCount = 1;
+	}
+	else if (val == (u32)getFIFO_VERTEX16()) {
+		//400048Ch 23h 2  9   VTX_16 - Set Vertex XYZ Coordinates (W)
+		AGXParamsCount = 2;
+	}
+	else if (val == (u32)getFIFO_VERTEX10()) {
+		//4000490h 24h 1  8   VTX_10 - Set Vertex XYZ Coordinates (W)
+		AGXParamsCount = 1;
+	}
+	else if (val == (u32)getFIFO_VTX_XY()) {
+		//4000494h 25h 1  8   VTX_XY - Set Vertex XY Coordinates (W)
+		AGXParamsCount = 1;
+	}
+	else if (val == (u32)getMTX_PUSH()) {
+		//4000444h 11h -  17  MTX_PUSH - Push Current Matrix on Stack (W)
+		//no args used by this GX command
+		AGXParamsCount = 0;
+	}
+	else if (val == (u32)getMTX_POP()) {
+		//4000448h 12h 1  36  MTX_POP - Pop Current Matrix from Stack (W)
+		AGXParamsCount = 1;
 	}
 	else if (val == (u32)getMTX_MULT_3x3()) {
 		//  4000468h 1Ah 9  28* MTX_MULT_3x3 - Multiply Current Matrix by 3x3 Matrix (W)
 		AGXParamsCount = 9;
 	}
-	else if (val == (u32)getFIFO_END()) {
-		//no args used by this GX command
+
+	else if (val == (u32)getMTX_MULT_4x4()) {
+		//  4000460h 18h 16 35* MTX_MULT_4x4 - Multiply Current Matrix by 4x4 Matrix (W)
+		AGXParamsCount = 16;
+	}
+
+	else if (val == (u32)getMTX_LOAD_4x4()) {
+		//  4000458h 16h 16 34  MTX_LOAD_4x4 - Load 4x4 Matrix to Current Matrix (W)
+		AGXParamsCount = 16;
+	}
+
+	else if (val == (u32)getMTX_LOAD_4x3()) {
+		//  400045Ch 17h 12 30  MTX_LOAD_4x3 - Load 4x3 Matrix to Current Matrix (W
+		AGXParamsCount = 12;
+	}
+
+	else if (val == (u32)getNOP()) {
+		//  N/A      00h -  -   NOP - No Operation (for padding packed GXFIFO commands)
 		AGXParamsCount = 0;
 	}
+
 	return AGXParamsCount;
 }
 
@@ -1405,15 +1588,72 @@ bool isNDSDLUtilsAPIStable(){
 
 #ifdef WIN32
 int main(int argc, char** argv){
-	//Unit Test #0: nds DisplayList utils safety checks.
-	bool ret = isNDSDLUtilsAPIStable();
-	if(ret == false){
-		printf("NDSDisplayListUtilsAPI was badly compiled. Rebuild again.");
-		while(1==1){
 
-		}
+	//Quick Unit Test Triangle rendering example: direct OpenGL commands, running in either WIN32 or NDS GX hardware
+	/*
+	//Simple Triangle GL init
+	float rotateX = 0.0;
+	float rotateY = 0.0;
+	{
+		//set mode 0, enable BG0 and set it to 3D
+		#ifdef ARM9
+		SETDISPCNT_MAIN(MODE_0_3D);
+		#endif
+		//this should work the same as the normal gl call
+		glViewport(0,0,255,191);
+		
+		glClearColor(0,0,0);
+		glClearDepth(0x7FFF);
+		
 	}
 	
+	ReSizeGLScene(255, 191);  
+	InitGL();	
+
+	//todo: merge https://bitbucket.org/Coto88/ndsdisplaylistutils/issues/4/move-all-opengl-calls-to-display-lists
+	//and legacy GL code must work having applied these changes...!
+	while (1){
+		glReset();
+	
+		//any floating point gl call is being converted to fixed prior to being implemented
+		gluPerspective(35, 256.0 / 192.0, 0.1, 40);
+
+		gluLookAt(	0.0, 0.0, 1.0,		//camera possition 
+					0.0, 0.0, 0.0,		//look at
+					0.0, 1.0, 0.0);		//up
+
+		glPushMatrix();
+
+		//move it away from the camera
+		glTranslate3f32(0, 0, floattof32(-1)); //bugged func 1 //so far here
+					
+		glRotateX(rotateX);
+		glRotateY(rotateY);			
+		glMatrixMode(GL_MODELVIEW);
+			
+		//not a real gl function and will likely change
+		glPolyFmt(POLY_ALPHA(31) | POLY_CULL_NONE);
+			
+		//glShadeModel(GL_FLAT); //forces the fill color to be the first glColor3b call
+			
+		//draw the obj
+		glBegin(GL_TRIANGLE);
+				
+			glColor3b(31,0,0);
+			glVertex3v16(inttov16(-1),inttov16(-1),0);
+
+			glColor3b(0,31,0);
+			glVertex3v16(inttov16(1), inttov16(-1), 0);
+
+			glColor3b(0,0,31);
+			glVertex3v16(inttov16(0), inttov16(1), 0);
+				
+		glEnd();
+		glPopMatrix(1);
+		glFlush();
+	}
+	*/
+
 	//Unit Test #1: Tests OpenGL DisplayLists components functionality then emitting proper GX displaylists, unpacked format.
 	GLInitExt();
 	int list = glGenLists(10);
@@ -1695,4 +1935,137 @@ bool ndsDisplayListUtilsTestCaseARM9(char * filename, char * outNDSGXBuiltDispla
 	TGDSARM9Free(NDSDL);
 	return retStatus;
 }
+#endif
+
+//GL Display Lists Unit Test: Cube Demo
+// Build Cube Display Lists
+GLvoid BuildLists(){
+	box=glGenLists(2);									// Generate 2 Different Lists
+	glNewList(box,GL_COMPILE);							// Start With The Box List
+		glBegin(GL_QUADS);
+			// Bottom Face
+			glNormal3f( 0.0f,-1.0f, 0.0f);
+			glTexCoord2f(1.0f, 1.0f); glVertex3f(-1.0f, -1.0f, -1.0f);
+			glTexCoord2f(0.0f, 1.0f); glVertex3f( 1.0f, -1.0f, -1.0f);
+			glTexCoord2f(0.0f, 0.0f); glVertex3f( 1.0f, -1.0f,  1.0f);
+			glTexCoord2f(1.0f, 0.0f); glVertex3f(-1.0f, -1.0f,  1.0f);
+			// Front Face
+			glNormal3f( 0.0f, 0.0f, 1.0f);
+			glTexCoord2f(0.0f, 0.0f); glVertex3f(-1.0f, -1.0f,  1.0f);
+			glTexCoord2f(1.0f, 0.0f); glVertex3f( 1.0f, -1.0f,  1.0f);
+			glTexCoord2f(1.0f, 1.0f); glVertex3f( 1.0f,  1.0f,  1.0f);
+			glTexCoord2f(0.0f, 1.0f); glVertex3f(-1.0f,  1.0f,  1.0f);
+			// Back Face
+			glNormal3f( 0.0f, 0.0f,-1.0f);
+			glTexCoord2f(1.0f, 0.0f); glVertex3f(-1.0f, -1.0f, -1.0f);
+			glTexCoord2f(1.0f, 1.0f); glVertex3f(-1.0f,  1.0f, -1.0f);
+			glTexCoord2f(0.0f, 1.0f); glVertex3f( 1.0f,  1.0f, -1.0f);
+			glTexCoord2f(0.0f, 0.0f); glVertex3f( 1.0f, -1.0f, -1.0f);
+			// Right face
+			glNormal3f( 1.0f, 0.0f, 0.0f);
+			glTexCoord2f(1.0f, 0.0f); glVertex3f( 1.0f, -1.0f, -1.0f);
+			glTexCoord2f(1.0f, 1.0f); glVertex3f( 1.0f,  1.0f, -1.0f);
+			glTexCoord2f(0.0f, 1.0f); glVertex3f( 1.0f,  1.0f,  1.0f);
+			glTexCoord2f(0.0f, 0.0f); glVertex3f( 1.0f, -1.0f,  1.0f);
+			// Left Face
+			glNormal3f(-1.0f, 0.0f, 0.0f);
+			glTexCoord2f(0.0f, 0.0f); glVertex3f(-1.0f, -1.0f, -1.0f);
+			glTexCoord2f(1.0f, 0.0f); glVertex3f(-1.0f, -1.0f,  1.0f);
+			glTexCoord2f(1.0f, 1.0f); glVertex3f(-1.0f,  1.0f,  1.0f);
+			glTexCoord2f(0.0f, 1.0f); glVertex3f(-1.0f,  1.0f, -1.0f);
+		glEnd();
+	glEndList();
+	top=box+1;											// Storage For "Top" Is "Box" Plus One
+	glNewList(top,GL_COMPILE);							// Now The "Top" Display List
+		glBegin(GL_QUADS);
+			// Top Face
+			glNormal3f( 0.0f, 1.0f, 0.0f);
+			glTexCoord2f(0.0f, 1.0f); glVertex3f(-1.0f,  1.0f, -1.0f);
+			glTexCoord2f(0.0f, 0.0f); glVertex3f(-1.0f,  1.0f,  1.0f);
+			glTexCoord2f(1.0f, 0.0f); glVertex3f( 1.0f,  1.0f,  1.0f);
+			glTexCoord2f(1.0f, 1.0f); glVertex3f( 1.0f,  1.0f, -1.0f);
+		glEnd();
+	glEndList();
+}
+
+GLvoid ReSizeGLScene(GLsizei width, GLsizei height)		// Resize And Initialize The GL Window
+{
+	if (height==0)										// Prevent A Divide By Zero By
+	{
+		height=1;										// Making Height Equal One
+	}
+
+	glViewport(0,0,width,height);						// Reset The Current Viewport
+
+	glMatrixMode(GL_PROJECTION);						// Select The Projection Matrix
+	glLoadIdentity();									// Reset The Projection Matrix
+
+	// Calculate The Aspect Ratio Of The Window
+	gluPerspective(45.0f,(GLfloat)width/(GLfloat)height,0.1f,100.0f);
+
+	glMatrixMode(GL_MODELVIEW);							// Select The Modelview Matrix
+	glLoadIdentity();									// Reset The Modelview Matrix
+}
+
+int InitGL()										// All Setup For OpenGL Goes Here
+{
+	//Unit Test #0: nds DisplayList utils safety checks.
+	/*
+	bool ret = isNDSDLUtilsAPIStable();
+	if(ret == false){
+		printf("NDSDisplayListUtilsAPI was badly compiled. Rebuild again.");
+		while(1==1){
+		}
+	}
+	*/
+
+	glInit(); //NDSDLUtils: Initializes a new videoGL context
+	BuildLists();										// Jump To The Code That Creates Our Display Lists
+
+	glEnable(GL_TEXTURE_2D);							// Enable Texture Mapping
+	glClearColor(0.0f, 0.0f, 0.0f);				// Black Background
+	glClearDepth(1.0f);									// Depth Buffer Setup
+	return true;										// Initialization Went OK
+}
+
+int DrawGLScene()									// Here's Where We Do All The Drawing
+{
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	// Clear The Screen And The Depth Buffer
+
+	for (yloop=1;yloop<6;yloop++)
+	{
+		for (xloop=0;xloop<yloop;xloop++)
+		{
+			glLoadIdentity();							// Reset The View
+			glTranslatef(1.4f+(float(xloop)*2.8f)-(float(yloop)*1.4f),((6.0f-float(yloop))*2.4f)-7.0f,-20.0f);
+			glRotatef(45.0f-(2.0f*yloop)+xrot,1.0f,0.0f,0.0f);
+			glRotatef(45.0f+yrot,0.0f,1.0f,0.0f);
+			glColor3fv(boxcol[yloop-1]);
+			glCallList(box);
+			glColor3fv(topcol[yloop-1]);
+			glCallList(top);
+		}
+	}
+	return true;										// Keep Going
+}
+
+#ifdef WIN32
+GLuint	texture[1];			// Storage For 1 Texture
+GLuint	box;				// Storage For The Box Display List
+GLuint	top;				// Storage For The Top Display List
+GLuint	xloop;				// Loop For X Axis
+GLuint	yloop;				// Loop For Y Axis
+
+GLfloat	xrot;				// Rotates Cube On The X Axis
+GLfloat	yrot;				// Rotates Cube On The Y Axis
+
+GLfloat boxcol[5][3]=
+{
+	{1.0f,0.0f,0.0f},{1.0f,0.5f,0.0f},{1.0f,1.0f,0.0f},{0.0f,1.0f,0.0f},{0.0f,1.0f,1.0f}
+};
+
+GLfloat topcol[5][3]=
+{
+	{.5f,0.0f,0.0f},{0.5f,0.25f,0.0f},{0.5f,0.5f,0.0f},{0.0f,0.5f,0.0f},{0.0f,0.5f,0.5f}
+};
 #endif

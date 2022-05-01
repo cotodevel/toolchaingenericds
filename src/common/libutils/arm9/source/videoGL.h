@@ -106,9 +106,17 @@ typedef void GLvoid;
 #define GFX_LIGHT_COLOR_ADDR       ((vuint32) 0x040004CC)
 #define GFX_NORMAL_ADDR            ((vuint32) 0x04000484)
 
-#define GFX_MTX_PUSH_ADDR            ((vuint32) 0x04000444)
-#define GFX_MTX_POP_ADDR            ((vuint32) 0x04000448)
-#define GFX_MTX_TRANS_ADDR            ((vuint32) 0x04000470)
+#define GFX_NOP_ADDR				((vuint32) 0)
+#define GFX_MTX_PUSH_ADDR				((vuint32) 0x04000444)
+#define GFX_MTX_POP_ADDR				((vuint32) 0x04000448)
+#define GFX_MTX_TRANS_ADDR				((vuint32) 0x04000470)
+#define GFX_MTX_STORE_ADDR				((vuint32) 0x0400044C)
+#define GFX_MTX_IDENTITY_ADDR			((vuint32) 0x04000454)
+#define GFX_MTX_LOAD_4x4_ADDR			((vuint32) 0x04000458)
+#define GFX_MTX_LOAD_4x3_ADDR			((vuint32) 0x0400045C)
+#define GFX_MTX_MODE_ADDR				((vuint32) 0x04000440)
+#define GFX_VIEWPORT_ADDR				((vuint32) 0x04000580)
+
 
 #define GFX_DIFFUSE_AMBIENT_ADDR   ((vuint32) 0x040004C0)
 #define GFX_SPECULAR_EMISSION_ADDR ((vuint32) 0x040004C4)
@@ -119,7 +127,6 @@ typedef void GLvoid;
 #define GFX_BEGIN_ADDR             ((vuint32) 0x04000500)
 #define GFX_END_ADDR               ((vuint32) 0x04000504)
 #define GFX_FLUSH_ADDR             ((vuint32) 0x04000540)
-#define GFX_VIEWPORT_ADDR          ((vuint32) 0x04000580)
 #define GFX_TOON_TABLE_ADDR		  ((vuint32)  0x04000380)
 #define GFX_EDGE_TABLE_ADDR		  ((vuint32)  0x04000330)
 
@@ -127,16 +134,12 @@ typedef void GLvoid;
 // Matrix processor control
 //////////////////////////////////////////////////////////////////////
 
-#define MATRIX_CONTROL_ADDR    (0x04000440)
 #define MATRIX_PUSH_ADDR       (0x04000444)
 #define MATRIX_POP_ADDR        (0x04000448)
 #define MATRIX_SCALE_ADDR      (0x0400046C)
 #define MATRIX_TRANSLATE_ADDR  (0x04000470)
 #define MATRIX_RESTORE_ADDR    (0x04000450)
 #define MATRIX_STORE_ADDR      (0x0400044C)
-#define MATRIX_IDENTITY_ADDR   (0x04000454)
-#define MATRIX_LOAD4x4_ADDR    (0x04000458)
-#define MATRIX_LOAD4x3_ADDR    (0x0400045C)
 #define MATRIX_MULT4x4_ADDR    (0x04000460)
 #define MATRIX_MULT4x3_ADDR    (0x04000464)
 #define MATRIX_MULT3x3_ADDR    (0x04000468)
@@ -404,10 +407,41 @@ enum GL_MATRIX_MODE_ENUM {
 #define MTX_POP			REG2ID(MATRIX_POP)
 #define MTX_IDENTITY	REG2ID(MATRIX_IDENTITY)
 #define MTX_TRANS		REG2ID(MATRIX_TRANSLATE)
-
 #define MTX_MULT_4x4		REG2ID(MATRIX_MULT4x4)
 #define MTX_MULT_4x3		REG2ID(MATRIX_MULT4x3)
 #define MTX_MULT_3x3		REG2ID(MATRIX_MULT3x3)
+
+//Custom OpenGL Display List -> GX commands. 
+#define MTX_ROTATE_Z	((u8)0x80) //unused (GXFIFO) command slot start
+#define MTX_ROTATE_Y	((u8)0x81)
+#define MTX_ROTATE_X	((u8)0x82)
+#define MTX_FRUSTRUM	((u8)0x83)
+#define MTX_LOOKAT		((u8)0x84)
+#define OPENGL_DL_TO_GX_DL_EXEC_CMD		((u8)0x85) //This command enables OpenGL Display Lists to run directly through GX Display List hardware
+
+//Precalculated argument size per command
+#define  MTX_STORE_GXCommandParamsCount ((int)getAGXParamsCountFromCommand(getMTX_STORE()))
+#define  MTX_TRANS_GXCommandParamsCount ((int)getAGXParamsCountFromCommand(getMTX_TRANS()))
+#define  MTX_IDENTITY_GXCommandParamsCount ((int)getAGXParamsCountFromCommand(getMTX_IDENTITY()))
+#define  MTX_MODE_GXCommandParamsCount ((int)getAGXParamsCountFromCommand(getMTX_MODE()))
+#define  VIEWPORT_GXCommandParamsCount ((int)getAGXParamsCountFromCommand(getVIEWPORT()))
+#define  FIFO_TEX_COORD_GXCommandParamsCount ((int)getAGXParamsCountFromCommand(getFIFO_TEX_COORD()))
+#define  FIFO_BEGIN_GXCommandParamsCount ((int)getAGXParamsCountFromCommand(getFIFO_BEGIN()))
+#define  FIFO_END_GXCommandParamsCount ((int)getAGXParamsCountFromCommand(getFIFO_END()))
+#define  FIFO_COLOR_GXCommandParamsCount ((int)getAGXParamsCountFromCommand(getFIFO_COLOR()))
+#define  FIFO_NORMAL_GXCommandParamsCount ((int)getAGXParamsCountFromCommand(getFIFO_NORMAL()))
+#define  FIFO_VERTEX16_GXCommandParamsCount ((int)getAGXParamsCountFromCommand(getFIFO_VERTEX16()))
+#define  FIFO_VERTEX10_GXCommandParamsCount ((int)getAGXParamsCountFromCommand(getFIFO_VERTEX10()))
+#define  FIFO_VTX_XY_GXCommandParamsCount ((int)getAGXParamsCountFromCommand(getFIFO_VTX_XY()))
+#define  MTX_PUSH_GXCommandParamsCount ((int)getAGXParamsCountFromCommand(getMTX_PUSH()))
+#define  MTX_POP_GXCommandParamsCount ((int)getAGXParamsCountFromCommand(getMTX_POP()))
+#define  MTX_MULT_3x3_GXCommandParamsCount ((int)getAGXParamsCountFromCommand(getMTX_MULT_3x3()))
+#define  MTX_MULT_4x4_GXCommandParamsCount ((int)getAGXParamsCountFromCommand(getMTX_MULT_4x4()))
+
+#define  MTX_LOAD_4x4_GXCommandParamsCount ((int)getAGXParamsCountFromCommand(getMTX_LOAD_4x4()))
+#define  MTX_LOAD_4x3_GXCommandParamsCount ((int)getAGXParamsCountFromCommand(getMTX_LOAD_4x3()))
+
+#define  NOP_GXCommandParamsCount ((int)getAGXParamsCountFromCommand(getNOP()))
 
 enum {
 	/* Boolean values */
@@ -1057,7 +1091,7 @@ enum {
 };
 
 //Max GL Lists allocated in the OpenGL API
-#define InternalUnpackedGX_DL_Size ((int)2048) //Max internal DL unpacked GX command/arguments count: 2048*4 = 8192 bytes
+#define InternalUnpackedGX_DL_Size ((int)8192) //Max internal DL unpacked GX command/arguments count: 8192*4 = 32768 bytes
 
 //Display List Descriptor
 #define DL_INVALID (u32)(-1)
@@ -1176,6 +1210,7 @@ extern void glClear( GLbitfield mask );
 extern void glClearColor(uint8 red, uint8 green, uint8 blue);
 extern void glClearDepth(uint16 depth);
 extern void glViewport(uint8 x1, uint8 y1, uint8 x2, uint8 y2);
+extern void handleInmediateGXDisplayList(u32 * sourcePhysDisplayList, u32 * sourcePhysDisplayListPtr, u8 cmdSource, int alternateParamsCount);
 
 //Object Format: Unpacked / Packed
 //extern struct ndsDisplayListDescriptor Internal_Descriptor_DL[InternalUnpackedGX_DL_Size];
@@ -1186,8 +1221,9 @@ extern u32 * getInternalUnpackedDisplayListBuffer();
 extern int getInternalUnpackedDisplayListBufferSize();
 extern u32 InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_Size];
 
-extern GLsizei Compiled_DL_Binary_Descriptor[InternalUnpackedGX_DL_Size];
+extern u32 SingleUnpackedGXCommand_DL_Binary[GX_TOP_PARAMS_SIZE+1];
 
+extern GLsizei Compiled_DL_Binary_Descriptor[InternalUnpackedGX_DL_Size];
 extern GLsizei currentListPointer;
 extern void GLInitExt();
 extern GLuint glGenLists(GLsizei range);
