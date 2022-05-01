@@ -45,7 +45,10 @@
 #include "dsregs.h"
 #endif
 
+
 #ifdef WIN32
+//disable _CRT_SECURE_NO_WARNINGS message to build this in VC++
+#pragma warning(disable:4996)
 #include "TGDSTypes.h"
 #endif
 
@@ -59,6 +62,7 @@ __attribute__((section(".dtcm")))
 #endif
 bool isNdsDisplayListUtilsCallList;
 struct GLContext globalGLCtx;
+u32 SingleUnpackedGXCommand_DL_Binary[GX_TOP_PARAMS_SIZE+1];
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -69,12 +73,10 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glPushMatrix(void){
-	if((isNdsDisplayListUtilsCallList == true) && ((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
+	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
 		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = getMTX_PUSH();
 		InternalUnpackedGX_DL_BinaryPtr++;
-	}
-	else{
-		MATRIX_PUSH = 0;
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, getMTX_PUSH(), 0);
 	}
 }
 
@@ -87,15 +89,367 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glPopMatrix(sint32 index){
-	if((isNdsDisplayListUtilsCallList == true) && ((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
+	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
 		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = getMTX_POP();
 		InternalUnpackedGX_DL_BinaryPtr++;
 		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)index;
 		InternalUnpackedGX_DL_BinaryPtr++;
-
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, getMTX_POP(), 0);
 	}
-	else{
-		MATRIX_POP = index;
+}
+
+
+//Not OpenGL standard, but decides wether we're running an OpenGL Display List or a direct GX Display List command.
+//If direct GX Display List command, A SINGLE COMMAND is executed inmediately (enumerated by internal DL Pointer), then the internal DL pointer is substracted.
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
+void handleInmediateGXDisplayList(u32 * sourcePhysDisplayList, u32 * sourcePhysDisplayListPtr, u8 cmdSource, int alternateParamsCount){
+	if(isNdsDisplayListUtilsCallList == false){
+		//Identify cmdSource, if not exists, use alternateParamsCount instead (cmd(s) + arg(s) count)
+		int cmdCount = 0;
+		if(isAGXCommand((u32)cmdSource) == true){
+			cmdCount = ((int)getAGXParamsCountFromCommand((u32)cmdSource) + 1)*4; //+1 is command itself unpacked format inside Unpacked Buffer
+		}
+		else{
+			cmdCount = (alternateParamsCount*4);
+		}
+		if(cmdCount > 0){
+			//substract cmdCount from current InternalUnpackedGX_DL_BinaryPtr, get buffer src and copy to target buffer, by cmdCount count, and run
+			*sourcePhysDisplayListPtr = (*sourcePhysDisplayListPtr - (cmdCount/4)); //Point to discarded cmd + arg list start since we already consumed it.
+			memset(SingleUnpackedGXCommand_DL_Binary, 0, sizeof(SingleUnpackedGXCommand_DL_Binary));
+			SingleUnpackedGXCommand_DL_Binary[0] = (u32)cmdCount;
+			memcpy((u8*)&SingleUnpackedGXCommand_DL_Binary[1], (u8*)&sourcePhysDisplayList[*sourcePhysDisplayListPtr], cmdCount);
+			
+			#ifdef WIN32
+			if(cmdSource == MTX_ROTATE_Z){
+				printf("\n\n\n\n\n!!!!!![CUSTOM COMMAND: MTX_ROTATE_Z]!!!!!!\n");
+			}
+			else if(cmdSource == MTX_ROTATE_Y){
+				printf("\n\n\n\n\n!!!!!![CUSTOM COMMAND: MTX_ROTATE_Y]!!!!!!\n");
+			}
+			else if(cmdSource == MTX_ROTATE_X){
+				printf("\n\n\n\n\n!!!!!![CUSTOM COMMAND: MTX_ROTATE_X]!!!!!!\n");
+			}
+			else if(cmdSource == MTX_FRUSTRUM){
+				printf("\n\n\n\n\n!!!!!![CUSTOM COMMAND: MTX_FRUSTRUM]!!!!!!\n");
+			}
+			else if(cmdSource == MTX_LOOKAT){
+				printf("\n\n\n\n\n!!!!!![CUSTOM COMMAND: MTX_LOOKAT]!!!!!!\n");
+			}
+			else if(cmdSource == OPENGL_DL_TO_GX_DL_EXEC_CMD){
+				printf("\n\n\n\n\n!!!!!![CUSTOM COMMAND: OPENGL_DL_TO_GX_DL_EXEC_CMD]!!!!!!\n");
+			}
+			#endif
+			//Hardware CallList
+			glCallListGX((const u32*)&SingleUnpackedGXCommand_DL_Binary[0]);
+			
+			//Emulated CallList (slow, debugging purposes)
+			/*
+			u32 * currCmd = &SingleUnpackedGXCommand_DL_Binary[1];
+			int leftArgCnt = (cmdCount/4); // -1 is removed command itself from the arg list count 
+			while(leftArgCnt > 0){
+				u8 val = (u8)*currCmd;
+				if (val == (u32)getMTX_STORE()) {
+					//write commands
+					currCmd++; 
+					u32 arg1 = *currCmd; currCmd++;
+					#ifdef ARM9
+					MATRIX_STORE = arg1;
+					#endif
+					leftArgCnt-= MTX_STORE_GXCommandParamsCount == 0 ? 1 : MTX_STORE_GXCommandParamsCount;
+				}
+				else if (val == (u32)getMTX_TRANS()) {
+					//write commands
+					currCmd++; 
+					u32 arg1 = *currCmd; currCmd++;
+					u32 arg2 = *currCmd; currCmd++;
+					u32 arg3 = *currCmd; currCmd++;
+					#ifdef ARM9
+					MATRIX_TRANSLATE = arg1;
+					MATRIX_TRANSLATE = arg2;
+					MATRIX_TRANSLATE = arg3;
+					#endif
+					leftArgCnt-= MTX_TRANS_GXCommandParamsCount == 0 ? 1 : MTX_TRANS_GXCommandParamsCount;
+				}
+				else if (val == (u32)getMTX_IDENTITY()) {
+					//write commands
+					currCmd++; 
+					#ifdef ARM9
+					MATRIX_IDENTITY = 0;
+					#endif
+					leftArgCnt-= MTX_IDENTITY_GXCommandParamsCount == 0 ? 1 : MTX_IDENTITY_GXCommandParamsCount;
+				}
+				else if (val == (u32)getMTX_MODE()) {
+					//write commands
+					currCmd++; 
+					u32 arg1 = *currCmd; currCmd++;
+					#ifdef ARM9
+					MATRIX_CONTROL = arg1;
+					#endif
+					leftArgCnt-= MTX_MODE_GXCommandParamsCount == 0 ? 1 : MTX_MODE_GXCommandParamsCount;
+				}
+				else if (val == (u32)getVIEWPORT()) {
+					//write commands
+					currCmd++; 
+					u32 arg1 = *currCmd; currCmd++;
+					#ifdef ARM9
+					GFX_VIEWPORT = arg1;
+					#endif
+					leftArgCnt-= VIEWPORT_GXCommandParamsCount == 0 ? 1 : VIEWPORT_GXCommandParamsCount;
+				}
+				else if (val == (u32)getFIFO_TEX_COORD()) {
+					//write commands
+					currCmd++; 
+					u32 arg1 = *currCmd; currCmd++;
+					#ifdef ARM9
+					GFX_TEX_COORD = arg1;
+					#endif
+					leftArgCnt-= FIFO_TEX_COORD_GXCommandParamsCount == 0 ? 1 : FIFO_TEX_COORD_GXCommandParamsCount;
+				}
+				else if (val == (u32)getFIFO_BEGIN()) {
+					//write commands
+					currCmd++; 
+					u32 arg1 = *currCmd; currCmd++;
+					#ifdef ARM9
+					GFX_BEGIN = arg1;
+					#endif
+					leftArgCnt-= FIFO_BEGIN_GXCommandParamsCount == 0 ? 1 : FIFO_BEGIN_GXCommandParamsCount;
+				}
+				else if (val == (u32)getFIFO_END()) {
+					//write commands
+					currCmd++; 
+					#ifdef ARM9
+					GFX_END = 0;
+					#endif
+					leftArgCnt-= FIFO_END_GXCommandParamsCount == 0 ? 1 : FIFO_END_GXCommandParamsCount;
+				}
+				else if (val == (u32)getFIFO_COLOR()) {
+					//write commands
+					currCmd++; 
+					u32 arg1 = *currCmd; currCmd++;
+					#ifdef ARM9
+					GFX_COLOR = arg1;
+					#endif
+					leftArgCnt-= FIFO_COLOR_GXCommandParamsCount == 0 ? 1 : FIFO_COLOR_GXCommandParamsCount;
+				}
+				else if (val == (u32)getFIFO_NORMAL()) {
+					//write commands
+					currCmd++; 
+					u32 arg1 = *currCmd; currCmd++;
+					#ifdef ARM9
+					GFX_NORMAL = arg1;
+					#endif
+					leftArgCnt-= FIFO_NORMAL_GXCommandParamsCount == 0 ? 1 : FIFO_NORMAL_GXCommandParamsCount;
+				}
+				else if (val == (u32)getFIFO_VERTEX16()) { 
+					//write commands
+					currCmd++; 
+					u32 arg1 = *currCmd; currCmd++;
+					u32 arg2 = *currCmd; currCmd++;
+					#ifdef ARM9
+					GFX_VERTEX16 = arg1;
+					GFX_VERTEX16 = arg2;
+					#endif
+					leftArgCnt-= FIFO_VERTEX16_GXCommandParamsCount == 0 ? 1 : FIFO_VERTEX16_GXCommandParamsCount;
+				}
+				else if (val == (u32)getFIFO_VERTEX10()) {
+					//write commands
+					currCmd++; 
+					u32 arg1 = *currCmd; currCmd++;
+					#ifdef ARM9
+					GFX_VERTEX10 = arg1;
+					#endif
+					leftArgCnt-= FIFO_VERTEX10_GXCommandParamsCount == 0 ? 1 : FIFO_VERTEX10_GXCommandParamsCount;
+				}
+				else if (val == (u32)getFIFO_VTX_XY()) { 
+					//write commands
+					currCmd++; 
+					u32 arg1 = *currCmd; currCmd++;
+					#ifdef ARM9
+					GFX_VERTEX_XY = arg1;
+					#endif
+					leftArgCnt-= FIFO_VTX_XY_GXCommandParamsCount == 0 ? 1 : FIFO_VTX_XY_GXCommandParamsCount;
+				}
+				else if (val == (u32)getMTX_PUSH()) { 
+					//write commands
+					currCmd++; 
+					#ifdef ARM9
+					MATRIX_PUSH = 0;
+					#endif
+					leftArgCnt-= MTX_PUSH_GXCommandParamsCount == 0 ? 1 : MTX_PUSH_GXCommandParamsCount;
+				}
+				else if (val == (u32)getMTX_POP()) { 
+					//write commands
+					currCmd++; 
+					u32 arg1 = *currCmd; currCmd++;
+					#ifdef ARM9
+					MATRIX_POP = arg1;
+					#endif
+					leftArgCnt-= MTX_POP_GXCommandParamsCount == 0 ? 1 : MTX_POP_GXCommandParamsCount;
+				}
+				else if (val == (u32)getMTX_MULT_3x3()) {
+					//write commands
+					currCmd++; 
+					u32 arg1 = *currCmd; currCmd++;
+					u32 arg2 = *currCmd; currCmd++;
+					u32 arg3 = *currCmd; currCmd++;
+					u32 arg4 = *currCmd; currCmd++;
+					u32 arg5 = *currCmd; currCmd++;
+					u32 arg6 = *currCmd; currCmd++;
+					u32 arg7 = *currCmd; currCmd++;
+					u32 arg8 = *currCmd; currCmd++;
+					u32 arg9 = *currCmd; currCmd++;
+					#ifdef ARM9
+					MATRIX_MULT3x3 = arg1;
+					MATRIX_MULT3x3 = arg2;
+					MATRIX_MULT3x3 = arg3;
+					MATRIX_MULT3x3 = arg4;
+					MATRIX_MULT3x3 = arg5;
+					MATRIX_MULT3x3 = arg6;
+					MATRIX_MULT3x3 = arg7;
+					MATRIX_MULT3x3 = arg8;
+					MATRIX_MULT3x3 = arg9;
+					#endif
+					leftArgCnt-= MTX_MULT_3x3_GXCommandParamsCount == 0 ? 1 : MTX_MULT_3x3_GXCommandParamsCount;
+				}
+				else if (val == (u32)getMTX_MULT_4x4()) {
+					//write commands
+					currCmd++; 
+					u32 arg1 = *currCmd; currCmd++;
+					u32 arg2 = *currCmd; currCmd++;
+					u32 arg3 = *currCmd; currCmd++;
+					u32 arg4 = *currCmd; currCmd++;
+					u32 arg5 = *currCmd; currCmd++;
+					u32 arg6 = *currCmd; currCmd++;
+					u32 arg7 = *currCmd; currCmd++;
+					u32 arg8 = *currCmd; currCmd++;
+					u32 arg9 = *currCmd; currCmd++;
+					u32 arg10 = *currCmd; currCmd++;
+					u32 arg11 = *currCmd; currCmd++;
+					u32 arg12 = *currCmd; currCmd++;
+					u32 arg13 = *currCmd; currCmd++;
+					u32 arg14 = *currCmd; currCmd++;
+					u32 arg15 = *currCmd; currCmd++;
+					u32 arg16 = *currCmd; currCmd++;
+					
+					#ifdef ARM9
+					MATRIX_MULT4x4 = arg1;
+					MATRIX_MULT4x4 = arg2;
+					MATRIX_MULT4x4 = arg3;
+					MATRIX_MULT4x4 = arg4;
+					MATRIX_MULT4x4 = arg5;
+					MATRIX_MULT4x4 = arg6;
+					MATRIX_MULT4x4 = arg7;
+					MATRIX_MULT4x4 = arg8;
+					MATRIX_MULT4x4 = arg9;
+					MATRIX_MULT4x4 = arg10;
+					MATRIX_MULT4x4 = arg11;
+					MATRIX_MULT4x4 = arg12;
+					MATRIX_MULT4x4 = arg13;
+					MATRIX_MULT4x4 = arg14;
+					MATRIX_MULT4x4 = arg15;
+					MATRIX_MULT4x4 = arg16;
+					#endif
+					leftArgCnt-= MTX_MULT_4x4_GXCommandParamsCount == 0 ? 1 : MTX_MULT_4x4_GXCommandParamsCount;
+				}
+
+				else if (val == (u32)getMTX_LOAD_4x4()) {
+					//write commands
+					currCmd++; 
+					u32 arg1 = *currCmd; currCmd++;
+					u32 arg2 = *currCmd; currCmd++;
+					u32 arg3 = *currCmd; currCmd++;
+					u32 arg4 = *currCmd; currCmd++;
+					u32 arg5 = *currCmd; currCmd++;
+					u32 arg6 = *currCmd; currCmd++;
+					u32 arg7 = *currCmd; currCmd++;
+					u32 arg8 = *currCmd; currCmd++;
+					u32 arg9 = *currCmd; currCmd++;
+					u32 arg10 = *currCmd; currCmd++;
+					u32 arg11 = *currCmd; currCmd++;
+					u32 arg12 = *currCmd; currCmd++;
+					u32 arg13 = *currCmd; currCmd++;
+					u32 arg14 = *currCmd; currCmd++;
+					u32 arg15 = *currCmd; currCmd++;
+					u32 arg16 = *currCmd; currCmd++;
+					
+					#ifdef ARM9
+					MATRIX_LOAD4x4 = arg1;     
+					MATRIX_LOAD4x4 = arg2;  
+					MATRIX_LOAD4x4 = arg3;      
+					MATRIX_LOAD4x4 = arg4;
+
+					MATRIX_LOAD4x4 = arg5;  
+					MATRIX_LOAD4x4 = arg6;     
+					MATRIX_LOAD4x4 = arg7;      
+					MATRIX_LOAD4x4 = arg8;
+		
+					MATRIX_LOAD4x4 = arg9;  
+					MATRIX_LOAD4x4 = arg10;  
+					MATRIX_LOAD4x4 = arg11;     
+					MATRIX_LOAD4x4 = arg12;
+		
+					MATRIX_LOAD4x4 = arg13;  
+					MATRIX_LOAD4x4 = arg14;  
+					MATRIX_LOAD4x4 = arg15;  
+					MATRIX_LOAD4x4 = arg16;
+					#endif
+					leftArgCnt-= MTX_LOAD_4x4_GXCommandParamsCount == 0 ? 1 : MTX_LOAD_4x4_GXCommandParamsCount;
+				}
+
+				else if (val == (u32)getMTX_LOAD_4x3()) {
+					//write commands
+					currCmd++; 
+					u32 arg1 = *currCmd; currCmd++;
+					u32 arg2 = *currCmd; currCmd++;
+					u32 arg3 = *currCmd; currCmd++;
+					u32 arg4 = *currCmd; currCmd++;
+					u32 arg5 = *currCmd; currCmd++;
+					u32 arg6 = *currCmd; currCmd++;
+					u32 arg7 = *currCmd; currCmd++;
+					u32 arg8 = *currCmd; currCmd++;
+					u32 arg9 = *currCmd; currCmd++;
+					u32 arg10 = *currCmd; currCmd++;
+					u32 arg11 = *currCmd; currCmd++;
+					u32 arg12 = *currCmd; currCmd++;
+					
+					#ifdef ARM9
+					MATRIX_LOAD4x3 = arg1;
+					MATRIX_LOAD4x3 = arg2;
+					MATRIX_LOAD4x3 = arg3;
+
+					MATRIX_LOAD4x3 = arg4;
+					MATRIX_LOAD4x3 = arg5;
+					MATRIX_LOAD4x3 = arg6;
+
+					MATRIX_LOAD4x3 = arg7;
+					MATRIX_LOAD4x3 = arg8;
+					MATRIX_LOAD4x3 = arg9;
+
+					MATRIX_LOAD4x3 = arg10;
+					MATRIX_LOAD4x3 = arg11;
+					MATRIX_LOAD4x3 = arg12;
+					#endif
+					leftArgCnt-= MTX_LOAD_4x3_GXCommandParamsCount == 0 ? 1 : MTX_LOAD_4x3_GXCommandParamsCount;
+				}
+
+				//N/A      00h -  -   NOP - No Operation (for padding packed GXFIFO commands)
+				else  {  //if (val == (u32)getNOP())
+					//write commands
+					currCmd++; 
+					leftArgCnt-= (NOP_GXCommandParamsCount == 0 ? 1 : NOP_GXCommandParamsCount);
+					//custom command invoked this, so quit
+					//break;
+				}
+			}
+			*/
+		}
 	}
 }
 
@@ -120,7 +474,13 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glStoreMatrix(sint32 index){
-	MATRIX_STORE = index;
+	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
+		//400044Ch - Cmd 13h - MTX_STORE - Store Current Matrix on Stack (W). Sets [N]=C. The stack pointer S is not used, and is left unchanged.
+		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getMTX_STORE(); //Unpacked Command format
+		InternalUnpackedGX_DL_BinaryPtr++;
+		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)(index&0x1f); InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, getMTX_STORE(), 0);
+	}
 }
 
 #ifdef ARM9
@@ -160,18 +520,14 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glTranslate3f32(f32 x, f32 y, f32 z){
-	if((isNdsDisplayListUtilsCallList == true) && ((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
+	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
 		//MTX_TRANS: Sets C=M*C. Parameters: 3, m[0..2] (x,y,z position)
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getMTX_TRANS(); //Unpacked Command format
+		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] =(getMTX_TRANS()); //Unpacked Command format
 		InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)x; InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)y; InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)z; InternalUnpackedGX_DL_BinaryPtr++;
-	}
-	else{
-		MATRIX_TRANSLATE = x;
-		MATRIX_TRANSLATE = y;
-		MATRIX_TRANSLATE = z;
+		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)(x); InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
+		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)(y); InternalUnpackedGX_DL_BinaryPtr++;
+		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)(z); InternalUnpackedGX_DL_BinaryPtr++;
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, getMTX_TRANS(), 0);
 	}
 }
 
@@ -238,7 +594,12 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glLoadIdentity(void){
-	MATRIX_IDENTITY = 0;
+	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
+		//4000454h 15h -  19  MTX_IDENTITY - Load Unit(Identity) Matrix to Current Matrix (W)
+		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getMTX_IDENTITY(); //Unpacked Command format
+		InternalUnpackedGX_DL_BinaryPtr++;
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, getMTX_IDENTITY(), 0);
+	}
 }
 
 #ifdef ARM9
@@ -250,7 +611,13 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glMatrixMode(int mode){
-	MATRIX_CONTROL = mode;
+	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
+		//4000440h 10h 1  1   MTX_MODE - Set Matrix Mode (W)
+		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getMTX_MODE(); //Unpacked Command format
+		InternalUnpackedGX_DL_BinaryPtr++;
+		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)(mode); InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, getMTX_MODE(), 0);
+	}
 }
 
 #ifdef ARM9
@@ -284,7 +651,9 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glPolyFmt(int alpha){ // obviously more to this
+	#ifdef ARM9
 	GFX_POLY_FORMAT = alpha;
+	#endif
 }
 
 #ifdef ARM9
@@ -296,7 +665,13 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glViewport(uint8 x1, uint8 y1, uint8 x2, uint8 y2){
-	GFX_VIEWPORT = (x1) + (y1 << 8) + (x2 << 16) + (y2 << 24);
+	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
+		//4000580h 60h 1  1   VIEWPORT - Set Viewport (W)
+		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getVIEWPORT(); //Unpacked Command format
+		InternalUnpackedGX_DL_BinaryPtr++;
+		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)((x1) + (y1 << 8) + (x2 << 16) + (y2 << 24)); InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, getVIEWPORT(), 0);
+	}
 }
 
 u8 defaultglClearColorR=0;
@@ -316,7 +691,9 @@ void glClearColor(uint8 red, uint8 green, uint8 blue){
 	defaultglClearColorR = red;
 	defaultglClearColorG = green;
 	defaultglClearColorB = blue;
+	#ifdef ARM9
 	GFX_CLEAR_COLOR = RGB15(red, green, blue);
+	#endif
 }
 
 #ifdef ARM9
@@ -329,7 +706,9 @@ __attribute__ ((optnone))
 #endif
 void glClearDepth(uint16 depth){
 	defaultglClearDepth = depth;
+	#ifdef ARM9
 	GFX_CLEAR_DEPTH = depth;
+	#endif
 }
 
 #ifdef ARM9
@@ -380,7 +759,9 @@ __attribute__ ((optnone))
 #endif
 void glEnable(int bits){
 	enable_bits |= bits & (GL_TEXTURE_2D|GL_TOON_HIGHLIGHT|GL_OUTLINE|GL_ANTIALIAS);
+	#ifdef ARM9
 	GFX_CONTROL = enable_bits;
+	#endif
 }
 
 #ifdef ARM9
@@ -405,7 +786,9 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glFlush(void){
+	#ifdef ARM9
 	GFX_FLUSH = 2;
+	#endif
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -560,46 +943,39 @@ __attribute__ ((optnone))
 void glRotateZi(int angle){
 	f32 sine = SIN[angle &  LUT_MASK];
 	f32 cosine = COS[angle & LUT_MASK];
-	if((isNdsDisplayListUtilsCallList == true) && ((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
-		//Rotate Z DL:
-		//Identity Matrix
-		//The MTX_IDENTITY command can be used to initialize the Position Matrix before doing any Translation/Scaling/Rotation, for example:
-		//  Load(Identity), Mul(Rotate), Mul(Scale)  ;rotation/scaling (not so efficient)
-		//Rotation Matrices
-		//Rotation can be performed with MTX_MULT_3x3 command, simple examples are:
-		//Around Z-Axis
-		//| cos   sin   0   |
-		//| -sin  cos   0   |
-		//| 0     0     1.0 |
+	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
+		isNdsDisplayListUtilsCallList = true; //Begin manual GX Display List
+		u32 argCnt = InternalUnpackedGX_DL_BinaryPtr;
+		{
+			//Rotate Z DL:
+			//Identity Matrix
+			//The MTX_IDENTITY command can be used to initialize the Position Matrix before doing any Translation/Scaling/Rotation, for example:
+			//  Load(Identity), Mul(Rotate), Mul(Scale)  ;rotation/scaling (not so efficient)
+			//Rotation Matrices
+			//Rotation can be performed with MTX_MULT_3x3 command, simple examples are:
+			//Around Z-Axis
+			//| cos   sin   0   |
+			//| -sin  cos   0   |
+			//| 0     0     1.0 |
 
-		//Load(Identity)
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getMTX_IDENTITY(); //Unpacked Command format
-		InternalUnpackedGX_DL_BinaryPtr++;
+			//Load(Identity)
 		
-		//Mul(Rotate)
-		//4000468h - Cmd 1Ah - MTX_MULT_3x3 - Multiply Current Matrix by 3x3 Matrix (W)
-		//Sets C=M*C. Parameters: 9, m[0..8]
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getMTX_MULT_3x3(); InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)cosine; InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)sine; InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)-sine; InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)cosine; InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)inttof32(1); InternalUnpackedGX_DL_BinaryPtr++;
-	}
-	else{
-		MATRIX_MULT3x3 = cosine;
-		MATRIX_MULT3x3 = sine;
-		MATRIX_MULT3x3 = 0;
-		MATRIX_MULT3x3 = - sine;
-		MATRIX_MULT3x3 = cosine;
-		MATRIX_MULT3x3 = 0;
-		MATRIX_MULT3x3 = 0;
-		MATRIX_MULT3x3 = 0;
-		MATRIX_MULT3x3 = inttof32(1);
+			//Mul(Rotate)
+			//4000468h - Cmd 1Ah - MTX_MULT_3x3 - Multiply Current Matrix by 3x3 Matrix (W)
+			//Sets C=M*C. Parameters: 9, m[0..8]
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getMTX_MULT_3x3(); InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)cosine; InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)sine; InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)-sine; InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)cosine; InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)inttof32(1); InternalUnpackedGX_DL_BinaryPtr++;
+		}
+		isNdsDisplayListUtilsCallList = false; //End manual GX Display List
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, MTX_ROTATE_Z, InternalUnpackedGX_DL_BinaryPtr - argCnt);
 	}
 }
 
@@ -614,46 +990,39 @@ __attribute__ ((optnone))
 void glRotateYi(int angle){
 	f32 sine = SIN[angle &  LUT_MASK];
 	f32 cosine = COS[angle & LUT_MASK];
-	if((isNdsDisplayListUtilsCallList == true) && ((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
-		//Rotate Y DL:
-		//Identity Matrix
-		//The MTX_IDENTITY command can be used to initialize the Position Matrix before doing any Translation/Scaling/Rotation, for example:
-		//  Load(Identity), Mul(Rotate), Mul(Scale)  ;rotation/scaling (not so efficient)
-		//Rotation Matrices
-		//Rotation can be performed with MTX_MULT_3x3 command, simple examples are:
-		//Around Y-Axis
-		//| cos   0    sin |
-		//| 0     1.0  0   |
-		//| -sin  0    cos |
+	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
+		isNdsDisplayListUtilsCallList = true; //Begin manual GX Display List
+		u32 argCnt = InternalUnpackedGX_DL_BinaryPtr;
+		{
+			//Rotate Y DL:
+			//Identity Matrix
+			//The MTX_IDENTITY command can be used to initialize the Position Matrix before doing any Translation/Scaling/Rotation, for example:
+			//  Load(Identity), Mul(Rotate), Mul(Scale)  ;rotation/scaling (not so efficient)
+			//Rotation Matrices
+			//Rotation can be performed with MTX_MULT_3x3 command, simple examples are:
+			//Around Y-Axis
+			//| cos   0    sin |
+			//| 0     1.0  0   |
+			//| -sin  0    cos |
 
-		//Load(Identity)
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getMTX_IDENTITY(); //Unpacked Command format
-		InternalUnpackedGX_DL_BinaryPtr++;
+			//Load(Identity)
 		
-		//Mul(Rotate)
-		//4000468h - Cmd 1Ah - MTX_MULT_3x3 - Multiply Current Matrix by 3x3 Matrix (W)
-		//Sets C=M*C. Parameters: 9, m[0..8]
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getMTX_MULT_3x3(); InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)cosine; InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)-sine; InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)inttof32(1); InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)sine; InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)cosine; InternalUnpackedGX_DL_BinaryPtr++;
-	}
-	else{
-		MATRIX_MULT3x3 = cosine;
-		MATRIX_MULT3x3 = 0;
-		MATRIX_MULT3x3 = -sine;
-		MATRIX_MULT3x3 = 0;
-		MATRIX_MULT3x3 = inttof32(1);
-		MATRIX_MULT3x3 = 0;
-		MATRIX_MULT3x3 = sine;
-		MATRIX_MULT3x3 = 0;
-		MATRIX_MULT3x3 = cosine;
+			//Mul(Rotate)
+			//4000468h - Cmd 1Ah - MTX_MULT_3x3 - Multiply Current Matrix by 3x3 Matrix (W)
+			//Sets C=M*C. Parameters: 9, m[0..8]
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getMTX_MULT_3x3(); InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)cosine; InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)-sine; InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)inttof32(1); InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)sine; InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)cosine; InternalUnpackedGX_DL_BinaryPtr++;
+		}
+		isNdsDisplayListUtilsCallList = false; //End manual GX Display List
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, MTX_ROTATE_Y, InternalUnpackedGX_DL_BinaryPtr - argCnt);	
 	}
 }
 
@@ -669,46 +1038,39 @@ void glRotateXi(int angle){
   f32 sine = SIN[angle &  LUT_MASK];
   f32 cosine = COS[angle & LUT_MASK];
 
-  if((isNdsDisplayListUtilsCallList == true) && ((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
-		//Rotate X DL:
-		//Identity Matrix
-		//The MTX_IDENTITY command can be used to initialize the Position Matrix before doing any Translation/Scaling/Rotation, for example:
-		//  Load(Identity), Mul(Rotate), Mul(Scale)  ;rotation/scaling (not so efficient)
-		//Rotation Matrices
-		//Rotation can be performed with MTX_MULT_3x3 command, simple examples are:
-		//Around X-Axis          
-		//| 1.0  0     0   |
-		//| 0    cos   sin |
-		//| 0    -sin  cos |
+  if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
+	  	isNdsDisplayListUtilsCallList = true; //Begin manual GX Display List
+		u32 argCnt = InternalUnpackedGX_DL_BinaryPtr;
+		{
+			//Rotate X DL:
+			//Identity Matrix
+			//The MTX_IDENTITY command can be used to initialize the Position Matrix before doing any Translation/Scaling/Rotation, for example:
+			//  Load(Identity), Mul(Rotate), Mul(Scale)  ;rotation/scaling (not so efficient)
+			//Rotation Matrices
+			//Rotation can be performed with MTX_MULT_3x3 command, simple examples are:
+			//Around X-Axis          
+			//| 1.0  0     0   |
+			//| 0    cos   sin |
+			//| 0    -sin  cos |
 
-		//Load(Identity)
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getMTX_IDENTITY(); //Unpacked Command format
-		InternalUnpackedGX_DL_BinaryPtr++;
+			//Load(Identity)
 		
-		//Mul(Rotate)
-		//4000468h - Cmd 1Ah - MTX_MULT_3x3 - Multiply Current Matrix by 3x3 Matrix (W)
-		//Sets C=M*C. Parameters: 9, m[0..8]
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getMTX_MULT_3x3(); InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)inttof32(1); InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)cosine; InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)sine; InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)-sine; InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)cosine; InternalUnpackedGX_DL_BinaryPtr++;
-	}
-	else{
-		MATRIX_MULT3x3 = inttof32(1);
-		MATRIX_MULT3x3 = 0;
-		MATRIX_MULT3x3 = 0;
-		MATRIX_MULT3x3 = 0;
-		MATRIX_MULT3x3 = cosine;
-		MATRIX_MULT3x3 = sine;  
-		MATRIX_MULT3x3 = 0;
-		MATRIX_MULT3x3 = -sine;
-		MATRIX_MULT3x3 = cosine;
+			//Mul(Rotate)
+			//4000468h - Cmd 1Ah - MTX_MULT_3x3 - Multiply Current Matrix by 3x3 Matrix (W)
+			//Sets C=M*C. Parameters: 9, m[0..8]
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getMTX_MULT_3x3(); InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)inttof32(1); InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)cosine; InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)sine; InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)-sine; InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)cosine; InternalUnpackedGX_DL_BinaryPtr++;
+		}
+		isNdsDisplayListUtilsCallList = false; //End manual GX Display List
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, MTX_ROTATE_X, InternalUnpackedGX_DL_BinaryPtr - argCnt);
 	}
 }
 
@@ -798,25 +1160,33 @@ void gluLookAtf32(f32 eyex, f32 eyey, f32 eyez, f32 lookAtx, f32 lookAty, f32 lo
 	normalizef32(x);
 	normalizef32(y);
 	
-	glMatrixMode(GL_MODELVIEW);
+	isNdsDisplayListUtilsCallList = true; //Begin manual GX Display List
+	u32 argCnt = InternalUnpackedGX_DL_BinaryPtr;
+	{
+		glMatrixMode(GL_MODELVIEW);
+		//400045Ch 17h 12 30  MTX_LOAD_4x3 - Load 4x3 Matrix to Current Matrix (W)
+		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getMTX_LOAD_4x3(); //Unpacked Command format
+		InternalUnpackedGX_DL_BinaryPtr++;
 
-	MATRIX_LOAD4x3 = x[0];
-	MATRIX_LOAD4x3 = x[1];
-	MATRIX_LOAD4x3 = x[2];
-
-	MATRIX_LOAD4x3 = y[0];
-	MATRIX_LOAD4x3 = y[1];
-	MATRIX_LOAD4x3 = y[2];
-
-	MATRIX_LOAD4x3 = z[0];
-	MATRIX_LOAD4x3 = z[1];
-	MATRIX_LOAD4x3 = z[2];
-
-	MATRIX_LOAD4x3 = 0;
-	MATRIX_LOAD4x3 = 0;
-	MATRIX_LOAD4x3 = floattof32(-1.0);
-
-	glTranslate3f32(-eyex, -eyey, -eyez);
+		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)x[0]; InternalUnpackedGX_DL_BinaryPtr++;
+		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)x[1]; InternalUnpackedGX_DL_BinaryPtr++;
+		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)x[2]; InternalUnpackedGX_DL_BinaryPtr++;
+		
+		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)y[0]; InternalUnpackedGX_DL_BinaryPtr++;
+		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)y[1]; InternalUnpackedGX_DL_BinaryPtr++;
+		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)y[2]; InternalUnpackedGX_DL_BinaryPtr++;
+		
+		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)z[0]; InternalUnpackedGX_DL_BinaryPtr++;
+		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)z[1]; InternalUnpackedGX_DL_BinaryPtr++;
+		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)z[2]; InternalUnpackedGX_DL_BinaryPtr++;
+		
+		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
+		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
+		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)floattof32(-1.0); InternalUnpackedGX_DL_BinaryPtr++;
+		glTranslate3f32(-eyex, -eyey, -eyez);
+	}
+	isNdsDisplayListUtilsCallList = false; //End manual GX Display List
+	handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, MTX_LOOKAT, InternalUnpackedGX_DL_BinaryPtr - argCnt);
 }
 
 //  glu wrapper for standard float call
@@ -843,29 +1213,39 @@ __attribute__ ((optnone))
 #endif
 #endif
 void gluFrustumf32(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far){
-   glMatrixMode(GL_PROJECTION);
+	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
+		isNdsDisplayListUtilsCallList = true; //Begin manual GX Display List
+		u32 argCnt = InternalUnpackedGX_DL_BinaryPtr;
+		{
+			glMatrixMode(GL_PROJECTION);
+			//4000458h 16h 16 34  MTX_LOAD_4x4 - Load 4x4 Matrix to Current Matrix (W)
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getMTX_LOAD_4x4(); //Unpacked Command format
+			InternalUnpackedGX_DL_BinaryPtr++;
 
-   MATRIX_LOAD4x4 = divf32(2*near, right - left);     
-   MATRIX_LOAD4x4 = 0;  
-   MATRIX_LOAD4x4 = divf32(right + left, right - left);      
-   MATRIX_LOAD4x4 = 0;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)divf32(2*near, right - left); InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)divf32(right + left, right - left); InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
+		
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)divf32(2*near, top - bottom); InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)divf32(top + bottom, top - bottom); InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
 
-   MATRIX_LOAD4x4 = 0;  
-   MATRIX_LOAD4x4 = divf32(2*near, top - bottom);     
-   MATRIX_LOAD4x4 = divf32(top + bottom, top - bottom);      
-   MATRIX_LOAD4x4 = 0;
-   
-   MATRIX_LOAD4x4 = 0;  
-   MATRIX_LOAD4x4 = 0;  
-   MATRIX_LOAD4x4 = -divf32(far + near, far - near);     
-   MATRIX_LOAD4x4 = floattof32(-1.0F);
-   
-   MATRIX_LOAD4x4 = 0;  
-   MATRIX_LOAD4x4 = 0;  
-   MATRIX_LOAD4x4 = -divf32(2 * mulf32(far, near), far - near);  
-   MATRIX_LOAD4x4 = 0;
-	
-   glStoreMatrix(0);
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)-divf32(far + near, far - near); InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)floattof32(-1.0F); InternalUnpackedGX_DL_BinaryPtr++;
+
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)-divf32(2 * mulf32(far, near), far - near); InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
+			glStoreMatrix(0);
+		}
+		isNdsDisplayListUtilsCallList = false; //End manual GX Display List
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, MTX_FRUSTRUM, InternalUnpackedGX_DL_BinaryPtr - argCnt);
+	}
 }
 
 #ifdef ARM9
@@ -1068,25 +1448,25 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glReset(void){
-  while (GFX_STATUS & (1<<27)); // wait till gfx engine is not busy
+	#ifdef ARM9
+	while (GFX_STATUS & (1<<27)); // wait till gfx engine is not busy
   
-  // Clear the FIFO
-  GFX_STATUS |= (1<<29);
+	// Clear the FIFO
+	GFX_STATUS |= (1<<29);
 
-  // Clear overflows for list memory
-  GFX_CONTROL = enable_bits = ((1<<12) | (1<<13)) | GL_TEXTURE_2D;
-  glResetMatrixStack();
+	// Clear overflows for list memory
+	GFX_CONTROL = enable_bits = ((1<<12) | (1<<13)) | GL_TEXTURE_2D;
+	glResetMatrixStack();
   
-  glInit(); //Initializes a new videoGL context
+	GFX_TEX_FORMAT = 0;
+	GFX_POLY_FORMAT = 0;
   
-  GFX_TEX_FORMAT = 0;
-  GFX_POLY_FORMAT = 0;
-  
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
 
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity();
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	#endif
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -1238,7 +1618,9 @@ int vramIsTextureBank(uint16 *addr){
 		else return 0;
 	}
 	#endif
+	#ifdef WIN32
 	return 0;
+	#endif
 }
 
 #ifdef ARM9
@@ -1267,7 +1649,9 @@ uint32* getNextTextureSlot(int size){
 
 	else return result;	
 	#endif
+	#ifdef WIN32
 	return 0;
+	#endif
 }
 
 // Similer to glTextImage2D from gl it takes a pointer to data
@@ -1548,7 +1932,74 @@ void glCallListGX(const u32* list) {
 	#endif
 
 	#ifdef WIN32
-	printf("\n(WIN32)glCallListGX: Executing DL List. Size: %d\n", (int)list[0]);
+	char displayListName[256];
+	//must be 1:1 from isAGXCommand
+	u32 cmd = list[1];
+	int cmdParamCount = getAGXParamsCountFromCommand(cmd);
+	bool customDL = false;
+	if (cmd == (u32)getMTX_STORE()) {
+		strcpy(displayListName, "getMTX_STORE()");
+	}
+	else if (cmd == (u32)getMTX_TRANS()) {
+		strcpy(displayListName, "getMTX_TRANS()");
+	}
+	else if (cmd == (u32)getMTX_IDENTITY()) {
+		strcpy(displayListName, "getMTX_IDENTITY()");
+	}
+	else if (cmd == (u32)getMTX_MODE()) {
+		strcpy(displayListName, "getMTX_MODE()");
+	}
+	else if (cmd == (u32)getVIEWPORT()) {
+		strcpy(displayListName, "getVIEWPORT()");
+	}
+	else if (cmd == (u32)getFIFO_TEX_COORD()) {
+		strcpy(displayListName, "getFIFO_TEX_COORD()");
+	}
+	else if (cmd == (u32)getFIFO_BEGIN()) {
+		strcpy(displayListName, "getFIFO_BEGIN()");
+	}
+	else if (cmd == (u32)getFIFO_END()) {
+		strcpy(displayListName, "getFIFO_END()");
+	}
+	else if (cmd == (u32)getFIFO_COLOR()) {
+		strcpy(displayListName, "getFIFO_COLOR()");
+	}
+	else if (cmd == (u32)getFIFO_NORMAL()) {
+		strcpy(displayListName, "getFIFO_NORMAL()");
+	}
+	else if (cmd == (u32)getFIFO_VERTEX16()) {
+		strcpy(displayListName, "getFIFO_VERTEX16()");
+	}
+	else if (cmd == (u32)getFIFO_VERTEX10()) {
+		strcpy(displayListName, "getFIFO_VERTEX10()");
+	}
+	else if (cmd == (u32)getFIFO_VTX_XY()) {
+		strcpy(displayListName, "getFIFO_VTX_XY()");
+	}
+	else if (cmd == (u32)getMTX_PUSH()) {
+		strcpy(displayListName, "getMTX_PUSH()");
+	}
+	else if (cmd == (u32)getMTX_POP()) {
+		strcpy(displayListName, "getMTX_POP()");
+	}
+	else if (cmd == (u32)getMTX_MULT_3x3()) {
+		strcpy(displayListName, "getMTX_MULT_3x3()");
+	}
+	else if (cmd == (u32)getMTX_MULT_4x4()) {
+		strcpy(displayListName, "getMTX_MULT_4x4()");
+	}
+
+	///////////////Custom Display Lists
+	else{
+		strcpy(displayListName, "CUSTOM DISPLAY LIST");
+		customDL = true;
+	}
+	if(customDL == false){
+		printf("\n(WIN32)glCallListGX: Executing DL[%s]; Args:%d Size: %d\n",displayListName, cmdParamCount,(int)list[0]);
+	}
+	else{
+		printf("\n(WIN32)glCallListGX: Executing DL[%s]; Size: %d\n",displayListName, (int)list[0]);
+	}
 	#endif
 }
 
@@ -1569,7 +2020,6 @@ void glColor3fv(const GLfloat * v){
 	}
 }
 
-/////////////////////////////////////////////////////////// Extension Start /////////////////////////////////////////////////////////// 
 //DL Notes: Are sent using unpacked format.
 //Unpacked Command format:
 //Opcodes that write more than one 32bit value (ie. STRD and STM) can be used to send ONE UNPACKED command, 
@@ -1814,8 +2264,8 @@ void glCallList(GLuint list){
 			//Run a single GX Display List, having proper DL size
 			memcpy((u8*)&singleOpenGLCompiledDisplayList[1], currentPhysicalDisplayListStart, singleListSize);
 			singleOpenGLCompiledDisplayList[0] = (u32)singleListSize;
-			glCallListGX((const u32*)&singleOpenGLCompiledDisplayList[0]);
-			//printf("glCallList():glCallListGX() List(%d) exec. OK", list);
+			u32 customsingleOpenGLCompiledDisplayListPtr = (singleListSize/4); //account the internal pointer ahead because DLs executed later are treated as the internal DL GX Binary
+			handleInmediateGXDisplayList((u32*)&singleOpenGLCompiledDisplayList[0], (u32*)&customsingleOpenGLCompiledDisplayListPtr, OPENGL_DL_TO_GX_DL_EXEC_CMD, (currentPhysicalDisplayListEnd - currentPhysicalDisplayListStart)); //glCallListGX((const u32*)&singleOpenGLCompiledDisplayList[0]);
 		}
 		else{
 			//printf("glCallList():This OpenGL list name(%d)'s InternalDL offset points to InternalDL GX end (no more GX DL after this)", (u32)list);
@@ -2015,14 +2465,12 @@ __attribute__((optnone))
 #endif
 #endif
 void glTexCoord1i(uint32 uv){
-	if((isNdsDisplayListUtilsCallList == true) && ((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
+	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
 		//4000488h 22h 1  1   TEXCOORD - Set Texture Coordinates (W)
 		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getFIFO_TEX_COORD(); //Unpacked Command format
 		InternalUnpackedGX_DL_BinaryPtr++;
 		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)uv; InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
-	}
-	else{
-		GFX_TEX_COORD = uv;
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, getFIFO_TEX_COORD(), 0);
 	}
 }
 
@@ -2036,14 +2484,12 @@ __attribute__((optnone))
 #endif
 #endif
 void glTexCoord2t16(t16 u, t16 v){
-	if((isNdsDisplayListUtilsCallList == true) && ((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
+	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
 		//4000488h 22h 1  1   TEXCOORD - Set Texture Coordinates (W)
 		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getFIFO_TEX_COORD(); //Unpacked Command format
 		InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)TEXTURE_PACK(u, v); InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
-	}
-	else{
-		GFX_TEX_COORD = (u << 16) + v;
+		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)(u << 16) + v; InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, getFIFO_TEX_COORD(), 0);
 	}
 }
 //////////////////////////////////////////////////////////////////////
@@ -2062,14 +2508,12 @@ __attribute__((optnone))
 #endif
 #endif
 void glBegin(int primitiveType){
-	if((isNdsDisplayListUtilsCallList == true) && ((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
+	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
 		//4000500h 40h 1  1   BEGIN_VTXS - Start of Vertex List (W)
 		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getFIFO_BEGIN(); //Unpacked Command format
 		InternalUnpackedGX_DL_BinaryPtr++;
 		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)primitiveType; InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
-	}
-	else{
-		GFX_BEGIN = (u32)primitiveType;
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, getFIFO_BEGIN(), 0);
 	}
 }
 
@@ -2083,14 +2527,12 @@ __attribute__((optnone))
 #endif
 #endif
 void glEnd( void){
-	if((isNdsDisplayListUtilsCallList == true) && ((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
+	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
 		//4000504h 41h -  1   END_VTXS - End of Vertex List (W)
 		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getFIFO_END(); //Unpacked Command format
 		InternalUnpackedGX_DL_BinaryPtr++;
 		//no args used by this GX command
-	}
-	else{
-		GFX_END = 0;
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, getFIFO_END(), 0);
 	}
 }
 
@@ -2112,13 +2554,8 @@ __attribute__((optnone))
 #endif
 #endif
 void glColor3b(uint8 red, uint8 green, uint8 blue){
-	if((isNdsDisplayListUtilsCallList == true) && ((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
-		//4000480h 20h 1  1   COLOR - Directly Set Vertex Color (W)
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getFIFO_COLOR(); //Unpacked Command format
-		InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)RGB15(red, green, blue); InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
-	}
-	else{
+	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
+		u16 finalColor = 0;
 		switch(globalGLCtx.primitiveShadeModelMode){
 			//light vectors are todo
 			case(GL_FLAT):{
@@ -2126,26 +2563,33 @@ void glColor3b(uint8 red, uint8 green, uint8 blue){
 				if(lastVertexColor == 0){
 					lastVertexColor = RGB15(red, green, blue);
 				}
-				GFX_COLOR = lastVertexColor;
+				finalColor = lastVertexColor;
 			}
 			break;
 			
 			case(GL_SMOOTH):{
 				//Smooth shading, the default by DS, causes the computed colors of vertices to be interpolated as the primitive is rasterized, 
 				//typically assigning different colors to each resulting pixel fragment. 
-				GFX_COLOR = (vuint32)RGB15(red, green, blue);			
+				finalColor = (vuint32)RGB15(red, green, blue);			
 			}
 			break;
 			
 			default:{
 				//error! call glInit(); first
+				return;
 			}
 			break;
 		}
+
+		//4000480h 20h 1  1   COLOR - Directly Set Vertex Color (W)
+		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getFIFO_COLOR(); //Unpacked Command format
+		InternalUnpackedGX_DL_BinaryPtr++;
+		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)finalColor; InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, getFIFO_COLOR(), 0);
 	}
 }
 
-////////////////////////////////////////////////////////////////////// glNormal — set the current normal vector //////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////// glNormal ï¿½ set the current normal vector //////////////////////////////////////////////////////////////////////
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("O0")))
@@ -2191,10 +2635,11 @@ void glNormal3f(
  	GLfloat ny,
  	GLfloat nz
 ){
-	if((isNdsDisplayListUtilsCallList == true) && ((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
+	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
 		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getFIFO_NORMAL(); //Unpacked Command format
 		InternalUnpackedGX_DL_BinaryPtr++;
 		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)NORMAL_PACK(floattov10(nx),floattov10(ny),floattov10(nz)); InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, getFIFO_NORMAL(), 0);
 	}
 }
 
@@ -2227,10 +2672,11 @@ void glNormal3i(
  	GLint ny,
  	GLint nz
 ){
-	if((isNdsDisplayListUtilsCallList == true) && ((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
+	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
 		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getFIFO_NORMAL(); //Unpacked Command format
 		InternalUnpackedGX_DL_BinaryPtr++;
 		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)NORMAL_PACK(inttov10(nx),inttov10(ny),inttov10(nz)); InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, getFIFO_NORMAL(), 0);
 	}
 }
 
@@ -2245,16 +2691,13 @@ __attribute__((optnone))
 #endif
 #endif
 void glVertex3v16(v16 x, v16 y, v16 z){
-	if((isNdsDisplayListUtilsCallList == true) && ((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
+	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
 		//400048Ch 23h 2  9   VTX_16 - Set Vertex XYZ Coordinates (W)
 		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getFIFO_VERTEX16(); //Unpacked Command format
 		InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)VERTEX_PACK(x, y); InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)VERTEX_PACK(z, 0); InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
-	}
-	else{
-		GFX_VERTEX16 = (y << 16) | (x & 0xFFFF);
-		GFX_VERTEX16 = ((uint32)(uint16)z);
+		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)(y << 16) | (x & 0xFFFF); InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
+		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)((uint32)(uint16)z); InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, getFIFO_VERTEX16(), 0);
 	}
 }
 
@@ -2268,15 +2711,12 @@ __attribute__((optnone))
 #endif
 #endif
 void glVertex3v10(v10 x, v10 y, v10 z){
-	if((isNdsDisplayListUtilsCallList == true) && ((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
+	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
 		//4000490h 24h 1  8   VTX_10 - Set Vertex XYZ Coordinates (W)
 		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getFIFO_VERTEX10(); //Unpacked Command format
 		InternalUnpackedGX_DL_BinaryPtr++;
 		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)VERTEX_PACKv10(x, y, z); InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
-	}
-	else{
-		GFX_VERTEX16 = (y << 16) | (x & 0xFFFF);
-		GFX_VERTEX16 = ((uint32)(uint16)z);
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, getFIFO_VERTEX10(), 0);
 	}
 }
 
@@ -2291,14 +2731,12 @@ __attribute__((optnone))
 #endif
 #endif
 void glVertex2v16(v16 x, v16 y){
-	if((isNdsDisplayListUtilsCallList == true) && ((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
+	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
 		//4000494h 25h 1  8   VTX_XY - Set Vertex XY Coordinates (W)
 		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getFIFO_VTX_XY(); //Unpacked Command format
 		InternalUnpackedGX_DL_BinaryPtr++;
 		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)VERTEX_PACK(x, y); InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
-	}
-	else{
-		GFX_VERTEX16 = (y << 16) | (x & 0xFFFF);
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, getFIFO_VTX_XY(), 0);
 	}
 }
 
@@ -2348,4 +2786,3 @@ int CompilePackedNDSGXDisplayListFromObject(u32 * bufOut, struct ndsDisplayListD
 
 	return DL_INVALID;
 }
-/////////////////////////////////////////////////////////// Extension End /////////////////////////////////////////////////////////// 

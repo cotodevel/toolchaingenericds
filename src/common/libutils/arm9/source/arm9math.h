@@ -34,6 +34,10 @@
 
 #include "trig_lut.h"
 
+#ifdef WIN32
+#include "TGDSTypes.h"
+#endif
+
 typedef int f32;             // 1.19.12 fixed point for matricies
 
 typedef sint64                   int64;
@@ -89,6 +93,7 @@ typedef volatile sint64                   vint64;
 //  and returns 1.19.12 result
 static inline f32 divf32(f32 num, f32 den)
 {
+	#ifdef ARM9
 	DIV_CR = DIV_64_32;
 	
 	while(DIV_CR & DIV_BUSY);
@@ -97,8 +102,12 @@ static inline f32 divf32(f32 num, f32 den)
 	DIV_DENOMINATOR32 = den;
 
 	while(DIV_CR & DIV_BUSY);
-
 	return (DIV_RESULT32);
+	#endif
+	
+	#ifdef WIN32
+	return ((num << 8) / den);
+	#endif
 }
 
 ///////////////////////////////////////
@@ -117,6 +126,7 @@ static inline f32 mulf32(f32 a, f32 b)
 //	returns the fixed point result
 static inline f32 sqrtf32(f32 a)
 {
+	#ifdef ARM9
 	SQRT_CR = SQRT_64;
 
 	while(SQRT_CR & SQRT_BUSY);
@@ -126,6 +136,32 @@ static inline f32 sqrtf32(f32 a)
 	while(SQRT_CR & SQRT_BUSY);
 	
 	return SQRT_RESULT32;
+	#endif
+	
+	#ifdef WIN32
+	uint32_t op  = a;
+    uint32_t res = 0;
+    uint32_t one = 1uL << 30; // The second-to-top bit is set: use 1u << 14 for uint16_t type; use 1uL<<30 for uint32_t type
+
+
+    // "one" starts at the highest power of four <= than the argument.
+    while (one > op)
+    {
+        one >>= 2;
+    }
+
+    while (one != 0)
+    {
+        if (op >= res + one)
+        {
+            op = op - (res + one);
+            res = res +  2 * one;
+        }
+        res >>= 1;
+        one >>= 2;
+    }
+    return res;
+	#endif
 }
 
 ///////////////////////////////////////////////////////////////
