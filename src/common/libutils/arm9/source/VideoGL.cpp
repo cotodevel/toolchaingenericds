@@ -28,7 +28,7 @@
 //   0.2: Added gluFrustrum, gluPerspective, and gluLookAt
 //			Converted all floating point math to fixed point
 //	 0.3: Display lists added thanks to mike260	
-//	 0.4: Update GL specs from OpenGL 1.0 to OpenGL 1.1 which enables Textures Objects (Coto)
+//	 0.4: Update GL specs from OpenGL 1.0 to OpenGL 1.1 which enables OpenGL standard Display Lists (Coto)
 //////////////////////////////////////////////////////////////////////
 
 #include "VideoGL.h"
@@ -45,24 +45,41 @@
 #include "dsregs.h"
 #endif
 
-
 #ifdef WIN32
 //disable _CRT_SECURE_NO_WARNINGS message to build this in VC++
 #pragma warning(disable:4996)
 #include "TGDSTypes.h"
 #endif
 
-//lut resolution for trig functions (must be power of two and must be the same as LUT resolution)
-//in other words dont change unless you also change your LUTs
-#define LUT_SIZE (512)
-#define LUT_MASK (0x1FF)
-
-#ifdef ARM9
-__attribute__((section(".dtcm")))
-#endif
-bool isNdsDisplayListUtilsCallList;
+//////////////////////////////////////////////////////////// Standard OpenGL 1.x start //////////////////////////////////////////
 struct GLContext globalGLCtx;
-u32 SingleUnpackedGXCommand_DL_Binary[GX_TOP_PARAMS_SIZE+1];
+static uint16 enable_bits = GL_TEXTURE_2D | (1<<13) | (1<<14);
+
+//Internal Unpacked GX buffer
+	u32 InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_internalSize];
+	u32 InternalUnpackedGX_DL_Binary_StandardOGLPtr;			//First 4K
+	u32 InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;	//Second 4K
+	
+	u32 SingleUnpackedGXCommand_DL_Binary[PHYS_GXFIFO_INTERNAL_SIZE]; //Unpacked single command GX Buffer
+//Initializes the NDS OpenGL system
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
+void glInit(){
+	memset((u8*)&globalGLCtx, 0, sizeof(struct GLContext));
+	glShadeModel(GL_SMOOTH);
+	InternalUnpackedGX_DL_Binary_StandardOGLPtr=0; //1st 4K
+	InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr=0; //2nd 4K
+	memset(getInternalUnpackedDisplayListBuffer_StandardOGLCurOffset(), 0, InternalUnpackedGX_DL_workSize);
+	memset(getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(), 0, InternalUnpackedGX_DL_workSize);
+	globalGLCtx.mode = GL_COMPILE;
+    isCustomDisplayList = false;
+}
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -73,10 +90,12 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glPushMatrix(void){
-	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = getMTX_PUSH();
-		InternalUnpackedGX_DL_BinaryPtr++;
-		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, getMTX_PUSH(), 0);
+	u32 * savedDLBuffderOffsetPtr = (isAnOpenGLExtendedDisplayListCallList == false) ? (u32*)&InternalUnpackedGX_DL_Binary_StandardOGLPtr : (u32*)&InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
+	u32 baseGXDLOffset = (isAnOpenGLExtendedDisplayListCallList == false) ? 0 : InternalUnpackedGX_DL_workSize;
+	if(((int)((*savedDLBuffderOffsetPtr)+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = getMTX_PUSH();
+		(*savedDLBuffderOffsetPtr)++;
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBuffderOffsetPtr, getMTX_PUSH(), 0);
 	}
 }
 
@@ -89,18 +108,17 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glPopMatrix(sint32 index){
-	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = getMTX_POP();
-		InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)index;
-		InternalUnpackedGX_DL_BinaryPtr++;
-		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, getMTX_POP(), 0);
+	u32 * savedDLBuffderOffsetPtr = (isAnOpenGLExtendedDisplayListCallList == false) ? (u32*)&InternalUnpackedGX_DL_Binary_StandardOGLPtr : (u32*)&InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
+	u32 baseGXDLOffset = (isAnOpenGLExtendedDisplayListCallList == false) ? 0 : InternalUnpackedGX_DL_workSize;
+	if(((int)((*savedDLBuffderOffsetPtr)+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = getMTX_POP();
+		(*savedDLBuffderOffsetPtr)++;
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)index;
+		(*savedDLBuffderOffsetPtr)++;
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBuffderOffsetPtr, getMTX_POP(), 0);
 	}
 }
 
-
-//Not OpenGL standard, but decides wether we're running an OpenGL Display List or a direct GX Display List command.
-//If direct GX Display List command, A SINGLE COMMAND is executed inmediately (enumerated by internal DL Pointer), then the internal DL pointer is substracted.
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("O0")))
@@ -110,7 +128,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 void handleInmediateGXDisplayList(u32 * sourcePhysDisplayList, u32 * sourcePhysDisplayListPtr, u8 cmdSource, int alternateParamsCount){
-	if(isNdsDisplayListUtilsCallList == false){
+	if((isCustomDisplayList == false) && (isAnOpenGLExtendedDisplayListCallList == false)){ //Only run Standard Open GL calls. Extended OpenGL DL CallLists are ran from standard-specific CallList() opcodes
 		//Identify cmdSource, if not exists, use alternateParamsCount instead (cmd(s) + arg(s) count)
 		int cmdCount = 0;
 		if(isAGXCommand((u32)cmdSource) == true){
@@ -120,12 +138,15 @@ void handleInmediateGXDisplayList(u32 * sourcePhysDisplayList, u32 * sourcePhysD
 			cmdCount = (alternateParamsCount*4);
 		}
 		if(cmdCount > 0){
-			//substract cmdCount from current InternalUnpackedGX_DL_BinaryPtr, get buffer src and copy to target buffer, by cmdCount count, and run
-			*sourcePhysDisplayListPtr = (*sourcePhysDisplayListPtr - (cmdCount/4)); //Point to discarded cmd + arg list start since we already consumed it.
-			memset(SingleUnpackedGXCommand_DL_Binary, 0, sizeof(SingleUnpackedGXCommand_DL_Binary));
+			//substract cmdCount from current sourcePhysDisplayListPtr, get buffer src and copy to target buffer, by cmdCount count, and run
+			*sourcePhysDisplayListPtr = (*sourcePhysDisplayListPtr - (cmdCount/4)); //Rewind cmd + arg list to use then restore the original DL offset so it's reentrant in order to prevents overflow.
+			if(cmdCount > PHYS_GXFIFO_INTERNAL_SIZE){
+				cmdCount = PHYS_GXFIFO_INTERNAL_SIZE;
+			}
+			memset(SingleUnpackedGXCommand_DL_Binary, 0, PHYS_GXFIFO_INTERNAL_SIZE);
 			SingleUnpackedGXCommand_DL_Binary[0] = (u32)cmdCount;
 			memcpy((u8*)&SingleUnpackedGXCommand_DL_Binary[1], (u8*)&sourcePhysDisplayList[*sourcePhysDisplayListPtr], cmdCount);
-			
+
 			#ifdef WIN32
 			if(cmdSource == MTX_ROTATE_Z){
 				printf("\n\n\n\n\n!!!!!![CUSTOM COMMAND: MTX_ROTATE_Z]!!!!!!\n");
@@ -474,12 +495,14 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glStoreMatrix(sint32 index){
-	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
+	u32 * savedDLBuffderOffsetPtr = (isAnOpenGLExtendedDisplayListCallList == false) ? (u32*)&InternalUnpackedGX_DL_Binary_StandardOGLPtr : (u32*)&InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
+	u32 baseGXDLOffset = (isAnOpenGLExtendedDisplayListCallList == false) ? 0 : InternalUnpackedGX_DL_workSize;
+	if(((int)((*savedDLBuffderOffsetPtr)+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 		//400044Ch - Cmd 13h - MTX_STORE - Store Current Matrix on Stack (W). Sets [N]=C. The stack pointer S is not used, and is left unchanged.
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getMTX_STORE(); //Unpacked Command format
-		InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)(index&0x1f); InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
-		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, getMTX_STORE(), 0);
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)getMTX_STORE(); //Unpacked Command format
+		(*savedDLBuffderOffsetPtr)++;
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)(index&0x1f); (*savedDLBuffderOffsetPtr)++; //Unpacked Command format
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBuffderOffsetPtr, getMTX_STORE(), 0);
 	}
 }
 
@@ -520,14 +543,16 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glTranslate3f32(f32 x, f32 y, f32 z){
-	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
+	u32 * savedDLBuffderOffsetPtr = (isAnOpenGLExtendedDisplayListCallList == false) ? (u32*)&InternalUnpackedGX_DL_Binary_StandardOGLPtr : (u32*)&InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
+	u32 baseGXDLOffset = (isAnOpenGLExtendedDisplayListCallList == false) ? 0 : InternalUnpackedGX_DL_workSize;
+	if(((int)((*savedDLBuffderOffsetPtr)+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 		//MTX_TRANS: Sets C=M*C. Parameters: 3, m[0..2] (x,y,z position)
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] =(getMTX_TRANS()); //Unpacked Command format
-		InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)(x); InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)(y); InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)(z); InternalUnpackedGX_DL_BinaryPtr++;
-		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, getMTX_TRANS(), 0);
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] =(getMTX_TRANS()); //Unpacked Command format
+		(*savedDLBuffderOffsetPtr)++;
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)(x); (*savedDLBuffderOffsetPtr)++; //Unpacked Command format
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)(y); (*savedDLBuffderOffsetPtr)++;
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)(z); (*savedDLBuffderOffsetPtr)++;
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], (u32*)savedDLBuffderOffsetPtr, getMTX_TRANS(), 0);
 	}
 }
 
@@ -594,11 +619,13 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glLoadIdentity(void){
-	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
+	u32 * savedDLBuffderOffsetPtr = (isAnOpenGLExtendedDisplayListCallList == false) ? (u32*)&InternalUnpackedGX_DL_Binary_StandardOGLPtr : (u32*)&InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
+	u32 baseGXDLOffset = (isAnOpenGLExtendedDisplayListCallList == false) ? 0 : InternalUnpackedGX_DL_workSize;
+	if(((int)((*savedDLBuffderOffsetPtr)+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 		//4000454h 15h -  19  MTX_IDENTITY - Load Unit(Identity) Matrix to Current Matrix (W)
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getMTX_IDENTITY(); //Unpacked Command format
-		InternalUnpackedGX_DL_BinaryPtr++;
-		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, getMTX_IDENTITY(), 0);
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)getMTX_IDENTITY(); //Unpacked Command format
+		(*savedDLBuffderOffsetPtr)++;
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBuffderOffsetPtr, getMTX_IDENTITY(), 0);
 	}
 }
 
@@ -611,12 +638,14 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glMatrixMode(int mode){
-	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
+	u32 * savedDLBuffderOffsetPtr = (isAnOpenGLExtendedDisplayListCallList == false) ? (u32*)&InternalUnpackedGX_DL_Binary_StandardOGLPtr : (u32*)&InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
+	u32 baseGXDLOffset = (isAnOpenGLExtendedDisplayListCallList == false) ? 0 : InternalUnpackedGX_DL_workSize;
+	if(((int)((*savedDLBuffderOffsetPtr)+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 		//4000440h 10h 1  1   MTX_MODE - Set Matrix Mode (W)
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getMTX_MODE(); //Unpacked Command format
-		InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)(mode); InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
-		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, getMTX_MODE(), 0);
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)getMTX_MODE(); //Unpacked Command format
+		(*savedDLBuffderOffsetPtr)++;
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)(mode); (*savedDLBuffderOffsetPtr)++; //Unpacked Command format
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBuffderOffsetPtr, getMTX_MODE(), 0);
 	}
 }
 
@@ -665,12 +694,14 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glViewport(uint8 x1, uint8 y1, uint8 x2, uint8 y2){
-	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
+	u32 * savedDLBuffderOffsetPtr = (isAnOpenGLExtendedDisplayListCallList == false) ? (u32*)&InternalUnpackedGX_DL_Binary_StandardOGLPtr : (u32*)&InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
+	u32 baseGXDLOffset = (isAnOpenGLExtendedDisplayListCallList == false) ? 0 : InternalUnpackedGX_DL_workSize;
+	if(((int)((*savedDLBuffderOffsetPtr)+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 		//4000580h 60h 1  1   VIEWPORT - Set Viewport (W)
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getVIEWPORT(); //Unpacked Command format
-		InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)((x1) + (y1 << 8) + (x2 << 16) + (y2 << 24)); InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
-		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, getVIEWPORT(), 0);
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)getVIEWPORT(); //Unpacked Command format
+		(*savedDLBuffderOffsetPtr)++;
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)((x1) + (y1 << 8) + (x2 << 16) + (y2 << 24)); (*savedDLBuffderOffsetPtr)++; //Unpacked Command format
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBuffderOffsetPtr, getVIEWPORT(), 0);
 	}
 }
 
@@ -747,8 +778,6 @@ void glTranslatef(float x, float y, float z){
 	glTranslate3f32(floattof32(x), floattof32(y), floattof32(z));
 }
 
-static uint16 enable_bits = GL_TEXTURE_2D | (1<<13) | (1<<14);
-
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("O0")))
@@ -791,7 +820,6 @@ void glFlush(void){
 	#endif
 }
 
-//////////////////////////////////////////////////////////////////////
 //OpenGL states this behaves the same as glFlush but also CPU waits for all commands to be executed by the GPU
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -943,9 +971,11 @@ __attribute__ ((optnone))
 void glRotateZi(int angle){
 	f32 sine = SIN[angle &  LUT_MASK];
 	f32 cosine = COS[angle & LUT_MASK];
-	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
-		isNdsDisplayListUtilsCallList = true; //Begin manual GX Display List
-		u32 argCnt = InternalUnpackedGX_DL_BinaryPtr;
+	u32 * savedDLBuffderOffsetPtr = (isAnOpenGLExtendedDisplayListCallList == false) ? (u32*)&InternalUnpackedGX_DL_Binary_StandardOGLPtr : (u32*)&InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
+	u32 baseGXDLOffset = (isAnOpenGLExtendedDisplayListCallList == false) ? 0 : InternalUnpackedGX_DL_workSize;
+	if(((int)((*savedDLBuffderOffsetPtr)+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
+		isCustomDisplayList = true; //Begin manual GX Display List
+		u32 argCnt = (*savedDLBuffderOffsetPtr);
 		{
 			//Rotate Z DL:
 			//Identity Matrix
@@ -963,19 +993,19 @@ void glRotateZi(int angle){
 			//Mul(Rotate)
 			//4000468h - Cmd 1Ah - MTX_MULT_3x3 - Multiply Current Matrix by 3x3 Matrix (W)
 			//Sets C=M*C. Parameters: 9, m[0..8]
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getMTX_MULT_3x3(); InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)cosine; InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)sine; InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)-sine; InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)cosine; InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)inttof32(1); InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)getMTX_MULT_3x3(); (*savedDLBuffderOffsetPtr)++; //Unpacked Command format
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)cosine; (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)sine; (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)0; (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)-sine; (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)cosine; (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)0; (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)0; (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)0; (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)inttof32(1); (*savedDLBuffderOffsetPtr)++;
 		}
-		isNdsDisplayListUtilsCallList = false; //End manual GX Display List
-		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, MTX_ROTATE_Z, InternalUnpackedGX_DL_BinaryPtr - argCnt);
+		isCustomDisplayList = false; //End manual GX Display List
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBuffderOffsetPtr, MTX_ROTATE_Z, (*savedDLBuffderOffsetPtr) - argCnt);
 	}
 }
 
@@ -990,9 +1020,11 @@ __attribute__ ((optnone))
 void glRotateYi(int angle){
 	f32 sine = SIN[angle &  LUT_MASK];
 	f32 cosine = COS[angle & LUT_MASK];
-	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
-		isNdsDisplayListUtilsCallList = true; //Begin manual GX Display List
-		u32 argCnt = InternalUnpackedGX_DL_BinaryPtr;
+	u32 * savedDLBuffderOffsetPtr = (isAnOpenGLExtendedDisplayListCallList == false) ? (u32*)&InternalUnpackedGX_DL_Binary_StandardOGLPtr : (u32*)&InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
+	u32 baseGXDLOffset = (isAnOpenGLExtendedDisplayListCallList == false) ? 0 : InternalUnpackedGX_DL_workSize;
+	if(((int)((*savedDLBuffderOffsetPtr)+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
+		isCustomDisplayList = true; //Begin manual GX Display List
+		u32 argCnt = (*savedDLBuffderOffsetPtr);
 		{
 			//Rotate Y DL:
 			//Identity Matrix
@@ -1010,19 +1042,19 @@ void glRotateYi(int angle){
 			//Mul(Rotate)
 			//4000468h - Cmd 1Ah - MTX_MULT_3x3 - Multiply Current Matrix by 3x3 Matrix (W)
 			//Sets C=M*C. Parameters: 9, m[0..8]
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getMTX_MULT_3x3(); InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)cosine; InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)-sine; InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)inttof32(1); InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)sine; InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)cosine; InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)getMTX_MULT_3x3(); (*savedDLBuffderOffsetPtr)++; //Unpacked Command format
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)cosine; (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)0; (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)-sine; (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)0; (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)inttof32(1); (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)0; (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)sine; (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)0; (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)cosine; (*savedDLBuffderOffsetPtr)++;
 		}
-		isNdsDisplayListUtilsCallList = false; //End manual GX Display List
-		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, MTX_ROTATE_Y, InternalUnpackedGX_DL_BinaryPtr - argCnt);	
+		isCustomDisplayList = false; //End manual GX Display List
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBuffderOffsetPtr, MTX_ROTATE_Y, (*savedDLBuffderOffsetPtr) - argCnt);	
 	}
 }
 
@@ -1037,10 +1069,11 @@ __attribute__ ((optnone))
 void glRotateXi(int angle){
   f32 sine = SIN[angle &  LUT_MASK];
   f32 cosine = COS[angle & LUT_MASK];
-
-  if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
-	  	isNdsDisplayListUtilsCallList = true; //Begin manual GX Display List
-		u32 argCnt = InternalUnpackedGX_DL_BinaryPtr;
+  u32 * savedDLBuffderOffsetPtr = (isAnOpenGLExtendedDisplayListCallList == false) ? (u32*)&InternalUnpackedGX_DL_Binary_StandardOGLPtr : (u32*)&InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
+  u32 baseGXDLOffset = (isAnOpenGLExtendedDisplayListCallList == false) ? 0 : InternalUnpackedGX_DL_workSize;
+  if(((int)((*savedDLBuffderOffsetPtr)+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
+	  	isCustomDisplayList = true; //Begin manual GX Display List
+		u32 argCnt = (*savedDLBuffderOffsetPtr);
 		{
 			//Rotate X DL:
 			//Identity Matrix
@@ -1058,19 +1091,19 @@ void glRotateXi(int angle){
 			//Mul(Rotate)
 			//4000468h - Cmd 1Ah - MTX_MULT_3x3 - Multiply Current Matrix by 3x3 Matrix (W)
 			//Sets C=M*C. Parameters: 9, m[0..8]
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getMTX_MULT_3x3(); InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)inttof32(1); InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)cosine; InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)sine; InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)-sine; InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)cosine; InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)getMTX_MULT_3x3(); (*savedDLBuffderOffsetPtr)++; //Unpacked Command format
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)inttof32(1); (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)0; (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)0; (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)0; (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)cosine; (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)sine; (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)0; (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)-sine; (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)cosine; (*savedDLBuffderOffsetPtr)++;
 		}
-		isNdsDisplayListUtilsCallList = false; //End manual GX Display List
-		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, MTX_ROTATE_X, InternalUnpackedGX_DL_BinaryPtr - argCnt);
+		isCustomDisplayList = false; //End manual GX Display List
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBuffderOffsetPtr, MTX_ROTATE_X, (*savedDLBuffderOffsetPtr) - argCnt);
 	}
 }
 
@@ -1160,33 +1193,35 @@ void gluLookAtf32(f32 eyex, f32 eyey, f32 eyez, f32 lookAtx, f32 lookAty, f32 lo
 	normalizef32(x);
 	normalizef32(y);
 	
-	isNdsDisplayListUtilsCallList = true; //Begin manual GX Display List
-	u32 argCnt = InternalUnpackedGX_DL_BinaryPtr;
+	u32 * savedDLBuffderOffsetPtr = (isAnOpenGLExtendedDisplayListCallList == false) ? (u32*)&InternalUnpackedGX_DL_Binary_StandardOGLPtr : (u32*)&InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
+	u32 baseGXDLOffset = (isAnOpenGLExtendedDisplayListCallList == false) ? 0 : InternalUnpackedGX_DL_workSize;
+	isCustomDisplayList = true; //Begin manual GX Display List
+	u32 argCnt = (*savedDLBuffderOffsetPtr);
 	{
 		glMatrixMode(GL_MODELVIEW);
 		//400045Ch 17h 12 30  MTX_LOAD_4x3 - Load 4x3 Matrix to Current Matrix (W)
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getMTX_LOAD_4x3(); //Unpacked Command format
-		InternalUnpackedGX_DL_BinaryPtr++;
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)getMTX_LOAD_4x3(); //Unpacked Command format
+		(*savedDLBuffderOffsetPtr)++;
 
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)x[0]; InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)x[1]; InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)x[2]; InternalUnpackedGX_DL_BinaryPtr++;
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)x[0]; (*savedDLBuffderOffsetPtr)++;
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)x[1]; (*savedDLBuffderOffsetPtr)++;
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)x[2]; (*savedDLBuffderOffsetPtr)++;
 		
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)y[0]; InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)y[1]; InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)y[2]; InternalUnpackedGX_DL_BinaryPtr++;
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)y[0]; (*savedDLBuffderOffsetPtr)++;
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)y[1]; (*savedDLBuffderOffsetPtr)++;
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)y[2]; (*savedDLBuffderOffsetPtr)++;
 		
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)z[0]; InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)z[1]; InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)z[2]; InternalUnpackedGX_DL_BinaryPtr++;
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)z[0]; (*savedDLBuffderOffsetPtr)++;
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)z[1]; (*savedDLBuffderOffsetPtr)++;
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)z[2]; (*savedDLBuffderOffsetPtr)++;
 		
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)floattof32(-1.0); InternalUnpackedGX_DL_BinaryPtr++;
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)0; (*savedDLBuffderOffsetPtr)++;
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)0; (*savedDLBuffderOffsetPtr)++;
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)floattof32(-1.0); (*savedDLBuffderOffsetPtr)++;
 		glTranslate3f32(-eyex, -eyey, -eyez);
 	}
-	isNdsDisplayListUtilsCallList = false; //End manual GX Display List
-	handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, MTX_LOOKAT, InternalUnpackedGX_DL_BinaryPtr - argCnt);
+	isCustomDisplayList = false; //End manual GX Display List
+	handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBuffderOffsetPtr, MTX_LOOKAT, (*savedDLBuffderOffsetPtr) - argCnt);
 }
 
 //  glu wrapper for standard float call
@@ -1213,38 +1248,40 @@ __attribute__ ((optnone))
 #endif
 #endif
 void gluFrustumf32(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far){
-	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
-		isNdsDisplayListUtilsCallList = true; //Begin manual GX Display List
-		u32 argCnt = InternalUnpackedGX_DL_BinaryPtr;
+	u32 * savedDLBuffderOffsetPtr = (isAnOpenGLExtendedDisplayListCallList == false) ? (u32*)&InternalUnpackedGX_DL_Binary_StandardOGLPtr : (u32*)&InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
+	u32 baseGXDLOffset = (isAnOpenGLExtendedDisplayListCallList == false) ? 0 : InternalUnpackedGX_DL_workSize;
+	if(((int)((*savedDLBuffderOffsetPtr)+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
+		isCustomDisplayList = true; //Begin manual GX Display List
+		u32 argCnt = (*savedDLBuffderOffsetPtr);
 		{
 			glMatrixMode(GL_PROJECTION);
 			//4000458h 16h 16 34  MTX_LOAD_4x4 - Load 4x4 Matrix to Current Matrix (W)
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getMTX_LOAD_4x4(); //Unpacked Command format
-			InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)getMTX_LOAD_4x4(); //Unpacked Command format
+			(*savedDLBuffderOffsetPtr)++;
 
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)divf32(2*near, right - left); InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)divf32(right + left, right - left); InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)divf32(2*near, right - left); (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)0; (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)divf32(right + left, right - left); (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)0; (*savedDLBuffderOffsetPtr)++;
 		
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)divf32(2*near, top - bottom); InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)divf32(top + bottom, top - bottom); InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)0; (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)divf32(2*near, top - bottom); (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)divf32(top + bottom, top - bottom); (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)0; (*savedDLBuffderOffsetPtr)++;
 
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)-divf32(far + near, far - near); InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)floattof32(-1.0F); InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)0; (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)0; (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)-divf32(far + near, far - near); (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)floattof32(-1.0F); (*savedDLBuffderOffsetPtr)++;
 
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)-divf32(2 * mulf32(far, near), far - near); InternalUnpackedGX_DL_BinaryPtr++;
-			InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)0; InternalUnpackedGX_DL_BinaryPtr++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)0; (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)0; (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)-divf32(2 * mulf32(far, near), far - near); (*savedDLBuffderOffsetPtr)++;
+			InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)0; (*savedDLBuffderOffsetPtr)++;
 			glStoreMatrix(0);
 		}
-		isNdsDisplayListUtilsCallList = false; //End manual GX Display List
-		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, MTX_FRUSTRUM, InternalUnpackedGX_DL_BinaryPtr - argCnt);
+		isCustomDisplayList = false; //End manual GX Display List
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBuffderOffsetPtr, MTX_FRUSTRUM, (*savedDLBuffderOffsetPtr) - argCnt);
 	}
 }
 
@@ -1351,7 +1388,6 @@ __attribute__ ((optnone))
 void glMaterialf(int mode, rgb color){
   static uint32 diffuse_ambient = 0;
   static uint32 specular_emission = 0;
-
   switch(mode) {
     case GL_AMBIENT:
       diffuse_ambient = (color << 16) | (diffuse_ambient & 0xFFFF);
@@ -1371,7 +1407,6 @@ void glMaterialf(int mode, rgb color){
       specular_emission = (color << 16) | (specular_emission & 0xFFFF);
       break;
   }
-  
   GFX_DIFFUSE_AMBIENT = diffuse_ambient;
   GFX_SPECULAR_EMISSION = specular_emission;
 }
@@ -1804,21 +1839,6 @@ void glColor3f(float red, float green, float blue){
 	glColor3b(f32toint(floattof32(red)), f32toint(floattof32(green)), f32toint(floattof32(blue)));
 }
 
-//Must be called everytime a new videoGL context starts
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-void glInit(){
-	memset((u8*)&globalGLCtx, 0, sizeof(struct GLContext));
-	glShadeModel(GL_SMOOTH);
-	GLInitExt();
-}
-
 //Open GL 1.1 Implementation: Texture Objects support
 //glTexImage*() == glTexImage3D
 #ifdef ARM9
@@ -1936,7 +1956,6 @@ void glCallListGX(const u32* list) {
 	//must be 1:1 from isAGXCommand
 	u32 cmd = list[1];
 	int cmdParamCount = getAGXParamsCountFromCommand(cmd);
-	bool customDL = false;
 	if (cmd == (u32)getMTX_STORE()) {
 		strcpy(displayListName, "getMTX_STORE()");
 	}
@@ -1992,14 +2011,8 @@ void glCallListGX(const u32* list) {
 	///////////////Custom Display Lists
 	else{
 		strcpy(displayListName, "CUSTOM DISPLAY LIST");
-		customDL = true;
 	}
-	if(customDL == false){
-		printf("\n(WIN32)glCallListGX: Executing DL[%s]; Args:%d Size: %d\n",displayListName, cmdParamCount,(int)list[0]);
-	}
-	else{
-		printf("\n(WIN32)glCallListGX: Executing DL[%s]; Size: %d\n",displayListName, (int)list[0]);
-	}
+	printf("\n(WIN32)glCallListGX: Executing DL[%s]; Size: %d\n",displayListName, (int)list[0]);
 	#endif
 }
 
@@ -2020,6 +2033,330 @@ void glColor3fv(const GLfloat * v){
 	}
 }
 
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glTexCoord2f(GLfloat s, GLfloat t){
+	glTexCoord2t16(floattot16(s), floattot16(t));
+}
+
+//////////////////////////////////////////////////////////////////////
+//glTexCoord specifies texture coordinates in one, two, three, or four dimensions. 
+//glTexCoord1 sets the current texture coordinates to s 0 0 1 ; 
+//glTexCoord2 sets them to s t 0 1 . 
+//glTexCoord3 specifies the texture coordinates as s t r 1
+//glTexCoord4 defines all four components explicitly as s t r q .
+
+//Note: uv == ((u << 16) | (v & 0xFFFF))
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glTexCoord1i(uint32 uv){
+	u32 * savedDLBuffderOffsetPtr = (isAnOpenGLExtendedDisplayListCallList == false) ? (u32*)&InternalUnpackedGX_DL_Binary_StandardOGLPtr : (u32*)&InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
+	u32 baseGXDLOffset = (isAnOpenGLExtendedDisplayListCallList == false) ? 0 : InternalUnpackedGX_DL_workSize;
+	if(((int)((*savedDLBuffderOffsetPtr)+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
+		//4000488h 22h 1  1   TEXCOORD - Set Texture Coordinates (W)
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_TEX_COORD(); //Unpacked Command format
+		(*savedDLBuffderOffsetPtr)++;
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)uv; (*savedDLBuffderOffsetPtr)++; //Unpacked Command format
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBuffderOffsetPtr, getFIFO_TEX_COORD(), 0);
+	}
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glTexCoord2t16(t16 u, t16 v){
+	u32 * savedDLBuffderOffsetPtr = (isAnOpenGLExtendedDisplayListCallList == false) ? (u32*)&InternalUnpackedGX_DL_Binary_StandardOGLPtr : (u32*)&InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
+	u32 baseGXDLOffset = (isAnOpenGLExtendedDisplayListCallList == false) ? 0 : InternalUnpackedGX_DL_workSize;
+	if(((int)((*savedDLBuffderOffsetPtr)+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
+		//4000488h 22h 1  1   TEXCOORD - Set Texture Coordinates (W)
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_TEX_COORD(); //Unpacked Command format
+		(*savedDLBuffderOffsetPtr)++;
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)(u << 16) + v; (*savedDLBuffderOffsetPtr)++; //Unpacked Command format
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBuffderOffsetPtr, getFIFO_TEX_COORD(), 0);
+	}
+}
+
+//Primitive types
+//0  Separate Triangle(s)    ;3*N vertices per N triangles
+//1  Separate Quadliteral(s) ;4*N vertices per N quads
+//2  Triangle Strips         ;3+(N-1) vertices per N triangles
+//3  Quadliteral Strips      ;4+(N-1)*2 vertices per N quads
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glBegin(int primitiveType){
+	u32 * savedDLBuffderOffsetPtr = (isAnOpenGLExtendedDisplayListCallList == false) ? (u32*)&InternalUnpackedGX_DL_Binary_StandardOGLPtr : (u32*)&InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
+	u32 baseGXDLOffset = (isAnOpenGLExtendedDisplayListCallList == false) ? 0 : InternalUnpackedGX_DL_workSize;
+	if(((int)((*savedDLBuffderOffsetPtr)+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
+		//4000500h 40h 1  1   BEGIN_VTXS - Start of Vertex List (W)
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_BEGIN(); //Unpacked Command format
+		(*savedDLBuffderOffsetPtr)++;
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)primitiveType; (*savedDLBuffderOffsetPtr)++; //Unpacked Command format
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBuffderOffsetPtr, getFIFO_BEGIN(), 0);
+	}
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glEnd( void){
+	u32 * savedDLBuffderOffsetPtr = (isAnOpenGLExtendedDisplayListCallList == false) ? (u32*)&InternalUnpackedGX_DL_Binary_StandardOGLPtr : (u32*)&InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
+	u32 baseGXDLOffset = (isAnOpenGLExtendedDisplayListCallList == false) ? 0 : InternalUnpackedGX_DL_workSize;
+	if(((int)((*savedDLBuffderOffsetPtr)+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
+		//4000504h 41h -  1   END_VTXS - End of Vertex List (W)
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_END(); //Unpacked Command format
+		(*savedDLBuffderOffsetPtr)++;
+		//no args used by this GX command
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBuffderOffsetPtr, getFIFO_END(), 0);
+	}
+}
+
+u16 lastVertexColor = 0;
+//set the current color
+//4000480h - Cmd 20h - COLOR - Directly Set Vertex Color (W)
+//Parameter 1, Bit 0-4    Red
+//Parameter 1, Bit 5-9    Green
+//Parameter 1, Bit 10-14  Blue
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glColor3b(uint8 red, uint8 green, uint8 blue){
+	u32 * savedDLBuffderOffsetPtr = (isAnOpenGLExtendedDisplayListCallList == false) ? (u32*)&InternalUnpackedGX_DL_Binary_StandardOGLPtr : (u32*)&InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
+	u32 baseGXDLOffset = (isAnOpenGLExtendedDisplayListCallList == false) ? 0 : InternalUnpackedGX_DL_workSize;
+	if(((int)((*savedDLBuffderOffsetPtr)+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
+		u16 finalColor = 0;
+		switch(globalGLCtx.primitiveShadeModelMode){
+			//light vectors are todo
+			case(GL_FLAT):{
+				//otherwise override all colors to be the same subset of whatever color was passed here
+				if(lastVertexColor == 0){
+					lastVertexColor = RGB15(red, green, blue);
+				}
+				finalColor = lastVertexColor;
+			}
+			break;
+			
+			case(GL_SMOOTH):{
+				//Smooth shading, the default by DS, causes the computed colors of vertices to be interpolated as the primitive is rasterized, 
+				//typically assigning different colors to each resulting pixel fragment. 
+				finalColor = (vuint32)RGB15(red, green, blue);			
+			}
+			break;
+			
+			default:{
+				//error! call glInit(); first
+				return;
+			}
+			break;
+		}
+
+		//4000480h 20h 1  1   COLOR - Directly Set Vertex Color (W)
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_COLOR(); //Unpacked Command format
+		(*savedDLBuffderOffsetPtr)++;
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)finalColor; (*savedDLBuffderOffsetPtr)++; //Unpacked Command format
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBuffderOffsetPtr, getFIFO_COLOR(), 0);
+	}
+}
+
+//glNormal: Sets the current normal vector
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glNormal3b(
+	GLbyte nx,
+ 	GLbyte ny,
+ 	GLbyte nz
+){
+	glNormal3i((GLint)nx, (GLint)ny,(GLint)nz);
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glNormal3d(
+	GLdouble nx,
+ 	GLdouble ny,
+ 	GLdouble nz
+){
+	glNormal3f((GLfloat)nx, (GLfloat)ny, (GLfloat)nz);
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glNormal3f(
+	GLfloat nx,
+ 	GLfloat ny,
+ 	GLfloat nz
+){
+	u32 * savedDLBuffderOffsetPtr = (isAnOpenGLExtendedDisplayListCallList == false) ? (u32*)&InternalUnpackedGX_DL_Binary_StandardOGLPtr : (u32*)&InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
+	u32 baseGXDLOffset = (isAnOpenGLExtendedDisplayListCallList == false) ? 0 : InternalUnpackedGX_DL_workSize;
+	if(((int)((*savedDLBuffderOffsetPtr)+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_NORMAL(); //Unpacked Command format
+		(*savedDLBuffderOffsetPtr)++;
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)NORMAL_PACK(floattov10(nx),floattov10(ny),floattov10(nz)); (*savedDLBuffderOffsetPtr)++; //Unpacked Command format
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBuffderOffsetPtr, getFIFO_NORMAL(), 0);
+	}
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glNormal3s(
+	GLshort nx,
+ 	GLshort ny,
+ 	GLshort nz
+){
+	glNormal3i((GLint)nx, (GLint)ny,(GLint)nz);
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glNormal3i(
+	GLint nx,
+ 	GLint ny,
+ 	GLint nz
+){
+	u32 * savedDLBuffderOffsetPtr = (isAnOpenGLExtendedDisplayListCallList == false) ? (u32*)&InternalUnpackedGX_DL_Binary_StandardOGLPtr : (u32*)&InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
+	u32 baseGXDLOffset = (isAnOpenGLExtendedDisplayListCallList == false) ? 0 : InternalUnpackedGX_DL_workSize;
+	if(((int)((*savedDLBuffderOffsetPtr)+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_NORMAL(); //Unpacked Command format
+		(*savedDLBuffderOffsetPtr)++;
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)NORMAL_PACK(inttov10(nx),inttov10(ny),inttov10(nz)); (*savedDLBuffderOffsetPtr)++; //Unpacked Command format
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBuffderOffsetPtr, getFIFO_NORMAL(), 0);
+	}
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glVertex3v16(v16 x, v16 y, v16 z){
+	u32 * savedDLBuffderOffsetPtr = (isAnOpenGLExtendedDisplayListCallList == false) ? (u32*)&InternalUnpackedGX_DL_Binary_StandardOGLPtr : (u32*)&InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
+	u32 baseGXDLOffset = (isAnOpenGLExtendedDisplayListCallList == false) ? 0 : InternalUnpackedGX_DL_workSize;
+	if(((int)((*savedDLBuffderOffsetPtr)+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
+		//400048Ch 23h 2  9   VTX_16 - Set Vertex XYZ Coordinates (W)
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_VERTEX16(); //Unpacked Command format
+		(*savedDLBuffderOffsetPtr)++;
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)(y << 16) | (x & 0xFFFF); (*savedDLBuffderOffsetPtr)++; //Unpacked Command format
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)((uint32)(uint16)z); (*savedDLBuffderOffsetPtr)++; //Unpacked Command format
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBuffderOffsetPtr, getFIFO_VERTEX16(), 0);
+	}
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glVertex3v10(v10 x, v10 y, v10 z){
+	u32 * savedDLBuffderOffsetPtr = (isAnOpenGLExtendedDisplayListCallList == false) ? (u32*)&InternalUnpackedGX_DL_Binary_StandardOGLPtr : (u32*)&InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
+	u32 baseGXDLOffset = (isAnOpenGLExtendedDisplayListCallList == false) ? 0 : InternalUnpackedGX_DL_workSize;
+	if(((int)((*savedDLBuffderOffsetPtr)+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
+		//4000490h 24h 1  8   VTX_10 - Set Vertex XYZ Coordinates (W)
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_VERTEX10(); //Unpacked Command format
+		(*savedDLBuffderOffsetPtr)++;
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)VERTEX_PACKv10(x, y, z); (*savedDLBuffderOffsetPtr)++; //Unpacked Command format
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBuffderOffsetPtr, getFIFO_VERTEX10(), 0);
+	}
+}
+
+//Parameters. x. Specifies the x-coordinate of a vertex. y. Specifies the y-coordinate of a vertex
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void glVertex2v16(v16 x, v16 y){
+	u32 * savedDLBuffderOffsetPtr = (isAnOpenGLExtendedDisplayListCallList == false) ? (u32*)&InternalUnpackedGX_DL_Binary_StandardOGLPtr : (u32*)&InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
+	u32 baseGXDLOffset = (isAnOpenGLExtendedDisplayListCallList == false) ? 0 : InternalUnpackedGX_DL_workSize;
+	if(((int)((*savedDLBuffderOffsetPtr)+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
+		//4000494h 25h 1  8   VTX_XY - Set Vertex XY Coordinates (W)
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_VTX_XY(); //Unpacked Command format
+		(*savedDLBuffderOffsetPtr)++;
+		InternalUnpackedGX_DL_Binary[(*savedDLBuffderOffsetPtr) + baseGXDLOffset] = (u32)VERTEX_PACK(x, y); (*savedDLBuffderOffsetPtr)++; //Unpacked Command format
+		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBuffderOffsetPtr, getFIFO_VTX_XY(), 0);
+	}
+}
+
+//Todo
+//4000498h 26h 1  8   VTX_XZ - Set Vertex XZ Coordinates (W)
+//400049Ch 27h 1  8   VTX_YZ - Set Vertex YZ Coordinates (W)
+//40004A0h 28h 1  8   VTX_DIFF - Set Relative Vertex Coordinates (W)
+//////////////////////////////////////////////////////////// Standard OpenGL 1.x end //////////////////////////////////////////
+
+
+
+//////////////////////////////////////////////////////////// Extended Display List OpenGL 1.x start //////////////////////////////////////////
 //DL Notes: Are sent using unpacked format.
 //Unpacked Command format:
 //Opcodes that write more than one 32bit value (ie. STRD and STM) can be used to send ONE UNPACKED command, 
@@ -2027,42 +2364,18 @@ void glColor3fv(const GLfloat * v){
 //After that, there must be a 1 cycle delay before sending the next command 
 //(ie. one cannot sent more than one command at once with a single opcode, each command must be invoked by a new opcode).
 
-//GX hardware object descriptor: Holds current callList GL context from a GL index
-//struct ndsDisplayListDescriptor Internal_Descriptor_DL[InternalUnpackedGX_DL_Size];
-
-u32 InternalUnpackedGX_DL_BinaryPtr=0; 
-//GX hardware DL Commands, GL index is above descriptor
-u32 InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_Size]; //Internal Unpacked GX buffer
-//OpenGL DL internal Display Lists enumerator, holds current DL index pointed by internal InternalUnpackedGX_DL_BinaryPtr, starting from 0.
-GLsizei Compiled_DL_Binary_Descriptor[InternalUnpackedGX_DL_Size];
-
-//Gets the internal Display List buffer used by Display Lists Open GL opcodes.
 #ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((section(".dtcm")))
 #endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__((optnone))
-#endif
-#endif
-u32 * getInternalUnpackedDisplayListBuffer(){
-	return (u32 *)&InternalUnpackedGX_DL_Binary[0];
-}
+bool isCustomDisplayList; //Toggles either a custom DL is built or a SINGLE GX hardware one
+bool isAnOpenGLExtendedDisplayListCallList; //Toggles targeting either a single, or custom DL into the Standard OpenGL GX binary pipeline, or the extended OpenGL DisplayList GX binary pipeline.
 
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-int getInternalUnpackedDisplayListBufferSize(){
-	return sizeof(InternalUnpackedGX_DL_Binary);
-}
+u32 singleOpenGLCompiledDisplayList[InternalUnpackedGX_DL_workSize]; //2048 cmds per a single List should be enough
 
-//listBase
-GLsizei currentListPointer = DL_INVALID;
+//OpenGL DL internal Display Lists enumerator: stores multiple DL pointed by current InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr, starting from 0.
+GLsizei Compiled_DL_Binary_Descriptor[InternalUnpackedGX_DL_workSize];
+
+u32 LastOpenGLDisplayListStart=0; //enumerates last list allocated by glNewList()
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -2072,26 +2385,20 @@ __attribute__((optimize("O0")))
 __attribute__((optnone))
 #endif
 #endif
-void GLInitExt(){
-	u32 * CompiledDisplayListsBuffer = getInternalUnpackedDisplayListBuffer();
-	int CompiledDisplayListsBufferSize = getInternalUnpackedDisplayListBufferSize();
-	memset(CompiledDisplayListsBuffer, 0, CompiledDisplayListsBufferSize);
-	globalGLCtx.mode = GL_COMPILE;
-	InternalUnpackedGX_DL_BinaryPtr=0;
-	/*
-	int i = 0;
-	for(i = 0; i < InternalUnpackedGX_DL_Size; i++ ){
-		Internal_Descriptor_DL[i].DisplayListNameAssigned = DL_INVALID;
-		Internal_Descriptor_DL[i].isDisplayListAssigned = false;
-        Internal_Descriptor_DL[i].ndsDisplayListSize = DL_MAX_ITEMS;
-		int j = 0;
-        for(j = 0; j < Internal_Descriptor_DL[i].ndsDisplayListSize; j++){
-            Internal_Descriptor_DL[i].DL[j].displayListType = DL_INVALID;
-            Internal_Descriptor_DL[i].DL[j].index = j;
-            Internal_Descriptor_DL[i].DL[j].value = DL_INVALID;
-        }
-	}*/
-    isNdsDisplayListUtilsCallList = false;
+u32 * getInternalUnpackedDisplayListBuffer_StandardOGLCurOffset(){
+	return (u32 *)&InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_StandardOpenGLStartOffset + InternalUnpackedGX_DL_Binary_StandardOGLPtr];
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+u32 * getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(){
+	return (u32 *)&InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_OpenGLDisplayListStartOffset];
 }
 
 //glGenLists returns the first list name in a range of the length you pass to glGenLists.
@@ -2104,24 +2411,15 @@ __attribute__((optnone))
 #endif
 #endif
 GLuint glGenLists(GLsizei	range){
-    if(range < InternalUnpackedGX_DL_Size){
+    if(range < InternalUnpackedGX_DL_workSize){
         int i = 0;
-        InternalUnpackedGX_DL_BinaryPtr = 1; //GL index 0 is reserved for DL size
-		for(i = 0; i < 128; i++ ){
-            /*
-			Internal_Descriptor_DL[i].DisplayListNameAssigned = DL_INVALID;//glNewList() assigns the index (name of a display list) //=i;
-            Internal_Descriptor_DL[i].isDisplayListAssigned = true;
-            Internal_Descriptor_DL[i].ndsDisplayListSize = DL_MAX_ITEMS;
-			int j = 0;
-            for(j = 0; j < Internal_Descriptor_DL[i].ndsDisplayListSize; j++){
-                Internal_Descriptor_DL[i].DL[j].displayListType = DL_INVALID;
-                Internal_Descriptor_DL[i].DL[j].index = j;
-                Internal_Descriptor_DL[i].DL[j].value = DL_INVALID;
-            }
-			*/
-			Compiled_DL_Binary_Descriptor[i] = DL_INVALID; //Compiled_DL_Binary_Descriptor[i] = InternalUnpackedGX_DL_BinaryPtr; //only mapped from glNewList()
+		for(i = 0; i < InternalUnpackedGX_DL_workSize; i++ ){
+			Compiled_DL_Binary_Descriptor[i] = DL_INVALID; //Compiled_DL_Binary_Descriptor[i] = InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr; //only mapped from glNewList()
 		}
-        return InternalUnpackedGX_DL_BinaryPtr; //starts from range of said length
+		isAnOpenGLExtendedDisplayListCallList = false; //cut-off incoming new OpenGL extended DLs
+		LastOpenGLDisplayListStart=0; //reset to default list start
+		InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = 1; //OFFSET 0 IS DL SIZE
+        return InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr; //starts from range of said length
     }
     return 0;
 }
@@ -2140,7 +2438,9 @@ void glListBase(GLuint base){
 	if(base > 0){
 		base--;
 	}
-	InternalUnpackedGX_DL_BinaryPtr = InternalUnpackedGX_DL_BinaryPtr + base;
+	if((u32)Compiled_DL_Binary_Descriptor[base] != (u32)DL_INVALID){
+		InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = Compiled_DL_Binary_Descriptor[base];
+	}
 }
 
 //glIsList returns GL_TRUE if list is the name of a display list and returns GL_FALSE if it is not, or if an error occurs.
@@ -2177,11 +2477,11 @@ __attribute__((optnone))
 #endif
 void glNewList(GLuint list, GLenum mode){
 	if(list >= 1){
-		list--; //assign current InternalUnpackedGX_DL_BinaryPtr (new) to a List
+		list--; //assign current InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr (new) to a List
 	}
-	Compiled_DL_Binary_Descriptor[list] = InternalUnpackedGX_DL_BinaryPtr;
+	Compiled_DL_Binary_Descriptor[list] = InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr + 1; //OFFSET 0 IS DL SIZE
 	globalGLCtx.mode = (u32)mode;
-	isNdsDisplayListUtilsCallList = true;
+	isAnOpenGLExtendedDisplayListCallList = true;
 }
 
 //When glEndList is encountered, the display-list definition is completed 
@@ -2200,32 +2500,23 @@ void glEndList(void){
 	//Else If LAST display-list name is GL_COMPILE_AND_EXECUTE: actually builds ALL the Display-list generated through the LAST display-list name generated from glNewList(), then compiles it into a GX binary DL and executes it inmediately through GX GLCallList()
 	
 	//define List Size
-	int listSize = (InternalUnpackedGX_DL_BinaryPtr * 4) + 4;
-	InternalUnpackedGX_DL_Binary[0] = (u32)listSize;
+	int listSize = ((InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr - LastOpenGLDisplayListStart) * 4) + 4;
+	InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_OpenGLDisplayListStartOffset + LastOpenGLDisplayListStart] = (u32)listSize;
+	u32 targetGXDLOffset = InternalUnpackedGX_DL_OpenGLDisplayListStartOffset + LastOpenGLDisplayListStart;
+	LastOpenGLDisplayListStart = InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 
-	//Close the list, build the list, execute it if needed
-	InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = getFIFO_END();
-	InternalUnpackedGX_DL_BinaryPtr++;
-
-	//not using Packed Command... int builtDisplayListSize = CompilePackedNDSGXDisplayListFromObject((u32*)&InternalUnpackedGX_DL_Binary[0], &Compiled_DL) + 1;
 	if(globalGLCtx.mode == GL_COMPILE_AND_EXECUTE){
-		glCallListGX((const u32*)&InternalUnpackedGX_DL_Binary[0]); //Using Unpacked Command instead
-
-		//List already consumed. Reset GX Compiled Display List
-		InternalUnpackedGX_DL_BinaryPtr = 1;
-		memset((char*)&InternalUnpackedGX_DL_Binary[0], 0, sizeof(InternalUnpackedGX_DL_Binary));
+		glCallListGX((const u32*)&InternalUnpackedGX_DL_Binary[targetGXDLOffset]); //Using Unpacked Command instead
 	}
-	isNdsDisplayListUtilsCallList = false;
+	isAnOpenGLExtendedDisplayListCallList = false;
 }
 
 /*
 OpenGL Display List execution which implements the lower level GX hardware Display Lists execution.
-
 params: 
 list
 Specifies the integer name of the display list to be executed.
 */
-u32 singleOpenGLCompiledDisplayList[2048]; //2048 cmds per a single List should be enough
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("O0")))
@@ -2235,37 +2526,24 @@ __attribute__((optnone))
 #endif
 #endif
 void glCallList(GLuint list){
-	u32 * InternalDL = getInternalUnpackedDisplayListBuffer();
+	if(list > 0){
+		list--;
+	}
+	u32 * InternalDL = getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr();
 	int curDLInCompiledDLOffset = Compiled_DL_Binary_Descriptor[list];
 	if((u32)curDLInCompiledDLOffset != DL_INVALID){
+		curDLInCompiledDLOffset-=2; //-1 because DL starts at 1 (0 reserved for size) and -1 because conversion from natural integer (1 from logical OpenGL DL start) to DL start offset 
 		u32 * currentPhysicalDisplayListStart = (u32 *)&InternalDL[curDLInCompiledDLOffset];
-		u32 * currentPhysicalDisplayListEnd = NULL;
-
-		int nextDLInCompiledDLOffset = Compiled_DL_Binary_Descriptor[list+1];
-		if(
-			((u32)nextDLInCompiledDLOffset != DL_INVALID)
-			||
-			( (u32)InternalDL[nextDLInCompiledDLOffset] == (u32)getFIFO_END() ) //Means no last cmd End. Commands are processed in unpacked format
-			){
-			currentPhysicalDisplayListEnd = (u32 *)&InternalDL[nextDLInCompiledDLOffset];
-		}
-		//means we are at the last list. Copy everything until getFIFO_END()
-		else{
-			u32 * currentPhysicalDisplayListEndCopy = currentPhysicalDisplayListStart;
-			while( ((u32)*(currentPhysicalDisplayListEndCopy)) != (u32)getFIFO_END() ){
-				currentPhysicalDisplayListEndCopy++;
-			}
-			currentPhysicalDisplayListEnd = currentPhysicalDisplayListEndCopy + 1; //a whole packed command is 4 bytes
-			//printf("[List: %d]got end of list: %x", list, currentPhysicalDisplayListEnd);
-			//printf("liststart: %x", currentPhysicalDisplayListStart);			
-		}
-		int singleListSize = (currentPhysicalDisplayListEnd - currentPhysicalDisplayListStart) * 4;
+		int singleListSize = *currentPhysicalDisplayListStart;
+		currentPhysicalDisplayListStart++;
 		if(singleListSize > 0){
 			//Run a single GX Display List, having proper DL size
-			memcpy((u8*)&singleOpenGLCompiledDisplayList[1], currentPhysicalDisplayListStart, singleListSize);
-			singleOpenGLCompiledDisplayList[0] = (u32)singleListSize;
+			memcpy((u8*)&singleOpenGLCompiledDisplayList[0], currentPhysicalDisplayListStart, singleListSize);
 			u32 customsingleOpenGLCompiledDisplayListPtr = (singleListSize/4); //account the internal pointer ahead because DLs executed later are treated as the internal DL GX Binary
-			handleInmediateGXDisplayList((u32*)&singleOpenGLCompiledDisplayList[0], (u32*)&customsingleOpenGLCompiledDisplayListPtr, OPENGL_DL_TO_GX_DL_EXEC_CMD, (currentPhysicalDisplayListEnd - currentPhysicalDisplayListStart)); //glCallListGX((const u32*)&singleOpenGLCompiledDisplayList[0]);
+			handleInmediateGXDisplayList((u32*)&singleOpenGLCompiledDisplayList[0], (u32*)&customsingleOpenGLCompiledDisplayListPtr, OPENGL_DL_TO_GX_DL_EXEC_CMD, singleListSize/4); 
+			#ifdef WIN32
+			printf("//////////////////////[OpenGL CallList: %d]//////////////////////////", list);
+			#endif
 		}
 		else{
 			//printf("glCallList():This OpenGL list name(%d)'s InternalDL offset points to InternalDL GX end (no more GX DL after this)", (u32)list);
@@ -2273,6 +2551,20 @@ void glCallList(GLuint list){
 	}
 }
 
+/*
+ Using display lists
+We have seen how to creates a display list.
+You should now want to use it :
+    gl.glCallList(list)
+
+You probably wants to call multiple lists :
+    gl.glListBase(listBase)
+    gl.glCallLists(nbLists, type, referenceOffsets)
+The first method select the display list refered by listBase as the base list. Indices in the referenceOffsets array are counter by considering that listBase is 0.
+nbLists is the number of lists that should be called.
+type is the type of information stored in referenceOffsets. It is typically : GL_UNSIGNED_BYTE, GL_SHORT, GL_UNSIGNED_SHORT, GL_INT or GL_UNSIGNED_INT.
+indiceOffset is an array that holds offset reference to the desired list to call by comparison to listBase (Ex: if listBase = 100 and you want to draw a list refered by 103, its offset reference is 3).
+*/
 /*
 OpenGL Display Lists collection execution. For each list it'll be executed as a single OpenGL Display List
 
@@ -2376,13 +2668,13 @@ void glCallLists(GLsizei n, GLenum type, const void * lists){
 				&&				//	|| Prevent out-of-bound lists
 				(listName >= 0)	//
 			){
-				//printf("glCallLists(): trying list: %d", listName);
 				glCallList(listName);
 			}
 		}
 	}
 }
 
+//Note: It's assumed DisplayLists are at the end of the physical DL GX Binary. //todo: maybe have 4K of physical DL for direct OGL cmds, and maybe the other 4K for display list OGL cmds
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("O0")))
@@ -2393,358 +2685,31 @@ __attribute__((optnone))
 #endif
 void glDeleteLists(GLuint list, GLsizei range){
 	if(list >= 1){
-		list--; //assign current InternalUnpackedGX_DL_BinaryPtr (new) to a List
+		list--; //assign current InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr (new) to a List
 	}
-	if (list >= sizeof(Compiled_DL_Binary_Descriptor)){
+	if (list >= DL_DESCRIPTOR_MAX_ITEMS){
 		return;
 	}
 
-	int lowestCurDLInCompiledDLOffset = -1;
+	int lowestCurDLInCompiledDLOffset = 0;
 	int i = 0;
 	for(i = 0; i < range; i++){
-		u32 * InternalDL = getInternalUnpackedDisplayListBuffer();
+		u32 * InternalDL = getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr();
 		int curDLInCompiledDLOffset = Compiled_DL_Binary_Descriptor[list + i];
 		if((u32)curDLInCompiledDLOffset != DL_INVALID){
-			u32 * currentPhysicalDisplayListStart = (u32 *)&InternalDL[curDLInCompiledDLOffset];
 			Compiled_DL_Binary_Descriptor[list + i] = DL_INVALID;
 
-			if(lowestCurDLInCompiledDLOffset < curDLInCompiledDLOffset){
+			if(lowestCurDLInCompiledDLOffset > curDLInCompiledDLOffset){
 				lowestCurDLInCompiledDLOffset = curDLInCompiledDLOffset;
 			}
 		}
 	}
-	globalGLCtx.mode = (u32)GL_NONE;
-	isNdsDisplayListUtilsCallList = false;
 	
 	//Find the lowest internal buffer offset assigned, just deleted, and rewind it so it points to unallocated Internal DL memory
 	if(lowestCurDLInCompiledDLOffset != -1){
-		InternalUnpackedGX_DL_BinaryPtr = lowestCurDLInCompiledDLOffset;
+		InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = lowestCurDLInCompiledDLOffset;
 	}
 }
-
-/*
- Using display lists
-We have seen how to creates a display list.
-You should now want to use it :
-    gl.glCallList(list)
-
-You probably wants to call multiple lists :
-    gl.glListBase(listBase)
-    gl.glCallLists(nbLists, type, referenceOffsets)
-The first method select the display list refered by listBase as the base list. Indices in the referenceOffsets array are counter by considering that listBase is 0.
-nbLists is the number of lists that should be called.
-type is the type of information stored in referenceOffsets. It is typically : GL_UNSIGNED_BYTE, GL_SHORT, GL_UNSIGNED_SHORT, GL_INT or GL_UNSIGNED_INT.
-indiceOffset is an array that holds offset reference to the desired list to call by comparison to listBase (Ex: if listBase = 100 and you want to draw a list refered by 103, its offset reference is 3).
-*/
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__((optnone))
-#endif
-#endif
-void glTexCoord2f(GLfloat s, GLfloat t){
-	glTexCoord2t16(floattot16(s), floattot16(t));
-}
-
-//////////////////////////////////////////////////////////////////////
-//glTexCoord specifies texture coordinates in one, two, three, or four dimensions. 
-//glTexCoord1 sets the current texture coordinates to s 0 0 1 ; 
-//glTexCoord2 sets them to s t 0 1 . 
-//glTexCoord3 specifies the texture coordinates as s t r 1
-//glTexCoord4 defines all four components explicitly as s t r q .
-
-//Note: uv == ((u << 16) | (v & 0xFFFF))
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__((optnone))
-#endif
-#endif
-void glTexCoord1i(uint32 uv){
-	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
-		//4000488h 22h 1  1   TEXCOORD - Set Texture Coordinates (W)
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getFIFO_TEX_COORD(); //Unpacked Command format
-		InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)uv; InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
-		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, getFIFO_TEX_COORD(), 0);
-	}
-}
-
-//////////////////////////////////////////////////////////////////////
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__((optnone))
-#endif
-#endif
-void glTexCoord2t16(t16 u, t16 v){
-	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
-		//4000488h 22h 1  1   TEXCOORD - Set Texture Coordinates (W)
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getFIFO_TEX_COORD(); //Unpacked Command format
-		InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)(u << 16) + v; InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
-		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, getFIFO_TEX_COORD(), 0);
-	}
-}
-//////////////////////////////////////////////////////////////////////
-
-//Primitive types
-//0  Separate Triangle(s)    ;3*N vertices per N triangles
-//1  Separate Quadliteral(s) ;4*N vertices per N quads
-//2  Triangle Strips         ;3+(N-1) vertices per N triangles
-//3  Quadliteral Strips      ;4+(N-1)*2 vertices per N quads
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__((optnone))
-#endif
-#endif
-void glBegin(int primitiveType){
-	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
-		//4000500h 40h 1  1   BEGIN_VTXS - Start of Vertex List (W)
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getFIFO_BEGIN(); //Unpacked Command format
-		InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)primitiveType; InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
-		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, getFIFO_BEGIN(), 0);
-	}
-}
-
-//////////////////////////////////////////////////////////////////////
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__((optnone))
-#endif
-#endif
-void glEnd( void){
-	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
-		//4000504h 41h -  1   END_VTXS - End of Vertex List (W)
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getFIFO_END(); //Unpacked Command format
-		InternalUnpackedGX_DL_BinaryPtr++;
-		//no args used by this GX command
-		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, getFIFO_END(), 0);
-	}
-}
-
-//////////////////////////////////////////////////////////////////////
-
-u16 lastVertexColor = 0;
-//set the current color
-//4000480h - Cmd 20h - COLOR - Directly Set Vertex Color (W)
-//Parameter 1, Bit 0-4    Red
-//Parameter 1, Bit 5-9    Green
-//Parameter 1, Bit 10-14  Blue
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__((optnone))
-#endif
-#endif
-void glColor3b(uint8 red, uint8 green, uint8 blue){
-	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
-		u16 finalColor = 0;
-		switch(globalGLCtx.primitiveShadeModelMode){
-			//light vectors are todo
-			case(GL_FLAT):{
-				//otherwise override all colors to be the same subset of whatever color was passed here
-				if(lastVertexColor == 0){
-					lastVertexColor = RGB15(red, green, blue);
-				}
-				finalColor = lastVertexColor;
-			}
-			break;
-			
-			case(GL_SMOOTH):{
-				//Smooth shading, the default by DS, causes the computed colors of vertices to be interpolated as the primitive is rasterized, 
-				//typically assigning different colors to each resulting pixel fragment. 
-				finalColor = (vuint32)RGB15(red, green, blue);			
-			}
-			break;
-			
-			default:{
-				//error! call glInit(); first
-				return;
-			}
-			break;
-		}
-
-		//4000480h 20h 1  1   COLOR - Directly Set Vertex Color (W)
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getFIFO_COLOR(); //Unpacked Command format
-		InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)finalColor; InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
-		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, getFIFO_COLOR(), 0);
-	}
-}
-
-////////////////////////////////////////////////////////////////////// glNormal � set the current normal vector //////////////////////////////////////////////////////////////////////
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__((optnone))
-#endif
-#endif
-void glNormal3b(
-	GLbyte nx,
- 	GLbyte ny,
- 	GLbyte nz
-){
-	glNormal3i((GLint)nx, (GLint)ny,(GLint)nz);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__((optnone))
-#endif
-#endif
-void glNormal3d(
-	GLdouble nx,
- 	GLdouble ny,
- 	GLdouble nz
-){
-	glNormal3f((GLfloat)nx, (GLfloat)ny, (GLfloat)nz);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__((optnone))
-#endif
-#endif
-void glNormal3f(
-	GLfloat nx,
- 	GLfloat ny,
- 	GLfloat nz
-){
-	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getFIFO_NORMAL(); //Unpacked Command format
-		InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)NORMAL_PACK(floattov10(nx),floattov10(ny),floattov10(nz)); InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
-		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, getFIFO_NORMAL(), 0);
-	}
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__((optnone))
-#endif
-#endif
-void glNormal3s(
-	GLshort nx,
- 	GLshort ny,
- 	GLshort nz
-){
-	glNormal3i((GLint)nx, (GLint)ny,(GLint)nz);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__((optnone))
-#endif
-#endif
-void glNormal3i(
-	GLint nx,
- 	GLint ny,
- 	GLint nz
-){
-	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getFIFO_NORMAL(); //Unpacked Command format
-		InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)NORMAL_PACK(inttov10(nx),inttov10(ny),inttov10(nz)); InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
-		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, getFIFO_NORMAL(), 0);
-	}
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__((optnone))
-#endif
-#endif
-void glVertex3v16(v16 x, v16 y, v16 z){
-	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
-		//400048Ch 23h 2  9   VTX_16 - Set Vertex XYZ Coordinates (W)
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getFIFO_VERTEX16(); //Unpacked Command format
-		InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)(y << 16) | (x & 0xFFFF); InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)((uint32)(uint16)z); InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
-		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, getFIFO_VERTEX16(), 0);
-	}
-}
-
-//////////////////////////////////////////////////////////////////////
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__((optnone))
-#endif
-#endif
-void glVertex3v10(v10 x, v10 y, v10 z){
-	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
-		//4000490h 24h 1  8   VTX_10 - Set Vertex XYZ Coordinates (W)
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getFIFO_VERTEX10(); //Unpacked Command format
-		InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)VERTEX_PACKv10(x, y, z); InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
-		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, getFIFO_VERTEX10(), 0);
-	}
-}
-
-//////////////////////////////////////////////////////////////////////
-//Parameters. x. Specifies the x-coordinate of a vertex. y. Specifies the y-coordinate of a vertex
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__((optnone))
-#endif
-#endif
-void glVertex2v16(v16 x, v16 y){
-	if(((int)(InternalUnpackedGX_DL_BinaryPtr+1) < (int)(InternalUnpackedGX_DL_Size)) ){
-		//4000494h 25h 1  8   VTX_XY - Set Vertex XY Coordinates (W)
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)getFIFO_VTX_XY(); //Unpacked Command format
-		InternalUnpackedGX_DL_BinaryPtr++;
-		InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_BinaryPtr] = (u32)VERTEX_PACK(x, y); InternalUnpackedGX_DL_BinaryPtr++; //Unpacked Command format
-		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[0], (u32*)&InternalUnpackedGX_DL_BinaryPtr, getFIFO_VTX_XY(), 0);
-	}
-}
-
-//////////////////////////////////////////////////////////////////////
-//Todo
-//4000498h 26h 1  8   VTX_XZ - Set Vertex XZ Coordinates (W)
-//400049Ch 27h 1  8   VTX_YZ - Set Vertex YZ Coordinates (W)
-//40004A0h 28h 1  8   VTX_DIFF - Set Relative Vertex Coordinates (W)
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -2786,3 +2751,5 @@ int CompilePackedNDSGXDisplayListFromObject(u32 * bufOut, struct ndsDisplayListD
 
 	return DL_INVALID;
 }
+
+//////////////////////////////////////////////////////////// Extended Display List OpenGL 1.x end //////////////////////////////////////////
