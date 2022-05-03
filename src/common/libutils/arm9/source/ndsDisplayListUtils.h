@@ -121,14 +121,6 @@ extern unsigned int *crc32_table;
 extern void free_crc32_table (void);
 extern unsigned int crc32 (unsigned int *crc, const void *buffer, unsigned int size);
 extern int crc32file( FILE *file, unsigned int *outCrc32);
-
-//debug
-extern GLvoid BuildLists();
-extern GLvoid ReSizeGLScene(GLsizei width, GLsizei height);
-extern int InitGL();
-extern int DrawGLScene();
-
-
 extern GLuint	texture[1];			// Storage For 1 Texture
 extern GLuint	box;				// Storage For The Box Display List
 extern GLuint	top;				// Storage For The Top Display List

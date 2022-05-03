@@ -80,6 +80,11 @@ typedef void GLvoid;
 
 #endif
 
+//lut resolution for trig functions (must be power of two and must be the same as LUT resolution)
+//in other words dont change unless you also change your LUTs
+#define LUT_SIZE (512)
+#define LUT_MASK (0x1FF)
+
 //////////////////////////////////////////////////////////////////////
 // 3D core control
 //////////////////////////////////////////////////////////////////////
@@ -437,10 +442,8 @@ enum GL_MATRIX_MODE_ENUM {
 #define  MTX_POP_GXCommandParamsCount ((int)getAGXParamsCountFromCommand(getMTX_POP()))
 #define  MTX_MULT_3x3_GXCommandParamsCount ((int)getAGXParamsCountFromCommand(getMTX_MULT_3x3()))
 #define  MTX_MULT_4x4_GXCommandParamsCount ((int)getAGXParamsCountFromCommand(getMTX_MULT_4x4()))
-
 #define  MTX_LOAD_4x4_GXCommandParamsCount ((int)getAGXParamsCountFromCommand(getMTX_LOAD_4x4()))
 #define  MTX_LOAD_4x3_GXCommandParamsCount ((int)getAGXParamsCountFromCommand(getMTX_LOAD_4x3()))
-
 #define  NOP_GXCommandParamsCount ((int)getAGXParamsCountFromCommand(getNOP()))
 
 enum {
@@ -1090,8 +1093,13 @@ enum {
 	GL_ALL_ATTRIB_BITS	= 0x000fffff
 };
 
+#define PHYS_GXFIFO_INTERNAL_SIZE ((int)512)
+
 //Max GL Lists allocated in the OpenGL API
-#define InternalUnpackedGX_DL_Size ((int)8192) //Max internal DL unpacked GX command/arguments count: 8192*4 = 32768 bytes
+#define InternalUnpackedGX_DL_internalSize ((int)8192) //Max internal DL unpacked GX command/arguments count: 8192*4 = 32768 bytes. first 4K half: Standard OpenGL commands ; Second 4K half: OpenGL Display List commands
+#define InternalUnpackedGX_DL_workSize	(InternalUnpackedGX_DL_internalSize/2) 
+#define InternalUnpackedGX_DL_StandardOpenGLStartOffset (InternalUnpackedGX_DL_workSize * 0)
+#define InternalUnpackedGX_DL_OpenGLDisplayListStartOffset (InternalUnpackedGX_DL_workSize * 1)
 
 //Display List Descriptor
 #define DL_INVALID (u32)(-1)
@@ -1100,7 +1108,7 @@ enum {
 #define DL_TYPE_FIFO_PACKED_COMMAND_V2 (u32)(DL_TYPE_FIFO_PACKED_COMMAND_V1+1)	//FIFO_COMMAND_PACK( FIFO_VERTEX16 , FIFO_COLOR , FIFO_TEX_COORD , FIFO_NORMAL )
 #define DL_TYPE_FIFO_PACKED_COMMAND_END (u32)(DL_TYPE_FIFO_PACKED_COMMAND_V2+1)	//FIFO_COMMAND_PACK( FIFO_VERTEX16 , FIFO_END , FIFO_NOP , FIFO_NOP )
 #define GX_TOP_PARAMS_SIZE (int)(32)	//32  SHININESS - Specular Reflection Shininess Table (W) -- would be the command having the most parameter count
-#define DL_DESCRIPTOR_MAX_ITEMS (int)(256) //NDS GX commands descriptor format, which is not compiled. 
+#define DL_DESCRIPTOR_MAX_ITEMS (int)(256) //NDS GX commands descriptor format, which is not compiled. Also OpenGL Display Lists limit size
 
 struct ndsDisplayList {
 	int index;
@@ -1132,7 +1140,7 @@ __attribute__((packed)) ;
 extern "C" {
 #endif
 #endif
-
+//////////////////////////////////////////////////////////// Standard OpenGL 1.x start //////////////////////////////////////////
 extern void glEnable(int bits);
 extern void glDisable(int bits);
 extern void glLoadMatrix4x4(m4x4 * m);
@@ -1181,27 +1189,20 @@ extern void glMatrixMode(int mode);
 extern void glMaterialShinnyness(void);
 extern void glPolyFmt(int alpha); 
 extern void glRotatef(int angle, float x, float y, float z);
-
 extern void glOrthof32(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far);
 extern void glOrtho(float left, float right, float bottom, float top, float near, float far);
 extern void glColor3f(float red, float green, float blue);
 extern void glColor3fv(const GLfloat * v);
-
 extern struct GLContext globalGLCtx;
 extern void glShadeModel(GLenum mode);
 extern void glInit();
-
 extern void glVertex2i(int x, int y); 
 extern void glVertex2f(float x, float y);
 extern void glVertex3f(GLfloat x, GLfloat y, GLfloat z);
-
-extern void GLInitExt();
-extern bool isNdsDisplayListUtilsCallList;
 extern void glCallListGX(const u32* list);
 extern void glTranslatef(float x, float y, float z);
 extern void glFlush(void);
 extern void glFinish(void);
-
 extern u8 defaultglClearColorR;
 extern u8 defaultglClearColorG;
 extern u8 defaultglClearColorB;
@@ -1211,27 +1212,6 @@ extern void glClearColor(uint8 red, uint8 green, uint8 blue);
 extern void glClearDepth(uint16 depth);
 extern void glViewport(uint8 x1, uint8 y1, uint8 x2, uint8 y2);
 extern void handleInmediateGXDisplayList(u32 * sourcePhysDisplayList, u32 * sourcePhysDisplayListPtr, u8 cmdSource, int alternateParamsCount);
-
-//Object Format: Unpacked / Packed
-//extern struct ndsDisplayListDescriptor Internal_Descriptor_DL[InternalUnpackedGX_DL_Size];
-
-//OpenGL DL internal Display Lists enumerator, holds current DL index pointed by internal InternalUnpackedGX_DL_BinaryPtr, starting from 0.
-extern u32 InternalUnpackedGX_DL_BinaryPtr;
-extern u32 * getInternalUnpackedDisplayListBuffer();
-extern int getInternalUnpackedDisplayListBufferSize();
-extern u32 InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_Size];
-
-extern u32 SingleUnpackedGXCommand_DL_Binary[GX_TOP_PARAMS_SIZE+1];
-
-extern GLsizei Compiled_DL_Binary_Descriptor[InternalUnpackedGX_DL_Size];
-extern GLsizei currentListPointer;
-extern void GLInitExt();
-extern GLuint glGenLists(GLsizei range);
-extern void glListBase(GLuint base);
-extern GLboolean glIsList(GLuint list);
-extern void glNewList(GLuint list, GLenum mode);
-extern void glEndList(void);
-
 extern void glNormal3b(
 	GLbyte nx,
  	GLbyte ny,
@@ -1257,25 +1237,49 @@ extern void glNormal3i(
  	GLint ny,
  	GLint nz
 );
-
 extern void glBegin(int primitiveType);
 extern void glEnd( void);
-extern void glCallList(GLuint list);
-extern void glCallLists(GLsizei n, GLenum type, const void * lists);
-extern void glDeleteLists(GLuint list, GLsizei range);
-
 extern void glTexCoord2t16(t16 u, t16 v);
 extern void glTexCoord2f(GLfloat s, GLfloat t);
 extern void glTexCoord1i(uint32 uv);
-
 extern u16 lastVertexColor;
 extern void glColor3b(uint8 red, uint8 green, uint8 blue);
 extern void glVertex3v16(v16 x, v16 y, v16 z);
 extern void glVertex3v10(v10 x, v10 y, v10 z);
 extern void glVertex2v16(v16 x, v16 y);
-extern u32 singleOpenGLCompiledDisplayList[2048];
+//////////////////////////////////////////////////////////// Standard OpenGL 1.x end //////////////////////////////////////////
+
+
+
+//////////////////////////////////////////////////////////// Extended Display List OpenGL 1.x start //////////////////////////////////////////
+extern bool isCustomDisplayList; 
+extern bool isAnOpenGLExtendedDisplayListCallList;
+
+extern u32 singleOpenGLCompiledDisplayList[InternalUnpackedGX_DL_workSize];
+extern GLsizei Compiled_DL_Binary_Descriptor[InternalUnpackedGX_DL_workSize];
+	extern u32 * getInternalUnpackedDisplayListBuffer_StandardOGLCurOffset();
+	extern u32 * getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(); 
+		extern u32 LastOpenGLDisplayListStart; 
+
+//Internal Unpacked GX buffer
+	extern u32 InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_internalSize];
+	extern u32 InternalUnpackedGX_DL_Binary_StandardOGLPtr;
+	extern u32 InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
+
+	extern u32 SingleUnpackedGXCommand_DL_Binary[PHYS_GXFIFO_INTERNAL_SIZE];
+	
+extern GLuint glGenLists(GLsizei range);
+extern void glListBase(GLuint base);
+extern GLboolean glIsList(GLuint list);
+extern void glNewList(GLuint list, GLenum mode);
+extern void glEndList(void);
+extern void glCallList(GLuint list);
+extern void glCallLists(GLsizei n, GLenum type, const void * lists);
+extern void glDeleteLists(GLuint list, GLsizei range);
 extern enum GL_GLBEGIN_ENUM getDisplayListGLType(struct ndsDisplayListDescriptor * dlInst);
 extern int CompilePackedNDSGXDisplayListFromObject(u32 * bufOut, struct ndsDisplayListDescriptor * dlInst);
+
+//////////////////////////////////////////////////////////// Extended Display List OpenGL 1.x end //////////////////////////////////////////
 
 #ifdef ARM9
 #ifdef __cplusplus

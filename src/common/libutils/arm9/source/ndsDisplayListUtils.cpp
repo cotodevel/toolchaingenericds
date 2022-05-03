@@ -1537,10 +1537,9 @@ bool isNDSDLUtilsAPIStable(){
 	crc32source = crc32(&crc32source, (u8*)&PackedDisplayListCompiledVS2012[0], PackedDisplayListCompiledVS2012_size);
 	#endif
 	//Packed GX Command list generated from VS2012 must be the same as the one dinamically generated on runtime (NDS/VS2012)
-	if(sourceFileSize > InternalUnpackedGX_DL_Size){
-		sourceFileSize = InternalUnpackedGX_DL_Size;
+	if(sourceFileSize > InternalUnpackedGX_DL_workSize){
+		sourceFileSize = InternalUnpackedGX_DL_workSize;
 	}
-	GLInitExt();
 	int list = glGenLists(10);
 	if(list){
 		glListBase(list);
@@ -1571,8 +1570,8 @@ bool isNDSDLUtilsAPIStable(){
 		glEndList();//The second display list is created
 	}
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	u32 * CompiledDisplayListsBuffer = getInternalUnpackedDisplayListBuffer(); //Lists called earlier are written to this buffer, using the unpacked GX command format.
-	u32 TestPacked_DL_Binary[InternalUnpackedGX_DL_Size];
+	u32 * CompiledDisplayListsBuffer = getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(); //Lists called earlier are written to this buffer, using the unpacked GX command format.
+	u32 TestPacked_DL_Binary[InternalUnpackedGX_DL_workSize];
 	memset((u8*)&TestPacked_DL_Binary[0], 0, sourceFileSize);
 	bool result2 = rawUnpackedToRawPackedDisplayListFormat(CompiledDisplayListsBuffer, (u32*)TestPacked_DL_Binary);
 	if(result2 == true){
@@ -1590,8 +1589,8 @@ bool isNDSDLUtilsAPIStable(){
 int main(int argc, char** argv){
 
 	//Quick Unit Test Triangle rendering example: direct OpenGL commands, running in either WIN32 or NDS GX hardware
-	/*
 	//Simple Triangle GL init
+	/*
 	float rotateX = 0.0;
 	float rotateY = 0.0;
 	{
@@ -1610,8 +1609,6 @@ int main(int argc, char** argv){
 	ReSizeGLScene(255, 191);  
 	InitGL();	
 
-	//todo: merge https://bitbucket.org/Coto88/ndsdisplaylistutils/issues/4/move-all-opengl-calls-to-display-lists
-	//and legacy GL code must work having applied these changes...!
 	while (1){
 		glReset();
 	
@@ -1655,7 +1652,6 @@ int main(int argc, char** argv){
 	*/
 
 	//Unit Test #1: Tests OpenGL DisplayLists components functionality then emitting proper GX displaylists, unpacked format.
-	GLInitExt();
 	int list = glGenLists(10);
 	if(list){
 		glListBase(list);
@@ -1670,7 +1666,7 @@ int main(int argc, char** argv){
 				glPopMatrix(1);
 			}
 		}
-		glEndList();
+		glEndList(); 
 		
 		glListBase(list + 1);
 		glNewList (list + 1, GL_COMPILE);//Create a second display list and execute it
@@ -1686,7 +1682,7 @@ int main(int argc, char** argv){
 		glEndList();//The second display list is created
 	}
 	
-	u32 * CompiledDisplayListsBuffer = getInternalUnpackedDisplayListBuffer(); //Lists called earlier are written to this buffer, using the unpacked GX command format.
+	u32 * CompiledDisplayListsBuffer =(u32 *)&InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_OpenGLDisplayListStartOffset]; //Lists called earlier are written to this buffer, using the unpacked GX command format.
 	//Unit Test #2:
 	//Takes an unpacked format display list, gets converted into packed format then exported as C Header file source code
 	char cwdPath[256];
@@ -1735,6 +1731,14 @@ int main(int argc, char** argv){
 	int DLCount = 0;
 	for(DLCount = 0; DLCount < 10; DLCount++){
 		glNewList(index + DLCount, GL_COMPILE);   // compile each one until the 10th
+
+		for (int i = 0; i <20; i ++){ //Draw 20 triangles
+			glPushMatrix();
+			glRotatef(18*i,0.0,0.0,1.0);
+			glTranslatef(15.0,0.0,0.0);
+			glPopMatrix(1);
+		}
+
 		glEndList();
 	}
 	// draw odd placed display lists names only (1st, 3rd, 5th, 7th, 9th)
