@@ -71,6 +71,10 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glInit(){
+	//set mode 0, enable BG0 and set it to 3D
+	#ifdef ARM9
+	SETDISPCNT_MAIN(MODE_0_3D);
+	#endif
 	memset((u8*)&globalGLCtx, 0, sizeof(struct GLContext));
 	glShadeModel(GL_SMOOTH);
 	InternalUnpackedGX_DL_Binary_StandardOGLPtr=0; //1st 4K
