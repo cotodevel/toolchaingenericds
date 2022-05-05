@@ -2483,7 +2483,8 @@ void glNewList(GLuint list, GLenum mode){
 	if(list >= 1){
 		list--; //assign current InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr (new) to a List
 	}
-	Compiled_DL_Binary_Descriptor[list] = InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr + 1; //OFFSET 0 IS DL SIZE
+	InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr++; //OFFSET 0 IS DL SIZE
+	Compiled_DL_Binary_Descriptor[list] = InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr; 
 	globalGLCtx.mode = (u32)mode;
 	isAnOpenGLExtendedDisplayListCallList = true;
 }
@@ -2507,8 +2508,8 @@ void glEndList(void){
 	int listSize = ((InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr - LastOpenGLDisplayListStart) * 4) + 4;
 	InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_OpenGLDisplayListStartOffset + LastOpenGLDisplayListStart] = (u32)listSize;
 	u32 targetGXDLOffset = InternalUnpackedGX_DL_OpenGLDisplayListStartOffset + LastOpenGLDisplayListStart;
-	LastOpenGLDisplayListStart = InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
-
+	InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr++;
+	LastOpenGLDisplayListStart = InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;	
 	if(globalGLCtx.mode == GL_COMPILE_AND_EXECUTE){
 		glCallListGX((const u32*)&InternalUnpackedGX_DL_Binary[targetGXDLOffset]); //Using Unpacked Command instead
 	}
@@ -2536,10 +2537,16 @@ void glCallList(GLuint list){
 	u32 * InternalDL = getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr();
 	int curDLInCompiledDLOffset = Compiled_DL_Binary_Descriptor[list];
 	if((u32)curDLInCompiledDLOffset != DL_INVALID){
-		curDLInCompiledDLOffset-=2; //-1 because DL starts at 1 (0 reserved for size) and -1 because conversion from natural integer (1 from logical OpenGL DL start) to DL start offset 
 		u32 * currentPhysicalDisplayListStart = (u32 *)&InternalDL[curDLInCompiledDLOffset];
+		if(curDLInCompiledDLOffset == 2){
+			currentPhysicalDisplayListStart-=2;
+			*(currentPhysicalDisplayListStart+1)=(*currentPhysicalDisplayListStart)-4;
+			currentPhysicalDisplayListStart++;
+		}
+		else{
+			currentPhysicalDisplayListStart--;
+		}
 		int singleListSize = *currentPhysicalDisplayListStart;
-		currentPhysicalDisplayListStart++;
 		if(singleListSize > 0){
 			//Run a single GX Display List, having proper DL size
 			memcpy((u8*)&singleOpenGLCompiledDisplayList[0], currentPhysicalDisplayListStart, singleListSize);

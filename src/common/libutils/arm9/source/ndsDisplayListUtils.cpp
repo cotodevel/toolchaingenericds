@@ -1651,6 +1651,14 @@ int main(int argc, char** argv){
 	}
 	*/
 
+	/* OpenGL 1.1 Dynamic Display List implementing the above simple triangle example */
+	//ReSizeGLScene(255, 191);
+	InitGL();
+	
+	while (1){
+		DrawGLScene();
+	}
+
 	//Unit Test #1: Tests OpenGL DisplayLists components functionality then emitting proper GX displaylists, unpacked format.
 	int list = glGenLists(10);
 	if(list){
