@@ -2374,8 +2374,6 @@ __attribute__((section(".dtcm")))
 bool isCustomDisplayList; //Toggles either a custom DL is built or a SINGLE GX hardware one
 bool isAnOpenGLExtendedDisplayListCallList; //Toggles targeting either a single, or custom DL into the Standard OpenGL GX binary pipeline, or the extended OpenGL DisplayList GX binary pipeline.
 
-u32 singleOpenGLCompiledDisplayList[InternalUnpackedGX_DL_workSize]; //2048 cmds per a single List should be enough
-
 //OpenGL DL internal Display Lists enumerator: stores multiple DL pointed by current InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr, starting from 0.
 GLsizei Compiled_DL_Binary_Descriptor[InternalUnpackedGX_DL_workSize];
 
@@ -2549,9 +2547,8 @@ void glCallList(GLuint list){
 		int singleListSize = *currentPhysicalDisplayListStart;
 		if(singleListSize > 0){
 			//Run a single GX Display List, having proper DL size
-			memcpy((u8*)&singleOpenGLCompiledDisplayList[0], currentPhysicalDisplayListStart, singleListSize);
 			u32 customsingleOpenGLCompiledDisplayListPtr = (singleListSize/4); //account the internal pointer ahead because DLs executed later are treated as the internal DL GX Binary
-			handleInmediateGXDisplayList((u32*)&singleOpenGLCompiledDisplayList[0], (u32*)&customsingleOpenGLCompiledDisplayListPtr, OPENGL_DL_TO_GX_DL_EXEC_CMD, singleListSize/4); 
+			handleInmediateGXDisplayList(currentPhysicalDisplayListStart, (u32*)&customsingleOpenGLCompiledDisplayListPtr, OPENGL_DL_TO_GX_DL_EXEC_CMD, singleListSize/4); 
 			#ifdef WIN32
 			printf("//////////////////////[OpenGL CallList: %d]//////////////////////////", list);
 			#endif

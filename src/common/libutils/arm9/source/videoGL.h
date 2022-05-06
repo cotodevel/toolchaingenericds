@@ -1255,7 +1255,6 @@ extern void glVertex2v16(v16 x, v16 y);
 extern bool isCustomDisplayList; 
 extern bool isAnOpenGLExtendedDisplayListCallList;
 
-extern u32 singleOpenGLCompiledDisplayList[InternalUnpackedGX_DL_workSize];
 extern GLsizei Compiled_DL_Binary_Descriptor[InternalUnpackedGX_DL_workSize];
 	extern u32 * getInternalUnpackedDisplayListBuffer_StandardOGLCurOffset();
 	extern u32 * getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(); 
