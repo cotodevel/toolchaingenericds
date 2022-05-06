@@ -18,7 +18,12 @@ USA
 
 */
 
-//ndsDisplayListUtils version: 0.3. src: https://bitbucket.org/Coto88/ndsdisplaylistutils/src
+//ndsDisplayListUtils. src: https://bitbucket.org/Coto88/ndsdisplaylistutils/src
+//Changelog:
+//0.4: Implementation finished.
+//0.3: Standardized format so it's conformant with Open GL Display Lists: (https://bitbucket.org/Coto88/toolchaingenericds-displaylist/src)
+//0.2: Ported to NintendoDS, unit test implemented at: https://bitbucket.org/Coto88/toolchaingenericds-unittest/src (5th Test Case)
+//0.1: First release, WIN32 only.
 
 #ifdef WIN32
 #include "winDir.h"
@@ -1590,7 +1595,7 @@ int main(int argc, char** argv){
 
 	//Quick Unit Test Triangle rendering example: direct OpenGL commands, running in either WIN32 or NDS GX hardware
 	//Simple Triangle GL init
-	/*
+	
 	float rotateX = 0.0;
 	float rotateY = 0.0;
 	{
@@ -1649,7 +1654,7 @@ int main(int argc, char** argv){
 		glPopMatrix(1);
 		glFlush();
 	}
-	*/
+	
 
 	/* OpenGL 1.1 Dynamic Display List implementing the above simple triangle example */
 	//ReSizeGLScene(255, 191);

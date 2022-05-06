@@ -18,8 +18,6 @@ USA
 
 */
 
-//ndsDisplayListUtils version: 0.3. src: https://bitbucket.org/Coto88/ndsdisplaylistutils/src
-
 #ifndef __ndsDisplayListUtils_h__
 #define __ndsDisplayListUtils_h__
 
