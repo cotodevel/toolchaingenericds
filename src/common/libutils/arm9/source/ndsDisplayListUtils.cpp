@@ -77,18 +77,6 @@ __attribute__((optimize("O0")))
 __attribute__ ((optnone))
 #endif
 #endif
-u32 REG2ID_C(u32 val){	
-	return (u32)( ( ((u32)((val & ~0x04000400))) ) >> 2 );
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
 u32 FIFO_COMMAND_PACK_C(u8 c1, u8 c2, u8 c3, u8 c4) {
 	return (u32)(((c4) << 24) | ((c3) << 16) | ((c2) << 8) | (c1));
 }
@@ -102,7 +90,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 u8 getFIFO_NOP(){
-	return REG2ID_C(GFX_FIFO_ADDR);
+	return REG2IDADDR(GFX_FIFO_ADDR);
 }
 
 #ifdef ARM9
@@ -114,7 +102,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 u8 getFIFO_STATUS(){
-	return REG2ID_C(GFX_STATUS_ADDR);
+	return REG2IDADDR(GFX_STATUS_ADDR);
 }
 
 #ifdef ARM9
@@ -126,7 +114,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 u8 getFIFO_COLOR(){
-	return REG2ID_C(GFX_COLOR_ADDR);
+	return REG2IDADDR(GFX_COLOR_ADDR);
 }
 
 #ifdef ARM9
@@ -138,7 +126,7 @@ __attribute__ ((optnone))
 #endif
 #endif  
 u8 getFIFO_VERTEX16(){
-	return REG2ID_C(GFX_VERTEX16_ADDR);
+	return REG2IDADDR(GFX_VERTEX16_ADDR);
 }
 
 #ifdef ARM9
@@ -150,7 +138,7 @@ __attribute__ ((optnone))
 #endif
 #endif  
 u8 getFIFO_VERTEX10(){
-	return REG2ID_C(GFX_VERTEX10_ADDR);
+	return REG2IDADDR(GFX_VERTEX10_ADDR);
 }
 
 #ifdef ARM9
@@ -162,7 +150,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 u8 getFIFO_TEX_COORD(){
-	return REG2ID_C(GFX_TEX_COORD_ADDR);
+	return REG2IDADDR(GFX_TEX_COORD_ADDR);
 }
 
 
@@ -175,7 +163,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 u8 getFIFO_VTX_XY(){
-	return REG2ID_C(GFX_VERTEX_XY_ADDR);
+	return REG2IDADDR(GFX_VERTEX_XY_ADDR);
 }
 
 
@@ -189,7 +177,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 u8 getFIFO_TEX_FORMAT(){
-	return REG2ID_C(GFX_TEX_FORMAT_ADDR);
+	return REG2IDADDR(GFX_TEX_FORMAT_ADDR);
 }
 
 #ifdef ARM9
@@ -201,7 +189,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 u8 getFIFO_CLEAR_COLOR(){
-	return REG2ID_C(GFX_CLEAR_COLOR_ADDR);
+	return REG2IDADDR(GFX_CLEAR_COLOR_ADDR);
 }
 
 #ifdef ARM9
@@ -213,7 +201,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 u8 getFIFO_CLEAR_DEPTH(){
-	return REG2ID_C(GFX_CLEAR_DEPTH_ADDR);
+	return REG2IDADDR(GFX_CLEAR_DEPTH_ADDR);
 }
 
 #ifdef ARM9
@@ -225,7 +213,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 u8 getFIFO_LIGHT_VECTOR(){
-	return REG2ID_C(GFX_LIGHT_VECTOR_ADDR);
+	return REG2IDADDR(GFX_LIGHT_VECTOR_ADDR);
 }
 
 #ifdef ARM9
@@ -237,7 +225,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 u8 getFIFO_LIGHT_COLOR(){
-	return REG2ID_C(GFX_LIGHT_COLOR_ADDR);
+	return REG2IDADDR(GFX_LIGHT_COLOR_ADDR);
 }
 
 #ifdef ARM9
@@ -249,7 +237,31 @@ __attribute__ ((optnone))
 #endif
 #endif
 u8 getMTX_MULT_3x3(){
-	return REG2ID_C(MATRIX_MULT3x3_ADDR);
+	return REG2IDADDR(MATRIX_MULT3x3_ADDR);
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
+u8 getMTX_STORE(){
+	return REG2IDADDR(MATRIX_STORE_ADDR);
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
+u8 getMTX_RESTORE(){
+	return REG2IDADDR(MATRIX_RESTORE_ADDR);
 }
 
 #ifdef ARM9
@@ -261,7 +273,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 u8 getMTX_MULT_4x4(){
-	return REG2ID_C(MATRIX_MULT4x4_ADDR);
+	return REG2IDADDR(MATRIX_MULT4x4_ADDR);
 }
 
 
@@ -274,7 +286,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 u8 getMTX_SCALE(){
-	return REG2ID_C(MATRIX_SCALE_ADDR);
+	return REG2IDADDR(MATRIX_SCALE_ADDR);
 }
 
 #ifdef ARM9
@@ -286,7 +298,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 u8 getMTX_PUSH(){
-	return REG2ID_C(GFX_MTX_PUSH_ADDR);
+	return REG2IDADDR(GFX_MTX_PUSH_ADDR);
 }
 
 #ifdef ARM9
@@ -298,7 +310,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 u8 getNOP(){
-	return REG2ID_C(GFX_NOP_ADDR);
+	return REG2IDADDR(GFX_NOP_ADDR);
 }
 
 #ifdef ARM9
@@ -310,7 +322,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 u8 getMTX_POP(){
-	return REG2ID_C(GFX_MTX_POP_ADDR);
+	return REG2IDADDR(GFX_MTX_POP_ADDR);
 }
 
 #ifdef ARM9
@@ -322,19 +334,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 u8 getMTX_TRANS(){
-	return REG2ID_C(GFX_MTX_TRANS_ADDR);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getMTX_STORE(){
-	return REG2ID_C(GFX_MTX_STORE_ADDR);
+	return REG2IDADDR(GFX_MTX_TRANS_ADDR);
 }
 
 #ifdef ARM9
@@ -346,7 +346,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 u8 getMTX_IDENTITY(){
-	return REG2ID_C(GFX_MTX_IDENTITY_ADDR);
+	return REG2IDADDR(GFX_MTX_IDENTITY_ADDR);
 }
 
 #ifdef ARM9
@@ -358,7 +358,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 u8 getMTX_LOAD_4x4(){
-	return REG2ID_C(GFX_MTX_LOAD_4x4_ADDR);
+	return REG2IDADDR(GFX_MTX_LOAD_4x4_ADDR);
 }
 
 #ifdef ARM9
@@ -370,7 +370,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 u8 getMTX_LOAD_4x3(){
-	return REG2ID_C(GFX_MTX_LOAD_4x3_ADDR);
+	return REG2IDADDR(GFX_MTX_LOAD_4x3_ADDR);
 }
 
 #ifdef ARM9
@@ -382,7 +382,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 u8 getMTX_MODE(){
-	return REG2ID_C(GFX_MTX_MODE_ADDR);
+	return REG2IDADDR(GFX_MTX_MODE_ADDR);
 }
 
 #ifdef ARM9
@@ -394,7 +394,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 u8 getVIEWPORT(){
-	return REG2ID_C(GFX_VIEWPORT_ADDR);
+	return REG2IDADDR(GFX_VIEWPORT_ADDR);
 }
 
 #ifdef ARM9
@@ -406,31 +406,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 u8 getFIFO_NORMAL(){
-	return REG2ID_C(GFX_NORMAL_ADDR);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getFIFO_DIFFUSE_AMBIENT(){
-	return REG2ID_C(GFX_DIFFUSE_AMBIENT_ADDR);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getFIFO_SPECULAR_EMISSION(){
-	return REG2ID_C(GFX_SPECULAR_EMISSION_ADDR);
+	return REG2IDADDR(GFX_NORMAL_ADDR);
 }
 
 #ifdef ARM9
@@ -442,7 +418,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 u8 getFIFO_SHININESS(){
-	return REG2ID_C(GFX_SHININESS_ADDR);
+	return REG2IDADDR(GFX_SHININESS_ADDR);
 }
 
 #ifdef ARM9
@@ -453,8 +429,44 @@ __attribute__((optimize("O0")))
 __attribute__ ((optnone))
 #endif
 #endif
-u8 getFIFO_POLY_FORMAT(){
-	return REG2ID_C(GFX_POLY_FORMAT_ADDR);
+u8 getFIFO_POLYGON_ATTR(){
+	return REG2IDADDR(GFX_POLYGON_ATTR_ADDR);
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
+u8 getFIFO_SWAP_BUFFERS(){
+	return REG2IDADDR(FIFO_SWAP_BUFFERS_ADDR);
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
+u8 getFIFO_DIFFUSE_AMBIENT(){
+	return REG2IDADDR(GFX_DIFFUSE_AMBIENT_ADDR);
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
+u8 getFIFO_SPECULAR_EMISSION(){
+	return REG2IDADDR(GFX_SPECULAR_EMISSION_ADDR);
 }
 
 #ifdef ARM9
@@ -466,7 +478,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 u8 getFIFO_BEGIN(){
-	return REG2ID_C(GFX_BEGIN_ADDR);
+	return REG2IDADDR(GFX_BEGIN_ADDR);
 }
 
 #ifdef ARM9
@@ -478,7 +490,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 u8 getFIFO_END(){
-	return REG2ID_C(GFX_END_ADDR);
+	return REG2IDADDR(GFX_END_ADDR);
 }
 
 #ifdef ARM9
@@ -490,7 +502,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 u8 getFIFO_FLUSH(){
-	return REG2ID_C(GFX_FLUSH_ADDR);
+	return REG2IDADDR(FIFO_SWAP_BUFFERS_ADDR);
 }
 
 #ifdef ARM9
@@ -502,7 +514,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 u8 getFIFO_VIEWPORT(){
-	return REG2ID_C(GFX_VIEWPORT_ADDR);
+	return REG2IDADDR(GFX_VIEWPORT_ADDR);
 }
 
 #ifdef ARM9
