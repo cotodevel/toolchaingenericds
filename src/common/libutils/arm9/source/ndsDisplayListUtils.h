@@ -51,7 +51,6 @@ struct unpackedCmd {
 #endif
 
 extern u32 ID2REG_C(u8 val);
-extern u32 REG2ID_C(u32 val);
 extern u32 FIFO_COMMAND_PACK_C(u8 c1, u8 c2, u8 c3, u8 c4);
 extern u8 getFIFO_NOP();
 extern u8 getFIFO_STATUS();
@@ -69,7 +68,6 @@ extern u8 getFIFO_NORMAL();
 extern u8 getFIFO_DIFFUSE_AMBIENT();
 extern u8 getFIFO_SPECULAR_EMISSION();
 extern u8 getFIFO_SHININESS();
-extern u8 getFIFO_POLY_FORMAT();
 extern u8 getFIFO_BEGIN();
 extern u8 getFIFO_END();
 extern u8 getFIFO_FLUSH();
@@ -134,3 +132,9 @@ extern GLvoid BuildLists();
 extern GLvoid ReSizeGLScene(GLsizei width, GLsizei height);
 extern int InitGL();
 extern int DrawGLScene();
+extern u8 getMTX_STORE();
+extern u8 getMTX_RESTORE();
+extern u8 getFIFO_LIGHT_COLOR();
+extern u8 getFIFO_SHININESS();
+extern u8 getFIFO_POLYGON_ATTR();
+extern u8 getFIFO_SWAP_BUFFERS();

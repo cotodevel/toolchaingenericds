@@ -115,7 +115,6 @@ typedef void GLvoid;
 #define GFX_MTX_PUSH_ADDR				((vuint32) 0x04000444)
 #define GFX_MTX_POP_ADDR				((vuint32) 0x04000448)
 #define GFX_MTX_TRANS_ADDR				((vuint32) 0x04000470)
-#define GFX_MTX_STORE_ADDR				((vuint32) 0x0400044C)
 #define GFX_MTX_IDENTITY_ADDR			((vuint32) 0x04000454)
 #define GFX_MTX_LOAD_4x4_ADDR			((vuint32) 0x04000458)
 #define GFX_MTX_LOAD_4x3_ADDR			((vuint32) 0x0400045C)
@@ -127,11 +126,11 @@ typedef void GLvoid;
 #define GFX_SPECULAR_EMISSION_ADDR ((vuint32) 0x040004C4)
 #define GFX_SHININESS_ADDR         ((vuint32) 0x040004D0)
 
-#define GFX_POLY_FORMAT_ADDR       ((vuint32) 0x040004A4)
+#define GFX_POLYGON_ATTR_ADDR       ((vuint32) 0x040004A4)
 
 #define GFX_BEGIN_ADDR             ((vuint32) 0x04000500)
 #define GFX_END_ADDR               ((vuint32) 0x04000504)
-#define GFX_FLUSH_ADDR             ((vuint32) 0x04000540)
+#define FIFO_SWAP_BUFFERS_ADDR    ((vuint32) 0x04000540)
 #define GFX_TOON_TABLE_ADDR		  ((vuint32)  0x04000380)
 #define GFX_EDGE_TABLE_ADDR		  ((vuint32)  0x04000330)
 
@@ -270,11 +269,11 @@ __attribute__((aligned (4)));
 #define GFX_SPECULAR_EMISSION (*(vuint32*) 0x040004C4)
 #define GFX_SHININESS         (*(vuint32*) 0x040004D0)
 
-#define GFX_POLY_FORMAT       (*(vuint32*) 0x040004A4)
+#define GFX_POLYGON_ATTR       (*(vuint32*) 0x040004A4)
 
 #define GFX_BEGIN             (*(vuint32*) 0x04000500)
 #define GFX_END               (*(vuint32*) 0x04000504)
-#define GFX_FLUSH             (*(vuint32*) 0x04000540)
+#define GFX_SWAP_BUFFERS      (*(vuint32*) 0x04000540)
 #define GFX_VIEWPORT          (*(vuint32*) 0x04000580)
 #define GFX_TOON_TABLE		  ((vuint16*)  0x04000380)
 #define GFX_EDGE_TABLE		  ((vuint16*)  0x04000330)
@@ -380,6 +379,7 @@ enum GL_MATRIX_MODE_ENUM {
 
 #define FIFO_COMMAND_PACK(c1,c2,c3,c4) (((c4) << 24) | ((c3) << 16) | ((c2) << 8) | (c1)) /*!< \brief packs four packed commands into a 32bit command for sending to the GFX FIFO */
 #define REG2ID(r)						(u8)( ( ((u32)(&(r)))-0x04000400 ) >> 2 )
+#define REG2IDADDR(r)						(u8)( ( ((u32)((r)))-0x04000400 ) >> 2 )
 
 #define FIFO_NOP				REG2ID(GFX_FIFO)  
 #define FIFO_STATUS				REG2ID(GFX_STATUS)            
