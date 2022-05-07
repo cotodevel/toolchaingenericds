@@ -48,44 +48,46 @@ struct unpackedCmd {
 #define CRC16_POLYNOMIAL 0xa001
 #define CRC32_POLYNOMIAL 0xedb88320
 
+//Inlined commands
+#define getFIFO_NOP (u8)REG2IDADDR(GFX_FIFO_ADDR)
+#define getFIFO_STATUS (u8)REG2IDADDR(GFX_STATUS_ADDR)
+#define getFIFO_COLOR (u8)REG2IDADDR(GFX_COLOR_ADDR)
+#define getFIFO_VERTEX16 (u8)REG2IDADDR(GFX_VERTEX16_ADDR)
+#define getFIFO_VERTEX10 (u8)REG2IDADDR(GFX_VERTEX10_ADDR)
+#define getFIFO_TEX_COORD (u8)REG2IDADDR(GFX_TEX_COORD_ADDR)
+#define getFIFO_VTX_XY (u8)REG2IDADDR(GFX_VERTEX_XY_ADDR)
+#define getFIFO_TEX_FORMAT (u8)REG2IDADDR(GFX_TEX_FORMAT_ADDR)
+#define getFIFO_CLEAR_COLOR (u8)REG2IDADDR(GFX_CLEAR_COLOR_ADDR)
+#define getFIFO_CLEAR_DEPTH (u8)REG2IDADDR(GFX_CLEAR_DEPTH_ADDR)
+#define getFIFO_LIGHT_VECTOR (u8)REG2IDADDR(GFX_LIGHT_VECTOR_ADDR)
+#define getFIFO_LIGHT_COLOR (u8)REG2IDADDR(GFX_LIGHT_COLOR_ADDR)
+#define getMTX_MULT_3x3 (u8)REG2IDADDR(MATRIX_MULT3x3_ADDR)
+#define getMTX_STORE (u8)REG2IDADDR(MATRIX_STORE_ADDR)
+#define getMTX_RESTORE (u8)REG2IDADDR(MATRIX_RESTORE_ADDR)
+#define getMTX_MULT_4x4 (u8)REG2IDADDR(MATRIX_MULT4x4_ADDR)
+#define getMTX_SCALE (u8)REG2IDADDR(MATRIX_SCALE_ADDR)
+#define getMTX_PUSH (u8)REG2IDADDR(GFX_MTX_PUSH_ADDR)
+#define getNOP (u8)REG2IDADDR(GFX_NOP_ADDR)
+#define getMTX_POP (u8)REG2IDADDR(GFX_MTX_POP_ADDR)
+#define getMTX_TRANS (u8)REG2IDADDR(GFX_MTX_TRANS_ADDR)
+#define getMTX_IDENTITY (u8)REG2IDADDR(GFX_MTX_IDENTITY_ADDR)
+#define getMTX_LOAD_4x4 (u8)REG2IDADDR(GFX_MTX_LOAD_4x4_ADDR)
+#define getMTX_LOAD_4x3 (u8)REG2IDADDR(GFX_MTX_LOAD_4x3_ADDR)
+#define getMTX_MODE (u8)REG2IDADDR(GFX_MTX_MODE_ADDR)
+#define getVIEWPORT (u8)REG2IDADDR(GFX_VIEWPORT_ADDR)
+#define getFIFO_NORMAL (u8)REG2IDADDR(GFX_NORMAL_ADDR)
+#define getFIFO_SHININESS (u8)REG2IDADDR(GFX_SHININESS_ADDR)
+#define getFIFO_POLYGON_ATTR (u8)REG2IDADDR(GFX_POLYGON_ATTR_ADDR)
+#define getFIFO_DIFFUSE_AMBIENT (u8)REG2IDADDR(GFX_DIFFUSE_AMBIENT_ADDR)
+#define getFIFO_SPECULAR_EMISSION (u8)REG2IDADDR(GFX_SPECULAR_EMISSION_ADDR)
+#define getFIFO_BEGIN (u8)REG2IDADDR(GFX_BEGIN_ADDR)
+#define getFIFO_END (u8)REG2IDADDR(GFX_END_ADDR)
+#define getFIFO_SWAP_BUFFERS (u8)REG2IDADDR(FIFO_SWAP_BUFFERS_ADDR) //aka getFIFO_FLUSH
+#define getFIFO_VIEWPORT (u8)REG2IDADDR(GFX_VIEWPORT_ADDR)
+
 #endif
 
-extern u32 ID2REG_C(u8 val);
 extern u32 FIFO_COMMAND_PACK_C(u8 c1, u8 c2, u8 c3, u8 c4);
-extern u8 getFIFO_NOP();
-extern u8 getFIFO_STATUS();
-extern u8 getFIFO_COLOR();
-extern u8 getFIFO_VERTEX10();
-extern u8 getFIFO_VERTEX16();
-extern u8 getFIFO_TEX_COORD();
-extern u8 getFIFO_VTX_XY();
-extern u8 getFIFO_TEX_FORMAT();
-extern u8 getFIFO_CLEAR_COLOR();
-extern u8 getFIFO_CLEAR_DEPTH();
-extern u8 getFIFO_LIGHT_VECTOR();
-extern u8 getFIFO_LIGHT_COLOR();
-extern u8 getFIFO_NORMAL();
-extern u8 getFIFO_DIFFUSE_AMBIENT();
-extern u8 getFIFO_SPECULAR_EMISSION();
-extern u8 getFIFO_SHININESS();
-extern u8 getFIFO_BEGIN();
-extern u8 getFIFO_END();
-extern u8 getFIFO_FLUSH();
-extern u8 getFIFO_VIEWPORT();
-extern u8 getMTX_MULT_3x3();
-extern u8 getMTX_MULT_4x4();
-extern u8 getMTX_SCALE();
-
-extern u8 getMTX_PUSH();
-extern u8 getMTX_POP();
-extern u8 getNOP();
-extern u8 getMTX_TRANS();
-extern u8 getMTX_STORE();
-extern u8 getMTX_IDENTITY();
-extern u8 getMTX_LOAD_4x4();
-extern u8 getMTX_LOAD_4x3();
-extern u8 getMTX_MODE();
-extern u8 getVIEWPORT();
 extern struct unpackedCmd FIFO_COMMAND_PACKED_FMT_UNPACK(u32 cmd);
 extern int BuildNDSGXDisplayListObjectFromFile(char * filename, struct ndsDisplayListDescriptor * dlInst);
 extern int getRawFileSizefromNDSGXDisplayListObject(struct ndsDisplayListDescriptor * dlInst);
@@ -132,9 +134,3 @@ extern GLvoid BuildLists();
 extern GLvoid ReSizeGLScene(GLsizei width, GLsizei height);
 extern int InitGL();
 extern int DrawGLScene();
-extern u8 getMTX_STORE();
-extern u8 getMTX_RESTORE();
-extern u8 getFIFO_LIGHT_COLOR();
-extern u8 getFIFO_SHININESS();
-extern u8 getFIFO_POLYGON_ATTR();
-extern u8 getFIFO_SWAP_BUFFERS();

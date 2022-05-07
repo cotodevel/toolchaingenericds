@@ -55,20 +55,6 @@ USA
 #include "PackedDisplayListCompiledVS2012.h"
 #endif
 
-//NDS GX C Display List implementation
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u32 ID2REG_C(u8 val){	
-	u8  u8val = (u8)((val) << 2);
-	return (u32)(u8val | 0x04000400);
-}
-
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("O0")))
@@ -79,442 +65,6 @@ __attribute__ ((optnone))
 #endif
 u32 FIFO_COMMAND_PACK_C(u8 c1, u8 c2, u8 c3, u8 c4) {
 	return (u32)(((c4) << 24) | ((c3) << 16) | ((c2) << 8) | (c1));
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getFIFO_NOP(){
-	return REG2IDADDR(GFX_FIFO_ADDR);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getFIFO_STATUS(){
-	return REG2IDADDR(GFX_STATUS_ADDR);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getFIFO_COLOR(){
-	return REG2IDADDR(GFX_COLOR_ADDR);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif  
-u8 getFIFO_VERTEX16(){
-	return REG2IDADDR(GFX_VERTEX16_ADDR);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif  
-u8 getFIFO_VERTEX10(){
-	return REG2IDADDR(GFX_VERTEX10_ADDR);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getFIFO_TEX_COORD(){
-	return REG2IDADDR(GFX_TEX_COORD_ADDR);
-}
-
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getFIFO_VTX_XY(){
-	return REG2IDADDR(GFX_VERTEX_XY_ADDR);
-}
-
-
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getFIFO_TEX_FORMAT(){
-	return REG2IDADDR(GFX_TEX_FORMAT_ADDR);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getFIFO_CLEAR_COLOR(){
-	return REG2IDADDR(GFX_CLEAR_COLOR_ADDR);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getFIFO_CLEAR_DEPTH(){
-	return REG2IDADDR(GFX_CLEAR_DEPTH_ADDR);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getFIFO_LIGHT_VECTOR(){
-	return REG2IDADDR(GFX_LIGHT_VECTOR_ADDR);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getFIFO_LIGHT_COLOR(){
-	return REG2IDADDR(GFX_LIGHT_COLOR_ADDR);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getMTX_MULT_3x3(){
-	return REG2IDADDR(MATRIX_MULT3x3_ADDR);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getMTX_STORE(){
-	return REG2IDADDR(MATRIX_STORE_ADDR);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getMTX_RESTORE(){
-	return REG2IDADDR(MATRIX_RESTORE_ADDR);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getMTX_MULT_4x4(){
-	return REG2IDADDR(MATRIX_MULT4x4_ADDR);
-}
-
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getMTX_SCALE(){
-	return REG2IDADDR(MATRIX_SCALE_ADDR);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getMTX_PUSH(){
-	return REG2IDADDR(GFX_MTX_PUSH_ADDR);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getNOP(){
-	return REG2IDADDR(GFX_NOP_ADDR);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getMTX_POP(){
-	return REG2IDADDR(GFX_MTX_POP_ADDR);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getMTX_TRANS(){
-	return REG2IDADDR(GFX_MTX_TRANS_ADDR);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getMTX_IDENTITY(){
-	return REG2IDADDR(GFX_MTX_IDENTITY_ADDR);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getMTX_LOAD_4x4(){
-	return REG2IDADDR(GFX_MTX_LOAD_4x4_ADDR);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getMTX_LOAD_4x3(){
-	return REG2IDADDR(GFX_MTX_LOAD_4x3_ADDR);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getMTX_MODE(){
-	return REG2IDADDR(GFX_MTX_MODE_ADDR);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getVIEWPORT(){
-	return REG2IDADDR(GFX_VIEWPORT_ADDR);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getFIFO_NORMAL(){
-	return REG2IDADDR(GFX_NORMAL_ADDR);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getFIFO_SHININESS(){
-	return REG2IDADDR(GFX_SHININESS_ADDR);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getFIFO_POLYGON_ATTR(){
-	return REG2IDADDR(GFX_POLYGON_ATTR_ADDR);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getFIFO_SWAP_BUFFERS(){
-	return REG2IDADDR(FIFO_SWAP_BUFFERS_ADDR);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getFIFO_DIFFUSE_AMBIENT(){
-	return REG2IDADDR(GFX_DIFFUSE_AMBIENT_ADDR);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getFIFO_SPECULAR_EMISSION(){
-	return REG2IDADDR(GFX_SPECULAR_EMISSION_ADDR);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getFIFO_BEGIN(){
-	return REG2IDADDR(GFX_BEGIN_ADDR);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getFIFO_END(){
-	return REG2IDADDR(GFX_END_ADDR);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getFIFO_FLUSH(){
-	return REG2IDADDR(FIFO_SWAP_BUFFERS_ADDR);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-u8 getFIFO_VIEWPORT(){
-	return REG2IDADDR(GFX_VIEWPORT_ADDR);
 }
 
 #ifdef ARM9
@@ -560,7 +110,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 bool getDisplayListFIFO_BEGIN(struct ndsDisplayListDescriptor * dlInst, struct ndsDisplayListDescriptor * dlInstOut){
-	return getDisplayListFilterByCommand(dlInst, dlInstOut, (u8)getFIFO_BEGIN());	
+	return getDisplayListFilterByCommand(dlInst, dlInstOut, (u8)getFIFO_BEGIN);	
 }
 
 //Lists: All "FIFO_END" commands inside dlInst
@@ -573,7 +123,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 bool getDisplayListFIFO_END(struct ndsDisplayListDescriptor * dlInst, struct ndsDisplayListDescriptor * dlInstOut){
-	return getDisplayListFilterByCommand(dlInst, dlInstOut, (u8)getFIFO_END());	
+	return getDisplayListFilterByCommand(dlInst, dlInstOut, (u8)getFIFO_END);	
 }
 
 //Lists: All "FIFO_VERTEX16" commands inside dlInst
@@ -586,7 +136,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 bool getDisplayListFIFO_VERTEX16(struct ndsDisplayListDescriptor * dlInst, struct ndsDisplayListDescriptor * dlInstOut){
-	return getDisplayListFilterByCommand(dlInst, dlInstOut, (u8)getFIFO_VERTEX16());	
+	return getDisplayListFilterByCommand(dlInst, dlInstOut, (u8)getFIFO_VERTEX16);	
 }
 
 //Lists: All "FIFO_TEX_COORD" commands inside dlInst
@@ -599,7 +149,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 bool getDisplayListFIFO_TEX_COORD(struct ndsDisplayListDescriptor * dlInst, struct ndsDisplayListDescriptor * dlInstOut){
-	return getDisplayListFilterByCommand(dlInst, dlInstOut, (u8)getFIFO_TEX_COORD());	
+	return getDisplayListFilterByCommand(dlInst, dlInstOut, (u8)getFIFO_TEX_COORD);	
 }
 
 //Lists: All "FIFO_COLOR" commands inside dlInst
@@ -612,7 +162,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 bool getDisplayListFIFO_COLOR(struct ndsDisplayListDescriptor * dlInst, struct ndsDisplayListDescriptor * dlInstOut){
-	return getDisplayListFilterByCommand(dlInst, dlInstOut, (u8)getFIFO_COLOR());	
+	return getDisplayListFilterByCommand(dlInst, dlInstOut, (u8)getFIFO_COLOR);	
 }
 
 
@@ -723,7 +273,7 @@ bool getDisplayListFilterByCommand(struct ndsDisplayListDescriptor * dlInst, str
 			}
 			//Handle special case: FIFO_VERTEX16 cmd. It packs 2 x 32bit (4x 16v values) = 8 bytes. 
 			if(indexOurCommandIs>1){
-				u8 specialCommandFIFO_VERTEX16 = (u8)getFIFO_VERTEX16();
+				u8 specialCommandFIFO_VERTEX16 = (u8)getFIFO_VERTEX16;
 				if(lastCmd == specialCommandFIFO_VERTEX16){
 					indexOurCommandIs++;
 				}
@@ -793,9 +343,9 @@ int BuildNDSGXDisplayListObjectFromFile(char * filename, struct ndsDisplayListDe
 			dlInst->ndsDisplayListSize = (int)*curPtr;
 			curPtr++;
 			
-			u32 cmdv1 = FIFO_COMMAND_PACK_C( getFIFO_BEGIN() , getFIFO_COLOR() , getFIFO_TEX_COORD() , getFIFO_NORMAL() ); //DL_TYPE_FIFO_PACKED_COMMAND_V1
-			u32 cmdv2 = FIFO_COMMAND_PACK_C( getFIFO_VERTEX16() , getFIFO_COLOR() , getFIFO_TEX_COORD() , getFIFO_NORMAL() ); //DL_TYPE_FIFO_PACKED_COMMAND_V2
-			u32 cmdend = FIFO_COMMAND_PACK_C( getFIFO_VERTEX16() , getFIFO_END() , getFIFO_NOP() , getFIFO_NOP() ); //DL_TYPE_FIFO_PACKED_COMMAND_END
+			u32 cmdv1 = FIFO_COMMAND_PACK_C( getFIFO_BEGIN , getFIFO_COLOR , getFIFO_TEX_COORD , getFIFO_NORMAL ); //DL_TYPE_FIFO_PACKED_COMMAND_V1
+			u32 cmdv2 = FIFO_COMMAND_PACK_C( getFIFO_VERTEX16 , getFIFO_COLOR , getFIFO_TEX_COORD , getFIFO_NORMAL ); //DL_TYPE_FIFO_PACKED_COMMAND_V2
+			u32 cmdend = FIFO_COMMAND_PACK_C( getFIFO_VERTEX16 , getFIFO_END , getFIFO_NOP , getFIFO_NOP ); //DL_TYPE_FIFO_PACKED_COMMAND_END
 				
 			//FIFO_COMMAND_PACK() CMD Descriptor (start cmd):
 			//1: FIFO_VERTEX16
@@ -869,66 +419,30 @@ __attribute__((optnone))
 #endif
 bool isAGXCommand(u32 val){
 	bool isAGXCommand = false;
-	
-	if (val == (u32)getMTX_STORE()) {
-		isAGXCommand = true;
-	}
-	else if (val == (u32)getMTX_TRANS()) {
-		isAGXCommand = true;
-	}
-	else if (val == (u32)getMTX_IDENTITY()) {
-		isAGXCommand = true;
-	}
-	else if (val == (u32)getMTX_MODE()) {
-		isAGXCommand = true;
-	}
-	else if (val == (u32)getVIEWPORT()) {
-		isAGXCommand = true;
-	}
-	else if (val == (u32)getFIFO_TEX_COORD()) {
-		isAGXCommand = true;
-	}
-	else if (val == (u32)getFIFO_BEGIN()) {
-		isAGXCommand = true;
-	}
-	else if (val == (u32)getFIFO_END()) {
-		isAGXCommand = true;
-	}
-	else if (val == (u32)getFIFO_COLOR()) {
-		isAGXCommand = true;
-	}
-	else if (val == (u32)getFIFO_NORMAL()) {
-		isAGXCommand = true;
-	}
-	else if (val == (u32)getFIFO_VERTEX16()) {
-		isAGXCommand = true;
-	}
-	else if (val == (u32)getFIFO_VERTEX10()) {
-		isAGXCommand = true;
-	}
-	else if (val == (u32)getFIFO_VTX_XY()) {
-		isAGXCommand = true;
-	}
-	else if (val == (u32)getMTX_PUSH()) {
-		isAGXCommand = true;
-	}
-	else if (val == (u32)getMTX_POP()) {
-		isAGXCommand = true;
-	}
-	else if (val == (u32)getMTX_MULT_3x3()) {
-		isAGXCommand = true;
-	}
-	else if (val == (u32)getMTX_MULT_4x4()) {
-		isAGXCommand = true;
-	}
-	else if (val == (u32)getMTX_LOAD_4x4()) {
-		isAGXCommand = true;
-	}
-	else if (val == (u32)getMTX_LOAD_4x3()) {
-		isAGXCommand = true;
-	}
-	else if (val == (u32)getNOP()) {
-		isAGXCommand = true;
+	switch(val){
+		case((u32)getMTX_STORE):
+		case((u32)getMTX_TRANS):
+		case((u32)getMTX_IDENTITY):
+		case((u32)getVIEWPORT):
+		case((u32)getFIFO_TEX_COORD):
+		case((u32)getFIFO_BEGIN):
+		case((u32)getFIFO_END):
+		case((u32)getFIFO_COLOR):
+		case((u32)getFIFO_NORMAL):
+		case((u32)getFIFO_VERTEX16):
+		case((u32)getFIFO_VERTEX10):
+		case((u32)getFIFO_VTX_XY):
+		case((u32)getMTX_PUSH):
+		case((u32)getMTX_POP):
+		case((u32)getMTX_MULT_3x3):
+		case((u32)getMTX_MULT_4x4):
+		case((u32)getMTX_LOAD_4x4):
+		case((u32)getMTX_LOAD_4x3):
+		case((u32)getNOP):
+		{
+			isAGXCommand = true;
+		}
+		break;
 	}
 	return isAGXCommand;
 }
@@ -945,94 +459,91 @@ __attribute__((optnone))
 int getAGXParamsCountFromCommand(u32 val){
 	//same as above method
 	int AGXParamsCount = -1;
-	if (val == (u32)getMTX_STORE()) {
-		//400044Ch 13h 1  17  MTX_STORE - Store Current Matrix on Stack (W)
-		AGXParamsCount = 1;
+	switch(val){
+			case((u32)getMTX_STORE):{
+				//400044Ch 13h 1  17  MTX_STORE - Store Current Matrix on Stack (W)
+				AGXParamsCount = 1;
+			}break;
+			case((u32)getMTX_TRANS):{
+				//  4000470h 1Ch 3  22* MTX_TRANS - Mult. Curr. Matrix by Translation Matrix (W)
+				AGXParamsCount = 3;
+			}break;
+			case((u32)getMTX_IDENTITY):{
+				//4000454h 15h - 19  MTX_IDENTITY - Load Unit Matrix to Current Matrix(W)
+				//no args used by this GX command
+				AGXParamsCount = 0;
+			}break;
+			case((u32)getMTX_MODE):{
+				//4000440h 10h 1  1   MTX_MODE - Set Matrix Mode (W)
+				AGXParamsCount = 1;
+			}break;
+			case((u32)getVIEWPORT):{
+				//4000580h 60h 1  1   VIEWPORT - Set Viewport (W)
+				AGXParamsCount = 1;					   
+			}break;
+			case((u32)getFIFO_TEX_COORD):{
+				//4000488h 22h 1  1   TEXCOORD - Set Texture Coordinates (W)
+				AGXParamsCount = 1;
+			}break;
+			case((u32)getFIFO_BEGIN):{
+				//4000500h 40h 1  1   BEGIN_VTXS - Start of Vertex List (W)
+				AGXParamsCount = 1;
+			}break;
+			case((u32)getFIFO_END):{
+				//4000504h 41h -  1   END_VTXS - End of Vertex List (W)
+				//no args used by this GX command
+				AGXParamsCount = 0;
+			}break;
+			case((u32)getFIFO_COLOR):{
+				//4000480h 20h 1  1   COLOR - Directly Set Vertex Color (W)
+				AGXParamsCount = 1;
+			}break;
+			case((u32)getFIFO_NORMAL):{
+				//4000484h 21h 1  9*  NORMAL - Set Normal Vector (W)
+				AGXParamsCount = 1;
+			}break;
+			case((u32)getFIFO_VERTEX16):{
+				//400048Ch 23h 2  9   VTX_16 - Set Vertex XYZ Coordinates (W)
+				AGXParamsCount = 2;
+			}break;
+			case((u32)getFIFO_VERTEX10):{
+				//4000490h 24h 1  8   VTX_10 - Set Vertex XYZ Coordinates (W)
+				AGXParamsCount = 1;
+			}break;
+			case((u32)getFIFO_VTX_XY):{
+				//4000494h 25h 1  8   VTX_XY - Set Vertex XY Coordinates (W)
+				AGXParamsCount = 1;
+			}break;
+			case((u32)getMTX_PUSH):{
+				//4000444h 11h -  17  MTX_PUSH - Push Current Matrix on Stack (W)
+				//no args used by this GX command
+				AGXParamsCount = 0;
+			}break;
+			case((u32)getMTX_POP):{
+				//4000448h 12h 1  36  MTX_POP - Pop Current Matrix from Stack (W)
+				AGXParamsCount = 1;
+			}break;
+			case((u32)getMTX_MULT_3x3):{
+				//  4000468h 1Ah 9  28* MTX_MULT_3x3 - Multiply Current Matrix by 3x3 Matrix (W)
+				AGXParamsCount = 9;
+			}break;
+			case((u32)getMTX_MULT_4x4):{
+				//  4000460h 18h 16 35* MTX_MULT_4x4 - Multiply Current Matrix by 4x4 Matrix (W)
+				AGXParamsCount = 16;
+			}break;
+			case((u32)getMTX_LOAD_4x4):{
+				//  4000458h 16h 16 34  MTX_LOAD_4x4 - Load 4x4 Matrix to Current Matrix (W)
+				AGXParamsCount = 16;
+			}break;
+			case((u32)getMTX_LOAD_4x3):{
+				//  400045Ch 17h 12 30  MTX_LOAD_4x3 - Load 4x3 Matrix to Current Matrix (W
+				AGXParamsCount = 12;
+			}break;
+			case((u32)getNOP):{
+				//  N/A      00h -  -   NOP - No Operation (for padding packed GXFIFO commands)
+				AGXParamsCount = 0;
+			}break;
 	}
-	else if (val == (u32)getMTX_TRANS()) {
-		//  4000470h 1Ch 3  22* MTX_TRANS - Mult. Curr. Matrix by Translation Matrix (W)
-		AGXParamsCount = 3;
-	}
-	else if (val == (u32)getMTX_IDENTITY()) {
-		//4000454h 15h - 19  MTX_IDENTITY - Load Unit Matrix to Current Matrix(W)
-		//no args used by this GX command
-		AGXParamsCount = 0;
-	}
-	else if (val == (u32)getMTX_MODE()) {
-		//4000440h 10h 1  1   MTX_MODE - Set Matrix Mode (W)
-		AGXParamsCount = 1;
-	}
-	else if (val == (u32)getVIEWPORT()) {
-		//4000580h 60h 1  1   VIEWPORT - Set Viewport (W)
-		AGXParamsCount = 1;
-	}
-	else if (val == (u32)getFIFO_TEX_COORD()) {
-		//4000488h 22h 1  1   TEXCOORD - Set Texture Coordinates (W)
-		AGXParamsCount = 1;
-	}
-	else if (val == (u32)getFIFO_BEGIN()) {
-		//4000500h 40h 1  1   BEGIN_VTXS - Start of Vertex List (W)
-		AGXParamsCount = 1;
-	}
-	else if (val == (u32)getFIFO_END()) {
-		//4000504h 41h -  1   END_VTXS - End of Vertex List (W)
-		//no args used by this GX command
-		AGXParamsCount = 0;
-	}
-	else if (val == (u32)getFIFO_COLOR()) {
-		//4000480h 20h 1  1   COLOR - Directly Set Vertex Color (W)
-		AGXParamsCount = 1;
-	}
-	else if (val == (u32)getFIFO_NORMAL()) {
-		//4000484h 21h 1  9*  NORMAL - Set Normal Vector (W)
-		AGXParamsCount = 1;
-	}
-	else if (val == (u32)getFIFO_VERTEX16()) {
-		//400048Ch 23h 2  9   VTX_16 - Set Vertex XYZ Coordinates (W)
-		AGXParamsCount = 2;
-	}
-	else if (val == (u32)getFIFO_VERTEX10()) {
-		//4000490h 24h 1  8   VTX_10 - Set Vertex XYZ Coordinates (W)
-		AGXParamsCount = 1;
-	}
-	else if (val == (u32)getFIFO_VTX_XY()) {
-		//4000494h 25h 1  8   VTX_XY - Set Vertex XY Coordinates (W)
-		AGXParamsCount = 1;
-	}
-	else if (val == (u32)getMTX_PUSH()) {
-		//4000444h 11h -  17  MTX_PUSH - Push Current Matrix on Stack (W)
-		//no args used by this GX command
-		AGXParamsCount = 0;
-	}
-	else if (val == (u32)getMTX_POP()) {
-		//4000448h 12h 1  36  MTX_POP - Pop Current Matrix from Stack (W)
-		AGXParamsCount = 1;
-	}
-	else if (val == (u32)getMTX_MULT_3x3()) {
-		//  4000468h 1Ah 9  28* MTX_MULT_3x3 - Multiply Current Matrix by 3x3 Matrix (W)
-		AGXParamsCount = 9;
-	}
-
-	else if (val == (u32)getMTX_MULT_4x4()) {
-		//  4000460h 18h 16 35* MTX_MULT_4x4 - Multiply Current Matrix by 4x4 Matrix (W)
-		AGXParamsCount = 16;
-	}
-
-	else if (val == (u32)getMTX_LOAD_4x4()) {
-		//  4000458h 16h 16 34  MTX_LOAD_4x4 - Load 4x4 Matrix to Current Matrix (W)
-		AGXParamsCount = 16;
-	}
-
-	else if (val == (u32)getMTX_LOAD_4x3()) {
-		//  400045Ch 17h 12 30  MTX_LOAD_4x3 - Load 4x3 Matrix to Current Matrix (W
-		AGXParamsCount = 12;
-	}
-
-	else if (val == (u32)getNOP()) {
-		//  N/A      00h -  -   NOP - No Operation (for padding packed GXFIFO commands)
-		AGXParamsCount = 0;
-	}
-
 	return AGXParamsCount;
 }
 
@@ -1107,21 +618,21 @@ bool packAndExportSourceCodeFromRawUnpackedDisplayListFormat(char * filenameOut,
 
 				int cmdOffset = 0;
 				bool isCmd = false;
-				if (cmd == getFIFO_BEGIN()){
+				if (cmd == getFIFO_BEGIN){
 					fprintf(fout, "FIFO_BEGIN");
 					currentCmdCount++;
 					isCmd = true;
 
 					//no args used by this GX command
 				}
-				else if(cmd == getMTX_PUSH()){
+				else if(cmd == getMTX_PUSH){
 					fprintf(fout, "MTX_PUSH");
 					currentCmdCount++;
 					isCmd = true;
 
 					//no args used by this GX command
 				}
-				else if(cmd == getMTX_POP()){
+				else if(cmd == getMTX_POP){
 					fprintf(fout, "MTX_POP");
 					currentCmdCount++;
 					isCmd = true;
@@ -1138,7 +649,7 @@ bool packAndExportSourceCodeFromRawUnpackedDisplayListFormat(char * filenameOut,
 						curRawARGBufferCount++;
 					}
 				}
-				else if (cmd == getMTX_IDENTITY()) {
+				else if (cmd == getMTX_IDENTITY) {
 					fprintf(fout, "MTX_IDENTITY");
 					currentCmdCount++;
 					isCmd = true;
@@ -1146,7 +657,7 @@ bool packAndExportSourceCodeFromRawUnpackedDisplayListFormat(char * filenameOut,
 					//4000454h 15h - 19  MTX_IDENTITY - Load Unit Matrix to Current Matrix(W)
 					//no args used by this GX command
 				}
-				else if (cmd == getMTX_TRANS()) {
+				else if (cmd == getMTX_TRANS) {
 					fprintf(fout, "MTX_TRANS");
 					currentCmdCount++;
 					isCmd = true;
@@ -1163,7 +674,7 @@ bool packAndExportSourceCodeFromRawUnpackedDisplayListFormat(char * filenameOut,
 						curRawARGBufferCount++;
 					}
 				}
-				else if (cmd == getMTX_MULT_3x3()) {
+				else if (cmd == getMTX_MULT_3x3) {
 					fprintf(fout, "MTX_MULT_3x3");
 					currentCmdCount++;
 					isCmd = true;
@@ -1180,7 +691,7 @@ bool packAndExportSourceCodeFromRawUnpackedDisplayListFormat(char * filenameOut,
 						curRawARGBufferCount++;
 					}
 				}
-				else if (cmd == getFIFO_END()) {
+				else if (cmd == getFIFO_END) {
 					fprintf(fout, "FIFO_END");
 					currentCmdCount++;
 					isCmd = true;
@@ -1353,21 +864,21 @@ bool rawUnpackedToRawPackedDisplayListFormat(u32 * inRawUnpackedDisplayList, u32
 			bool iscmdEnd = false;
 			int cmdOffset = 0;
 			bool isCmd = false;
-			if (cmd == getFIFO_BEGIN()){
+			if (cmd == getFIFO_BEGIN){
 				//fprintf(fout, "FIFO_BEGIN");
 				currentCmdCount++;
 				isCmd = true;
 
 				//no args used by this GX command
 			}
-			else if(cmd == getMTX_PUSH()){
+			else if(cmd == getMTX_PUSH){
 				//fprintf(fout, "MTX_PUSH");
 				currentCmdCount++;
 				isCmd = true;
 
 				//no args used by this GX command
 			}
-			else if(cmd == getMTX_POP()){
+			else if(cmd == getMTX_POP){
 				//fprintf(fout, "MTX_POP");
 				currentCmdCount++;
 				isCmd = true;
@@ -1384,7 +895,7 @@ bool rawUnpackedToRawPackedDisplayListFormat(u32 * inRawUnpackedDisplayList, u32
 					curRawARGBufferCount++;
 				}
 			}
-			else if (cmd == getMTX_IDENTITY()) {
+			else if (cmd == getMTX_IDENTITY) {
 				//fprintf(fout, "MTX_IDENTITY");
 				currentCmdCount++;
 				isCmd = true;
@@ -1392,7 +903,7 @@ bool rawUnpackedToRawPackedDisplayListFormat(u32 * inRawUnpackedDisplayList, u32
 				//4000454h 15h - 19  MTX_IDENTITY - Load Unit Matrix to Current Matrix(W)
 				//no args used by this GX command
 			}
-			else if (cmd == getMTX_TRANS()) {
+			else if (cmd == getMTX_TRANS) {
 				//fprintf(fout, "MTX_TRANS");
 				currentCmdCount++;
 				isCmd = true;
@@ -1409,7 +920,7 @@ bool rawUnpackedToRawPackedDisplayListFormat(u32 * inRawUnpackedDisplayList, u32
 					curRawARGBufferCount++;
 				}
 			}
-			else if (cmd == getMTX_MULT_3x3()) {
+			else if (cmd == getMTX_MULT_3x3) {
 				//fprintf(fout, "MTX_MULT_3x3");
 				currentCmdCount++;
 				isCmd = true;
@@ -1426,7 +937,7 @@ bool rawUnpackedToRawPackedDisplayListFormat(u32 * inRawUnpackedDisplayList, u32
 					curRawARGBufferCount++;
 				}
 			}
-			else if (cmd == getFIFO_END()) {
+			else if (cmd == getFIFO_END) {
 				//fprintf(fout, "FIFO_END");
 				currentCmdCount++;
 				isCmd = true;
