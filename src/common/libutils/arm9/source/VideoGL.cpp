@@ -98,7 +98,7 @@ void glPushMatrix(void){
 	u32 baseGXDLOffset = (isAnOpenGLExtendedDisplayListCallList == false) ? 0 : InternalUnpackedGX_DL_workSize;
 	u32 ptrVal = (*savedDLBufferOffsetPtr);
 	if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
-		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = getMTX_PUSH();
+		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = getMTX_PUSH;
 		(*savedDLBufferOffsetPtr)++;
 		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBufferOffsetPtr, cmd, (*savedDLBufferOffsetPtr) - ptrVal);
 	}
@@ -117,7 +117,7 @@ void glPopMatrix(sint32 index){
 	u32 baseGXDLOffset = (isAnOpenGLExtendedDisplayListCallList == false) ? 0 : InternalUnpackedGX_DL_workSize;
 	u32 ptrVal = (*savedDLBufferOffsetPtr);
 	if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
-		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = getMTX_POP();
+		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = getMTX_POP;
 		(*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)index;
 		(*savedDLBufferOffsetPtr)++;
@@ -176,7 +176,7 @@ void handleInmediateGXDisplayList(u32 * sourcePhysDisplayList, u32 * sourcePhysD
 			int leftArgCnt = (cmdCount/4); // -1 is removed command itself from the arg list count 
 			while(leftArgCnt > 0){
 				u8 val = (u8)*currCmd;
-				if (val == (u32)getMTX_STORE()) {
+				if (val == (u32)getMTX_STORE) {
 					//write commands
 					currCmd++; 
 					u32 arg1 = *currCmd; currCmd++;
@@ -185,7 +185,7 @@ void handleInmediateGXDisplayList(u32 * sourcePhysDisplayList, u32 * sourcePhysD
 					#endif
 					leftArgCnt-= MTX_STORE_GXCommandParamsCount == 0 ? 1 : MTX_STORE_GXCommandParamsCount;
 				}
-				else if (val == (u32)getMTX_TRANS()) {
+				else if (val == (u32)getMTX_TRANS) {
 					//write commands
 					currCmd++; 
 					u32 arg1 = *currCmd; currCmd++;
@@ -198,7 +198,7 @@ void handleInmediateGXDisplayList(u32 * sourcePhysDisplayList, u32 * sourcePhysD
 					#endif
 					leftArgCnt-= MTX_TRANS_GXCommandParamsCount == 0 ? 1 : MTX_TRANS_GXCommandParamsCount;
 				}
-				else if (val == (u32)getMTX_IDENTITY()) {
+				else if (val == (u32)getMTX_IDENTITY) {
 					//write commands
 					currCmd++; 
 					#ifdef ARM9
@@ -206,7 +206,7 @@ void handleInmediateGXDisplayList(u32 * sourcePhysDisplayList, u32 * sourcePhysD
 					#endif
 					leftArgCnt-= MTX_IDENTITY_GXCommandParamsCount == 0 ? 1 : MTX_IDENTITY_GXCommandParamsCount;
 				}
-				else if (val == (u32)getMTX_MODE()) {
+				else if (val == (u32)getMTX_MODE) {
 					//write commands
 					currCmd++; 
 					u32 arg1 = *currCmd; currCmd++;
@@ -215,7 +215,7 @@ void handleInmediateGXDisplayList(u32 * sourcePhysDisplayList, u32 * sourcePhysD
 					#endif
 					leftArgCnt-= MTX_MODE_GXCommandParamsCount == 0 ? 1 : MTX_MODE_GXCommandParamsCount;
 				}
-				else if (val == (u32)getVIEWPORT()) {
+				else if (val == (u32)getVIEWPORT) {
 					//write commands
 					currCmd++; 
 					u32 arg1 = *currCmd; currCmd++;
@@ -224,7 +224,7 @@ void handleInmediateGXDisplayList(u32 * sourcePhysDisplayList, u32 * sourcePhysD
 					#endif
 					leftArgCnt-= VIEWPORT_GXCommandParamsCount == 0 ? 1 : VIEWPORT_GXCommandParamsCount;
 				}
-				else if (val == (u32)getFIFO_TEX_COORD()) {
+				else if (val == (u32)getFIFO_TEX_COORD) {
 					//write commands
 					currCmd++; 
 					u32 arg1 = *currCmd; currCmd++;
@@ -233,7 +233,7 @@ void handleInmediateGXDisplayList(u32 * sourcePhysDisplayList, u32 * sourcePhysD
 					#endif
 					leftArgCnt-= FIFO_TEX_COORD_GXCommandParamsCount == 0 ? 1 : FIFO_TEX_COORD_GXCommandParamsCount;
 				}
-				else if (val == (u32)getFIFO_BEGIN()) {
+				else if (val == (u32)getFIFO_BEGIN) {
 					//write commands
 					currCmd++; 
 					u32 arg1 = *currCmd; currCmd++;
@@ -242,7 +242,7 @@ void handleInmediateGXDisplayList(u32 * sourcePhysDisplayList, u32 * sourcePhysD
 					#endif
 					leftArgCnt-= FIFO_BEGIN_GXCommandParamsCount == 0 ? 1 : FIFO_BEGIN_GXCommandParamsCount;
 				}
-				else if (val == (u32)getFIFO_END()) {
+				else if (val == (u32)getFIFO_END) {
 					//write commands
 					currCmd++; 
 					#ifdef ARM9
@@ -250,7 +250,7 @@ void handleInmediateGXDisplayList(u32 * sourcePhysDisplayList, u32 * sourcePhysD
 					#endif
 					leftArgCnt-= FIFO_END_GXCommandParamsCount == 0 ? 1 : FIFO_END_GXCommandParamsCount;
 				}
-				else if (val == (u32)getFIFO_COLOR()) {
+				else if (val == (u32)getFIFO_COLOR) {
 					//write commands
 					currCmd++; 
 					u32 arg1 = *currCmd; currCmd++;
@@ -259,7 +259,7 @@ void handleInmediateGXDisplayList(u32 * sourcePhysDisplayList, u32 * sourcePhysD
 					#endif
 					leftArgCnt-= FIFO_COLOR_GXCommandParamsCount == 0 ? 1 : FIFO_COLOR_GXCommandParamsCount;
 				}
-				else if (val == (u32)getFIFO_NORMAL()) {
+				else if (val == (u32)getFIFO_NORMAL) {
 					//write commands
 					currCmd++; 
 					u32 arg1 = *currCmd; currCmd++;
@@ -268,7 +268,7 @@ void handleInmediateGXDisplayList(u32 * sourcePhysDisplayList, u32 * sourcePhysD
 					#endif
 					leftArgCnt-= FIFO_NORMAL_GXCommandParamsCount == 0 ? 1 : FIFO_NORMAL_GXCommandParamsCount;
 				}
-				else if (val == (u32)getFIFO_VERTEX16()) { 
+				else if (val == (u32)getFIFO_VERTEX16) { 
 					//write commands
 					currCmd++; 
 					u32 arg1 = *currCmd; currCmd++;
@@ -279,7 +279,7 @@ void handleInmediateGXDisplayList(u32 * sourcePhysDisplayList, u32 * sourcePhysD
 					#endif
 					leftArgCnt-= FIFO_VERTEX16_GXCommandParamsCount == 0 ? 1 : FIFO_VERTEX16_GXCommandParamsCount;
 				}
-				else if (val == (u32)getFIFO_VERTEX10()) {
+				else if (val == (u32)getFIFO_VERTEX10) {
 					//write commands
 					currCmd++; 
 					u32 arg1 = *currCmd; currCmd++;
@@ -297,7 +297,7 @@ void handleInmediateGXDisplayList(u32 * sourcePhysDisplayList, u32 * sourcePhysD
 					#endif
 					leftArgCnt-= FIFO_VTX_XY_GXCommandParamsCount == 0 ? 1 : FIFO_VTX_XY_GXCommandParamsCount;
 				}
-				else if (val == (u32)getMTX_PUSH()) { 
+				else if (val == (u32)getMTX_PUSH) { 
 					//write commands
 					currCmd++; 
 					#ifdef ARM9
@@ -305,7 +305,7 @@ void handleInmediateGXDisplayList(u32 * sourcePhysDisplayList, u32 * sourcePhysD
 					#endif
 					leftArgCnt-= MTX_PUSH_GXCommandParamsCount == 0 ? 1 : MTX_PUSH_GXCommandParamsCount;
 				}
-				else if (val == (u32)getMTX_POP()) { 
+				else if (val == (u32)getMTX_POP) { 
 					//write commands
 					currCmd++; 
 					u32 arg1 = *currCmd; currCmd++;
@@ -314,7 +314,7 @@ void handleInmediateGXDisplayList(u32 * sourcePhysDisplayList, u32 * sourcePhysD
 					#endif
 					leftArgCnt-= MTX_POP_GXCommandParamsCount == 0 ? 1 : MTX_POP_GXCommandParamsCount;
 				}
-				else if (val == (u32)getMTX_MULT_3x3()) {
+				else if (val == (u32)getMTX_MULT_3x3) {
 					//write commands
 					currCmd++; 
 					u32 arg1 = *currCmd; currCmd++;
@@ -339,7 +339,7 @@ void handleInmediateGXDisplayList(u32 * sourcePhysDisplayList, u32 * sourcePhysD
 					#endif
 					leftArgCnt-= MTX_MULT_3x3_GXCommandParamsCount == 0 ? 1 : MTX_MULT_3x3_GXCommandParamsCount;
 				}
-				else if (val == (u32)getMTX_MULT_4x4()) {
+				else if (val == (u32)getMTX_MULT_4x4) {
 					//write commands
 					currCmd++; 
 					u32 arg1 = *currCmd; currCmd++;
@@ -380,7 +380,7 @@ void handleInmediateGXDisplayList(u32 * sourcePhysDisplayList, u32 * sourcePhysD
 					leftArgCnt-= MTX_MULT_4x4_GXCommandParamsCount == 0 ? 1 : MTX_MULT_4x4_GXCommandParamsCount;
 				}
 
-				else if (val == (u32)getMTX_LOAD_4x4()) {
+				else if (val == (u32)getMTX_LOAD_4x4) {
 					//write commands
 					currCmd++; 
 					u32 arg1 = *currCmd; currCmd++;
@@ -424,7 +424,7 @@ void handleInmediateGXDisplayList(u32 * sourcePhysDisplayList, u32 * sourcePhysD
 					leftArgCnt-= MTX_LOAD_4x4_GXCommandParamsCount == 0 ? 1 : MTX_LOAD_4x4_GXCommandParamsCount;
 				}
 
-				else if (val == (u32)getMTX_LOAD_4x3()) {
+				else if (val == (u32)getMTX_LOAD_4x3) {
 					//write commands
 					currCmd++; 
 					u32 arg1 = *currCmd; currCmd++;
@@ -488,7 +488,7 @@ void glRestoreMatrix(sint32 index){
 	u32 ptrVal = (*savedDLBufferOffsetPtr);
 	if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 		//4000450h 14h 1  36  MTX_RESTORE - Restore Current Matrix from Stack (W)
-		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = getMTX_RESTORE();
+		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = getMTX_RESTORE;
 		(*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)index;
 		(*savedDLBufferOffsetPtr)++;
@@ -510,7 +510,7 @@ void glStoreMatrix(sint32 index){
 	u32 ptrVal = (*savedDLBufferOffsetPtr);
 	if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 		//400044Ch - Cmd 13h - MTX_STORE - Store Current Matrix on Stack (W). Sets [N]=C. The stack pointer S is not used, and is left unchanged.
-		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getMTX_STORE(); //Unpacked Command format
+		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getMTX_STORE; //Unpacked Command format
 		(*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)(index&0x1f); (*savedDLBufferOffsetPtr)++; //Unpacked Command format
 		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBufferOffsetPtr, cmd, (*savedDLBufferOffsetPtr) - ptrVal);
@@ -531,7 +531,7 @@ void glScalev(GLvector* v){
 	u32 ptrVal = (*savedDLBufferOffsetPtr);
 	if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 		//400046Ch 1Bh 3  22  MTX_SCALE - Multiply Current Matrix by Scale Matrix (W)
-		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getMTX_SCALE(); //Unpacked Command format
+		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getMTX_SCALE; //Unpacked Command format
 		(*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)v->x; (*savedDLBufferOffsetPtr)++; //Unpacked Command format
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)v->y; (*savedDLBufferOffsetPtr)++; //Unpacked Command format
@@ -554,7 +554,7 @@ void glTranslatev(GLvector* v){
 	u32 ptrVal = (*savedDLBufferOffsetPtr);
 	if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 		//4000470h 1Ch 3  22* MTX_TRANS - Mult. Curr. Matrix by Translation Matrix (W)
-		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getMTX_TRANS(); //Unpacked Command format
+		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getMTX_TRANS; //Unpacked Command format
 		(*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)v->x; (*savedDLBufferOffsetPtr)++; //Unpacked Command format
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)v->y; (*savedDLBufferOffsetPtr)++; //Unpacked Command format
@@ -589,7 +589,7 @@ void glTranslate3f32(f32 x, f32 y, f32 z){
 	u32 ptrVal = (*savedDLBufferOffsetPtr);
 	if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 		//MTX_TRANS: Sets C=M*C. Parameters: 3, m[0..2] (x,y,z position)
-		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = getMTX_TRANS(); //Unpacked Command format
+		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = getMTX_TRANS; //Unpacked Command format
 		(*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)(x); (*savedDLBufferOffsetPtr)++; //Unpacked Command format
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)(y); (*savedDLBufferOffsetPtr)++;
@@ -612,7 +612,7 @@ void glScalef32(f32 factor){
 	u32 ptrVal = (*savedDLBufferOffsetPtr);
 	if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 		//400046Ch 1Bh 3  22  MTX_SCALE - Multiply Current Matrix by Scale Matrix (W)
-		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getMTX_SCALE(); //Unpacked Command format
+		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getMTX_SCALE; //Unpacked Command format
 		(*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)factor; (*savedDLBufferOffsetPtr)++; //Unpacked Command format
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)factor; (*savedDLBufferOffsetPtr)++; //Unpacked Command format
@@ -636,11 +636,11 @@ void glLight(int id, rgb color, v10 x, v10 y, v10 z){
 	if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 		id = (id & 3) << 30;
 		//40004C8h 32h 1  6   LIGHT_VECTOR - Set Light's Directional Vector (W)
-		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_LIGHT_VECTOR(); //Unpacked Command format
+		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_LIGHT_VECTOR; //Unpacked Command format
 		(*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)(id | ((z & 0x3FF) << 20) | ((y & 0x3FF) << 10) | (x & 0x3FF)); (*savedDLBufferOffsetPtr)++; //Unpacked Command format
 		//40004CCh 33h 1  1   LIGHT_COLOR - Set Light Color (W)
-		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_LIGHT_COLOR(); //Unpacked Command format
+		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_LIGHT_COLOR; //Unpacked Command format
 		(*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)(id | color); (*savedDLBufferOffsetPtr)++; //Unpacked Command format
 		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBufferOffsetPtr, cmd, (*savedDLBufferOffsetPtr) - ptrVal);
@@ -661,7 +661,7 @@ void glNormal(uint32 normal){
 	u32 ptrVal = (*savedDLBufferOffsetPtr);
 	if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 		//4000484h 21h 1  9*  NORMAL - Set Normal Vector (W)
-		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_NORMAL(); //Unpacked Command format
+		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_NORMAL; //Unpacked Command format
 		(*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)normal; (*savedDLBufferOffsetPtr)++; //Unpacked Command format
 		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBufferOffsetPtr, cmd, (*savedDLBufferOffsetPtr) - ptrVal);
@@ -682,7 +682,7 @@ void glLoadIdentity(void){
 	u32 ptrVal = (*savedDLBufferOffsetPtr);
 	if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 		//4000454h 15h -  19  MTX_IDENTITY - Load Unit(Identity) Matrix to Current Matrix (W)
-		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getMTX_IDENTITY(); //Unpacked Command format
+		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getMTX_IDENTITY; //Unpacked Command format
 		(*savedDLBufferOffsetPtr)++;
 		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBufferOffsetPtr, cmd, (*savedDLBufferOffsetPtr) - ptrVal);
 	}
@@ -702,7 +702,7 @@ void glMatrixMode(int mode){
 	u32 ptrVal = (*savedDLBufferOffsetPtr);
 	if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 		//4000440h 10h 1  1   MTX_MODE - Set Matrix Mode (W)
-		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getMTX_MODE(); //Unpacked Command format
+		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getMTX_MODE; //Unpacked Command format
 		(*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)(mode); (*savedDLBufferOffsetPtr)++; //Unpacked Command format
 		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBufferOffsetPtr, cmd, (*savedDLBufferOffsetPtr) - ptrVal);
@@ -729,7 +729,7 @@ void glMaterialShinnyness(void){
 			shiny8[i>>1] = i;
 		}
 		//40004D0h 34h 32 32  SHININESS - Specular Reflection Shininess Table (W)
-		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_SHININESS(); //Unpacked Command format
+		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_SHININESS; //Unpacked Command format
 		(*savedDLBufferOffsetPtr)++;
 		for (i = 0; i < 128 / 4; i++){
 			InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)shiny32[i]; (*savedDLBufferOffsetPtr)++; //Unpacked Command format
@@ -753,7 +753,7 @@ void glPolyFmt(int alpha){ // obviously more to this
 	u32 ptrVal = (*savedDLBufferOffsetPtr);
 	if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 		//40004A4h 29h 1  1   POLYGON_ATTR - Set Polygon Attributes (W)
-		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_POLYGON_ATTR(); //Unpacked Command format
+		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_POLYGON_ATTR; //Unpacked Command format
 		(*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)alpha; (*savedDLBufferOffsetPtr)++; //Unpacked Command format
 		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBufferOffsetPtr, cmd, (*savedDLBufferOffsetPtr) - ptrVal);
@@ -774,7 +774,7 @@ void glViewport(uint8 x1, uint8 y1, uint8 x2, uint8 y2){
 	u32 ptrVal = (*savedDLBufferOffsetPtr);
 	if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 		//4000580h 60h 1  1   VIEWPORT - Set Viewport (W)
-		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getVIEWPORT(); //Unpacked Command format
+		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getVIEWPORT; //Unpacked Command format
 		(*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)((x1) + (y1 << 8) + (x2 << 16) + (y2 << 24)); (*savedDLBufferOffsetPtr)++; //Unpacked Command format
 		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBufferOffsetPtr, cmd, (*savedDLBufferOffsetPtr) - ptrVal);
@@ -898,7 +898,7 @@ void glFlush(void){
 	u32 ptrVal = (*savedDLBufferOffsetPtr);
 	if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 		//4000540h 50h 1  392 SWAP_BUFFERS - Swap Rendering Engine Buffer (W)
-		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_SWAP_BUFFERS(); //Unpacked Command format
+		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_SWAP_BUFFERS; //Unpacked Command format
 		(*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)(2); (*savedDLBufferOffsetPtr)++; //Unpacked Command format
 		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBufferOffsetPtr, cmd, (*savedDLBufferOffsetPtr) - ptrVal);
@@ -935,7 +935,7 @@ void glLoadMatrix4x4(m4x4 * m){
 	u32 ptrVal = (*savedDLBufferOffsetPtr);
 	if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 		//4000458h 16h 16 34  MTX_LOAD_4x4 - Load 4x4 Matrix to Current Matrix (W)
-		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getMTX_LOAD_4x4(); //Unpacked Command format
+		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getMTX_LOAD_4x4; //Unpacked Command format
 		(*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)m->m[0]; (*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)m->m[1]; (*savedDLBufferOffsetPtr)++;
@@ -971,7 +971,7 @@ void glLoadMatrix4x3(m4x3* m){
 	u32 ptrVal = (*savedDLBufferOffsetPtr);
 	if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 		//400045Ch 17h 12 30  MTX_LOAD_4x3 - Load 4x3 Matrix to Current Matrix (W)
-		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getMTX_LOAD_4x3(); //Unpacked Command format
+		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getMTX_LOAD_4x3; //Unpacked Command format
 		(*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)m->m[0]; (*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)m->m[1]; (*savedDLBufferOffsetPtr)++;
@@ -1003,7 +1003,7 @@ void glMultMatrix4x4(m4x4* m){
 	u32 ptrVal = (*savedDLBufferOffsetPtr);
 	if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 		//4000460h 18h 16 35* MTX_MULT_4x4 - Multiply Current Matrix by 4x4 Matrix (W)
-		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getMTX_MULT_4x4(); //Unpacked Command format
+		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getMTX_MULT_4x4; //Unpacked Command format
 		(*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)m->m[0]; (*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)m->m[1]; (*savedDLBufferOffsetPtr)++;
@@ -1039,7 +1039,7 @@ void glMultMatrix4x3(m4x3* m){
 	u32 ptrVal = (*savedDLBufferOffsetPtr);
 	if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 		//4000460h 18h 16 35* MTX_MULT_4x4 - Multiply Current Matrix by 4x4 Matrix (W)
-		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getMTX_MULT_4x4(); //Unpacked Command format
+		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getMTX_MULT_4x4; //Unpacked Command format
 		(*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)m->m[0]; (*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)m->m[1]; (*savedDLBufferOffsetPtr)++;
@@ -1054,7 +1054,7 @@ void glMultMatrix4x3(m4x3* m){
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)m->m[10]; (*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)m->m[11]; (*savedDLBufferOffsetPtr)++;
 		//4000468h 1Ah 9  28* MTX_MULT_3x3 - Multiply Current Matrix by 3x3 Matrix (W)
-		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getMTX_MULT_3x3(); //Unpacked Command format
+		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getMTX_MULT_3x3; //Unpacked Command format
 		(*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)m->m[0]; (*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)m->m[1]; (*savedDLBufferOffsetPtr)++;
@@ -1104,7 +1104,7 @@ void glRotateZi(int angle){
 			//Mul(Rotate)
 			//4000468h - Cmd 1Ah - MTX_MULT_3x3 - Multiply Current Matrix by 3x3 Matrix (W)
 			//Sets C=M*C. Parameters: 9, m[0..8]
-			InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getMTX_MULT_3x3(); (*savedDLBufferOffsetPtr)++; //Unpacked Command format
+			InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getMTX_MULT_3x3; (*savedDLBufferOffsetPtr)++; //Unpacked Command format
 			InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)cosine; (*savedDLBufferOffsetPtr)++;
 			InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)sine; (*savedDLBufferOffsetPtr)++;
 			InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)0; (*savedDLBufferOffsetPtr)++;
@@ -1153,7 +1153,7 @@ void glRotateYi(int angle){
 			//Mul(Rotate)
 			//4000468h - Cmd 1Ah - MTX_MULT_3x3 - Multiply Current Matrix by 3x3 Matrix (W)
 			//Sets C=M*C. Parameters: 9, m[0..8]
-			InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getMTX_MULT_3x3(); (*savedDLBufferOffsetPtr)++; //Unpacked Command format
+			InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getMTX_MULT_3x3; (*savedDLBufferOffsetPtr)++; //Unpacked Command format
 			InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)cosine; (*savedDLBufferOffsetPtr)++;
 			InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)0; (*savedDLBufferOffsetPtr)++;
 			InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)-sine; (*savedDLBufferOffsetPtr)++;
@@ -1202,7 +1202,7 @@ void glRotateXi(int angle){
 			//Mul(Rotate)
 			//4000468h - Cmd 1Ah - MTX_MULT_3x3 - Multiply Current Matrix by 3x3 Matrix (W)
 			//Sets C=M*C. Parameters: 9, m[0..8]
-			InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getMTX_MULT_3x3(); (*savedDLBufferOffsetPtr)++; //Unpacked Command format
+			InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getMTX_MULT_3x3; (*savedDLBufferOffsetPtr)++; //Unpacked Command format
 			InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)inttof32(1); (*savedDLBufferOffsetPtr)++;
 			InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)0; (*savedDLBufferOffsetPtr)++;
 			InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)0; (*savedDLBufferOffsetPtr)++;
@@ -1311,7 +1311,7 @@ void gluLookAtf32(f32 eyex, f32 eyey, f32 eyez, f32 lookAtx, f32 lookAty, f32 lo
 	{
 		glMatrixMode(GL_MODELVIEW);
 		//400045Ch 17h 12 30  MTX_LOAD_4x3 - Load 4x3 Matrix to Current Matrix (W)
-		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getMTX_LOAD_4x3(); //Unpacked Command format
+		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getMTX_LOAD_4x3; //Unpacked Command format
 		(*savedDLBufferOffsetPtr)++;
 
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)x[0]; (*savedDLBufferOffsetPtr)++;
@@ -1367,7 +1367,7 @@ void gluFrustumf32(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far){
 		{
 			glMatrixMode(GL_PROJECTION);
 			//4000458h 16h 16 34  MTX_LOAD_4x4 - Load 4x4 Matrix to Current Matrix (W)
-			InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getMTX_LOAD_4x4(); //Unpacked Command format
+			InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getMTX_LOAD_4x4; //Unpacked Command format
 			(*savedDLBufferOffsetPtr)++;
 
 			InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)divf32(2*near, right - left); (*savedDLBufferOffsetPtr)++;
@@ -1425,7 +1425,7 @@ void glOrthof32(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far){
 		{
 			glMatrixMode(GL_PROJECTION);
 			//4000458h 16h 16 34  MTX_LOAD_4x4 - Load 4x4 Matrix to Current Matrix (W)
-			InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getMTX_LOAD_4x4(); //Unpacked Command format
+			InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getMTX_LOAD_4x4; //Unpacked Command format
 			(*savedDLBufferOffsetPtr)++;
 
 			InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)divf32(2, right - left); (*savedDLBufferOffsetPtr)++;
@@ -1536,11 +1536,11 @@ void glMaterialf(int mode, rgb color){
 	u32 ptrVal = (*savedDLBufferOffsetPtr);
 	if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 		//40004C0h 30h 1  4   DIF_AMB - MaterialColor0 - Diffuse/Ambient Reflect. (W)
-		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_DIFFUSE_AMBIENT(); //Unpacked Command format
+		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_DIFFUSE_AMBIENT; //Unpacked Command format
 		(*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)(diffuse_ambient); (*savedDLBufferOffsetPtr)++; //Unpacked Command format
 		//40004C4h 31h 1  4   SPE_EMI - MaterialColor1 - Specular Ref. & Emission (W)
-		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_SPECULAR_EMISSION(); //Unpacked Command format
+		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_SPECULAR_EMISSION; //Unpacked Command format
 		(*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)(specular_emission); (*savedDLBufferOffsetPtr)++; //Unpacked Command format
 		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBufferOffsetPtr, cmd, (*savedDLBufferOffsetPtr) - ptrVal);
@@ -1707,7 +1707,7 @@ void glBindTexture(int target, int name){
 	u32 ptrVal = (*savedDLBufferOffsetPtr);
 	if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 		//40004A8h 2Ah 1  1   TEXIMAGE_PARAM - Set Texture Parameters (W)
-		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_TEX_FORMAT(); //Unpacked Command format
+		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_TEX_FORMAT; //Unpacked Command format
 		(*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)(textures[name]); (*savedDLBufferOffsetPtr)++; //Unpacked Command format
 		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBufferOffsetPtr, cmd, (*savedDLBufferOffsetPtr) - ptrVal);
@@ -1891,7 +1891,7 @@ int glTexImage2D(int target, int empty1, int type, int sizeX, int sizeY, int emp
 	u32 ptrVal = (*savedDLBufferOffsetPtr);
 	if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 		//40004A8h 2Ah 1  1   TEXIMAGE_PARAM - Set Texture Parameters (W)
-		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_TEX_FORMAT(); //Unpacked Command format
+		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_TEX_FORMAT; //Unpacked Command format
 		(*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)(sizeX << 20) | (sizeY << 23) | ((type == GL_RGB ? GL_RGBA : type ) << 26); (*savedDLBufferOffsetPtr)++; //Unpacked Command format
 		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBufferOffsetPtr, cmd, (*savedDLBufferOffsetPtr) - ptrVal);
@@ -2109,56 +2109,56 @@ void glCallListGX(const u32* list) {
 	//must be 1:1 from isAGXCommand
 	u32 cmd = list[1];
 	int cmdParamCount = getAGXParamsCountFromCommand(cmd);
-	if (cmd == (u32)getMTX_STORE()) {
-		strcpy(displayListName, "getMTX_STORE()");
+	if (cmd == (u32)getMTX_STORE) {
+		strcpy(displayListName, "getMTX_STORE");
 	}
-	else if (cmd == (u32)getMTX_TRANS()) {
-		strcpy(displayListName, "getMTX_TRANS()");
+	else if (cmd == (u32)getMTX_TRANS) {
+		strcpy(displayListName, "getMTX_TRANS");
 	}
-	else if (cmd == (u32)getMTX_IDENTITY()) {
-		strcpy(displayListName, "getMTX_IDENTITY()");
+	else if (cmd == (u32)getMTX_IDENTITY) {
+		strcpy(displayListName, "getMTX_IDENTITY");
 	}
-	else if (cmd == (u32)getMTX_MODE()) {
-		strcpy(displayListName, "getMTX_MODE()");
+	else if (cmd == (u32)getMTX_MODE) {
+		strcpy(displayListName, "getMTX_MODE");
 	}
-	else if (cmd == (u32)getVIEWPORT()) {
-		strcpy(displayListName, "getVIEWPORT()");
+	else if (cmd == (u32)getVIEWPORT) {
+		strcpy(displayListName, "getVIEWPORT");
 	}
-	else if (cmd == (u32)getFIFO_TEX_COORD()) {
-		strcpy(displayListName, "getFIFO_TEX_COORD()");
+	else if (cmd == (u32)getFIFO_TEX_COORD) {
+		strcpy(displayListName, "getFIFO_TEX_COORD");
 	}
-	else if (cmd == (u32)getFIFO_BEGIN()) {
-		strcpy(displayListName, "getFIFO_BEGIN()");
+	else if (cmd == (u32)getFIFO_BEGIN) {
+		strcpy(displayListName, "getFIFO_BEGIN");
 	}
-	else if (cmd == (u32)getFIFO_END()) {
-		strcpy(displayListName, "getFIFO_END()");
+	else if (cmd == (u32)getFIFO_END) {
+		strcpy(displayListName, "getFIFO_END");
 	}
-	else if (cmd == (u32)getFIFO_COLOR()) {
-		strcpy(displayListName, "getFIFO_COLOR()");
+	else if (cmd == (u32)getFIFO_COLOR) {
+		strcpy(displayListName, "getFIFO_COLOR");
 	}
-	else if (cmd == (u32)getFIFO_NORMAL()) {
-		strcpy(displayListName, "getFIFO_NORMAL()");
+	else if (cmd == (u32)getFIFO_NORMAL) {
+		strcpy(displayListName, "getFIFO_NORMAL");
 	}
-	else if (cmd == (u32)getFIFO_VERTEX16()) {
-		strcpy(displayListName, "getFIFO_VERTEX16()");
+	else if (cmd == (u32)getFIFO_VERTEX16) {
+		strcpy(displayListName, "getFIFO_VERTEX16");
 	}
-	else if (cmd == (u32)getFIFO_VERTEX10()) {
-		strcpy(displayListName, "getFIFO_VERTEX10()");
+	else if (cmd == (u32)getFIFO_VERTEX10) {
+		strcpy(displayListName, "getFIFO_VERTEX10");
 	}
-	else if (cmd == (u32)getFIFO_VTX_XY()) {
-		strcpy(displayListName, "getFIFO_VTX_XY()");
+	else if (cmd == (u32)getFIFO_VTX_XY) {
+		strcpy(displayListName, "getFIFO_VTX_XY");
 	}
-	else if (cmd == (u32)getMTX_PUSH()) {
-		strcpy(displayListName, "getMTX_PUSH()");
+	else if (cmd == (u32)getMTX_PUSH) {
+		strcpy(displayListName, "getMTX_PUSH");
 	}
-	else if (cmd == (u32)getMTX_POP()) {
-		strcpy(displayListName, "getMTX_POP()");
+	else if (cmd == (u32)getMTX_POP) {
+		strcpy(displayListName, "getMTX_POP");
 	}
-	else if (cmd == (u32)getMTX_MULT_3x3()) {
-		strcpy(displayListName, "getMTX_MULT_3x3()");
+	else if (cmd == (u32)getMTX_MULT_3x3) {
+		strcpy(displayListName, "getMTX_MULT_3x3");
 	}
-	else if (cmd == (u32)getMTX_MULT_4x4()) {
-		strcpy(displayListName, "getMTX_MULT_4x4()");
+	else if (cmd == (u32)getMTX_MULT_4x4) {
+		strcpy(displayListName, "getMTX_MULT_4x4");
 	}
 
 	///////////////Custom Display Lists
@@ -2220,7 +2220,7 @@ void glTexCoord1i(uint32 uv){
 	u32 ptrVal = (*savedDLBufferOffsetPtr);
 	if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 		//4000488h 22h 1  1   TEXCOORD - Set Texture Coordinates (W)
-		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_TEX_COORD(); //Unpacked Command format
+		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_TEX_COORD; //Unpacked Command format
 		(*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)uv; (*savedDLBufferOffsetPtr)++; //Unpacked Command format
 		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBufferOffsetPtr, cmd, (*savedDLBufferOffsetPtr) - ptrVal);
@@ -2241,7 +2241,7 @@ void glTexCoord2t16(t16 u, t16 v){
 	u32 ptrVal = (*savedDLBufferOffsetPtr);
 	if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 		//4000488h 22h 1  1   TEXCOORD - Set Texture Coordinates (W)
-		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_TEX_COORD(); //Unpacked Command format
+		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_TEX_COORD; //Unpacked Command format
 		(*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)(u << 16) + v; (*savedDLBufferOffsetPtr)++; //Unpacked Command format
 		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBufferOffsetPtr, cmd, (*savedDLBufferOffsetPtr) - ptrVal);
@@ -2267,7 +2267,7 @@ void glBegin(int primitiveType){
 	u32 ptrVal = (*savedDLBufferOffsetPtr);
 	if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 		//4000500h 40h 1  1   BEGIN_VTXS - Start of Vertex List (W)
-		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_BEGIN(); //Unpacked Command format
+		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_BEGIN; //Unpacked Command format
 		(*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)primitiveType; (*savedDLBufferOffsetPtr)++; //Unpacked Command format
 		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBufferOffsetPtr, cmd, (*savedDLBufferOffsetPtr) - ptrVal);
@@ -2288,7 +2288,7 @@ void glEnd( void){
 	u32 ptrVal = (*savedDLBufferOffsetPtr);
 	if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 		//4000504h 41h -  1   END_VTXS - End of Vertex List (W)
-		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_END(); //Unpacked Command format
+		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_END; //Unpacked Command format
 		(*savedDLBufferOffsetPtr)++;
 		//no args used by this GX command
 		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBufferOffsetPtr, cmd, (*savedDLBufferOffsetPtr) - ptrVal);
@@ -2342,7 +2342,7 @@ void glColor3b(uint8 red, uint8 green, uint8 blue){
 		}
 
 		//4000480h 20h 1  1   COLOR - Directly Set Vertex Color (W)
-		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_COLOR(); //Unpacked Command format
+		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_COLOR; //Unpacked Command format
 		(*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)finalColor; (*savedDLBufferOffsetPtr)++; //Unpacked Command format
 		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBufferOffsetPtr, cmd, (*savedDLBufferOffsetPtr) - ptrVal);
@@ -2399,7 +2399,7 @@ void glNormal3f(
 	u32 baseGXDLOffset = (isAnOpenGLExtendedDisplayListCallList == false) ? 0 : InternalUnpackedGX_DL_workSize;
 	u32 ptrVal = (*savedDLBufferOffsetPtr);
 	if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
-		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_NORMAL(); //Unpacked Command format
+		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_NORMAL; //Unpacked Command format
 		(*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)NORMAL_PACK(floattov10(nx),floattov10(ny),floattov10(nz)); (*savedDLBufferOffsetPtr)++; //Unpacked Command format
 		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBufferOffsetPtr, cmd, (*savedDLBufferOffsetPtr) - ptrVal);
@@ -2439,7 +2439,7 @@ void glNormal3i(
 	u32 baseGXDLOffset = (isAnOpenGLExtendedDisplayListCallList == false) ? 0 : InternalUnpackedGX_DL_workSize;
 	u32 ptrVal = (*savedDLBufferOffsetPtr);
 	if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
-		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_NORMAL(); //Unpacked Command format
+		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_NORMAL; //Unpacked Command format
 		(*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)NORMAL_PACK(inttov10(nx),inttov10(ny),inttov10(nz)); (*savedDLBufferOffsetPtr)++; //Unpacked Command format
 		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBufferOffsetPtr, cmd, (*savedDLBufferOffsetPtr) - ptrVal);
@@ -2460,7 +2460,7 @@ void glVertex3v16(v16 x, v16 y, v16 z){
 	u32 ptrVal = (*savedDLBufferOffsetPtr);
 	if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 		//400048Ch 23h 2  9   VTX_16 - Set Vertex XYZ Coordinates (W)
-		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_VERTEX16(); //Unpacked Command format
+		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_VERTEX16; //Unpacked Command format
 		(*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)(y << 16) | (x & 0xFFFF); (*savedDLBufferOffsetPtr)++; //Unpacked Command format
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)((uint32)(uint16)z); (*savedDLBufferOffsetPtr)++; //Unpacked Command format
@@ -2482,7 +2482,7 @@ void glVertex3v10(v10 x, v10 y, v10 z){
 	u32 ptrVal = (*savedDLBufferOffsetPtr);
 	if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 		//4000490h 24h 1  8   VTX_10 - Set Vertex XYZ Coordinates (W)
-		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_VERTEX10(); //Unpacked Command format
+		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_VERTEX10; //Unpacked Command format
 		(*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)VERTEX_PACKv10(x, y, z); (*savedDLBufferOffsetPtr)++; //Unpacked Command format
 		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBufferOffsetPtr, cmd, (*savedDLBufferOffsetPtr) - ptrVal);
@@ -2504,7 +2504,7 @@ void glVertex2v16(v16 x, v16 y){
 	u32 ptrVal = (*savedDLBufferOffsetPtr);
 	if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 		//4000494h 25h 1  8   VTX_XY - Set Vertex XY Coordinates (W)
-		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_VTX_XY(); //Unpacked Command format
+		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_VTX_XY; //Unpacked Command format
 		(*savedDLBufferOffsetPtr)++;
 		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)VERTEX_PACK(x, y); (*savedDLBufferOffsetPtr)++; //Unpacked Command format
 		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBufferOffsetPtr, cmd, (*savedDLBufferOffsetPtr) - ptrVal);
