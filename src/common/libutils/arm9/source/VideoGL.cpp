@@ -2078,6 +2078,7 @@ void glPrioritizeTextures (GLsizei n, const GLuint *textures, const GLclampf *pr
 }
 
 #ifdef ARM9
+__attribute__((section(".itcm")))
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("O0")))
 #endif
@@ -2090,13 +2091,9 @@ void glCallListGX(const u32* list) {
 	u32 count = *list++;
 
 	// flush the area that we are going to DMA
-	coherent_user_range_by_size((uint32)list, count*4);
+	coherent_user_range_by_size((uint32)list, count);
 	
-	// don't start DMAing while anything else is being DMAed because FIFO DMA is touchy as hell
-	//    If anyone can explain this better that would be great. -- gabebear
-	while((DMAXCNT(0) & DMAENABLED)||(DMAXCNT(1) & DMAENABLED)||(DMAXCNT(2) & DMAENABLED)||(DMAXCNT(3) & DMAENABLED));
-
-	// send the packed list asynchronously via DMA to the FIFO
+	// send the packed list synchronously via DMA to the FIFO
 	DMAXSAD(0) = (u32)list;
 	DMAXDAD(0) = 0x4000400;
 	DMAXCNT(0) = DMA_FIFO | count;
