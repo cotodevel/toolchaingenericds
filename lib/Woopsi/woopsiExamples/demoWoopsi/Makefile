@@ -21,7 +21,7 @@
 #ToolchainGenericDS specific: Use Makefiles from either TGDS, or custom
 #Note: Woopsi template mostly targets ARM9 SDK. Thus the default ARM7 template is used
 export SOURCE_MAKEFILE7 = default
-export SOURCE_MAKEFILE9 = custom
+export SOURCE_MAKEFILE9 = default
 
 #Shared
 include $(DEFAULT_GCC_PATH)/Makefile.basenewlib
@@ -32,7 +32,7 @@ export TGDSPROJECTNAME = demoWoopsi
 export EXECUTABLE_FNAME = $(TGDSPROJECTNAME).nds
 export EXECUTABLE_VERSION_HEADER =	0.1
 export EXECUTABLE_VERSION =	"$(EXECUTABLE_VERSION_HEADER)"
-
+export TGDSPKG_TARGET_NAME := /
 #The ndstool I use requires to have the elf section removed, so these rules create elf headerless- binaries.
 export BINSTRIP_RULE_7 =	arm7.bin
 export BINSTRIP_RULE_9 =	arm9.bin
@@ -90,6 +90,7 @@ export DIRS_ARM9_HEADER = data/	\
 			../common/	\
 			../common/templateCode/source/	\
 			../common/templateCode/data/arm9/	\
+			build/	\
 			../$(PosIndCodeDIR_FILENAME)/$(DIR_ARM9)/include/
 			
 # Build Target(s)	(both processors here)
@@ -118,7 +119,8 @@ endif
 $(EXECUTABLE_FNAME)	:	compile
 	-@echo 'ndstool begin'
 	$(NDSTOOL)	-v	-c $@	-7  $(CURDIR)/arm7/$(BINSTRIP_RULE_7)	-e7  0x03800000	-9 $(CURDIR)/arm9/$(BINSTRIP_RULE_9) -e9  0x02000000	-b	icon.bmp "ToolchainGenericDS SDK;$(TGDSPROJECTNAME) NDS Binary; "
-	$(NDSTOOL)	-c 	${@:.nds=.srl} -b	icon.bmp "ToolchainGenericDS SDK;$(TGDSPROJECTNAME) NDS Binary; " -7 arm7/arm7-nonstripped_dsi.elf -9 arm9/arm9-nonstripped_dsi.elf
+	$(NDSTOOL)	-c 	${@:.nds=.srl} -g "TGDS" "NN" "NDS.TinyFB" -b	icon.bmp "ToolchainGenericDS SDK;$(TGDSPROJECTNAME) TWL Binary;" -7  $(CURDIR)/arm7/${BINSTRIP_RULE_7:.bin=_twl.bin}	-e7  0x03800000 -9 $(CURDIR)/arm9/${BINSTRIP_RULE_9:.bin=_twl.bin} -e9  0x02000000
+	-mv ${@:.nds=.srl}	/E
 	-@echo 'ndstool end: built: $@'
 	
 #---------------------------------------------------------------------------------
@@ -149,4 +151,20 @@ rebase:
 commitChanges:
 	-@git commit -a	-m '$(COMMITMSG)'
 	-@git push origin HEAD
-	
+
+#---------------------------------------------------------------------------------
+
+switchStable:
+	-@git checkout -f	'TGDS1.65'
+
+#---------------------------------------------------------------------------------
+
+switchMaster:
+	-@git checkout -f	'master'
+
+#---------------------------------------------------------------------------------
+
+#ToolchainGenericDS Package deploy format required by ToolchainGenericDS-OnlineApp.
+BuildTGDSPKG:
+	-@echo 'Build TGDS Package. '
+	-$(TGDSPKGBUILDER) $(TGDSPROJECTNAME) $(TGDSPKG_TARGET_NAME) $(LIBPATH) /release/arm7dldi-ntr/
