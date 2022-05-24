@@ -1141,6 +1141,8 @@ extern "C" {
 #endif
 #endif
 //////////////////////////////////////////////////////////// Standard OpenGL 1.x start //////////////////////////////////////////
+extern uint32 diffuse_ambient;
+extern uint32 specular_emission;
 extern void glEnable(int bits);
 extern void glDisable(int bits);
 extern void glLoadMatrix4x4(m4x4 * m);
@@ -1247,6 +1249,10 @@ extern void glColor3b(uint8 red, uint8 green, uint8 blue);
 extern void glVertex3v16(v16 x, v16 y, v16 z);
 extern void glVertex3v10(v10 x, v10 y, v10 z);
 extern void glVertex2v16(v16 x, v16 y);
+extern int getTextureBaseFromTextureSlot(int textureSlot);
+extern uint32 textures[MAX_TEXTURES];
+extern uint32 activeTexture;
+extern uint32* nextBlock;
 //////////////////////////////////////////////////////////// Standard OpenGL 1.x end //////////////////////////////////////////
 
 
