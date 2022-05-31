@@ -23,7 +23,7 @@ USA
 
 #include "typedefsTGDS.h"
 #include "dsregs.h"
-#include "SoundTGDS.h"
+#include "soundTGDS.h"
 
 //Mic
 #define TGDS_SAVE_MIC_DATA	(uint32)(0xffff03AA)
