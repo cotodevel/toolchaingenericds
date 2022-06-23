@@ -1,12 +1,10 @@
-#ifdef WIN32
+#if defined(WIN32) || !defined(ARM9)
 
 #include <stdio.h>
 #include <string.h>
 #include "dldiWin32.h"
 
-#if defined(WIN32) || defined(ARM9)
-#include "fatfslayerTGDS.h"
-#endif
+#include "../TGDSVideoConverter/TGDSTypes.h"
 
 #if defined(WIN32)
 FILE * virtualDLDIDISKImg = NULL;
@@ -25,6 +23,9 @@ const sint8 DLDI_MAGIC_STRING_BACKWARDS [DLDI_MAGIC_STRING_LEN] =
 struct DLDI_INTERFACE* dldiGet(void) {
 	#if defined(WIN32)
 	return (struct DLDI_INTERFACE*)&_io_dldi_stub[0];
+	#endif
+	#if !defined(WIN32)
+	return NULL;
 	#endif
 }
 
@@ -82,4 +83,5 @@ bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buff
 	#endif
 	return true;
 }
+
 #endif

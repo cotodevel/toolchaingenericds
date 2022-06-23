@@ -1,4 +1,4 @@
-#ifdef WIN32
+#if defined(WIN32) || !defined(ARM9)
 
 /*
  dldi.h
@@ -34,9 +34,9 @@
 #include "typedefsTGDS.h"
 #endif
 
-#if defined (MSDOS) || defined(WIN32)
+#if defined (MSDOS) || defined(WIN32) || !defined(ARM9)
 #include "fatfslayerTGDS.h"
-#include "..\misc\vs2012TGDS-FS\TGDSFSVS2012\TGDSFSVS2012\TGDSTypes.h"
+#include "../TGDSVideoConverter/TGDSTypes.h"
 #endif
 
 typedef uint32_t sec_t;
@@ -115,7 +115,8 @@ extern bool __dsimode;
 #ifdef ARM9
 extern struct DLDI_INTERFACE _io_dldi_stub;
 #endif
-#if defined(WIN32)
+
+#if defined(WIN32) || !defined(ARM9)
 
 /*
 Pointer to the internal DLDI, not directly usable by libfat.
@@ -133,6 +134,7 @@ extern bool dldi_handler_init();
 extern void dldi_handler_deinit();
 extern bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer);
 extern bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buffer);
+extern struct DLDI_INTERFACE* dldiGet(void);
 
 #ifdef ARM7
 extern u32 * DLDIARM7Address;

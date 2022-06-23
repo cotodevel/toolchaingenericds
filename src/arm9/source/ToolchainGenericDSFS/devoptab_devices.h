@@ -18,8 +18,6 @@ USA
 
 */
 
-#if defined(ARM9) || defined(WIN32)
-
 #ifndef __devoptab_devices_h__
 #define __devoptab_devices_h__
 
@@ -29,9 +27,9 @@ USA
 #include "dsregs.h"
 #endif
 
-#if defined(WIN32)
-#include "..\misc\vs2012TGDS-FS\TGDSFSVS2012\TGDSFSVS2012\TGDSTypes.h"
-#include "fatfs\source\ff.h"
+#if defined(WIN32) || !defined(ARM9)
+#include "../TGDSVideoConverter/TGDSTypes.h"
+#include "fatfs/source/ff.h"
 
 #define OPEN_MAXTGDS (int)(20)					//Available POSIX File Descriptors (from POSIX -> TGDS)
 #define MAX_TGDSFILENAME_LENGTH (int)(256)				//NAME_MAX: Max filename (POSIX) that inherits into TGDSFILENAME_LENGTH
@@ -114,7 +112,5 @@ extern void initTGDSDevoptab();
 }
 #endif
 
-
 #endif
 
-#endif
