@@ -15,6 +15,10 @@
 
 /* @(#) $Id$ */
 
+#ifdef WIN32
+//disable _CRT_SECURE_NO_WARNINGS message to build this in VC++
+#pragma warning(disable:4996)
+#endif
 #include <stdio.h>
 #include "zlib.h"
 
@@ -71,33 +75,31 @@
 
 char *prog;
 
-void error            OF((const char *msg));
-void gz_compress      OF((FILE   *in, gzFile out));
+int gz_compress      OF((FILE   *in, gzFile out));
 #ifdef USE_MMAP
 int  gz_compress_mmap OF((FILE   *in, gzFile out));
 #endif
 void gz_uncompress    OF((gzFile in, FILE   *out));
-void file_compress    OF((char  *file, char *mode));
+int file_compress    OF((char  *file, char *mode));
 void file_uncompress  OF((char  *file));
 int  main             OF((int argc, char *argv[]));
 
 /* ===========================================================================
  * Display error message and exit
  */
-void error(msg)
-    const char *msg;
+/*
+void error(const char *msg)
 {
-    fprintf(stderr, "%s: %s\n", prog, msg);
-    exit(1);
+    printf(stderr, "%s: %s\n", prog, msg);
+    while(1==1){}
 }
-
+*/
 /* ===========================================================================
  * Compress input to output then close both files.
  */
 
-void gz_compress(in, out)
-    FILE   *in;
-    gzFile out;
+int gz_compress(FILE   *in,
+    gzFile out)
 {
     local char buf[BUFLEN];
     int len;
@@ -112,15 +114,23 @@ void gz_compress(in, out)
     for (;;) {
         len = (int)fread(buf, 1, sizeof(buf), in);
         if (ferror(in)) {
-            perror("fread");
-            exit(1);
+            //perror("fread");
+            //exit(1);
+			return Z_DATA_ERROR;
         }
         if (len == 0) break;
 
-        if (gzwrite(out, buf, (unsigned)len) != len) error(gzerror(out, &err));
+        if (gzwrite(out, buf, (unsigned)len) != len) {
+			error(gzerror(out, &err));
+			return Z_DATA_ERROR;
+		}
     }
     fclose(in);
-    if (gzclose(out) != Z_OK) error("failed gzclose");
+    if (gzclose(out) != Z_OK) {
+		//error("failed gzclose");
+		return Z_DATA_ERROR;
+	}
+	return Z_OK;
 }
 
 #ifdef USE_MMAP /* MMAP version, Miguel Albrecht <malbrech@eso.org> */
@@ -163,9 +173,8 @@ int gz_compress_mmap(in, out)
 /* ===========================================================================
  * Uncompress input to output then close both files.
  */
-void gz_uncompress(in, out)
-    gzFile in;
-    FILE   *out;
+void gz_uncompress(gzFile in,
+    FILE   *out)
 {
     local char buf[BUFLEN];
     int len;
@@ -190,38 +199,41 @@ void gz_uncompress(in, out)
  * Compress the given file: create a corresponding .gz file and remove the
  * original.
  */
-void file_compress(file, mode)
-    char  *file;
-    char  *mode;
+int file_compress(char  *file,
+    char  *mode)
 {
     local char outfile[MAX_NAME_LEN];
     FILE  *in;
     gzFile out;
+	int retval = Z_STREAM_ERROR;
 
     strcpy(outfile, file);
     strcat(outfile, GZ_SUFFIX);
 
-    in = fopen(file, "r");
+    in = fopen(file, "rb");
     if (in == NULL) {
-        perror(file);
-        exit(1);
+        //perror(file);
+        //exit(1);
+		return Z_STREAM_ERROR;
     }
     out = gzopen(outfile, mode);
     if (out == NULL) {
-        fprintf(stderr, "%s: can't gzopen %s\n", prog, outfile);
-        exit(1);
+        //fprintf(stderr, "%s: can't gzopen %s\n", prog, outfile);
+        //exit(1);
+		return Z_STREAM_ERROR;
     }
-    gz_compress(in, out);
+
+    retval = gz_compress(in, out);
 
     unlink(file);
+	return retval;
 }
 
 
 /* ===========================================================================
  * Uncompress the given file and remove the original.
  */
-void file_uncompress(file)
-    char  *file;
+void file_uncompress(char  *file)
 {
     local char buf[MAX_NAME_LEN];
     char *infile, *outfile;
@@ -266,9 +278,8 @@ void file_uncompress(file)
  *   -1 to -9 : compression level
  */
 
-int main(argc, argv)
-    int argc;
-    char *argv[];
+int mainminigzip(int argc,
+    char *argv[])
 {
     int uncompr = 0;
     gzFile file;

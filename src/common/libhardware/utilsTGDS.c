@@ -1064,9 +1064,7 @@ void addARGV(int argc, char *argv){
 #ifdef ARM9
 __attribute__((section(".dtcm")))
 u32 reloadStatus = 0;
-#endif
 
-#ifdef ARM9
 //ToolchainGenericDS-multiboot NDS Binary loader: Requires tgds_multiboot_payload_ntr.bin / tgds_multiboot_payload_twl.bin (TGDS-multiboot Project) in SD root.
 __attribute__((section(".itcm")))
 #if (defined(__GNUC__) && !defined(__clang__))

@@ -12,7 +12,7 @@
 #if defined(WIN32)
 #include "..\..\dldiWin32.h"
 #include "..\..\..\ToolchainGenericDSFS\fatfslayerTGDS.h"
-#include "..\..\..\misc\vs2012TGDS-FS\TGDSFSVS2012\TGDSFSVS2012\TGDSTypes.h"
+#include "..\..\..\TGDSVideoConverter\TGDSTypes.h"
 #endif
 
 #if defined(ARM9)

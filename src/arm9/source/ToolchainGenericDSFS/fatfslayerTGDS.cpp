@@ -1,3 +1,5 @@
+#if defined(WIN32) || defined(ARM9) //only WIN32 and NDS has TGDS FS DLDI support for now
+
 #if defined(WIN32)
 //disable _CRT_SECURE_NO_WARNINGS message to build this in VC++
 #pragma warning(disable:4996)
@@ -33,10 +35,11 @@ USA
 #endif
 
 #if defined(WIN32)
-#include "..\misc\vs2012TGDS-FS\TGDSFSVS2012\TGDSFSVS2012\TGDSTypes.h"
-#include "dldiWin32.h"
-#include "fatfs\source\ff.h"
+#include "../TGDSVideoConverter/TGDSTypes.h"
 #endif
+#include "dldiWin32.h"
+#include "fatfs/source/ff.h"
+#include "devoptab_devices.h"
 
 //fatfs
 FATFS dldiFs;
@@ -169,6 +172,7 @@ int fsync(int structFDIndex){	//(FileDescriptor :struct fd index)
     return fatfs_fsync(structFDIndex);
 }
 
+#if defined(WIN32) || defined(ARM9)
 int mkdir(const sint8 *path, mode_t mode){
     return fatfs_mkdir(path, mode);
 }
@@ -197,6 +201,7 @@ struct dirent *readdir(DIR *dirp){
     return fatfs_readdir(dirp);
 }
 
+#endif
 void rewinddir(DIR *dirp){
     fatfs_rewinddir(dirp);
 }
@@ -2875,3 +2880,4 @@ int str_split(char * stream, char * haystack, char * outBuf, int itemSize, int b
 struct FileClassList * initFileList(){
 	return (struct FileClassList *)TGDSARM9Malloc(sizeof(struct FileClassList));
 }
+#endif

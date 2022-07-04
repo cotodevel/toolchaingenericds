@@ -26,7 +26,7 @@
 #define err(e) {clrscr();printf("%s",(char*)e);while(1);}
 
 //Buffer size: higher value will speed up file compression/decompression
-#define UNZIPBUFFER_SIZE (sint32)(1024 * 256)
+#define UNZIPBUFFER_SIZE (sint32)(1024 * 64)
 
 /* PKZIP header definitions */
 #define ZIPMAG 0x4b50           /* two-byte zip lead-in */

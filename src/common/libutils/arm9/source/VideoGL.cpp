@@ -864,9 +864,7 @@ __attribute__ ((optnone))
 #endif
 void glEnable(int bits){
 	enable_bits |= bits & (GL_TEXTURE_2D|GL_TOON_HIGHLIGHT|GL_OUTLINE|GL_ANTIALIAS);
-	#ifdef ARM9
 	GFX_CONTROL = enable_bits;
-	#endif
 }
 
 #ifdef ARM9
@@ -1500,6 +1498,10 @@ void gluPerspective(float fovy, float aspect, float zNear, float zFar){
 	gluPerspectivef32((int)(fovy * LUT_SIZE / 360.0), floattof32(aspect), floattof32(zNear), floattof32(zFar));    
 }
 
+
+uint32 diffuse_ambient = 0;
+uint32 specular_emission = 0;
+
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("O0")))
@@ -1509,8 +1511,6 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glMaterialf(int mode, rgb color){
-  static uint32 diffuse_ambient = 0;
-  static uint32 specular_emission = 0;
   switch(mode) {
     case GL_AMBIENT:
       diffuse_ambient = (color << 16) | (diffuse_ambient & 0xFFFF);
@@ -1989,7 +1989,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glColor3f(float red, float green, float blue){
-	glColor3b(f32toint(floattof32(red)), f32toint(floattof32(green)), f32toint(floattof32(blue)));
+	glColor3b(floattov10(red), floattov10(green), floattov10(blue));
 }
 
 //Open GL 1.1 Implementation: Texture Objects support
@@ -2191,8 +2191,31 @@ __attribute__((optimize("O0")))
 __attribute__((optnone))
 #endif
 #endif
+int getTextureBaseFromTextureSlot(int textureSlot){
+	u32 textureDescriptor = textures[textureSlot];
+	u8 baseTexSize1 = ((textureDescriptor >> 20) & TEXTURE_SIZE_1024);
+	u8 baseTexSize2 = ((textureDescriptor >> 23) & TEXTURE_SIZE_1024);
+	int res = (baseTexSize1*baseTexSize2*8);
+	return ((res != 0) ? res : 8);
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
 void glTexCoord2f(GLfloat s, GLfloat t){
-	glTexCoord2t16(floattot16(s), floattot16(t));
+	int texBase = getTextureBaseFromTextureSlot(activeTexture);
+	if(s > 0.0){
+		s = s + (texBase-1);
+	}
+	if(t > 0.0){
+		t = t + (texBase-1);
+	}
+	glTexCoord2t16(floattot16(t), floattot16(s));
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -2240,7 +2263,7 @@ void glTexCoord2t16(t16 u, t16 v){
 		//4000488h 22h 1  1   TEXCOORD - Set Texture Coordinates (W)
 		u8 cmd = InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)getFIFO_TEX_COORD; //Unpacked Command format
 		(*savedDLBufferOffsetPtr)++;
-		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)(u << 16) + v; (*savedDLBufferOffsetPtr)++; //Unpacked Command format
+		InternalUnpackedGX_DL_Binary[(*savedDLBufferOffsetPtr) + baseGXDLOffset] = (u32)TEXTURE_PACK(u, v); (*savedDLBufferOffsetPtr)++; //Unpacked Command format
 		handleInmediateGXDisplayList((u32*)&InternalUnpackedGX_DL_Binary[baseGXDLOffset], savedDLBufferOffsetPtr, cmd, (*savedDLBufferOffsetPtr) - ptrVal);
 	}
 }

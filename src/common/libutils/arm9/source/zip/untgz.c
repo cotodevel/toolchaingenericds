@@ -10,20 +10,37 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <errno.h>
+
+#ifdef WIN32
+//disable _CRT_SECURE_NO_WARNINGS message to build this in VC++
+#pragma warning(disable:4996)
+#pragma warning(disable:4703)
+#include "zlib-1.2.11/zlib.h"
+#include "utilities.h"
+#include <direct.h>
+#include <io.h>
+#endif
+#ifndef WIN32
 #include "zlib.h"
 #include "posixHandleTGDS.h"
+#include "fatfslayerTGDS.h"
+#include <unistd.h>
+#include <utime.h>
+#endif
+
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #define unix
 
 #ifdef unix
-#  include <unistd.h>
 #else
 #  include <direct.h>
 #  include <io.h>
 #endif
 
-#ifdef WIN32
+#if !defined(unix)
 #include <windows.h>
 #  ifndef F_OK
 #    define F_OK  0
@@ -35,7 +52,7 @@
 #    define strdup(str)         _strdup(str)
 #  endif
 #else
-#  include <utime.h>
+
 #endif
 
 
@@ -104,25 +121,34 @@ struct attr_item
 
 enum { TGZ_EXTRACT, TGZ_LIST, TGZ_INVALID };
 
-char *TGZfname          OF((const char *));
-void TGZnotfound        OF((const char *));
+char *TGZfname          (const char *);
+void TGZnotfound        (const char *);
 
-int getoct              OF((char *, int));
-char *strtime           OF((time_t *));
-int setfiletime         OF((char *, time_t));
-void push_attr          OF((struct attr_item **, char *, int, time_t));
-void restore_attr       OF((struct attr_item **));
+int getoct              (char *, int);
+char *strtime           (time_t *);
+int setfiletime         (char *, time_t);
+void push_attr          (struct attr_item **, char *, int, time_t);
+void restore_attr       (struct attr_item **);
 
-int ExprMatch           OF((char *, char *));
+int ExprMatch           (char *, char *);
 
-int makedir             OF((char *));
-int matchname           OF((int, int, char **, char *));
+int makedir             (char *);
+int matchname           (int, int, char **, char *);
 
-void error              OF((const char *));
-int tar                 OF((gzFile, int, int, int, char **));
+void error              (const char *);
+int tar                 (gzFile, int, int, int, char **);
 
-void help               OF((int));
-int main                OF((int, char **));
+void help               (int);
+int main                (int, char **);
+
+#ifndef WIN32
+static bool existFilePosix(char * file){
+	if(FileExists(file) == FT_FILE){
+		return true;
+	}
+	return false;
+}
+#endif
 
 char *prog;
 
@@ -142,8 +168,9 @@ char *TGZfname (const char *arcname)
   for (i=0; TGZsuffix[i]; i++)
     {
        strcpy(buffer+origlen,TGZsuffix[i]);
-       if (access(buffer,F_OK) == 0)
+       if (existFilePosix(buffer) == true){
          return buffer;
+	   }
     }
   return NULL;
 }
@@ -151,18 +178,12 @@ char *TGZfname (const char *arcname)
 
 /* error message for the filename */
 
-void TGZnotfound (const char *arcname)
-{
+void TGZnotfound (const char *arcname){
   int i;
-
-  /*
-  printf("%s: Couldn't find ",prog);
-  for (i=0;TGZsuffix[i];i++)}
-    printf((TGZsuffix[i+1]) ? "%s%s, " : "or %s%s\n",
-            arcname,
-            TGZsuffix[i]);
+  printf("%s: Couldn't find ", prog);
+  for (i=0;TGZsuffix[i];i++){
+     printf((TGZsuffix[i+1]) ? "%s%s, " : "or %s%s", arcname, TGZsuffix[i]);
   }
-  */
 }
 
 
@@ -209,6 +230,7 @@ char *strtime (time_t *t)
 
 int setfiletime (char *fname,time_t ftime)
 {
+	/*
 #ifdef WIN32
   static int isWinNT = -1;
   SYSTEMTIME st;
@@ -249,6 +271,11 @@ int setfiletime (char *fname,time_t ftime)
   settime.actime = settime.modtime = ftime;
   return utime(fname,&settime);
 #endif
+  */
+
+
+
+	return -1;
 }
 
 
@@ -259,8 +286,9 @@ void push_attr(struct attr_item **list,char *fname,int mode,time_t time)
   struct attr_item *item;
 
   item = (struct attr_item *)TGDSARM9Malloc(sizeof(struct attr_item));
-  if (item == NULL)
+  if (item == NULL){
     error("Out of memory");
+  }
   item->fname = strdup(fname);
   item->mode  = mode;
   item->time  = time;
@@ -270,7 +298,6 @@ void push_attr(struct attr_item **list,char *fname,int mode,time_t time)
 
 
 /* restore file attributes */
-
 void restore_attr(struct attr_item **list)
 {
   struct attr_item *item, *prev;
@@ -279,7 +306,7 @@ void restore_attr(struct attr_item **list)
     {
       setfiletime(item->fname,item->time);
       chmod(item->fname,item->mode);
-      prev = item;
+	  prev = item;
       item = item->next;
       TGDSARM9Free(prev);
     }
@@ -342,9 +369,14 @@ int makedir (char *newdir)
   if (buffer[len-1] == '/') {
     buffer[len-1] = '\0';
   }
-  if (mkdir(buffer, 0755) == 0)
+	#ifdef WIN32
+	if (mkdir(buffer) == 0)
+	#endif
+	#ifndef WIN32
+	if (mkdir(buffer, 0755) == 0)
+	#endif
     {
-      TGDSARM9Free(buffer);
+      free(buffer);
       return 1;
     }
 
@@ -357,17 +389,23 @@ int makedir (char *newdir)
         p++;
       hold = *p;
       *p = 0;
-      if ((mkdir(buffer, 0755) == -1) && (errno == ENOENT))
-        {
-          //printf("%s: Couldn't create directory %s\n",prog,buffer);
-          TGDSARM9Free(buffer);
+	
+	#ifdef WIN32
+	if (mkdir(buffer) == -1)
+	#endif
+    #ifndef WIN32
+	if ((mkdir(buffer, 0755) == -1) && (errno == ENOENT))
+	#endif
+	  {
+          printf("%s: Couldn't create directory %s",prog,buffer);
+          free(buffer);
           return 0;
         }
       if (hold == 0)
         break;
       *p++ = hold;
     }
-  TGDSARM9Free(buffer);
+  free(buffer);
   return 1;
 }
 
@@ -401,14 +439,16 @@ int tar (gzFile in,int action,int arg,int argc,char **argv)
   struct attr_item *attributes = NULL;
 
   if (action == TGZ_LIST){
-		//printf("    date      time     size                       file\n" " ---------- -------- --------- -------------------------------------\n");
+    //printf("    date      time     size                       file"
+    //       " ---------- -------- --------- -------------------------------------");
   }
   while (1)
     {
       len = gzread(in, &buffer, BLOCKSIZE);
-      if (len < 0)
+      if (len < 0){
         error(gzerror(in, &err));
-      /*
+	  }
+	   /*
        * Always expect complete blocks to process
        * the tar information.
        */
@@ -450,8 +490,9 @@ int tar (gzFile in,int action,int arg,int argc,char **argv)
               /*
                * The file name is longer than SHORTNAMESIZE
                */
-              if (strncmp(fname,buffer.header.name,SHORTNAMESIZE-1) != 0)
+              if (strncmp(fname,buffer.header.name,SHORTNAMESIZE-1) != 0){
                   error("bad long name");
+			  }
               getheader = 1;
             }
 
@@ -462,9 +503,9 @@ int tar (gzFile in,int action,int arg,int argc,char **argv)
             {
             case DIRTYPE:
               if (action == TGZ_LIST){
-                //printf(" %s     <dir> %s\n",strtime(&tartime),fname);
+                //printf(" %s     <dir> %s",strtime(&tartime),fname);
               }
-			  if (action == TGZ_EXTRACT)
+              if (action == TGZ_EXTRACT)
                 {
                   makedir(fname);
                   push_attr(&attributes,fname,tarmode,tartime);
@@ -479,36 +520,46 @@ int tar (gzFile in,int action,int arg,int argc,char **argv)
                   break;
                 }
               if (action == TGZ_LIST){
-                //printf(" %s %9d %s\n",strtime(&tartime),remaining,fname);
+                //printf(" %s %9d %s",strtime(&tartime),remaining,fname);
               }
-			  else if (action == TGZ_EXTRACT)
+              else if (action == TGZ_EXTRACT)
                 {
                   if (matchname(arg,argc,argv,fname))
                     {
+                      #if !defined(ARM9)
+                      outfile = fopen(fname,"wb");
+                      #endif
+                      #if defined(ARM9)
 					  char * filenam = &fname[0];
 					  char newName[256];
 					  memset(newName, 0, sizeof(newName));
 					  strcpy(newName, "0:/");
 					  strcat(newName, filenam);
-                      outfile = fopen(newName,"w+");
+                      strcpy(fname, (char*)&newName[0]); 
+                      outfile = fopen(fname,"w+");
+                      #endif
                       if (outfile == NULL) {
                         /* try creating directory */
-                        char *p = strrchr(newName, '/');
+                        char *p = strrchr(fname, '/');
                         if (p != NULL) {
                           *p = '\0';
-						  //printf("new dir: %s", &newName[0]);
-                          makedir((char*)&newName[0]);
+                           makedir(fname);
                           *p = '/';
-                          outfile = fopen(newName,"w+");
+                           #if !defined(ARM9)
+                           outfile = fopen(fname,"wb");
+                           #endif
+						   #if defined(ARM9)
+						   outfile = fopen(fname,"w+");
+                           #endif
                         }
                       }
                       if (outfile != NULL){
-                        //printf("Extracting %s\n",newName);
-                      }
+                        //printf("[Extracting %s]",fname);
+					  }
 					  else{
-                        //printf("%s: Couldn't create %s",prog,newName);
-                      }
-					}
+                        //printf("[%s: Couldn't create %s]",prog,fname);
+					  }
+                    }
                   else
                     outfile = NULL;
                 }
@@ -523,9 +574,10 @@ int tar (gzFile in,int action,int arg,int argc,char **argv)
                   break;
                 }
               len = gzread(in, fname, BLOCKSIZE);
-              if (len < 0)
+              if (len < 0){
                 error(gzerror(in, &err));
-              if (fname[BLOCKSIZE-1] != 0 || (int)strlen(fname) > remaining)
+			  }
+			  if (fname[BLOCKSIZE-1] != 0 || (int)strlen(fname) > remaining)
                 {
                   action = TGZ_INVALID;
                   break;
@@ -534,8 +586,8 @@ int tar (gzFile in,int action,int arg,int argc,char **argv)
               break;
             default:
               if (action == TGZ_LIST){
-                //printf(" %s     <---> %s\n",strtime(&tartime),fname);
-              }
+                //printf(" %s     <---> %s",strtime(&tartime),fname);
+			  }
 			  break;
             }
         }
@@ -547,8 +599,9 @@ int tar (gzFile in,int action,int arg,int argc,char **argv)
             {
               if (fwrite(&buffer,sizeof(char),bytes,outfile) != bytes)
                 {
-                  //printf("%s: Error writing %s -- skipping\n",prog,fname);
-                  fclose(outfile);
+				  printf("%s: Error writing %s -- skipping",prog,fname);
+                  
+				  fclose(outfile);
                   outfile = NULL;
                   remove(fname);
                 }
@@ -563,19 +616,19 @@ int tar (gzFile in,int action,int arg,int argc,char **argv)
             {
               fclose(outfile);
               outfile = NULL;
-              if (action != TGZ_INVALID)
+              if (action != TGZ_INVALID){
                 push_attr(&attributes,fname,tarmode,tartime);
+			  }
             }
         }
 
       /*
        * Abandon if errors are found
        */
-      if (action == TGZ_INVALID)
-        {
+      if (action == TGZ_INVALID){
           error("broken archive");
           break;
-        }
+      }
     }
 
   /*
@@ -583,9 +636,9 @@ int tar (gzFile in,int action,int arg,int argc,char **argv)
    */
   restore_attr(&attributes);
 
-  if (gzclose(in) != Z_OK)
+  if (gzclose(in) != Z_OK){
     error("failed gzclose");
-
+  }
   return 0;
 }
 
@@ -593,14 +646,20 @@ int tar (gzFile in,int action,int arg,int argc,char **argv)
 /* ============================================================ */
 
 void help(int exitval)
+
 {
-  //printf("untgz version 0.2.1\n" "  using zlib version %s\n\n", zlibVersion());
-  //printf("Usage: untgz file.tgz            extract all files\n" "       untgz file.tgz fname ...  extract selected files\n" "       untgz -l file.tgz         list archive contents\n" "       untgz -h                  display this help\n");
+  printf("untgz version 0.2.1"
+         "  using zlib version %s",
+         zlibVersion());
+  printf("Usage: untgz file.tgz            extract all files"
+         "       untgz file.tgz fname ...  extract selected files"
+         "       untgz -l file.tgz         list archive contents"
+         "       untgz -h                  display this help");
 }
 
-void error(const char *msg)
-{
-  //printf("%s: %s\n", prog, msg);
+void error(const char *msg){
+  printf("%s: %s", prog, msg);
+  while(1==1){}
 }
 
 
@@ -659,21 +718,23 @@ int untgzmain(int argc,char **argv)
 /*
  *  Process the TGZ file
  */
-    switch(action){
-		case TGZ_LIST:
-		case TGZ_EXTRACT:{
-			f = gzopen(TGZfile,"r");
-			if (f == NULL){
-				//printf("%s: Couldn't gzopen %s\n",prog,TGZfile);
-				return 1;
-			}
-			tar(f, action, arg, argc, argv);
-		}
-		break;
-		default:{
-			error("Unknown option");
-			return 1;
-		}
-	}
+    switch(action)
+      {
+      case TGZ_LIST:
+      case TGZ_EXTRACT:
+		  f = (gzFile*)gzopen(TGZfile,"rb");
+        if (f == NULL)
+          {
+            printf("%s: Couldn't gzopen %s",prog,TGZfile);
+            return 1;
+          }
+        tar(f, action, arg, argc, argv);
+      break;
+
+      default:
+		  {
+			printf("Unknown option");
+		  }
+      }
     return 0;
 }

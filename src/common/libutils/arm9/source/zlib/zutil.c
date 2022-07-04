@@ -5,8 +5,17 @@
 
 /* @(#) $Id$ */
 
-#include "zutil.h"
+#ifdef WIN32
+//disable _CRT_SECURE_NO_WARNINGS message to build this in VC++
+#pragma warning(disable:4996)
+
+#include "../TGDSVideoConverter/TGDSTypes.h"
+#endif
+
+#ifdef ARM9
 #include "posixHandleTGDS.h"
+#endif
+#include "zutil.h"
 
 #ifndef NO_DUMMY_DECL
 struct internal_state      {int dummy;}; /* for buggy compilers */
@@ -131,8 +140,7 @@ void z_error (m)
 /* exported to allow conversion of error code to string for compress() and
  * uncompress()
  */
-const char * ZEXPORT zError(err)
-    int err;
+const char * ZEXPORT zError(int err)
 {
     return ERR_MSG(err);
 }
@@ -298,19 +306,17 @@ extern voidp  calloc OF((uInt items, uInt size));
 extern void   free   OF((voidpf ptr));
 #endif
 
-voidpf zcalloc (opaque, items, size)
-    voidpf opaque;
-    unsigned items;
-    unsigned size;
+voidpf zcalloc (voidpf opaque,
+    unsigned int items,
+    unsigned int size)
 {
     if (opaque) items += size - size; /* make compiler happy */
     return sizeof(uInt) > 2 ? (voidpf)TGDSARM9Malloc(items * size) :
                               (voidpf)TGDSARM9Calloc(items, size);
 }
 
-void  zcfree (opaque, ptr)
-    voidpf opaque;
-    voidpf ptr;
+void  zcfree (voidpf opaque,
+    voidpf ptr)
 {
     TGDSARM9Free(ptr);
     if (opaque) return; /* make compiler happy */

@@ -1,3 +1,4 @@
+#if defined(WIN32) || defined(ARM9)
 /*
 
 			Copyright (C) 2017  Coto
@@ -46,8 +47,9 @@ USA
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
-#include "..\misc\vs2012TGDS-FS\TGDSFSVS2012\TGDSFSVS2012\TGDSTypes.h"
-#include "fatfs\source\ff.h"	//DIR struct definition here. dirent.h´s DIR was removed, and rewritten
+#include "../TGDSVideoConverter/TGDSTypes.h"
+#include "fatfs/source/ff.h"	//DIR struct definition here. dirent.h´s DIR was removed, and rewritten
+#include "../utilities.h"
 
 #define fatfs_O_ACCMODE (FA_READ|FA_WRITE)
 #define	O_ACCMODE	(O_RDONLY|O_WRONLY|O_RDWR)
@@ -275,6 +277,7 @@ extern void getDirFromFilePath(char * filePath, char* outDirectory);
 extern int FileExists(char * filename);
 extern int rename(const sint8 *oldpathfile, const sint8 *newpathfile);
 extern int fsync(int fd);
+#ifdef WIN32
 extern int mkdir(const sint8 *path, mode_t mode);
 extern int rmdir(const sint8 *path);
 extern int chdir(const sint8 *path);
@@ -282,6 +285,7 @@ extern sint8 *getcwd(sint8 *buf, size_t size);
 extern DIR *opendir(const sint8 *path);
 extern int closedir(DIR *dirp);
 extern struct dirent *readdir(DIR *dirp);
+#endif
 extern void rewinddir(DIR *dirp);
 extern int dirfd(DIR *dirp);
 extern int remove(const char *filename);
@@ -575,4 +579,5 @@ static struct FileClassList * randomizeFileClassList(struct FileClassList * lst)
 
 ////////////////////////////////////////////////////////////////////////////INTERNAL CODE END/////////////////////////////////////////////////////////////////////////////////////
 
+#endif
 #endif
