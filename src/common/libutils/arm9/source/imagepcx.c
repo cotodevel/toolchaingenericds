@@ -177,7 +177,7 @@ int LoadLotsOfGLTextures(u32 * textureSourceArray, int * textureArray, int textu
 		//load our texture
 		loadPCX((u8*)textureSourceArray[curTexture], &pcx);
 		image8to16(&pcx);
-		glTexImage2D(0, 0, GL_RGB, TEXTURE_SIZE_128 , TEXTURE_SIZE_128, 0, TEXGEN_TEXCOORD, pcx.image.data8); //maps textures automatically to VRAM map
+		glTexImage2D(0, 0, GL_RGB, TEXTURE_SIZE_64 , TEXTURE_SIZE_64, 0, TEXGEN_TEXCOORD, pcx.image.data8); //maps textures automatically to VRAM map
 		imageDestroy(&pcx);	
 	}
 	return curTexture;

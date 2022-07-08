@@ -859,8 +859,8 @@ bool rawUnpackedToRawPackedDisplayListFormat(u32 * inRawUnpackedDisplayList, u32
 
 		int curRawARGBufferCount = 0; //incremented from the args parsing part, consumed when adding args to fout stream
 		int packedCommandCount = 0;
-		
-		for(int i = 0; i < (listSize / 4); i++){
+		int i = 0;
+		for(i = 0; i < (listSize / 4); i++){
 			//Note: All commands implemented here must be replicated to isAGXCommand() method
 			u32 cmd = *listPtr;
 			bool iscmdEnd = false;

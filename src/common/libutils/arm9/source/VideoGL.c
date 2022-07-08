@@ -2209,7 +2209,7 @@ int getTextureBaseFromTextureSlot(int textureSlot){
 	u32 textureDescriptor = textures[textureSlot];
 	u8 baseTexSize1 = ((textureDescriptor >> 20) & TEXTURE_SIZE_1024);
 	u8 baseTexSize2 = ((textureDescriptor >> 23) & TEXTURE_SIZE_1024);
-	int res = (baseTexSize1*baseTexSize2*8);
+	int res = (baseTexSize1*baseTexSize2*7);
 	return ((res != 0) ? res : 8);
 }
 
@@ -2224,10 +2224,10 @@ __attribute__((optnone))
 void glTexCoord2f(GLfloat s, GLfloat t){
 	int texBase = getTextureBaseFromTextureSlot(activeTexture);
 	if(s > 0.0){
-		s = s + (texBase-1);
+		s = s + (texBase);
 	}
 	if(t > 0.0){
-		t = t + (texBase-1);
+		t = t + (texBase);
 	}
 	glTexCoord2t16(floattot16(t), floattot16(s));
 }
