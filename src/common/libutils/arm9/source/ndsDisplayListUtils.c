@@ -57,7 +57,7 @@ USA
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -69,7 +69,7 @@ u32 FIFO_COMMAND_PACK_C(u8 c1, u8 c2, u8 c3, u8 c4) {
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -87,7 +87,7 @@ struct unpackedCmd FIFO_COMMAND_PACKED_FMT_UNPACK(u32 cmd){
 //Returns: Display List raw binary filesize.
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -103,7 +103,7 @@ int getRawFileSizefromNDSGXDisplayListObject(struct ndsDisplayListDescriptor * d
 //Lists: All "FIFO_BEGIN" commands inside dlInst
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -116,7 +116,7 @@ bool getDisplayListFIFO_BEGIN(struct ndsDisplayListDescriptor * dlInst, struct n
 //Lists: All "FIFO_END" commands inside dlInst
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -129,7 +129,7 @@ bool getDisplayListFIFO_END(struct ndsDisplayListDescriptor * dlInst, struct nds
 //Lists: All "FIFO_VERTEX16" commands inside dlInst
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -142,7 +142,7 @@ bool getDisplayListFIFO_VERTEX16(struct ndsDisplayListDescriptor * dlInst, struc
 //Lists: All "FIFO_TEX_COORD" commands inside dlInst
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -155,7 +155,7 @@ bool getDisplayListFIFO_TEX_COORD(struct ndsDisplayListDescriptor * dlInst, stru
 //Lists: All "FIFO_COLOR" commands inside dlInst
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -231,7 +231,7 @@ char* itoa1(int value, char* buffer, int base)
 /////////////////////////////////////////////////////////////////////////////////////////
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -300,7 +300,7 @@ bool getDisplayListFilterByCommand(struct ndsDisplayListDescriptor * dlInst, str
 //Returns: Display List size, DL_INVALID if fails.
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -412,7 +412,7 @@ int BuildNDSGXDisplayListObjectFromFile(char * filename, struct ndsDisplayListDe
 //Defines if it's a GX command or not
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -451,7 +451,7 @@ bool isAGXCommand(u32 val){
 //returns: -1 if ain't a command, or command count
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -551,7 +551,7 @@ int getAGXParamsCountFromCommand(u32 val){
 //counts leading zeroes :)
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -579,7 +579,7 @@ u8 clzero(u32 var){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -834,7 +834,7 @@ bool packAndExportSourceCodeFromRawUnpackedDisplayListFormat(char * filenameOut,
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -1034,7 +1034,7 @@ bool rawUnpackedToRawPackedDisplayListFormat(u32 * inRawUnpackedDisplayList, u32
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1063,7 +1063,7 @@ unsigned int *crc32_table = NULL;
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1076,7 +1076,7 @@ void free_crc32_table (void){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1098,7 +1098,7 @@ unsigned int crc32 (unsigned int *crc, const void *buffer, unsigned int size){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1306,7 +1306,7 @@ int main(int argc, char** argv){
 //	false: ndsDisplayListUtils on NDS hardware was wrongly compiled in this session, rebuild again.
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -1392,7 +1392,7 @@ bool isNDSDLUtilsAPIStable(){
 //Unit Test (NDS): reads a NDS GX Display List / Call List payload emmited from (https://bitbucket.org/Coto88/blender-nds-exporter/src/master/)
 //Translates to an NDS GX Display List / Call List object, and then builds it again into the original payload.
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
