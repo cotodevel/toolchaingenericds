@@ -122,7 +122,6 @@ typedef void GLvoid;
 #define GFX_MTX_MODE_ADDR				((vuint32) 0x04000440)
 #define GFX_VIEWPORT_ADDR				((vuint32) 0x04000580)
 
-
 #define GFX_DIFFUSE_AMBIENT_ADDR   ((vuint32) 0x040004C0)
 #define GFX_SPECULAR_EMISSION_ADDR ((vuint32) 0x040004C4)
 #define GFX_SHININESS_ADDR         ((vuint32) 0x040004D0)
@@ -135,6 +134,8 @@ typedef void GLvoid;
 #define GFX_TOON_TABLE_ADDR		  ((vuint32)  0x04000380)
 #define GFX_EDGE_TABLE_ADDR		  ((vuint32)  0x04000330)
 
+#define GFX_POLY_FORMAT       (*(vuint32*) 0x040004A4)
+#define GFX_FLUSH             (*(vuint32*) 0x04000540)
 //////////////////////////////////////////////////////////////////////
 // Matrix processor control
 //////////////////////////////////////////////////////////////////////
@@ -1256,19 +1257,15 @@ extern uint32* nextBlock;
 //////////////////////////////////////////////////////////// Standard OpenGL 1.x end //////////////////////////////////////////
 
 
-
 //////////////////////////////////////////////////////////// Extended Display List OpenGL 1.x start //////////////////////////////////////////
-extern bool isCustomDisplayList; 
 extern bool isAnOpenGLExtendedDisplayListCallList;
 
 extern GLsizei Compiled_DL_Binary_Descriptor[InternalUnpackedGX_DL_workSize];
-	extern u32 * getInternalUnpackedDisplayListBuffer_StandardOGLCurOffset();
 	extern u32 * getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(); 
 		extern u32 LastOpenGLDisplayListStart; 
 
 //Internal Unpacked GX buffer
 	extern u32 InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_internalSize];
-	extern u32 InternalUnpackedGX_DL_Binary_StandardOGLPtr;
 	extern u32 InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 
 	extern u32 SingleUnpackedGXCommand_DL_Binary[PHYS_GXFIFO_INTERNAL_SIZE];
@@ -1302,7 +1299,7 @@ __attribute__ ((optnone))
 inline
 #endif
 static void handleInmediateGXDisplayList(u32 * sourcePhysDisplayList, u32 * sourcePhysDisplayListPtr, u8 cmdSource, int alternateParamsCount){
-	if((isCustomDisplayList == false) && (isAnOpenGLExtendedDisplayListCallList == false)){ //Only run Standard Open GL calls. Extended OpenGL DL CallLists are ran from standard-specific CallList() opcodes
+	if(isAnOpenGLExtendedDisplayListCallList == false){ //Only run Standard Open GL calls. Extended OpenGL DL CallLists are ran from standard-specific CallList() opcodes
 		//Identify cmdSource, if not exists, use alternateParamsCount instead (cmd(s) + arg(s) count)
 		int cmdCount = (alternateParamsCount*4);
 		if(cmdCount > 0){
