@@ -57,7 +57,7 @@ USA
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -69,7 +69,7 @@ u32 FIFO_COMMAND_PACK_C(u8 c1, u8 c2, u8 c3, u8 c4) {
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -87,7 +87,7 @@ struct unpackedCmd FIFO_COMMAND_PACKED_FMT_UNPACK(u32 cmd){
 //Returns: Display List raw binary filesize.
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -103,7 +103,7 @@ int getRawFileSizefromNDSGXDisplayListObject(struct ndsDisplayListDescriptor * d
 //Lists: All "FIFO_BEGIN" commands inside dlInst
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -116,7 +116,7 @@ bool getDisplayListFIFO_BEGIN(struct ndsDisplayListDescriptor * dlInst, struct n
 //Lists: All "FIFO_END" commands inside dlInst
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -129,7 +129,7 @@ bool getDisplayListFIFO_END(struct ndsDisplayListDescriptor * dlInst, struct nds
 //Lists: All "FIFO_VERTEX16" commands inside dlInst
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -142,7 +142,7 @@ bool getDisplayListFIFO_VERTEX16(struct ndsDisplayListDescriptor * dlInst, struc
 //Lists: All "FIFO_TEX_COORD" commands inside dlInst
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -155,7 +155,7 @@ bool getDisplayListFIFO_TEX_COORD(struct ndsDisplayListDescriptor * dlInst, stru
 //Lists: All "FIFO_COLOR" commands inside dlInst
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -189,15 +189,13 @@ char* reverse1(char *buffer, int i, int j)
 // Iterative function to implement `itoa()` function in C
 char* itoa1(int value, char* buffer, int base)
 {
+	// consider the absolute value of the number
+    int n = abs(value);
+    int i = 0;
     // invalid input
     if (base < 2 || base > 32) {
         return buffer;
     }
- 
-    // consider the absolute value of the number
-    int n = abs(value);
- 
-    int i = 0;
     while (n)
     {
         int r = n % base;
@@ -233,24 +231,25 @@ char* itoa1(int value, char* buffer, int base)
 /////////////////////////////////////////////////////////////////////////////////////////
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
 #endif
 bool getDisplayListFilterByCommand(struct ndsDisplayListDescriptor * dlInst, struct ndsDisplayListDescriptor * dlInstOut, u8 targetCommand){
+	int i = 0; 
 	if((dlInst != NULL) && (dlInstOut != NULL)){
 		int outCmdCount = 0;
 		//Initialize
 		dlInstOut->ndsDisplayListSize = 0;
-		for(int i = 0; i < DL_DESCRIPTOR_MAX_ITEMS; i++){
+		for(i = 0; i < DL_DESCRIPTOR_MAX_ITEMS; i++){
 			struct ndsDisplayList * DLOut = (struct ndsDisplayList *)&dlInstOut->DL[i];
 			DLOut->displayListType = DL_INVALID;
 			DLOut->index = 0;
 			DLOut->value = 0;
 		}
-		for(int i = 0; i < dlInst->ndsDisplayListSize; i++){
+		for(i = 0; i < dlInst->ndsDisplayListSize; i++){
 			struct ndsDisplayList * thisDL = (struct ndsDisplayList *)&dlInst->DL[i];
 			int indexOurCommandIs = (int)DL_INVALID;
 			u8 lastCmd = (u8)DL_INVALID;
@@ -301,7 +300,7 @@ bool getDisplayListFilterByCommand(struct ndsDisplayListDescriptor * dlInst, str
 //Returns: Display List size, DL_INVALID if fails.
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -312,29 +311,35 @@ int BuildNDSGXDisplayListObjectFromFile(char * filename, struct ndsDisplayListDe
 	int readFileSize = -1;
 	u32 * curPtr = NULL;
 	u32 * startPtr = NULL;
+	char * binDisplayList = NULL;
+	u32 cmdv1 = FIFO_COMMAND_PACK_C( getFIFO_BEGIN , getFIFO_COLOR , getFIFO_TEX_COORD , getFIFO_NORMAL ); //DL_TYPE_FIFO_PACKED_COMMAND_V1
+	u32 cmdv2 = FIFO_COMMAND_PACK_C( getFIFO_VERTEX16 , getFIFO_COLOR , getFIFO_TEX_COORD , getFIFO_NORMAL ); //DL_TYPE_FIFO_PACKED_COMMAND_V2
+	u32 cmdend = FIFO_COMMAND_PACK_C( getFIFO_VERTEX16 , getFIFO_END , getFIFO_NOP , getFIFO_NOP ); //DL_TYPE_FIFO_PACKED_COMMAND_END	
+	struct ndsDisplayList * curDL = NULL;
+	int curDLIndex = 0;
+	int FileSize = 0;
+	FILE * outFileGen = NULL;
+	u32 val = 0;
 	if( (filename != NULL) && (strlen(filename) > 0) && (dlInst != NULL) ){
 		//Initialize
-		for(int i = 0; i < DL_DESCRIPTOR_MAX_ITEMS; i++){
+		int i = 0; 
+		for(i = 0; i < DL_DESCRIPTOR_MAX_ITEMS; i++){
 			struct ndsDisplayList * initDL = (struct ndsDisplayList *)&dlInst->DL[i];
 			initDL->displayListType = DL_INVALID;
 			initDL->index = 0;
 			initDL->value = 0;
 		}
-		struct ndsDisplayList * curDL = (struct ndsDisplayList *)&dlInst->DL[0];
-		int curDLIndex = 0;
-		
+		curDL = (struct ndsDisplayList *)&dlInst->DL[0];
 		#ifdef WIN32
-		FILE * outFileGen = fopen(filename, "rb");
+		outFileGen = fopen(filename, "rb");
 		#endif
 		
 		#ifdef ARM9
-		FILE * outFileGen = fopen(filename, "r");
+		outFileGen = fopen(filename, "r");
 		#endif
-		
-		char * binDisplayList = NULL;
 		if(outFileGen != NULL){
 			fseek(outFileGen, 0, SEEK_END);
-			int FileSize = ftell(outFileGen);
+			FileSize = ftell(outFileGen);
 			fseek(outFileGen, 0, SEEK_SET);
 			binDisplayList = (char*)TGDSARM9Malloc(FileSize);
 			readFileSize = fread(binDisplayList, 1, FileSize, outFileGen);
@@ -342,17 +347,13 @@ int BuildNDSGXDisplayListObjectFromFile(char * filename, struct ndsDisplayListDe
 			startPtr = curPtr = (u32*)binDisplayList;
 			dlInst->ndsDisplayListSize = (int)*curPtr;
 			curPtr++;
-			
-			u32 cmdv1 = FIFO_COMMAND_PACK_C( getFIFO_BEGIN , getFIFO_COLOR , getFIFO_TEX_COORD , getFIFO_NORMAL ); //DL_TYPE_FIFO_PACKED_COMMAND_V1
-			u32 cmdv2 = FIFO_COMMAND_PACK_C( getFIFO_VERTEX16 , getFIFO_COLOR , getFIFO_TEX_COORD , getFIFO_NORMAL ); //DL_TYPE_FIFO_PACKED_COMMAND_V2
-			u32 cmdend = FIFO_COMMAND_PACK_C( getFIFO_VERTEX16 , getFIFO_END , getFIFO_NOP , getFIFO_NOP ); //DL_TYPE_FIFO_PACKED_COMMAND_END
 				
 			//FIFO_COMMAND_PACK() CMD Descriptor (start cmd):
 			//1: FIFO_VERTEX16
 			//2: FIFO_COLOR
 			//3: FIFO_TEX_COORD
 			//4: FIFO_NORMAL
-			u32 val = *(curPtr);
+			val = *(curPtr);
 			while(
 				!(val == cmdv1)
 			){
@@ -411,7 +412,7 @@ int BuildNDSGXDisplayListObjectFromFile(char * filename, struct ndsDisplayListDe
 //Defines if it's a GX command or not
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -450,7 +451,7 @@ bool isAGXCommand(u32 val){
 //returns: -1 if ain't a command, or command count
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -550,7 +551,7 @@ int getAGXParamsCountFromCommand(u32 val){
 //counts leading zeroes :)
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -578,15 +579,15 @@ u8 clzero(u32 var){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
 #endif
 #endif
 bool packAndExportSourceCodeFromRawUnpackedDisplayListFormat(char * filenameOut, u32 * rawUnpackedDisplayList){
+	int foundOffset = 0;
 	if( (filenameOut != NULL) && (rawUnpackedDisplayList != NULL) ){
-		
 		#ifdef WIN32
 		FILE * fout = fopen(filenameOut, "w+b");
 		#endif
@@ -598,227 +599,229 @@ bool packAndExportSourceCodeFromRawUnpackedDisplayListFormat(char * filenameOut,
 		if(fout != NULL){
 			u32 * listPtr = rawUnpackedDisplayList;
 			int listSize = (int)*listPtr;
-			listPtr++;
 			int currentCmdCount = 0;
-			fprintf(fout, "#include \"VideoGL.h\"\n\nu32 PackedDLEmitted[] = { \n%d,\n", listSize);
-
 			u32 * rawARGBuffer = (u32 *)TGDSARM9Malloc(listSize); //raw, linear buffer args from all GX commands (without GX commands)
 			u32* curRawARGBufferSave = (u32*)rawARGBuffer; //used to save args
 			u32* curRawARGBufferRestore = (u32*)rawARGBuffer; //used to read and consume args 
 			int curRawARGBufferCount = 0; //incremented from the args parsing part, consumed when adding args to fout stream
 			int packedCommandCount = 0;
-
-			for(int i = 0; i < (listSize / 4); i++){
-				//Note: All commands implemented here must be replicated to isAGXCommand() method
-				u32 cmd = *listPtr;
-				//build command(s)
-				if ( (isAGXCommand(cmd) == true)  && (((currentCmdCount) % 4) == 0) ) {
-					fprintf(fout, "FIFO_COMMAND_PACK(");
-				}
-
-				int cmdOffset = 0;
-				bool isCmd = false;
-				if (cmd == getFIFO_BEGIN){
-					fprintf(fout, "FIFO_BEGIN");
-					currentCmdCount++;
-					isCmd = true;
-
-					//no args used by this GX command
-				}
-				else if(cmd == getMTX_PUSH){
-					fprintf(fout, "MTX_PUSH");
-					currentCmdCount++;
-					isCmd = true;
-
-					//no args used by this GX command
-				}
-				else if(cmd == getMTX_POP){
-					fprintf(fout, "MTX_POP");
-					currentCmdCount++;
-					isCmd = true;
-
-					//4000448h 12h 1  36  MTX_POP - Pop Current Matrix from Stack(W)
-					u32 * curListPtr = listPtr;
-					curListPtr++;
-					u32 curVal = *curListPtr;
-					while (isAGXCommand(curVal) == false) {
-						*curRawARGBufferSave = curVal;
-						curRawARGBufferSave++;
-						curListPtr++;
-						curVal = *curListPtr;
-						curRawARGBufferCount++;
+			int i = 0;
+			u8 leadingZeroes = 0;
+			char readBuf[128];
+			char listSizeChar[128];
+			fprintf(fout, "#include \"VideoGL.h\"\n\nu32 PackedDLEmitted[] = { \n%d,\n", listSize);
+			listPtr++;
+			{
+				for(i = 0; i < (listSize / 4); i++){
+					//Note: All commands implemented here must be replicated to isAGXCommand() method
+					bool isCmd = false;
+					u32 cmd = *listPtr;
+					//build command(s)
+					if ( (isAGXCommand(cmd) == true)  && (((currentCmdCount) % 4) == 0) ) {
+						fprintf(fout, "FIFO_COMMAND_PACK(");
 					}
-				}
-				else if (cmd == getMTX_IDENTITY) {
-					fprintf(fout, "MTX_IDENTITY");
-					currentCmdCount++;
-					isCmd = true;
 
-					//4000454h 15h - 19  MTX_IDENTITY - Load Unit Matrix to Current Matrix(W)
-					//no args used by this GX command
-				}
-				else if (cmd == getMTX_TRANS) {
-					fprintf(fout, "MTX_TRANS");
-					currentCmdCount++;
-					isCmd = true;
+					if (cmd == getFIFO_BEGIN){
+						fprintf(fout, "FIFO_BEGIN");
+						currentCmdCount++;
+						isCmd = true;
 
-					//4000470h 1Ch 3  22 * MTX_TRANS - Mult.Curr.Matrix by Translation Matrix(W)
-					u32* curListPtr = listPtr;
-					curListPtr++;
-					u32 curVal = *curListPtr;
-					while (isAGXCommand(curVal) == false) {
-						*curRawARGBufferSave = curVal;
-						curRawARGBufferSave++;
-						curListPtr++;
-						curVal = *curListPtr;
-						curRawARGBufferCount++;
+						//no args used by this GX command
 					}
-				}
-				else if (cmd == getMTX_MULT_3x3) {
-					fprintf(fout, "MTX_MULT_3x3");
-					currentCmdCount++;
-					isCmd = true;
+					else if(cmd == getMTX_PUSH){
+						fprintf(fout, "MTX_PUSH");
+						currentCmdCount++;
+						isCmd = true;
 
-					//4000468h 1Ah 9  28 * MTX_MULT_3x3 - Multiply Current Matrix by 3x3 Matrix(W)
-					u32* curListPtr = listPtr;
-					curListPtr++;
-					u32 curVal = *curListPtr;
-					while (isAGXCommand(curVal) == false) {
-						*curRawARGBufferSave = curVal;
-						curRawARGBufferSave++;
-						curListPtr++;
-						curVal = *curListPtr;
-						curRawARGBufferCount++;
+						//no args used by this GX command
 					}
-				}
-				else if (cmd == getFIFO_END) {
-					fprintf(fout, "FIFO_END");
-					currentCmdCount++;
-					isCmd = true;
-					//no args used by this GX command
-				}
+					else if(cmd == getMTX_POP){
+						//4000448h 12h 1  36  MTX_POP - Pop Current Matrix from Stack(W)
+						u32 * curListPtr = listPtr;
+						curListPtr++;
+						{
+							u32 curVal = *curListPtr;
+							while (isAGXCommand(curVal) == false) {
+								*curRawARGBufferSave = curVal;
+								curRawARGBufferSave++;
+								curListPtr++;
+								curVal = *curListPtr;
+								curRawARGBufferCount++;
+							}
+							fprintf(fout, "MTX_POP");
+							currentCmdCount++;
+							isCmd = true;
+						}
+					}
+					else if (cmd == getMTX_IDENTITY) {
+						fprintf(fout, "MTX_IDENTITY");
+						currentCmdCount++;
+						isCmd = true;
+
+						//4000454h 15h - 19  MTX_IDENTITY - Load Unit Matrix to Current Matrix(W)
+						//no args used by this GX command
+					}
+					else if (cmd == getMTX_TRANS) {
+						//4000470h 1Ch 3  22 * MTX_TRANS - Mult.Curr.Matrix by Translation Matrix(W)
+						u32* curListPtr = listPtr;
+						curListPtr++;
+						{
+							u32 curVal = *curListPtr;
+							while (isAGXCommand(curVal) == false) {
+								*curRawARGBufferSave = curVal;
+								curRawARGBufferSave++;
+								curListPtr++;
+								curVal = *curListPtr;
+								curRawARGBufferCount++;
+							}
+						}
+						fprintf(fout, "MTX_TRANS");
+						currentCmdCount++;
+						isCmd = true;
+					}
+					else if (cmd == getMTX_MULT_3x3) {
+						//4000468h 1Ah 9  28 * MTX_MULT_3x3 - Multiply Current Matrix by 3x3 Matrix(W)
+						u32* curListPtr = listPtr;
+						curListPtr++;
+						{
+							u32 curVal = *curListPtr;
+							while (isAGXCommand(curVal) == false) {
+								*curRawARGBufferSave = curVal;
+								curRawARGBufferSave++;
+								curListPtr++;
+								curVal = *curListPtr;
+								curRawARGBufferCount++;
+							}
+						}
+						fprintf(fout, "MTX_MULT_3x3");
+						currentCmdCount++;
+						isCmd = true;
+					}
+					else if (cmd == getFIFO_END) {
+						fprintf(fout, "FIFO_END");
+						currentCmdCount++;
+						isCmd = true;
+						//no args used by this GX command
+					}
 
 
-				//IS closing cmd... Process all remaining FIFO commands, then stub out the rest as FIFO_NOPs
-				if( i == ((listSize / 4) - 1)){
-					int currentCommandOffset = (currentCmdCount % 4);
-					int currentCommandOffsetCopy = currentCommandOffset;
-					int j = 0;
+					//IS closing cmd... Process all remaining FIFO commands, then stub out the rest as FIFO_NOPs
+					if( i == ((listSize / 4) - 1)){
+						int currentCommandOffset = (currentCmdCount % 4);
+						int currentCommandOffsetCopy = currentCommandOffset;
+						int j = 0;
 					
-					//FIFO_END not last aligned command? Fill it with FIFO_NOP
-					if (currentCommandOffset > 0){
-						for (j = 0; j < currentCommandOffset; j++) {
-							fprintf(fout, "FIFO_NOP");
-							currentCommandOffsetCopy++;
-							if((currentCommandOffsetCopy % 4) == 0){
-								//LAST CMD BATCH: for each command found, add params(s)
-								//curRawARGBufferCount consumed here
-								if (curRawARGBufferCount > 0) {
-									fprintf(fout, "),\n");
-									packedCommandCount++; //a whole packed command is 4 bytes
-
-									int j = 0;
-									for (j = 0; j < curRawARGBufferCount; j++) {
-										u32 curArg = curRawARGBufferRestore[j];
-										fprintf(fout, "%d", curArg);
-										if( j != (curRawARGBufferCount - 1)){
-											fprintf(fout, ",");
+						//FIFO_END not last aligned command? Fill it with FIFO_NOP
+						if (currentCommandOffset > 0){
+							for (j = 0; j < currentCommandOffset; j++) {
+								fprintf(fout, "FIFO_NOP");
+								currentCommandOffsetCopy++;
+								if((currentCommandOffsetCopy % 4) == 0){
+									//LAST CMD BATCH: for each command found, add params(s)
+									//curRawARGBufferCount consumed here
+									if (curRawARGBufferCount > 0) {
+										fprintf(fout, "),\n");
+										packedCommandCount++; //a whole packed command is 4 bytes
+										for (j = 0; j < curRawARGBufferCount; j++) {
+											u32 curArg = curRawARGBufferRestore[j];
+											fprintf(fout, "%d", curArg);
+											if( j != (curRawARGBufferCount - 1)){
+												fprintf(fout, ",");
+											}
+											fprintf(fout, "\n");
+											packedCommandCount++; //each param is 4 bytes
 										}
-										fprintf(fout, "\n");
-										packedCommandCount++; //each param is 4 bytes
+										curRawARGBufferRestore += curRawARGBufferCount;
+										curRawARGBufferCount = 0;
 									}
-									curRawARGBufferRestore += curRawARGBufferCount;
-									curRawARGBufferCount = 0;
+									else{
+										fprintf(fout, ")\n");
+									}
+
+									fprintf(fout, "};");
 								}
 								else{
-									fprintf(fout, ")\n");
+									fprintf(fout, ", ");
 								}
-
-								fprintf(fout, "};");
 							}
-							else{
+						}
+						//FIFO_END IS last aligned command. Close bracket and remove last comma
+						else{
+							int pos = ftell(fout) - 2;
+							if(pos <= 0){
+								pos = 0;
+							}
+							fseek(fout, pos, SEEK_SET);
+							fprintf(fout, "\n};");
+							packedCommandCount++; //a whole packed command is 4 bytes
+						}
+					}
+					//NOT closing cmd!...  
+					else{
+						//add comma if next command is not closing
+						if ( (((currentCmdCount) % 4) != 0) ) {
+							if (isCmd == true) {
 								fprintf(fout, ", ");
 							}
 						}
-					}
-					//FIFO_END IS last aligned command. Close bracket and remove last comma
-					else{
-						int pos = ftell(fout) - 2;
-						if(pos <= 0){
-							pos = 0;
-						}
-						fseek(fout, pos, SEEK_SET);
-						fprintf(fout, "\n};");
-						packedCommandCount++; //a whole packed command is 4 bytes
-					}
-				}
-				//NOT closing cmd!...  
-				else{
-					//add comma if next command is not closing
-					if ( (((currentCmdCount) % 4) != 0) ) {
-						if (isCmd == true) {
-							fprintf(fout, ", ");
-						}
-					}
-					else {
-						//close command
-						if (isAGXCommand(cmd) == true){
-							fprintf(fout, "),\n");
-							packedCommandCount++; //a whole packed command is 4 bytes
-						}
-						//NOT LAST CMD BATCH: for each command found, add params(s): curRawARGBufferCount consumed here
-						if (curRawARGBufferCount > 0) {
-							int j = 0;
-							for (j = 0; j < curRawARGBufferCount; j++) {
-								u32 curArg = curRawARGBufferRestore[j];
-								fprintf(fout, "%d,\n", curArg);
-								packedCommandCount++; //each param is 4 bytes
+						else {
+							//close command
+							if (isAGXCommand(cmd) == true){
+								fprintf(fout, "),\n");
+								packedCommandCount++; //a whole packed command is 4 bytes
 							}
-							curRawARGBufferRestore += curRawARGBufferCount;
-							curRawARGBufferCount = 0;
+							//NOT LAST CMD BATCH: for each command found, add params(s): curRawARGBufferCount consumed here
+							if (curRawARGBufferCount > 0) {
+								int j = 0;
+								for (j = 0; j < curRawARGBufferCount; j++) {
+									u32 curArg = curRawARGBufferRestore[j];
+									fprintf(fout, "%d,\n", curArg);
+									packedCommandCount++; //each param is 4 bytes
+								}
+								curRawARGBufferRestore += curRawARGBufferCount;
+								curRawARGBufferCount = 0;
+							}
 						}
 					}
-				}
 				
-				listPtr++;
+					listPtr++;
+				}
 			}
 
 			//Now find listSize inside file handle, and replace it with new count
 			fseek(fout, 0, SEEK_SET);
-			char readBuf[128];
 			fread(readBuf, 1, sizeof(readBuf), fout);
-			int j = 0;
 			
-			u8 leadingZeroes = clzero((u32)listSize)/4; //bit -> decimal zeroes
+			leadingZeroes = clzero((u32)listSize)/4; //bit -> decimal zeroes
 			leadingZeroes++; //count last decimal
 
-			char listSizeChar[128];
 			memset(listSizeChar, 0, leadingZeroes);
 			itoa1(listSize, (char*)&listSizeChar[0], 10);
-			int foundOffset = 0;
+			foundOffset = 0;
+			{
+				int j = 0;
+				int k = 0;
+				for(j = 0; j < 128/leadingZeroes; j++){
+					char * looker = (char *)&readBuf[j * leadingZeroes-1];
+					if(strncmp (looker, (const char *)&listSizeChar[0], leadingZeroes) == 0){
+						foundOffset--;
 
-			for(j = 0; j < 128/leadingZeroes; j++){
-				char * looker = (char *)&readBuf[j * leadingZeroes-1];
-				if(strncmp (looker, (const char *)&listSizeChar[0], leadingZeroes) == 0){
-					foundOffset--;
+						//erase the value
+						fseek(fout, foundOffset, SEEK_SET);
+						for(k = 0; k < (int)leadingZeroes + 1; k++){ //+1 the comma
+							fprintf(fout, " ");
+						}
 
-					//erase the value
-					fseek(fout, foundOffset, SEEK_SET);
-					int k = 0;
-					for(k = 0; k < (int)leadingZeroes + 1; k++){ //+1 the comma
-						fprintf(fout, " ");
+						//set packed count
+						fseek(fout, foundOffset, SEEK_SET);
+						fprintf(fout, "%d,\n", packedCommandCount*4);
+
 					}
-
-					//set packed count
-					fseek(fout, foundOffset, SEEK_SET);
-					fprintf(fout, "%d,\n", packedCommandCount*4);
-
-				}
-				else{
-					foundOffset+=leadingZeroes;
+					else{
+						foundOffset+=leadingZeroes;
+					}
 				}
 			}
-
 			fclose(fout);
 			TGDSARM9Free(rawARGBuffer);
 		}
@@ -831,11 +834,10 @@ bool packAndExportSourceCodeFromRawUnpackedDisplayListFormat(char * filenameOut,
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
-#endif
 #endif
 bool rawUnpackedToRawPackedDisplayListFormat(u32 * inRawUnpackedDisplayList, u32 * outRawPackedDisplayList){
 	if( (inRawUnpackedDisplayList != NULL) && (outRawPackedDisplayList != NULL) ){
@@ -857,8 +859,8 @@ bool rawUnpackedToRawPackedDisplayListFormat(u32 * inRawUnpackedDisplayList, u32
 
 		int curRawARGBufferCount = 0; //incremented from the args parsing part, consumed when adding args to fout stream
 		int packedCommandCount = 0;
-		
-		for(int i = 0; i < (listSize / 4); i++){
+		int i = 0;
+		for(i = 0; i < (listSize / 4); i++){
 			//Note: All commands implemented here must be replicated to isAGXCommand() method
 			u32 cmd = *listPtr;
 			bool iscmdEnd = false;
@@ -1028,94 +1030,103 @@ bool rawUnpackedToRawPackedDisplayListFormat(u32 * inRawUnpackedDisplayList, u32
 	}
 	return false;
 }
+#endif
 
-//returns:
-//	true: ndsDisplayListUtils behaves 1:1 on NDS hardware and Visual Studio, and it's 100% guaranteed to work in this session.
-//	false: ndsDisplayListUtils on NDS hardware was wrongly compiled in this session, rebuild again.
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
-__attribute__((optnone))
+__attribute__ ((optnone))
 #endif
 #endif
-bool isNDSDLUtilsAPIStable(){
-	bool ret = false;
-	unsigned int crc32source = 0;
-	int sourceFileSize = 0;
-	#ifdef WIN32
-	char cwdPathMP4[256];
-	getCWDWin(cwdPathMP4, testSourceFileLocation);
-	FILE * outFileGen = fopen(cwdPathMP4, "rb");
-	if(outFileGen != NULL){
-		fseek(outFileGen, 0, SEEK_END);
-		sourceFileSize = ftell(outFileGen);
-		fseek(outFileGen, 0, SEEK_SET);
+void init_crc_table (void *table, unsigned int polynomial){ // works for crc16 and crc32
+  unsigned int crc, i, j;
 
-		crc32source = -1;
-		int err = crc32file(outFileGen, &crc32source);
-		fclose(outFileGen);
+  for (i = 0; i < 256; i++)
+    {
+      crc = i;
+      for (j = 8; j > 0; j--)
+        if (crc & 1)
+          crc = (crc >> 1) ^ polynomial;
+        else
+          crc >>= 1;
+
+      if (polynomial == CRC32_POLYNOMIAL)
+        ((unsigned int *) table)[i] = crc;
+      else
+        ((unsigned short *) table)[i] = (unsigned short) crc;
+    }
+}
+
+unsigned int *crc32_table = NULL;
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
+void free_crc32_table (void){
+	TGDSARM9Free(crc32_table);
+	crc32_table = NULL;
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
+unsigned int crc32 (unsigned int *crc, const void *buffer, unsigned int size){
+	unsigned char *p = (unsigned char *)buffer;
+	if (!crc32_table){
+		crc32_table = (unsigned int *) TGDSARM9Malloc(256 * 4);
+		init_crc_table (crc32_table, CRC32_POLYNOMIAL);
 	}
-	#endif
-	
-	#ifdef ARM9
-	crc32source = 0;
-	sourceFileSize = PackedDisplayListCompiledVS2012_size;	//(int)PackedDisplayListCompiledVS2012[0]; //<--- this is PACKED SIZE, SINCE IT'S PACKED, IT DOESN'T GENERATE THE SAME UNPACKED OUTPUT AS NORMAL NDSDLUTILSCALLS
-	crc32source = crc32(&crc32source, (u8*)&PackedDisplayListCompiledVS2012[0], PackedDisplayListCompiledVS2012_size);
-	#endif
-	//Packed GX Command list generated from VS2012 must be the same as the one dinamically generated on runtime (NDS/VS2012)
-	if(sourceFileSize > InternalUnpackedGX_DL_workSize){
-		sourceFileSize = InternalUnpackedGX_DL_workSize;
+	*crc = ~(*crc);
+	while (size--){
+		*crc = ((*crc) >> 8) ^ crc32_table[((*crc) ^ *p++) & 0xff];
 	}
-	int list = glGenLists(10);
-	if(list){
-		glListBase(list);
-		bool ret = glIsList(list); //should return false (DL generated, but no displaylist-name was generated)
-		glNewList(list, GL_COMPILE);
-		ret = glIsList(list); //should return true (DL generated, and displaylist-name was generated)
-		if(ret == true){
-			for (int i = 0; i <10; i ++){ //Draw 10 cubes
-				glPushMatrix();
-				glRotatef(36*i,0.0,0.0,1.0);
-				glTranslatef(10.0,0.0,0.0);
-				glPopMatrix(1);
-			}
-		}
-		glEndList();
-		
-		glListBase(list + 1);
-		glNewList (list + 1, GL_COMPILE);//Create a second display list and execute it
-		ret = glIsList(list + 1); //should return true (DL generated, and displaylist-name was generated)
-		if(ret == true){
-			for (int i = 0; i <20; i ++){ //Draw 20 triangles
-				glPushMatrix();
-				glRotatef(18*i,0.0,0.0,1.0);
-				glTranslatef(15.0,0.0,0.0);
-				glPopMatrix(1);
-			}
-		}
-		glEndList();//The second display list is created
-	}
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	u32 * CompiledDisplayListsBuffer = getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(); //Lists called earlier are written to this buffer, using the unpacked GX command format.
-	u32 TestPacked_DL_Binary[InternalUnpackedGX_DL_workSize];
-	memset((u8*)&TestPacked_DL_Binary[0], 0, sourceFileSize);
-	bool result2 = rawUnpackedToRawPackedDisplayListFormat(CompiledDisplayListsBuffer, (u32*)TestPacked_DL_Binary);
-	if(result2 == true){
-		unsigned int crc32dest = 0;
-		int packedSize = (int)TestPacked_DL_Binary[0];
-		crc32dest = crc32(&crc32dest, (u8*)&TestPacked_DL_Binary[0], packedSize);
-		if(crc32source == crc32dest){
-			ret = true;
-		}
-	}
-	return ret;
+	free_crc32_table();
+	return ~(*crc);
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
+int crc32file( FILE *file, unsigned int *outCrc32){
+	#define CRC_BUFFER_SIZE  (int)(1024*64)
+    char * buf = (char *)TGDSARM9Malloc(CRC_BUFFER_SIZE);
+	size_t bufLen;
+    /** accumulate crc32 from file **/
+    *outCrc32 = 0;
+    while (1) {
+        bufLen = fread(buf, 1, CRC_BUFFER_SIZE, file);
+        if (bufLen == 0) {
+            //if (ferror(file)) {
+            //    fprintf( stderr, "error reading file\n" );
+            //    goto ERR_EXIT;
+            //}
+            break;
+        }
+        *outCrc32 = crc32(outCrc32, buf, bufLen );
+    }
+	TGDSARM9Free(buf);
+    return( 0 );
 }
 
 #ifdef WIN32
 int main(int argc, char** argv){
-
 	//Quick Unit Test Triangle rendering example: direct OpenGL commands, running in either WIN32 or NDS GX hardware
 	//Simple Triangle GL init
 	
@@ -1133,7 +1144,7 @@ int main(int argc, char** argv){
 		glClearDepth(0x7FFF);
 		
 	}
-	
+	/*
 	ReSizeGLScene(255, 191);  
 	InitGL();	
 
@@ -1179,7 +1190,7 @@ int main(int argc, char** argv){
 	}
 	
 
-	/* OpenGL 1.1 Dynamic Display List implementing the above simple triangle example */
+	// OpenGL 1.1 Dynamic Display List 
 	//ReSizeGLScene(255, 191);
 	InitGL();
 	
@@ -1284,117 +1295,104 @@ int main(int argc, char** argv){
 
 	//Unit Test #5: glDeleteLists test
 	glDeleteLists(index, 5); //remove 5 of them
-
+	*/
 	return 0;
 }
 #endif
 
+/*
+//returns:
+//	true: ndsDisplayListUtils behaves 1:1 on NDS hardware and Visual Studio, and it's 100% guaranteed to work in this session.
+//	false: ndsDisplayListUtils on NDS hardware was wrongly compiled in this session, rebuild again.
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
+__attribute__((optnone))
 #endif
 #endif
-void init_crc_table (void *table, unsigned int polynomial){ // works for crc16 and crc32
-  unsigned int crc, i, j;
+bool isNDSDLUtilsAPIStable(){
+	bool ret = false;
+	unsigned int crc32source = 0;
+	int sourceFileSize = 0;
+	#ifdef WIN32
+	char cwdPathMP4[256];
+	getCWDWin(cwdPathMP4, testSourceFileLocation);
+	FILE * outFileGen = fopen(cwdPathMP4, "rb");
+	if(outFileGen != NULL){
+		fseek(outFileGen, 0, SEEK_END);
+		sourceFileSize = ftell(outFileGen);
+		fseek(outFileGen, 0, SEEK_SET);
 
-  for (i = 0; i < 256; i++)
-    {
-      crc = i;
-      for (j = 8; j > 0; j--)
-        if (crc & 1)
-          crc = (crc >> 1) ^ polynomial;
-        else
-          crc >>= 1;
-
-      if (polynomial == CRC32_POLYNOMIAL)
-        ((unsigned int *) table)[i] = crc;
-      else
-        ((unsigned short *) table)[i] = (unsigned short) crc;
-    }
-}
-
-unsigned int *crc32_table = NULL;
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-void free_crc32_table (void){
-	TGDSARM9Free(crc32_table);
-	crc32_table = NULL;
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-unsigned int crc32 (unsigned int *crc, const void *buffer, unsigned int size){
-	unsigned char *p = (unsigned char *)buffer;
-	if (!crc32_table){
-		crc32_table = (unsigned int *) TGDSARM9Malloc(256 * 4);
-		init_crc_table (crc32_table, CRC32_POLYNOMIAL);
+		crc32source = -1;
+		int err = crc32file(outFileGen, &crc32source);
+		fclose(outFileGen);
 	}
-	*crc = ~(*crc);
-	while (size--){
-		*crc = ((*crc) >> 8) ^ crc32_table[((*crc) ^ *p++) & 0xff];
+	#endif
+	
+	#ifdef ARM9
+	crc32source = 0;
+	sourceFileSize = PackedDisplayListCompiledVS2012_size;	//(int)PackedDisplayListCompiledVS2012[0]; //<--- this is PACKED SIZE, SINCE IT'S PACKED, IT DOESN'T GENERATE THE SAME UNPACKED OUTPUT AS NORMAL NDSDLUTILSCALLS
+	crc32source = crc32(&crc32source, (u8*)&PackedDisplayListCompiledVS2012[0], PackedDisplayListCompiledVS2012_size);
+	#endif
+	//Packed GX Command list generated from VS2012 must be the same as the one dinamically generated on runtime (NDS/VS2012)
+	if(sourceFileSize > InternalUnpackedGX_DL_workSize){
+		sourceFileSize = InternalUnpackedGX_DL_workSize;
 	}
-	free_crc32_table();
-	return ~(*crc);
+	int list = glGenLists(10);
+	if(list){
+		glListBase(list);
+		bool ret = glIsList(list); //should return false (DL generated, but no displaylist-name was generated)
+		glNewList(list, GL_COMPILE);
+		ret = glIsList(list); //should return true (DL generated, and displaylist-name was generated)
+		if(ret == true){
+			for (int i = 0; i <10; i ++){ //Draw 10 cubes
+				glPushMatrix();
+				glRotatef(36*i,0.0,0.0,1.0);
+				glTranslatef(10.0,0.0,0.0);
+				glPopMatrix(1);
+			}
+		}
+		glEndList();
+		
+		glListBase(list + 1);
+		glNewList (list + 1, GL_COMPILE);//Create a second display list and execute it
+		ret = glIsList(list + 1); //should return true (DL generated, and displaylist-name was generated)
+		if(ret == true){
+			for (int i = 0; i <20; i ++){ //Draw 20 triangles
+				glPushMatrix();
+				glRotatef(18*i,0.0,0.0,1.0);
+				glTranslatef(15.0,0.0,0.0);
+				glPopMatrix(1);
+			}
+		}
+		glEndList();//The second display list is created
+	}
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	u32 * CompiledDisplayListsBuffer = getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(); //Lists called earlier are written to this buffer, using the unpacked GX command format.
+	u32 TestPacked_DL_Binary[InternalUnpackedGX_DL_workSize];
+	memset((u8*)&TestPacked_DL_Binary[0], 0, sourceFileSize);
+	bool result2 = rawUnpackedToRawPackedDisplayListFormat(CompiledDisplayListsBuffer, (u32*)TestPacked_DL_Binary);
+	if(result2 == true){
+		unsigned int crc32dest = 0;
+		int packedSize = (int)TestPacked_DL_Binary[0];
+		crc32dest = crc32(&crc32dest, (u8*)&TestPacked_DL_Binary[0], packedSize);
+		if(crc32source == crc32dest){
+			ret = true;
+		}
+	}
+	return ret;
 }
 
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-int crc32file( FILE *file, unsigned int *outCrc32){
-	#define CRC_BUFFER_SIZE  (int)(1024*64)
-    char * buf = (char *)TGDSARM9Malloc(CRC_BUFFER_SIZE);
-	size_t bufLen;
-    /** accumulate crc32 from file **/
-    *outCrc32 = 0;
-    while (1) {
-        bufLen = fread(buf, 1, CRC_BUFFER_SIZE, file);
-        if (bufLen == 0) {
-			/*
-            if (ferror(file)) {
-                fprintf( stderr, "error reading file\n" );
-                goto ERR_EXIT;
-            }
-			*/
-            break;
-        }
-        *outCrc32 = crc32(outCrc32, buf, bufLen );
-    }
-	TGDSARM9Free(buf);
-    return( 0 );
-
-    /* error exit 
-ERR_EXIT:
-    return( -1 );
-	*/
-}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 #ifdef ARM9
 //Unit Test (NDS): reads a NDS GX Display List / Call List payload emmited from (https://bitbucket.org/Coto88/blender-nds-exporter/src/master/)
 //Translates to an NDS GX Display List / Call List object, and then builds it again into the original payload.
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1476,136 +1474,4 @@ bool ndsDisplayListUtilsTestCaseARM9(char * filename, char * outNDSGXBuiltDispla
 	return retStatus;
 }
 #endif
-
-//GL Display Lists Unit Test: Cube Demo
-// Build Cube Display Lists
-GLvoid BuildLists(){
-	box=glGenLists(2);									// Generate 2 Different Lists
-	glNewList(box,GL_COMPILE);							// Start With The Box List
-		glBegin(GL_QUADS);
-			// Bottom Face
-			glNormal3f( 0.0f,-1.0f, 0.0f);
-			glTexCoord2f(1.0f, 1.0f); glVertex3f(-1.0f, -1.0f, -1.0f);
-			glTexCoord2f(0.0f, 1.0f); glVertex3f( 1.0f, -1.0f, -1.0f);
-			glTexCoord2f(0.0f, 0.0f); glVertex3f( 1.0f, -1.0f,  1.0f);
-			glTexCoord2f(1.0f, 0.0f); glVertex3f(-1.0f, -1.0f,  1.0f);
-			// Front Face
-			glNormal3f( 0.0f, 0.0f, 1.0f);
-			glTexCoord2f(0.0f, 0.0f); glVertex3f(-1.0f, -1.0f,  1.0f);
-			glTexCoord2f(1.0f, 0.0f); glVertex3f( 1.0f, -1.0f,  1.0f);
-			glTexCoord2f(1.0f, 1.0f); glVertex3f( 1.0f,  1.0f,  1.0f);
-			glTexCoord2f(0.0f, 1.0f); glVertex3f(-1.0f,  1.0f,  1.0f);
-			// Back Face
-			glNormal3f( 0.0f, 0.0f,-1.0f);
-			glTexCoord2f(1.0f, 0.0f); glVertex3f(-1.0f, -1.0f, -1.0f);
-			glTexCoord2f(1.0f, 1.0f); glVertex3f(-1.0f,  1.0f, -1.0f);
-			glTexCoord2f(0.0f, 1.0f); glVertex3f( 1.0f,  1.0f, -1.0f);
-			glTexCoord2f(0.0f, 0.0f); glVertex3f( 1.0f, -1.0f, -1.0f);
-			// Right face
-			glNormal3f( 1.0f, 0.0f, 0.0f);
-			glTexCoord2f(1.0f, 0.0f); glVertex3f( 1.0f, -1.0f, -1.0f);
-			glTexCoord2f(1.0f, 1.0f); glVertex3f( 1.0f,  1.0f, -1.0f);
-			glTexCoord2f(0.0f, 1.0f); glVertex3f( 1.0f,  1.0f,  1.0f);
-			glTexCoord2f(0.0f, 0.0f); glVertex3f( 1.0f, -1.0f,  1.0f);
-			// Left Face
-			glNormal3f(-1.0f, 0.0f, 0.0f);
-			glTexCoord2f(0.0f, 0.0f); glVertex3f(-1.0f, -1.0f, -1.0f);
-			glTexCoord2f(1.0f, 0.0f); glVertex3f(-1.0f, -1.0f,  1.0f);
-			glTexCoord2f(1.0f, 1.0f); glVertex3f(-1.0f,  1.0f,  1.0f);
-			glTexCoord2f(0.0f, 1.0f); glVertex3f(-1.0f,  1.0f, -1.0f);
-		glEnd();
-	glEndList();
-	top=box+1;											// Storage For "Top" Is "Box" Plus One
-	glNewList(top,GL_COMPILE);							// Now The "Top" Display List
-		glBegin(GL_QUADS);
-			// Top Face
-			glNormal3f( 0.0f, 1.0f, 0.0f);
-			glTexCoord2f(0.0f, 1.0f); glVertex3f(-1.0f,  1.0f, -1.0f);
-			glTexCoord2f(0.0f, 0.0f); glVertex3f(-1.0f,  1.0f,  1.0f);
-			glTexCoord2f(1.0f, 0.0f); glVertex3f( 1.0f,  1.0f,  1.0f);
-			glTexCoord2f(1.0f, 1.0f); glVertex3f( 1.0f,  1.0f, -1.0f);
-		glEnd();
-	glEndList();
-}
-
-GLvoid ReSizeGLScene(GLsizei width, GLsizei height)		// Resize And Initialize The GL Window
-{
-	if (height==0)										// Prevent A Divide By Zero By
-	{
-		height=1;										// Making Height Equal One
-	}
-
-	glViewport(0,0,width,height);						// Reset The Current Viewport
-
-	glMatrixMode(GL_PROJECTION);						// Select The Projection Matrix
-	glLoadIdentity();									// Reset The Projection Matrix
-
-	// Calculate The Aspect Ratio Of The Window
-	gluPerspective(45.0f,(GLfloat)width/(GLfloat)height,0.1f,100.0f);
-
-	glMatrixMode(GL_MODELVIEW);							// Select The Modelview Matrix
-	glLoadIdentity();									// Reset The Modelview Matrix
-}
-
-int InitGL()										// All Setup For OpenGL Goes Here
-{
-	//Unit Test #0: nds DisplayList utils safety checks.
-	/*
-	bool ret = isNDSDLUtilsAPIStable();
-	if(ret == false){
-		printf("NDSDisplayListUtilsAPI was badly compiled. Rebuild again.");
-		while(1==1){
-		}
-	}
-	*/
-
-	glInit(); //NDSDLUtils: Initializes a new videoGL context
-	BuildLists();										// Jump To The Code That Creates Our Display Lists
-
-	glEnable(GL_TEXTURE_2D);							// Enable Texture Mapping
-	glClearColor(0.0f, 0.0f, 0.0f);				// Black Background
-	glClearDepth(1.0f);									// Depth Buffer Setup
-	return true;										// Initialization Went OK
-}
-
-int DrawGLScene()									// Here's Where We Do All The Drawing
-{
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	// Clear The Screen And The Depth Buffer
-
-	for (yloop=1;yloop<6;yloop++)
-	{
-		for (xloop=0;xloop<yloop;xloop++)
-		{
-			glLoadIdentity();							// Reset The View
-			glTranslatef(1.4f+(float(xloop)*2.8f)-(float(yloop)*1.4f),((6.0f-float(yloop))*2.4f)-7.0f,-20.0f);
-			glRotatef(45.0f-(2.0f*yloop)+xrot,1.0f,0.0f,0.0f);
-			glRotatef(45.0f+yrot,0.0f,1.0f,0.0f);
-			glColor3fv(boxcol[yloop-1]);
-			glCallList(box);
-			glColor3fv(topcol[yloop-1]);
-			glCallList(top);
-		}
-	}
-	return true;										// Keep Going
-}
-
-#ifdef WIN32
-GLuint	texture[1];			// Storage For 1 Texture
-GLuint	box;				// Storage For The Box Display List
-GLuint	top;				// Storage For The Top Display List
-GLuint	xloop;				// Loop For X Axis
-GLuint	yloop;				// Loop For Y Axis
-
-GLfloat	xrot;				// Rotates Cube On The X Axis
-GLfloat	yrot;				// Rotates Cube On The Y Axis
-
-GLfloat boxcol[5][3]=
-{
-	{1.0f,0.0f,0.0f},{1.0f,0.5f,0.0f},{1.0f,1.0f,0.0f},{0.0f,1.0f,0.0f},{0.0f,1.0f,1.0f}
-};
-
-GLfloat topcol[5][3]=
-{
-	{.5f,0.0f,0.0f},{0.5f,0.25f,0.0f},{0.5f,0.5f,0.0f},{0.0f,0.5f,0.0f},{0.0f,0.5f,0.5f}
-};
-#endif
+*/

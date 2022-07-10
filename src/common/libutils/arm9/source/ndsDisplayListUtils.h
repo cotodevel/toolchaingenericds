@@ -64,6 +64,7 @@ struct unpackedCmd {
 #define getMTX_MULT_3x3 (u8)REG2IDADDR(MATRIX_MULT3x3_ADDR)
 #define getMTX_STORE (u8)REG2IDADDR(MATRIX_STORE_ADDR)
 #define getMTX_RESTORE (u8)REG2IDADDR(MATRIX_RESTORE_ADDR)
+#define getMTX_MULT_4x3 (u8)REG2IDADDR(MATRIX_MULT4x3_ADDR)
 #define getMTX_MULT_4x4 (u8)REG2IDADDR(MATRIX_MULT4x4_ADDR)
 #define getMTX_SCALE (u8)REG2IDADDR(MATRIX_SCALE_ADDR)
 #define getMTX_PUSH (u8)REG2IDADDR(GFX_MTX_PUSH_ADDR)
@@ -98,10 +99,6 @@ extern bool getDisplayListFIFO_VERTEX16(struct ndsDisplayListDescriptor * dlInst
 extern bool getDisplayListFIFO_BEGIN(struct ndsDisplayListDescriptor * dlInst, struct ndsDisplayListDescriptor * dlInstOut);
 extern bool getDisplayListFIFO_END(struct ndsDisplayListDescriptor * dlInst, struct ndsDisplayListDescriptor * dlInstOut);
 
-#ifdef ARM9
-extern bool ndsDisplayListUtilsTestCaseARM9(char * filename, char * outNDSGXBuiltDisplayList);
-#endif
-
 extern bool isAGXCommand(u32 val);
 extern u8 clzero(u32 var);
 extern bool packAndExportSourceCodeFromRawUnpackedDisplayListFormat(char * filenameOut, u32 * rawUnpackedDisplayList);
@@ -111,7 +108,6 @@ extern int getAGXParamsCountFromCommand(u32 command);
 extern void swap1(char *x, char *y);
 extern char* reverse1(char *buffer, int i, int j);
 extern char* itoa1(int value, char* buffer, int base);
-extern bool isNDSDLUtilsAPIStable();
 
 //crc32 bits
 extern void init_crc_table (void *table, unsigned int polynomial);
@@ -119,18 +115,8 @@ extern unsigned int *crc32_table;
 extern void free_crc32_table (void);
 extern unsigned int crc32 (unsigned int *crc, const void *buffer, unsigned int size);
 extern int crc32file( FILE *file, unsigned int *outCrc32);
-extern GLuint	texture[1];			// Storage For 1 Texture
-extern GLuint	box;				// Storage For The Box Display List
-extern GLuint	top;				// Storage For The Top Display List
-extern GLuint	xloop;				// Loop For X Axis
-extern GLuint	yloop;				// Loop For Y Axis
 
-extern GLfloat	xrot;				// Rotates Cube On The X Axis
-extern GLfloat	yrot;				// Rotates Cube On The Y Axis
-
-extern GLfloat boxcol[5][3];
-extern GLfloat topcol[5][3];
-extern GLvoid BuildLists();
-extern GLvoid ReSizeGLScene(GLsizei width, GLsizei height);
-extern int InitGL();
-extern int DrawGLScene();
+//Debug
+//extern bool isNDSDLUtilsAPIStable();
+//extern int mainNDS9(int argc, char** argv);
+//extern bool ndsDisplayListUtilsTestCaseARM9(char * filename, char * outNDSGXBuiltDisplayList);
