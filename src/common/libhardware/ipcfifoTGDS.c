@@ -184,6 +184,12 @@ void HandleFifoNotEmpty(){
 			}
 			break;
 			
+			case(TGDS_GETEXTERNALPAYLOAD_MODE):{
+				struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
+				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+				fifomsg[58] = (u32)__dsimode;
+			}
+			break;
 			
 			//ARM7 command handler
 			#ifdef ARM7
@@ -762,6 +768,17 @@ u8 ARM7ReadFWVersionFromFlashByFIFOIRQ(){
 		swiDelay(2);
 	}
 	return (u8)fifomsg[58];
+}
+
+bool getNTRorTWLModeFromExternalProcessor(){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+	setValueSafe(&fifomsg[58], (u32)0xFFFFFFFF);
+	SendFIFOWords(TGDS_GETEXTERNALPAYLOAD_MODE, 0xFF);
+	while(getValueSafe(&fifomsg[58]) == 0xFFFFFFFF){
+		swiDelay(2);
+	}
+	return (bool)fifomsg[58];
 }
 
 #endif

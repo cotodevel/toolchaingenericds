@@ -64,7 +64,7 @@ static uint16 enable_bits = GL_TEXTURE_2D | (1<<13) | (1<<14);
 	#ifdef ARM9
 	__attribute__((section(".dtcm")))
 	#endif
-	u32 InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;	//First 8K
+	u32 InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;	//2nd half 4K
 	u32 SingleUnpackedGXCommand_DL_Binary[PHYS_GXFIFO_INTERNAL_SIZE]; //Unpacked single command GX Buffer
 	
 //Initializes the NDS OpenGL system
@@ -86,8 +86,7 @@ void glInit(){
 	
 	InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr=0; //2nd half 4K
 	memset(getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(), 0, InternalUnpackedGX_DL_workSize);
-	globalGLCtx.mode = GL_COMPILE;
-    isAnOpenGLExtendedDisplayListCallList = false;
+	isAnOpenGLExtendedDisplayListCallList = false;
 }
 
 #ifdef ARM9
@@ -2562,7 +2561,12 @@ GLsizei Compiled_DL_Binary_Descriptor[InternalUnpackedGX_DL_workSize];
 #ifdef ARM9
 __attribute__((section(".dtcm")))
 #endif
-u32 LastOpenGLDisplayListStart=0; //enumerates last list allocated by glNewList()
+u32 LastGXInternalDisplayListPtr=0; //enumerates last list allocated by glNewList()
+
+#ifdef ARM9
+__attribute__((section(".dtcm")))
+#endif
+u32 LastActiveOpenGLDisplayList;
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -2592,9 +2596,10 @@ GLuint glGenLists(GLsizei	range){
 			Compiled_DL_Binary_Descriptor[i] = DL_INVALID; //Compiled_DL_Binary_Descriptor[i] = InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr; //only mapped from glNewList()
 		}
 		isAnOpenGLExtendedDisplayListCallList = false; //cut-off incoming new OpenGL extended DLs
-		LastOpenGLDisplayListStart=0; //reset to default list start
+		LastGXInternalDisplayListPtr=0; //reset to default list start
 		InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = 1; //OFFSET 0 IS DL SIZE
-        return InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr; //starts from range of said length
+        LastActiveOpenGLDisplayList = DL_INVALID;
+		return InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr; //starts from range of said length
     }
     return 0;
 }
@@ -2657,6 +2662,7 @@ void glNewList(GLuint list, GLenum mode){
 	InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr++; //OFFSET 0 IS DL SIZE
 	Compiled_DL_Binary_Descriptor[list] = InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr; 
 	globalGLCtx.mode = (u32)mode;
+	LastActiveOpenGLDisplayList = (u32)list;
 	isAnOpenGLExtendedDisplayListCallList = true;
 }
 
@@ -2673,21 +2679,21 @@ __attribute__((optnone))
 #endif
 void glEndList(void){
 	int listSize = 0;
-	u32 targetGXDLOffset = 0;
 	//If LAST display-list name is GL_COMPILE: actually builds ALL the Display-list generated through the LAST display-list name generated from glNewList(), then compiles it into a GX binary DL. Such binary will be manually executed when glCallList(display-list name) is called 
 	//Else If LAST display-list name is GL_COMPILE_AND_EXECUTE: actually builds ALL the Display-list generated through the LAST display-list name generated from glNewList(), then compiles it into a GX binary DL and executes it inmediately through GX GLCallList()
 	
 	//define List Size
-	listSize = ((InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr - LastOpenGLDisplayListStart) * 4) + 4;
-	InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_OpenGLDisplayListStartOffset + LastOpenGLDisplayListStart] = (u32)listSize;
-	targetGXDLOffset = InternalUnpackedGX_DL_OpenGLDisplayListStartOffset + LastOpenGLDisplayListStart;
+	listSize = ((InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr - LastGXInternalDisplayListPtr) * 4) + 4;
+	InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_OpenGLDisplayListStartOffset + LastGXInternalDisplayListPtr] = (u32)listSize;
 	InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr++;
-	LastOpenGLDisplayListStart = InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;	
+	LastGXInternalDisplayListPtr = InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;	
 
 	if(globalGLCtx.mode == GL_COMPILE_AND_EXECUTE){
-		glCallListGX((const u32*)&InternalUnpackedGX_DL_Binary[targetGXDLOffset]); //Using Unpacked Command instead
+		glCallList((GLuint)LastActiveOpenGLDisplayList);
 	}
 	isAnOpenGLExtendedDisplayListCallList = false;
+	LastActiveOpenGLDisplayList = DL_INVALID;
+	globalGLCtx.mode = GL_COMPILE;
 }
 
 /*
@@ -2705,34 +2711,36 @@ __attribute__((optnone))
 #endif
 #endif
 void glCallList(GLuint list){
-	u32 * InternalDL = getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr();
-	int curDLInCompiledDLOffset = 0;
-	int singleListSize = 0;
-	if(list > 0){
-		list--;
-	}
-	curDLInCompiledDLOffset = Compiled_DL_Binary_Descriptor[list];
-	if((u32)curDLInCompiledDLOffset != DL_INVALID){
-		u32 * currentPhysicalDisplayListStart = (u32 *)&InternalDL[curDLInCompiledDLOffset];
-		if(curDLInCompiledDLOffset == 2){
-			currentPhysicalDisplayListStart-=2;
-			*(currentPhysicalDisplayListStart+1)=(*currentPhysicalDisplayListStart)-4;
-			currentPhysicalDisplayListStart++;
+	if(list != DL_INVALID){
+		u32 * InternalDL = getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr();
+		int curDLInCompiledDLOffset = 0;
+		int singleListSize = 0;
+		if(list > 0){
+			list--;
 		}
-		else{
-			currentPhysicalDisplayListStart--;
-		}
-		singleListSize = *currentPhysicalDisplayListStart;
-		if(singleListSize > 0){
-			//Run a single GX Display List, having proper DL size
-			u32 customsingleOpenGLCompiledDisplayListPtr = (singleListSize/4); //account the internal pointer ahead because DLs executed later are treated as the internal DL GX Binary
-			handleInmediateGXDisplayList(currentPhysicalDisplayListStart, (u32*)&customsingleOpenGLCompiledDisplayListPtr, OPENGL_DL_TO_GX_DL_EXEC_CMD, singleListSize/4); 
-			#ifdef WIN32
-			printf("//////////////////////[OpenGL CallList: %d]//////////////////////////", list);
-			#endif
-		}
-		else{
-			//printf("glCallList():This OpenGL list name(%d)'s InternalDL offset points to InternalDL GX end (no more GX DL after this)", (u32)list);
+		curDLInCompiledDLOffset = Compiled_DL_Binary_Descriptor[list];
+		if((u32)curDLInCompiledDLOffset != DL_INVALID){
+			u32 * currentPhysicalDisplayListStart = (u32 *)&InternalDL[curDLInCompiledDLOffset];
+			if(curDLInCompiledDLOffset == 2){
+				currentPhysicalDisplayListStart-=2;
+				*(currentPhysicalDisplayListStart+1)=(*currentPhysicalDisplayListStart)-4;
+				currentPhysicalDisplayListStart++;
+			}
+			else{
+				currentPhysicalDisplayListStart--;
+			}
+			singleListSize = *currentPhysicalDisplayListStart;
+			if(singleListSize > 0){
+				//Run a single GX Display List, having proper DL size
+				u32 customsingleOpenGLCompiledDisplayListPtr = (singleListSize/4); //account the internal pointer ahead because DLs executed later are treated as the internal DL GX Binary
+				handleInmediateGXDisplayList(currentPhysicalDisplayListStart, (u32*)&customsingleOpenGLCompiledDisplayListPtr, OPENGL_DL_TO_GX_DL_EXEC_CMD, singleListSize/4); 
+				#ifdef WIN32
+				printf("//////////////////////[OpenGL CallList: %d]//////////////////////////", list);
+				#endif
+			}
+			else{
+				//printf("glCallList():This OpenGL list name(%d)'s InternalDL offset points to InternalDL GX end (no more GX DL after this)", (u32)list);
+			}
 		}
 	}
 }

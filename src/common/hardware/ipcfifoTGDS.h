@@ -130,6 +130,8 @@ USA
 	
 #define IPC_TGDSUSER_START_FREE_INDEX	(u8)(10)	//TGDS User Project rely on it
 
+#define TGDS_GETEXTERNALPAYLOAD_MODE (u32)(0xFFFFAAC2)
+
 //ARM7 FS Transaction Status
 #define ARM7FS_TRANSACTIONSTATUS_IDLE (int)(-1)
 #define ARM7FS_TRANSACTIONSTATUS_BUSY (int)(0)
@@ -309,6 +311,8 @@ extern void SendFIFOWordsITCM(uint32 data0, uint32 data1);
 extern void XYReadScrPosUser(struct touchPosition * StouchScrPosInst);
 extern u8 ARM7ReadFWVersionFromFlashByFIFOIRQ();
 extern void ReadMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead);
+
+extern bool getNTRorTWLModeFromExternalProcessor();
 
 #ifdef __cplusplus
 }
