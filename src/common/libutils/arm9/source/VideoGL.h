@@ -1262,8 +1262,8 @@ extern bool isAnOpenGLExtendedDisplayListCallList;
 
 extern GLsizei Compiled_DL_Binary_Descriptor[InternalUnpackedGX_DL_workSize];
 	extern u32 * getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(); 
-		extern u32 LastOpenGLDisplayListStart; 
-
+		extern u32 LastGXInternalDisplayListPtr; 
+		extern u32 LastActiveOpenGLDisplayList;
 //Internal Unpacked GX buffer
 	extern u32 InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_internalSize];
 	extern u32 InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
