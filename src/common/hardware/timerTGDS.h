@@ -50,12 +50,24 @@ USA
 #define TIMER_FREQ_256(n) (-(BUS_CLOCK>>8)/(n))
 #define TIMER_FREQ_1024(n) (-(BUS_CLOCK>>10)/(n))
 
+
+//tUnitsMilliseconds = 1ms
+//tUnitsMicroseconds = 1us (DS is too slow to handle microseconds in hardware timers lol)
+enum timerUnits
+{
+	tUnitsMilliseconds=1000, tUnitsMicroseconds=1000000
+};
+
 #endif
 
 #ifdef __cplusplus
 extern "C"{
 #endif
 
+extern unsigned int timerUnits;
+extern void startTimerCounter(enum timerUnits units);
+extern unsigned int getTimerCounter();
+extern void stopTimerCounter();
 
 #ifdef __cplusplus
 }

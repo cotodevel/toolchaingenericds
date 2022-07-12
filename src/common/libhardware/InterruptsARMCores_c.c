@@ -36,6 +36,7 @@ USA
 #include "dldi.h"
 #include "debugNocash.h"
 #include "utilsTGDS.h"
+#include "timerTGDS.h"
 
 #ifdef TWLMODE
 #include "utils.twl.h"
@@ -177,6 +178,7 @@ void NDS_IRQHandler(){
 			MicInterruptARM7LibUtilsCallback(); //Microphone recording handler
 		}
 		#endif
+		timerUnits++;
 		Timer2handlerUser();
 		REG_IF = IRQ_TIMER2;
 	}
