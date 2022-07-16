@@ -351,11 +351,19 @@ enum GL_MATRIX_MODE_ENUM {
 #define TEXTURE_SIZE_512   6
 #define TEXTURE_SIZE_1024  7 
 
-#define TEXGEN_OFF			(0<<30)			//unmodified texcoord
-#define TEXGEN_TEXCOORD		(1<<30)			//texcoord * texture-matrix
-#define TEXGEN_NORMAL		(2<<30)			//normal * texture-matrix
-#define TEXGEN_POSITION		(3<<30)			//vertex * texture-matrix
-//////////////////////////////////////////////////////////////////////
+//unmodified texcoord
+#define TEXGEN_OFF			(0<<30)
+
+//texcoord * texture-matrix
+#define TEXGEN_TEXCOORD		(1<<30)			
+
+//normal * texture-matrix
+#define TEXGEN_NORMAL		(2<<30)
+
+//vertex * texture-matrix
+#define TEXGEN_POSITION		(3<<30)
+
+
 #define GL_TEXTURE_WRAP_S (1 << 16)
 #define GL_TEXTURE_WRAP_T (1 << 17)
 #define GL_TEXTURE_FLIP_S (1 << 18)
@@ -364,7 +372,7 @@ enum GL_MATRIX_MODE_ENUM {
 #define GL_TEXTURE_2D		1
 #define GL_TOON_HIGHLIGHT	(1<<1)
 #define GL_BLEND (1<<3)
-#define GL_ANTIALIAS		(1<<4)			//not fully figured out
+#define GL_ANTIALIAS		(1<<4)
 #define GL_OUTLINE			(1<<5)
 
 //////////////////////////////////////////////////////////////////////
@@ -951,6 +959,7 @@ enum {
 	GL_NEAREST			= 0x2600,
 	GL_REPEAT			= 0x2901,
 	GL_CLAMP			= 0x2900,
+	GL_CLAMP_TO_EDGE 	= 0x812F,
 	GL_S				= 0x2000,
 	GL_T				= 0x2001,
 	GL_R				= 0x2002,
@@ -1254,6 +1263,15 @@ extern int getTextureBaseFromTextureSlot(int textureSlot);
 extern uint32 textures[MAX_TEXTURES];
 extern uint32 activeTexture;
 extern uint32* nextBlock;
+extern void glLightfv (GLenum light, GLenum pname, const GLfloat *params);
+extern void glMaterialfv (GLenum face, GLenum pname, const GLfloat *params);
+extern void glNormal3fv(const GLfloat *v);
+extern void glVertex3fv(const GLfloat *v);
+extern void glTexParameteri(
+   GLenum target,
+   GLenum pname,
+   GLint  param
+);
 //////////////////////////////////////////////////////////// Standard OpenGL 1.x end //////////////////////////////////////////
 
 
