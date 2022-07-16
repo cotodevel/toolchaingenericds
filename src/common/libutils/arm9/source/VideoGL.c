@@ -1944,6 +1944,10 @@ __attribute__ ((optnone))
 #endif
 void glColor3f(float red, float green, float blue){
 	glColor3b(floattov10(red), floattov10(green), floattov10(blue));
+
+	//Todo: detect light sources and apply colors. Normal GL calls resort to glColor to update material color + light color + texture color
+	int id = 0; 
+	glLight(id, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), inttov10(31), inttov10(31), inttov10(31));
 }
 
 //Open GL 1.1 Implementation: Texture Objects support
