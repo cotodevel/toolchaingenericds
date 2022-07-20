@@ -55,6 +55,12 @@
 struct GLContext globalGLCtx;
 static uint16 enable_bits = GL_TEXTURE_2D | (1<<13) | (1<<14);
 
+static u32 textureParamsValue = 0;
+static u16 diffuseValue=0;
+static u16 ambientValue=0;
+static u16 specularValue=0;
+static u16 emissionValue=0;
+
 //Internal Unpacked GX buffer
 	#ifdef ARM9
 	//__attribute__((section(".dtcm")))
@@ -1580,7 +1586,7 @@ void glReset(void){
 	GFX_CONTROL = enable_bits = ((1<<12) | (1<<13)) | GL_TEXTURE_2D;
 	glResetMatrixStack();
   
-	GFX_TEX_FORMAT = 0;
+	GFX_TEX_FORMAT = textureParamsValue = 0;
 	GFX_POLYGON_ATTR = 0;
   
 	glMatrixMode(GL_PROJECTION);
@@ -1665,7 +1671,7 @@ void glBindTexture(int target, int name){
 	}
 	else{
 		#if defined(ARM9)
-		GFX_TEX_FORMAT = textures[name];
+		GFX_TEX_FORMAT = textureParamsValue = textures[name];
 		#endif
 	}
 	activeTexture = name;
@@ -1843,7 +1849,7 @@ int glTexImage2D(int target, int empty1, int type, int sizeX, int sizeY, int emp
 
 	glTexParameter(sizeX, sizeY, addr, type, param);
 	#if defined(ARM9)
-	GFX_TEX_FORMAT = (sizeX << 20) | (sizeY << 23) | ((type == GL_RGB ? GL_RGBA : type ) << 26);
+	GFX_TEX_FORMAT = textureParamsValue = (sizeX << 20) | (sizeY << 23) | ((type == GL_RGB ? GL_RGBA : type ) << 26);
 	#endif
 	//unlock texture memory
 	#ifdef ARM9
@@ -1938,6 +1944,10 @@ __attribute__ ((optnone))
 #endif
 void glColor3f(float red, float green, float blue){
 	glColor3b(floattov10(red), floattov10(green), floattov10(blue));
+
+	//Todo: detect light sources and apply colors. Normal GL calls resort to glColor to update material color + light color + texture color
+	int id = 0; 
+	glLight(id, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), inttov10(31), inttov10(31), inttov10(31));
 }
 
 //Open GL 1.1 Implementation: Texture Objects support
@@ -2945,4 +2955,171 @@ int CompilePackedNDSGXDisplayListFromObject(u32 * bufOut, struct ndsDisplayListD
 	return DL_INVALID;
 }
 
-//////////////////////////////////////////////////////////// Extended Display List OpenGL 1.x end //////////////////////////////////////////
+//////////////////////////////////////////////////////////// Extended Display List OpenGL 1.x end 
+void glLightfv (GLenum light, GLenum pname, const GLfloat *params){
+	//El parámetro params contiene cuatro valores de punto flotante que especifican la intensidad RGBA ambiente de la luz. Los valores de punto flotante se asignan directamente. No se fijan valores enteros ni de punto flotante. La intensidad de luz ambiente predeterminada es (0,0, 0,0, 0,0, 1,0).
+	if(pname == GL_AMBIENT){
+		float rAmbient = params[0];
+		float gAmbient = params[1];
+		float bAmbient = params[2];
+		float aAmbient = params[3];
+		ambientValue = ((floattov10(rAmbient) & 0x1F) << 16) | ((floattov10(gAmbient) & 0x1F) << 21) | ((floattov10(bAmbient) & 0x1F) << 26);
+		u32 diffuseAmbientWrite = ( ((diffuseValue & 0xFFFF) << 0) | ((ambientValue & 0xFFFF) << 16) );
+		GFX_DIFFUSE_AMBIENT = diffuseAmbientWrite;
+	}
+	//El parámetro params contiene cuatro valores de punto flotante que especifican la intensidad RGBA difusa de la luz. Los valores de punto flotante se asignan directamente. No se fijan valores enteros ni de punto flotante. La intensidad difusa predeterminada es (0,0, 0,0, 0,0, 1,0) para todas las luces que no sean cero. La intensidad difusa predeterminada de la luz cero es (1,0, 1,0, 1,0, 1,0).
+	if(pname == GL_DIFFUSE){
+		float rDiffuse = params[0];
+		float gDiffuse = params[1];
+		float bDiffuse = params[2];
+		float aDiffuse = params[3];
+		u8 setVtxColor = 1; //15    Set Vertex Color (0=No, 1=Set Diffuse Reflection Color as Vertex Color)
+		diffuseValue = ((floattov10(rDiffuse) & 0x1F) << 0) | ((floattov10(gDiffuse) & 0x1F) << 5) | ((floattov10(bDiffuse) & 0x1F) << 10) | ((setVtxColor & 0x1) << 15);
+		u32 diffuseAmbientWrite = ( ((diffuseValue & 0xFFFF) << 0) | ((ambientValue & 0xFFFF) << 16) );
+		GFX_DIFFUSE_AMBIENT = diffuseAmbientWrite;
+	}
+	//El parámetro params contiene cuatro valores de punto flotante que especifican la posición de la luz en coordenadas de objeto homogéneas. Los valores enteros y de punto flotante se asignan directamente. No se fijan valores enteros ni de punto flotante.
+	//La posición se transforma mediante la matriz modelview cuando se llama a glLightfv (como si fuera un punto) y se almacena en coordenadas oculares. Si el componente w de la posición es 0,0, la luz se trata como una fuente direccional. Los cálculos de iluminación difusa y especular toman la dirección de la luz, pero no su posición real, en cuenta y la atenuación está deshabilitada. De lo contrario, los cálculos de iluminación difusa y especular se basan en la ubicación real de la luz en coordenadas oculares y se habilita la atenuación. La posición predeterminada es (0,0,1,0); por lo tanto, la fuente de luz predeterminada es direccional, paralela a y en la dirección del eje -z .
+	if(pname == GL_POSITION){
+		int id = ((((int)light) & 3) << 30);
+		float x = params[0];
+		float y = params[1];
+		float z = params[2];
+		GFX_LIGHT_VECTOR = id | ((floattov10(z) & 0x3FF) << 20) | ((floattov10(y) & 0x3FF) << 10) | (floattov10(x) & 0x3FF);
+	}
+	//El parámetro params contiene cuatro valores de punto flotante que especifican la intensidad RGBA especular de la luz. Los valores de punto flotante se asignan directamente. No se fijan valores enteros ni de punto flotante. La intensidad especular predeterminada es (0,0, 0,0, 0,0, 1,0) para todas las luces que no sean cero. La intensidad especular predeterminada del cero claro es (1,0, 1,0, 1,0, 1,0).
+	if(pname == GL_SPECULAR){
+		float rSpecular = params[0];
+		float gSpecular = params[1];
+		float bSpecular = params[2];
+		float aSpecular = params[3];
+		u8 useSpecularReflectionShininessTable = 0; //15    Specular Reflection Shininess Table (0=Disable, 1=Enable)
+		specularValue = ((floattov10(rSpecular) & 0x1F) << 16) | ((floattov10(gSpecular) & 0x1F) << 21) | ((floattov10(bSpecular) & 0x1F) << 26) | ((useSpecularReflectionShininessTable & 0x1) << 15);
+		u32 specularEmissionWrite = ( ((specularValue & 0xFFFF) << 0) | ((emissionValue & 0xFFFF) << 16) );
+		GFX_SPECULAR_EMISSION = specularEmissionWrite;
+	}
+	
+	//Unimplemented:
+	//GL_SPOT_DIRECTION (GX hardware doesn't support it)
+	//GL_SPOT_EXPONENT (GX hardware doesn't support it)
+	//GL_SPOT_CUTOFF (GX hardware doesn't support it)
+	//GL_CONSTANT_ATTENUATION (GX hardware doesn't support it) 
+	//GL_LINEAR_ATTENUATION (GX hardware doesn't support it)
+	//GL_QUADRATIC_ATTENUATION (GX hardware doesn't support it)
+}
+
+void glMaterialfv (GLenum face, GLenum pname, const GLfloat *params){
+	//GX hardware does support "face" attributes:
+	//face, specifies whether the GL_FRONT materials, the GL_BACK materials, or both GL_FRONT_AND_BACK materials will be modified. 
+	if(face == GL_FRONT){
+
+	}
+	else if(face == GL_BACK){
+		//GX assumes always this because polygon attribute sets CULL to BACK. todo: inherit to polys
+		//glPolyFmt(POLY_ALPHA(31) | POLY_CULL_BACK );
+	}
+	else if(face == GL_FRONT_AND_BACK){
+		
+	}
+
+	//The params parameter contains four floating-point values that specify the RGBA emitted light intensity of the material. Integer values are mapped linearly such that the most positive representable value maps to 1.0, and the most negative representable value maps to -1.0. Floating-point values are mapped directly. Neither integer nor floating-point values are clamped. The default emission intensity for both front-facing and back-facing materials is (0.0, 0.0, 0.0, 1.0).
+	if(pname == GL_EMISSION){
+		float rEmission = params[0];
+		float gEmission = params[1];
+		float bEmission = params[2];
+		float aEmission = params[3];
+		emissionValue = ((floattov10(rEmission) & 0x1F) << 16) | ((floattov10(gEmission) & 0x1F) << 21) | ((floattov10(bEmission) & 0x1F) << 26);
+		u32 specularEmissionWrite = ( ((specularValue & 0xFFFF) << 0) | ((emissionValue & 0xFFFF) << 16) );
+		GFX_SPECULAR_EMISSION = specularEmissionWrite;
+	}
+
+	//	The param parameter is a single integer value that specifies the RGBA specular exponent of the material. Integer values are mapped directly. Only values in the range [0, 128] are accepted. The default specular exponent for both front-facing and back-facing materials is 0.
+	if(pname == GL_SHININESS){
+		u8 useSpecularReflectionShininessTable = ((specularValue >> 15) & 0x1);
+		if(useSpecularReflectionShininessTable == true){
+			uint32 shiny32[128/4];
+			uint8  *shiny8 = (uint8*)shiny32;
+			int i;
+			for (i = 0; i < 128 * 2; i += 2){
+				shiny8[i>>1] = i;
+			}
+			for (i = 0; i < 128 / 4; i++){
+				GFX_SHININESS = shiny32[i];
+			}
+		}
+		//If the table is disabled (by MaterialColor1.Bit15), then reflection will act as if the table would be filled with linear increasing numbers.
+		else{
+			float MaterialSpecularComponent = params[0];
+			GFX_SHININESS = floattov10(MaterialSpecularComponent);
+		}
+	}
+
+	//Todo: GL_COLOR_INDEXES
+
+	//Unimplemented:
+	//GL_AMBIENT (GX hardware doesn't support it)
+	//GL_DIFFUSE (GX hardware doesn't support it)
+	//GL_SPECULAR (GX hardware doesn't support it)
+}
+
+//v: A pointer to an array of three elements: the x, y, and z coordinates of the new current normal.
+void glNormal3fv(const GLfloat *v){
+	glNormal3f(v[0], v[1], v[2]);
+}
+
+//v: A pointer to an array of three elements. The elements are the x, y, and z coordinates of a vertex.
+void glVertex3fv(const GLfloat *v){
+	glVertex3f(v[0], v[1], v[2]);
+}
+
+
+//target: The target texture, which must be either GL_TEXTURE_1D or GL_TEXTURE_2D.
+//pname: The symbolic name of a single valued texture parameter. The following symbols are accepted in pname.
+void glTexParameteri(
+   GLenum target,
+   GLenum pname,
+   GLint  param
+){
+	target = GL_TEXTURE_2D;
+
+	//16    Repeat in S Direction (0=Clamp Texture, 1=Repeat Texture)
+	if((param & GL_REPEAT) == GL_REPEAT){
+		if((pname & GL_TEXTURE_WRAP_S) == GL_TEXTURE_WRAP_S){
+			textureParamsValue |= GL_TEXTURE_WRAP_S;
+		}
+		if((pname & GL_TEXTURE_WRAP_T) == GL_TEXTURE_WRAP_T){
+			textureParamsValue |= GL_TEXTURE_WRAP_T;
+		}
+
+		//18    Flip in S Direction   (0=No, 1=Flip each 2nd Texture) (requires Repeat)
+  		if((pname & GL_TEXTURE_FLIP_S) == GL_TEXTURE_FLIP_S){
+			textureParamsValue |= GL_TEXTURE_FLIP_S;
+		}
+
+		//19    Flip in T Direction   (0=No, 1=Flip each 2nd Texture) (requires Repeat)
+		if((pname & GL_TEXTURE_FLIP_T) == GL_TEXTURE_FLIP_T){
+			textureParamsValue |= GL_TEXTURE_FLIP_T;
+		}
+	}
+	if(
+		( (param & GL_CLAMP) == GL_CLAMP)
+		||
+		( (param & GL_CLAMP_TO_EDGE) == GL_CLAMP_TO_EDGE)
+	){
+		if((pname & GL_TEXTURE_WRAP_S) == GL_TEXTURE_WRAP_S){
+			textureParamsValue &= ~GL_TEXTURE_WRAP_S;
+		}
+		
+		if((pname & GL_TEXTURE_WRAP_T) == GL_TEXTURE_WRAP_T){
+			textureParamsValue &= ~GL_TEXTURE_WRAP_T;
+		}
+
+		//18    Flip in S Direction   (0=No, 1=Flip each 2nd Texture) (requires Repeat)
+		//19    Flip in T Direction   (0=No, 1=Flip each 2nd Texture) (requires Repeat)
+			//no Repeat bit, so we remove Flip in both T and S directions
+		textureParamsValue &= ~GL_TEXTURE_FLIP_S;
+		textureParamsValue &= ~GL_TEXTURE_FLIP_T;
+	}
+
+	GFX_TEX_FORMAT = textureParamsValue;
+}

@@ -282,4 +282,7 @@ void initHardware(u8 DSHardware) {
 	handleARM9InitSVC();	
 	#endif
 	
+	//Shared ARM Cores
+	
+	disableTGDSDebugging(); //Disable debugging by default
 }

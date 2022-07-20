@@ -23,3 +23,46 @@ USA
 #include "dsregs.h"
 #include "dsregs_asm.h"
 #include "timerTGDS.h"
+
+///////////////////////////////////Usercode Timer///////////////////////////////////
+//Note: IRQ Timer 2 is reserved
+
+#ifdef ARM9
+__attribute__((section(".dtcm")))
+#endif
+unsigned int timerUnits = 0;
+
+/* Example:
+//Timer start: Measured in milliseconds (or millisecond units)
+	startTimerCounter(tUnitsMilliseconds);
+	
+	//do stuff
+	int j = 0;
+	for(j = 0; j < 100; j++){
+		int a = 0;
+		int b = a;
+		int c = b-a;
+		printf("%d", c);
+	}
+	
+	//Timer stop
+	stopTimerCounter();
+	
+	printf("timer took: %d ms", getTimerCounter()); 
+*/
+
+void startTimerCounter(enum timerUnits units){
+	timerUnits = 0;
+	TIMERXDATA(2) = TIMER_FREQ((int)units);
+	TIMERXCNT(2) = TIMER_DIV_1 | TIMER_IRQ_REQ | TIMER_ENABLE;
+	irqEnable(IRQ_TIMER2);
+	
+}
+
+unsigned int getTimerCounter(){
+	return timerUnits;
+}
+
+void stopTimerCounter(){
+	irqDisable(IRQ_TIMER2);
+}

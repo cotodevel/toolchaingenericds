@@ -280,7 +280,10 @@ extern char** getGlobalArgv();
 
 extern int globalArgc;
 extern char **globalArgv;
-
+extern bool debugEnabled;
+extern void enableTGDSDebugging();
+extern void disableTGDSDebugging();
+extern bool getTGDSDebuggingState();
 #ifdef __cplusplus
 }
 #endif
