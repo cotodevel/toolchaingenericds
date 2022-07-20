@@ -1326,3 +1326,15 @@ int isNTROrTWLBinary(char * filename){
 	return mode;
 }
 #endif
+
+
+bool debugEnabled = false;
+void enableTGDSDebugging(){
+	debugEnabled = true;
+}
+void disableTGDSDebugging(){
+	debugEnabled = false;
+}
+bool getTGDSDebuggingState(){
+	return debugEnabled;
+}
