@@ -64,10 +64,12 @@ enum timerUnits
 extern "C"{
 #endif
 
+#ifdef ARM9
 extern unsigned int timerUnits;
 extern void startTimerCounter(enum timerUnits units);
 extern unsigned int getTimerCounter();
 extern void stopTimerCounter();
+#endif
 
 #ifdef __cplusplus
 }
