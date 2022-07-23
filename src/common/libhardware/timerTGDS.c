@@ -51,11 +51,12 @@ unsigned int timerUnits = 0;
 	printf("timer took: %d ms", getTimerCounter()); 
 */
 
+#ifdef ARM9
 void startTimerCounter(enum timerUnits units){
 	timerUnits = 0;
-	TIMERXDATA(2) = TIMER_FREQ((int)units);
-	TIMERXCNT(2) = TIMER_DIV_1 | TIMER_IRQ_REQ | TIMER_ENABLE;
-	irqEnable(IRQ_TIMER2);
+	TIMERXDATA(3) = TIMER_FREQ((int)units);
+	TIMERXCNT(3) = TIMER_DIV_1 | TIMER_IRQ_REQ | TIMER_ENABLE;
+	irqEnable(IRQ_TIMER3);
 	
 }
 
@@ -64,5 +65,6 @@ unsigned int getTimerCounter(){
 }
 
 void stopTimerCounter(){
-	irqDisable(IRQ_TIMER2);
+	irqDisable(IRQ_TIMER3);
 }
+#endif

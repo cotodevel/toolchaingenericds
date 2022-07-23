@@ -178,7 +178,6 @@ void NDS_IRQHandler(){
 			MicInterruptARM7LibUtilsCallback(); //Microphone recording handler
 		}
 		#endif
-		timerUnits++;
 		Timer2handlerUser();
 		REG_IF = IRQ_TIMER2;
 	}
@@ -188,6 +187,7 @@ void NDS_IRQHandler(){
 		if(timerWifiInterruptARM9LibUtilsCallback != NULL){
 			timerWifiInterruptARM9LibUtilsCallback();	//wifi arm9 irq
 		}
+		timerUnits++;
 		#endif
 		Timer3handlerUser();
 		REG_IF = IRQ_TIMER3;
