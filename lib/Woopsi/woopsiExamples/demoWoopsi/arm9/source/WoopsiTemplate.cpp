@@ -22,6 +22,7 @@
 #include "pong.h"
 #include "pacman.h"
 #include "zombie.h"
+#include "spitscTGDS.h"
 
 __attribute__((section(".dtcm")))
 WoopsiTemplate * WoopsiTemplateProc = NULL;
@@ -279,7 +280,11 @@ void WoopsiTemplate::startup(int argc, char **argv) {
 	// Add Welcome notice
 	_alert = new Alert(2, 2, 200, 80, "Welcome!", "Welcome to Woopsi!");
 	newScreen2->addGadget(_alert);
-
+	
+	if(__dsimode == true){
+		TWLSetTouchscreenTWLMode();
+	}
+	
 	enableDrawing();	// Ensure Woopsi can now draw itself
 	redraw();			// Draw initial state
 

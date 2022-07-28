@@ -116,6 +116,86 @@ int main(int argc, char **argv) {
 	//Show logo
 	RenderTGDSLogoMainEngine((uint8*)&TGDSLogoLZSSCompressed[0], TGDSLogoLZSSCompressed_size);
 	
+	/////////////////////////////////////////////////////////Reload TGDS Proj///////////////////////////////////////////////////////////
+	char tmpName[256];
+	char ext[256];	
+	char TGDSProj[256];
+	char curChosenBrowseFile[256];
+	strcpy(TGDSProj,"0:/");
+	strcat(TGDSProj, "ToolchainGenericDS-multiboot");
+	if(__dsimode == true){
+		strcat(TGDSProj, ".srl");
+	}
+	else{
+		strcat(TGDSProj, ".nds");
+	}
+	//Force ARM7 reload once 
+	if( 
+		(argc < 3) 
+		&& 
+		(strncmp(argv[1], TGDSProj, strlen(TGDSProj)) != 0) 	
+	){
+		REG_IME = 0;
+		MPUSet();
+		REG_IME = 1;
+		char startPath[MAX_TGDSFILENAME_LENGTH+1];
+		strcpy(startPath,"/");
+		strcpy(curChosenBrowseFile, TGDSProj);
+		
+		char thisTGDSProject[MAX_TGDSFILENAME_LENGTH+1];
+		strcpy(thisTGDSProject, "0:/");
+		strcat(thisTGDSProject, TGDSPROJECTNAME);
+		if(__dsimode == true){
+			strcat(thisTGDSProject, ".srl");
+		}
+		else{
+			strcat(thisTGDSProject, ".nds");
+		}
+		
+		//Boot .NDS file! (homebrew only)
+		strcpy(tmpName, curChosenBrowseFile);
+		separateExtension(tmpName, ext);
+		strlwr(ext);
+		
+		//pass incoming launcher's ARGV0
+		char arg0[256];
+		int newArgc = 3;
+		if (argc > 2) {
+			printf(" ---- test");
+			printf(" ---- test");
+			printf(" ---- test");
+			printf(" ---- test");
+			printf(" ---- test");
+			printf(" ---- test");
+			printf(" ---- test");
+			printf(" ---- test");
+			
+			//arg 0: original NDS caller
+			//arg 1: this NDS binary
+			//arg 2: this NDS binary's ARG0: filepath
+			strcpy(arg0, (const char *)argv[2]);
+			newArgc++;
+		}
+		//or else stub out an incoming arg0 for relaunched TGDS binary
+		else {
+			strcpy(arg0, (const char *)"0:/incomingCommand.bin");
+			newArgc++;
+		}
+		//debug end
+		
+		char thisArgv[4][MAX_TGDSFILENAME_LENGTH];
+		memset(thisArgv, 0, sizeof(thisArgv));
+		strcpy(&thisArgv[0][0], thisTGDSProject);	//Arg0:	This Binary loaded
+		strcpy(&thisArgv[1][0], curChosenBrowseFile);	//Arg1:	Chainload caller: TGDS-MB
+		strcpy(&thisArgv[2][0], thisTGDSProject);	//Arg2:	NDS Binary reloaded through ChainLoad
+		strcpy(&thisArgv[3][0], (char*)&arg0[0]);//Arg3: NDS Binary reloaded through ChainLoad's ARG0
+		addARGV(newArgc, (char*)&thisArgv);				
+		if(TGDSMultibootRunNDSPayload(curChosenBrowseFile) == false){ //should never reach here, nor even return true. Should fail it returns false
+			
+		}
+	}
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	
 	// Create Woopsi UI
 	WoopsiTemplate WoopsiTemplateApp;
 	WoopsiTemplateProc = &WoopsiTemplateApp;
