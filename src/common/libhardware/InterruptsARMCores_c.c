@@ -113,7 +113,7 @@ void IRQInit(u8 DSHardware)  {
 			REG_AUXIE = 0;
 			REG_AUXIF = ~0;
 			irqEnableAUX(GPIO33_2);
-			//TGDS-Projects -> legacy NTR TSC compatibility
+			//TGDS-Projects -> TWL TSC
 			TWLSetTouchscreenNTRMode();
 			#endif
 			
@@ -218,6 +218,22 @@ void NDS_IRQHandler(){
 		sIPCSharedTGDSInst->KEYINPUT7 = (uint16)REG_KEYINPUT;
 		
 		u16 keys= REG_KEYXY;	
+		#ifdef TWLMODE
+		keys |= (1 << 6);
+		if(touchPenDown() == true){
+			keys &= ~(1 << 6);
+		}
+		#endif
+		/*
+		4000136h - NDS7 - EXTKEYIN - Key X/Y Input (R)
+		0      Button X     (0=Pressed, 1=Released)
+		1      Button Y     (0=Pressed, 1=Released)
+		3      DEBUG button (0=Pressed, 1=Released/None such)
+		6      Pen down     (0=Pressed, 1=Released/Disabled) (always 0 in DSi mode)
+		7      Hinge/folded (0=Open, 1=Closed)
+		2,4,5  Unknown / set
+		8..15  Unknown / zero
+		*/
 		if(keys & KEY_TOUCH){
 			penDown = false;
 		}
@@ -254,9 +270,18 @@ void NDS_IRQHandler(){
 			}
 			
 			//handle re-click
+			
+			#ifdef NTRMODE
 			if( !(((uint16)REG_KEYINPUT) & KEY_TOUCH) ){
 				penDown = true;
 			}
+			#endif
+			
+			#ifdef TWLMODE
+			if(touchPenDown() == false){
+				penDown = true;
+			}
+			#endif
 		}
 		
 		sIPCSharedTGDSInst->buttons7	= keys;
