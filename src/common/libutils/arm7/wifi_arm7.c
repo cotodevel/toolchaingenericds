@@ -673,6 +673,7 @@ void Wifi_Interrupt() {
 	int wIF;
 	if(!WifiData) { W_IF = W_IF; return; }
 	if(!(WifiData->flags7&WFLAG_ARM7_RUNNING)) { W_IF = W_IF; return; }
+	REG_IE&=~(IRQ_WIFI);
 	do {
 		//REG_IF=0x01000000; // now that we've cleared the wireless IF, kill the bit in regular IF.
 		wIF= W_IE & W_IF;
@@ -694,10 +695,8 @@ void Wifi_Interrupt() {
 		if(wIF& 0x8000) { W_IF=0x8000;  Wifi_Intr_DoNothing();  } //15) PreTBTT
 		wIF= W_IE & W_IF;
 	} while(wIF);
-
+	REG_IE|=IRQ_WIFI;
 }
-
-
 
 
 static u8 scanlist[] = {
