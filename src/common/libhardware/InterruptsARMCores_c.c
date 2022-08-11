@@ -450,11 +450,16 @@ void NDS_IRQHandler(){
 	SWI_CHECKBITS = REG_IE_SET;
 }
 
-
+#ifdef ARM9
+__attribute__((section(".itcm")))
+#endif
 void irqEnable(uint32 IRQ){
 	REG_IE	|=	IRQ;
 }
 
+#ifdef ARM9
+__attribute__((section(".itcm")))
+#endif
 void irqDisable(uint32 IRQ){
 	REG_IE	&=	~(IRQ);
 }

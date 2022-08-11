@@ -25,7 +25,7 @@ USA
 #include "timerTGDS.h"
 
 ///////////////////////////////////Usercode Timer///////////////////////////////////
-//Note: IRQ Timer 2 is reserved
+//Note: IRQ Timer 3 is used. So Wifi can't be used at the same time when counting up
 
 #ifdef ARM9
 __attribute__((section(".dtcm")))
@@ -52,6 +52,7 @@ unsigned int timerUnits = 0;
 */
 
 #ifdef ARM9
+__attribute__((section(".itcm")))
 void startTimerCounter(enum timerUnits units){
 	timerUnits = 0;
 	TIMERXDATA(3) = TIMER_FREQ((int)units);
@@ -60,10 +61,12 @@ void startTimerCounter(enum timerUnits units){
 	
 }
 
+__attribute__((section(".itcm")))
 unsigned int getTimerCounter(){
 	return timerUnits;
 }
 
+__attribute__((section(".itcm")))
 void stopTimerCounter(){
 	irqDisable(IRQ_TIMER3);
 }
