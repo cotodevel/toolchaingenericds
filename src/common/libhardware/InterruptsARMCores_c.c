@@ -187,7 +187,7 @@ void NDS_IRQHandler(){
 		if(timerWifiInterruptARM9LibUtilsCallback != NULL){
 			timerWifiInterruptARM9LibUtilsCallback();	//wifi arm9 irq
 		}
-		timerUnits++;
+		timerTicks+=timerUnitsPerTick;
 		#endif
 		Timer3handlerUser();
 		REG_IF = IRQ_TIMER3;
