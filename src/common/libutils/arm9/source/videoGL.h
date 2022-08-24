@@ -1212,6 +1212,7 @@ extern void glInit();
 extern void glVertex2i(int x, int y); 
 extern void glVertex2f(float x, float y);
 extern void glVertex3f(GLfloat x, GLfloat y, GLfloat z);
+extern void glVertex3i(GLint x, GLint y, GLint z);
 extern void glCallListGX(const u32* list);
 extern void glTranslatef(float x, float y, float z);
 extern void glFlush(void);
@@ -1253,6 +1254,7 @@ extern void glBegin(int primitiveType);
 extern void glEnd( void);
 extern void glTexCoord2t16(t16 u, t16 v);
 extern void glTexCoord2f(GLfloat s, GLfloat t);
+extern void glTexCoord2i(GLint s, GLint t);
 extern void glTexCoord1i(uint32 uv);
 extern u16 lastVertexColor;
 extern void glColor3b(uint8 red, uint8 green, uint8 blue);
@@ -1298,6 +1300,9 @@ extern void glCallLists(GLsizei n, GLenum type, const void * lists);
 extern void glDeleteLists(GLuint list, GLsizei range);
 extern enum GL_GLBEGIN_ENUM getDisplayListGLType(struct ndsDisplayListDescriptor * dlInst);
 extern int CompilePackedNDSGXDisplayListFromObject(u32 * bufOut, struct ndsDisplayListDescriptor * dlInst);
+extern void glNormal3dv(const GLdouble *v);
+extern void glVertex3dv(const GLdouble *v);
+extern void emitGLShinnyness(float shinyValue);
 
 //////////////////////////////////////////////////////////// Extended Display List OpenGL 1.x end //////////////////////////////////////////
 
