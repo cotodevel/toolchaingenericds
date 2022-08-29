@@ -294,7 +294,6 @@ extern s16 *lBuffer;
 extern s16 *rBuffer;
 
 // wav
-extern bool memoryLoad;
 extern char *memoryContents;
 extern u32 memoryPos;
 extern u32 memorySize;
