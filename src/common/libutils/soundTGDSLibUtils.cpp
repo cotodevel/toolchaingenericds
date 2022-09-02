@@ -245,8 +245,6 @@ __attribute__((section(".dtcm")))
 s16 *rBuffer = NULL;
 
 // wav
-__attribute__((section(".dtcm")))
-bool memoryLoad = false;
 
 __attribute__((section(".dtcm")))
 char *memoryContents = NULL;
@@ -392,14 +390,7 @@ void updateStream()
 			swapAndSend(ARM7COMMAND_SOUND_COPY);
 			wavDecode();
 			
-			if(memoryLoad)
-			{
-				soundData.loc = 0;
-			}
-			else
-			{
-				soundData.loc = ftell(soundData.filePointer) - soundData.dataOffset;
-			}
+			soundData.loc = ftell(soundData.filePointer) - soundData.dataOffset;
 		}
 		break;
 		default:{
@@ -485,11 +476,7 @@ void freeSound()
 	switch(internalCodecType)
 	{
 		case SRC_WAV:{
-			if(memoryLoad)
-			{	
-				TGDSARM9Free(memoryContents);
-				memoryLoad = false;
-			}
+			
 		}
 		break;
 		case SRC_WAVADPCM:{
@@ -571,24 +558,7 @@ void setWavDecodeCallback(void (*cb)()){
 
 u32 getWavData(void *outLoc, int amount, FILE *fh)
 {
-	if(memoryLoad)
-	{
-		u32 actualRead = amount;
-		
-		if((memoryPos + actualRead) > memorySize)
-		{
-			actualRead = memorySize - memoryPos;
-		}
-		
-		memcpy(outLoc, memoryContents + memoryPos, actualRead);
-		memoryPos += actualRead;
-		
-		return actualRead;
-	}
-	else
-	{
-		return fread(outLoc, 1, amount, fh);
-	}
+	return fread(outLoc, 1, amount, fh);
 }
 
 void wavDecode8Bit()
@@ -1098,23 +1068,6 @@ int initSoundStreamFromStructFD(struct fd * _FileHandleAudio, char * ext) {	//AR
 			mallocData(WAV_READ_SIZE);
 			
 			memoryContents = NULL;
-			if(memoryLoad)
-			{
-				memoryPos = 0;
-				memorySize = len - wavStartOffset;
-				memoryContents = (char *)TGDSARM9Malloc(memorySize);
-				
-				if(memoryContents == NULL)
-				{
-					// can't fit into memory, fail
-					fatfs_close(soundData.filePointerStructFD->cur_entry.d_ino);
-					return SRC_NONE;
-				}
-				
-				read = fatfs_read(soundData.filePointerStructFD->cur_entry.d_ino, (u8*)memoryContents, memorySize); //fread(memoryContents, 1, memorySize, fp);
-				fatfs_close(soundData.filePointerStructFD->cur_entry.d_ino);
-			}
-			
 			wavDecode();
 			startSound9();
 			internalCodecType = SRC_WAV;
