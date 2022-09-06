@@ -228,10 +228,25 @@ typedef void GLvoid;
 
 #endif
 
+#define GX_LIGHT0 (1 << 0)
+#define GX_LIGHT1 (1 << 1)
+#define GX_LIGHT2 (1 << 2)
+#define GX_LIGHT3 (1 << 3)
+
 struct GLContext{
 	GLenum primitiveShadeModelMode;	//glShadeModel(GLenum mode: [GL_FLAT/GL_SMOOTH]);
 	u32	mode; //GLenum mode: //Specifies the compilation mode, which can be GL_COMPILE or GL_COMPILE_AND_EXECUTE. Set up by glNewList()
+	u8 lightsEnabled; //lights enabled are written here
+	u32 textureParamsValue;
+	u16 diffuseValue;
+	u16 ambientValue;
+	u16 specularValue;
+	u16 emissionValue;
+
+	//latest Viewport
+	u32 lastViewport; //(x1) + (y1 << 8) + (x2 << 16) + (y2 << 24) //x1 = x, y1 = y, x2 = 
 } 
+
 #ifdef ARM9
 __attribute__((aligned (4)));
 #endif
@@ -427,7 +442,7 @@ enum GL_MATRIX_MODE_ENUM {
 #define MTX_MULT_3x3		REG2ID(MATRIX_MULT3x3)
 
 //Custom OpenGL Display List -> GX commands. 
-#define MTX_ROTATE_Z	((u8)0x80) //unused (GXFIFO) command slot start
+#define MTX_ROTATE_Z	((u8)0x80) //GXFIFO command slot start
 #define MTX_ROTATE_Y	((u8)0x81)
 #define MTX_ROTATE_X	((u8)0x82)
 #define MTX_FRUSTRUM	((u8)0x83)
@@ -1305,6 +1320,16 @@ extern void glVertex3dv(const GLdouble *v);
 extern void emitGLShinnyness(float shinyValue);
 
 //////////////////////////////////////////////////////////// Extended Display List OpenGL 1.x end //////////////////////////////////////////
+
+extern void glGetFloatv(
+   GLenum pname, 
+   GLfloat *params
+);
+
+extern void glGetDoublev(
+   GLenum   pname,
+   GLdouble *params
+);
 
 #ifdef ARM9
 #ifdef __cplusplus

@@ -52,14 +52,12 @@
 #endif
 
 //////////////////////////////////////////////////////////// Standard OpenGL 1.x start //////////////////////////////////////////
+#ifdef ARM9
+__attribute__((section(".data")))
+#endif
 struct GLContext globalGLCtx;
-static uint16 enable_bits = GL_TEXTURE_2D | (1<<13) | (1<<14);
 
-static u32 textureParamsValue = 0;
-static u16 diffuseValue=0;
-static u16 ambientValue=0;
-static u16 specularValue=0;
-static u16 emissionValue=0;
+static uint16 enable_bits = GL_TEXTURE_2D | (1<<13) | (1<<14);
 
 //Internal Unpacked GX buffer
 	#ifdef ARM9
@@ -90,6 +88,12 @@ void glInit(){
 	memset((u8*)&globalGLCtx, 0, sizeof(struct GLContext));
 	glShadeModel(GL_SMOOTH);
 	
+	globalGLCtx.textureParamsValue = 0;
+	globalGLCtx.diffuseValue=0;
+	globalGLCtx.ambientValue=0;
+	globalGLCtx.specularValue=0;
+	globalGLCtx.emissionValue=0;
+
 	InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr=0; //2nd half 4K
 	memset(getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(), 0, InternalUnpackedGX_DL_workSize);
 	isAnOpenGLExtendedDisplayListCallList = false;
@@ -520,21 +524,23 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glViewport(uint8 x1, uint8 y1, uint8 x2, uint8 y2){
+	u32 viewPortWrite = (u32)((x1) + (y1 << 8) + (x2 << 16) + (y2 << 24));
 	if(isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			//4000580h 60h 1  1   VIEWPORT - Set Viewport (W)
 			InternalUnpackedGX_DL_Binary[ptrVal + InternalUnpackedGX_DL_workSize] = (u32)getVIEWPORT; //Unpacked Command format
 			ptrVal++;
-			InternalUnpackedGX_DL_Binary[ptrVal + InternalUnpackedGX_DL_workSize] = (u32)((x1) + (y1 << 8) + (x2 << 16) + (y2 << 24)); ptrVal++;
+			InternalUnpackedGX_DL_Binary[ptrVal + InternalUnpackedGX_DL_workSize] = viewPortWrite; ptrVal++;
 			InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = ptrVal;
 		}
 	}
 	else{
 		#if defined(ARM9)
-		GFX_VIEWPORT = (x1) + (y1 << 8) + (x2 << 16) + (y2 << 24);
+		GFX_VIEWPORT = viewPortWrite;
 		#endif
 	}
+	globalGLCtx.lastViewport = viewPortWrite;
 }
 
 u8 defaultglClearColorR=0;
@@ -1604,7 +1610,7 @@ void glReset(void){
 	GFX_CONTROL = enable_bits = ((1<<12) | (1<<13)) | GL_TEXTURE_2D;
 	glResetMatrixStack();
   
-	GFX_TEX_FORMAT = textureParamsValue = 0;
+	GFX_TEX_FORMAT = globalGLCtx.textureParamsValue = 0;
 	GFX_POLYGON_ATTR = 0;
   
 	glMatrixMode(GL_PROJECTION);
@@ -1689,7 +1695,7 @@ void glBindTexture(int target, int name){
 	}
 	else{
 		#if defined(ARM9)
-		GFX_TEX_FORMAT = textureParamsValue = textures[name];
+		GFX_TEX_FORMAT = globalGLCtx.textureParamsValue = textures[name];
 		#endif
 	}
 	activeTexture = name;
@@ -1777,9 +1783,7 @@ int vramIsTextureBank(uint16 *addr){
 		else return 0;
 	}
 	#endif
-	#ifdef WIN32
 	return 0;
-	#endif
 }
 
 #ifdef ARM9
@@ -1867,7 +1871,7 @@ int glTexImage2D(int target, int empty1, int type, int sizeX, int sizeY, int emp
 
 	glTexParameter(sizeX, sizeY, addr, type, param);
 	#if defined(ARM9)
-	GFX_TEX_FORMAT = textureParamsValue = (sizeX << 20) | (sizeY << 23) | ((type == GL_RGB ? GL_RGBA : type ) << 26);
+	GFX_TEX_FORMAT = globalGLCtx.textureParamsValue = (sizeX << 20) | (sizeY << 23) | ((type == GL_RGB ? GL_RGBA : type ) << 26);
 	#endif
 	//unlock texture memory
 	#ifdef ARM9
@@ -1974,10 +1978,11 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glColor3f(float red, float green, float blue){
-	glColor3b(floattov10(red), floattov10(green), floattov10(blue));
-
 	//Todo: detect light sources and apply colors. Normal GL calls resort to glColor to update material color + light color + texture color
 	int id = 0; 
+	
+	glColor3b(floattov10(red), floattov10(green), floattov10(blue));
+
 	glLight(id, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), inttov10(31), inttov10(31), inttov10(31));
 }
 
@@ -3006,22 +3011,21 @@ void glLightfv (GLenum light, GLenum pname, const GLfloat *params){
 		float rAmbient = params[0];
 		float gAmbient = params[1];
 		float bAmbient = params[2];
-		float aAmbient = params[3];
-		ambientValue = ((floattov10(rAmbient) & 0x1F) << 16) | ((floattov10(gAmbient) & 0x1F) << 21) | ((floattov10(bAmbient) & 0x1F) << 26);
-		u32 diffuseAmbientWrite = ( ((diffuseValue & 0xFFFF) << 0) | ((ambientValue & 0xFFFF) << 16) );
+		//float aAmbient = params[3];
+		globalGLCtx.ambientValue = ((floattov10(rAmbient) & 0x1F) << 16) | ((floattov10(gAmbient) & 0x1F) << 21) | ((floattov10(bAmbient) & 0x1F) << 26);
 		if(isAnOpenGLExtendedDisplayListCallList == true){
 			u32 ptrVal = InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 			if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 				//40004C0h 30h 1  4   DIF_AMB - MaterialColor0 - Diffuse/Ambient Reflect. (W)
 				InternalUnpackedGX_DL_Binary[ptrVal + InternalUnpackedGX_DL_workSize] = (u32)getFIFO_DIFFUSE_AMBIENT; //Unpacked Command format
 				ptrVal++;
-				InternalUnpackedGX_DL_Binary[ptrVal + InternalUnpackedGX_DL_workSize] = (u32)(diffuseAmbientWrite); ptrVal++;
+				InternalUnpackedGX_DL_Binary[ptrVal + InternalUnpackedGX_DL_workSize] = ((u32)( ((globalGLCtx.diffuseValue & 0xFFFF) << 0) | ((globalGLCtx.ambientValue & 0xFFFF) << 16) )); ptrVal++;
 				InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = ptrVal;
 			}
 		}
 		else{
 			#if defined(ARM9)
-			GFX_DIFFUSE_AMBIENT = diffuseAmbientWrite;
+			GFX_DIFFUSE_AMBIENT = (u32)( ((globalGLCtx.diffuseValue & 0xFFFF) << 0) | ((globalGLCtx.ambientValue & 0xFFFF) << 16) );
 			#endif
 		}
 	}
@@ -3030,23 +3034,22 @@ void glLightfv (GLenum light, GLenum pname, const GLfloat *params){
 		float rDiffuse = params[0];
 		float gDiffuse = params[1];
 		float bDiffuse = params[2];
-		float aDiffuse = params[3];
+		//float aDiffuse = params[3];
 		u8 setVtxColor = 1; //15    Set Vertex Color (0=No, 1=Set Diffuse Reflection Color as Vertex Color)
-		diffuseValue = ((floattov10(rDiffuse) & 0x1F) << 0) | ((floattov10(gDiffuse) & 0x1F) << 5) | ((floattov10(bDiffuse) & 0x1F) << 10) | ((setVtxColor & 0x1) << 15);
-		u32 diffuseAmbientWrite = ( ((diffuseValue & 0xFFFF) << 0) | ((ambientValue & 0xFFFF) << 16) );
+		globalGLCtx.diffuseValue = ((floattov10(rDiffuse) & 0x1F) << 0) | ((floattov10(gDiffuse) & 0x1F) << 5) | ((floattov10(bDiffuse) & 0x1F) << 10) | ((setVtxColor & 0x1) << 15);
 		if(isAnOpenGLExtendedDisplayListCallList == true){
 			u32 ptrVal = InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 			if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 				//40004C0h 30h 1  4   DIF_AMB - MaterialColor0 - Diffuse/Ambient Reflect. (W)
 				InternalUnpackedGX_DL_Binary[ptrVal + InternalUnpackedGX_DL_workSize] = (u32)getFIFO_DIFFUSE_AMBIENT; //Unpacked Command format
 				ptrVal++;
-				InternalUnpackedGX_DL_Binary[ptrVal + InternalUnpackedGX_DL_workSize] = (u32)(diffuseAmbientWrite); ptrVal++;
+				InternalUnpackedGX_DL_Binary[ptrVal + InternalUnpackedGX_DL_workSize] = (u32)(( ((globalGLCtx.diffuseValue & 0xFFFF) << 0) | ((globalGLCtx.ambientValue & 0xFFFF) << 16) )); ptrVal++;
 				InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = ptrVal;
 			}
 		}
 		else{
 			#if defined(ARM9)
-			GFX_DIFFUSE_AMBIENT = diffuseAmbientWrite;
+			GFX_DIFFUSE_AMBIENT = (u32)( ((globalGLCtx.diffuseValue & 0xFFFF) << 0) | ((globalGLCtx.ambientValue & 0xFFFF) << 16) );
 			#endif
 		}
 	}
@@ -3080,23 +3083,22 @@ void glLightfv (GLenum light, GLenum pname, const GLfloat *params){
 		float rSpecular = params[0];
 		float gSpecular = params[1];
 		float bSpecular = params[2];
-		float aSpecular = params[3];
+		//float aSpecular = params[3];
 		u8 useSpecularReflectionShininessTable = 0; //15    Specular Reflection Shininess Table (0=Disable, 1=Enable)
-		specularValue = ((floattov10(rSpecular) & 0x1F) << 16) | ((floattov10(gSpecular) & 0x1F) << 21) | ((floattov10(bSpecular) & 0x1F) << 26) | ((useSpecularReflectionShininessTable & 0x1) << 15);
-		u32 specularEmissionWrite = ( ((specularValue & 0xFFFF) << 0) | ((emissionValue & 0xFFFF) << 16) );
+		globalGLCtx.specularValue = ((floattov10(rSpecular) & 0x1F) << 16) | ((floattov10(gSpecular) & 0x1F) << 21) | ((floattov10(bSpecular) & 0x1F) << 26) | ((useSpecularReflectionShininessTable & 0x1) << 15);
 		if(isAnOpenGLExtendedDisplayListCallList == true){
 			u32 ptrVal = InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 			if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 				//40004C4h 31h 1  4   SPE_EMI - MaterialColor1 - Specular Ref. & Emission (W)
 				InternalUnpackedGX_DL_Binary[ptrVal + InternalUnpackedGX_DL_workSize] = (u32)getFIFO_SPECULAR_EMISSION; //Unpacked Command format
 				ptrVal++;
-				InternalUnpackedGX_DL_Binary[ptrVal + InternalUnpackedGX_DL_workSize] = (u32)(specularEmissionWrite); ptrVal++;
+				InternalUnpackedGX_DL_Binary[ptrVal + InternalUnpackedGX_DL_workSize] = (u32)((u32 )( ((globalGLCtx.specularValue & 0xFFFF) << 0) | ((globalGLCtx.emissionValue & 0xFFFF) << 16) )); ptrVal++;
 				InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = ptrVal;
 			}
 		}
 		else{
 			#if defined(ARM9)
-			GFX_SPECULAR_EMISSION = specularEmissionWrite;
+			GFX_SPECULAR_EMISSION = (u32 )( ((globalGLCtx.specularValue & 0xFFFF) << 0) | ((globalGLCtx.emissionValue & 0xFFFF) << 16) );
 			#endif
 		}
 	}
@@ -3129,22 +3131,21 @@ void glMaterialfv (GLenum face, GLenum pname, const GLfloat *params){
 		float rEmission = params[0];
 		float gEmission = params[1];
 		float bEmission = params[2];
-		float aEmission = params[3];
-		emissionValue = ((floattov10(rEmission) & 0x1F) << 16) | ((floattov10(gEmission) & 0x1F) << 21) | ((floattov10(bEmission) & 0x1F) << 26);
-		u32 specularEmissionWrite = ( ((specularValue & 0xFFFF) << 0) | ((emissionValue & 0xFFFF) << 16) );
+		//float aEmission = params[3];
+		globalGLCtx.emissionValue = ((floattov10(rEmission) & 0x1F) << 16) | ((floattov10(gEmission) & 0x1F) << 21) | ((floattov10(bEmission) & 0x1F) << 26);
 		if(isAnOpenGLExtendedDisplayListCallList == true){
 			u32 ptrVal = InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 			if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 				//40004C4h 31h 1  4   SPE_EMI - MaterialColor1 - Specular Ref. & Emission (W)
 				InternalUnpackedGX_DL_Binary[ptrVal + InternalUnpackedGX_DL_workSize] = (u32)getFIFO_SPECULAR_EMISSION; //Unpacked Command format
 				ptrVal++;
-				InternalUnpackedGX_DL_Binary[ptrVal + InternalUnpackedGX_DL_workSize] = (u32)(specularEmissionWrite); ptrVal++;
+				InternalUnpackedGX_DL_Binary[ptrVal + InternalUnpackedGX_DL_workSize] = (u32)(( ((globalGLCtx.specularValue & 0xFFFF) << 0) | ((globalGLCtx.emissionValue & 0xFFFF) << 16) )); ptrVal++;
 				InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = ptrVal;
 			}
 		}
 		else{
 			#if defined(ARM9)
-			GFX_SPECULAR_EMISSION = specularEmissionWrite;
+			GFX_SPECULAR_EMISSION = (u32)( ((globalGLCtx.specularValue & 0xFFFF) << 0) | ((globalGLCtx.emissionValue & 0xFFFF) << 16) );
 			#endif
 		}
 	}
@@ -3180,6 +3181,7 @@ void glVertex3dv(const GLdouble *v){
 	glVertex3f((float)v[0], (float)v[1], (float)v[2]);
 }
 
+
 //target: The target texture, which must be either GL_TEXTURE_1D or GL_TEXTURE_2D.
 //pname: The symbolic name of a single valued texture parameter. The following symbols are accepted in pname.
 void glTexParameteri(
@@ -3192,20 +3194,20 @@ void glTexParameteri(
 	//16    Repeat in S Direction (0=Clamp Texture, 1=Repeat Texture)
 	if((param & GL_REPEAT) == GL_REPEAT){
 		if((pname & GL_TEXTURE_WRAP_S) == GL_TEXTURE_WRAP_S){
-			textureParamsValue |= GL_TEXTURE_WRAP_S;
+			globalGLCtx.textureParamsValue |= GL_TEXTURE_WRAP_S;
 		}
 		if((pname & GL_TEXTURE_WRAP_T) == GL_TEXTURE_WRAP_T){
-			textureParamsValue |= GL_TEXTURE_WRAP_T;
+			globalGLCtx.textureParamsValue |= GL_TEXTURE_WRAP_T;
 		}
 
 		//18    Flip in S Direction   (0=No, 1=Flip each 2nd Texture) (requires Repeat)
   		if((pname & GL_TEXTURE_FLIP_S) == GL_TEXTURE_FLIP_S){
-			textureParamsValue |= GL_TEXTURE_FLIP_S;
+			globalGLCtx.textureParamsValue |= GL_TEXTURE_FLIP_S;
 		}
 
 		//19    Flip in T Direction   (0=No, 1=Flip each 2nd Texture) (requires Repeat)
 		if((pname & GL_TEXTURE_FLIP_T) == GL_TEXTURE_FLIP_T){
-			textureParamsValue |= GL_TEXTURE_FLIP_T;
+			globalGLCtx.textureParamsValue |= GL_TEXTURE_FLIP_T;
 		}
 	}
 	if(
@@ -3214,18 +3216,18 @@ void glTexParameteri(
 		( (param & GL_CLAMP_TO_EDGE) == GL_CLAMP_TO_EDGE)
 	){
 		if((pname & GL_TEXTURE_WRAP_S) == GL_TEXTURE_WRAP_S){
-			textureParamsValue &= ~GL_TEXTURE_WRAP_S;
+			globalGLCtx.textureParamsValue &= ~GL_TEXTURE_WRAP_S;
 		}
 		
 		if((pname & GL_TEXTURE_WRAP_T) == GL_TEXTURE_WRAP_T){
-			textureParamsValue &= ~GL_TEXTURE_WRAP_T;
+			globalGLCtx.textureParamsValue &= ~GL_TEXTURE_WRAP_T;
 		}
 
 		//18    Flip in S Direction   (0=No, 1=Flip each 2nd Texture) (requires Repeat)
 		//19    Flip in T Direction   (0=No, 1=Flip each 2nd Texture) (requires Repeat)
 			//no Repeat bit, so we remove Flip in both T and S directions
-		textureParamsValue &= ~GL_TEXTURE_FLIP_S;
-		textureParamsValue &= ~GL_TEXTURE_FLIP_T;
+		globalGLCtx.textureParamsValue &= ~GL_TEXTURE_FLIP_S;
+		globalGLCtx.textureParamsValue &= ~GL_TEXTURE_FLIP_T;
 	}
 	
 	if(isAnOpenGLExtendedDisplayListCallList == true){
@@ -3234,13 +3236,123 @@ void glTexParameteri(
 			//40004A8h 2Ah 1  1   TEXIMAGE_PARAM - Set Texture Parameters (W)
 			InternalUnpackedGX_DL_Binary[ptrVal + InternalUnpackedGX_DL_workSize] = (u32)getFIFO_TEX_FORMAT; //Unpacked Command format
 			ptrVal++;
-			InternalUnpackedGX_DL_Binary[ptrVal + InternalUnpackedGX_DL_workSize] = (u32)(textureParamsValue); ptrVal++;
+			InternalUnpackedGX_DL_Binary[ptrVal + InternalUnpackedGX_DL_workSize] = (u32)(globalGLCtx.textureParamsValue); ptrVal++;
 			InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = ptrVal;
 		}
 	}
 	else{
 		#if defined(ARM9)
-		GFX_TEX_FORMAT = textureParamsValue;
+		GFX_TEX_FORMAT = globalGLCtx.textureParamsValue;
 		#endif
 	}
+}
+
+//4000640h..67Fh - CLIPMTX_RESULT - Read Current Clip Coordinates Matrix (R)
+//This 64-byte region (16 words) contains the m[0..15] values of the Current Clip Coordinates Matrix, arranged in 4x4 Matrix format. Make sure that the Geometry Engine is stopped (GXSTAT.27) before reading from these registers.
+//The Clip Matrix is internally used to convert vertices to screen coordinates, and is internally re-calculated anytime when changing the Position or Projection matrices:
+//ClipMatrix = PositionMatrix * ProjectionMatrix
+//To read only the Position Matrix, or only the Projection Matrix: Use Load Identity on the OTHER matrix, so the ClipMatrix becomes equal to the DESIRED matrix (multiplied by the Identity Matrix, which has no effect on the result).
+
+//pname: The symbolic name of a single valued texture parameter. The following symbols are accepted in pname.
+//params: misc
+void glGetFloatv(
+   GLenum pname, 
+   GLfloat *params
+){
+	//The params parameter returns four values: the x and y window coordinates of the viewport, followed by its width and height.
+	if((pname & GL_VIEWPORT) == GL_VIEWPORT){
+		u32 readLastViewport = globalGLCtx.lastViewport;
+		u32 * paramOut = (u32*)params;
+		*paramOut = (u32)(readLastViewport&0xFF); paramOut++; //x1
+		*paramOut = (u32)((readLastViewport>>8)&0xFF); paramOut++; //y1
+		*paramOut = (u32)((readLastViewport>>16)&0xFF); paramOut++; //width
+		*paramOut = (u32)((readLastViewport>>24)&0xFF); paramOut++; //height
+	}
+
+	//The params parameter returns a single Boolean value indicating whether the vertex array is enabled.
+	else if((pname & GL_VERTEX_ARRAY) == GL_VERTEX_ARRAY){
+		*params = (u32)false; //Won't be implemented: It's slower than DisplayLists because of the NDS CPU, no server-side only rendering (DL -> VRAM -> GX), let alone programmable arrays
+	}
+	
+	//The params parameter returns four values: the red, green, blue, and alpha components 
+	//of the ambient intensity of the entire scene. Integer values, if requested, are linearly mapped from 
+	//the internal floating-point representation such that 1.0 returns the most positive representable integer value, 
+	//and -1.0 returns the most negative representable integer value.
+	else if((pname & GL_LIGHT_MODEL_AMBIENT) == GL_LIGHT_MODEL_AMBIENT){
+		u32 specVal = globalGLCtx.specularValue;
+		u32 * paramOut = (u32*)params;
+		//globalGLCtx.specularValue = ((floattov10(rSpecular) & 0x1F) << 16) | ((floattov10(gSpecular) & 0x1F) << 21) | ((floattov10(bSpecular) & 0x1F) << 26);
+		int rIntAmb = v10toint((specVal >> 16) & 0x1F); 
+		int gIntAmb = v10toint((specVal >> 21) & 0x1F); 
+		int bIntAmb = v10toint((specVal >> 26) & 0x1F); 
+		*paramOut = (u32)rIntAmb; paramOut++;
+		*paramOut = (u32)gIntAmb; paramOut++;
+		*paramOut = (u32)bIntAmb; paramOut++;
+		*paramOut = (u32)0; paramOut++;
+	}
+	
+	//The params parameter returns a single Boolean value indicating whether lighting is enabled.
+	else if((pname & GL_LIGHTING) == GL_LIGHTING){
+		u8 activeLights = globalGLCtx.lightsEnabled;
+		if(activeLights > 0){
+			*params = (u32)true;
+		}
+		else{
+			*params = (u32)false;
+		}
+	}
+	
+	//The params parameter returns one value: the maximum number of lights.
+	else if((pname & GL_MAX_LIGHTS) == GL_MAX_LIGHTS){
+		u8 activeLights = globalGLCtx.lightsEnabled;
+		int activeLightCount = 0;
+		if((activeLights & GX_LIGHT0) == GX_LIGHT0){
+			activeLightCount++;
+		}
+		if((activeLights & GX_LIGHT1) == GX_LIGHT1){
+			activeLightCount++;
+		}
+		if((activeLights & GX_LIGHT2) == GX_LIGHT2){
+			activeLightCount++;
+		}
+		if((activeLights & GX_LIGHT3) == GX_LIGHT3){
+			activeLightCount++;
+		}
+		*params = (u32)activeLightCount;
+	}
+	
+	//The params parameter returns one value: the maximum recursion depth allowed during display-list traversal
+	else if((pname & GL_MAX_LIST_NESTING) == GL_MAX_LIST_NESTING){
+		*params = (u32)(InternalUnpackedGX_DL_workSize/sizeof(int));
+	}
+	
+	//The params parameter returns 16 values: the modelview matrix on the top of the modelview matrix stack.
+	else if((pname & GL_MODELVIEW_MATRIX) == GL_MODELVIEW_MATRIX){
+		u32 * curModelViewMatrixPtr = (u32*)0x04000640;
+		u32 * targetModelViewMatrixPtr = (u32 *)params;
+		while (GFX_STATUS & (1<<27)); // wait till gfx engine is not busy
+		*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //0
+		*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //1
+		*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //2
+		*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //3
+		*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //4
+		*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //5
+		*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //6
+		*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //7
+		*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //8
+		*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //9
+		*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //10
+		*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //11
+		*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //12
+		*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //13
+		*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //14
+		*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //15
+	}
+}
+
+void glGetDoublev(
+   GLenum   pname,
+   GLdouble *params
+   ){
+	   glGetFloatv(pname, (GLfloat*)params);
 }
