@@ -297,36 +297,6 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glScalef32(f32 factor){
-	if(isAnOpenGLExtendedDisplayListCallList == true){
-		u32 ptrVal = InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
-		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
-			//400046Ch 1Bh 3  22  MTX_SCALE - Multiply Current Matrix by Scale Matrix (W)
-			InternalUnpackedGX_DL_Binary[ptrVal + InternalUnpackedGX_DL_workSize] = (u32)getMTX_SCALE; //Unpacked Command format
-			ptrVal++;
-			InternalUnpackedGX_DL_Binary[ptrVal + InternalUnpackedGX_DL_workSize] = (u32)factor; ptrVal++;
-			InternalUnpackedGX_DL_Binary[ptrVal + InternalUnpackedGX_DL_workSize] = (u32)factor; ptrVal++;
-			InternalUnpackedGX_DL_Binary[ptrVal + InternalUnpackedGX_DL_workSize] = (u32)factor; ptrVal++;
-			InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = ptrVal;
-		}
-	}
-	else{
-		#if defined(ARM9)
-		MATRIX_SCALE = factor;
-		MATRIX_SCALE = factor;
-		MATRIX_SCALE = factor;
-		#endif
-	}
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
 void glLight(int id, rgb color, v10 x, v10 y, v10 z){
 	if(isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
@@ -3396,4 +3366,25 @@ void  glMultMatrixf(const GLfloat *m){
 	inMtx.m[14] = floattof32(m[14]); //14
 	inMtx.m[15] = floattof32(m[15]); //15
 	glMultMatrix4x4(&inMtx);	
+}
+
+//The glScaled and glScalef functions multiply the current matrix by a general scaling matrix.
+void glScalef(
+   GLfloat x,
+   GLfloat y,
+   GLfloat z
+){
+	GLvector scaleVector;
+	scaleVector.x = floattof32(x);
+	scaleVector.y = floattof32(y);
+	scaleVector.z = floattof32(z);
+	glScalev(&scaleVector);
+}
+
+void glScaled(
+   GLdouble x,
+   GLdouble y,
+   GLdouble z
+){
+	glScalef((GLfloat)x, (GLfloat)y, (GLfloat)z);
 }

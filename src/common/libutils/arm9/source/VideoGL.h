@@ -1208,7 +1208,6 @@ extern void glStoreMatrix(sint32 index);
 extern void glScalev(GLvector* v);
 extern void glTranslatev(GLvector* v);
 extern void glTranslate3f32(f32 x, f32 y, f32 z);
-extern void glScalef32(f32 factor);
 extern void glTranslatef32(int x, int y, int z);
 extern void glLight(int id, rgb color, v10 x, v10 y, v10 z);
 extern void glNormal(uint32 normal);
@@ -1320,7 +1319,16 @@ extern void glVertex3dv(const GLdouble *v);
 extern void emitGLShinnyness(float shinyValue);
 extern void  glMultMatrixf(const GLfloat *m);
 extern void  glMultMatrixd(const GLdouble *m);
-
+extern void glScalef(
+   GLfloat x,
+   GLfloat y,
+   GLfloat z
+);
+extern void glScaled(
+   GLdouble x,
+   GLdouble y,
+   GLdouble z
+);
 //////////////////////////////////////////////////////////// Extended Display List OpenGL 1.x end //////////////////////////////////////////
 
 extern void glGetFloatv(
