@@ -3356,3 +3356,44 @@ void glGetDoublev(
    ){
 	   glGetFloatv(pname, (GLfloat*)params);
 }
+
+/*
+The glMultMatrixd and glMultMatrixf functions multiply the current matrix by an arbitrary matrix.
+
+Parameters:
+m 
+A pointer to a 4x4 matrix stored in column-major order as 16 consecutive values.
+
+Remarks:
+The glMultMatrix function multiplies the current matrix by the one specified in m. That is, 
+if M is the current matrix and T is the matrix passed to glMultMatrix, then M is replaced with M T.
+The current matrix is the projection matrix, modelview matrix, or texture matrix, determined by
+ the current matrix mode (see glMatrixMode).
+
+The m parameter points to a 4x4 matrix of single-precision or double-precision floating-point values 
+stored in column-major order.
+*/
+void  glMultMatrixd(const GLdouble *m){
+	glMultMatrixf((GLfloat*)m);
+}
+
+void  glMultMatrixf(const GLfloat *m){
+	m4x4 inMtx;
+	inMtx.m[0] = floattof32(m[0]); //0
+	inMtx.m[1] = floattof32(m[1]); //1
+	inMtx.m[2] = floattof32(m[2]); //2
+	inMtx.m[3] = floattof32(m[3]); //3
+	inMtx.m[4] = floattof32(m[4]); //4
+	inMtx.m[5] = floattof32(m[5]); //5
+	inMtx.m[6] = floattof32(m[6]); //6
+	inMtx.m[7] = floattof32(m[7]); //7
+	inMtx.m[8] = floattof32(m[8]); //8
+	inMtx.m[9] = floattof32(m[9]); //9
+	inMtx.m[10] = floattof32(m[10]); //10
+	inMtx.m[11] = floattof32(m[11]); //11
+	inMtx.m[12] = floattof32(m[12]); //12
+	inMtx.m[13] = floattof32(m[13]); //13
+	inMtx.m[14] = floattof32(m[14]); //14
+	inMtx.m[15] = floattof32(m[15]); //15
+	glMultMatrix4x4(&inMtx);	
+}

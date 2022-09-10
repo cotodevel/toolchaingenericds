@@ -1318,6 +1318,8 @@ extern int CompilePackedNDSGXDisplayListFromObject(u32 * bufOut, struct ndsDispl
 extern void glNormal3dv(const GLdouble *v);
 extern void glVertex3dv(const GLdouble *v);
 extern void emitGLShinnyness(float shinyValue);
+extern void  glMultMatrixf(const GLfloat *m);
+extern void  glMultMatrixd(const GLdouble *m);
 
 //////////////////////////////////////////////////////////// Extended Display List OpenGL 1.x end //////////////////////////////////////////
 
