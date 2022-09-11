@@ -390,6 +390,12 @@ enum GL_MATRIX_MODE_ENUM {
 #define GL_ANTIALIAS		(1<<4)
 #define GL_OUTLINE			(1<<5)
 
+//13    Polygon/Vertex RAM Overflow    (0=None, 1=Overflow/Acknowledge)
+#define GL_POLYGON_VERTEX_RAM_OVERFLOW	(1<<13)
+
+//14    Rear-Plane Mode                (0=Blank, 1=Bitmap)
+#define REAR_PLANE_MODE_BITMAP			(1<<14)
+  
 //////////////////////////////////////////////////////////////////////
 
 #define GL_RGB		8

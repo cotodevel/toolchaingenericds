@@ -53,11 +53,11 @@
 
 //////////////////////////////////////////////////////////// Standard OpenGL 1.x start //////////////////////////////////////////
 #ifdef ARM9
-__attribute__((section(".data")))
+__attribute__((section(".dtcm")))
 #endif
 struct GLContext globalGLCtx;
 
-static uint16 enable_bits = GL_TEXTURE_2D | (1<<13) | (1<<14);
+static uint16 enable_bits = GL_TEXTURE_2D | GL_POLYGON_VERTEX_RAM_OVERFLOW | REAR_PLANE_MODE_BITMAP;
 
 //Internal Unpacked GX buffer
 	#ifdef ARM9
@@ -97,6 +97,8 @@ void glInit(){
 	InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr=0; //2nd half 4K
 	memset(getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(), 0, InternalUnpackedGX_DL_workSize);
 	isAnOpenGLExtendedDisplayListCallList = false;
+	
+	//enable_bits = GL_TEXTURE_2D | GL_POLYGON_VERTEX_RAM_OVERFLOW | REAR_PLANE_MODE_BITMAP;
 }
 
 #ifdef ARM9
@@ -1149,8 +1151,7 @@ void glRotatef(int angle, float x, float y, float z){
 	}
 }
 
-// Fixed point look at function, it appears to work as expected although 
-//	testing is recomended
+// Fixed point look at function, it appears to work as expected although testing is recomended
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
@@ -1229,7 +1230,6 @@ void gluLookAtf32(f32 eyex, f32 eyey, f32 eyez, f32 lookAtx, f32 lookAty, f32 lo
 	}
 }
 
-//  glu wrapper for standard float call
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
@@ -1239,11 +1239,13 @@ __attribute__ ((optnone))
 #endif
 #endif
 void gluLookAt(float eyex, float eyey, float eyez, float lookAtx, float lookAty, float lookAtz, float upx, float upy, float upz){
-	gluLookAtf32(floattof32(eyex), floattof32(eyey), floattof32(eyez), floattof32(lookAtx), floattof32(lookAty), floattof32(lookAtz),
-					floattof32(upx), floattof32(upy), floattof32(upz));
+	gluLookAtf32(
+		floattof32(eyex), floattof32(eyey), floattof32(eyez), 
+		floattof32(lookAtx), floattof32(lookAty), floattof32(lookAtz), 
+		floattof32(upx), floattof32(upy), floattof32(upz)
+	);
 }
 
-//	frustrum has only been tested as part of perspective
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
@@ -1389,7 +1391,6 @@ void glOrthof32(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far){
 	}
 }
 
-//  Frustrum wrapper
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
@@ -1956,8 +1957,6 @@ void glColor3f(float red, float green, float blue){
 	glLight(id, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), inttov10(31), inttov10(31), inttov10(31));
 }
 
-//Open GL 1.1 Implementation: Texture Objects support
-//glTexImage*() == glTexImage3D
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
@@ -2311,7 +2310,9 @@ void glEnd( void){
 	}
 }
 
+__attribute__((section(".dtcm")))
 u16 lastVertexColor = 0;
+
 //set the current color
 //4000480h - Cmd 20h - COLOR - Directly Set Vertex Color (W)
 //Parameter 1, Bit 0-4    Red
@@ -2975,6 +2976,12 @@ int CompilePackedNDSGXDisplayListFromObject(u32 * bufOut, struct ndsDisplayListD
 }
 
 //////////////////////////////////////////////////////////// Extended Display List OpenGL 1.x end 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void glLightfv (GLenum light, GLenum pname, const GLfloat *params){
 	//El parámetro params contiene cuatro valores de punto flotante que especifican la intensidad RGBA ambiente de la luz. Los valores de punto flotante se asignan directamente. No se fijan valores enteros ni de punto flotante. La intensidad de luz ambiente predeterminada es (0,0, 0,0, 0,0, 1,0).
 	if(pname == GL_AMBIENT){
@@ -3082,6 +3089,12 @@ void glLightfv (GLenum light, GLenum pname, const GLfloat *params){
 	//GL_QUADRATIC_ATTENUATION (GX hardware doesn't support it)
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void glMaterialfv (GLenum face, GLenum pname, const GLfloat *params){
 	//GX hardware does support "face" attributes:
 	//face, specifies whether the GL_FRONT materials, the GL_BACK materials, or both GL_FRONT_AND_BACK materials will be modified. 
@@ -3133,20 +3146,45 @@ void glMaterialfv (GLenum face, GLenum pname, const GLfloat *params){
 	//GL_SPECULAR (GX hardware doesn't support it)
 }
 
+//glNormal(v): A pointer to an array of three elements: the x, y, and z coordinates of the new current normal.
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void glNormal3dv(const GLdouble *v){
 	glNormal3d(v[0], v[1], v[2]);
 }
 
-//v: A pointer to an array of three elements: the x, y, and z coordinates of the new current normal.
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void glNormal3fv(const GLfloat *v){
 	glNormal3f(v[0], v[1], v[2]);
 }
 
 //v: A pointer to an array of three elements. The elements are the x, y, and z coordinates of a vertex.
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void glVertex3fv(const GLfloat *v){
 	glVertex3f(v[0], v[1], v[2]);
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void glVertex3dv(const GLdouble *v){
 	glVertex3f((float)v[0], (float)v[1], (float)v[2]);
 }
@@ -3154,6 +3192,12 @@ void glVertex3dv(const GLdouble *v){
 
 //target: The target texture, which must be either GL_TEXTURE_1D or GL_TEXTURE_2D.
 //pname: The symbolic name of a single valued texture parameter. The following symbols are accepted in pname.
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void glTexParameteri(
    GLenum target,
    GLenum pname,
@@ -3225,6 +3269,12 @@ void glTexParameteri(
 
 //pname: The symbolic name of a single valued texture parameter. The following symbols are accepted in pname.
 //params: misc
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void glGetFloatv(
    GLenum pname, 
    GLfloat *params
@@ -3320,6 +3370,12 @@ void glGetFloatv(
 	}
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void glGetDoublev(
    GLenum   pname,
    GLdouble *params
@@ -3343,10 +3399,22 @@ The current matrix is the projection matrix, modelview matrix, or texture matrix
 The m parameter points to a 4x4 matrix of single-precision or double-precision floating-point values 
 stored in column-major order.
 */
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void  glMultMatrixd(const GLdouble *m){
 	glMultMatrixf((GLfloat*)m);
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void  glMultMatrixf(const GLfloat *m){
 	m4x4 inMtx;
 	inMtx.m[0] = floattof32(m[0]); //0
@@ -3369,6 +3437,12 @@ void  glMultMatrixf(const GLfloat *m){
 }
 
 //The glScaled and glScalef functions multiply the current matrix by a general scaling matrix.
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void glScalef(
    GLfloat x,
    GLfloat y,
@@ -3381,6 +3455,12 @@ void glScalef(
 	glScalev(&scaleVector);
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void glScaled(
    GLdouble x,
    GLdouble y,
