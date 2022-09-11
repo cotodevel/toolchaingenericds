@@ -2310,7 +2310,9 @@ void glEnd( void){
 	}
 }
 
+#ifdef ARM9
 __attribute__((section(".dtcm")))
+#endif
 u16 lastVertexColor = 0;
 
 //set the current color
