@@ -49,6 +49,8 @@ struct sIPCSharedTGDSSpecific {
 #define TGDS_ARM7_MALLOCSIZE (int)(112*1024)
 #define TGDSDLDI_ARM7_ADDRESS (u32)(TGDS_ARM7_MALLOCSTART + TGDS_ARM7_MALLOCSIZE)
 
+//#define ISEMULATOR 1 //defined == TGDS Project does not self reload, undedfined == TGDS Project self reloads
+
 #endif
 
 #endif
