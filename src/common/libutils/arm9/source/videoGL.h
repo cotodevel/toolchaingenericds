@@ -228,10 +228,25 @@ typedef void GLvoid;
 
 #endif
 
+#define GX_LIGHT0 (1 << 0)
+#define GX_LIGHT1 (1 << 1)
+#define GX_LIGHT2 (1 << 2)
+#define GX_LIGHT3 (1 << 3)
+
 struct GLContext{
 	GLenum primitiveShadeModelMode;	//glShadeModel(GLenum mode: [GL_FLAT/GL_SMOOTH]);
 	u32	mode; //GLenum mode: //Specifies the compilation mode, which can be GL_COMPILE or GL_COMPILE_AND_EXECUTE. Set up by glNewList()
+	u8 lightsEnabled; //lights enabled are written here
+	u32 textureParamsValue;
+	u16 diffuseValue;
+	u16 ambientValue;
+	u16 specularValue;
+	u16 emissionValue;
+
+	//latest Viewport
+	u32 lastViewport; //(x1) + (y1 << 8) + (x2 << 16) + (y2 << 24) //x1 = x, y1 = y, x2 = 
 } 
+
 #ifdef ARM9
 __attribute__((aligned (4)));
 #endif
@@ -375,6 +390,12 @@ enum GL_MATRIX_MODE_ENUM {
 #define GL_ANTIALIAS		(1<<4)
 #define GL_OUTLINE			(1<<5)
 
+//13    Polygon/Vertex RAM Overflow    (0=None, 1=Overflow/Acknowledge)
+#define GL_POLYGON_VERTEX_RAM_OVERFLOW	(1<<13)
+
+//14    Rear-Plane Mode                (0=Blank, 1=Bitmap)
+#define REAR_PLANE_MODE_BITMAP			(1<<14)
+  
 //////////////////////////////////////////////////////////////////////
 
 #define GL_RGB		8
@@ -427,7 +448,7 @@ enum GL_MATRIX_MODE_ENUM {
 #define MTX_MULT_3x3		REG2ID(MATRIX_MULT3x3)
 
 //Custom OpenGL Display List -> GX commands. 
-#define MTX_ROTATE_Z	((u8)0x80) //unused (GXFIFO) command slot start
+#define MTX_ROTATE_Z	((u8)0x80) //GXFIFO command slot start
 #define MTX_ROTATE_Y	((u8)0x81)
 #define MTX_ROTATE_X	((u8)0x82)
 #define MTX_FRUSTRUM	((u8)0x83)
@@ -1193,7 +1214,6 @@ extern void glStoreMatrix(sint32 index);
 extern void glScalev(GLvector* v);
 extern void glTranslatev(GLvector* v);
 extern void glTranslate3f32(f32 x, f32 y, f32 z);
-extern void glScalef32(f32 factor);
 extern void glTranslatef32(int x, int y, int z);
 extern void glLight(int id, rgb color, v10 x, v10 y, v10 z);
 extern void glNormal(uint32 normal);
@@ -1303,8 +1323,29 @@ extern int CompilePackedNDSGXDisplayListFromObject(u32 * bufOut, struct ndsDispl
 extern void glNormal3dv(const GLdouble *v);
 extern void glVertex3dv(const GLdouble *v);
 extern void emitGLShinnyness(float shinyValue);
-
+extern void  glMultMatrixf(const GLfloat *m);
+extern void  glMultMatrixd(const GLdouble *m);
+extern void glScalef(
+   GLfloat x,
+   GLfloat y,
+   GLfloat z
+);
+extern void glScaled(
+   GLdouble x,
+   GLdouble y,
+   GLdouble z
+);
 //////////////////////////////////////////////////////////// Extended Display List OpenGL 1.x end //////////////////////////////////////////
+
+extern void glGetFloatv(
+   GLenum pname, 
+   GLfloat *params
+);
+
+extern void glGetDoublev(
+   GLenum   pname,
+   GLdouble *params
+);
 
 #ifdef ARM9
 #ifdef __cplusplus
