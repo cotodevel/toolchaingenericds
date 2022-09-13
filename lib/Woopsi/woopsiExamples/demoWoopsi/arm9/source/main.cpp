@@ -117,6 +117,7 @@ int main(int argc, char **argv) {
 	RenderTGDSLogoMainEngine((uint8*)&TGDSLogoLZSSCompressed[0], TGDSLogoLZSSCompressed_size);
 	
 	/////////////////////////////////////////////////////////Reload TGDS Proj///////////////////////////////////////////////////////////
+	#if !defined(ISEMULATOR)
 	char tmpName[256];
 	char ext[256];	
 	char TGDSProj[256];
@@ -194,7 +195,11 @@ int main(int argc, char **argv) {
 			
 		}
 	}
+	#endif
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	if(__dsimode == true){
+		TWLSetTouchscreenTWLMode();
+	}
 	
 	// Create Woopsi UI
 	WoopsiTemplate WoopsiTemplateApp;
