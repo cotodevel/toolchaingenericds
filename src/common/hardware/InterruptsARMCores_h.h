@@ -62,6 +62,7 @@ extern void NDS_IRQHandler();	//Actual Interrupt Handler
 extern void IRQWait(uint32 returnInmediately, uint32 irqstowait);
 extern void IRQVBlankWait();
 extern void IRQInit(u8 DSHardware);
+extern void HaltUntilIRQ();
 
 
 //TWL bits

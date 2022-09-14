@@ -26,6 +26,13 @@
 .align 4
 
 #include "../dsregs_asm.h"
+@CPU enters low power mode until any IRQ happens, the rest of the circuitry is kept working regardless.
+.global 	HaltUntilIRQ
+.type   	HaltUntilIRQ STT_FUNC
+HaltUntilIRQ:
+	swi 0x00060000
+bx lr
+
 .global 	IRQWait
 .type   	IRQWait STT_FUNC
 IRQWait:
