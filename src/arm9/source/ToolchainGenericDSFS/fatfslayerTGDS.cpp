@@ -1,6 +1,6 @@
-#if defined(WIN32) || defined(ARM9) //only WIN32 and NDS has TGDS FS DLDI support for now
+#if defined(_MSC_VER) || defined(ARM9) //only WIN32 and NDS has TGDS FS DLDI support for now
 
-#if defined(WIN32)
+#if defined(_MSC_VER)
 //disable _CRT_SECURE_NO_WARNINGS message to build this in VC++
 #pragma warning(disable:4996)
 #endif
@@ -35,10 +35,10 @@ USA
 #endif
 
 #if defined(WIN32)
-#include "../TGDSVideoConverter/TGDSTypes.h"
+#include "TGDSTypes.h"
 #endif
 #include "dldiWin32.h"
-#include "fatfs/source/ff.h"
+#include "ff.h"
 #include "devoptab_devices.h"
 
 //fatfs
@@ -148,18 +148,13 @@ bool closeFileFromStructFD(int StructFD){
 //retcode: FT_NONE , FT_DIR or FT_FILE
 int FileExists(char * filename){
 	int Type = FT_NONE;
-	int StructFD = OpenFileFromPathGetStructFD((char *)filename);
-	struct fd *pfd = getStructFD(StructFD);
-	if(pfd != NULL){
-		//file?
-		if(S_ISREG(pfd->stat.st_mode)){
-			Type = FT_FILE;
-		}
-		//dir?
-		else if(S_ISDIR(pfd->stat.st_mode)){
-			Type = FT_DIR;
-		}
-		closeFileFromStructFD(StructFD);
+	FILINFO fno;
+	FRESULT result = f_stat((const TCHAR*)filename, &fno);
+	if ((fno.fattrib & AM_MASK) & AM_DIR) {
+		Type = FT_DIR;
+	}
+	else if ((fno.fattrib & AM_MASK) & AM_ARC) {
+		Type = FT_FILE;
 	}
 	return Type;
 }
@@ -2888,158 +2883,4 @@ __attribute__ ((optnone))
 struct FileClassList * initFileList(){
 	return (struct FileClassList *)TGDSARM9Malloc(sizeof(struct FileClassList));
 }
-
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-bool contains(int * arr, int arrSize, int value){
-    int i=0;
-	for(i=0; i < arrSize; i++){
-        if(arr[i] == value){
-            return true;
-        }
-    }
-    return false;
-} 
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-struct FileClassList * randomizeFileClassList(struct FileClassList * lst){
-	if(lst != NULL){
-		//Build rand table
-		int listCount = lst->FileDirCount;
-		int uniqueArr[FileClassItems];
-		int i=0;
-		int indx=0;
-		for(i=0; i < FileClassItems; i++){
-            uniqueArr[i] = -1;
-        }
-		for(;;){
-		    int randVal = rand() % (listCount);
-		    if (contains(uniqueArr, listCount, randVal) == false){
-		        uniqueArr[indx] = randVal;
-		        indx++;
-		    }
-		    if(indx == (listCount)){
-		        break;
-		    }
-		}
-		
-		//Shuffle it
-		for(indx=0; indx < listCount; indx++){
-			struct FileClass fileListSrc;
-			struct FileClass fileListTarget;
-			int targetIndx = uniqueArr[indx];
-			int srcIndx = indx;
-			memset(&fileListSrc, 0, sizeof(struct FileClass));
-			memset(&fileListTarget, 0, sizeof(struct FileClass));
-			if(targetIndx != srcIndx){
-				struct FileClass * FileClassInstSource = getFileClassFromList(srcIndx, lst);
-				struct FileClass * FileClassInstTarget = getFileClassFromList(targetIndx, lst);
-				
-				memcpy((u8*)&fileListSrc, (u8*)FileClassInstSource, sizeof(struct FileClass));
-				memcpy((u8*)&fileListTarget, (u8*)FileClassInstTarget, sizeof(struct FileClass));
-				
-				memcpy((u8*)FileClassInstSource, (u8*)&fileListTarget, sizeof(struct FileClass));
-				memcpy((u8*)FileClassInstTarget, (u8*)&fileListSrc, sizeof(struct FileClass));
-			}
-		}
-		
-		//done 
-		return lst;
-	}
-	return NULL;
-}
-
-
-//return: true if clean success
-//false if lst == NULL
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-bool cleanFileList(struct FileClassList * lst){
-	if(lst != NULL){
-		memset((u8*)lst, 0, sizeof(struct FileClassList));
-		lst->CurrentFileDirEntry = 0;
-		lst->LastDirEntry=structfd_posixInvalidFileDirOrBufferHandle;
-		lst->LastFileEntry=structfd_posixInvalidFileDirOrBufferHandle;
-		setCurrentDirectoryCount(lst, 0);
-		return true;
-	}
-	return false;
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-void freeFileList(struct FileClassList * lst){
-	if(lst != NULL){
-		TGDSARM9Free(lst);
-	}
-}
-
-//returns: the struct FileClassList * context if success
-//if error: returns NULL, which means, operation failed.
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-struct FileClassList * pushEntryToFileClassList(bool iterable, char * fullPath, int Typ, int StructFD, struct FileClassList * lst){
-	if(lst != NULL){		
-		int FileClassListIndex = lst->FileDirCount;
-		setFileClass(iterable, fullPath, FileClassListIndex, Typ, StructFD, lst);
-		return lst;
-	}
-	return NULL;
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-struct FileClassList * popEntryfromFileClassList(struct FileClassList * lst){
-	if(lst != NULL){		
-		int FileClassListIndex = lst->FileDirCount;
-		if(FileClassListIndex > 0){
-			if(FileClassListIndex < FileClassItems){	//prevent overlapping current FileClassList 
-				struct FileClass * FileClassInst = getFileClassFromList(FileClassListIndex, lst);
-				lst->FileDirCount = FileClassListIndex - 1;
-				memset(FileClassInst, 0, sizeof(struct FileClass));
-				return lst;
-			}
-		}
-	}
-	return NULL;
-}
-
 #endif
