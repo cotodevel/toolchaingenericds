@@ -1,4 +1,14 @@
-#if defined(WIN32) || defined(ARM9)
+#ifndef __fatfslayerTGDS_h__
+#define __fatfslayerTGDS_h__
+
+//TGDS FS defs: These must be typecasted otherwise compiler will generate wrong strb opcodes
+#define FT_NONE (int)(0)
+#define FT_FILE (int)(1)
+#define FT_DIR (int)(2)
+#define FT_BUFFER (int)(3)
+
+
+#if defined(_MSC_VER) || defined(ARM9)
 /*
 
 			Copyright (C) 2017  Coto
@@ -22,8 +32,6 @@ USA
 //Coto: this was rewritten by me so it could fit the following setup:
 //newlib libc nano ARM Toolchain. dirent.h is not supported in this newlib version so we restore it
 
-#ifndef __fatfslayerTGDS_h__
-#define __fatfslayerTGDS_h__
 
 ////////////////////////////////////////////////////////////////////////////INTERNAL CODE START/////////////////////////////////////////////////////////////////////////////////////
 
@@ -47,9 +55,10 @@ USA
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
-#include "../TGDSVideoConverter/TGDSTypes.h"
-#include "fatfs/source/ff.h"	//DIR struct definition here. dirent.h´s DIR was removed, and rewritten
-#include "../utilities.h"
+#include "TGDSTypes.h"
+#include "TGDSVideo.h"
+#include "ff.h"	//DIR struct definition here. dirent.h´s DIR was removed, and rewritten
+#include "utilities.h"
 
 #define fatfs_O_ACCMODE (FA_READ|FA_WRITE)
 #define	O_ACCMODE	(O_RDONLY|O_WRONLY|O_RDWR)
@@ -113,12 +122,6 @@ struct dirent {
     char d_name[MAX_TGDSFILENAME_LENGTH+1];	/* name must be no longer than this */
 };
 #endif
-
-//TGDS FS defs: These must be typecasted otherwise compiler will generate wrong strb opcodes
-#define FT_NONE (int)(0)
-#define FT_FILE (int)(1)
-#define FT_DIR (int)(2)
-#define FT_BUFFER (int)(3)
 
 #define structfd_isused 	(sint32)(1)
 #define structfd_isunused	(sint32)(0)
@@ -446,18 +449,137 @@ extern int fatfs_readDirectStructFD(struct fd * pfd, u8 *ptr, int len);
 extern int fatfs_closeDirectStructFD(struct fd * pfd);
 extern int fatfs_seekDirectStructFD(struct fd * pfd, int offst);
 extern int str_split(char * stream, char * haystack, char * outBuf, int itemSize, int blockSize);
+
 extern void separateExtension(char *str, char *ext);
 extern struct FileClassList * initFileList();
-extern bool contains(int * arr, int arrSize, int value);
-extern struct FileClassList * randomizeFileClassList(struct FileClassList * lst);
-extern bool cleanFileList(struct FileClassList * lst);
-extern void freeFileList(struct FileClassList * lst);
-extern struct FileClassList * pushEntryToFileClassList(bool iterable, char * fullPath, int Typ, int StructFD, struct FileClassList * lst);
-extern struct FileClassList * popEntryfromFileClassList(struct FileClassList * lst);
 
 #ifdef __cplusplus
 }
 #endif
+
+
+//return: true if clean success
+//false if lst == NULL
+#ifdef ARM9
+inline 
+#endif
+static bool cleanFileList(struct FileClassList * lst){
+	if(lst != NULL){
+		memset((u8*)lst, 0, sizeof(struct FileClassList));
+		lst->CurrentFileDirEntry = 0;
+		lst->LastDirEntry=structfd_posixInvalidFileDirOrBufferHandle;
+		lst->LastFileEntry=structfd_posixInvalidFileDirOrBufferHandle;
+		setCurrentDirectoryCount(lst, 0);
+		return true;
+	}
+	return false;
+}
+
+#ifdef ARM9
+inline 
+#endif
+static void freeFileList(struct FileClassList * lst){
+	if(lst != NULL){
+		TGDSARM9Free(lst);
+	}
+}
+
+//returns: the struct FileClassList * context if success
+//if error: returns NULL, which means, operation failed.
+
+#ifdef ARM9
+inline 
+#endif
+static struct FileClassList * pushEntryToFileClassList(bool iterable, char * fullPath, int Typ, int StructFD, struct FileClassList * lst){
+	if(lst != NULL){		
+		int FileClassListIndex = lst->FileDirCount;
+		setFileClass(iterable, fullPath, FileClassListIndex, Typ, StructFD, lst);
+		return lst;
+	}
+	return NULL;
+}
+
+#ifdef ARM9
+inline
+#endif
+static struct FileClassList * popEntryfromFileClassList(struct FileClassList * lst){
+	if(lst != NULL){		
+		int FileClassListIndex = lst->FileDirCount;
+		if(FileClassListIndex > 0){
+			if(FileClassListIndex < FileClassItems){	//prevent overlapping current FileClassList 
+				struct FileClass * FileClassInst = getFileClassFromList(FileClassListIndex, lst);
+				lst->FileDirCount = FileClassListIndex - 1;
+				memset(FileClassInst, 0, sizeof(struct FileClass));
+				return lst;
+			}
+		}
+	}
+	return NULL;
+}
+
+#ifdef ARM9
+inline 
+#endif
+static bool contains(int * arr, int arrSize, int value){
+    int i=0;
+	for(i=0; i < arrSize; i++){
+        if(arr[i] == value){
+            return true;
+        }
+    }
+    return false;
+} 
+
+#ifdef ARM9
+inline 
+#endif
+static struct FileClassList * randomizeFileClassList(struct FileClassList * lst){
+	if(lst != NULL){
+		//Build rand table
+		int listCount = lst->FileDirCount;
+		int uniqueArr[FileClassItems];
+		int i=0;
+		int indx=0;
+		for(i=0; i < FileClassItems; i++){
+            uniqueArr[i] = -1;
+        }
+		for(;;){
+		    int randVal = rand() % (listCount);
+		    if (contains(uniqueArr, listCount, randVal) == false){
+		        uniqueArr[indx] = randVal;
+		        indx++;
+		    }
+		    if(indx == (listCount)){
+		        break;
+		    }
+		}
+		
+		//Shuffle it
+		for(indx=0; indx < listCount; indx++){
+			struct FileClass fileListSrc;
+			struct FileClass fileListTarget;
+			int targetIndx = uniqueArr[indx];
+			int srcIndx = indx;
+			memset(&fileListSrc, 0, sizeof(struct FileClass));
+			memset(&fileListTarget, 0, sizeof(struct FileClass));
+			if(targetIndx != srcIndx){
+				struct FileClass * FileClassInstSource = getFileClassFromList(srcIndx, lst);
+				struct FileClass * FileClassInstTarget = getFileClassFromList(targetIndx, lst);
+				
+				memcpy((u8*)&fileListSrc, (u8*)FileClassInstSource, sizeof(struct FileClass));
+				memcpy((u8*)&fileListTarget, (u8*)FileClassInstTarget, sizeof(struct FileClass));
+				
+				memcpy((u8*)FileClassInstSource, (u8*)&fileListTarget, sizeof(struct FileClass));
+				memcpy((u8*)FileClassInstTarget, (u8*)&fileListSrc, sizeof(struct FileClass));
+			}
+		}
+		
+		//done 
+		return lst;
+	}
+	return NULL;
+}
+
 ////////////////////////////////////////////////////////////////////////////INTERNAL CODE END/////////////////////////////////////////////////////////////////////////////////////
 
 #endif

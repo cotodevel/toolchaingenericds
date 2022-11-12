@@ -18,7 +18,7 @@ USA
 
 */
 
-#if defined(ARM9) || defined(WIN32)
+#if defined(ARM9) || defined(_MSC_VER)
 #include "devoptab_devices.h"
 #ifdef ARM9
 #include "consoleTGDS.h"

@@ -28,8 +28,8 @@ USA
 #endif
 
 #if defined(WIN32) || !defined(ARM9)
-#include "../TGDSVideoConverter/TGDSTypes.h"
-#include "fatfs/source/ff.h"
+#include "TGDSTypes.h"
+#include "ff.h"
 
 #define OPEN_MAXTGDS (int)(20)					//Available POSIX File Descriptors (from POSIX -> TGDS)
 #define MAX_TGDSFILENAME_LENGTH (int)(256)				//NAME_MAX: Max filename (POSIX) that inherits into TGDSFILENAME_LENGTH

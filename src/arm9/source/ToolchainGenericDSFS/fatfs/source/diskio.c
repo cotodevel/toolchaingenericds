@@ -10,9 +10,8 @@
 #include "diskio.h"		/* FatFs lower layer API */
 
 #if defined(WIN32)
-#include "..\..\dldiWin32.h"
-#include "..\..\..\ToolchainGenericDSFS\fatfslayerTGDS.h"
-#include "..\..\..\TGDSVideoConverter\TGDSTypes.h"
+#include "dldiWin32.h"
+#include "TGDSTypes.h"
 #endif
 
 #if defined(ARM9)
