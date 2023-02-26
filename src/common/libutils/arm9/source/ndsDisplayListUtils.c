@@ -1129,7 +1129,7 @@ int crc32file( FILE *file, unsigned int *outCrc32){
 int main(int argc, char** argv){
 	//Quick Unit Test Triangle rendering example: direct OpenGL commands, running in either WIN32 or NDS GX hardware
 	//Simple Triangle GL init
-	
+	struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext = (struct TGDSOGL_DisplayListContext *)&TGDSOGL_DisplayListContextInst[TGDSOGL_DisplayListContext_External];
 	float rotateX = 0.0;
 	float rotateY = 0.0;
 	{
@@ -1138,7 +1138,7 @@ int main(int argc, char** argv){
 		SETDISPCNT_MAIN(MODE_0_3D);
 		#endif
 		//this should work the same as the normal gl call
-		glViewport(0,0,255,191);
+		glViewport(0,0,255,191, TGDSOGL_DisplayListContext);
 		
 		glClearColor(0,0,0);
 		glClearDepth(0x7FFF);
@@ -1296,6 +1296,121 @@ int main(int argc, char** argv){
 	//Unit Test #5: glDeleteLists test
 	glDeleteLists(index, 5); //remove 5 of them
 	*/
+
+
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//DS can just call glInit(); a lot of times
+	#ifdef WIN32
+	InitGLOnlyOnce = false;
+	glInit();
+	#endif
+	
+	//https://songho.ca/opengl/gl_vbo.html
+	{
+		GLuint vboId1 = 1; // ID of VBO: vertex
+		//GLuint vboId2 = 2; // ID of VBO: indices //todo
+
+		const GLvoid * offset1 = (const GLvoid *)0; // vertex array offset start
+		const GLvoid * offset2 = (const GLvoid *)0; // normal array offset start
+		const GLvoid * offset3 = (const GLvoid *)0; // texture coordinate array offset start
+
+		//VBO Test #1: Creating a single VBO for vertex coordinates + using a static vertex buffer
+		//Usage:
+		//glDrawArrays() reads vertex data from the enabled arrays by marching straight through the array without skipping or hopping. Because glDrawArrays() does not allows hopping around the vertex arrays, you still have to repeat the shared vertices once per face.
+		//glDrawArrays() takes 3 arguments. The first thing is the primitive type. The second parameter is the starting offset of the array. The last parameter is the number of vertices to pass to rendering pipeline of OpenGL.
+		//For above example to draw a cube, the first parameter is GL_TRIANGLES, the second is 0, which means starting from beginning of the array. And the last parameter is 36: a cube has 6 sides and each side needs 6 vertices to draw 2 triangles, 6 × 6 = 36.
+
+		{
+			GLfloat vertices[12][3] = {
+				{0.0f,1.0f,-1.0f}, 
+				{0.0f,1.0f,-1.0f}, 
+				{0.0f,1.0f,-1.0f},
+				{0.0f,1.0f,-1.0f},
+				{0.0f,1.0f,-1.0f},
+				{0.0f,1.0f,-1.0f},
+				{0.0f,1.0f,-1.0f},
+				{0.0f,1.0f,-1.0f},
+				{0.0f,1.0f,-1.0f},
+				{0.0f,1.0f,-1.0f},
+				{0.0f,1.0f,-1.0f},
+				{0.0f,1.0f,-1.0f},
+			}; // 36 of vertex coords
+		
+			// activate and specify pointer to vertex array
+			glEnableClientState(GL_VERTEX_ARRAY);
+			glVertexPointer(3, GL_FLOAT, 0, vertices);
+
+			// draw a cube
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+
+			// deactivate vertex arrays after drawing
+			glDisableClientState(GL_VERTEX_ARRAY);
+
+			//As a result of using glDrawArrays(), you can replace 36 glVertex*() calls with a single glDrawArrays() call. However, we still need to duplicate the shared vertices, so the number of vertices defined in the array is still 36 instead of 8. glDrawElements() is the solution to reduce the number of vertices in the array, so it allows transferring less data to OpenGL.
+		}
+
+		//todo: test
+		//VBO Test #2: Creating a single VBO for vertex coordinates + upload to VBO + drawing VBOs
+		{
+			GLsizei stride = 0; //array is packed (not aligned, natural size)
+			int vCount = 4; //4 glVertex calls crammed into 1 vertex array
+			int dataSize = sizeof(GLfloat)*vCount*3;
+			GLfloat* vertices = (GLfloat*)malloc(dataSize); // create vertex array
+		
+			//fill these vertices using the array format!
+			vertices[(0*1)+0] = (GLfloat)1.0f;
+			vertices[(0*1)+1] = (GLfloat)-1.0f;
+			vertices[(0*1)+2] = (GLfloat)-1.0f;
+
+			vertices[(1*1)+0] = (GLfloat)1.0f;
+			vertices[(1*1)+1] = (GLfloat)-1.0f;
+			vertices[(1*1)+2] = (GLfloat)-1.0f;
+
+			vertices[(2*1)+0] = (GLfloat)1.0f;
+			vertices[(2*1)+1] = (GLfloat)-1.0f;
+			vertices[(2*1)+2] = (GLfloat)-1.0f;
+
+			vertices[(3*1)+0] = (GLfloat)1.0f;
+			vertices[(3*1)+1] = (GLfloat)-1.0f;
+			vertices[(3*1)+2] = (GLfloat)-1.0f;
+
+			// generate a new VBO and get the associated ID
+			glGenBuffers(1, &vboId1);
+
+			// bind VBO in order to use vertex array and index array
+			glBindBuffer(GL_ARRAY_BUFFER, vboId1); // for vertex attributes
+			//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboId2);    // for indices //todo
+
+			// upload data to VBO
+			glBufferData(GL_ARRAY_BUFFER, dataSize, vertices, GL_STATIC_DRAW);
+
+			//vertex data uploaded; It's safe to delete after copying data to VBO
+			free(vertices);
+		
+			////part 2: draw
+			glEnableClientState(GL_VERTEX_ARRAY);             // activate vertex position array
+			glEnableClientState(GL_NORMAL_ARRAY);             // activate vertex normal array
+			glEnableClientState(GL_TEXTURE_COORD_ARRAY);      // activate texture coord array
+
+			glVertexPointer(3, GL_FLOAT, stride, offset1);   
+			glNormalPointer(GL_FLOAT, stride, offset2);
+			glTexCoordPointer(2, GL_FLOAT, stride, offset3);
+
+			// draw 6 faces using offset of index array
+			glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_BYTE, 0);
+
+			glDisableClientState(GL_VERTEX_ARRAY);            // deactivate vertex position array
+			glDisableClientState(GL_NORMAL_ARRAY);            // deactivate vertex normal array
+			glDisableClientState(GL_TEXTURE_COORD_ARRAY);     // deactivate vertex tex coord array
+
+			// bind with 0, so, switch back to normal pointer operation
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+		
+			// delete VBO when program terminated
+			glDeleteBuffers(1, &vboId1);
+		}
+	}
 	return 0;
 }
 #endif

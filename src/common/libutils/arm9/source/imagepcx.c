@@ -151,7 +151,7 @@ int LoadGLTextures(u8 * textureSource)									// Load PCX files And Convert To 
 
 	//DS supports no filtering of anykind so no need for more than one texture
 	glGenTextures(1, &textureID);
-	glBindTexture(0, textureID);
+	glBindTexture(0, textureID, USERSPACE_TGDS_OGL_DL_POINTER);
 	glTexImage2D(0, 0, GL_RGB, TEXTURE_SIZE_128 , TEXTURE_SIZE_128, 0, TEXGEN_TEXCOORD, pcx.image.data8);
 
 	imageDestroy(&pcx);
@@ -172,7 +172,7 @@ int LoadLotsOfGLTextures(u32 * textureSourceArray, int * textureArray, int textu
 	glGenTextures(textureCount, textureArray);
 	int curTexture = 0;
 	for(curTexture = 0; curTexture < textureCount; curTexture++){
-		glBindTexture(0, textureArray[curTexture]);
+		glBindTexture(0, textureArray[curTexture], USERSPACE_TGDS_OGL_DL_POINTER);
 		sImage pcx;
 		//load our texture
 		loadPCX((u8*)textureSourceArray[curTexture], &pcx);
