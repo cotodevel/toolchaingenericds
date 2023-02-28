@@ -4196,8 +4196,8 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 		u16 * crc16Ptr = &vboColor->lastPrebuiltDLCRC16;
 		if( ((u16)*(crc16Ptr)) != colorArraycrc16){
 			requiresRecompileGXDisplayList = true;
+			*crc16Ptr = colorArraycrc16;
 		}
-		*crc16Ptr = colorArraycrc16;
 		argsTotal++;
 	}
 	
@@ -4207,8 +4207,8 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 		u16 * crc16Ptr = &vboNormal->lastPrebuiltDLCRC16;
 		if( ((u16)*(crc16Ptr)) != normalArraycrc16){
 			requiresRecompileGXDisplayList = true;
+			*crc16Ptr = normalArraycrc16;
 		}
-		*crc16Ptr = normalArraycrc16;
 		argsTotal++;
 	}
 
@@ -4218,8 +4218,8 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 		u16 * crc16Ptr = &vboTexCoord->lastPrebuiltDLCRC16;
 		if( ((u16)*(crc16Ptr)) != texcoordArraycrc16){
 			requiresRecompileGXDisplayList = true;
+			*crc16Ptr = texcoordArraycrc16;
 		}
-		*crc16Ptr = texcoordArraycrc16;
 		argsTotal++;
 	}
 
@@ -4229,8 +4229,8 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 		u16 * crc16Ptr = &vboVertex->lastPrebuiltDLCRC16;
 		if( ((u16)*(crc16Ptr)) != vertexArraycrc16){
 			requiresRecompileGXDisplayList = true;
+			*crc16Ptr = vertexArraycrc16;
 		}
-		*crc16Ptr = vertexArraycrc16;
 		argsTotal++;
 	}
 

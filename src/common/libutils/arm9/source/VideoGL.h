@@ -61,7 +61,6 @@
 
 #ifdef WIN32
 #include "TGDSTypes.h"
-#include "crc16_win32.h"
 typedef unsigned int GLenum;
 typedef unsigned char GLboolean;
 typedef unsigned int GLbitfield;
