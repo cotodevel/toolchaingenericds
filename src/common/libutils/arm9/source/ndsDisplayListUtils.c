@@ -1321,19 +1321,20 @@ int main(int argc, char** argv){
 		//For above example to draw a cube, the first parameter is GL_TRIANGLES, the second is 0, which means starting from beginning of the array. And the last parameter is 36: a cube has 6 sides and each side needs 6 vertices to draw 2 triangles, 6 × 6 = 36.
 
 		{
-			GLfloat vertices[12][3] = {
-				{0.0f,1.0f,-1.0f}, 
-				{0.0f,1.0f,-1.0f}, 
-				{0.0f,1.0f,-1.0f},
-				{0.0f,1.0f,-1.0f},
-				{0.0f,1.0f,-1.0f},
-				{0.0f,1.0f,-1.0f},
-				{0.0f,1.0f,-1.0f},
-				{0.0f,1.0f,-1.0f},
-				{0.0f,1.0f,-1.0f},
-				{0.0f,1.0f,-1.0f},
-				{0.0f,1.0f,-1.0f},
-				{0.0f,1.0f,-1.0f},
+			//DS uses v16 format to store vertices. DON'T USE FLOAT DIRECTLY
+			v16 vertices[12][3] = {
+				{ floattov16(0.0f), floattov16(1.0f), floattov16(-1.0f) }, 
+				{ floattov16(0.0f), floattov16(1.0f), floattov16(-1.0f) }, 
+				{ floattov16(0.0f), floattov16(1.0f), floattov16(-1.0f) },
+				{ floattov16(0.0f), floattov16(1.0f), floattov16(-1.0f) },
+				{ floattov16(0.0f), floattov16(1.0f), floattov16(-1.0f) },
+				{ floattov16(0.0f), floattov16(1.0f), floattov16(-1.0f) },
+				{ floattov16(0.0f), floattov16(1.0f), floattov16(-1.0f) },
+				{ floattov16(0.0f) ,floattov16(1.0f), floattov16(-1.0f) },
+				{ floattov16(0.0f), floattov16(1.0f), floattov16(-1.0f) },
+				{ floattov16(0.0f), floattov16(1.0f), floattov16(-1.0f) },
+				{ floattov16(0.0f), floattov16(1.0f), floattov16(-1.0f) },
+				{ floattov16(0.0f), floattov16(1.0f) ,floattov16(-1.0f) },
 			}; // 36 of vertex coords
 		
 			// activate and specify pointer to vertex array
@@ -1349,8 +1350,56 @@ int main(int argc, char** argv){
 			//As a result of using glDrawArrays(), you can replace 36 glVertex*() calls with a single glDrawArrays() call. However, we still need to duplicate the shared vertices, so the number of vertices defined in the array is still 36 instead of 8. glDrawElements() is the solution to reduce the number of vertices in the array, so it allows transferring less data to OpenGL.
 		}
 
+		//VBO Test #2: Creating a VBO for vertex coordinates + normal coordinates + using a static vertex buffer
+		{
+			//DS uses v16 format to store vertices. DON'T USE FLOAT DIRECTLY
+			v16 vertices[24][3] = {
+				{ floattov16(0.0f), floattov16(1.0f), floattov16(-1.0f) },	//vertex
+				{ floattov10(-0.5f), floattov10(-2.0f), floattov10(0.8f) }, //normal
+				{ floattov16(0.0f), floattov16(1.0f), floattov16(-1.0f) },	//vertex 
+				{ floattov10(-0.6f), floattov10(-2.1f), floattov10(0.9f) }, //normal
+				{ floattov16(0.0f), floattov16(1.0f), floattov16(-1.0f) },	//vertex
+				{ floattov10(-0.7f), floattov10(-2.2f), floattov10(1.0f) }, //normal
+				{ floattov16(0.0f), floattov16(1.0f), floattov16(-1.0f) },	//vertex
+				{ floattov10(-0.8f), floattov10(-2.3f), floattov10(1.1f) }, //normal
+				{ floattov16(0.0f), floattov16(1.0f), floattov16(-1.0f) },	//vertex
+				{ floattov10(-0.9f), floattov10(-2.4f), floattov10(1.2f) }, //normal
+				{ floattov16(0.0f), floattov16(1.0f), floattov16(-1.0f) },	//vertex
+				{ floattov10(-1.0f), floattov10(-2.5f), floattov10(1.3f) }, //normal
+				{ floattov16(0.0f), floattov16(1.0f), floattov16(-1.0f) },	//vertex
+				{ floattov10(-1.1f), floattov10(-2.6f), floattov10(1.4f) }, //normal
+				{ floattov16(0.0f), floattov16(1.0f), floattov16(-1.0f) },	//vertex
+				{ floattov10(-1.2f), floattov10(-2.7f), floattov10(1.5f) }, //normal
+				{ floattov16(0.0f), floattov16(1.0f), floattov16(-1.0f) },	//vertex
+				{ floattov10(-1.3f), floattov10(-2.8f), floattov10(1.6f) }, //normal
+				{ floattov16(0.0f), floattov16(1.0f), floattov16(-1.0f) },	//vertex
+				{ floattov10(-1.4f), floattov10(-2.9f), floattov10(1.7f) }, //normal
+				{ floattov16(0.0f), floattov16(1.0f), floattov16(-1.0f) },	//vertex
+				{ floattov10(-1.5f), floattov10(-3.0f), floattov10(1.8f) }, //normal
+				{ floattov16(0.0f), floattov16(1.0f), floattov16(-1.0f) },	//vertex
+				{ floattov10(-1.6f), floattov10(-3.1f), floattov10(1.9f) }, //normal
+			};
+		
+			// activate and specify pointer to vertex array
+			glEnableClientState(GL_VERTEX_ARRAY);
+			glVertexPointer(3, GL_FLOAT, 0, vertices);
+
+			// activate and specify pointer to normal array
+			glEnableClientState(GL_NORMAL_ARRAY);
+			glNormalPointer(GL_FLOAT, 1, vertices);
+
+			// draw a cube
+			{
+				int arrSize = sizeof(vertices);
+				glDrawArrays(GL_TRIANGLES, 0, arrSize);
+			}
+			// deactivate arrays after drawing
+			glDisableClientState(GL_VERTEX_ARRAY);
+			glDisableClientState(GL_NORMAL_ARRAY);
+		}
+
 		//todo: test
-		//VBO Test #2: Creating a single VBO for vertex coordinates + upload to VBO + drawing VBOs
+		//VBO Test #3: Creating a single VBO for vertex coordinates + upload to VBO + drawing VBOs
 		{
 			GLsizei stride = 0; //array is packed (not aligned, natural size)
 			int vCount = 4; //4 glVertex calls crammed into 1 vertex array

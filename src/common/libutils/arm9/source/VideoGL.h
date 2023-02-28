@@ -497,17 +497,17 @@ enum {
 	GL_4_BYTES			= (unsigned int)0x1409,
 
 	/* Primitives */
-	GL_LINES			= (unsigned int)0x0001,
-	GL_POINTS			= (unsigned int)0x0000,
-	GL_LINE_STRIP			= (unsigned int)0x0003,
-	GL_LINE_LOOP			= (unsigned int)0x0002,
-	//GL_TRIANGLES			= (unsigned int)0x0004,
-	//GL_TRIANGLE_STRIP		= (unsigned int)0x0005,
-	GL_TRIANGLE_FAN			= (unsigned int)0x0006,
-	//GL_QUADS			= (unsigned int)0x0007,
-	//GL_QUAD_STRIP			= (unsigned int)0x0008,
-	GL_POLYGON			= (unsigned int)0x0009,
-	GL_EDGE_FLAG			= (unsigned int)0x0B43,
+	GL_LINES			= (unsigned int)0x1001,
+	GL_POINTS			= (unsigned int)0x1000,
+	GL_LINE_STRIP			= (unsigned int)0x1003,
+	GL_LINE_LOOP			= (unsigned int)0x1002,
+	//GL_TRIANGLES			= (unsigned int)0x1004,
+	//GL_TRIANGLE_STRIP		= (unsigned int)0x1005,
+	GL_TRIANGLE_FAN			= (unsigned int)0x1006,
+	//GL_QUADS			= (unsigned int)0x1007,
+	//GL_QUAD_STRIP			= (unsigned int)0x1008,
+	GL_POLYGON			= (unsigned int)0x1009,
+	GL_EDGE_FLAG			= (unsigned int)0x1B43,
 
 	/* Vertex Arrays */
 	GL_VERTEX_ARRAY			= (unsigned int)0x8074,
@@ -773,7 +773,7 @@ enum {
 	GL_DECR				= (unsigned int)0x1E03,
 
 	/* Buffers, Pixel Drawing/Reading */
-	GL_NONE				= (unsigned int)0,
+	GL_NONE				= (unsigned int)0x0429,
 	GL_LEFT				= (unsigned int)0x0406,
 	GL_RIGHT			= (unsigned int)0x0407,
 	/*GL_FRONT			= (unsigned int)0x0404, */
@@ -1220,6 +1220,7 @@ extern enum GL_GLBEGIN_ENUM getDisplayListGLType(struct ndsDisplayListDescriptor
 extern int CompilePackedNDSGXDisplayListFromObject(u32 * bufOut, struct ndsDisplayListDescriptor * dlInst);
 extern void glNormal3dv(const GLdouble *v, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext);
 extern void glVertex3dv(const GLdouble *v, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext);
+extern void glNormal3v10(v10 nx, v10 ny, v10 nz, struct TGDSOGL_DisplayListContext * Inst);
 extern void emitGLShinnyness(float shinyValue, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext);
 extern void  glMultMatrixf(const GLfloat *m, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext);
 extern void  glMultMatrixd(const GLdouble *m, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext);

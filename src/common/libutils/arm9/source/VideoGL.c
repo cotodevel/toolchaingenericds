@@ -2521,6 +2521,37 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__((optnone))
 #endif
 #endif
+void glNormal3v10(
+	v10 nx,
+ 	v10 ny,
+ 	v10 nz,
+	struct TGDSOGL_DisplayListContext * Inst
+){
+	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
+		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
+			//4000484h 21h 1  9*  NORMAL - Set Normal Vector (W)
+			Inst->InternalUnpackedGX_DL_Binary[ptrVal + InternalUnpackedGX_DL_workSize] = (u32)getFIFO_NORMAL; //Unpacked Command format
+			ptrVal++;
+			Inst->InternalUnpackedGX_DL_Binary[ptrVal + InternalUnpackedGX_DL_workSize] = (u32)NORMAL_PACK(nx, ny, nz); ptrVal++;
+			Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = ptrVal;
+		}
+	}
+	else{
+		#if defined(ARM9)
+		GFX_NORMAL = (u32)NORMAL_PACK(floattov10(nx),floattov10(ny),floattov10(nz));
+		#endif
+	}	
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
 void glNormal3s(
 	GLshort nx,
  	GLshort ny,
@@ -2821,11 +2852,12 @@ void glEndList(struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext){
 	TGDSOGL_DisplayListContext->LastGXInternalDisplayListPtr = TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;	
 
 	if(TGDSOGL_DisplayListContext->mode == GL_COMPILE_AND_EXECUTE){
+		TGDSOGL_DisplayListContext->isAnOpenGLExtendedDisplayListCallList = false; //Standard OpenGL DisplayList marked as executable now. Run it through the GX hardware from indirect glCallList(); call
 		glCallList((GLuint)TGDSOGL_DisplayListContext->LastActiveOpenGLDisplayList, TGDSOGL_DisplayListContext);
 	}
 	TGDSOGL_DisplayListContext->isAnOpenGLExtendedDisplayListCallList = false;
 	TGDSOGL_DisplayListContext->LastActiveOpenGLDisplayList = DL_INVALID;
-	TGDSOGL_DisplayListContext->mode = GL_COMPILE;
+	TGDSOGL_DisplayListContext->mode = GL_COMPILE; //Even if Standard OpenGL DisplayList was marked earlier as executable. Disable further calls because it's slow, and precompiled GX Display List can be ran directly later through standard glCallList()
 }
 
 /*
@@ -3800,17 +3832,17 @@ void glVertexPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *ptr)
 			typeSizeOf = sizeof(GLint);
 		}break;
 		case GL_FLOAT:{
-			typeSizeOf = sizeof(GLfloat);
+			typeSizeOf = sizeof(v16); //treat DS floats as v16 for max GX vertex precision 
 		}break;
 		case GL_DOUBLE:{
-			typeSizeOf = sizeof(GLdouble);
+			typeSizeOf = sizeof(v16); //treat DS floats as v16 for max GX vertex precision 
 		}break;
 		default:{
 			errorStatus = GL_INVALID_ENUM;
 			return;
 		}break;
 	}
-	if((size != 2) || (size != 3) || (size != 4)){
+	if((size != 2) && (size != 3) && (size != 4)){
 		errorStatus = GL_INVALID_VALUE;
 		return;
 	}
@@ -3831,18 +3863,17 @@ void glVertexPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *ptr)
 		vboVertex->vboIsDynamicMemoryAllocated = false;
 	}
 	vboVertex->vertexBufferObjectstrideOffset = stride;
-	vboVertex->ElementsPerVertexBufferObjectUnit = size;
-	vboVertex->VertexBufferObjectStartOffset = (int)ptr;
+	vboVertex->ElementsPerVertexBufferObjectUnit = typeSizeOf; //defines pointer length
+	vboVertex->VertexBufferObjectStartOffset = (int)0; //default to 0
 }
 
 /*
 glNormalPointer: function defines an array of normals.
-
 type: The data type of each coordinate in the array using the following symbolic constants: GL_BYTE, GL_SHORT, GL_INT, GL_FLOAT, and GL_DOUBLE.
-
 stride: The byte offset between consecutive normals. When stride is zero, the normals are tightly packed in the array.
-
 pointer: A pointer to the first normal in the array.
+
+NOTE: DS floats ARE TREATED AS v10 in all cases for max GX normal precision
 */
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
@@ -3854,19 +3885,19 @@ void glNormalPointer( GLenum type, GLsizei stride, const GLvoid *ptr ){
 	int typeSizeOf = 0;
 	switch(type){
 		case GL_BYTE:{
-			typeSizeOf = sizeof(GLbyte);
+			typeSizeOf = sizeof(v10); //treat DS floats as v10 for max GX normal precision
 		}break;
 		case GL_SHORT:{
-			typeSizeOf = sizeof(GLshort);
+			typeSizeOf = sizeof(v10); //treat DS floats as v10 for max GX normal precision
 		}break;
 		case GL_INT:{
-			typeSizeOf = sizeof(GLint);
+			typeSizeOf = sizeof(v10); //treat DS floats as v10 for max GX normal precision
 		}break;
 		case GL_FLOAT:{
-			typeSizeOf = sizeof(GLfloat);
+			typeSizeOf = sizeof(v10); //treat DS floats as v10 for max GX normal precision
 		}break;
 		case GL_DOUBLE:{
-			typeSizeOf = sizeof(GLdouble);
+			typeSizeOf = sizeof(v10); //treat DS floats as v10 for max GX normal precision
 		}break;
 		default:{
 			errorStatus = GL_INVALID_ENUM;
@@ -3890,8 +3921,8 @@ void glNormalPointer( GLenum type, GLsizei stride, const GLvoid *ptr ){
 		vboNormal->vboIsDynamicMemoryAllocated = false;
 	}
 	vboNormal->vertexBufferObjectstrideOffset = stride;
-	vboNormal->ElementsPerVertexBufferObjectUnit = -1;
-	vboNormal->VertexBufferObjectStartOffset = (int)ptr;
+	vboNormal->ElementsPerVertexBufferObjectUnit = typeSizeOf; //defines pointer length
+	vboNormal->VertexBufferObjectStartOffset = (int)0; //default to 0
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -3910,29 +3941,29 @@ void glColorPointer( GLint size, GLenum type, GLsizei stride, const GLvoid *ptr 
 			typeSizeOf = sizeof(GLubyte);
 		}break;
 		case GL_SHORT:{
-			typeSizeOf = sizeof(GLshort);
+			typeSizeOf = sizeof(GLshort);	//GX supports packed color as 8bit only anyway
 		}break;
 		case GL_UNSIGNED_SHORT:{
-			typeSizeOf = sizeof(GLushort);
+			typeSizeOf = sizeof(GLushort);	//GX supports packed color as 8bit only anyway
 		}break;
 		case GL_INT:{
-			typeSizeOf = sizeof(GLint);
+			typeSizeOf = sizeof(GLint);		//GX supports packed color as 8bit only anyway
 		}break;
 		case GL_UNSIGNED_INT:{
-			typeSizeOf = sizeof(GLuint);
+			typeSizeOf = sizeof(GLuint);	//GX supports packed color as 8bit only anyway
 		}break;
 		case GL_FLOAT:{
-			typeSizeOf = sizeof(GLfloat);
+			typeSizeOf = sizeof(GLfloat);	//GX supports packed color as 8bit only anyway
 		}break;
 		case GL_DOUBLE:{
-			typeSizeOf = sizeof(GLdouble);
+			typeSizeOf = sizeof(GLdouble);	//GX supports packed color as 8bit only anyway
 		}break;
 		default:{
-			errorStatus = GL_INVALID_ENUM;
+			errorStatus = GL_INVALID_ENUM;	
 			return;
 		}break;
 	}
-	if((size != 2) || (size != 3) || (size != 4)){
+	if((size != 1) && (size != 2) && (size != 3) && (size != 4)){
 		errorStatus = GL_INVALID_VALUE;
 		return;
 	}
@@ -3953,8 +3984,8 @@ void glColorPointer( GLint size, GLenum type, GLsizei stride, const GLvoid *ptr 
 		vboColor->vboIsDynamicMemoryAllocated = false;
 	}
 	vboColor->vertexBufferObjectstrideOffset = stride;
-	vboColor->ElementsPerVertexBufferObjectUnit = size;
-	vboColor->VertexBufferObjectStartOffset = (int)ptr;
+	vboColor->ElementsPerVertexBufferObjectUnit = typeSizeOf; //defines pointer length
+	vboColor->VertexBufferObjectStartOffset = (int)0; //default to 0
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -4000,8 +4031,8 @@ void glIndexPointer( GLenum type, GLsizei stride, const GLvoid *ptr ){
 		vboIndex->vboIsDynamicMemoryAllocated = false;
 	}
 	vboIndex->vertexBufferObjectstrideOffset = stride;
-	vboIndex->ElementsPerVertexBufferObjectUnit = -1;
-	vboIndex->VertexBufferObjectStartOffset = (int)ptr;
+	vboIndex->ElementsPerVertexBufferObjectUnit = typeSizeOf; //defines pointer length
+	vboIndex->VertexBufferObjectStartOffset = (int)0; //default to 0
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -4030,7 +4061,7 @@ void glTexCoordPointer( GLint size, GLenum type, GLsizei stride, const GLvoid *p
 			return;
 		}break;
 	}
-	if((size != 2) || (size != 3) || (size != 4)){
+	if((size != 1) && (size != 2) && (size != 3) && (size != 4)){
 		errorStatus = GL_INVALID_VALUE;
 		return;
 	}
@@ -4051,8 +4082,8 @@ void glTexCoordPointer( GLint size, GLenum type, GLsizei stride, const GLvoid *p
 		vboTexCoord->vboIsDynamicMemoryAllocated = false;
 	}
 	vboTexCoord->vertexBufferObjectstrideOffset = stride;
-	vboTexCoord->ElementsPerVertexBufferObjectUnit = size;
-	vboTexCoord->VertexBufferObjectStartOffset = (int)ptr;
+	vboTexCoord->ElementsPerVertexBufferObjectUnit = typeSizeOf; //defines pointer length
+	vboTexCoord->VertexBufferObjectStartOffset = (int)0; //default to 0
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -4132,8 +4163,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 	bool vboIndexEnabled = vboIndex->ClientStateEnabled;
 	bool vboTexCoordEnabled = vboTexCoord->ClientStateEnabled;
 	bool vboEdgeFlagEnabled = vboEdgeFlag->ClientStateEnabled;
-	struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext = (struct TGDSOGL_DisplayListContext *)&TGDSOGL_DisplayListContextInst[TGDSOGL_DisplayListContext_Internal];
-
+	int argsTotal = 0;
 	if(count < 0){
 		errorStatus = GL_INVALID_ENUM;
 		return;
@@ -4168,6 +4198,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 			requiresRecompileGXDisplayList = true;
 		}
 		*crc16Ptr = colorArraycrc16;
+		argsTotal++;
 	}
 	
 	//2
@@ -4178,6 +4209,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 			requiresRecompileGXDisplayList = true;
 		}
 		*crc16Ptr = normalArraycrc16;
+		argsTotal++;
 	}
 
 	//3
@@ -4188,6 +4220,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 			requiresRecompileGXDisplayList = true;
 		}
 		*crc16Ptr = texcoordArraycrc16;
+		argsTotal++;
 	}
 
 	//4
@@ -4198,6 +4231,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 			requiresRecompileGXDisplayList = true;
 		}
 		*crc16Ptr = vertexArraycrc16;
+		argsTotal++;
 	}
 
 	//todo
@@ -4223,34 +4257,119 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 			isTriangleStrip = true;
 			argCount = 4;
 		}
-		glNewList(OGL_DL_DRAW_ARRAYS_METHOD, GL_COMPILE_AND_EXECUTE, TGDSOGL_DisplayListContext);
-		for(i = 0; i < count; i+=argCount){
-			glBegin(mode, TGDSOGL_DisplayListContext);
+		glNewList(OGL_DL_DRAW_ARRAYS_METHOD, GL_COMPILE_AND_EXECUTE, INTERNAL_TGDS_OGL_DL_POINTER);
+			glBegin(mode, INTERNAL_TGDS_OGL_DL_POINTER);
+			for(i = 0; i < (count/argsTotal); i+=(argsTotal*argCount)){
 				if(vboColorEnabled == true){
-					u8 * colorOffset = (u8*)((int)vboColor->vboArrayMemoryStart + first + (vboColor->VertexBufferObjectStartOffset) + i);
-					glColor3b(*(colorOffset+0), *(colorOffset+1), *(colorOffset+2), TGDSOGL_DisplayListContext);
+					switch(vboColor->ElementsPerVertexBufferObjectUnit){
+						//unsigned char
+						case 1:{
+							unsigned char * colorOffset = (unsigned char*)( ((int)vboColor->vboArrayMemoryStart) +  (i * sizeof(unsigned char) + ((vboColor->vertexBufferObjectstrideOffset*sizeof(unsigned char)*argCount))));
+							unsigned char arg0 = (unsigned char)*(colorOffset+0);
+							unsigned char arg1 = (unsigned char)*(colorOffset+1);
+							unsigned char arg2 = (unsigned char)*(colorOffset+2);
+							glColor3b(arg0, arg1, arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+						}break;
+						
+						//unsigned short
+						/*
+						case 2:{
+						//no GX methods for 2 byte colors
+						}break;
+						*/
+						
+						//unsigned int: no GX methods for 4 byte colors but we add it because of OpenGL color-on-light-reflection wrapper for now
+						case 4:{
+							GLfloat * colorOffset = (GLfloat*)( ((int)vboColor->vboArrayMemoryStart) +  (i * sizeof(GLfloat) + ((vboColor->vertexBufferObjectstrideOffset*sizeof(GLfloat)*argCount))));
+							GLfloat arg0 = (GLfloat)*(colorOffset+0);
+							GLfloat arg1 = (GLfloat)*(colorOffset+1);
+							GLfloat arg2 = (GLfloat)*(colorOffset+2);
+							glColor3f(arg0, arg1, arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+						}break;
+					}
 				}
 
 				if(vboNormalEnabled == true){
-					GLfloat * normalOffset = (GLfloat*)((int)vboNormal->vboArrayMemoryStart + first + (vboNormal->VertexBufferObjectStartOffset) + i);
-					glNormal3f(*(normalOffset+0), *(normalOffset+1), *(normalOffset+2), TGDSOGL_DisplayListContext);
+					switch(vboNormal->ElementsPerVertexBufferObjectUnit){
+						/*
+						//unsigned char
+						case 1:{
+							//Normals are 10bit at least
+						}break;
+						*/
+						//unsigned short
+						case 2:{
+							unsigned short * normalOffset = (unsigned short*)( ((int)vboNormal->vboArrayMemoryStart) +  (i * sizeof(unsigned short) + ((vboNormal->vertexBufferObjectstrideOffset*sizeof(unsigned short)*argCount))));
+							unsigned short arg0 = (unsigned short)*(normalOffset+0);
+							unsigned short arg1 = (unsigned short)*(normalOffset+1);
+							unsigned short arg2 = (unsigned short)*(normalOffset+2);
+							glNormal3v10((v10)arg0, (v10)arg1, (v10)arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+						}break;
+						/*
+						//unsigned int
+						case 4:{
+							//there are no packed 4 byte Normal GX methods
+						}break;
+						*/
+					}
 				}
 
 				if(vboTexCoordEnabled == true){
-					GLfloat * texcoordOffset = (GLfloat*)((int)vboTexCoord->vboArrayMemoryStart + first + (vboTexCoord->VertexBufferObjectStartOffset) + i);
-					glTexCoord2f(*(texcoordOffset+0), *(texcoordOffset+1), TGDSOGL_DisplayListContext);
+					switch(vboTexCoord->ElementsPerVertexBufferObjectUnit){
+						/*
+						//unsigned char
+						case 1:{
+							//GX texture coordinates are at least 12.4bit
+						}break;
+						*/
+						//unsigned short
+						case 2:{
+							unsigned short * TexCoordOffset = (unsigned short*)( ((int)vboTexCoord->vboArrayMemoryStart) +  (i * sizeof(unsigned short) + ((vboTexCoord->vertexBufferObjectstrideOffset*sizeof(unsigned short)*argCount))));
+							unsigned short arg0 = (unsigned short)*(TexCoordOffset+0);
+							unsigned short arg1 = (unsigned short)*(TexCoordOffset+1);
+							glTexCoord2t16((t16)arg0, (t16)arg1, INTERNAL_TGDS_OGL_DL_POINTER);
+						}break;
+						//unsigned int
+						case 4:{
+							u32 * TexCoordOffset = (u32*)( ((int)vboTexCoord->vboArrayMemoryStart) +  (i * sizeof(unsigned int) + ((vboTexCoord->vertexBufferObjectstrideOffset*sizeof(unsigned int)*argCount))));
+							uint32 arg0 = (uint32)*(TexCoordOffset+0);
+							glTexCoord1i(arg0, INTERNAL_TGDS_OGL_DL_POINTER);
+						}break;
+					}
 				}
 
 				if(vboVertexEnabled == true){
-					GLfloat * vertexOffset = (GLfloat*)((int)vboVertex->vboArrayMemoryStart + first + (vboVertex->VertexBufferObjectStartOffset) + i);
-					glVertex3v16(floattov16(*(vertexOffset+0)), floattov16(*(vertexOffset+1)), floattov16(*(vertexOffset+2)), TGDSOGL_DisplayListContext);
+					switch(vboVertex->ElementsPerVertexBufferObjectUnit){
+						/*
+						//unsigned char
+						case 1:{
+							//GX vertex are at least 10bit
+						}break;
+						*/
+						//unsigned short
+						case 2:{
+							u16 * vertexOffset = (u16*)( ((int)vboVertex->vboArrayMemoryStart) +  (i * sizeof(v16) + ((vboVertex->vertexBufferObjectstrideOffset*sizeof(v16)*argCount))));
+							v16 arg0 = (v16)*(vertexOffset+0);
+							v16 arg1 = (v16)*(vertexOffset+1);
+							v16 arg2 = (v16)*(vertexOffset+2);
+							glVertex3v16(arg0, arg1, arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+						}break;
+						//unsigned int
+						case 4:{
+							u32 * vertexOffset = (u32*)( ((int)vboVertex->vboArrayMemoryStart) +  (i * sizeof(unsigned int) + ((vboVertex->vertexBufferObjectstrideOffset*sizeof(unsigned int)*argCount))));
+							v16 arg0 = (v16) f32tov16(*(vertexOffset+0));
+							v16 arg1 = (v16) f32tov16(*(vertexOffset+1));				
+							v16 arg2 = (v16) f32tov16(*(vertexOffset+2));
+							glVertex3v16(arg0, arg1, arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+						}break;
+					}
 				}
-			glEnd(TGDSOGL_DisplayListContext);
-		}
-		glEndList(TGDSOGL_DisplayListContext); 
+			}
+			glEnd(INTERNAL_TGDS_OGL_DL_POINTER);
+		glEndList(INTERNAL_TGDS_OGL_DL_POINTER); 
 	}
 	else{
-		glCallList(OGL_DL_DRAW_ARRAYS_METHOD, TGDSOGL_DisplayListContext);
+		glCallList(OGL_DL_DRAW_ARRAYS_METHOD, INTERNAL_TGDS_OGL_DL_POINTER);
 	}
 }
 
