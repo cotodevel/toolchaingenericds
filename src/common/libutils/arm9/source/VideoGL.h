@@ -1619,8 +1619,12 @@ static void handleInmediateGXDisplayList(u32 * sourcePhysDisplayList, u32 * sour
 #define OBJECT_BUFFER_INDEX ((int)3)  //index
 #define OBJECT_BUFFER_TEXCOORD ((int)4)  //texture coordinate
 #define OBJECT_BUFFER_EDGEFLAG ((int)5)  //Edge Flag
+#define VBO_DESCRIPTOR_INVALID ((GLuint *)-1)
 
 #define VBO_ARRAY_SIZE ((int)256) //up to 256 elements
+
+#define MAX_VBO_HANDLES_GL ((int)20)
+
 
 // Buffer Objects 
 #define GL_ARRAY_BUFFER                   ((GLenum)0x8892)
@@ -1658,7 +1662,10 @@ struct vertexBufferObject {
 
 //VBA
 struct vertexBufferArray {
-	struct vertexBufferObject vertexBufferObjectInst[MAX_VBO_PER_VBA]; 
+	struct vertexBufferObject * vertexBufferObjectReferences[MAX_VBO_HANDLES_GL]; //n OpenGL 1.1 descriptor index per VBO can point n buffers (vertex, normal, etc). Set NULL by glBindBuffer(); at the time the internal VBO name is assigned
+	GLint vboName[MAX_VBO_HANDLES_GL]; //OpenGL 1.1 descriptor index. Once it's not VBO_DESCRIPTOR_INVALID it's free for allocation later by glBindBuffer();
+	
+	struct vertexBufferObject vertexBufferObjectInst[MAX_VBO_PER_VBA];
 };
 
 //pointers of implemented VBOs

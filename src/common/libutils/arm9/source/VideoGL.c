@@ -79,6 +79,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glInit(){
+	int i = 0;
 	//set mode 0, enable BG0 and set it to 3D
 	#ifdef ARM9
 	SETDISPCNT_MAIN(MODE_0_3D);
@@ -132,6 +133,10 @@ void glInit(){
 		vboEdgeFlag->vboIsDynamicMemoryAllocated = false;
 		InitGLOnlyOnce = true;
 	}
+	for(i=0; i < MAX_VBO_HANDLES_GL; i++){
+		TGDSVBAInstance.vertexBufferObjectReferences[i] = NULL;
+		TGDSVBAInstance.vboName[i] = (GLint)VBO_DESCRIPTOR_INVALID;
+	}
 
 	//vertex
 	vboVertex->vertexBufferObjectstrideOffset = -1;
@@ -169,7 +174,6 @@ void glInit(){
 	vboEdgeFlag->VertexBufferObjectStartOffset = -1;
 	vboEdgeFlag->lastPrebuiltDLCRC16 = 0;
 	vboEdgeFlag->ClientStateEnabled = false;
-
 	{
 		struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext = (struct TGDSOGL_DisplayListContext *)&TGDSOGL_DisplayListContextInst[TGDSOGL_DisplayListContext_Internal];
 		OGL_DL_DRAW_ARRAYS_METHOD = glGenLists(1, TGDSOGL_DisplayListContext);
@@ -3669,9 +3673,43 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 void glGenBuffers(GLsizei n, GLuint* ids){
-	
+	int i = 0;
+	if(n < MAX_VBO_PER_VBA){
+		if(n > 0){
+			n--;
+		}
+		for(i = 0; i < MAX_VBO_HANDLES_GL; i++){
+			if( (i <= n) && ((GLuint)TGDSVBAInstance.vboName[i] == (GLuint)VBO_DESCRIPTOR_INVALID)){
+				TGDSVBAInstance.vboName[i] = (GLuint)*(ids + i);
+				TGDSVBAInstance.vertexBufferObjectReferences[i] = NULL;
+			}
+		}
+	}
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void glDeleteBuffers(GLsizei n, const GLuint* ids){
+	int i = 0;
+	if(n < MAX_VBO_PER_VBA){
+		if(n > 0){
+			n--;
+		}
+		for(i = 0; i < MAX_VBO_PER_VBA; i++){
+			if( (ids[i] != NULL) && ((GLint)TGDSVBAInstance.vboName[i] == (GLint)ids[i]) ){
+				GLuint * ptr = (GLuint * )(ids + i);
+				*ptr = (GLuint)VBO_DESCRIPTOR_INVALID;
+				TGDSVBAInstance.vboName[i] = (GLint)VBO_DESCRIPTOR_INVALID;
+			}
+		}
+	}
+}
+
+//Note: Method adapted to work around OpenGL1.5 
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
@@ -3679,9 +3717,69 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 void glBindBuffer(GLenum target, GLuint id){
+	switch(target){
+		case GL_ARRAY_BUFFER:{ //OpenGL 1.5+: allocate vertex buffer
+			int i = 0;
+			//OpenGL spec says it's Dynamic object allocation or using a referenced array
+			if(vboVertex->vboIsDynamicMemoryAllocated == true){
+				TGDSARM9Free(vboVertex->vboArrayMemoryStart);
+			}
+			vboVertex->vboArrayMemoryStart = (u32*)TGDSARM9Malloc(vboVertex->ElementsPerVertexBufferObjectUnit*VBO_ARRAY_SIZE);
+			vboVertex->vboIsDynamicMemoryAllocated = true;
+			//Lookaround the id and bind it to vertex buffer
+			for(i = 0; i < MAX_VBO_HANDLES_GL; i++){
+				if((GLuint)TGDSVBAInstance.vboName[i] == (GLuint)id){
+					TGDSVBAInstance.vertexBufferObjectReferences[i] = vboVertex;
+					break;
+				}
+			}
+		}break;
+		case GL_ELEMENT_ARRAY_BUFFER:{ //OpenGL 1.5+: allocate indices buffer
+			int i = 0;
+			//OpenGL spec says it's Dynamic object allocation or using a referenced array
+			if(vboIndex->vboIsDynamicMemoryAllocated == true){
+				TGDSARM9Free(vboIndex->vboArrayMemoryStart);
+			}
+			vboIndex->vboArrayMemoryStart = (u32*)TGDSARM9Malloc(vboIndex->ElementsPerVertexBufferObjectUnit*VBO_ARRAY_SIZE);
+			vboIndex->vboIsDynamicMemoryAllocated = true;
+			//Lookaround the id and bind it to index buffer
+			for(i = 0; i < MAX_VBO_HANDLES_GL; i++){
+				if((GLuint)TGDSVBAInstance.vboName[i] == (GLuint)id){
+					TGDSVBAInstance.vertexBufferObjectReferences[i] = vboIndex;
+					break;
+				}
+			}
+		}break;
 
+		//Unsupported
+		/*
+		case GL_PIXEL_PACK_BUFFER:{
+		}break;
+		
+		case GL_PIXEL_UNPACK_BUFFER:{
+		}break;
+		*/
+
+		default:{
+			errorStatus = GL_INVALID_ENUM;
+		}break;
+	}
 }
 
+/*
+Parameters
+target
+Specifies the target buffer object. The symbolic constant must be GL_ARRAY_BUFFER, GL_ELEMENT_ARRAY_BUFFER, GL_PIXEL_PACK_BUFFER, or GL_PIXEL_UNPACK_BUFFER.
+
+size
+Specifies the size in bytes of the buffer object's new data store.
+
+data
+Specifies a pointer to data that will be copied into the data store for initialization, or NULL if no data is to be copied.
+
+usage
+Specifies the expected usage pattern of the data store. The symbolic constant must be GL_STREAM_DRAW, GL_STREAM_READ, GL_STREAM_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STATIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, or GL_DYNAMIC_COPY.
+*/
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
@@ -3689,32 +3787,50 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 void glBufferData(GLenum target, GLsizei size, const void* data, GLenum usage){
+	u32 * targetBuffer = NULL;
+	switch(target){
+		case GL_ARRAY_BUFFER:{ //OpenGL 1.5+: allocate vertex buffer
+			targetBuffer = vboVertex->vboArrayMemoryStart;
+		}break;
+		case GL_ELEMENT_ARRAY_BUFFER:{ //OpenGL 1.5+: allocate indices buffer
+			targetBuffer = vboIndex->vboArrayMemoryStart;
+		}break;
+		//Unsupported
+		/*
+		case GL_PIXEL_PACK_BUFFER:{
+		}break;
+		
+		case GL_PIXEL_UNPACK_BUFFER:{
+		}break;
+		*/
+		default:{
+			errorStatus = GL_INVALID_ENUM;
+			return;
+		}break;
+	}
+
 	switch(usage){
-		case GL_STATIC_DRAW:{
+		//The data store contents are modified by the application, and used as the source for GL drawing and image specification commands.
+		case	GL_STATIC_DRAW:
+		case	GL_DYNAMIC_DRAW:
+		case	GL_STREAM_DRAW:
+		{
+			memcpy(targetBuffer, (void*)data, (int)size);
 		}break;
 
-		case GL_STATIC_READ:{
+		//The data store contents are modified by reading data from the GL, and used to return that data when queried by the application.
+		case	GL_DYNAMIC_READ:
+		case	GL_STATIC_READ:
+		case	GL_STREAM_READ:
+		{
+			memcpy((void*)data, targetBuffer, (int)size);
 		}break;
 		
-		case GL_STATIC_COPY:{
-		}break;
-		
-		case GL_DYNAMIC_DRAW:{
-		}break;
-		
-		case GL_DYNAMIC_READ:{
-		}break;
-		
-		case GL_DYNAMIC_COPY:{
-		}break;
-		
-		case GL_STREAM_DRAW:{
-		}break;
-		
-		case GL_STREAM_READ:{
-		}break;
-		
-		case GL_STREAM_COPY:{
+		//The data store contents are modified by reading data from the GL, and used as the source for GL drawing and image specification commands.
+		case	GL_STATIC_COPY:{
+		case	GL_DYNAMIC_COPY:
+		case	GL_STREAM_COPY:
+			data = targetBuffer;
 		}break;
 	}
 }
@@ -3726,16 +3842,6 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 void glBufferSubData(GLenum target, GLint offset, GLsizei size, void* data){
-
-}
-
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-void glDeleteBuffers(GLsizei n, const GLuint* ids){
 
 }
 
@@ -3816,6 +3922,7 @@ stride: The byte offset between consecutive vertices. When stride is zero, the v
 
 pointer: A pointer to the first coordinate of the first vertex in the array.
 */
+//Note: Method adapted to work around OpenGL1.5
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
@@ -3850,15 +3957,7 @@ void glVertexPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *ptr)
 		errorStatus = GL_INVALID_VALUE;
 		return;
 	}
-	//OpenGL spec says it's Dynamic object allocation or using a referenced array
-	if(vboVertex->vboIsDynamicMemoryAllocated == true){
-		TGDSARM9Free(vboVertex->vboArrayMemoryStart);
-	}
-	if(ptr == NULL){
-		vboVertex->vboArrayMemoryStart = (u32*)TGDSARM9Malloc(size*typeSizeOf*VBO_ARRAY_SIZE);
-		vboVertex->vboIsDynamicMemoryAllocated = true;
-	}
-	else{
+	if(ptr != NULL){
 		vboVertex->vboArrayMemoryStart = (u32*)ptr;
 		vboVertex->vboIsDynamicMemoryAllocated = false;
 	}
@@ -3988,6 +4087,7 @@ void glColorPointer( GLint size, GLenum type, GLsizei stride, const GLvoid *ptr 
 	vboColor->VertexBufferObjectStartOffset = (int)0; //default to 0
 }
 
+//Note: Method adapted to work around OpenGL1.5
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
@@ -4018,15 +4118,7 @@ void glIndexPointer( GLenum type, GLsizei stride, const GLvoid *ptr ){
 		errorStatus = GL_INVALID_VALUE;
 		return;
 	}
-	//OpenGL spec says it's Dynamic object allocation or using a referenced array
-	if(vboIndex->vboIsDynamicMemoryAllocated == true){
-		TGDSARM9Free(vboIndex->vboArrayMemoryStart);
-	}
-	if(ptr == NULL){
-		vboIndex->vboArrayMemoryStart = (u32*)TGDSARM9Malloc(typeSizeOf*VBO_ARRAY_SIZE);
-		vboIndex->vboIsDynamicMemoryAllocated = true;
-	}
-	else{
+	if(ptr != NULL){
 		vboIndex->vboArrayMemoryStart = (u32*)ptr;
 		vboIndex->vboIsDynamicMemoryAllocated = false;
 	}

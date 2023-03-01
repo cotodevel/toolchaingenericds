@@ -1341,8 +1341,11 @@ int main(int argc, char** argv){
 			glEnableClientState(GL_VERTEX_ARRAY);
 			glVertexPointer(3, GL_FLOAT, 0, vertices);
 
-			// draw a cube
-			glDrawArrays(GL_TRIANGLES, 0, 36);
+			// draw a cube: rendering should be compiled here
+			glDrawArrays(GL_TRIANGLES, 0, 36); 
+
+			// draw a cube again: rendering should be cached and ran through a OpenGL DL here
+			glDrawArrays(GL_TRIANGLES, 0, 36); 
 
 			// deactivate vertex arrays after drawing
 			glDisableClientState(GL_VERTEX_ARRAY);
@@ -1391,6 +1394,10 @@ int main(int argc, char** argv){
 			// draw a cube
 			{
 				int arrSize = sizeof(vertices);
+				// draw a cube: rendering should be compiled here
+				glDrawArrays(GL_TRIANGLES, 0, arrSize);
+
+				// draw a cube again: rendering should be cached and ran through a OpenGL DL here
 				glDrawArrays(GL_TRIANGLES, 0, arrSize);
 			}
 			// deactivate arrays after drawing
@@ -1398,7 +1405,6 @@ int main(int argc, char** argv){
 			glDisableClientState(GL_NORMAL_ARRAY);
 		}
 
-		//todo: test
 		//VBO Test #3: Creating a single VBO for vertex coordinates + upload to VBO + drawing VBOs
 		{
 			GLsizei stride = 0; //array is packed (not aligned, natural size)
