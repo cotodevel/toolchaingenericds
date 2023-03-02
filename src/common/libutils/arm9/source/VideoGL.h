@@ -1652,6 +1652,7 @@ struct vertexBufferObject {
   int ElementsPerVertexBufferObjectUnit; //unit size per VBO entry in array
   int vertexBufferObjectstrideOffset; //stride / offset per VBO defaults
   int VertexBufferObjectStartOffset; //offset to start buffer from
+  int argCount; //units per vector
 
   //A normal array is enabled when you specify the GL_NORMAL_ARRAY constant with glEnableClientState. When enabled, glDrawArrays, glDrawElements and glArrayElement use the selected array. By default the selected array is disabled. Also multiple arrays can be enabled / disabled at the same time
   bool ClientStateEnabled; //each VBA has an descriptor state, toggled at  glEnableClientState and glDisableClientState, and used by subsequent calls

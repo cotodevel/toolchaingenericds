@@ -3842,7 +3842,8 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 void glBufferSubData(GLenum target, GLint offset, GLsizei size, void* data){
-
+	//OpenGL 1.1 supported only (and some of OpenGL 1.5)
+	errorStatus = GL_INVALID_ENUM;
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -3964,6 +3965,7 @@ void glVertexPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *ptr)
 	vboVertex->vertexBufferObjectstrideOffset = stride;
 	vboVertex->ElementsPerVertexBufferObjectUnit = typeSizeOf; //defines pointer length
 	vboVertex->VertexBufferObjectStartOffset = (int)0; //default to 0
+	vboVertex->argCount = size;
 }
 
 /*
@@ -4022,6 +4024,7 @@ void glNormalPointer( GLenum type, GLsizei stride, const GLvoid *ptr ){
 	vboNormal->vertexBufferObjectstrideOffset = stride;
 	vboNormal->ElementsPerVertexBufferObjectUnit = typeSizeOf; //defines pointer length
 	vboNormal->VertexBufferObjectStartOffset = (int)0; //default to 0
+	vboNormal->argCount = 3; //GX uses always three normals
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -4085,6 +4088,7 @@ void glColorPointer( GLint size, GLenum type, GLsizei stride, const GLvoid *ptr 
 	vboColor->vertexBufferObjectstrideOffset = stride;
 	vboColor->ElementsPerVertexBufferObjectUnit = typeSizeOf; //defines pointer length
 	vboColor->VertexBufferObjectStartOffset = (int)0; //default to 0
+	vboColor->argCount = size;
 }
 
 //Note: Method adapted to work around OpenGL1.5
@@ -4125,6 +4129,7 @@ void glIndexPointer( GLenum type, GLsizei stride, const GLvoid *ptr ){
 	vboIndex->vertexBufferObjectstrideOffset = stride;
 	vboIndex->ElementsPerVertexBufferObjectUnit = typeSizeOf; //defines pointer length
 	vboIndex->VertexBufferObjectStartOffset = (int)0; //default to 0
+	vboIndex->argCount = 0; //todo
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -4176,6 +4181,7 @@ void glTexCoordPointer( GLint size, GLenum type, GLsizei stride, const GLvoid *p
 	vboTexCoord->vertexBufferObjectstrideOffset = stride;
 	vboTexCoord->ElementsPerVertexBufferObjectUnit = typeSizeOf; //defines pointer length
 	vboTexCoord->VertexBufferObjectStartOffset = (int)0; //default to 0
+	vboTexCoord->argCount = size;
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -4196,19 +4202,181 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 void glGetPointerv( GLenum pname, GLvoid **params ){
-
+	switch(pname){
+		case GL_EDGE_FLAG_ARRAY_POINTER:{
+			*params=vboEdgeFlag->vboArrayMemoryStart;
+		}break;
+		case GL_INDEX_ARRAY_POINTER:{
+			*params=vboIndex->vboArrayMemoryStart;
+		}break;
+		case GL_NORMAL_ARRAY_POINTER:{
+			*params=vboNormal->vboArrayMemoryStart;
+		}break;
+		case GL_TEXTURE_COORD_ARRAY_POINTER:{
+			*params=vboTexCoord->vboArrayMemoryStart;
+		}break;
+		case GL_VERTEX_ARRAY_POINTER:{
+			*params=vboVertex->vboArrayMemoryStart;
+		}break;
+		case GL_COLOR_ARRAY_POINTER:{
+			*params=vboColor->vboArrayMemoryStart;
+		}break;
+		/*GL_FOG_COORD_ARRAY_POINTER, GL_FEEDBACK_BUFFER_POINTER, GL_SECONDARY_COLOR_ARRAY_POINTER, GL_SELECTION_BUFFER_POINTER, */ //unimplemented
+		default:{
+			errorStatus = GL_INVALID_ENUM;
+		}break;
+	}
 }
 
+
+
+
+
+/*
+Example:
+void		display_rect(int x, int y, int lettre)
+{
+	static GLfloat	vertices[] = {
+
+	0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0,
+	0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0};
+	glPushMatrix();
+	glLoadIdentity();
+	glVertexPointer(3, GL_FLOAT, 0, vertices);
+	glTexCoordPointer(2, GL_FLOAT, 0, vertices + 12);
+	glBindTexture(GL_TEXTURE_2D, g_env->textures[lettre]);
+	glScalef(0.03, 0.03, 0);
+	glTranslatef(x, y, 0);
+	glBegin(GL_QUADS);
+	{
+		glArrayElement(0);
+		glArrayElement(1);
+		glArrayElement(2);
+		glArrayElement(3);
+	}
+	glEnd();
+	glPopMatrix();
+}
+*/
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-void glArrayElement( GLint i ){
+void glArrayElement( GLint index ){
+	bool vboVertexEnabled = vboVertex->ClientStateEnabled;
+	bool vboNormalEnabled = vboNormal->ClientStateEnabled;
+	bool vboColorEnabled = vboColor->ClientStateEnabled;
+	bool vboIndexEnabled = vboIndex->ClientStateEnabled;
+	bool vboTexCoordEnabled = vboTexCoord->ClientStateEnabled;
+	bool vboEdgeFlagEnabled = vboEdgeFlag->ClientStateEnabled;
+	if(vboColorEnabled == true){
+		switch(vboColor->ElementsPerVertexBufferObjectUnit){
+			//unsigned char
+			case 1:{
+				unsigned char * colorOffset = (unsigned char*)( ((int)vboColor->vboArrayMemoryStart) +  (index * sizeof(unsigned char) + ((vboColor->vertexBufferObjectstrideOffset*sizeof(unsigned char)*vboColor->argCount))));
+				unsigned char arg0 = (unsigned char)*(colorOffset+0);
+				unsigned char arg1 = (unsigned char)*(colorOffset+1);
+				unsigned char arg2 = (unsigned char)*(colorOffset+2);
+				glColor3b(arg0, arg1, arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+			}break;
+						
+			//unsigned short
+			/*
+			case 2:{
+			//no GX methods for 2 byte colors
+			}break;
+			*/
+						
+			//unsigned int: no GX methods for 4 byte colors but we add it because of OpenGL color-on-light-reflection wrapper for now
+			case 4:{
+				GLfloat * colorOffset = (GLfloat*)( ((int)vboColor->vboArrayMemoryStart) +  (index * sizeof(GLfloat) + ((vboColor->vertexBufferObjectstrideOffset*sizeof(GLfloat)*vboColor->argCount))));
+				GLfloat arg0 = (GLfloat)*(colorOffset+0);
+				GLfloat arg1 = (GLfloat)*(colorOffset+1);
+				GLfloat arg2 = (GLfloat)*(colorOffset+2);
+				glColor3f(arg0, arg1, arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+			}break;
+		}
+	}
+
+	if(vboNormalEnabled == true){
+		switch(vboNormal->ElementsPerVertexBufferObjectUnit){
+			/*
+			//unsigned char
+			case 1:{
+				//Normals are 10bit at least
+			}break;
+			*/
+			//unsigned short
+			case 2:{
+				unsigned short * normalOffset = (unsigned short*)( ((int)vboNormal->vboArrayMemoryStart) +  (index * sizeof(unsigned short) + ((vboNormal->vertexBufferObjectstrideOffset*sizeof(unsigned short)*vboNormal->argCount))));
+				unsigned short arg0 = (unsigned short)*(normalOffset+0);
+				unsigned short arg1 = (unsigned short)*(normalOffset+1);
+				unsigned short arg2 = (unsigned short)*(normalOffset+2);
+				glNormal3v10((v10)arg0, (v10)arg1, (v10)arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+			}break;
+			/*
+			//unsigned int
+			case 4:{
+				//there are no packed 4 byte Normal GX methods
+			}break;
+			*/
+		}
+	}
+
+	if(vboTexCoordEnabled == true){
+		switch(vboTexCoord->ElementsPerVertexBufferObjectUnit){
+			/*
+			//unsigned char
+			case 1:{
+				//GX texture coordinates are at least 12.4bit
+			}break;
+			*/
+			//unsigned short
+			case 2:{
+				unsigned short * TexCoordOffset = (unsigned short*)( ((int)vboTexCoord->vboArrayMemoryStart) +  (index * sizeof(unsigned short) + ((vboTexCoord->vertexBufferObjectstrideOffset*sizeof(unsigned short)*vboTexCoord->argCount))));
+				unsigned short arg0 = (unsigned short)*(TexCoordOffset+0);
+				unsigned short arg1 = (unsigned short)*(TexCoordOffset+1);
+				glTexCoord2t16((t16)arg0, (t16)arg1, INTERNAL_TGDS_OGL_DL_POINTER);
+			}break;
+			//unsigned int
+			case 4:{
+				u32 * TexCoordOffset = (u32*)( ((int)vboTexCoord->vboArrayMemoryStart) +  (index * sizeof(unsigned int) + ((vboTexCoord->vertexBufferObjectstrideOffset*sizeof(unsigned int)*vboTexCoord->argCount))));
+				uint32 arg0 = (uint32)*(TexCoordOffset+0);
+				glTexCoord1i(arg0, INTERNAL_TGDS_OGL_DL_POINTER);
+			}break;
+		}
+	}
+
+	if(vboVertexEnabled == true){
+		switch(vboVertex->ElementsPerVertexBufferObjectUnit){
+			/*
+			//unsigned char
+			case 1:{
+				//GX vertex are at least 10bit
+			}break;
+			*/
+			//unsigned short
+			case 2:{
+				u16 * vertexOffset = (u16*)( ((int)vboVertex->vboArrayMemoryStart) +  (index * sizeof(v16) + ((vboVertex->vertexBufferObjectstrideOffset*sizeof(v16)*vboVertex->argCount))));
+				v16 arg0 = (v16)*(vertexOffset+0);
+				v16 arg1 = (v16)*(vertexOffset+1);
+				v16 arg2 = (v16)*(vertexOffset+2);
+				glVertex3v16(arg0, arg1, arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+			}break;
+			//unsigned int
+			case 4:{
+				u32 * vertexOffset = (u32*)( ((int)vboVertex->vboArrayMemoryStart) +  (index * sizeof(unsigned int) + ((vboVertex->vertexBufferObjectstrideOffset*sizeof(unsigned int)*vboVertex->argCount))));
+				v16 arg0 = (v16) f32tov16(*(vertexOffset+0));
+				v16 arg1 = (v16) f32tov16(*(vertexOffset+1));				
+				v16 arg2 = (v16) f32tov16(*(vertexOffset+2));
+				glVertex3v16(arg0, arg1, arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+			}break;
+		}
+	}
 
 }
-
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /*
@@ -4472,9 +4640,17 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 void glDrawElements( GLenum mode, GLsizei count, GLenum type, const GLvoid *indices ){
-
+	//OpenGL 1.1 supported only (and some of OpenGL 1.5)
+	errorStatus = GL_INVALID_ENUM;
 }
 
+/* glInterleavedArrays() 
+NOTE: You need to make sure that you set up the data in your structure (or class) 
+// in the same order as you tell OpenGL it is.  By passing in GL_T2F_V3F we told OpenGL that 
+// our texture data comes before the vertex data.  In our class/structure make sure that
+// you define your data as such (see CVertex).  If you don't it won't work.  The data will
+// be confused.
+*/
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
@@ -4482,7 +4658,340 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 void glInterleavedArrays( GLenum format, GLsizei stride, const GLvoid *pointer ){
+	bool requiresRecompileGXDisplayList = false;
+	bool vboVertexEnabled = true; //Vertex coordinates are always extracted.
+	bool vboNormalEnabled = false;
+	bool vboColorEnabled = false;
+	bool vboIndexEnabled = false;
+	bool vboTexCoordEnabled = false;
+	bool vboEdgeFlagEnabled = false;
+	int argsTotal = 0;
+	int countVertex = 0;
+	int countNormal = 0;
+	int countColor = 0;
+	int countTexCoord = 0;
+	int mode = 0;
+	u32* targetVertexOffset = NULL;
+	u32* targetNormalOffset = NULL;
+	u32* targetColorOffset = NULL;
+	u32* targetTexCoordOffset = NULL;
 
+	switch(format){
+		//format: If format contains a T, then texture coordinates are extracted from the interleaved array.
+		//If C is present, color values are extracted.
+		//If N is present, normal coordinates are extracted.
+		//Vertex coordinates are always extracted.
+		//The digits 2, 3, and 4 denote how many values are extracted.
+		//F indicates that values are extracted as floating point values.
+		//If 4UB follows the C, colors may also be extracted as 4 unsigned bytes. If a color is extracted as 4 unsigned bytes, the vertex array element that follows is located at the first possible floating-point aligned address.
+
+		case GL_V2F:{
+			mode = GL_TRIANGLES;
+			countVertex = 2 * sizeof(GLfloat);
+			targetVertexOffset = (u32*)( ((int)pointer) +  (0 * countVertex));
+		}break;
+
+		case GL_V3F:{
+			mode = GL_TRIANGLES;
+			countVertex = 3 * sizeof(GLfloat);
+			targetVertexOffset = (u32*)( ((int)pointer) +  (0 * countVertex));
+		}break;
+		
+		//unsupported by NDS hardware
+		/*
+		case GL_C4UB_V2F:{
+			
+		}break;
+		
+		case GL_C4UB_V3F:{
+		}break;
+		*/
+
+		case GL_C3F_V3F:{
+			mode = GL_TRIANGLES;
+			countColor = 3 * sizeof(GLfloat);
+			vboColorEnabled = true;
+			countVertex = 3 * sizeof(GLfloat);
+			vboVertexEnabled = true;
+			targetColorOffset = (u32*)( ((int)pointer) +  (0 * countColor));
+			targetVertexOffset = (u32*)( ((int)pointer) +  (1 * countVertex));
+		}break;
+		
+		case GL_N3F_V3F:{
+			mode = GL_TRIANGLES;
+			countNormal = 3 * sizeof(GLfloat);
+			vboNormalEnabled = true;
+			countVertex = 3 * sizeof(GLfloat);
+			vboVertexEnabled = true;
+			targetNormalOffset = (u32*)( ((int)pointer) +  (0 * countNormal));
+			targetVertexOffset = (u32*)( ((int)pointer) +  (1 * countVertex));
+		}break;
+		
+		//unsupported by NDS hardware
+		/*
+		case GL_C4F_N3F_V3F:{
+		}break;
+		*/
+
+		case GL_T2F_V3F:{
+			mode = GL_TRIANGLES;
+			countTexCoord = 2 * sizeof(GLfloat);
+			vboTexCoordEnabled = true;
+			countVertex = 3 * sizeof(GLfloat);
+			vboVertexEnabled = true;
+			targetTexCoordOffset = (u32*)( ((int)pointer) +  (0 * countTexCoord));
+			targetVertexOffset = (u32*)( ((int)pointer) +  (1 * countVertex));
+		}break;
+		
+		//unsupported by NDS hardware
+		/*
+		case GL_T4F_V4F:{
+		}break;
+		
+		case GL_T2F_C4UB_V3F:{
+		}break;
+		*/
+
+		case GL_T2F_C3F_V3F:{
+			mode = GL_TRIANGLES;
+			countTexCoord = 2 * sizeof(GLfloat);
+			vboTexCoordEnabled = true;
+			countColor = 3 * sizeof(GLfloat);
+			vboColorEnabled = true;
+			countVertex = 3 * sizeof(GLfloat);
+			vboVertexEnabled = true;
+			targetTexCoordOffset = (u32*)( ((int)pointer) +  (0 * countTexCoord));
+			targetColorOffset = (u32*)( ((int)pointer) +  (1 * countColor));
+			targetVertexOffset = (u32*)( ((int)pointer) +  (2 * countVertex));
+		}break;
+		
+		case GL_T2F_N3F_V3F:{
+			mode = GL_TRIANGLES;
+			countTexCoord = 2 * sizeof(GLfloat);
+			vboTexCoordEnabled = true;
+			countNormal = 3 * sizeof(GLfloat);
+			vboNormalEnabled = true;
+			countVertex = 3 * sizeof(GLfloat);
+			vboVertexEnabled = true;
+			targetTexCoordOffset = (u32*)( ((int)pointer) +  (0 * countTexCoord));
+			targetNormalOffset = (u32*)( ((int)pointer) +  (1 * countNormal));
+			targetVertexOffset = (u32*)( ((int)pointer) +  (2 * countVertex));
+		}break;
+
+		case GL_T2F_C4F_N3F_V3F:{
+			mode = GL_TRIANGLES;
+			countTexCoord = 2 * sizeof(GLfloat);
+			vboTexCoordEnabled = true;
+			countColor = 3 * sizeof(GLfloat); //max 3 colors
+			vboColorEnabled = true;
+			countNormal = 3 * sizeof(GLfloat);
+			vboNormalEnabled = true;
+			countVertex = 3 * sizeof(GLfloat);
+			vboVertexEnabled = true;
+			targetTexCoordOffset = (u32*)( ((int)pointer) +  (0 * countTexCoord));
+			targetColorOffset = (u32*)( ((int)pointer) +  (1 * countColor));
+			targetNormalOffset = (u32*)( ((int)pointer) +  (2 * countNormal));
+			targetVertexOffset = (u32*)( ((int)pointer) +  (3 * countVertex));
+		}break;
+		
+		//Unsupported by NDS hardware
+		/*
+		case GL_T4F_C4F_N3F_V4F:{
+		}break;
+		*/
+
+		default:{
+			errorStatus = GL_INVALID_ENUM;
+			return;
+		}break;
+	}
+
+
+	//////////!!!!!!!!!!!!!!!!!!ORDER IS IMPORTANT DUE TO HOW GX DISPLAYLISTS ARE BUILT ON NDS HARDWARE!!!!!!!!!!!!!!!!!!
+	//////////////////////////Build DisplayLists and CRC all buffers generated from each VBO buffer//////////////////////////
+	//With glDrawArrays, you can specify multiple geometric primitives to render. Instead of calling separate OpenGL functions to pass each individual vertex, normal, or color, you can specify separate arrays of vertices, normals, and colors to define a sequence of primitives (all the same kind) with a single call to glDrawArrays.
+	//When you call glDrawArrays, count sequential elements from each enabled array are used to construct a sequence of geometric primitives, beginning with the first element. The mode parameter specifies what kind of primitive to construct and how to use the array elements to construct the primitives.
+	//1
+	if(vboColorEnabled == true){
+		u16 colorArraycrc16 = swiCRC16(0xffff, (void*)((int)targetColorOffset), (uint32)((int)countColor*sizeof(GLfloat)));
+		u16 * crc16Ptr = &vboColor->lastPrebuiltDLCRC16;
+		if( ((u16)*(crc16Ptr)) != colorArraycrc16){
+			requiresRecompileGXDisplayList = true;
+			*crc16Ptr = colorArraycrc16;
+		}
+		argsTotal++;
+	}
+	
+	//2
+	if(vboNormalEnabled == true){
+		u16 normalArraycrc16 = swiCRC16(0xffff, (void*)((int)targetNormalOffset), (uint32)((int)countNormal*sizeof(GLfloat)));
+		u16 * crc16Ptr = &vboNormal->lastPrebuiltDLCRC16;
+		if( ((u16)*(crc16Ptr)) != normalArraycrc16){
+			requiresRecompileGXDisplayList = true;
+			*crc16Ptr = normalArraycrc16;
+		}
+		argsTotal++;
+	}
+
+	//3
+	if(vboTexCoordEnabled == true){
+		u16 texcoordArraycrc16 = swiCRC16(0xffff, (void*)((int)targetTexCoordOffset), (uint32)((int)countTexCoord*sizeof(GLfloat)));
+		u16 * crc16Ptr = &vboTexCoord->lastPrebuiltDLCRC16;
+		if( ((u16)*(crc16Ptr)) != texcoordArraycrc16){
+			requiresRecompileGXDisplayList = true;
+			*crc16Ptr = texcoordArraycrc16;
+		}
+		argsTotal++;
+	}
+
+	//4
+	if(vboVertexEnabled == true){
+		u16 vertexArraycrc16 = swiCRC16(0xffff, (void*)((int)targetVertexOffset), (uint32)((int)countVertex*sizeof(GLfloat)));
+		u16 * crc16Ptr = &vboVertex->lastPrebuiltDLCRC16;
+		if( ((u16)*(crc16Ptr)) != vertexArraycrc16){
+			requiresRecompileGXDisplayList = true;
+			*crc16Ptr = vertexArraycrc16;
+		}
+		argsTotal++;
+	}
+
+	//todo
+	/*
+	if(vboIndexEnabled == true){
+
+	}
+	*/
+	
+	//unused
+	/*
+	if(vboEdgeFlagEnabled == true){
+
+	}
+	*/
+
+	//Emit DL and execute it inmediately if arrays are dirty, otherwise run the DL directly
+	if(requiresRecompileGXDisplayList == true){
+		int i = 0;
+		bool isTriangleStrip = false; //false = GL_TRIANGLES (3 args) / true = GL_TRIANGLE_STRIP (4 args)
+		int argCount = 3;
+		if(mode == GL_TRIANGLE_STRIP){
+			isTriangleStrip = true;
+			argCount = 4;
+		}
+		glNewList(OGL_DL_DRAW_ARRAYS_METHOD, GL_COMPILE_AND_EXECUTE, INTERNAL_TGDS_OGL_DL_POINTER);
+			glBegin(mode, INTERNAL_TGDS_OGL_DL_POINTER);
+			for(i = 0; i < ((countColor+countNormal+countTexCoord+countVertex)/argsTotal); i+=(argsTotal*argCount)){
+				if(vboColorEnabled == true){
+					switch(vboColor->ElementsPerVertexBufferObjectUnit){
+						//unsigned char
+						case 1:{
+							unsigned char * colorOffset = (unsigned char*)( ((int)targetColorOffset) +  (i * sizeof(unsigned char) + ((stride*sizeof(unsigned char)*argCount))));
+							unsigned char arg0 = (unsigned char)*(colorOffset+0);
+							unsigned char arg1 = (unsigned char)*(colorOffset+1);
+							unsigned char arg2 = (unsigned char)*(colorOffset+2);
+							glColor3b(arg0, arg1, arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+						}break;
+						
+						//unsigned short
+						/*
+						case 2:{
+						//no GX methods for 2 byte colors
+						}break;
+						*/
+						
+						//unsigned int: no GX methods for 4 byte colors but we add it because of OpenGL color-on-light-reflection wrapper for now
+						case 4:{
+							GLfloat * colorOffset = (GLfloat*)( ((int)targetColorOffset) +  (i * sizeof(GLfloat) + ((stride*sizeof(GLfloat)*argCount))));
+							GLfloat arg0 = (GLfloat)*(colorOffset+0);
+							GLfloat arg1 = (GLfloat)*(colorOffset+1);
+							GLfloat arg2 = (GLfloat)*(colorOffset+2);
+							glColor3f(arg0, arg1, arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+						}break;
+					}
+				}
+
+				if(vboNormalEnabled == true){
+					switch(vboNormal->ElementsPerVertexBufferObjectUnit){
+						/*
+						//unsigned char
+						case 1:{
+							//Normals are 10bit at least
+						}break;
+						*/
+						//unsigned short
+						case 2:{
+							unsigned short * normalOffset = (unsigned short*)( ((int)targetNormalOffset) +  (i * sizeof(unsigned short) + ((stride*sizeof(unsigned short)*argCount))));
+							unsigned short arg0 = (unsigned short)*(normalOffset+0);
+							unsigned short arg1 = (unsigned short)*(normalOffset+1);
+							unsigned short arg2 = (unsigned short)*(normalOffset+2);
+							glNormal3v10((v10)arg0, (v10)arg1, (v10)arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+						}break;
+						/*
+						//unsigned int
+						case 4:{
+							//there are no packed 4 byte Normal GX methods
+						}break;
+						*/
+					}
+				}
+
+				if(vboTexCoordEnabled == true){
+					switch(vboTexCoord->ElementsPerVertexBufferObjectUnit){
+						/*
+						//unsigned char
+						case 1:{
+							//GX texture coordinates are at least 12.4bit
+						}break;
+						*/
+						//unsigned short
+						case 2:{
+							unsigned short * TexCoordOffset = (unsigned short*)( ((int)targetTexCoordOffset) +  (i * sizeof(unsigned short) + ((stride*sizeof(unsigned short)*argCount))));
+							unsigned short arg0 = (unsigned short)*(TexCoordOffset+0);
+							unsigned short arg1 = (unsigned short)*(TexCoordOffset+1);
+							glTexCoord2t16((t16)arg0, (t16)arg1, INTERNAL_TGDS_OGL_DL_POINTER);
+						}break;
+						//unsigned int
+						case 4:{
+							u32 * TexCoordOffset = (u32*)( ((int)targetTexCoordOffset) +  (i * sizeof(unsigned int) + ((stride*sizeof(unsigned int)*argCount))));
+							uint32 arg0 = (uint32)*(TexCoordOffset+0);
+							glTexCoord1i(arg0, INTERNAL_TGDS_OGL_DL_POINTER);
+						}break;
+					}
+				}
+
+				if(vboVertexEnabled == true){
+					switch(vboVertex->ElementsPerVertexBufferObjectUnit){
+						/*
+						//unsigned char
+						case 1:{
+							//GX vertex are at least 10bit
+						}break;
+						*/
+						//unsigned short
+						case 2:{
+							u16 * vertexOffset = (u16*)( ((int)targetVertexOffset) +  (i * sizeof(v16) + ((stride*sizeof(v16)*argCount))));
+							v16 arg0 = (v16)*(vertexOffset+0);
+							v16 arg1 = (v16)*(vertexOffset+1);
+							v16 arg2 = (v16)*(vertexOffset+2);
+							glVertex3v16(arg0, arg1, arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+						}break;
+						//unsigned int
+						case 4:{
+							u32 * vertexOffset = (u32*)( ((int)targetVertexOffset) +  (i * sizeof(unsigned int) + ((stride*sizeof(unsigned int)*argCount))));
+							v16 arg0 = (v16) f32tov16(*(vertexOffset+0));
+							v16 arg1 = (v16) f32tov16(*(vertexOffset+1));				
+							v16 arg2 = (v16) f32tov16(*(vertexOffset+2));
+							glVertex3v16(arg0, arg1, arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+						}break;
+					}
+				}
+			}
+			glEnd(INTERNAL_TGDS_OGL_DL_POINTER);
+		glEndList(INTERNAL_TGDS_OGL_DL_POINTER); 
+	}
+	else{
+		glCallList(OGL_DL_DRAW_ARRAYS_METHOD, INTERNAL_TGDS_OGL_DL_POINTER);
+	}
 }
 
 //////////////////////////////////////////////////////////// Extended Vertex Array Buffers and Vertex Buffer Objects OpenGL 1.1 end //////////////////////////////////////////
