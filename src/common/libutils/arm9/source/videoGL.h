@@ -61,7 +61,6 @@
 
 #ifdef WIN32
 #include "TGDSTypes.h"
-#include "crc16_win32.h"
 typedef unsigned int GLenum;
 typedef unsigned char GLboolean;
 typedef unsigned int GLbitfield;
@@ -497,17 +496,17 @@ enum {
 	GL_4_BYTES			= (unsigned int)0x1409,
 
 	/* Primitives */
-	GL_LINES			= (unsigned int)0x0001,
-	GL_POINTS			= (unsigned int)0x0000,
-	GL_LINE_STRIP			= (unsigned int)0x0003,
-	GL_LINE_LOOP			= (unsigned int)0x0002,
-	//GL_TRIANGLES			= (unsigned int)0x0004,
-	//GL_TRIANGLE_STRIP		= (unsigned int)0x0005,
-	GL_TRIANGLE_FAN			= (unsigned int)0x0006,
-	//GL_QUADS			= (unsigned int)0x0007,
-	//GL_QUAD_STRIP			= (unsigned int)0x0008,
-	GL_POLYGON			= (unsigned int)0x0009,
-	GL_EDGE_FLAG			= (unsigned int)0x0B43,
+	GL_LINES			= (unsigned int)0x1001,
+	GL_POINTS			= (unsigned int)0x1000,
+	GL_LINE_STRIP			= (unsigned int)0x1003,
+	GL_LINE_LOOP			= (unsigned int)0x1002,
+	//GL_TRIANGLES			= (unsigned int)0x1004,
+	//GL_TRIANGLE_STRIP		= (unsigned int)0x1005,
+	GL_TRIANGLE_FAN			= (unsigned int)0x1006,
+	//GL_QUADS			= (unsigned int)0x1007,
+	//GL_QUAD_STRIP			= (unsigned int)0x1008,
+	GL_POLYGON			= (unsigned int)0x1009,
+	GL_EDGE_FLAG			= (unsigned int)0x1B43,
 
 	/* Vertex Arrays */
 	GL_VERTEX_ARRAY			= (unsigned int)0x8074,
@@ -773,7 +772,7 @@ enum {
 	GL_DECR				= (unsigned int)0x1E03,
 
 	/* Buffers, Pixel Drawing/Reading */
-	GL_NONE				= (unsigned int)0,
+	GL_NONE				= (unsigned int)0x0429,
 	GL_LEFT				= (unsigned int)0x0406,
 	GL_RIGHT			= (unsigned int)0x0407,
 	/*GL_FRONT			= (unsigned int)0x0404, */
@@ -1220,6 +1219,7 @@ extern enum GL_GLBEGIN_ENUM getDisplayListGLType(struct ndsDisplayListDescriptor
 extern int CompilePackedNDSGXDisplayListFromObject(u32 * bufOut, struct ndsDisplayListDescriptor * dlInst);
 extern void glNormal3dv(const GLdouble *v, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext);
 extern void glVertex3dv(const GLdouble *v, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext);
+extern void glNormal3v10(v10 nx, v10 ny, v10 nz, struct TGDSOGL_DisplayListContext * Inst);
 extern void emitGLShinnyness(float shinyValue, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext);
 extern void  glMultMatrixf(const GLfloat *m, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext);
 extern void  glMultMatrixd(const GLdouble *m, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext);
@@ -1619,8 +1619,12 @@ static void handleInmediateGXDisplayList(u32 * sourcePhysDisplayList, u32 * sour
 #define OBJECT_BUFFER_INDEX ((int)3)  //index
 #define OBJECT_BUFFER_TEXCOORD ((int)4)  //texture coordinate
 #define OBJECT_BUFFER_EDGEFLAG ((int)5)  //Edge Flag
+#define VBO_DESCRIPTOR_INVALID ((GLuint *)-1)
 
 #define VBO_ARRAY_SIZE ((int)256) //up to 256 elements
+
+#define MAX_VBO_HANDLES_GL ((int)20)
+
 
 // Buffer Objects 
 #define GL_ARRAY_BUFFER                   ((GLenum)0x8892)
@@ -1648,6 +1652,7 @@ struct vertexBufferObject {
   int ElementsPerVertexBufferObjectUnit; //unit size per VBO entry in array
   int vertexBufferObjectstrideOffset; //stride / offset per VBO defaults
   int VertexBufferObjectStartOffset; //offset to start buffer from
+  int argCount; //units per vector
 
   //A normal array is enabled when you specify the GL_NORMAL_ARRAY constant with glEnableClientState. When enabled, glDrawArrays, glDrawElements and glArrayElement use the selected array. By default the selected array is disabled. Also multiple arrays can be enabled / disabled at the same time
   bool ClientStateEnabled; //each VBA has an descriptor state, toggled at  glEnableClientState and glDisableClientState, and used by subsequent calls
@@ -1658,7 +1663,10 @@ struct vertexBufferObject {
 
 //VBA
 struct vertexBufferArray {
-	struct vertexBufferObject vertexBufferObjectInst[MAX_VBO_PER_VBA]; 
+	struct vertexBufferObject * vertexBufferObjectReferences[MAX_VBO_HANDLES_GL]; //n OpenGL 1.1 descriptor index per VBO can point n buffers (vertex, normal, etc). Set NULL by glBindBuffer(); at the time the internal VBO name is assigned
+	GLint vboName[MAX_VBO_HANDLES_GL]; //OpenGL 1.1 descriptor index. Once it's not VBO_DESCRIPTOR_INVALID it's free for allocation later by glBindBuffer();
+	
+	struct vertexBufferObject vertexBufferObjectInst[MAX_VBO_PER_VBA];
 };
 
 //pointers of implemented VBOs
