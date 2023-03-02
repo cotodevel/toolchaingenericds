@@ -3940,10 +3940,10 @@ void glVertexPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *ptr)
 			typeSizeOf = sizeof(GLint);
 		}break;
 		case GL_FLOAT:{
-			typeSizeOf = sizeof(v16); //treat DS floats as v16 for max GX vertex precision 
+			typeSizeOf = sizeof(GLfloat);
 		}break;
 		case GL_DOUBLE:{
-			typeSizeOf = sizeof(v16); //treat DS floats as v16 for max GX vertex precision 
+			typeSizeOf = sizeof(GLdouble);
 		}break;
 		default:{
 			errorStatus = GL_INVALID_ENUM;
@@ -3986,19 +3986,19 @@ void glNormalPointer( GLenum type, GLsizei stride, const GLvoid *ptr ){
 	int typeSizeOf = 0;
 	switch(type){
 		case GL_BYTE:{
-			typeSizeOf = sizeof(v10); //treat DS floats as v10 for max GX normal precision
+			typeSizeOf = sizeof(GLbyte); //treat DS floats as v10 for max GX normal precision
 		}break;
 		case GL_SHORT:{
-			typeSizeOf = sizeof(v10); //treat DS floats as v10 for max GX normal precision
+			typeSizeOf = sizeof(GLshort); //treat DS floats as v10 for max GX normal precision
 		}break;
 		case GL_INT:{
-			typeSizeOf = sizeof(v10); //treat DS floats as v10 for max GX normal precision
+			typeSizeOf = sizeof(GLint); //treat DS floats as v10 for max GX normal precision
 		}break;
 		case GL_FLOAT:{
-			typeSizeOf = sizeof(v10); //treat DS floats as v10 for max GX normal precision
+			typeSizeOf = sizeof(GLfloat); //treat DS floats as v10 for max GX normal precision
 		}break;
 		case GL_DOUBLE:{
-			typeSizeOf = sizeof(v10); //treat DS floats as v10 for max GX normal precision
+			typeSizeOf = sizeof(GLdouble); //treat DS floats as v10 for max GX normal precision
 		}break;
 		default:{
 			errorStatus = GL_INVALID_ENUM;
@@ -4288,14 +4288,14 @@ void glArrayElement( GLint index ){
 			//no GX methods for 2 byte colors
 			}break;
 			*/
-						
-			//unsigned int: no GX methods for 4 byte colors but we add it because of OpenGL color-on-light-reflection wrapper for now
+			
+			//unsigned int (packed as Float -> u8)
 			case 4:{
 				GLfloat * colorOffset = (GLfloat*)( ((int)vboColor->vboArrayMemoryStart) +  (index * sizeof(GLfloat) + ((vboColor->vertexBufferObjectstrideOffset*sizeof(GLfloat)*vboColor->argCount))));
-				GLfloat arg0 = (GLfloat)*(colorOffset+0);
-				GLfloat arg1 = (GLfloat)*(colorOffset+1);
-				GLfloat arg2 = (GLfloat)*(colorOffset+2);
-				glColor3f(arg0, arg1, arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+				u8 arg0 = (u8)*(colorOffset+0);
+				u8 arg1 = (u8)*(colorOffset+1);
+				u8 arg2 = (u8)*(colorOffset+2);
+				glColor3b((u8)arg0, (u8)arg1, (u8)arg2, INTERNAL_TGDS_OGL_DL_POINTER);
 			}break;
 		}
 	}
@@ -4316,12 +4316,15 @@ void glArrayElement( GLint index ){
 				unsigned short arg2 = (unsigned short)*(normalOffset+2);
 				glNormal3v10((v10)arg0, (v10)arg1, (v10)arg2, INTERNAL_TGDS_OGL_DL_POINTER);
 			}break;
-			/*
-			//unsigned int
+			
+			//unsigned int (packed as Float -> v10)
 			case 4:{
-				//there are no packed 4 byte Normal GX methods
+				GLfloat * normalOffset = (GLfloat*)( ((int)vboNormal->vboArrayMemoryStart) +  (index * sizeof(GLfloat) + ((vboNormal->vertexBufferObjectstrideOffset*sizeof(GLfloat)*vboNormal->argCount))));
+				v10 arg0 = (v10)*(normalOffset+0);
+				v10 arg1 = (v10)*(normalOffset+1);
+				v10 arg2 = (v10)*(normalOffset+2);
+				glNormal3v10((v10)arg0, (v10)arg1, (v10)arg2, INTERNAL_TGDS_OGL_DL_POINTER);
 			}break;
-			*/
 		}
 	}
 
@@ -4340,11 +4343,13 @@ void glArrayElement( GLint index ){
 				unsigned short arg1 = (unsigned short)*(TexCoordOffset+1);
 				glTexCoord2t16((t16)arg0, (t16)arg1, INTERNAL_TGDS_OGL_DL_POINTER);
 			}break;
-			//unsigned int
+			
+			//unsigned int (packed as Float -> t16)
 			case 4:{
-				u32 * TexCoordOffset = (u32*)( ((int)vboTexCoord->vboArrayMemoryStart) +  (index * sizeof(unsigned int) + ((vboTexCoord->vertexBufferObjectstrideOffset*sizeof(unsigned int)*vboTexCoord->argCount))));
-				uint32 arg0 = (uint32)*(TexCoordOffset+0);
-				glTexCoord1i(arg0, INTERNAL_TGDS_OGL_DL_POINTER);
+				GLfloat * TexCoordOffset = (GLfloat*)( ((int)vboTexCoord->vboArrayMemoryStart) +  (index * sizeof(GLfloat) + ((vboTexCoord->vertexBufferObjectstrideOffset*sizeof(GLfloat)*vboTexCoord->argCount))));
+				t16 arg0 = (t16)*(TexCoordOffset+0);
+				t16 arg1 = (t16)*(TexCoordOffset+1);
+				glTexCoord2t16((t16)arg0, (t16)arg1, INTERNAL_TGDS_OGL_DL_POINTER);
 			}break;
 		}
 	}
@@ -4365,17 +4370,17 @@ void glArrayElement( GLint index ){
 				v16 arg2 = (v16)*(vertexOffset+2);
 				glVertex3v16(arg0, arg1, arg2, INTERNAL_TGDS_OGL_DL_POINTER);
 			}break;
-			//unsigned int
+			
+			//unsigned int (packed as Float -> v16)
 			case 4:{
-				u32 * vertexOffset = (u32*)( ((int)vboVertex->vboArrayMemoryStart) +  (index * sizeof(unsigned int) + ((vboVertex->vertexBufferObjectstrideOffset*sizeof(unsigned int)*vboVertex->argCount))));
-				v16 arg0 = (v16) f32tov16(*(vertexOffset+0));
-				v16 arg1 = (v16) f32tov16(*(vertexOffset+1));				
-				v16 arg2 = (v16) f32tov16(*(vertexOffset+2));
+				GLfloat * vertexOffset = (GLfloat*)( ((int)vboVertex->vboArrayMemoryStart) +  (index * sizeof(GLfloat) + ((vboVertex->vertexBufferObjectstrideOffset*sizeof(GLfloat)*vboVertex->argCount))));
+				v16 arg0 = (v16)*(vertexOffset+0);
+				v16 arg1 = (v16)*(vertexOffset+1);
+				v16 arg2 = (v16)*(vertexOffset+2);
 				glVertex3v16(arg0, arg1, arg2, INTERNAL_TGDS_OGL_DL_POINTER);
 			}break;
 		}
 	}
-
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -4519,7 +4524,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 		}
 		glNewList(OGL_DL_DRAW_ARRAYS_METHOD, GL_COMPILE_AND_EXECUTE, INTERNAL_TGDS_OGL_DL_POINTER);
 			glBegin(mode, INTERNAL_TGDS_OGL_DL_POINTER);
-			for(i = 0; i < (count/argsTotal); i+=(argsTotal*argCount)){
+			for(i = 0; i < count; i+=(argsTotal*argCount)){
 				if(vboColorEnabled == true){
 					switch(vboColor->ElementsPerVertexBufferObjectUnit){
 						//unsigned char
@@ -4538,13 +4543,13 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 						}break;
 						*/
 						
-						//unsigned int: no GX methods for 4 byte colors but we add it because of OpenGL color-on-light-reflection wrapper for now
+						//unsigned int (packed as Float -> u8)
 						case 4:{
 							GLfloat * colorOffset = (GLfloat*)( ((int)vboColor->vboArrayMemoryStart) +  (i * sizeof(GLfloat) + ((vboColor->vertexBufferObjectstrideOffset*sizeof(GLfloat)*argCount))));
-							GLfloat arg0 = (GLfloat)*(colorOffset+0);
-							GLfloat arg1 = (GLfloat)*(colorOffset+1);
-							GLfloat arg2 = (GLfloat)*(colorOffset+2);
-							glColor3f(arg0, arg1, arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+							u8 arg0 = (u8)*(colorOffset+0);
+							u8 arg1 = (u8)*(colorOffset+1);
+							u8 arg2 = (u8)*(colorOffset+2);
+							glColor3b((u8)arg0, (u8)arg1, (u8)arg2, INTERNAL_TGDS_OGL_DL_POINTER);
 						}break;
 					}
 				}
@@ -4565,12 +4570,15 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 							unsigned short arg2 = (unsigned short)*(normalOffset+2);
 							glNormal3v10((v10)arg0, (v10)arg1, (v10)arg2, INTERNAL_TGDS_OGL_DL_POINTER);
 						}break;
-						/*
-						//unsigned int
+						
+						//unsigned int (packed as Float -> v10)
 						case 4:{
-							//there are no packed 4 byte Normal GX methods
+							GLfloat * normalOffset = (GLfloat*)( ((int)vboNormal->vboArrayMemoryStart) +  (i * sizeof(GLfloat) + ((vboNormal->vertexBufferObjectstrideOffset*sizeof(GLfloat)*argCount))));
+							v10 arg0 = (v10)*(normalOffset+0);
+							v10 arg1 = (v10)*(normalOffset+1);
+							v10 arg2 = (v10)*(normalOffset+2);
+							glNormal3v10((v10)arg0, (v10)arg1, (v10)arg2, INTERNAL_TGDS_OGL_DL_POINTER);
 						}break;
-						*/
 					}
 				}
 
@@ -4589,11 +4597,13 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 							unsigned short arg1 = (unsigned short)*(TexCoordOffset+1);
 							glTexCoord2t16((t16)arg0, (t16)arg1, INTERNAL_TGDS_OGL_DL_POINTER);
 						}break;
-						//unsigned int
+
+						//unsigned int (packed as Float -> t16)
 						case 4:{
-							u32 * TexCoordOffset = (u32*)( ((int)vboTexCoord->vboArrayMemoryStart) +  (i * sizeof(unsigned int) + ((vboTexCoord->vertexBufferObjectstrideOffset*sizeof(unsigned int)*argCount))));
-							uint32 arg0 = (uint32)*(TexCoordOffset+0);
-							glTexCoord1i(arg0, INTERNAL_TGDS_OGL_DL_POINTER);
+							GLfloat * TexCoordOffset = (u32*)( ((int)vboTexCoord->vboArrayMemoryStart) +  (i * sizeof(unsigned int) + ((vboTexCoord->vertexBufferObjectstrideOffset*sizeof(unsigned int)*argCount))));
+							t16 arg0 = (t16)*(TexCoordOffset+0);
+							t16 arg1 = (t16)*(TexCoordOffset+1);
+							glTexCoord2t16((t16)arg0, (t16)arg1, INTERNAL_TGDS_OGL_DL_POINTER);
 						}break;
 					}
 				}
@@ -4614,12 +4624,13 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 							v16 arg2 = (v16)*(vertexOffset+2);
 							glVertex3v16(arg0, arg1, arg2, INTERNAL_TGDS_OGL_DL_POINTER);
 						}break;
-						//unsigned int
+
+						//unsigned int (packed as Float -> v16)
 						case 4:{
-							u32 * vertexOffset = (u32*)( ((int)vboVertex->vboArrayMemoryStart) +  (i * sizeof(unsigned int) + ((vboVertex->vertexBufferObjectstrideOffset*sizeof(unsigned int)*argCount))));
-							v16 arg0 = (v16) f32tov16(*(vertexOffset+0));
-							v16 arg1 = (v16) f32tov16(*(vertexOffset+1));				
-							v16 arg2 = (v16) f32tov16(*(vertexOffset+2));
+							GLfloat * vertexOffset = (u32*)( ((int)vboVertex->vboArrayMemoryStart) +  (i * sizeof(unsigned int) + ((vboVertex->vertexBufferObjectstrideOffset*sizeof(unsigned int)*argCount))));
+							v16 arg0 = (v16)*(vertexOffset+0);
+							v16 arg1 = (v16)*(vertexOffset+1);
+							v16 arg2 = (v16)*(vertexOffset+2);
 							glVertex3v16(arg0, arg1, arg2, INTERNAL_TGDS_OGL_DL_POINTER);
 						}break;
 					}
@@ -4880,7 +4891,7 @@ void glInterleavedArrays( GLenum format, GLsizei stride, const GLvoid *pointer )
 		}
 		glNewList(OGL_DL_DRAW_ARRAYS_METHOD, GL_COMPILE_AND_EXECUTE, INTERNAL_TGDS_OGL_DL_POINTER);
 			glBegin(mode, INTERNAL_TGDS_OGL_DL_POINTER);
-			for(i = 0; i < ((countColor+countNormal+countTexCoord+countVertex)/argsTotal); i+=(argsTotal*argCount)){
+			for(i = 0; i < (countColor+countNormal+countTexCoord+countVertex); i+=(argsTotal*argCount)){
 				if(vboColorEnabled == true){
 					switch(vboColor->ElementsPerVertexBufferObjectUnit){
 						//unsigned char
@@ -4899,13 +4910,13 @@ void glInterleavedArrays( GLenum format, GLsizei stride, const GLvoid *pointer )
 						}break;
 						*/
 						
-						//unsigned int: no GX methods for 4 byte colors but we add it because of OpenGL color-on-light-reflection wrapper for now
+						//unsigned int (packed as Float -> u8)
 						case 4:{
 							GLfloat * colorOffset = (GLfloat*)( ((int)targetColorOffset) +  (i * sizeof(GLfloat) + ((stride*sizeof(GLfloat)*argCount))));
-							GLfloat arg0 = (GLfloat)*(colorOffset+0);
-							GLfloat arg1 = (GLfloat)*(colorOffset+1);
-							GLfloat arg2 = (GLfloat)*(colorOffset+2);
-							glColor3f(arg0, arg1, arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+							u8 arg0 = (u8)*(colorOffset+0);
+							u8 arg1 = (u8)*(colorOffset+1);
+							u8 arg2 = (u8)*(colorOffset+2);
+							glColor3b((u8)arg0, (u8)arg1, (u8)arg2, INTERNAL_TGDS_OGL_DL_POINTER);
 						}break;
 					}
 				}
@@ -4926,12 +4937,15 @@ void glInterleavedArrays( GLenum format, GLsizei stride, const GLvoid *pointer )
 							unsigned short arg2 = (unsigned short)*(normalOffset+2);
 							glNormal3v10((v10)arg0, (v10)arg1, (v10)arg2, INTERNAL_TGDS_OGL_DL_POINTER);
 						}break;
-						/*
-						//unsigned int
+						
+						//unsigned int (packed as Float -> v10)
 						case 4:{
-							//there are no packed 4 byte Normal GX methods
+							GLfloat * normalOffset = (GLfloat*)( ((int)targetNormalOffset) +  (i * sizeof(GLfloat) + ((stride*sizeof(GLfloat)*argCount))));
+							v10 arg0 = (v10)*(normalOffset+0);
+							v10 arg1 = (v10)*(normalOffset+1);
+							v10 arg2 = (v10)*(normalOffset+2);
+							glNormal3v10((v10)arg0, (v10)arg1, (v10)arg2, INTERNAL_TGDS_OGL_DL_POINTER);
 						}break;
-						*/
 					}
 				}
 
@@ -4950,11 +4964,13 @@ void glInterleavedArrays( GLenum format, GLsizei stride, const GLvoid *pointer )
 							unsigned short arg1 = (unsigned short)*(TexCoordOffset+1);
 							glTexCoord2t16((t16)arg0, (t16)arg1, INTERNAL_TGDS_OGL_DL_POINTER);
 						}break;
-						//unsigned int
+						
+						//unsigned int (packed as Float -> t16)
 						case 4:{
-							u32 * TexCoordOffset = (u32*)( ((int)targetTexCoordOffset) +  (i * sizeof(unsigned int) + ((stride*sizeof(unsigned int)*argCount))));
-							uint32 arg0 = (uint32)*(TexCoordOffset+0);
-							glTexCoord1i(arg0, INTERNAL_TGDS_OGL_DL_POINTER);
+							GLfloat * TexCoordOffset = (GLfloat*)( ((int)targetTexCoordOffset) +  (i * sizeof(GLfloat) + ((stride*sizeof(GLfloat)*argCount))));
+							t16 arg0 = (t16)*(TexCoordOffset+0);
+							t16 arg1 = (t16)*(TexCoordOffset+1);
+							glTexCoord2t16((t16)arg0, (t16)arg1, INTERNAL_TGDS_OGL_DL_POINTER);
 						}break;
 					}
 				}
@@ -4975,12 +4991,13 @@ void glInterleavedArrays( GLenum format, GLsizei stride, const GLvoid *pointer )
 							v16 arg2 = (v16)*(vertexOffset+2);
 							glVertex3v16(arg0, arg1, arg2, INTERNAL_TGDS_OGL_DL_POINTER);
 						}break;
-						//unsigned int
+						
+						//unsigned int (packed as Float -> v16)
 						case 4:{
-							u32 * vertexOffset = (u32*)( ((int)targetVertexOffset) +  (i * sizeof(unsigned int) + ((stride*sizeof(unsigned int)*argCount))));
-							v16 arg0 = (v16) f32tov16(*(vertexOffset+0));
-							v16 arg1 = (v16) f32tov16(*(vertexOffset+1));				
-							v16 arg2 = (v16) f32tov16(*(vertexOffset+2));
+							GLfloat * vertexOffset = (GLfloat*)( ((int)targetVertexOffset) +  (i * sizeof(GLfloat) + ((stride*sizeof(GLfloat)*argCount))));
+							v16 arg0 = (v16)*(vertexOffset+0);
+							v16 arg1 = (v16)*(vertexOffset+1);
+							v16 arg2 = (v16)*(vertexOffset+2);
 							glVertex3v16(arg0, arg1, arg2, INTERNAL_TGDS_OGL_DL_POINTER);
 						}break;
 					}
