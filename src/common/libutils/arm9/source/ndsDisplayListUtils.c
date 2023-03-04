@@ -1558,6 +1558,12 @@ int main(int argc, char** argv){
 			// delete VBO when program terminated
 			glDeleteBuffers(1, &vboId1);
 		}
+
+		//misc tests
+		{
+			GLfloat mat[16] = {1.0f, 1.0f, -1.0f, 0.0f, 1.0f, 1.0f, -1.0f, 0.0f, 1.0f, 1.0f, -1.0f, 0.0f, 1.0f, 1.0f, -1.0f, 0.0f};
+			glLoadMatrixf((const GLfloat *)&mat, USERSPACE_TGDS_OGL_DL_POINTER);
+		}
 	}
 	return 0;
 }

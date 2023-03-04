@@ -1716,6 +1716,8 @@ extern uint32 diffuse_ambient;
 extern uint32 specular_emission;
 extern void glEnable(int bits);
 extern void glDisable(int bits);
+
+extern void glLoadMatrixf(const GLfloat *m, struct TGDSOGL_DisplayListContext * Inst);
 extern void glLoadMatrix4x4(m4x4 * m, struct TGDSOGL_DisplayListContext * Inst);
 extern void glLoadMatrix4x3(m4x3 * m, struct TGDSOGL_DisplayListContext * Inst);
 extern void glMultMatrix4x4(m4x4 * m, struct TGDSOGL_DisplayListContext * Inst);

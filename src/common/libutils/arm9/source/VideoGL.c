@@ -739,6 +739,40 @@ void glFinish(struct TGDSOGL_DisplayListContext * Inst){
 	}
 }
 
+/*
+Parameters
+m
+A pointer to a 4x4 matrix stored in column-major order as 16 consecutive values.
+*/
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
+void glLoadMatrixf(const GLfloat *m, struct TGDSOGL_DisplayListContext * Inst){
+	m4x4 inMtx; //Float -> fixed point conversion
+	inMtx.m[0] = floattof32(m[0]); //0
+	inMtx.m[1] = floattof32(m[1]); //1
+	inMtx.m[2] = floattof32(m[2]); //2
+	inMtx.m[3] = floattof32(m[3]); //3
+	inMtx.m[4] = floattof32(m[4]); //4
+	inMtx.m[5] = floattof32(m[5]); //5
+	inMtx.m[6] = floattof32(m[6]); //6
+	inMtx.m[7] = floattof32(m[7]); //7
+	inMtx.m[8] = floattof32(m[8]); //8
+	inMtx.m[9] = floattof32(m[9]); //9
+	inMtx.m[10] = floattof32(m[10]); //10
+	inMtx.m[11] = floattof32(m[11]); //11
+	inMtx.m[12] = floattof32(m[12]); //12
+	inMtx.m[13] = floattof32(m[13]); //13
+	inMtx.m[14] = floattof32(m[14]); //14
+	inMtx.m[15] = floattof32(m[15]); //15
+	glLoadMatrix4x4(&inMtx, Inst);
+}
+
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
@@ -4600,7 +4634,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 
 						//unsigned int (packed as Float -> t16)
 						case 4:{
-							GLfloat * TexCoordOffset = (u32*)( ((int)vboTexCoord->vboArrayMemoryStart) +  (i * sizeof(unsigned int) + ((vboTexCoord->vertexBufferObjectstrideOffset*sizeof(unsigned int)*argCount))));
+							GLfloat * TexCoordOffset = (GLfloat*)( ((int)vboTexCoord->vboArrayMemoryStart) +  (i * sizeof(unsigned int) + ((vboTexCoord->vertexBufferObjectstrideOffset*sizeof(unsigned int)*argCount))));
 							t16 arg0 = (t16)*(TexCoordOffset+0);
 							t16 arg1 = (t16)*(TexCoordOffset+1);
 							glTexCoord2t16((t16)arg0, (t16)arg1, INTERNAL_TGDS_OGL_DL_POINTER);
@@ -4627,7 +4661,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 
 						//unsigned int (packed as Float -> v16)
 						case 4:{
-							GLfloat * vertexOffset = (u32*)( ((int)vboVertex->vboArrayMemoryStart) +  (i * sizeof(unsigned int) + ((vboVertex->vertexBufferObjectstrideOffset*sizeof(unsigned int)*argCount))));
+							GLfloat * vertexOffset = (GLfloat*)( ((int)vboVertex->vboArrayMemoryStart) +  (i * sizeof(unsigned int) + ((vboVertex->vertexBufferObjectstrideOffset*sizeof(unsigned int)*argCount))));
 							v16 arg0 = (v16)*(vertexOffset+0);
 							v16 arg1 = (v16)*(vertexOffset+1);
 							v16 arg2 = (v16)*(vertexOffset+2);
