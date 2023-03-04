@@ -86,7 +86,11 @@ void glInit(){
 	#endif
 	memset((u8*)&globalGLCtx, 0, sizeof(struct GLContext));
 	glShadeModel(GL_SMOOTH);
-	
+
+	globalGLCtx.polyAttributes = POLY_ALPHA(31);
+	glCullFace(GL_FRONT); 
+	glDisable(GL_CULL_FACE);
+
 	globalGLCtx.textureParamsValue = 0;
 	globalGLCtx.diffuseValue=0;
 	globalGLCtx.ambientValue=0;
@@ -106,8 +110,6 @@ void glInit(){
 		memset(getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(TGDSOGL_DisplayListContextThis), 0, InternalUnpackedGX_DL_workSize);
 		TGDSOGL_DisplayListContextThis->isAnOpenGLExtendedDisplayListCallList = false;
 	}
-	//enable_bits = GL_TEXTURE_2D | GL_POLYGON_VERTEX_RAM_OVERFLOW | REAR_PLANE_MODE_BITMAP;
-
 	//////////////////////////////////////////////////////VBO & VBA init//////////////////////////////////////////////////////
 
 	//Start clean once. Because subsequent re-init calls will require array memory to be freed/reallocated
@@ -676,6 +678,9 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glEnable(int bits){
+	if((bits&GL_CULL_FACE) == GL_CULL_FACE){
+		//faces are enabled through glCullFace() because culling occurs per polygon on GX
+	}
 	enable_bits |= bits & (GL_TEXTURE_2D|GL_TOON_HIGHLIGHT|GL_OUTLINE|GL_ANTIALIAS);
 	#if defined(ARM9)
 	GFX_CONTROL = enable_bits;
@@ -691,6 +696,10 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glDisable(int bits){
+	if((bits&GL_CULL_FACE) == GL_CULL_FACE){
+		u32 polyAttr = (globalGLCtx.polyAttributes & ~(POLY_CULL_BACK | POLY_CULL_FRONT | POLY_CULL_NONE));
+		globalGLCtx.polyAttributes = polyAttr | POLY_CULL_NONE;
+	}
 	enable_bits &= ~(bits & (GL_TEXTURE_2D|GL_TOON_HIGHLIGHT|GL_OUTLINE|GL_ANTIALIAS));	
 	#ifdef ARM9
 	GFX_CONTROL = enable_bits;
@@ -3642,6 +3651,22 @@ void glScaled(
    struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext
 ){
 	glScalef((GLfloat)x, (GLfloat)y, (GLfloat)z, TGDSOGL_DisplayListContext);
+}
+
+void glCullFace(GLenum mode){
+	switch(mode){
+		case GL_FRONT:{
+			u32 polyAttr = (globalGLCtx.polyAttributes & ~(POLY_CULL_BACK | POLY_CULL_FRONT | POLY_CULL_NONE));
+			globalGLCtx.polyAttributes = polyAttr | POLY_CULL_FRONT;
+		}break;
+		case GL_BACK:{
+			u32 polyAttr = (globalGLCtx.polyAttributes & ~(POLY_CULL_BACK | POLY_CULL_FRONT | POLY_CULL_NONE));
+			globalGLCtx.polyAttributes = polyAttr | POLY_CULL_BACK;
+		}break;
+		default:{
+			errorStatus = GL_INVALID_ENUM;
+		}break;
+	}
 }
 
 //////////////////////////////////////////////////////////// Extended Display List OpenGL 1.1 end //////////////////////////////////////////

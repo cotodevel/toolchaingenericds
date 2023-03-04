@@ -242,6 +242,8 @@ struct GLContext{
 	u16 ambientValue;
 	u16 specularValue;
 	u16 emissionValue;
+	
+	u32 polyAttributes; //POLY_ALPHA(31) | POLY_CULL_NONE , etc. This attribute is later implemented as: glPolyFmt(globalGLCtx.polyAttributes); when rendering
 
 	//latest Viewport
 	u32 lastViewport; //(x1) + (y1 << 8) + (x2 << 16) + (y2 << 24) //x1 = x, y1 = y, x2 = 
@@ -1838,6 +1840,7 @@ extern void glTexParameteri(
 	GLint  param, 
 	struct TGDSOGL_DisplayListContext * Inst
 );
+extern void glCullFace(GLenum mode);
 
 #ifdef ARM9
 #ifdef __cplusplus
