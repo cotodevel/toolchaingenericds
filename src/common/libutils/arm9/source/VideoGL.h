@@ -1130,10 +1130,8 @@ enum {
 #define PHYS_GXFIFO_INTERNAL_SIZE ((int)512)
 
 //Max GL Lists allocated in the OpenGL API
-#define InternalUnpackedGX_DL_internalSize ((int)8192) //Max internal DL unpacked GX command/arguments count: 8192*4 = 32768 bytes. first 4K half: Standard OpenGL commands ; Second 4K half: OpenGL Display List commands
-#define InternalUnpackedGX_DL_workSize	(InternalUnpackedGX_DL_internalSize/2) 
-#define InternalUnpackedGX_DL_StandardOpenGLStartOffset (InternalUnpackedGX_DL_workSize * 0)
-#define InternalUnpackedGX_DL_OpenGLDisplayListStartOffset (InternalUnpackedGX_DL_workSize * 1)
+#define InternalUnpackedGX_DL_workSize	((int)4096) //Max internal DL unpacked GX command/arguments count: up to 4096 in-queue 
+#define InternalUnpackedGX_DL_OpenGLDisplayListStartOffset (InternalUnpackedGX_DL_workSize * 0)
 
 //Display List Descriptor
 #define DL_INVALID (u32)(-1)
@@ -1180,7 +1178,7 @@ struct TGDSOGL_DisplayListContext {
 	GLsizei InternalUnpackedGX_DL_Binary_Enumerator[InternalUnpackedGX_DL_workSize/sizeof(GLsizei)];
 	u32 LastGXInternalDisplayListPtr;
 	u32 LastActiveOpenGLDisplayList;
-	u32 InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_internalSize];
+	u32 InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_workSize];
 	u32 InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 	bool isAnOpenGLExtendedDisplayListCallList;
 	u32	mode; //GLenum mode: //Specifies the compilation mode, which can be GL_COMPILE or GL_COMPILE_AND_EXECUTE. Set up by glNewList()
