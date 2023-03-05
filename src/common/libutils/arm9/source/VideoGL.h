@@ -137,6 +137,8 @@ typedef void GLvoid;
 
 #define GFX_POLY_FORMAT       (*(vuint32*) 0x040004A4)
 #define GFX_FLUSH             (*(vuint32*) 0x04000540)
+#define GX_ERROR_BIT ((u32)(1<<15))
+
 //////////////////////////////////////////////////////////////////////
 // Matrix processor control
 //////////////////////////////////////////////////////////////////////

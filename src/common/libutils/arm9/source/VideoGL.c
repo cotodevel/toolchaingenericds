@@ -2834,6 +2834,12 @@ void glNewList(GLuint list, GLenum mode, struct TGDSOGL_DisplayListContext * TGD
 		list--; //assign current InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr (new) to a List
 	}
 	TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr++; //OFFSET 0 IS DL SIZE
+
+	//Rewind list if out of memory
+	if(TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr > InternalUnpackedGX_DL_workSize){
+		TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = 0 + 1; //OFFSET 0 IS DL SIZE
+	}
+
 	TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary_Enumerator[list] = TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr; 
 	TGDSOGL_DisplayListContext->mode = (u32)mode;
 	TGDSOGL_DisplayListContext->LastActiveOpenGLDisplayList = (u32)list;
@@ -2869,6 +2875,13 @@ void glEndList(struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext){
 	TGDSOGL_DisplayListContext->isAnOpenGLExtendedDisplayListCallList = false;
 	TGDSOGL_DisplayListContext->LastActiveOpenGLDisplayList = DL_INVALID;
 	TGDSOGL_DisplayListContext->mode = GL_COMPILE; //Even if Standard OpenGL DisplayList was marked earlier as executable. Disable further calls because it's slow, and precompiled GX Display List can be ran directly later through standard glCallList()
+	/*//disable
+	//fifo overflow/underflow? acknowledge error
+	u32 gxbits = *(u32*)0x04000600;
+	if( (gxbits & GX_ERROR_BIT) == GX_ERROR_BIT){
+		*(u32*)0x04000600 |= GX_ERROR_BIT;
+	}
+	*/
 }
 
 /*
@@ -4456,6 +4469,9 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 		errorStatus = GL_INVALID_ENUM;
 		return;
 	}
+	if((count > 6144)){
+		count = 6144; //DS can only render up to 6144 vertices / 2048 polys 
+	}
 	switch(mode){
 		//unsupported by DS hardware
 		case	GL_POINTS:
@@ -4539,10 +4555,8 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 	//Emit DL and execute it inmediately if arrays are dirty, otherwise run the DL directly
 	if(requiresRecompileGXDisplayList == true){
 		int i = 0;
-		bool isTriangleStrip = false; //false = GL_TRIANGLES (3 args) / true = GL_TRIANGLE_STRIP (4 args)
 		int argCount = 3;
-		if(mode == GL_TRIANGLE_STRIP){
-			isTriangleStrip = true;
+		if( (mode == GL_TRIANGLE_STRIP) || (mode == GL_QUAD_STRIP) || (mode == GL_QUADS) ){
 			argCount = 4;
 		}
 		glNewList(OGL_DL_DRAW_ARRAYS_METHOD, GL_COMPILE_AND_EXECUTE, INTERNAL_TGDS_OGL_DL_POINTER);
@@ -4661,6 +4675,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 			}
 			glEnd(INTERNAL_TGDS_OGL_DL_POINTER);
 		glEndList(INTERNAL_TGDS_OGL_DL_POINTER); 
+		//TWLPrintf("glDrawArrays() Count: %d \n", count);
 	}
 	else{
 		glCallList(OGL_DL_DRAW_ARRAYS_METHOD, INTERNAL_TGDS_OGL_DL_POINTER);
