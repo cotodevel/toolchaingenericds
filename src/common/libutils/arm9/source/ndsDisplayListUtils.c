@@ -1331,11 +1331,11 @@ int main(int argc, char** argv){
 			
 		//draw the triangle: DS uses v16 format to store vertices. 
 		GLfloat vertices[6][3] = {
-			{ floattov16(-1.0f), floattov16(-1.0f), floattov16(0.0f) }, 
+			{ -1.0f, -1.0f,  0.0f }, 
 			{ (u8)(31), (u8)(0), (u8)(0) }, 
-			{ floattov16(1.0f), floattov16(-1.0f), floattov16(0.0f) },
+			{ 1.0f,  -1.0f,  0.0f },
 			{ (u8)(0), (u8)(31), (u8)(0) },
-			{ floattov16(0.0f), floattov16(1.0f), floattov16(0.0f) },
+			{ 0.0f,   1.0f,  0.0f },
 			{ (u8)(0), (u8)(0), (u8)(31) },
 		};
 		int arrSize = sizeof(vertices)/sizeof(GLfloat);

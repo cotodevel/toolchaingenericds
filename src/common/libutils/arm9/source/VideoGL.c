@@ -4611,9 +4611,9 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 						//unsigned int (packed as Float -> v10)
 						case 4:{
 							GLfloat * normalOffset = (GLfloat*)( ((int)vboNormal->vboArrayMemoryStart) +  (i * sizeof(GLfloat) + ((vboNormal->vertexBufferObjectstrideOffset*sizeof(GLfloat)*argCount))));
-							v10 arg0 = (v10)*(normalOffset+0);
-							v10 arg1 = (v10)*(normalOffset+1);
-							v10 arg2 = (v10)*(normalOffset+2);
+							v10 arg0 = (v10)floattov10(*(normalOffset+0));
+							v10 arg1 = (v10)floattov10(*(normalOffset+1));
+							v10 arg2 = (v10)floattov10(*(normalOffset+2));
 							glNormal3v10((v10)arg0, (v10)arg1, (v10)arg2, INTERNAL_TGDS_OGL_DL_POINTER);
 						}break;
 					}
@@ -4638,8 +4638,8 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 						//unsigned int (packed as Float -> t16)
 						case 4:{
 							GLfloat * TexCoordOffset = (GLfloat*)( ((int)vboTexCoord->vboArrayMemoryStart) +  (i * sizeof(unsigned int) + ((vboTexCoord->vertexBufferObjectstrideOffset*sizeof(unsigned int)*argCount))));
-							t16 arg0 = (t16)*(TexCoordOffset+0);
-							t16 arg1 = (t16)*(TexCoordOffset+1);
+							t16 arg0 = (t16)floattot16(*(TexCoordOffset+0));
+							t16 arg1 = (t16)floattot16(*(TexCoordOffset+1));
 							glTexCoord2t16((t16)arg0, (t16)arg1, INTERNAL_TGDS_OGL_DL_POINTER);
 						}break;
 					}
@@ -4665,9 +4665,9 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 						//unsigned int (packed as Float -> v16)
 						case 4:{
 							GLfloat * vertexOffset = (GLfloat*)( ((int)vboVertex->vboArrayMemoryStart) +  (i * sizeof(unsigned int) + ((vboVertex->vertexBufferObjectstrideOffset*sizeof(unsigned int)*argCount))));
-							v16 arg0 = (v16)*(vertexOffset+0);
-							v16 arg1 = (v16)*(vertexOffset+1);
-							v16 arg2 = (v16)*(vertexOffset+2);
+							v16 arg0 = (v16)floattov16(*(vertexOffset+0));
+							v16 arg1 = (v16)floattov16(*(vertexOffset+1));
+							v16 arg2 = (v16)floattov16(*(vertexOffset+2));
 							glVertex3v16(arg0, arg1, arg2, INTERNAL_TGDS_OGL_DL_POINTER);
 						}break;
 					}
@@ -4979,9 +4979,9 @@ void glInterleavedArrays( GLenum format, GLsizei stride, const GLvoid *pointer )
 						//unsigned int (packed as Float -> v10)
 						case 4:{
 							GLfloat * normalOffset = (GLfloat*)( ((int)targetNormalOffset) +  (i * sizeof(GLfloat) + ((stride*sizeof(GLfloat)*argCount))));
-							v10 arg0 = (v10)*(normalOffset+0);
-							v10 arg1 = (v10)*(normalOffset+1);
-							v10 arg2 = (v10)*(normalOffset+2);
+							v10 arg0 = (v10)floattov10(*(normalOffset+0));
+							v10 arg1 = (v10)floattov10(*(normalOffset+1));
+							v10 arg2 = (v10)floattov10(*(normalOffset+2));
 							glNormal3v10((v10)arg0, (v10)arg1, (v10)arg2, INTERNAL_TGDS_OGL_DL_POINTER);
 						}break;
 					}
@@ -5006,8 +5006,8 @@ void glInterleavedArrays( GLenum format, GLsizei stride, const GLvoid *pointer )
 						//unsigned int (packed as Float -> t16)
 						case 4:{
 							GLfloat * TexCoordOffset = (GLfloat*)( ((int)targetTexCoordOffset) +  (i * sizeof(GLfloat) + ((stride*sizeof(GLfloat)*argCount))));
-							t16 arg0 = (t16)*(TexCoordOffset+0);
-							t16 arg1 = (t16)*(TexCoordOffset+1);
+							t16 arg0 = (t16)floattot16(*(TexCoordOffset+0));
+							t16 arg1 = (t16)floattot16(*(TexCoordOffset+1));
 							glTexCoord2t16((t16)arg0, (t16)arg1, INTERNAL_TGDS_OGL_DL_POINTER);
 						}break;
 					}
@@ -5033,9 +5033,9 @@ void glInterleavedArrays( GLenum format, GLsizei stride, const GLvoid *pointer )
 						//unsigned int (packed as Float -> v16)
 						case 4:{
 							GLfloat * vertexOffset = (GLfloat*)( ((int)targetVertexOffset) +  (i * sizeof(GLfloat) + ((stride*sizeof(GLfloat)*argCount))));
-							v16 arg0 = (v16)*(vertexOffset+0);
-							v16 arg1 = (v16)*(vertexOffset+1);
-							v16 arg2 = (v16)*(vertexOffset+2);
+							v16 arg0 = (v16)floattov16(*(vertexOffset+0));
+							v16 arg1 = (v16)floattov16(*(vertexOffset+1));
+							v16 arg2 = (v16)floattov16(*(vertexOffset+2));
 							glVertex3v16(arg0, arg1, arg2, INTERNAL_TGDS_OGL_DL_POINTER);
 						}break;
 					}
