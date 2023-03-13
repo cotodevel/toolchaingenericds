@@ -1713,9 +1713,6 @@ extern int OGL_DL_DRAW_ARRAYS_METHOD;
 
 //////////////////////////////////////////////////////////// Extended Vertex Array Buffers and Vertex Buffer Objects OpenGL 1.1 end //////////////////////////////////////////
 
-
-extern uint32 diffuse_ambient;
-extern uint32 specular_emission;
 extern void glEnable(int bits);
 extern void glDisable(int bits);
 
@@ -1740,7 +1737,12 @@ extern int glTexImage2D(int target, int empty1, int type, int sizeX, int sizeY, 
 extern void glBindTexture(int target, int name, struct TGDSOGL_DisplayListContext * Inst);
 extern int glGenTextures(int n, int *names);
 extern void glResetTextures(void);
-extern void glMaterialf(int mode, rgb color, struct TGDSOGL_DisplayListContext * Inst);
+extern void glMaterialf(
+	GLenum  face,
+	GLenum  pname,
+	GLfloat param, 
+	struct TGDSOGL_DisplayListContext * Inst
+);
 extern void glResetMatrixStack(struct TGDSOGL_DisplayListContext * Inst);
 extern void glSetOutlineColor(int id, rgb color);
 extern void glSetToonTable(uint16 *table);

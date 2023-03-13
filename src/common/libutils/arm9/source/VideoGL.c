@@ -1596,10 +1596,10 @@ void gluPerspective(float fovy, float aspect, float zNear, float zFar, struct TG
 	gluPerspectivef32((int)(fovy * LUT_SIZE / 360.0), floattof32(aspect), floattof32(zNear), floattof32(zFar), Inst);    
 }
 
-
-uint32 diffuse_ambient = 0;
-uint32 specular_emission = 0;
-
+//Default OpenGL 1.0 implementation:
+//The param parameter is a single floating-point value that specifies the RGBA specular exponent of the material. 
+//Integer values are mapped directly. Only values in the range [0, 128] are accepted. 
+//The default specular exponent for both front-facing and back-facing materials is 0.
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
@@ -1608,49 +1608,19 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glMaterialf(int mode, rgb color, struct TGDSOGL_DisplayListContext * Inst){
-  switch(mode) {
-    case GL_AMBIENT:
-      diffuse_ambient = (color << 16) | (diffuse_ambient & 0xFFFF);
-      break;
-    case GL_DIFFUSE:
-      diffuse_ambient = color | (diffuse_ambient & 0xFFFF0000);
-      break;
-    case GL_AMBIENT_AND_DIFFUSE:
-      diffuse_ambient= color + (color << 16);
-      break;
-    case GL_SPECULAR:
-      specular_emission = color | (specular_emission & 0xFFFF0000);
-      break;
-    case GL_SHININESS:
-      break;
-    case GL_EMISSION:
-      specular_emission = (color << 16) | (specular_emission & 0xFFFF);
-      break;
-  }
-
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
-		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
-		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
-			//40004C0h 30h 1  4   DIF_AMB - MaterialColor0 - Diffuse/Ambient Reflect. (W)
-			Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)getFIFO_DIFFUSE_AMBIENT; //Unpacked Command format
-			ptrVal++;
-			Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)(diffuse_ambient); ptrVal++;
-			
-			//40004C4h 31h 1  4   SPE_EMI - MaterialColor1 - Specular Ref. & Emission (W)
-			Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)getFIFO_SPECULAR_EMISSION; //Unpacked Command format
-			ptrVal++;
-			Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)(specular_emission); ptrVal++;
-			
-			Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = ptrVal;
-		}
+void glMaterialf(
+	GLenum  face,
+	GLenum  pname,
+	GLfloat param, 
+	struct TGDSOGL_DisplayListContext * Inst
+   ){
+	if((GLenum)pname != (GLenum)GL_SHININESS){ //only this command is supported, reject everything else.
+		errorStatus = GL_INVALID_ENUM;
+		return;
 	}
-	else{
-		#if defined(ARM9)
-		GFX_DIFFUSE_AMBIENT = diffuse_ambient;
-		GFX_SPECULAR_EMISSION = specular_emission;
-		#endif
-	}
+	GLfloat params[4];
+	params[0] = param; 
+	glMaterialfv (face, pname, (const GLfloat *)&params, Inst);
 }
 
 #ifdef ARM9
@@ -3341,58 +3311,102 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 void glMaterialfv (GLenum face, GLenum pname, const GLfloat *params, struct TGDSOGL_DisplayListContext * Inst){
-	//GX hardware does support "face" attributes:
-	//face, specifies whether the GL_FRONT materials, the GL_BACK materials, or both GL_FRONT_AND_BACK materials will be modified. 
-	if(face == GL_FRONT){
+	unsigned short emissionValueOut = 0;
+	
+	//GL_FRONT, GL_BACK and GL_FRONT_AND_BACK are ignored in GX because material face attributes aren't supported by hardware.
+	//Just slip through and execute all other supported commands
+	switch(face){
+		case GL_FRONT:
+		case GL_BACK:
+		case GL_FRONT_AND_BACK:{
+			
+		}break;
+		default:{
+			errorStatus = GL_INVALID_ENUM;
+			return;
+		}break;
+	}
+	switch(pname){
+		//	The param parameter is a single integer value that specifies the RGBA specular exponent of the material. Integer values are mapped directly. Only values in the range [0, 128] are accepted. The default specular exponent for both front-facing and back-facing materials is 0.
+		case GL_SHININESS:{
+			emitGLShinnyness((float)params[0], Inst);
+			return;
+		}break;
 
+		//The params parameter contains four floating-point values that specify the RGBA emitted light intensity of the material. Integer values are mapped linearly such that the most positive representable value maps to 1.0, and the most negative representable value maps to -1.0. Floating-point values are mapped directly. Neither integer nor floating-point values are clamped. The default emission intensity for both front-facing and back-facing materials is (0.0, 0.0, 0.0, 1.0).
+		case GL_AMBIENT: 
+		case GL_DIFFUSE: 
+		case GL_AMBIENT_AND_DIFFUSE:
+		case GL_SPECULAR:
+		case GL_EMISSION:{ //special case: convert float -> rgb color
+			float rEmission = params[0];
+			float gEmission = params[1];
+			float bEmission = params[2];
+			//float aEmission = params[3]; //GX can't do alpha emission through GX cmds
+			emissionValueOut = RGB15(((int)rEmission),((int)gEmission),((int)bEmission));
+			//glMaterialGX((int)pname, colOut, Inst);
+		}break;
+		default:{
+			errorStatus = GL_INVALID_ENUM;
+			return;
+		}break;
 	}
-	else if(face == GL_BACK){
-		//GX assumes always this because polygon attribute sets CULL to BACK. todo: inherit to polys
-		//glPolyFmt(POLY_ALPHA(31) | POLY_CULL_BACK );
-	}
-	else if(face == GL_FRONT_AND_BACK){
-		
-	}
+	{
+		u32 diffuse_ambient = ((globalGLCtx.ambientValue << 16) | globalGLCtx.diffuseValue);
+		u32 specular_emission = ((globalGLCtx.emissionValue << 16) | globalGLCtx.specularValue);
+		switch(pname){
+			case GL_AMBIENT:{
+				diffuse_ambient = (emissionValueOut << 16) | (diffuse_ambient & 0xFFFF); //high part = ambient
+			}break;
+			case GL_DIFFUSE:{
+				diffuse_ambient = emissionValueOut | (diffuse_ambient & 0xFFFF0000); //low part = diffuse
+			}break;
+			case GL_AMBIENT_AND_DIFFUSE:{
+				diffuse_ambient= emissionValueOut + (emissionValueOut << 16); //repeat same values for both low and high part = ambient_and_diffuse
+			}break;
+			case GL_SPECULAR:{
+				specular_emission = emissionValueOut | (specular_emission & 0xFFFF0000); //low part = specular
+			}break;
+			case GL_EMISSION:{
+				specular_emission = (emissionValueOut << 16) | (specular_emission & 0xFFFF); //high part = emission
+			}break;
+			case GL_COLOR_INDEXES:{
+				//Todo
+			}break;
+		}
 
-	//The params parameter contains four floating-point values that specify the RGBA emitted light intensity of the material. Integer values are mapped linearly such that the most positive representable value maps to 1.0, and the most negative representable value maps to -1.0. Floating-point values are mapped directly. Neither integer nor floating-point values are clamped. The default emission intensity for both front-facing and back-facing materials is (0.0, 0.0, 0.0, 1.0).
-	if(pname == GL_EMISSION){
-		float rEmission = params[0];
-		float gEmission = params[1];
-		float bEmission = params[2];
-		//float aEmission = params[3];
-		globalGLCtx.emissionValue = ((floattov10(rEmission) & 0x1F) << 16) | ((floattov10(gEmission) & 0x1F) << 21) | ((floattov10(bEmission) & 0x1F) << 26);
+		//Update GX properties
+		globalGLCtx.ambientValue = (diffuse_ambient >> 16);
+		globalGLCtx.diffuseValue = (diffuse_ambient&0xFFFF);
+		globalGLCtx.emissionValue = (specular_emission >> 16);
+		globalGLCtx.specularValue = (specular_emission&0xFFFF);
+
 		if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
 			u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 			if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
+				//40004C0h 30h 1  4   DIF_AMB - MaterialColor0 - Diffuse/Ambient Reflect. (W)
+				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)getFIFO_DIFFUSE_AMBIENT; //Unpacked Command format
+				ptrVal++;
+				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)(diffuse_ambient); ptrVal++;
+				
 				//40004C4h 31h 1  4   SPE_EMI - MaterialColor1 - Specular Ref. & Emission (W)
 				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)getFIFO_SPECULAR_EMISSION; //Unpacked Command format
 				ptrVal++;
-				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)(( ((globalGLCtx.specularValue & 0xFFFF) << 0) | ((globalGLCtx.emissionValue & 0xFFFF) << 16) )); ptrVal++;
+				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)(specular_emission); ptrVal++;
+				
 				Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = ptrVal;
 			}
 		}
 		else{
 			#if defined(ARM9)
-			GFX_SPECULAR_EMISSION = (u32)( ((globalGLCtx.specularValue & 0xFFFF) << 0) | ((globalGLCtx.emissionValue & 0xFFFF) << 16) );
+			GFX_DIFFUSE_AMBIENT = diffuse_ambient;
+			GFX_SPECULAR_EMISSION = specular_emission;
 			#endif
 		}
 	}
-
-	//	The param parameter is a single integer value that specifies the RGBA specular exponent of the material. Integer values are mapped directly. Only values in the range [0, 128] are accepted. The default specular exponent for both front-facing and back-facing materials is 0.
-	if(pname == GL_SHININESS){
-		emitGLShinnyness((float)params[0], Inst);
-	}
-
-	//Todo: GL_COLOR_INDEXES
-
-	//Unimplemented:
-	//GL_AMBIENT (GX hardware doesn't support it)
-	//GL_DIFFUSE (GX hardware doesn't support it)
-	//GL_SPECULAR (GX hardware doesn't support it)
 }
 
 //glNormal(v): A pointer to an array of three elements: the x, y, and z coordinates of the new current normal.
-
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
@@ -5162,9 +5176,9 @@ void glGetMaterialfv(
 			//Integer values, when requested, are linearly mapped from the internal floating-point representation such that 1.0 maps to 
 			//the most positive representable integer value, and -1.0 maps to the most negative representable integer value. 
 			//If the internal value is outside the range [-1,1], the corresponding integer return value is undefined.
-			*(params+0) = ((float)((diffuse_ambient>>16)&0x1f)); //r
-			*(params+1) = ((float)((diffuse_ambient>>21)&0x1f)); //g
-			*(params+2) = ((float)((diffuse_ambient>>26)&0x1f)); //b
+			*(params+0) = ((float)((globalGLCtx.ambientValue>>0)&0x1f)); //r
+			*(params+1) = ((float)((globalGLCtx.ambientValue>>5)&0x1f)); //g
+			*(params+2) = ((float)((globalGLCtx.ambientValue>>10)&0x1f)); //b
 			*(params+3) = 0;
 		}break;
 		case GL_DIFFUSE:{
@@ -5172,9 +5186,9 @@ void glGetMaterialfv(
 			//Integer values, when requested, are linearly mapped from the internal floating-point representation such that 1.0 maps to 
 			//the most positive representable integer value, and -1.0 maps to the most negative representable integer value. 
 			//If the internal value is outside the range [-1,1], the corresponding integer return value is undefined.
-			*(params+0) = ((float)((diffuse_ambient>>0)&0x1f)); //r
-			*(params+1) = ((float)((diffuse_ambient>>5)&0x1f)); //g
-			*(params+2) = ((float)((diffuse_ambient>>10)&0x1f)); //b
+			*(params+0) = ((float)((globalGLCtx.diffuseValue>>0)&0x1f)); //r
+			*(params+1) = ((float)((globalGLCtx.diffuseValue>>5)&0x1f)); //g
+			*(params+2) = ((float)((globalGLCtx.diffuseValue>>10)&0x1f)); //b
 			*(params+3) = 0;
 		}break;
 		case GL_SPECULAR:{
@@ -5182,9 +5196,9 @@ void glGetMaterialfv(
 			//Integer values, when requested, are linearly mapped from the internal floating-point representation such that 1.0 maps to 
 			//the most positive representable integer value, and -1.0 maps to the most negative representable integer value. 
 			//If the internal value is outside the range [-1,1], the corresponding integer return value is undefined.
-			*(params+0) = ((float)((specular_emission>>0)&0x1f)); //r
-			*(params+1) = ((float)((specular_emission>>5)&0x1f)); //g
-			*(params+2) = ((float)((specular_emission>>10)&0x1f)); //b
+			*(params+0) = ((float)((globalGLCtx.specularValue>>0)&0x1f)); //r
+			*(params+1) = ((float)((globalGLCtx.specularValue>>5)&0x1f)); //g
+			*(params+2) = ((float)((globalGLCtx.specularValue>>10)&0x1f)); //b
 			*(params+3) = 0;
 		}break;
 		case GL_SHININESS:{
@@ -5197,9 +5211,9 @@ void glGetMaterialfv(
 			//Integer values, when requested, are linearly mapped from the internal floating-point representation such that 1.0 maps to 
 			//the most positive representable integer value, and -1.0 maps to the most negative representable integer value. 
 			//If the internal value is outside the range [-1,1], the corresponding integer return value is undefined.
-			*(params+0) = ((float)((specular_emission>>16)&0x1f)); //r
-			*(params+1) = ((float)((specular_emission>>21)&0x1f)); //g
-			*(params+2) = ((float)((specular_emission>>26)&0x1f)); //b
+			*(params+0) = ((float)((globalGLCtx.emissionValue>>0)&0x1f)); //r
+			*(params+1) = ((float)((globalGLCtx.emissionValue>>5)&0x1f)); //g
+			*(params+2) = ((float)((globalGLCtx.emissionValue>>10)&0x1f)); //b
 			*(params+3) = 0;
 		}break;
 		default:{
