@@ -5209,4 +5209,19 @@ void glGetMaterialfv(
 	}
 }
 
+//See glGetFloatv(); for implementation. 
+//Note: It's the same because both int and float datatypes are 4-byte on ARM v5t CPU platforms.
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void glGetIntegerv(
+   GLenum pname,
+   GLint  *params
+   ){
+	   glGetFloatv(pname, (GLfloat*)params);
+}
+
 //////////////////////////////////////////////////////////// Extended Vertex Array Buffers and Vertex Buffer Objects OpenGL 1.1 end //////////////////////////////////////////

@@ -1847,7 +1847,10 @@ extern void glGetMaterialfv(
    GLenum  pname,
    GLfloat *params
 );
-
+extern void glGetIntegerv(
+   GLenum pname,
+   GLint  *params
+);
 #ifdef ARM9
 #ifdef __cplusplus
 }
