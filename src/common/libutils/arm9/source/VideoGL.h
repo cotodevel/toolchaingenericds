@@ -244,7 +244,7 @@ struct GLContext{
 	u16 ambientValue;
 	u16 specularValue;
 	u16 emissionValue;
-	
+	float shininessValue;
 	u32 polyAttributes; //POLY_ALPHA(31) | POLY_CULL_NONE , etc. This attribute is later implemented as: glPolyFmt(globalGLCtx.polyAttributes); when rendering
 
 	//latest Viewport
@@ -1842,6 +1842,11 @@ extern void glTexParameteri(
 	struct TGDSOGL_DisplayListContext * Inst
 );
 extern void glCullFace(GLenum mode);
+extern void glGetMaterialfv(
+   GLenum  face,
+   GLenum  pname,
+   GLfloat *params
+);
 
 #ifdef ARM9
 #ifdef __cplusplus

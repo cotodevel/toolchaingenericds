@@ -496,6 +496,7 @@ __attribute__ ((optnone))
 void emitGLShinnyness(float shinyValue, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext){
 	float shinyFragment = (shinyValue/64.0f);
 	float shinyFragmentCount = 0.0f;
+	globalGLCtx.shininessValue = shinyValue;
 	if(TGDSOGL_DisplayListContext->isAnOpenGLExtendedDisplayListCallList == true){
 		uint32 shiny32[128/4];
 		uint8  *shiny8 = (uint8*)shiny32;	
@@ -5120,6 +5121,91 @@ void glInterleavedArrays( GLenum format, GLsizei stride, const GLvoid *pointer )
 	}
 	else{
 		glCallList(OGL_DL_DRAW_ARRAYS_METHOD, INTERNAL_TGDS_OGL_DL_POINTER);
+	}
+}
+
+//The glGetMaterialfv and glGetMaterialiv functions return material parameters.
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void glGetMaterialfv(
+   GLenum  face,
+   GLenum  pname,
+   GLfloat *params
+   ){
+	//GL_FRONT or GL_BACK are allowed and ignored in GX
+	switch(face){
+		case GL_FRONT:
+		case GL_BACK:{
+				
+		}break;
+		default:{
+			errorStatus = GL_INVALID_ENUM;
+		return;
+		}break;
+	}
+	switch(pname){
+		/*40004C0h - Cmd 30h - DIF_AMB - MaterialColor0 - Diffuse/Ambient Reflect. (W)
+		0-4   Diffuse Reflection Red     ;\light(s) that directly hits the polygon,
+		5-9   Diffuse Reflection Green   ; ie. max when NormalVector has opposite
+		10-14 Diffuse Reflection Blue    ;/direction of LightVector
+		15    Set Vertex Color (0=No, 1=Set Diffuse Reflection Color as Vertex Color)
+		16-20 Ambient Reflection Red     ;\light(s) that indirectly hits the polygon,
+		21-25 Ambient Reflection Green   ; ie. assuming that light is reflected by
+		26-30 Ambient Reflection Blue    ;/walls/floor, regardless of LightVector
+		31    Not used*/
+		case GL_AMBIENT:{
+			//The params parameter returns four integer or floating-point values representing the ambient reflectance of the material. 
+			//Integer values, when requested, are linearly mapped from the internal floating-point representation such that 1.0 maps to 
+			//the most positive representable integer value, and -1.0 maps to the most negative representable integer value. 
+			//If the internal value is outside the range [-1,1], the corresponding integer return value is undefined.
+			*(params+0) = ((float)((diffuse_ambient>>16)&0x1f)); //r
+			*(params+1) = ((float)((diffuse_ambient>>21)&0x1f)); //g
+			*(params+2) = ((float)((diffuse_ambient>>26)&0x1f)); //b
+			*(params+3) = 0;
+		}break;
+		case GL_DIFFUSE:{
+			//The params parameter returns four integer or floating-point values representing the diffuse reflectance of the material. 
+			//Integer values, when requested, are linearly mapped from the internal floating-point representation such that 1.0 maps to 
+			//the most positive representable integer value, and -1.0 maps to the most negative representable integer value. 
+			//If the internal value is outside the range [-1,1], the corresponding integer return value is undefined.
+			*(params+0) = ((float)((diffuse_ambient>>0)&0x1f)); //r
+			*(params+1) = ((float)((diffuse_ambient>>5)&0x1f)); //g
+			*(params+2) = ((float)((diffuse_ambient>>10)&0x1f)); //b
+			*(params+3) = 0;
+		}break;
+		case GL_SPECULAR:{
+			//The params parameter returns four integer or floating-point values representing the specular reflectance of the material. 
+			//Integer values, when requested, are linearly mapped from the internal floating-point representation such that 1.0 maps to 
+			//the most positive representable integer value, and -1.0 maps to the most negative representable integer value. 
+			//If the internal value is outside the range [-1,1], the corresponding integer return value is undefined.
+			*(params+0) = ((float)((specular_emission>>0)&0x1f)); //r
+			*(params+1) = ((float)((specular_emission>>5)&0x1f)); //g
+			*(params+2) = ((float)((specular_emission>>10)&0x1f)); //b
+			*(params+3) = 0;
+		}break;
+		case GL_SHININESS:{
+			//The params parameter returns one integer or floating-point value representing the specular exponent of the material. 
+			//Integer values, when requested, are computed by rounding the internal floating-point value to the nearest integer value.
+			*(params+0) = globalGLCtx.shininessValue;
+		}break;
+		case GL_EMISSION:{
+			//The params parameter returns four integer or floating-point values representing the emitted light intensity of the material. 
+			//Integer values, when requested, are linearly mapped from the internal floating-point representation such that 1.0 maps to 
+			//the most positive representable integer value, and -1.0 maps to the most negative representable integer value. 
+			//If the internal value is outside the range [-1,1], the corresponding integer return value is undefined.
+			*(params+0) = ((float)((specular_emission>>16)&0x1f)); //r
+			*(params+1) = ((float)((specular_emission>>21)&0x1f)); //g
+			*(params+2) = ((float)((specular_emission>>26)&0x1f)); //b
+			*(params+3) = 0;
+		}break;
+		default:{
+			errorStatus = GL_INVALID_ENUM;
+			return;
+		}break;
 	}
 }
 
