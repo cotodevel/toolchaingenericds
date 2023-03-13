@@ -180,6 +180,7 @@ void glInit(){
 		struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext = (struct TGDSOGL_DisplayListContext *)&TGDSOGL_DisplayListContextInst[TGDSOGL_DisplayListContext_Internal];
 		OGL_DL_DRAW_ARRAYS_METHOD = glGenLists(1, TGDSOGL_DisplayListContext);
 	}
+	glDisable(GL_LIGHT0|GL_LIGHT1|GL_LIGHT2|GL_LIGHT3); //No lights enabled as default.
 }
 
 #ifdef ARM9
@@ -550,7 +551,7 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glPolyFmt(int alpha, struct TGDSOGL_DisplayListContext * Inst){ // obviously more to this
+void glPolyFmt(int alpha, struct TGDSOGL_DisplayListContext * Inst){
 	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
@@ -681,6 +682,24 @@ void glEnable(int bits){
 	if((bits&GL_CULL_FACE) == GL_CULL_FACE){
 		//faces are enabled through glCullFace() because culling occurs per polygon on GX
 	}
+
+	//Lights enable
+	if((bits&GL_LIGHT0) == GL_LIGHT0){
+		globalGLCtx.lightsEnabled |= (u32)GL_LIGHT0;
+	}
+
+	if((bits&GL_LIGHT1) == GL_LIGHT1){
+		globalGLCtx.lightsEnabled |= (u32)GL_LIGHT1;
+	}
+
+	if((bits&GL_LIGHT2) == GL_LIGHT2){
+		globalGLCtx.lightsEnabled |= (u32)GL_LIGHT2;
+	}
+
+	if((bits&GL_LIGHT3) == GL_LIGHT3){
+		globalGLCtx.lightsEnabled |= (u32)GL_LIGHT3;
+	}
+
 	enable_bits |= bits & (GL_TEXTURE_2D|GL_TOON_HIGHLIGHT|GL_OUTLINE|GL_ANTIALIAS);
 	#if defined(ARM9)
 	GFX_CONTROL = enable_bits;
@@ -700,6 +719,24 @@ void glDisable(int bits){
 		u32 polyAttr = (globalGLCtx.polyAttributes & ~(POLY_CULL_BACK | POLY_CULL_FRONT | POLY_CULL_NONE));
 		globalGLCtx.polyAttributes = polyAttr | POLY_CULL_NONE;
 	}
+	
+	//Lights disable
+	if((bits&GL_LIGHT0) == GL_LIGHT0){
+		globalGLCtx.lightsEnabled &= ~((u32)GL_LIGHT0);
+	}
+
+	if((bits&GL_LIGHT1) == GL_LIGHT1){
+		globalGLCtx.lightsEnabled &= ~((u32)GL_LIGHT1);
+	}
+
+	if((bits&GL_LIGHT2) == GL_LIGHT2){
+		globalGLCtx.lightsEnabled &= ~((u32)GL_LIGHT2);
+	}
+
+	if((bits&GL_LIGHT3) == GL_LIGHT3){
+		globalGLCtx.lightsEnabled &= ~((u32)GL_LIGHT3);
+	}
+	
 	enable_bits &= ~(bits & (GL_TEXTURE_2D|GL_TOON_HIGHLIGHT|GL_OUTLINE|GL_ANTIALIAS));	
 	#ifdef ARM9
 	GFX_CONTROL = enable_bits;
@@ -2071,12 +2108,26 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glColor3f(float red, float green, float blue, struct TGDSOGL_DisplayListContext * Inst){
-	//Todo: detect light sources and apply colors. Normal GL calls resort to glColor to update material color + light color + texture color
-	int id = 0; 
-	
+	//Detect light sources and apply colors. Normal GL calls resort to glColor to update material color + light color + texture color
 	glColor3b(floattov10(red), floattov10(green), floattov10(blue), Inst);
-
-	glLight(id, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), inttov10(31), inttov10(31), inttov10(31), Inst);
+	
+	//Handle light vectors
+	//Note: Light depth is 10bit. Which means only glColor3f(); can colour normals on polygons. glColor3b(); can't. Also don't forget to enable at least one light per scene or colour over normals won't reflect in the light vector.
+	{
+		u32 lightsEnabled = globalGLCtx.lightsEnabled;
+		if((lightsEnabled&GL_LIGHT0) == GL_LIGHT0){
+			glLight(0, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), inttov10(31), inttov10(31), inttov10(31), Inst);
+		}
+		if((lightsEnabled&GL_LIGHT1) == GL_LIGHT1){
+			glLight(1, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), inttov10(31), inttov10(31), inttov10(31), Inst);
+		}
+		if((lightsEnabled&GL_LIGHT2) == GL_LIGHT2){
+			glLight(2, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), inttov10(31), inttov10(31), inttov10(31), Inst);
+		}
+		if((lightsEnabled&GL_LIGHT3) == GL_LIGHT3){
+			glLight(3, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), inttov10(31), inttov10(31), inttov10(31), Inst);
+		}
+	}
 }
 
 #ifdef ARM9
@@ -2454,7 +2505,6 @@ __attribute__((optnone))
 void glColor3b(uint8 red, uint8 green, uint8 blue, struct TGDSOGL_DisplayListContext * Inst){
 	u16 finalColor = 0;
 	switch(globalGLCtx.primitiveShadeModelMode){
-		//light vectors are todo
 		case(GL_FLAT):{
 			//otherwise override all colors to be the same subset of whatever color was passed here
 			if(lastVertexColor == 0){
@@ -2492,6 +2542,8 @@ void glColor3b(uint8 red, uint8 green, uint8 blue, struct TGDSOGL_DisplayListCon
 		GFX_COLOR = (u32)finalColor;
 		#endif
 	}
+
+	//Light vectors are not possible using glColor8b();. Use glColor3f(); instead.
 }
 
 //glNormal: Sets the current normal vector
@@ -2725,6 +2777,40 @@ void glVertex2v16(v16 x, v16 y, struct TGDSOGL_DisplayListContext * Inst){
 //4000498h 26h 1  8   VTX_XZ - Set Vertex XZ Coordinates (W)
 //400049Ch 27h 1  8   VTX_YZ - Set Vertex YZ Coordinates (W)
 //40004A0h 28h 1  8   VTX_DIFF - Set Relative Vertex Coordinates (W)
+
+
+//-
+
+//To be called right before vertices, normals, texCoords and colors are rendered, but right after the polygon scene has been prepared.
+//Usage: https://bitbucket.org/Coto88/toolchaingenericds-unittest/src example
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void updateGXLights(struct TGDSOGL_DisplayListContext * Inst){
+	u32 activeLights = globalGLCtx.lightsEnabled;
+	if((activeLights & GL_LIGHT0) == GL_LIGHT0){
+		#define GX_LIGHT0 (1 << 0)
+		glPolyFmt(GX_LIGHT0 | POLY_ALPHA(31) | POLY_CULL_NONE, Inst);
+	}
+	if((activeLights & GL_LIGHT1) == GL_LIGHT1){
+		#define GX_LIGHT1 (1 << 1)
+		glPolyFmt(GX_LIGHT1 | POLY_ALPHA(31) | POLY_CULL_NONE, Inst);
+	}
+	if((activeLights & GL_LIGHT2) == GL_LIGHT2){
+		#define GX_LIGHT2 (1 << 2)
+		glPolyFmt(GX_LIGHT2 | POLY_ALPHA(31) | POLY_CULL_NONE, Inst);
+	}
+	if((activeLights & GL_LIGHT3) == GL_LIGHT3){
+		#define GX_LIGHT3 (1 << 3)
+		glPolyFmt(GX_LIGHT3 | POLY_ALPHA(31) | POLY_CULL_NONE, Inst);
+	}
+}
+
 //////////////////////////////////////////////////////////// Standard OpenGL 1.0 end //////////////////////////////////////////
 
 
@@ -3483,20 +3569,8 @@ void glGetFloatv(
 	
 	//The params parameter returns one value: the maximum number of lights.
 	else if((pname & GL_MAX_LIGHTS) == GL_MAX_LIGHTS){
-		u8 activeLights = globalGLCtx.lightsEnabled;
-		int activeLightCount = 0;
-		if((activeLights & GX_LIGHT0) == GX_LIGHT0){
-			activeLightCount++;
-		}
-		if((activeLights & GX_LIGHT1) == GX_LIGHT1){
-			activeLightCount++;
-		}
-		if((activeLights & GX_LIGHT2) == GX_LIGHT2){
-			activeLightCount++;
-		}
-		if((activeLights & GX_LIGHT3) == GX_LIGHT3){
-			activeLightCount++;
-		}
+		//GX: Max lights
+		int activeLightCount = 4;
 		*params = (u32)activeLightCount;
 	}
 	

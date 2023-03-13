@@ -238,7 +238,7 @@ typedef void GLvoid;
 
 struct GLContext{
 	GLenum primitiveShadeModelMode;	//glShadeModel(GLenum mode: [GL_FLAT/GL_SMOOTH]);
-	u8 lightsEnabled; //lights enabled are written here
+	u32 lightsEnabled; //lights enabled are written here
 	u32 textureParamsValue;
 	u16 diffuseValue;
 	u16 ambientValue;
@@ -1826,6 +1826,7 @@ extern void glColor3b(uint8 red, uint8 green, uint8 blue, struct TGDSOGL_Display
 extern void glVertex3v16(v16 x, v16 y, v16 z, struct TGDSOGL_DisplayListContext * Inst);
 extern void glVertex3v10(v10 x, v10 y, v10 z, struct TGDSOGL_DisplayListContext * Inst);
 extern void glVertex2v16(v16 x, v16 y, struct TGDSOGL_DisplayListContext * Inst);
+extern void updateGXLights(struct TGDSOGL_DisplayListContext * Inst);
 extern int getTextureBaseFromTextureSlot(int textureSlot);
 extern uint32 textures[MAX_TEXTURES];
 extern uint32 activeTexture;
