@@ -1269,7 +1269,7 @@ static void handleInmediateGXDisplayList(u32 * sourcePhysDisplayList, u32 * sour
 		int cmdCount = (alternateParamsCount*4);
 		if(cmdCount > 0){
 			//substract cmdCount from current sourcePhysDisplayListPtr, get buffer src and copy to target buffer, by cmdCount count, and run
-			*sourcePhysDisplayListPtr = (*sourcePhysDisplayListPtr - (cmdCount/4)); //Rewind cmd + arg list to use then restore the original DL offset so it's reentrant in order to prevents overflow.
+			*sourcePhysDisplayListPtr = (*sourcePhysDisplayListPtr - (alternateParamsCount)); //Rewind cmd + arg list to use then restore the original DL offset so it's reentrant in order to prevents overflow.
 			if(cmdCount > PHYS_GXFIFO_INTERNAL_SIZE){
 				cmdCount = PHYS_GXFIFO_INTERNAL_SIZE;
 			}

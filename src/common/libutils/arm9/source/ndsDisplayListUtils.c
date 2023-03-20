@@ -1192,46 +1192,48 @@ int main(int argc, char** argv){
 	}
 	*/
 
-	//NintendoDS: OpenGL 1.0 Dynamic Display List 
-	/*
-	//ReSizeGLScene(255, 191);
-	InitGL();
 	
-	while (1){
-		DrawGLScene();
-	}
 
 	//Unit Test #1: Tests OpenGL DisplayLists components functionality then emitting proper GX displaylists, unpacked format.
-	int list = glGenLists(10);
-	if(list){
-		glListBase(list);
-		bool ret = glIsList(list); //should return false (DL generated, but no displaylist-name was generated)
-		glNewList(list, GL_COMPILE);
-		ret = glIsList(list); //should return true (DL generated, and displaylist-name was generated)
-		if(ret == true){
-			for (int i = 0; i <10; i ++){ //Draw 10 cubes
-				glPushMatrix();
-				glRotatef(36*i,0.0,0.0,1.0);
-				glTranslatef(10.0,0.0,0.0);
-				glPopMatrix(1);
+	{
+		int list = glGenLists(1, USERSPACE_TGDS_OGL_DL_POINTER);
+		if(list){
+			int i = 0;
+			bool ret = 0;
+			glListBase(list, USERSPACE_TGDS_OGL_DL_POINTER);
+			ret = glIsList(list, USERSPACE_TGDS_OGL_DL_POINTER); //should return false (DL generated, but no displaylist-name was generated)
+			glNewList(list, GL_COMPILE, USERSPACE_TGDS_OGL_DL_POINTER);
+			ret = glIsList(list, USERSPACE_TGDS_OGL_DL_POINTER); //should return true (DL generated, and displaylist-name was generated)
+			if(ret == true){
+				for (i = 0; i <10; i ++){ //Draw 10 cubes
+					glPushMatrix(USERSPACE_TGDS_OGL_DL_POINTER);
+					glRotatef(36*i,0.0,0.0,1.0, USERSPACE_TGDS_OGL_DL_POINTER);
+					glTranslatef(10.0,0.0,0.0, USERSPACE_TGDS_OGL_DL_POINTER);
+					glPopMatrix(1, USERSPACE_TGDS_OGL_DL_POINTER);
+				}
 			}
-		}
-		glEndList(); 
+			glEndList(USERSPACE_TGDS_OGL_DL_POINTER); 
 		
-		glListBase(list + 1);
-		glNewList (list + 1, GL_COMPILE);//Create a second display list and execute it
-        ret = glIsList(list + 1); //should return true (DL generated, and displaylist-name was generated)
-		if(ret == true){
-			for (int i = 0; i <20; i ++){ //Draw 20 triangles
-				glPushMatrix();
-				glRotatef(18*i,0.0,0.0,1.0);
-				glTranslatef(15.0,0.0,0.0);
-				glPopMatrix(1);
+			glListBase(list + 1, USERSPACE_TGDS_OGL_DL_POINTER);
+			glNewList (list + 1, GL_COMPILE, USERSPACE_TGDS_OGL_DL_POINTER);//Create a second display list and execute it
+			ret = glIsList(list + 1, USERSPACE_TGDS_OGL_DL_POINTER); //should return true (DL generated, and displaylist-name was generated)
+			if(ret == true){
+				for (i = 0; i <20; i ++){ //Draw 20 triangles
+					glPushMatrix(USERSPACE_TGDS_OGL_DL_POINTER);
+					glRotatef(18*i,0.0,0.0,1.0, USERSPACE_TGDS_OGL_DL_POINTER);
+					glTranslatef(15.0,0.0,0.0, USERSPACE_TGDS_OGL_DL_POINTER);
+					glPopMatrix(1, USERSPACE_TGDS_OGL_DL_POINTER);
+				}
 			}
+			glEndList(USERSPACE_TGDS_OGL_DL_POINTER);//The second display list is created
 		}
-		glEndList();//The second display list is created
+		glCallList(1, USERSPACE_TGDS_OGL_DL_POINTER);
+	
+		//delete
+		glDeleteLists(list, 1, USERSPACE_TGDS_OGL_DL_POINTER); //remove 5 of them
 	}
 	
+	/*
 	u32 * CompiledDisplayListsBuffer =(u32 *)&InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_OpenGLDisplayListStartOffset]; //Lists called earlier are written to this buffer, using the unpacked GX command format.
 	//Unit Test #2:
 	//Takes an unpacked format display list, gets converted into packed format then exported as C Header file source code

@@ -1614,11 +1614,11 @@ void glMaterialf(
 	GLfloat param, 
 	struct TGDSOGL_DisplayListContext * Inst
    ){
+	GLfloat params[4];
 	if((GLenum)pname != (GLenum)GL_SHININESS){ //only this command is supported, reject everything else.
 		errorStatus = GL_INVALID_ENUM;
 		return;
 	}
-	GLfloat params[4];
 	params[0] = param; 
 	glMaterialfv (face, pname, (const GLfloat *)&params, Inst);
 }
@@ -2966,15 +2966,8 @@ void glCallList(GLuint list, struct TGDSOGL_DisplayListContext * TGDSOGL_Display
 		curDLInCompiledDLOffset = TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary_Enumerator[list];
 		if((u32)curDLInCompiledDLOffset != DL_INVALID){
 			u32 * currentPhysicalDisplayListStart = (u32 *)&InternalDL[curDLInCompiledDLOffset];
-			if(curDLInCompiledDLOffset == 2){
-				currentPhysicalDisplayListStart-=2;
-				*(currentPhysicalDisplayListStart+1)=(*currentPhysicalDisplayListStart)-4;
-				currentPhysicalDisplayListStart++;
-			}
-			else{
-				currentPhysicalDisplayListStart--;
-			}
-			singleListSize = *currentPhysicalDisplayListStart;
+			currentPhysicalDisplayListStart--;
+			singleListSize = (*currentPhysicalDisplayListStart);
 			if(singleListSize > 0){
 				//Run a single GX Display List, having proper DL size
 				u32 customsingleOpenGLCompiledDisplayListPtr = (singleListSize/4); //account the internal pointer ahead because DLs executed later are treated as the internal DL GX Binary
