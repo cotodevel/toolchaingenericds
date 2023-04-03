@@ -2966,7 +2966,15 @@ void glCallList(GLuint list, struct TGDSOGL_DisplayListContext * TGDSOGL_Display
 		curDLInCompiledDLOffset = TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary_Enumerator[list];
 		if((u32)curDLInCompiledDLOffset != DL_INVALID){
 			u32 * currentPhysicalDisplayListStart = (u32 *)&InternalDL[curDLInCompiledDLOffset];
-			currentPhysicalDisplayListStart--;
+			//Fixup for first OpenGL DL Entry
+			if(curDLInCompiledDLOffset == 2){
+				currentPhysicalDisplayListStart-=2;
+				*(currentPhysicalDisplayListStart+1)=(*currentPhysicalDisplayListStart)-4;
+				currentPhysicalDisplayListStart++;
+			}
+			else{
+				currentPhysicalDisplayListStart--;
+			}
 			singleGXDisplayListSize = (*currentPhysicalDisplayListStart);
 			if(singleGXDisplayListSize > 0){
 				//Run a single GX Display List, having proper DL size
