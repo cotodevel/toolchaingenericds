@@ -4955,7 +4955,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 		}
 		glNewList(OGL_DL_DRAW_ARRAYS_METHOD, GL_COMPILE_AND_EXECUTE, INTERNAL_TGDS_OGL_DL_POINTER);
 			glBegin(mode, INTERNAL_TGDS_OGL_DL_POINTER);
-			for(i = 0; i < count; i+=(argsTotal*argCount)){
+			for(i = 0; i < (argCount*count); i+=(argCount)){
 				if(vboColorEnabled == true){
 					switch(vboColor->ElementsPerVertexBufferObjectUnit){
 						//unsigned char
