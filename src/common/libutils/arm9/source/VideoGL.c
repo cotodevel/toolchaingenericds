@@ -5535,4 +5535,17 @@ void glGetIntegerv(
 	   glGetFloatv(pname, (GLfloat*)params);
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void glGetBooleanv(
+   GLenum pname,
+   GLboolean *params
+   ){
+	glGetFloatv(pname, (GLfloat*)params);
+}
+
 //////////////////////////////////////////////////////////// Extended Vertex Array Buffers and Vertex Buffer Objects OpenGL 1.1 end //////////////////////////////////////////

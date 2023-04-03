@@ -1503,6 +1503,10 @@ extern void glGetIntegerv(
    GLenum pname,
    GLint  *params
 );
+extern void glGetBooleanv(
+   GLenum pname,
+   GLboolean *params
+);
 #ifdef ARM9
 #ifdef __cplusplus
 }
