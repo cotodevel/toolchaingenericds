@@ -60,7 +60,10 @@ Guidelines:
 - If TGDS homebrew doesn't boot, or boots incorrectly (dead touchscreen, no audio, etc), first try to reload such homebrew through ToolchainGenericDS-multiboot, otherwise, notify me.
 - If TGDS homebrew doesn't initialize filesystem, make sure you use FAT32 64K/32K/16K/4K, or FAT16 64K/32K/16K/4K, anything else is untested and unsupported.
 - NTR Mode: Make sure to DLDI patch TGDS homebrew. For TGDS homebrew development, you can use TGDS-RAMDISK DLDI or others. TWL mode doesn't care because it maps the internal SD as filesystem.
-
+- C++ support: 
+	-1) Partial (not fully C++98 compliant), which means static templates and virtual/friend classes do not work. Use C code because it's much faster (50%+ speed boost, in game engines). 
+	-2) C++ is NOT as portable as C. 
+	
 ---------------------------------------------
 Development guidelines:
 
