@@ -137,6 +137,8 @@ typedef void GLvoid;
 
 #define GFX_POLY_FORMAT       (*(vuint32*) 0x040004A4)
 #define GFX_FLUSH             (*(vuint32*) 0x04000540)
+#define GX_ERROR_BIT ((u32)(1<<15))
+
 //////////////////////////////////////////////////////////////////////
 // Matrix processor control
 //////////////////////////////////////////////////////////////////////
@@ -236,12 +238,14 @@ typedef void GLvoid;
 
 struct GLContext{
 	GLenum primitiveShadeModelMode;	//glShadeModel(GLenum mode: [GL_FLAT/GL_SMOOTH]);
-	u8 lightsEnabled; //lights enabled are written here
+	u32 lightsEnabled; //lights enabled are written here
 	u32 textureParamsValue;
 	u16 diffuseValue;
 	u16 ambientValue;
 	u16 specularValue;
 	u16 emissionValue;
+	float shininessValue;
+	u32 polyAttributes; //POLY_ALPHA(31) | POLY_CULL_NONE , etc. This attribute is later implemented as: glPolyFmt(globalGLCtx.polyAttributes); when rendering
 
 	//latest Viewport
 	u32 lastViewport; //(x1) + (y1 << 8) + (x2 << 16) + (y2 << 24) //x1 = x, y1 = y, x2 = 
@@ -1128,10 +1132,8 @@ enum {
 #define PHYS_GXFIFO_INTERNAL_SIZE ((int)512)
 
 //Max GL Lists allocated in the OpenGL API
-#define InternalUnpackedGX_DL_internalSize ((int)8192) //Max internal DL unpacked GX command/arguments count: 8192*4 = 32768 bytes. first 4K half: Standard OpenGL commands ; Second 4K half: OpenGL Display List commands
-#define InternalUnpackedGX_DL_workSize	(InternalUnpackedGX_DL_internalSize/2) 
-#define InternalUnpackedGX_DL_StandardOpenGLStartOffset (InternalUnpackedGX_DL_workSize * 0)
-#define InternalUnpackedGX_DL_OpenGLDisplayListStartOffset (InternalUnpackedGX_DL_workSize * 1)
+#define InternalUnpackedGX_DL_workSize	((int)4096) //Max internal DL unpacked GX command/arguments count: up to 4096 in-queue 
+#define InternalUnpackedGX_DL_OpenGLDisplayListStartOffset (InternalUnpackedGX_DL_workSize * 0)
 
 //Display List Descriptor
 #define DL_INVALID (u32)(-1)
@@ -1178,7 +1180,7 @@ struct TGDSOGL_DisplayListContext {
 	GLsizei InternalUnpackedGX_DL_Binary_Enumerator[InternalUnpackedGX_DL_workSize/sizeof(GLsizei)];
 	u32 LastGXInternalDisplayListPtr;
 	u32 LastActiveOpenGLDisplayList;
-	u32 InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_internalSize];
+	u32 InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_workSize];
 	u32 InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 	bool isAnOpenGLExtendedDisplayListCallList;
 	u32	mode; //GLenum mode: //Specifies the compilation mode, which can be GL_COMPILE or GL_COMPILE_AND_EXECUTE. Set up by glNewList()
@@ -1251,356 +1253,6 @@ extern void glGetDoublev(
 );
 
 extern void glCallListGX(const u32* list);
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-inline
-#endif
-static void handleInmediateGXDisplayList(u32 * sourcePhysDisplayList, u32 * sourcePhysDisplayListPtr, u8 cmdSource, int alternateParamsCount, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext){
-	if(TGDSOGL_DisplayListContext->isAnOpenGLExtendedDisplayListCallList == false){ //Only run Standard Open GL calls. Extended OpenGL DL CallLists are ran from standard-specific CallList() opcodes
-		//Identify cmdSource, if not exists, use alternateParamsCount instead (cmd(s) + arg(s) count)
-		int cmdCount = (alternateParamsCount*4);
-		if(cmdCount > 0){
-			//substract cmdCount from current sourcePhysDisplayListPtr, get buffer src and copy to target buffer, by cmdCount count, and run
-			*sourcePhysDisplayListPtr = (*sourcePhysDisplayListPtr - (cmdCount/4)); //Rewind cmd + arg list to use then restore the original DL offset so it's reentrant in order to prevents overflow.
-			if(cmdCount > PHYS_GXFIFO_INTERNAL_SIZE){
-				cmdCount = PHYS_GXFIFO_INTERNAL_SIZE;
-			}
-			memset(SingleUnpackedGXCommand_DL_Binary, 0, PHYS_GXFIFO_INTERNAL_SIZE);
-			SingleUnpackedGXCommand_DL_Binary[0] = (u32)cmdCount;
-			memcpy((u8*)&SingleUnpackedGXCommand_DL_Binary[1], (u8*)&sourcePhysDisplayList[*sourcePhysDisplayListPtr], cmdCount);
-
-			#ifdef WIN32
-			if(cmdSource == MTX_ROTATE_Z){
-				printf("\n\n\n\n\n!!!!!![CUSTOM COMMAND: MTX_ROTATE_Z]!!!!!!\n");
-			}
-			else if(cmdSource == MTX_ROTATE_Y){
-				printf("\n\n\n\n\n!!!!!![CUSTOM COMMAND: MTX_ROTATE_Y]!!!!!!\n");
-			}
-			else if(cmdSource == MTX_ROTATE_X){
-				printf("\n\n\n\n\n!!!!!![CUSTOM COMMAND: MTX_ROTATE_X]!!!!!!\n");
-			}
-			else if(cmdSource == MTX_FRUSTRUM){
-				printf("\n\n\n\n\n!!!!!![CUSTOM COMMAND: MTX_FRUSTRUM]!!!!!!\n");
-			}
-			else if(cmdSource == MTX_LOOKAT){
-				printf("\n\n\n\n\n!!!!!![CUSTOM COMMAND: MTX_LOOKAT]!!!!!!\n");
-			}
-			else if(cmdSource == OPENGL_DL_TO_GX_DL_EXEC_CMD){
-				printf("\n\n\n\n\n!!!!!![CUSTOM COMMAND: OPENGL_DL_TO_GX_DL_EXEC_CMD]!!!!!!\n");
-			}
-			#endif
-			//Hardware CallList
-			glCallListGX((const u32*)&SingleUnpackedGXCommand_DL_Binary[0]);
-			
-			//Emulated CallList (slow, debugging purposes)
-			/*
-			u32 * currCmd = &SingleUnpackedGXCommand_DL_Binary[1];
-			int leftArgCnt = (cmdCount/4); // -1 is removed command itself from the arg list count 
-			while(leftArgCnt > 0){
-				u8 val = (u8)*currCmd;
-				if (val == (u32)getMTX_STORE) {
-					//write commands
-					currCmd++; 
-					u32 arg1 = *currCmd; currCmd++;
-					#ifdef ARM9
-					MATRIX_STORE = arg1;
-					#endif
-					leftArgCnt-= MTX_STORE_GXCommandParamsCount == 0 ? 1 : MTX_STORE_GXCommandParamsCount;
-				}
-				else if (val == (u32)getMTX_TRANS) {
-					//write commands
-					currCmd++; 
-					u32 arg1 = *currCmd; currCmd++;
-					u32 arg2 = *currCmd; currCmd++;
-					u32 arg3 = *currCmd; currCmd++;
-					#ifdef ARM9
-					MATRIX_TRANSLATE = arg1;
-					MATRIX_TRANSLATE = arg2;
-					MATRIX_TRANSLATE = arg3;
-					#endif
-					leftArgCnt-= MTX_TRANS_GXCommandParamsCount == 0 ? 1 : MTX_TRANS_GXCommandParamsCount;
-				}
-				else if (val == (u32)getMTX_IDENTITY) {
-					//write commands
-					currCmd++; 
-					#ifdef ARM9
-					MATRIX_IDENTITY = 0;
-					#endif
-					leftArgCnt-= MTX_IDENTITY_GXCommandParamsCount == 0 ? 1 : MTX_IDENTITY_GXCommandParamsCount;
-				}
-				else if (val == (u32)getMTX_MODE) {
-					//write commands
-					currCmd++; 
-					u32 arg1 = *currCmd; currCmd++;
-					#ifdef ARM9
-					MATRIX_CONTROL = arg1;
-					#endif
-					leftArgCnt-= MTX_MODE_GXCommandParamsCount == 0 ? 1 : MTX_MODE_GXCommandParamsCount;
-				}
-				else if (val == (u32)getVIEWPORT) {
-					//write commands
-					currCmd++; 
-					u32 arg1 = *currCmd; currCmd++;
-					#ifdef ARM9
-					GFX_VIEWPORT = arg1;
-					#endif
-					leftArgCnt-= VIEWPORT_GXCommandParamsCount == 0 ? 1 : VIEWPORT_GXCommandParamsCount;
-				}
-				else if (val == (u32)getFIFO_TEX_COORD) {
-					//write commands
-					currCmd++; 
-					u32 arg1 = *currCmd; currCmd++;
-					#ifdef ARM9
-					GFX_TEX_COORD = arg1;
-					#endif
-					leftArgCnt-= FIFO_TEX_COORD_GXCommandParamsCount == 0 ? 1 : FIFO_TEX_COORD_GXCommandParamsCount;
-				}
-				else if (val == (u32)getFIFO_BEGIN) {
-					//write commands
-					currCmd++; 
-					u32 arg1 = *currCmd; currCmd++;
-					#ifdef ARM9
-					GFX_BEGIN = arg1;
-					#endif
-					leftArgCnt-= FIFO_BEGIN_GXCommandParamsCount == 0 ? 1 : FIFO_BEGIN_GXCommandParamsCount;
-				}
-				else if (val == (u32)getFIFO_END) {
-					//write commands
-					currCmd++; 
-					#ifdef ARM9
-					GFX_END = 0;
-					#endif
-					leftArgCnt-= FIFO_END_GXCommandParamsCount == 0 ? 1 : FIFO_END_GXCommandParamsCount;
-				}
-				else if (val == (u32)getFIFO_COLOR) {
-					//write commands
-					currCmd++; 
-					u32 arg1 = *currCmd; currCmd++;
-					#ifdef ARM9
-					GFX_COLOR = arg1;
-					#endif
-					leftArgCnt-= FIFO_COLOR_GXCommandParamsCount == 0 ? 1 : FIFO_COLOR_GXCommandParamsCount;
-				}
-				else if (val == (u32)getFIFO_NORMAL) {
-					//write commands
-					currCmd++; 
-					u32 arg1 = *currCmd; currCmd++;
-					#ifdef ARM9
-					GFX_NORMAL = arg1;
-					#endif
-					leftArgCnt-= FIFO_NORMAL_GXCommandParamsCount == 0 ? 1 : FIFO_NORMAL_GXCommandParamsCount;
-				}
-				else if (val == (u32)getFIFO_VERTEX16) { 
-					//write commands
-					currCmd++; 
-					u32 arg1 = *currCmd; currCmd++;
-					u32 arg2 = *currCmd; currCmd++;
-					#ifdef ARM9
-					GFX_VERTEX16 = arg1;
-					GFX_VERTEX16 = arg2;
-					#endif
-					leftArgCnt-= FIFO_VERTEX16_GXCommandParamsCount == 0 ? 1 : FIFO_VERTEX16_GXCommandParamsCount;
-				}
-				else if (val == (u32)getFIFO_VERTEX10) {
-					//write commands
-					currCmd++; 
-					u32 arg1 = *currCmd; currCmd++;
-					#ifdef ARM9
-					GFX_VERTEX10 = arg1;
-					#endif
-					leftArgCnt-= FIFO_VERTEX10_GXCommandParamsCount == 0 ? 1 : FIFO_VERTEX10_GXCommandParamsCount;
-				}
-				else if (val == (u32)getFIFO_VTX_XY()) { 
-					//write commands
-					currCmd++; 
-					u32 arg1 = *currCmd; currCmd++;
-					#ifdef ARM9
-					GFX_VERTEX_XY = arg1;
-					#endif
-					leftArgCnt-= FIFO_VTX_XY_GXCommandParamsCount == 0 ? 1 : FIFO_VTX_XY_GXCommandParamsCount;
-				}
-				else if (val == (u32)getMTX_PUSH) { 
-					//write commands
-					currCmd++; 
-					#ifdef ARM9
-					MATRIX_PUSH = 0;
-					#endif
-					leftArgCnt-= MTX_PUSH_GXCommandParamsCount == 0 ? 1 : MTX_PUSH_GXCommandParamsCount;
-				}
-				else if (val == (u32)getMTX_POP) { 
-					//write commands
-					currCmd++; 
-					u32 arg1 = *currCmd; currCmd++;
-					#ifdef ARM9
-					MATRIX_POP = arg1;
-					#endif
-					leftArgCnt-= MTX_POP_GXCommandParamsCount == 0 ? 1 : MTX_POP_GXCommandParamsCount;
-				}
-				else if (val == (u32)getMTX_MULT_3x3) {
-					//write commands
-					currCmd++; 
-					u32 arg1 = *currCmd; currCmd++;
-					u32 arg2 = *currCmd; currCmd++;
-					u32 arg3 = *currCmd; currCmd++;
-					u32 arg4 = *currCmd; currCmd++;
-					u32 arg5 = *currCmd; currCmd++;
-					u32 arg6 = *currCmd; currCmd++;
-					u32 arg7 = *currCmd; currCmd++;
-					u32 arg8 = *currCmd; currCmd++;
-					u32 arg9 = *currCmd; currCmd++;
-					#ifdef ARM9
-					MATRIX_MULT3x3 = arg1;
-					MATRIX_MULT3x3 = arg2;
-					MATRIX_MULT3x3 = arg3;
-					MATRIX_MULT3x3 = arg4;
-					MATRIX_MULT3x3 = arg5;
-					MATRIX_MULT3x3 = arg6;
-					MATRIX_MULT3x3 = arg7;
-					MATRIX_MULT3x3 = arg8;
-					MATRIX_MULT3x3 = arg9;
-					#endif
-					leftArgCnt-= MTX_MULT_3x3_GXCommandParamsCount == 0 ? 1 : MTX_MULT_3x3_GXCommandParamsCount;
-				}
-				else if (val == (u32)getMTX_MULT_4x4) {
-					//write commands
-					currCmd++; 
-					u32 arg1 = *currCmd; currCmd++;
-					u32 arg2 = *currCmd; currCmd++;
-					u32 arg3 = *currCmd; currCmd++;
-					u32 arg4 = *currCmd; currCmd++;
-					u32 arg5 = *currCmd; currCmd++;
-					u32 arg6 = *currCmd; currCmd++;
-					u32 arg7 = *currCmd; currCmd++;
-					u32 arg8 = *currCmd; currCmd++;
-					u32 arg9 = *currCmd; currCmd++;
-					u32 arg10 = *currCmd; currCmd++;
-					u32 arg11 = *currCmd; currCmd++;
-					u32 arg12 = *currCmd; currCmd++;
-					u32 arg13 = *currCmd; currCmd++;
-					u32 arg14 = *currCmd; currCmd++;
-					u32 arg15 = *currCmd; currCmd++;
-					u32 arg16 = *currCmd; currCmd++;
-					
-					#ifdef ARM9
-					MATRIX_MULT4x4 = arg1;
-					MATRIX_MULT4x4 = arg2;
-					MATRIX_MULT4x4 = arg3;
-					MATRIX_MULT4x4 = arg4;
-					MATRIX_MULT4x4 = arg5;
-					MATRIX_MULT4x4 = arg6;
-					MATRIX_MULT4x4 = arg7;
-					MATRIX_MULT4x4 = arg8;
-					MATRIX_MULT4x4 = arg9;
-					MATRIX_MULT4x4 = arg10;
-					MATRIX_MULT4x4 = arg11;
-					MATRIX_MULT4x4 = arg12;
-					MATRIX_MULT4x4 = arg13;
-					MATRIX_MULT4x4 = arg14;
-					MATRIX_MULT4x4 = arg15;
-					MATRIX_MULT4x4 = arg16;
-					#endif
-					leftArgCnt-= MTX_MULT_4x4_GXCommandParamsCount == 0 ? 1 : MTX_MULT_4x4_GXCommandParamsCount;
-				}
-
-				else if (val == (u32)getMTX_LOAD_4x4) {
-					//write commands
-					currCmd++; 
-					u32 arg1 = *currCmd; currCmd++;
-					u32 arg2 = *currCmd; currCmd++;
-					u32 arg3 = *currCmd; currCmd++;
-					u32 arg4 = *currCmd; currCmd++;
-					u32 arg5 = *currCmd; currCmd++;
-					u32 arg6 = *currCmd; currCmd++;
-					u32 arg7 = *currCmd; currCmd++;
-					u32 arg8 = *currCmd; currCmd++;
-					u32 arg9 = *currCmd; currCmd++;
-					u32 arg10 = *currCmd; currCmd++;
-					u32 arg11 = *currCmd; currCmd++;
-					u32 arg12 = *currCmd; currCmd++;
-					u32 arg13 = *currCmd; currCmd++;
-					u32 arg14 = *currCmd; currCmd++;
-					u32 arg15 = *currCmd; currCmd++;
-					u32 arg16 = *currCmd; currCmd++;
-					
-					#ifdef ARM9
-					MATRIX_LOAD4x4 = arg1;     
-					MATRIX_LOAD4x4 = arg2;  
-					MATRIX_LOAD4x4 = arg3;      
-					MATRIX_LOAD4x4 = arg4;
-
-					MATRIX_LOAD4x4 = arg5;  
-					MATRIX_LOAD4x4 = arg6;     
-					MATRIX_LOAD4x4 = arg7;      
-					MATRIX_LOAD4x4 = arg8;
-		
-					MATRIX_LOAD4x4 = arg9;  
-					MATRIX_LOAD4x4 = arg10;  
-					MATRIX_LOAD4x4 = arg11;     
-					MATRIX_LOAD4x4 = arg12;
-		
-					MATRIX_LOAD4x4 = arg13;  
-					MATRIX_LOAD4x4 = arg14;  
-					MATRIX_LOAD4x4 = arg15;  
-					MATRIX_LOAD4x4 = arg16;
-					#endif
-					leftArgCnt-= MTX_LOAD_4x4_GXCommandParamsCount == 0 ? 1 : MTX_LOAD_4x4_GXCommandParamsCount;
-				}
-
-				else if (val == (u32)getMTX_LOAD_4x3) {
-					//write commands
-					currCmd++; 
-					u32 arg1 = *currCmd; currCmd++;
-					u32 arg2 = *currCmd; currCmd++;
-					u32 arg3 = *currCmd; currCmd++;
-					u32 arg4 = *currCmd; currCmd++;
-					u32 arg5 = *currCmd; currCmd++;
-					u32 arg6 = *currCmd; currCmd++;
-					u32 arg7 = *currCmd; currCmd++;
-					u32 arg8 = *currCmd; currCmd++;
-					u32 arg9 = *currCmd; currCmd++;
-					u32 arg10 = *currCmd; currCmd++;
-					u32 arg11 = *currCmd; currCmd++;
-					u32 arg12 = *currCmd; currCmd++;
-					
-					#ifdef ARM9
-					MATRIX_LOAD4x3 = arg1;
-					MATRIX_LOAD4x3 = arg2;
-					MATRIX_LOAD4x3 = arg3;
-
-					MATRIX_LOAD4x3 = arg4;
-					MATRIX_LOAD4x3 = arg5;
-					MATRIX_LOAD4x3 = arg6;
-
-					MATRIX_LOAD4x3 = arg7;
-					MATRIX_LOAD4x3 = arg8;
-					MATRIX_LOAD4x3 = arg9;
-
-					MATRIX_LOAD4x3 = arg10;
-					MATRIX_LOAD4x3 = arg11;
-					MATRIX_LOAD4x3 = arg12;
-					#endif
-					leftArgCnt-= MTX_LOAD_4x3_GXCommandParamsCount == 0 ? 1 : MTX_LOAD_4x3_GXCommandParamsCount;
-				}
-
-				//N/A      00h -  -   NOP - No Operation (for padding packed GXFIFO commands)
-				else  {  //if (val == (u32)getNOP())
-					//write commands
-					currCmd++; 
-					leftArgCnt-= (NOP_GXCommandParamsCount == 0 ? 1 : NOP_GXCommandParamsCount);
-					//custom command invoked this, so quit
-					//break;
-				}
-			}
-			*/
-		}
-	}
-}
 //////////////////////////////////////////////////////////// Extended Display List OpenGL 1.1 end //////////////////////////////////////////
 
 
@@ -1711,11 +1363,10 @@ extern int OGL_DL_DRAW_ARRAYS_METHOD;
 
 //////////////////////////////////////////////////////////// Extended Vertex Array Buffers and Vertex Buffer Objects OpenGL 1.1 end //////////////////////////////////////////
 
-
-extern uint32 diffuse_ambient;
-extern uint32 specular_emission;
 extern void glEnable(int bits);
 extern void glDisable(int bits);
+
+extern void glLoadMatrixf(const GLfloat *m, struct TGDSOGL_DisplayListContext * Inst);
 extern void glLoadMatrix4x4(m4x4 * m, struct TGDSOGL_DisplayListContext * Inst);
 extern void glLoadMatrix4x3(m4x3 * m, struct TGDSOGL_DisplayListContext * Inst);
 extern void glMultMatrix4x4(m4x4 * m, struct TGDSOGL_DisplayListContext * Inst);
@@ -1736,7 +1387,12 @@ extern int glTexImage2D(int target, int empty1, int type, int sizeX, int sizeY, 
 extern void glBindTexture(int target, int name, struct TGDSOGL_DisplayListContext * Inst);
 extern int glGenTextures(int n, int *names);
 extern void glResetTextures(void);
-extern void glMaterialf(int mode, rgb color, struct TGDSOGL_DisplayListContext * Inst);
+extern void glMaterialf(
+	GLenum  face,
+	GLenum  pname,
+	GLfloat param, 
+	struct TGDSOGL_DisplayListContext * Inst
+);
 extern void glResetMatrixStack(struct TGDSOGL_DisplayListContext * Inst);
 extern void glSetOutlineColor(int id, rgb color);
 extern void glSetToonTable(uint16 *table);
@@ -1822,6 +1478,7 @@ extern void glColor3b(uint8 red, uint8 green, uint8 blue, struct TGDSOGL_Display
 extern void glVertex3v16(v16 x, v16 y, v16 z, struct TGDSOGL_DisplayListContext * Inst);
 extern void glVertex3v10(v10 x, v10 y, v10 z, struct TGDSOGL_DisplayListContext * Inst);
 extern void glVertex2v16(v16 x, v16 y, struct TGDSOGL_DisplayListContext * Inst);
+extern void updateGXLights(struct TGDSOGL_DisplayListContext * Inst);
 extern int getTextureBaseFromTextureSlot(int textureSlot);
 extern uint32 textures[MAX_TEXTURES];
 extern uint32 activeTexture;
@@ -1836,7 +1493,20 @@ extern void glTexParameteri(
 	GLint  param, 
 	struct TGDSOGL_DisplayListContext * Inst
 );
-
+extern void glCullFace(GLenum mode);
+extern void glGetMaterialfv(
+   GLenum  face,
+   GLenum  pname,
+   GLfloat *params
+);
+extern void glGetIntegerv(
+   GLenum pname,
+   GLint  *params
+);
+extern void glGetBooleanv(
+   GLenum pname,
+   GLboolean *params
+);
 #ifdef ARM9
 #ifdef __cplusplus
 }
