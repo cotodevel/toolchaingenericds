@@ -43,6 +43,7 @@
 #include <typedefsTGDS.h>
 #include "dsregs.h"
 #include "videoTGDS.h"
+#include "dmaTGDS.h"
 #include "dsregs.h"
 #endif
 
@@ -2794,8 +2795,11 @@ void updateGXLights(struct TGDSOGL_DisplayListContext * Inst){
 //After that, there must be a 1 cycle delay before sending the next command 
 //(ie. one cannot sent more than one command at once with a single opcode, each command must be invoked by a new opcode).
 
+
+#ifdef _MSC_VER
 //Scratchpad GX buffer
-u32 SingleUnpackedGXCommand_DL_Binary[PHYS_GXFIFO_INTERNAL_SIZE]; //Unpacked single command GX Buffer
+u32 SingleUnpackedGXCommand_DL_Binary[PHYS_GXFIFO_INTERNAL_SIZE];
+#endif
 
 struct TGDSOGL_DisplayListContext TGDSOGL_DisplayListContextInst[MAX_TGDSOGL_DisplayListContexts];
 
@@ -2982,10 +2986,17 @@ void glCallList(GLuint list, struct TGDSOGL_DisplayListContext * TGDSOGL_Display
 					if(singleGXDisplayListSize > PHYS_GXFIFO_INTERNAL_SIZE){
 						singleGXDisplayListSize = PHYS_GXFIFO_INTERNAL_SIZE;
 					}
-					memset(SingleUnpackedGXCommand_DL_Binary, 0, PHYS_GXFIFO_INTERNAL_SIZE);
-					SingleUnpackedGXCommand_DL_Binary[0] = (u32)singleGXDisplayListSize;
-					memcpy((u8*)&SingleUnpackedGXCommand_DL_Binary[1], (u8*)&currentPhysicalDisplayListStart[0], singleGXDisplayListSize);
 
+					#ifdef WIN32
+					memset(SingleUnpackedGXCommand_DL_Binary, 0, singleGXDisplayListSize);
+					memcpy((u8*)&SingleUnpackedGXCommand_DL_Binary[1], (u8*)&currentPhysicalDisplayListStart[0], singleGXDisplayListSize);
+					#endif
+					#ifdef ARM9
+					dmaFillWord(0, 0, (uint32)SingleUnpackedGXCommand_DL_Binary, (uint32)PHYS_GXFIFO_INTERNAL_SIZE);
+					dmaTransferWord(0, (uint32)&currentPhysicalDisplayListStart[0], (uint32)&SingleUnpackedGXCommand_DL_Binary[1], (uint32)singleGXDisplayListSize);
+					coherent_user_range_by_size((uint32)SingleUnpackedGXCommand_DL_Binary, singleGXDisplayListSize);
+					#endif
+					SingleUnpackedGXCommand_DL_Binary[0] = (u32)singleGXDisplayListSize;
 					//Hardware CallList
 					glCallListGX((const u32*)&SingleUnpackedGXCommand_DL_Binary[0]);
 					
@@ -4353,7 +4364,6 @@ stride: The byte offset between consecutive vertices. When stride is zero, the v
 
 pointer: A pointer to the first coordinate of the first vertex in the array.
 */
-//Note: Method adapted to work around OpenGL1.5
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
@@ -4390,8 +4400,12 @@ void glVertexPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *ptr)
 	}
 	if(ptr != NULL){
 		vboVertex->vboArrayMemoryStart = (u32*)ptr;
-		vboVertex->vboIsDynamicMemoryAllocated = false;
 	}
+	else{
+		errorStatus = GL_INVALID_VALUE;
+		return;
+	}
+	vboVertex->vboIsDynamicMemoryAllocated = false;
 	vboVertex->vertexBufferObjectstrideOffset = stride;
 	vboVertex->ElementsPerVertexBufferObjectUnit = typeSizeOf; //defines pointer length
 	vboVertex->VertexBufferObjectStartOffset = (int)0; //default to 0
@@ -4439,18 +4453,14 @@ void glNormalPointer( GLenum type, GLsizei stride, const GLvoid *ptr ){
 		errorStatus = GL_INVALID_VALUE;
 		return;
 	}
-	//OpenGL spec says it's Dynamic object allocation or using a referenced array
-	if(vboNormal->vboIsDynamicMemoryAllocated == true){
-		TGDSARM9Free(vboNormal->vboArrayMemoryStart);
-	}
-	if(ptr == NULL){
-		vboNormal->vboArrayMemoryStart = (u32*)TGDSARM9Malloc(typeSizeOf*VBO_ARRAY_SIZE);
-		vboNormal->vboIsDynamicMemoryAllocated = true;
+	if(ptr != NULL){
+		vboNormal->vboArrayMemoryStart = (u32*)ptr;
 	}
 	else{
-		vboNormal->vboArrayMemoryStart = (u32*)ptr;
-		vboNormal->vboIsDynamicMemoryAllocated = false;
+		errorStatus = GL_INVALID_VALUE;
+		return;
 	}
+	vboNormal->vboIsDynamicMemoryAllocated = false;
 	vboNormal->vertexBufferObjectstrideOffset = stride;
 	vboNormal->ElementsPerVertexBufferObjectUnit = typeSizeOf; //defines pointer length
 	vboNormal->VertexBufferObjectStartOffset = (int)0; //default to 0
@@ -4503,25 +4513,20 @@ void glColorPointer( GLint size, GLenum type, GLsizei stride, const GLvoid *ptr 
 		errorStatus = GL_INVALID_VALUE;
 		return;
 	}
-	//OpenGL spec says it's Dynamic object allocation or using a referenced array
-	if(vboColor->vboIsDynamicMemoryAllocated == true){
-		TGDSARM9Free(vboColor->vboArrayMemoryStart);
-	}
-	if(ptr == NULL){
-		vboColor->vboArrayMemoryStart = (u32*)TGDSARM9Malloc(size*typeSizeOf*VBO_ARRAY_SIZE);
-		vboColor->vboIsDynamicMemoryAllocated = true;
+	if(ptr != NULL){
+		vboColor->vboArrayMemoryStart = (u32*)ptr;
 	}
 	else{
-		vboColor->vboArrayMemoryStart = (u32*)ptr;
-		vboColor->vboIsDynamicMemoryAllocated = false;
+		errorStatus = GL_INVALID_VALUE;
+		return;
 	}
+	vboColor->vboIsDynamicMemoryAllocated = false;
 	vboColor->vertexBufferObjectstrideOffset = stride;
 	vboColor->ElementsPerVertexBufferObjectUnit = typeSizeOf; //defines pointer length
 	vboColor->VertexBufferObjectStartOffset = (int)0; //default to 0
 	vboColor->argCount = size;
 }
 
-//Note: Method adapted to work around OpenGL1.5
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
@@ -4554,8 +4559,12 @@ void glIndexPointer( GLenum type, GLsizei stride, const GLvoid *ptr ){
 	}
 	if(ptr != NULL){
 		vboIndex->vboArrayMemoryStart = (u32*)ptr;
-		vboIndex->vboIsDynamicMemoryAllocated = false;
 	}
+	else{
+		errorStatus = GL_INVALID_VALUE;
+		return;
+	}
+	vboIndex->vboIsDynamicMemoryAllocated = false;
 	vboIndex->vertexBufferObjectstrideOffset = stride;
 	vboIndex->ElementsPerVertexBufferObjectUnit = typeSizeOf; //defines pointer length
 	vboIndex->VertexBufferObjectStartOffset = (int)0; //default to 0
@@ -4596,18 +4605,14 @@ void glTexCoordPointer( GLint size, GLenum type, GLsizei stride, const GLvoid *p
 		errorStatus = GL_INVALID_VALUE;
 		return;
 	}
-	//OpenGL spec says it's Dynamic object allocation or using a referenced array
-	if(vboTexCoord->vboIsDynamicMemoryAllocated == true){
-		TGDSARM9Free(vboTexCoord->vboArrayMemoryStart);
-	}
-	if(ptr == NULL){
-		vboTexCoord->vboArrayMemoryStart = (u32*)TGDSARM9Malloc(size*typeSizeOf*VBO_ARRAY_SIZE);
-		vboTexCoord->vboIsDynamicMemoryAllocated = true;
+	if(ptr != NULL){
+		vboTexCoord->vboArrayMemoryStart = (u32*)ptr;
 	}
 	else{
-		vboTexCoord->vboArrayMemoryStart = (u32*)ptr;
-		vboTexCoord->vboIsDynamicMemoryAllocated = false;
+		errorStatus = GL_INVALID_VALUE;
+		return;
 	}
+	vboTexCoord->vboIsDynamicMemoryAllocated = false;
 	vboTexCoord->vertexBufferObjectstrideOffset = stride;
 	vboTexCoord->ElementsPerVertexBufferObjectUnit = typeSizeOf; //defines pointer length
 	vboTexCoord->VertexBufferObjectStartOffset = (int)0; //default to 0
@@ -4955,12 +4960,13 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 		}
 		glNewList(OGL_DL_DRAW_ARRAYS_METHOD, GL_COMPILE_AND_EXECUTE, INTERNAL_TGDS_OGL_DL_POINTER);
 			glBegin(mode, INTERNAL_TGDS_OGL_DL_POINTER);
-			for(i = 0; i < (argCount*count); i+=(argCount)){
+			for(i = 0; i < count; i++){
+				int nextOffset = 0;
 				if(vboColorEnabled == true){
 					switch(vboColor->ElementsPerVertexBufferObjectUnit){
 						//unsigned char
 						case 1:{
-							unsigned char * colorOffset = (unsigned char*)( ((int)vboColor->vboArrayMemoryStart) +  (i * sizeof(unsigned char) + ((vboColor->vertexBufferObjectstrideOffset*sizeof(unsigned char)*argCount))));
+							unsigned char * colorOffset = (unsigned char*)( ((int)vboColor->vboArrayMemoryStart) +  (i * sizeof(unsigned char) + ((vboColor->vertexBufferObjectstrideOffset*sizeof(unsigned char)))));
 							unsigned char arg0 = (unsigned char)*(colorOffset+0);
 							unsigned char arg1 = (unsigned char)*(colorOffset+1);
 							unsigned char arg2 = (unsigned char)*(colorOffset+2);
@@ -4976,13 +4982,14 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 						
 						//unsigned int (packed as Float -> u8)
 						case 4:{
-							GLfloat * colorOffset = (GLfloat*)( ((int)vboColor->vboArrayMemoryStart) +  (i * sizeof(GLfloat) + ((vboColor->vertexBufferObjectstrideOffset*sizeof(GLfloat)*argCount))));
+							GLfloat * colorOffset = (GLfloat*)( ((int)vboColor->vboArrayMemoryStart) +  (i * sizeof(GLfloat) + ((vboColor->vertexBufferObjectstrideOffset*sizeof(GLfloat)))));
 							u8 arg0 = (u8)*(colorOffset+0);
 							u8 arg1 = (u8)*(colorOffset+1);
 							u8 arg2 = (u8)*(colorOffset+2);
 							glColor3b((u8)arg0, (u8)arg1, (u8)arg2, INTERNAL_TGDS_OGL_DL_POINTER);
 						}break;
 					}
+					nextOffset = (vboColor->argCount-1);
 				}
 
 				if(vboNormalEnabled == true){
@@ -4995,7 +5002,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 						*/
 						//unsigned short
 						case 2:{
-							unsigned short * normalOffset = (unsigned short*)( ((int)vboNormal->vboArrayMemoryStart) +  (i * sizeof(unsigned short) + ((vboNormal->vertexBufferObjectstrideOffset*sizeof(unsigned short)*argCount))));
+							unsigned short * normalOffset = (unsigned short*)( ((int)vboNormal->vboArrayMemoryStart) +  (i * sizeof(unsigned short) + ((vboNormal->vertexBufferObjectstrideOffset*sizeof(unsigned short)))));
 							unsigned short arg0 = (unsigned short)*(normalOffset+0);
 							unsigned short arg1 = (unsigned short)*(normalOffset+1);
 							unsigned short arg2 = (unsigned short)*(normalOffset+2);
@@ -5004,13 +5011,14 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 						
 						//unsigned int (packed as Float -> v10)
 						case 4:{
-							GLfloat * normalOffset = (GLfloat*)( ((int)vboNormal->vboArrayMemoryStart) +  (i * sizeof(GLfloat) + ((vboNormal->vertexBufferObjectstrideOffset*sizeof(GLfloat)*argCount))));
+							GLfloat * normalOffset = (GLfloat*)( ((int)vboNormal->vboArrayMemoryStart) +  (i * sizeof(GLfloat) + ((vboNormal->vertexBufferObjectstrideOffset*sizeof(GLfloat)))));
 							v10 arg0 = (v10)floattov10(*(normalOffset+0));
 							v10 arg1 = (v10)floattov10(*(normalOffset+1));
 							v10 arg2 = (v10)floattov10(*(normalOffset+2));
 							glNormal3v10((v10)arg0, (v10)arg1, (v10)arg2, INTERNAL_TGDS_OGL_DL_POINTER);
 						}break;
 					}
+					nextOffset = (vboNormal->argCount-1);
 				}
 
 				if(vboTexCoordEnabled == true){
@@ -5023,7 +5031,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 						*/
 						//unsigned short
 						case 2:{
-							unsigned short * TexCoordOffset = (unsigned short*)( ((int)vboTexCoord->vboArrayMemoryStart) +  (i * sizeof(unsigned short) + ((vboTexCoord->vertexBufferObjectstrideOffset*sizeof(unsigned short)*argCount))));
+							unsigned short * TexCoordOffset = (unsigned short*)( ((int)vboTexCoord->vboArrayMemoryStart) +  (i * sizeof(unsigned short) + ((vboTexCoord->vertexBufferObjectstrideOffset*sizeof(unsigned short)))));
 							unsigned short arg0 = (unsigned short)*(TexCoordOffset+0);
 							unsigned short arg1 = (unsigned short)*(TexCoordOffset+1);
 							glTexCoord2t16((t16)arg0, (t16)arg1, INTERNAL_TGDS_OGL_DL_POINTER);
@@ -5031,12 +5039,13 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 
 						//unsigned int (packed as Float -> t16)
 						case 4:{
-							GLfloat * TexCoordOffset = (GLfloat*)( ((int)vboTexCoord->vboArrayMemoryStart) +  (i * sizeof(unsigned int) + ((vboTexCoord->vertexBufferObjectstrideOffset*sizeof(unsigned int)*argCount))));
+							GLfloat * TexCoordOffset = (GLfloat*)( ((int)vboTexCoord->vboArrayMemoryStart) +  (i * sizeof(unsigned int) + ((vboTexCoord->vertexBufferObjectstrideOffset*sizeof(unsigned int)))));
 							t16 arg0 = (t16)floattot16(*(TexCoordOffset+0));
 							t16 arg1 = (t16)floattot16(*(TexCoordOffset+1));
 							glTexCoord2t16((t16)arg0, (t16)arg1, INTERNAL_TGDS_OGL_DL_POINTER);
 						}break;
 					}
+					nextOffset = (vboTexCoord->argCount-1);
 				}
 
 				if(vboVertexEnabled == true){
@@ -5049,7 +5058,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 						*/
 						//unsigned short
 						case 2:{
-							u16 * vertexOffset = (u16*)( ((int)vboVertex->vboArrayMemoryStart) +  (i * sizeof(v16) + ((vboVertex->vertexBufferObjectstrideOffset*sizeof(v16)*argCount))));
+							u16 * vertexOffset = (u16*)( ((int)vboVertex->vboArrayMemoryStart) +  (i * sizeof(v16) + ((vboVertex->vertexBufferObjectstrideOffset*sizeof(v16)))));
 							v16 arg0 = (v16)*(vertexOffset+0);
 							v16 arg1 = (v16)*(vertexOffset+1);
 							v16 arg2 = (v16)*(vertexOffset+2);
@@ -5058,14 +5067,16 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 
 						//unsigned int (packed as Float -> v16)
 						case 4:{
-							GLfloat * vertexOffset = (GLfloat*)( ((int)vboVertex->vboArrayMemoryStart) +  (i * sizeof(unsigned int) + ((vboVertex->vertexBufferObjectstrideOffset*sizeof(unsigned int)*argCount))));
+							GLfloat * vertexOffset = (GLfloat*)( ((int)vboVertex->vboArrayMemoryStart) +  (i * sizeof(unsigned int) + ((vboVertex->vertexBufferObjectstrideOffset*sizeof(unsigned int)))));
 							v16 arg0 = (v16)floattov16(*(vertexOffset+0));
 							v16 arg1 = (v16)floattov16(*(vertexOffset+1));
 							v16 arg2 = (v16)floattov16(*(vertexOffset+2));
 							glVertex3v16(arg0, arg1, arg2, INTERNAL_TGDS_OGL_DL_POINTER);
 						}break;
 					}
+					nextOffset = (vboVertex->argCount-1);
 				}
+				i += (nextOffset);
 			}
 			glEnd(INTERNAL_TGDS_OGL_DL_POINTER);
 		glEndList(INTERNAL_TGDS_OGL_DL_POINTER); 

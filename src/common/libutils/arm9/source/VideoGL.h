@@ -1129,7 +1129,7 @@ enum {
 	GL_ALL_ATTRIB_BITS	= (unsigned int)0x000fffff
 };
 
-#define PHYS_GXFIFO_INTERNAL_SIZE ((int)512)
+#define PHYS_GXFIFO_INTERNAL_SIZE ((int)1024)
 
 //Max GL Lists allocated in the OpenGL API
 #define InternalUnpackedGX_DL_workSize	((int)4096) //Max internal DL unpacked GX command/arguments count: up to 4096 in-queue 
@@ -1175,6 +1175,10 @@ __attribute__((packed)) ;
 #define TGDSOGL_DisplayListContext_Internal ((int)0) //VBO & VBA
 #define TGDSOGL_DisplayListContext_External ((int)1) //OpenGL API usermode
 
+#ifndef _MSC_VER
+#define SingleUnpackedGXCommand_DL_Binary ((u32*)((int)0x06200000+((128*1024)-PHYS_GXFIFO_INTERNAL_SIZE))) //VRAM_C_0x06200000_ENGINE_B_BG: VRAM C Bottom Screen Console, Engine B
+#endif
+
 struct TGDSOGL_DisplayListContext {
 	//Internal Unpacked GX buffer
 	GLsizei InternalUnpackedGX_DL_Binary_Enumerator[InternalUnpackedGX_DL_workSize/sizeof(GLsizei)];
@@ -1189,17 +1193,17 @@ struct TGDSOGL_DisplayListContext {
 #define INTERNAL_TGDS_OGL_DL_POINTER ((struct TGDSOGL_DisplayListContext *)&TGDSOGL_DisplayListContextInst[TGDSOGL_DisplayListContext_Internal])
 #define USERSPACE_TGDS_OGL_DL_POINTER ((struct TGDSOGL_DisplayListContext *)&TGDSOGL_DisplayListContextInst[TGDSOGL_DisplayListContext_External])
 
-#ifdef ARM9
 #ifdef __cplusplus
 extern "C" {
-#endif
 #endif
 
 extern struct TGDSOGL_DisplayListContext TGDSOGL_DisplayListContextInst[MAX_TGDSOGL_DisplayListContexts];
 extern u32 * getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(struct TGDSOGL_DisplayListContext * Inst); 
 
 //Scratchpad GX buffer
+#ifdef _MSC_VER
 extern u32 SingleUnpackedGXCommand_DL_Binary[PHYS_GXFIFO_INTERNAL_SIZE];
+#endif
 
 //Note: TGDS OpenGL usermode apps use always the identifier:
 //struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext = (struct TGDSOGL_DisplayListContext *)&TGDSOGL_DisplayListContextInst[TGDSOGL_DisplayListContext_External];
@@ -1299,7 +1303,7 @@ extern void glCallListGX(const u32* list);
 
 //VBO: 
 struct vertexBufferObject {
-  u32 * vboArrayMemoryStart; //equals to = malloc(VBO_ARRAY_SIZE); / ptr to free later
+  u32 * vboArrayMemoryStart; //attribute storage allocated at runtime 
   bool vboIsDynamicMemoryAllocated;
   int ElementsPerVertexBufferObjectUnit; //unit size per VBO entry in array
   int vertexBufferObjectstrideOffset; //stride / offset per VBO defaults
@@ -1507,10 +1511,8 @@ extern void glGetBooleanv(
    GLenum pname,
    GLboolean *params
 );
-#ifdef ARM9
 #ifdef __cplusplus
 }
-#endif
 #endif
 
 #endif
