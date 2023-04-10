@@ -2110,6 +2110,37 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
+void glColor3fv(const GLfloat * v, struct TGDSOGL_DisplayListContext * Inst){
+	float red = v[0];
+	float green = v[1];
+	float blue = v[2];
+	glColor3f(red, green, blue, Inst);
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
+void glColor4fv(const GLfloat *v, struct TGDSOGL_DisplayListContext * Inst){
+	float red = v[0];
+	float green = v[1];
+	float blue = v[2];
+	//alpha channel unsupported by NDS GX hardware
+	glColor3f(red, green, blue, Inst);
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
 void glTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid *pixels){
 
 }
@@ -2272,23 +2303,6 @@ void glCallListGX(const u32* list) {
 	}
 	printf("\n(WIN32)glCallListGX: Executing DL[%s]; Size: %d\n",displayListName, (int)list[0]);
 	#endif
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-void glColor3fv(const GLfloat * v, struct TGDSOGL_DisplayListContext * Inst){
-	if(v != NULL){
-		float red = v[0];
-		float green = v[1];
-		float blue = v[2];
-		glColor3f(red, green, blue, Inst);
-	}
 }
 
 #ifdef ARM9

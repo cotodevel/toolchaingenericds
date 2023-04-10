@@ -1423,6 +1423,7 @@ extern void glOrthof32(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 f
 extern void glOrtho(float left, float right, float bottom, float top, float near, float far, struct TGDSOGL_DisplayListContext * Inst);
 extern void glColor3f(float red, float green, float blue, struct TGDSOGL_DisplayListContext * Inst);
 extern void glColor3fv(const GLfloat * v, struct TGDSOGL_DisplayListContext * Inst);
+extern void glColor4fv(const GLfloat *v, struct TGDSOGL_DisplayListContext * Inst);
 extern struct GLContext globalGLCtx;
 extern void glShadeModel(GLenum mode);
 extern void glInit();
