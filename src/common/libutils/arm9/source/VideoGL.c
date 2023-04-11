@@ -73,7 +73,7 @@ bool InitGLOnlyOnce;
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -102,13 +102,13 @@ void glInit(){
 		//Internal
 		struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContextThis = (struct TGDSOGL_DisplayListContext *)&TGDSOGL_DisplayListContextInst[TGDSOGL_DisplayListContext_Internal];
 		TGDSOGL_DisplayListContextThis->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr=0;
-		memset(getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(TGDSOGL_DisplayListContextThis), 0, InternalUnpackedGX_DL_workSize);
+		memset(getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(TGDSOGL_DisplayListContextThis), 0, sizeof(TGDSOGL_DisplayListContextThis->InternalUnpackedGX_DL_Binary));
 		TGDSOGL_DisplayListContextThis->isAnOpenGLExtendedDisplayListCallList = false;
 	
 		//External
 		TGDSOGL_DisplayListContextThis = (struct TGDSOGL_DisplayListContext *)&TGDSOGL_DisplayListContextInst[TGDSOGL_DisplayListContext_External];
 		TGDSOGL_DisplayListContextThis->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr=0; 
-		memset(getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(TGDSOGL_DisplayListContextThis), 0, InternalUnpackedGX_DL_workSize);
+		memset(getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(TGDSOGL_DisplayListContextThis), 0, sizeof(TGDSOGL_DisplayListContextThis->InternalUnpackedGX_DL_Binary));
 		TGDSOGL_DisplayListContextThis->isAnOpenGLExtendedDisplayListCallList = false;
 	}
 	//////////////////////////////////////////////////////VBO & VBA init//////////////////////////////////////////////////////
