@@ -2779,7 +2779,7 @@ __attribute__((optnone))
 #endif
 #endif
 void updateGXLights(struct TGDSOGL_DisplayListContext * Inst){
-	glPolyFmt(globalGLCtx.GXPolygonAttributes | POLY_CULL_NONE, Inst);
+	glPolyFmt(globalGLCtx.GXPolygonAttributes, Inst);
 }
 
 //////////////////////////////////////////////////////////// Standard OpenGL 1.0 end //////////////////////////////////////////
