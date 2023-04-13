@@ -88,10 +88,7 @@ void glInit(){
 	memset((u8*)&globalGLCtx, 0, sizeof(struct GLContext));
 	glShadeModel(GL_SMOOTH);
 
-	globalGLCtx.polyAttributes = POLY_ALPHA(31);
-	glCullFace(GL_FRONT); 
-	glDisable(GL_CULL_FACE);
-
+	globalGLCtx.GXPolygonAttributes = (POLY_ALPHA(31) | POLY_CULL_NONE);
 	globalGLCtx.textureParamsValue = 0;
 	globalGLCtx.diffuseValue=0;
 	globalGLCtx.ambientValue=0;
@@ -110,6 +107,9 @@ void glInit(){
 		TGDSOGL_DisplayListContextThis->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr=0; 
 		memset(getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(TGDSOGL_DisplayListContextThis), 0, sizeof(TGDSOGL_DisplayListContextThis->InternalUnpackedGX_DL_Binary));
 		TGDSOGL_DisplayListContextThis->isAnOpenGLExtendedDisplayListCallList = false;
+		
+		glCullFace(GL_FRONT); 
+		glDisable(GL_LIGHT0|GL_LIGHT1|GL_LIGHT2|GL_LIGHT3|GL_CULL_FACE, TGDSOGL_DisplayListContextThis); //No lights enabled as default. 
 	}
 	//////////////////////////////////////////////////////VBO & VBA init//////////////////////////////////////////////////////
 
@@ -181,7 +181,6 @@ void glInit(){
 		struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext = (struct TGDSOGL_DisplayListContext *)&TGDSOGL_DisplayListContextInst[TGDSOGL_DisplayListContext_Internal];
 		OGL_DL_DRAW_ARRAYS_METHOD = glGenLists(1, TGDSOGL_DisplayListContext);
 	}
-	glDisable(GL_LIGHT0|GL_LIGHT1|GL_LIGHT2|GL_LIGHT3); //No lights enabled as default.
 }
 
 #ifdef ARM9
@@ -553,20 +552,20 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glPolyFmt(int alpha, struct TGDSOGL_DisplayListContext * Inst){
+void glPolyFmt(u32 GXPolygonAttributes, struct TGDSOGL_DisplayListContext * Inst){
 	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			//40004A4h 29h 1  1   POLYGON_ATTR - Set Polygon Attributes (W)
 			Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)getFIFO_POLYGON_ATTR; //Unpacked Command format
 			ptrVal++;
-			Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)alpha; ptrVal++;
+			Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)GXPolygonAttributes; ptrVal++;
 			Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = ptrVal;
 		}
 	}
 	else{
 		#if defined(ARM9)
-		GFX_POLY_FORMAT = alpha;
+		GFX_POLY_FORMAT = GXPolygonAttributes;
 		#endif
 	}
 }
@@ -680,32 +679,33 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glEnable(int bits){
+void glEnable(int bits, struct TGDSOGL_DisplayListContext * Inst){
 	if((bits&GL_CULL_FACE) == GL_CULL_FACE){
 		//faces are enabled through glCullFace() because culling occurs per polygon on GX
 	}
 
 	//Lights enable
 	if((bits&GL_LIGHT0) == GL_LIGHT0){
-		globalGLCtx.lightsEnabled |= (u32)GL_LIGHT0;
+		globalGLCtx.GXPolygonAttributes |= GX_LIGHT0;
 	}
 
 	if((bits&GL_LIGHT1) == GL_LIGHT1){
-		globalGLCtx.lightsEnabled |= (u32)GL_LIGHT1;
+		globalGLCtx.GXPolygonAttributes |= GX_LIGHT1;
 	}
 
 	if((bits&GL_LIGHT2) == GL_LIGHT2){
-		globalGLCtx.lightsEnabled |= (u32)GL_LIGHT2;
+		globalGLCtx.GXPolygonAttributes |= GX_LIGHT2;
 	}
 
 	if((bits&GL_LIGHT3) == GL_LIGHT3){
-		globalGLCtx.lightsEnabled |= (u32)GL_LIGHT3;
+		globalGLCtx.GXPolygonAttributes |= GX_LIGHT3;
 	}
 
 	enable_bits |= bits & (GL_TEXTURE_2D|GL_TOON_HIGHLIGHT|GL_OUTLINE|GL_ANTIALIAS);
 	#if defined(ARM9)
 	GFX_CONTROL = enable_bits;
 	#endif
+	updateGXLights(Inst);
 }
 
 #ifdef ARM9
@@ -716,33 +716,34 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glDisable(int bits){
+void glDisable(int bits, struct TGDSOGL_DisplayListContext * Inst){
 	if((bits&GL_CULL_FACE) == GL_CULL_FACE){
-		u32 polyAttr = (globalGLCtx.polyAttributes & ~(POLY_CULL_BACK | POLY_CULL_FRONT | POLY_CULL_NONE));
-		globalGLCtx.polyAttributes = polyAttr | POLY_CULL_NONE;
+		u32 polyAttr = (globalGLCtx.GXPolygonAttributes & ~(POLY_CULL_BACK | POLY_CULL_FRONT | POLY_CULL_NONE));
+		globalGLCtx.GXPolygonAttributes = polyAttr | POLY_CULL_NONE;
 	}
 	
 	//Lights disable
 	if((bits&GL_LIGHT0) == GL_LIGHT0){
-		globalGLCtx.lightsEnabled &= ~((u32)GL_LIGHT0);
+		globalGLCtx.GXPolygonAttributes &= ~(GX_LIGHT0);
 	}
 
 	if((bits&GL_LIGHT1) == GL_LIGHT1){
-		globalGLCtx.lightsEnabled &= ~((u32)GL_LIGHT1);
+		globalGLCtx.GXPolygonAttributes &= ~(GX_LIGHT1);
 	}
 
 	if((bits&GL_LIGHT2) == GL_LIGHT2){
-		globalGLCtx.lightsEnabled &= ~((u32)GL_LIGHT2);
+		globalGLCtx.GXPolygonAttributes &= ~(GX_LIGHT2);
 	}
 
 	if((bits&GL_LIGHT3) == GL_LIGHT3){
-		globalGLCtx.lightsEnabled &= ~((u32)GL_LIGHT3);
+		globalGLCtx.GXPolygonAttributes &= ~(GX_LIGHT3);
 	}
 	
 	enable_bits &= ~(bits & (GL_TEXTURE_2D|GL_TOON_HIGHLIGHT|GL_OUTLINE|GL_ANTIALIAS));	
 	#ifdef ARM9
 	GFX_CONTROL = enable_bits;
 	#endif
+	updateGXLights(Inst);
 }
 
 #ifdef ARM9
@@ -2086,17 +2087,17 @@ void glColor3f(float red, float green, float blue, struct TGDSOGL_DisplayListCon
 	//Handle light vectors
 	//Note: Light depth is 10bit. Which means only glColor3f(); can colour normals on polygons. glColor3b(); can't. Also don't forget to enable at least one light per scene or colour over normals won't reflect in the light vector.
 	{
-		u32 lightsEnabled = globalGLCtx.lightsEnabled;
-		if((lightsEnabled&GL_LIGHT0) == GL_LIGHT0){
+		u32 lightsEnabled = globalGLCtx.GXPolygonAttributes;
+		if((lightsEnabled&GX_LIGHT0) == GX_LIGHT0){
 			glLight(0, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), inttov10(31), inttov10(31), inttov10(31), Inst);
 		}
-		if((lightsEnabled&GL_LIGHT1) == GL_LIGHT1){
+		if((lightsEnabled&GX_LIGHT1) == GX_LIGHT1){
 			glLight(1, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), inttov10(31), inttov10(31), inttov10(31), Inst);
 		}
-		if((lightsEnabled&GL_LIGHT2) == GL_LIGHT2){
+		if((lightsEnabled&GX_LIGHT2) == GX_LIGHT2){
 			glLight(2, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), inttov10(31), inttov10(31), inttov10(31), Inst);
 		}
-		if((lightsEnabled&GL_LIGHT3) == GL_LIGHT3){
+		if((lightsEnabled&GX_LIGHT3) == GX_LIGHT3){
 			glLight(3, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), inttov10(31), inttov10(31), inttov10(31), Inst);
 		}
 	}
@@ -2778,23 +2779,7 @@ __attribute__((optnone))
 #endif
 #endif
 void updateGXLights(struct TGDSOGL_DisplayListContext * Inst){
-	u32 activeLights = globalGLCtx.lightsEnabled;
-	if((activeLights & GL_LIGHT0) == GL_LIGHT0){
-		#define GX_LIGHT0 (1 << 0)
-		glPolyFmt(GX_LIGHT0 | POLY_ALPHA(31) | POLY_CULL_NONE, Inst);
-	}
-	if((activeLights & GL_LIGHT1) == GL_LIGHT1){
-		#define GX_LIGHT1 (1 << 1)
-		glPolyFmt(GX_LIGHT1 | POLY_ALPHA(31) | POLY_CULL_NONE, Inst);
-	}
-	if((activeLights & GL_LIGHT2) == GL_LIGHT2){
-		#define GX_LIGHT2 (1 << 2)
-		glPolyFmt(GX_LIGHT2 | POLY_ALPHA(31) | POLY_CULL_NONE, Inst);
-	}
-	if((activeLights & GL_LIGHT3) == GL_LIGHT3){
-		#define GX_LIGHT3 (1 << 3)
-		glPolyFmt(GX_LIGHT3 | POLY_ALPHA(31) | POLY_CULL_NONE, Inst);
-	}
+	glPolyFmt(globalGLCtx.GXPolygonAttributes | POLY_CULL_NONE, Inst);
 }
 
 //////////////////////////////////////////////////////////// Standard OpenGL 1.0 end //////////////////////////////////////////
@@ -3903,7 +3888,7 @@ void glGetFloatv(
 	
 	//The params parameter returns a single Boolean value indicating whether lighting is enabled.
 	else if((pname & GL_LIGHTING) == GL_LIGHTING){
-		u8 activeLights = globalGLCtx.lightsEnabled;
+		u32 activeLights = (globalGLCtx.GXPolygonAttributes & (GX_LIGHT0|GX_LIGHT1|GX_LIGHT2|GX_LIGHT3));
 		if(activeLights > 0){
 			*params = (u32)true;
 		}
@@ -4052,12 +4037,12 @@ void glScaled(
 void glCullFace(GLenum mode){
 	switch(mode){
 		case GL_FRONT:{
-			u32 polyAttr = (globalGLCtx.polyAttributes & ~(POLY_CULL_BACK | POLY_CULL_FRONT | POLY_CULL_NONE));
-			globalGLCtx.polyAttributes = polyAttr | POLY_CULL_FRONT;
+			u32 polyAttr = (globalGLCtx.GXPolygonAttributes & ~(POLY_CULL_BACK | POLY_CULL_FRONT | POLY_CULL_NONE));
+			globalGLCtx.GXPolygonAttributes = polyAttr | POLY_CULL_FRONT;
 		}break;
 		case GL_BACK:{
-			u32 polyAttr = (globalGLCtx.polyAttributes & ~(POLY_CULL_BACK | POLY_CULL_FRONT | POLY_CULL_NONE));
-			globalGLCtx.polyAttributes = polyAttr | POLY_CULL_BACK;
+			u32 polyAttr = (globalGLCtx.GXPolygonAttributes & ~(POLY_CULL_BACK | POLY_CULL_FRONT | POLY_CULL_NONE));
+			globalGLCtx.GXPolygonAttributes = polyAttr | POLY_CULL_BACK;
 		}break;
 		default:{
 			errorStatus = GL_INVALID_ENUM;

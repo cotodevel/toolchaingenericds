@@ -238,14 +238,13 @@ typedef void GLvoid;
 
 struct GLContext{
 	GLenum primitiveShadeModelMode;	//glShadeModel(GLenum mode: [GL_FLAT/GL_SMOOTH]);
-	u32 lightsEnabled; //lights enabled are written here
+	u32 GXPolygonAttributes; //Current GX Polygon Attributes
 	u32 textureParamsValue;
 	u16 diffuseValue;
 	u16 ambientValue;
 	u16 specularValue;
 	u16 emissionValue;
 	float shininessValue;
-	u32 polyAttributes; //POLY_ALPHA(31) | POLY_CULL_NONE , etc. This attribute is later implemented as: glPolyFmt(globalGLCtx.polyAttributes); when rendering
 
 	//latest Viewport
 	u32 lastViewport; //(x1) + (y1 << 8) + (x2 << 16) + (y2 << 24) //x1 = x, y1 = y, x2 = 
@@ -1367,8 +1366,8 @@ extern int OGL_DL_DRAW_ARRAYS_METHOD;
 
 //////////////////////////////////////////////////////////// Extended Vertex Array Buffers and Vertex Buffer Objects OpenGL 1.1 end //////////////////////////////////////////
 
-extern void glEnable(int bits);
-extern void glDisable(int bits);
+extern void glEnable(int bits, struct TGDSOGL_DisplayListContext * Inst);
+extern void glDisable(int bits, struct TGDSOGL_DisplayListContext * Inst);
 
 extern void glLoadMatrixf(const GLfloat *m, struct TGDSOGL_DisplayListContext * Inst);
 extern void glLoadMatrix4x4(m4x4 * m, struct TGDSOGL_DisplayListContext * Inst);
@@ -1417,7 +1416,7 @@ extern void glNormal(uint32 normal, struct TGDSOGL_DisplayListContext * Inst);
 extern void glLoadIdentity(struct TGDSOGL_DisplayListContext * Inst);
 extern void glMatrixMode(int mode, struct TGDSOGL_DisplayListContext * Inst); 
 extern void glMaterialShinnyness(struct TGDSOGL_DisplayListContext * Inst);
-extern void glPolyFmt(int alpha, struct TGDSOGL_DisplayListContext * Inst); 
+extern void glPolyFmt(u32 GXPolygonAttributes, struct TGDSOGL_DisplayListContext * Inst); 
 extern void glRotatef(int angle, float x, float y, float z, struct TGDSOGL_DisplayListContext * Inst);
 extern void glOrthof32(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far, struct TGDSOGL_DisplayListContext * Inst);
 extern void glOrtho(float left, float right, float bottom, float top, float near, float far, struct TGDSOGL_DisplayListContext * Inst);
