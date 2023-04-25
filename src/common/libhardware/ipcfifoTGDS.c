@@ -654,7 +654,7 @@ void HandleFifoNotEmpty(){
 						return;
 				}
 				
-				// call immediately if the format needs it
+				// call immediately if the format needs it (decode on demand)
 				if(SoundStreamUpdateSoundStreamARM9LibUtilsCallback != NULL){
 					SoundStreamUpdateSoundStreamARM9LibUtilsCallback();
 				}
