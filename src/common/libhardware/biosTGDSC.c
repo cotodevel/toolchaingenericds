@@ -113,9 +113,14 @@ void handleARM9InitSVC(){
 __attribute__((section(".itcm")))
 #endif
 void handleARM9SVC(){
-	//handles Local/UDP Nifi
+	//handles Local/UDP Nifi / GDB Server
 	if(HandledoMULTIDaemonWeakRefLibHardware9Callback != NULL){
 		sint32 currentDSWNIFIMode = HandledoMULTIDaemonWeakRefLibHardware9Callback();
-	}	
+	}
+	
+	//Default TGDS Audio playback: WAV/IMA-ADPCM
+	if(SoundStreamUpdateSoundStreamARM9LibUtilsCallback != NULL){
+		SoundStreamUpdateSoundStreamARM9LibUtilsCallback();
+	}
 }
 #endif

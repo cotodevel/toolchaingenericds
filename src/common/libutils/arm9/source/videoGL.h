@@ -238,14 +238,13 @@ typedef void GLvoid;
 
 struct GLContext{
 	GLenum primitiveShadeModelMode;	//glShadeModel(GLenum mode: [GL_FLAT/GL_SMOOTH]);
-	u32 lightsEnabled; //lights enabled are written here
+	u32 GXPolygonAttributes; //Current GX Polygon Attributes
 	u32 textureParamsValue;
 	u16 diffuseValue;
 	u16 ambientValue;
 	u16 specularValue;
 	u16 emissionValue;
 	float shininessValue;
-	u32 polyAttributes; //POLY_ALPHA(31) | POLY_CULL_NONE , etc. This attribute is later implemented as: glPolyFmt(globalGLCtx.polyAttributes); when rendering
 
 	//latest Viewport
 	u32 lastViewport; //(x1) + (y1 << 8) + (x2 << 16) + (y2 << 24) //x1 = x, y1 = y, x2 = 
@@ -1129,7 +1128,7 @@ enum {
 	GL_ALL_ATTRIB_BITS	= (unsigned int)0x000fffff
 };
 
-#define PHYS_GXFIFO_INTERNAL_SIZE ((int)512)
+#define PHYS_GXFIFO_INTERNAL_SIZE ((int)1024)
 
 //Max GL Lists allocated in the OpenGL API
 #define InternalUnpackedGX_DL_workSize	((int)4096) //Max internal DL unpacked GX command/arguments count: up to 4096 in-queue 
@@ -1175,6 +1174,10 @@ __attribute__((packed)) ;
 #define TGDSOGL_DisplayListContext_Internal ((int)0) //VBO & VBA
 #define TGDSOGL_DisplayListContext_External ((int)1) //OpenGL API usermode
 
+#ifndef _MSC_VER
+#define SingleUnpackedGXCommand_DL_Binary ((u32*)((int)0x06200000+((128*1024)-PHYS_GXFIFO_INTERNAL_SIZE))) //VRAM_C_0x06200000_ENGINE_B_BG: VRAM C Bottom Screen Console, Engine B
+#endif
+
 struct TGDSOGL_DisplayListContext {
 	//Internal Unpacked GX buffer
 	GLsizei InternalUnpackedGX_DL_Binary_Enumerator[InternalUnpackedGX_DL_workSize/sizeof(GLsizei)];
@@ -1189,17 +1192,17 @@ struct TGDSOGL_DisplayListContext {
 #define INTERNAL_TGDS_OGL_DL_POINTER ((struct TGDSOGL_DisplayListContext *)&TGDSOGL_DisplayListContextInst[TGDSOGL_DisplayListContext_Internal])
 #define USERSPACE_TGDS_OGL_DL_POINTER ((struct TGDSOGL_DisplayListContext *)&TGDSOGL_DisplayListContextInst[TGDSOGL_DisplayListContext_External])
 
-#ifdef ARM9
 #ifdef __cplusplus
 extern "C" {
-#endif
 #endif
 
 extern struct TGDSOGL_DisplayListContext TGDSOGL_DisplayListContextInst[MAX_TGDSOGL_DisplayListContexts];
 extern u32 * getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(struct TGDSOGL_DisplayListContext * Inst); 
 
 //Scratchpad GX buffer
+#ifdef _MSC_VER
 extern u32 SingleUnpackedGXCommand_DL_Binary[PHYS_GXFIFO_INTERNAL_SIZE];
+#endif
 
 //Note: TGDS OpenGL usermode apps use always the identifier:
 //struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext = (struct TGDSOGL_DisplayListContext *)&TGDSOGL_DisplayListContextInst[TGDSOGL_DisplayListContext_External];
@@ -1299,7 +1302,7 @@ extern void glCallListGX(const u32* list);
 
 //VBO: 
 struct vertexBufferObject {
-  u32 * vboArrayMemoryStart; //equals to = malloc(VBO_ARRAY_SIZE); / ptr to free later
+  u32 * vboArrayMemoryStart; //attribute storage allocated at runtime 
   bool vboIsDynamicMemoryAllocated;
   int ElementsPerVertexBufferObjectUnit; //unit size per VBO entry in array
   int vertexBufferObjectstrideOffset; //stride / offset per VBO defaults
@@ -1363,8 +1366,8 @@ extern int OGL_DL_DRAW_ARRAYS_METHOD;
 
 //////////////////////////////////////////////////////////// Extended Vertex Array Buffers and Vertex Buffer Objects OpenGL 1.1 end //////////////////////////////////////////
 
-extern void glEnable(int bits);
-extern void glDisable(int bits);
+extern void glEnable(int bits, struct TGDSOGL_DisplayListContext * Inst);
+extern void glDisable(int bits, struct TGDSOGL_DisplayListContext * Inst);
 
 extern void glLoadMatrixf(const GLfloat *m, struct TGDSOGL_DisplayListContext * Inst);
 extern void glLoadMatrix4x4(m4x4 * m, struct TGDSOGL_DisplayListContext * Inst);
@@ -1413,12 +1416,13 @@ extern void glNormal(uint32 normal, struct TGDSOGL_DisplayListContext * Inst);
 extern void glLoadIdentity(struct TGDSOGL_DisplayListContext * Inst);
 extern void glMatrixMode(int mode, struct TGDSOGL_DisplayListContext * Inst); 
 extern void glMaterialShinnyness(struct TGDSOGL_DisplayListContext * Inst);
-extern void glPolyFmt(int alpha, struct TGDSOGL_DisplayListContext * Inst); 
+extern void glPolyFmt(u32 GXPolygonAttributes, struct TGDSOGL_DisplayListContext * Inst); 
 extern void glRotatef(int angle, float x, float y, float z, struct TGDSOGL_DisplayListContext * Inst);
 extern void glOrthof32(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far, struct TGDSOGL_DisplayListContext * Inst);
 extern void glOrtho(float left, float right, float bottom, float top, float near, float far, struct TGDSOGL_DisplayListContext * Inst);
 extern void glColor3f(float red, float green, float blue, struct TGDSOGL_DisplayListContext * Inst);
 extern void glColor3fv(const GLfloat * v, struct TGDSOGL_DisplayListContext * Inst);
+extern void glColor4fv(const GLfloat *v, struct TGDSOGL_DisplayListContext * Inst);
 extern struct GLContext globalGLCtx;
 extern void glShadeModel(GLenum mode);
 extern void glInit();
@@ -1507,10 +1511,8 @@ extern void glGetBooleanv(
    GLenum pname,
    GLboolean *params
 );
-#ifdef ARM9
 #ifdef __cplusplus
 }
-#endif
 #endif
 
 #endif

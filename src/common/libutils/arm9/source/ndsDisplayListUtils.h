@@ -120,3 +120,14 @@ extern int crc32file( FILE *file, unsigned int *outCrc32);
 //extern bool isNDSDLUtilsAPIStable();
 //extern int mainNDS9(int argc, char** argv);
 //extern bool ndsDisplayListUtilsTestCaseARM9(char * filename, char * outNDSGXBuiltDisplayList);
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+extern int TWLPrintf(const char *fmt, ...);
+
+#ifdef __cplusplus
+}
+#endif

@@ -50,9 +50,8 @@ USA
 #include "VideoGL.h"
 #include "ndsDisplayListUtils.h"
 
-#ifdef ARM9
-#include "posixHandleTGDS.h"
-#include "PackedDisplayListCompiledVS2012.h"
+#ifdef WIN32
+#include "Renderable.h"
 #endif
 
 #ifdef ARM9
@@ -1335,24 +1334,24 @@ int main(int argc, char** argv){
 		updateGXLights(USERSPACE_TGDS_OGL_DL_POINTER); //Update GX 3D light scene!
 		
 		{
-			typedef float vector3[3];
-			vector3 vertices[] = {
-				{ -1.0f, -1.0f,  0.0f },
-				{ 1.0f,  -1.0f,  0.0f },
-				{ 0.0f,   1.0f,  0.0f }
+			float vertices[9] = {
+				 -1.0f, -1.0f,  0.0f ,
+				 1.0f,  -1.0f,  0.0f ,
+				 0.0f,   1.0f,  0.0f 
 			};
-			vector3 colors[] = {
-				{ 31.0f, 0.0f, 0.0f },
-				{ 0.0f, 31.0f, 0.0f },
-				{ 0.0f, 0.0f, 31.0f }
+			float colors[9] = {
+				 31.0f, 0.0f, 0.0f ,
+				 0.0f, 31.0f, 0.0f ,
+				 0.0f, 0.0f, 31.0f 
 			};
 
+			int vtxSize = (sizeof(vertices)/sizeof(GLfloat));
 			glEnableClientState(GL_VERTEX_ARRAY);
 			glEnableClientState(GL_COLOR_ARRAY);
 
 			glVertexPointer(3, GL_FLOAT, 0, vertices);
 			glColorPointer(3, GL_FLOAT, 0, colors);
-			glDrawArrays(GL_TRIANGLES, 0, (sizeof(vector3)/sizeof(GLfloat)) );
+			glDrawArrays(GL_TRIANGLES, 0, vtxSize);
 
 			glDisableClientState(GL_VERTEX_ARRAY);
 			glDisableClientState(GL_COLOR_ARRAY);
@@ -1467,6 +1466,18 @@ int main(int argc, char** argv){
 		glLoadMatrixf((const GLfloat *)&mat, USERSPACE_TGDS_OGL_DL_POINTER);
 	}
 	
+	{
+#ifdef WIN32
+		int ret = startAquarium(argc, argv);
+#endif
+	}
+	
+	return 0;
+}
+#endif
+
+#ifdef WIN32
+int TWLPrintf(const char *fmt, ...){
 	return 0;
 }
 #endif

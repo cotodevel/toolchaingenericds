@@ -43,6 +43,7 @@
 #include <typedefsTGDS.h>
 #include "dsregs.h"
 #include "videoTGDS.h"
+#include "dmaTGDS.h"
 #include "dsregs.h"
 #endif
 
@@ -72,7 +73,7 @@ bool InitGLOnlyOnce;
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -87,10 +88,7 @@ void glInit(){
 	memset((u8*)&globalGLCtx, 0, sizeof(struct GLContext));
 	glShadeModel(GL_SMOOTH);
 
-	globalGLCtx.polyAttributes = POLY_ALPHA(31);
-	glCullFace(GL_FRONT); 
-	glDisable(GL_CULL_FACE);
-
+	globalGLCtx.GXPolygonAttributes = (POLY_ALPHA(31) | POLY_CULL_NONE);
 	globalGLCtx.textureParamsValue = 0;
 	globalGLCtx.diffuseValue=0;
 	globalGLCtx.ambientValue=0;
@@ -101,14 +99,17 @@ void glInit(){
 		//Internal
 		struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContextThis = (struct TGDSOGL_DisplayListContext *)&TGDSOGL_DisplayListContextInst[TGDSOGL_DisplayListContext_Internal];
 		TGDSOGL_DisplayListContextThis->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr=0;
-		memset(getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(TGDSOGL_DisplayListContextThis), 0, InternalUnpackedGX_DL_workSize);
+		memset(getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(TGDSOGL_DisplayListContextThis), 0, sizeof(TGDSOGL_DisplayListContextThis->InternalUnpackedGX_DL_Binary));
 		TGDSOGL_DisplayListContextThis->isAnOpenGLExtendedDisplayListCallList = false;
 	
 		//External
 		TGDSOGL_DisplayListContextThis = (struct TGDSOGL_DisplayListContext *)&TGDSOGL_DisplayListContextInst[TGDSOGL_DisplayListContext_External];
 		TGDSOGL_DisplayListContextThis->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr=0; 
-		memset(getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(TGDSOGL_DisplayListContextThis), 0, InternalUnpackedGX_DL_workSize);
+		memset(getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(TGDSOGL_DisplayListContextThis), 0, sizeof(TGDSOGL_DisplayListContextThis->InternalUnpackedGX_DL_Binary));
 		TGDSOGL_DisplayListContextThis->isAnOpenGLExtendedDisplayListCallList = false;
+		
+		glCullFace(GL_FRONT); 
+		glDisable(GL_LIGHT0|GL_LIGHT1|GL_LIGHT2|GL_LIGHT3|GL_CULL_FACE, TGDSOGL_DisplayListContextThis); //No lights enabled as default. 
 	}
 	//////////////////////////////////////////////////////VBO & VBA init//////////////////////////////////////////////////////
 
@@ -180,7 +181,6 @@ void glInit(){
 		struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext = (struct TGDSOGL_DisplayListContext *)&TGDSOGL_DisplayListContextInst[TGDSOGL_DisplayListContext_Internal];
 		OGL_DL_DRAW_ARRAYS_METHOD = glGenLists(1, TGDSOGL_DisplayListContext);
 	}
-	glDisable(GL_LIGHT0|GL_LIGHT1|GL_LIGHT2|GL_LIGHT3); //No lights enabled as default.
 }
 
 #ifdef ARM9
@@ -552,20 +552,20 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glPolyFmt(int alpha, struct TGDSOGL_DisplayListContext * Inst){
+void glPolyFmt(u32 GXPolygonAttributes, struct TGDSOGL_DisplayListContext * Inst){
 	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			//40004A4h 29h 1  1   POLYGON_ATTR - Set Polygon Attributes (W)
 			Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)getFIFO_POLYGON_ATTR; //Unpacked Command format
 			ptrVal++;
-			Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)alpha; ptrVal++;
+			Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)GXPolygonAttributes; ptrVal++;
 			Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = ptrVal;
 		}
 	}
 	else{
 		#if defined(ARM9)
-		GFX_POLY_FORMAT = alpha;
+		GFX_POLY_FORMAT = GXPolygonAttributes;
 		#endif
 	}
 }
@@ -679,32 +679,33 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glEnable(int bits){
+void glEnable(int bits, struct TGDSOGL_DisplayListContext * Inst){
 	if((bits&GL_CULL_FACE) == GL_CULL_FACE){
 		//faces are enabled through glCullFace() because culling occurs per polygon on GX
 	}
 
 	//Lights enable
 	if((bits&GL_LIGHT0) == GL_LIGHT0){
-		globalGLCtx.lightsEnabled |= (u32)GL_LIGHT0;
+		globalGLCtx.GXPolygonAttributes |= GX_LIGHT0;
 	}
 
 	if((bits&GL_LIGHT1) == GL_LIGHT1){
-		globalGLCtx.lightsEnabled |= (u32)GL_LIGHT1;
+		globalGLCtx.GXPolygonAttributes |= GX_LIGHT1;
 	}
 
 	if((bits&GL_LIGHT2) == GL_LIGHT2){
-		globalGLCtx.lightsEnabled |= (u32)GL_LIGHT2;
+		globalGLCtx.GXPolygonAttributes |= GX_LIGHT2;
 	}
 
 	if((bits&GL_LIGHT3) == GL_LIGHT3){
-		globalGLCtx.lightsEnabled |= (u32)GL_LIGHT3;
+		globalGLCtx.GXPolygonAttributes |= GX_LIGHT3;
 	}
 
 	enable_bits |= bits & (GL_TEXTURE_2D|GL_TOON_HIGHLIGHT|GL_OUTLINE|GL_ANTIALIAS);
 	#if defined(ARM9)
 	GFX_CONTROL = enable_bits;
 	#endif
+	updateGXLights(Inst);
 }
 
 #ifdef ARM9
@@ -715,33 +716,34 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glDisable(int bits){
+void glDisable(int bits, struct TGDSOGL_DisplayListContext * Inst){
 	if((bits&GL_CULL_FACE) == GL_CULL_FACE){
-		u32 polyAttr = (globalGLCtx.polyAttributes & ~(POLY_CULL_BACK | POLY_CULL_FRONT | POLY_CULL_NONE));
-		globalGLCtx.polyAttributes = polyAttr | POLY_CULL_NONE;
+		u32 polyAttr = (globalGLCtx.GXPolygonAttributes & ~(POLY_CULL_BACK | POLY_CULL_FRONT | POLY_CULL_NONE));
+		globalGLCtx.GXPolygonAttributes = polyAttr | POLY_CULL_NONE;
 	}
 	
 	//Lights disable
 	if((bits&GL_LIGHT0) == GL_LIGHT0){
-		globalGLCtx.lightsEnabled &= ~((u32)GL_LIGHT0);
+		globalGLCtx.GXPolygonAttributes &= ~(GX_LIGHT0);
 	}
 
 	if((bits&GL_LIGHT1) == GL_LIGHT1){
-		globalGLCtx.lightsEnabled &= ~((u32)GL_LIGHT1);
+		globalGLCtx.GXPolygonAttributes &= ~(GX_LIGHT1);
 	}
 
 	if((bits&GL_LIGHT2) == GL_LIGHT2){
-		globalGLCtx.lightsEnabled &= ~((u32)GL_LIGHT2);
+		globalGLCtx.GXPolygonAttributes &= ~(GX_LIGHT2);
 	}
 
 	if((bits&GL_LIGHT3) == GL_LIGHT3){
-		globalGLCtx.lightsEnabled &= ~((u32)GL_LIGHT3);
+		globalGLCtx.GXPolygonAttributes &= ~(GX_LIGHT3);
 	}
 	
 	enable_bits &= ~(bits & (GL_TEXTURE_2D|GL_TOON_HIGHLIGHT|GL_OUTLINE|GL_ANTIALIAS));	
 	#ifdef ARM9
 	GFX_CONTROL = enable_bits;
 	#endif
+	updateGXLights(Inst);
 }
 
 #ifdef ARM9
@@ -2085,20 +2087,51 @@ void glColor3f(float red, float green, float blue, struct TGDSOGL_DisplayListCon
 	//Handle light vectors
 	//Note: Light depth is 10bit. Which means only glColor3f(); can colour normals on polygons. glColor3b(); can't. Also don't forget to enable at least one light per scene or colour over normals won't reflect in the light vector.
 	{
-		u32 lightsEnabled = globalGLCtx.lightsEnabled;
-		if((lightsEnabled&GL_LIGHT0) == GL_LIGHT0){
+		u32 lightsEnabled = globalGLCtx.GXPolygonAttributes;
+		if((lightsEnabled&GX_LIGHT0) == GX_LIGHT0){
 			glLight(0, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), inttov10(31), inttov10(31), inttov10(31), Inst);
 		}
-		if((lightsEnabled&GL_LIGHT1) == GL_LIGHT1){
+		if((lightsEnabled&GX_LIGHT1) == GX_LIGHT1){
 			glLight(1, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), inttov10(31), inttov10(31), inttov10(31), Inst);
 		}
-		if((lightsEnabled&GL_LIGHT2) == GL_LIGHT2){
+		if((lightsEnabled&GX_LIGHT2) == GX_LIGHT2){
 			glLight(2, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), inttov10(31), inttov10(31), inttov10(31), Inst);
 		}
-		if((lightsEnabled&GL_LIGHT3) == GL_LIGHT3){
+		if((lightsEnabled&GX_LIGHT3) == GX_LIGHT3){
 			glLight(3, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), inttov10(31), inttov10(31), inttov10(31), Inst);
 		}
 	}
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
+void glColor3fv(const GLfloat * v, struct TGDSOGL_DisplayListContext * Inst){
+	float red = v[0];
+	float green = v[1];
+	float blue = v[2];
+	glColor3f(red, green, blue, Inst);
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
+void glColor4fv(const GLfloat *v, struct TGDSOGL_DisplayListContext * Inst){
+	float red = v[0];
+	float green = v[1];
+	float blue = v[2];
+	//alpha channel unsupported by NDS GX hardware
+	glColor3f(red, green, blue, Inst);
 }
 
 #ifdef ARM9
@@ -2271,23 +2304,6 @@ void glCallListGX(const u32* list) {
 	}
 	printf("\n(WIN32)glCallListGX: Executing DL[%s]; Size: %d\n",displayListName, (int)list[0]);
 	#endif
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-void glColor3fv(const GLfloat * v, struct TGDSOGL_DisplayListContext * Inst){
-	if(v != NULL){
-		float red = v[0];
-		float green = v[1];
-		float blue = v[2];
-		glColor3f(red, green, blue, Inst);
-	}
 }
 
 #ifdef ARM9
@@ -2763,23 +2779,7 @@ __attribute__((optnone))
 #endif
 #endif
 void updateGXLights(struct TGDSOGL_DisplayListContext * Inst){
-	u32 activeLights = globalGLCtx.lightsEnabled;
-	if((activeLights & GL_LIGHT0) == GL_LIGHT0){
-		#define GX_LIGHT0 (1 << 0)
-		glPolyFmt(GX_LIGHT0 | POLY_ALPHA(31) | POLY_CULL_NONE, Inst);
-	}
-	if((activeLights & GL_LIGHT1) == GL_LIGHT1){
-		#define GX_LIGHT1 (1 << 1)
-		glPolyFmt(GX_LIGHT1 | POLY_ALPHA(31) | POLY_CULL_NONE, Inst);
-	}
-	if((activeLights & GL_LIGHT2) == GL_LIGHT2){
-		#define GX_LIGHT2 (1 << 2)
-		glPolyFmt(GX_LIGHT2 | POLY_ALPHA(31) | POLY_CULL_NONE, Inst);
-	}
-	if((activeLights & GL_LIGHT3) == GL_LIGHT3){
-		#define GX_LIGHT3 (1 << 3)
-		glPolyFmt(GX_LIGHT3 | POLY_ALPHA(31) | POLY_CULL_NONE, Inst);
-	}
+	glPolyFmt(globalGLCtx.GXPolygonAttributes, Inst);
 }
 
 //////////////////////////////////////////////////////////// Standard OpenGL 1.0 end //////////////////////////////////////////
@@ -2794,8 +2794,11 @@ void updateGXLights(struct TGDSOGL_DisplayListContext * Inst){
 //After that, there must be a 1 cycle delay before sending the next command 
 //(ie. one cannot sent more than one command at once with a single opcode, each command must be invoked by a new opcode).
 
+
+#ifdef _MSC_VER
 //Scratchpad GX buffer
-u32 SingleUnpackedGXCommand_DL_Binary[PHYS_GXFIFO_INTERNAL_SIZE]; //Unpacked single command GX Buffer
+u32 SingleUnpackedGXCommand_DL_Binary[PHYS_GXFIFO_INTERNAL_SIZE];
+#endif
 
 struct TGDSOGL_DisplayListContext TGDSOGL_DisplayListContextInst[MAX_TGDSOGL_DisplayListContexts];
 
@@ -2982,10 +2985,17 @@ void glCallList(GLuint list, struct TGDSOGL_DisplayListContext * TGDSOGL_Display
 					if(singleGXDisplayListSize > PHYS_GXFIFO_INTERNAL_SIZE){
 						singleGXDisplayListSize = PHYS_GXFIFO_INTERNAL_SIZE;
 					}
-					memset(SingleUnpackedGXCommand_DL_Binary, 0, PHYS_GXFIFO_INTERNAL_SIZE);
-					SingleUnpackedGXCommand_DL_Binary[0] = (u32)singleGXDisplayListSize;
-					memcpy((u8*)&SingleUnpackedGXCommand_DL_Binary[1], (u8*)&currentPhysicalDisplayListStart[0], singleGXDisplayListSize);
 
+					#ifdef WIN32
+					memset(SingleUnpackedGXCommand_DL_Binary, 0, singleGXDisplayListSize);
+					memcpy((u8*)&SingleUnpackedGXCommand_DL_Binary[1], (u8*)&currentPhysicalDisplayListStart[0], singleGXDisplayListSize);
+					#endif
+					#ifdef ARM9
+					dmaFillWord(0, 0, (uint32)SingleUnpackedGXCommand_DL_Binary, (uint32)PHYS_GXFIFO_INTERNAL_SIZE);
+					dmaTransferWord(0, (uint32)&currentPhysicalDisplayListStart[0], (uint32)&SingleUnpackedGXCommand_DL_Binary[1], (uint32)singleGXDisplayListSize);
+					coherent_user_range_by_size((uint32)SingleUnpackedGXCommand_DL_Binary, singleGXDisplayListSize);
+					#endif
+					SingleUnpackedGXCommand_DL_Binary[0] = (u32)singleGXDisplayListSize;
 					//Hardware CallList
 					glCallListGX((const u32*)&SingleUnpackedGXCommand_DL_Binary[0]);
 					
@@ -3878,7 +3888,7 @@ void glGetFloatv(
 	
 	//The params parameter returns a single Boolean value indicating whether lighting is enabled.
 	else if((pname & GL_LIGHTING) == GL_LIGHTING){
-		u8 activeLights = globalGLCtx.lightsEnabled;
+		u32 activeLights = (globalGLCtx.GXPolygonAttributes & (GX_LIGHT0|GX_LIGHT1|GX_LIGHT2|GX_LIGHT3));
 		if(activeLights > 0){
 			*params = (u32)true;
 		}
@@ -4027,12 +4037,12 @@ void glScaled(
 void glCullFace(GLenum mode){
 	switch(mode){
 		case GL_FRONT:{
-			u32 polyAttr = (globalGLCtx.polyAttributes & ~(POLY_CULL_BACK | POLY_CULL_FRONT | POLY_CULL_NONE));
-			globalGLCtx.polyAttributes = polyAttr | POLY_CULL_FRONT;
+			u32 polyAttr = (globalGLCtx.GXPolygonAttributes & ~(POLY_CULL_BACK | POLY_CULL_FRONT | POLY_CULL_NONE));
+			globalGLCtx.GXPolygonAttributes = polyAttr | POLY_CULL_FRONT;
 		}break;
 		case GL_BACK:{
-			u32 polyAttr = (globalGLCtx.polyAttributes & ~(POLY_CULL_BACK | POLY_CULL_FRONT | POLY_CULL_NONE));
-			globalGLCtx.polyAttributes = polyAttr | POLY_CULL_BACK;
+			u32 polyAttr = (globalGLCtx.GXPolygonAttributes & ~(POLY_CULL_BACK | POLY_CULL_FRONT | POLY_CULL_NONE));
+			globalGLCtx.GXPolygonAttributes = polyAttr | POLY_CULL_BACK;
 		}break;
 		default:{
 			errorStatus = GL_INVALID_ENUM;
@@ -4353,7 +4363,6 @@ stride: The byte offset between consecutive vertices. When stride is zero, the v
 
 pointer: A pointer to the first coordinate of the first vertex in the array.
 */
-//Note: Method adapted to work around OpenGL1.5
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
@@ -4390,8 +4399,12 @@ void glVertexPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *ptr)
 	}
 	if(ptr != NULL){
 		vboVertex->vboArrayMemoryStart = (u32*)ptr;
-		vboVertex->vboIsDynamicMemoryAllocated = false;
 	}
+	else{
+		errorStatus = GL_INVALID_VALUE;
+		return;
+	}
+	vboVertex->vboIsDynamicMemoryAllocated = false;
 	vboVertex->vertexBufferObjectstrideOffset = stride;
 	vboVertex->ElementsPerVertexBufferObjectUnit = typeSizeOf; //defines pointer length
 	vboVertex->VertexBufferObjectStartOffset = (int)0; //default to 0
@@ -4439,18 +4452,14 @@ void glNormalPointer( GLenum type, GLsizei stride, const GLvoid *ptr ){
 		errorStatus = GL_INVALID_VALUE;
 		return;
 	}
-	//OpenGL spec says it's Dynamic object allocation or using a referenced array
-	if(vboNormal->vboIsDynamicMemoryAllocated == true){
-		TGDSARM9Free(vboNormal->vboArrayMemoryStart);
-	}
-	if(ptr == NULL){
-		vboNormal->vboArrayMemoryStart = (u32*)TGDSARM9Malloc(typeSizeOf*VBO_ARRAY_SIZE);
-		vboNormal->vboIsDynamicMemoryAllocated = true;
+	if(ptr != NULL){
+		vboNormal->vboArrayMemoryStart = (u32*)ptr;
 	}
 	else{
-		vboNormal->vboArrayMemoryStart = (u32*)ptr;
-		vboNormal->vboIsDynamicMemoryAllocated = false;
+		errorStatus = GL_INVALID_VALUE;
+		return;
 	}
+	vboNormal->vboIsDynamicMemoryAllocated = false;
 	vboNormal->vertexBufferObjectstrideOffset = stride;
 	vboNormal->ElementsPerVertexBufferObjectUnit = typeSizeOf; //defines pointer length
 	vboNormal->VertexBufferObjectStartOffset = (int)0; //default to 0
@@ -4503,25 +4512,20 @@ void glColorPointer( GLint size, GLenum type, GLsizei stride, const GLvoid *ptr 
 		errorStatus = GL_INVALID_VALUE;
 		return;
 	}
-	//OpenGL spec says it's Dynamic object allocation or using a referenced array
-	if(vboColor->vboIsDynamicMemoryAllocated == true){
-		TGDSARM9Free(vboColor->vboArrayMemoryStart);
-	}
-	if(ptr == NULL){
-		vboColor->vboArrayMemoryStart = (u32*)TGDSARM9Malloc(size*typeSizeOf*VBO_ARRAY_SIZE);
-		vboColor->vboIsDynamicMemoryAllocated = true;
+	if(ptr != NULL){
+		vboColor->vboArrayMemoryStart = (u32*)ptr;
 	}
 	else{
-		vboColor->vboArrayMemoryStart = (u32*)ptr;
-		vboColor->vboIsDynamicMemoryAllocated = false;
+		errorStatus = GL_INVALID_VALUE;
+		return;
 	}
+	vboColor->vboIsDynamicMemoryAllocated = false;
 	vboColor->vertexBufferObjectstrideOffset = stride;
 	vboColor->ElementsPerVertexBufferObjectUnit = typeSizeOf; //defines pointer length
 	vboColor->VertexBufferObjectStartOffset = (int)0; //default to 0
 	vboColor->argCount = size;
 }
 
-//Note: Method adapted to work around OpenGL1.5
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
@@ -4554,8 +4558,12 @@ void glIndexPointer( GLenum type, GLsizei stride, const GLvoid *ptr ){
 	}
 	if(ptr != NULL){
 		vboIndex->vboArrayMemoryStart = (u32*)ptr;
-		vboIndex->vboIsDynamicMemoryAllocated = false;
 	}
+	else{
+		errorStatus = GL_INVALID_VALUE;
+		return;
+	}
+	vboIndex->vboIsDynamicMemoryAllocated = false;
 	vboIndex->vertexBufferObjectstrideOffset = stride;
 	vboIndex->ElementsPerVertexBufferObjectUnit = typeSizeOf; //defines pointer length
 	vboIndex->VertexBufferObjectStartOffset = (int)0; //default to 0
@@ -4596,18 +4604,14 @@ void glTexCoordPointer( GLint size, GLenum type, GLsizei stride, const GLvoid *p
 		errorStatus = GL_INVALID_VALUE;
 		return;
 	}
-	//OpenGL spec says it's Dynamic object allocation or using a referenced array
-	if(vboTexCoord->vboIsDynamicMemoryAllocated == true){
-		TGDSARM9Free(vboTexCoord->vboArrayMemoryStart);
-	}
-	if(ptr == NULL){
-		vboTexCoord->vboArrayMemoryStart = (u32*)TGDSARM9Malloc(size*typeSizeOf*VBO_ARRAY_SIZE);
-		vboTexCoord->vboIsDynamicMemoryAllocated = true;
+	if(ptr != NULL){
+		vboTexCoord->vboArrayMemoryStart = (u32*)ptr;
 	}
 	else{
-		vboTexCoord->vboArrayMemoryStart = (u32*)ptr;
-		vboTexCoord->vboIsDynamicMemoryAllocated = false;
+		errorStatus = GL_INVALID_VALUE;
+		return;
 	}
+	vboTexCoord->vboIsDynamicMemoryAllocated = false;
 	vboTexCoord->vertexBufferObjectstrideOffset = stride;
 	vboTexCoord->ElementsPerVertexBufferObjectUnit = typeSizeOf; //defines pointer length
 	vboTexCoord->VertexBufferObjectStartOffset = (int)0; //default to 0
@@ -4955,12 +4959,13 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 		}
 		glNewList(OGL_DL_DRAW_ARRAYS_METHOD, GL_COMPILE_AND_EXECUTE, INTERNAL_TGDS_OGL_DL_POINTER);
 			glBegin(mode, INTERNAL_TGDS_OGL_DL_POINTER);
-			for(i = 0; i < (argCount*count); i+=(argCount)){
+			for(i = 0; i < count; i++){
+				int nextOffset = 0;
 				if(vboColorEnabled == true){
 					switch(vboColor->ElementsPerVertexBufferObjectUnit){
 						//unsigned char
 						case 1:{
-							unsigned char * colorOffset = (unsigned char*)( ((int)vboColor->vboArrayMemoryStart) +  (i * sizeof(unsigned char) + ((vboColor->vertexBufferObjectstrideOffset*sizeof(unsigned char)*argCount))));
+							unsigned char * colorOffset = (unsigned char*)( ((int)vboColor->vboArrayMemoryStart) +  (i * sizeof(unsigned char) + ((vboColor->vertexBufferObjectstrideOffset*sizeof(unsigned char)))));
 							unsigned char arg0 = (unsigned char)*(colorOffset+0);
 							unsigned char arg1 = (unsigned char)*(colorOffset+1);
 							unsigned char arg2 = (unsigned char)*(colorOffset+2);
@@ -4976,13 +4981,14 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 						
 						//unsigned int (packed as Float -> u8)
 						case 4:{
-							GLfloat * colorOffset = (GLfloat*)( ((int)vboColor->vboArrayMemoryStart) +  (i * sizeof(GLfloat) + ((vboColor->vertexBufferObjectstrideOffset*sizeof(GLfloat)*argCount))));
+							GLfloat * colorOffset = (GLfloat*)( ((int)vboColor->vboArrayMemoryStart) +  (i * sizeof(GLfloat) + ((vboColor->vertexBufferObjectstrideOffset*sizeof(GLfloat)))));
 							u8 arg0 = (u8)*(colorOffset+0);
 							u8 arg1 = (u8)*(colorOffset+1);
 							u8 arg2 = (u8)*(colorOffset+2);
 							glColor3b((u8)arg0, (u8)arg1, (u8)arg2, INTERNAL_TGDS_OGL_DL_POINTER);
 						}break;
 					}
+					nextOffset = (vboColor->argCount-1);
 				}
 
 				if(vboNormalEnabled == true){
@@ -4995,7 +5001,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 						*/
 						//unsigned short
 						case 2:{
-							unsigned short * normalOffset = (unsigned short*)( ((int)vboNormal->vboArrayMemoryStart) +  (i * sizeof(unsigned short) + ((vboNormal->vertexBufferObjectstrideOffset*sizeof(unsigned short)*argCount))));
+							unsigned short * normalOffset = (unsigned short*)( ((int)vboNormal->vboArrayMemoryStart) +  (i * sizeof(unsigned short) + ((vboNormal->vertexBufferObjectstrideOffset*sizeof(unsigned short)))));
 							unsigned short arg0 = (unsigned short)*(normalOffset+0);
 							unsigned short arg1 = (unsigned short)*(normalOffset+1);
 							unsigned short arg2 = (unsigned short)*(normalOffset+2);
@@ -5004,13 +5010,14 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 						
 						//unsigned int (packed as Float -> v10)
 						case 4:{
-							GLfloat * normalOffset = (GLfloat*)( ((int)vboNormal->vboArrayMemoryStart) +  (i * sizeof(GLfloat) + ((vboNormal->vertexBufferObjectstrideOffset*sizeof(GLfloat)*argCount))));
+							GLfloat * normalOffset = (GLfloat*)( ((int)vboNormal->vboArrayMemoryStart) +  (i * sizeof(GLfloat) + ((vboNormal->vertexBufferObjectstrideOffset*sizeof(GLfloat)))));
 							v10 arg0 = (v10)floattov10(*(normalOffset+0));
 							v10 arg1 = (v10)floattov10(*(normalOffset+1));
 							v10 arg2 = (v10)floattov10(*(normalOffset+2));
 							glNormal3v10((v10)arg0, (v10)arg1, (v10)arg2, INTERNAL_TGDS_OGL_DL_POINTER);
 						}break;
 					}
+					nextOffset = (vboNormal->argCount-1);
 				}
 
 				if(vboTexCoordEnabled == true){
@@ -5023,7 +5030,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 						*/
 						//unsigned short
 						case 2:{
-							unsigned short * TexCoordOffset = (unsigned short*)( ((int)vboTexCoord->vboArrayMemoryStart) +  (i * sizeof(unsigned short) + ((vboTexCoord->vertexBufferObjectstrideOffset*sizeof(unsigned short)*argCount))));
+							unsigned short * TexCoordOffset = (unsigned short*)( ((int)vboTexCoord->vboArrayMemoryStart) +  (i * sizeof(unsigned short) + ((vboTexCoord->vertexBufferObjectstrideOffset*sizeof(unsigned short)))));
 							unsigned short arg0 = (unsigned short)*(TexCoordOffset+0);
 							unsigned short arg1 = (unsigned short)*(TexCoordOffset+1);
 							glTexCoord2t16((t16)arg0, (t16)arg1, INTERNAL_TGDS_OGL_DL_POINTER);
@@ -5031,12 +5038,13 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 
 						//unsigned int (packed as Float -> t16)
 						case 4:{
-							GLfloat * TexCoordOffset = (GLfloat*)( ((int)vboTexCoord->vboArrayMemoryStart) +  (i * sizeof(unsigned int) + ((vboTexCoord->vertexBufferObjectstrideOffset*sizeof(unsigned int)*argCount))));
+							GLfloat * TexCoordOffset = (GLfloat*)( ((int)vboTexCoord->vboArrayMemoryStart) +  (i * sizeof(unsigned int) + ((vboTexCoord->vertexBufferObjectstrideOffset*sizeof(unsigned int)))));
 							t16 arg0 = (t16)floattot16(*(TexCoordOffset+0));
 							t16 arg1 = (t16)floattot16(*(TexCoordOffset+1));
 							glTexCoord2t16((t16)arg0, (t16)arg1, INTERNAL_TGDS_OGL_DL_POINTER);
 						}break;
 					}
+					nextOffset = (vboTexCoord->argCount-1);
 				}
 
 				if(vboVertexEnabled == true){
@@ -5049,7 +5057,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 						*/
 						//unsigned short
 						case 2:{
-							u16 * vertexOffset = (u16*)( ((int)vboVertex->vboArrayMemoryStart) +  (i * sizeof(v16) + ((vboVertex->vertexBufferObjectstrideOffset*sizeof(v16)*argCount))));
+							u16 * vertexOffset = (u16*)( ((int)vboVertex->vboArrayMemoryStart) +  (i * sizeof(v16) + ((vboVertex->vertexBufferObjectstrideOffset*sizeof(v16)))));
 							v16 arg0 = (v16)*(vertexOffset+0);
 							v16 arg1 = (v16)*(vertexOffset+1);
 							v16 arg2 = (v16)*(vertexOffset+2);
@@ -5058,14 +5066,16 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 
 						//unsigned int (packed as Float -> v16)
 						case 4:{
-							GLfloat * vertexOffset = (GLfloat*)( ((int)vboVertex->vboArrayMemoryStart) +  (i * sizeof(unsigned int) + ((vboVertex->vertexBufferObjectstrideOffset*sizeof(unsigned int)*argCount))));
+							GLfloat * vertexOffset = (GLfloat*)( ((int)vboVertex->vboArrayMemoryStart) +  (i * sizeof(unsigned int) + ((vboVertex->vertexBufferObjectstrideOffset*sizeof(unsigned int)))));
 							v16 arg0 = (v16)floattov16(*(vertexOffset+0));
 							v16 arg1 = (v16)floattov16(*(vertexOffset+1));
 							v16 arg2 = (v16)floattov16(*(vertexOffset+2));
 							glVertex3v16(arg0, arg1, arg2, INTERNAL_TGDS_OGL_DL_POINTER);
 						}break;
 					}
+					nextOffset = (vboVertex->argCount-1);
 				}
+				i += (nextOffset);
 			}
 			glEnd(INTERNAL_TGDS_OGL_DL_POINTER);
 		glEndList(INTERNAL_TGDS_OGL_DL_POINTER); 
