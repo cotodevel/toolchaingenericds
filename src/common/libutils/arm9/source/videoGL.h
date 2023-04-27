@@ -1477,6 +1477,7 @@ extern void glTexCoord2t16(t16 u, t16 v, struct TGDSOGL_DisplayListContext * Ins
 extern void glTexCoord2f(GLfloat s, GLfloat t, struct TGDSOGL_DisplayListContext * Inst);
 extern void glTexCoord2i(GLint s, GLint t, struct TGDSOGL_DisplayListContext * Inst);
 extern void glTexCoord1i(uint32 uv, struct TGDSOGL_DisplayListContext * Inst);
+extern void glTexCoord2fv(const GLfloat *v, struct TGDSOGL_DisplayListContext * Inst);
 extern u16 lastVertexColor;
 extern void glColor3b(uint8 red, uint8 green, uint8 blue, struct TGDSOGL_DisplayListContext * Inst);
 extern void glVertex3v16(v16 x, v16 y, v16 z, struct TGDSOGL_DisplayListContext * Inst);

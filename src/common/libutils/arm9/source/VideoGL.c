@@ -2330,6 +2330,22 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__((optnone))
 #endif
 #endif
+void glTexCoord2fv(
+   const GLfloat *v,
+   struct TGDSOGL_DisplayListContext * Inst){
+	float s = v[0];
+	float t = v[1];
+	glTexCoord2f(s, t, Inst);
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
 void glTexCoord2f(GLfloat s, GLfloat t, struct TGDSOGL_DisplayListContext * Inst){
 	int texBase = getTextureBaseFromTextureSlot(activeTexture);
 	if(s > 0.0){
@@ -3854,83 +3870,7 @@ void glGetFloatv(
    GLenum pname, 
    GLfloat *params
 ){
-	//The params parameter returns four values: the x and y window coordinates of the viewport, followed by its width and height.
-	if((pname & GL_VIEWPORT) == GL_VIEWPORT){
-		u32 readLastViewport = globalGLCtx.lastViewport;
-		u32 * paramOut = (u32*)params;
-		*paramOut = (u32)(readLastViewport&0xFF); paramOut++; //x1
-		*paramOut = (u32)((readLastViewport>>8)&0xFF); paramOut++; //y1
-		*paramOut = (u32)((readLastViewport>>16)&0xFF); paramOut++; //width
-		*paramOut = (u32)((readLastViewport>>24)&0xFF); paramOut++; //height
-	}
-
-	//The params parameter returns a single Boolean value indicating whether the vertex array is enabled.
-	else if((pname & GL_VERTEX_ARRAY) == GL_VERTEX_ARRAY){
-		*params = (u32)false; //Won't be implemented: It's slower than DisplayLists because of the NDS CPU, no server-side only rendering (DL -> VRAM -> GX), let alone programmable arrays
-	}
-	
-	//The params parameter returns four values: the red, green, blue, and alpha components 
-	//of the ambient intensity of the entire scene. Integer values, if requested, are linearly mapped from 
-	//the internal floating-point representation such that 1.0 returns the most positive representable integer value, 
-	//and -1.0 returns the most negative representable integer value.
-	else if((pname & GL_LIGHT_MODEL_AMBIENT) == GL_LIGHT_MODEL_AMBIENT){
-		u32 specVal = globalGLCtx.specularValue;
-		u32 * paramOut = (u32*)params;
-		//globalGLCtx.specularValue = ((floattov10(rSpecular) & 0x1F) << 16) | ((floattov10(gSpecular) & 0x1F) << 21) | ((floattov10(bSpecular) & 0x1F) << 26);
-		int rIntAmb = v10toint((specVal >> 16) & 0x1F); 
-		int gIntAmb = v10toint((specVal >> 21) & 0x1F); 
-		int bIntAmb = v10toint((specVal >> 26) & 0x1F); 
-		*paramOut = (u32)rIntAmb; paramOut++;
-		*paramOut = (u32)gIntAmb; paramOut++;
-		*paramOut = (u32)bIntAmb; paramOut++;
-		*paramOut = (u32)0; paramOut++;
-	}
-	
-	//The params parameter returns a single Boolean value indicating whether lighting is enabled.
-	else if((pname & GL_LIGHTING) == GL_LIGHTING){
-		u32 activeLights = (globalGLCtx.GXPolygonAttributes & (GX_LIGHT0|GX_LIGHT1|GX_LIGHT2|GX_LIGHT3));
-		if(activeLights > 0){
-			*params = (u32)true;
-		}
-		else{
-			*params = (u32)false;
-		}
-	}
-	
-	//The params parameter returns one value: the maximum number of lights.
-	else if((pname & GL_MAX_LIGHTS) == GL_MAX_LIGHTS){
-		//GX: Max lights
-		int activeLightCount = 4;
-		*params = (u32)activeLightCount;
-	}
-	
-	//The params parameter returns one value: the maximum recursion depth allowed during display-list traversal
-	else if((pname & GL_MAX_LIST_NESTING) == GL_MAX_LIST_NESTING){
-		*params = (u32)(InternalUnpackedGX_DL_workSize/sizeof(int));
-	}
-	
-	//The params parameter returns 16 values: the modelview matrix on the top of the modelview matrix stack.
-	else if((pname & GL_MODELVIEW_MATRIX) == GL_MODELVIEW_MATRIX){
-		u32 * curModelViewMatrixPtr = (u32*)0x04000640;
-		u32 * targetModelViewMatrixPtr = (u32 *)params;
-		while (GFX_STATUS & (1<<27)); // wait till gfx engine is not busy
-		*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //0
-		*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //1
-		*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //2
-		*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //3
-		*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //4
-		*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //5
-		*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //6
-		*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //7
-		*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //8
-		*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //9
-		*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //10
-		*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //11
-		*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //12
-		*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //13
-		*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //14
-		*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //15
-	}
+	glGetIntegerv(pname, (GLint*)params);
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -3943,7 +3883,7 @@ void glGetDoublev(
    GLenum   pname,
    GLdouble *params
    ){
-	   glGetFloatv(pname, (GLfloat*)params);
+	   glGetIntegerv(pname, (GLfloat*)params);
 }
 
 /*
@@ -5538,7 +5478,6 @@ void glGetMaterialfv(
 	}
 }
 
-//See glGetFloatv(); for implementation. 
 //Note: It's the same because both int and float datatypes are 4-byte on ARM v5t CPU platforms.
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
@@ -5550,7 +5489,94 @@ void glGetIntegerv(
    GLenum pname,
    GLint  *params
    ){
-	   glGetFloatv(pname, (GLfloat*)params);
+	   switch(pname){
+		//The params parameter returns four values: the x and y window coordinates of the viewport, followed by its width and height.
+		case(GL_VIEWPORT):{
+			u32 readLastViewport = globalGLCtx.lastViewport;
+			u32 * paramOut = (u32*)params;
+			*paramOut = (u32)(readLastViewport&0xFF); paramOut++; //x1
+			*paramOut = (u32)((readLastViewport>>8)&0xFF); paramOut++; //y1
+			*paramOut = (u32)((readLastViewport>>16)&0xFF); paramOut++; //width
+			*paramOut = (u32)((readLastViewport>>24)&0xFF); paramOut++; //height
+		}break;
+		
+		//The params parameter returns a single Boolean value indicating whether the vertex array is enabled.
+		case(GL_VERTEX_ARRAY):{
+			*params = (u32)false; //Won't be implemented: It's slower than DisplayLists because of the NDS CPU, no server-side only rendering (DL -> VRAM -> GX), let alone programmable arrays
+		}break;
+
+		//The params parameter returns four values: the red, green, blue, and alpha components 
+		//of the ambient intensity of the entire scene. Integer values, if requested, are linearly mapped from 
+		//the internal floating-point representation such that 1.0 returns the most positive representable integer value, 
+		//and -1.0 returns the most negative representable integer value.
+		case(GL_LIGHT_MODEL_AMBIENT):{
+			u32 specVal = globalGLCtx.specularValue;
+			u32 * paramOut = (u32*)params;
+			//globalGLCtx.specularValue = ((floattov10(rSpecular) & 0x1F) << 16) | ((floattov10(gSpecular) & 0x1F) << 21) | ((floattov10(bSpecular) & 0x1F) << 26);
+			int rIntAmb = v10toint((specVal >> 16) & 0x1F); 
+			int gIntAmb = v10toint((specVal >> 21) & 0x1F); 
+			int bIntAmb = v10toint((specVal >> 26) & 0x1F); 
+			*paramOut = (u32)rIntAmb; paramOut++;
+			*paramOut = (u32)gIntAmb; paramOut++;
+			*paramOut = (u32)bIntAmb; paramOut++;
+			*paramOut = (u32)0; paramOut++;
+		}break;
+
+		//The params parameter returns a single Boolean value indicating whether lighting is enabled.
+		case(GL_LIGHTING):{
+			u32 activeLights = (globalGLCtx.GXPolygonAttributes & (GX_LIGHT0|GX_LIGHT1|GX_LIGHT2|GX_LIGHT3));
+			if(activeLights > 0){
+				*params = (u32)true;
+			}
+			else{
+				*params = (u32)false;
+			}
+		}break;
+
+		//The params parameter returns one value: the maximum number of lights.
+		case(GL_MAX_LIGHTS):{
+			//GX: Max lights
+			int activeLightCount = 4;
+			*params = (u32)activeLightCount;
+		}break;
+
+		//The params parameter returns one value: the maximum recursion depth allowed during display-list traversal
+		case(GL_MAX_LIST_NESTING):{
+			*params = (u32)(InternalUnpackedGX_DL_workSize/sizeof(int));
+		}break;
+
+		//The params parameter returns 16 values: the modelview matrix on the top of the modelview matrix stack.
+		case(GL_MODELVIEW_MATRIX):{
+			u32 * curModelViewMatrixPtr = (u32*)0x04000640;
+			u32 * targetModelViewMatrixPtr = (u32 *)params;
+			while (GFX_STATUS & (1<<27)); // wait till gfx engine is not busy
+			*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //0
+			*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //1
+			*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //2
+			*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //3
+			*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //4
+			*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //5
+			*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //6
+			*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //7
+			*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //8
+			*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //9
+			*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //10
+			*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //11
+			*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //12
+			*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //13
+			*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //14
+			*targetModelViewMatrixPtr = (u32)*curModelViewMatrixPtr; curModelViewMatrixPtr++; targetModelViewMatrixPtr++; //15
+		}break;
+
+		//The params parameter returns one value: a symbolic constant indicating whether the shading mode is flat or smooth. See glShadeModel.
+		case(GL_SHADE_MODEL):{
+			*params = (u32)(globalGLCtx.primitiveShadeModelMode);
+		}break;
+		default:{
+			errorStatus = GL_INVALID_ENUM;
+			return;
+		}break;
+	}
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -5563,7 +5589,7 @@ void glGetBooleanv(
    GLenum pname,
    GLboolean *params
    ){
-	glGetFloatv(pname, (GLfloat*)params);
+	glGetIntegerv(pname, (GLint*)params);
 }
 
 //////////////////////////////////////////////////////////// Extended Vertex Array Buffers and Vertex Buffer Objects OpenGL 1.1 end //////////////////////////////////////////

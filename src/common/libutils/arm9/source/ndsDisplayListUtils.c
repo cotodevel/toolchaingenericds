@@ -50,10 +50,6 @@ USA
 #include "VideoGL.h"
 #include "ndsDisplayListUtils.h"
 
-#ifdef WIN32
-#include "Renderable.h"
-#endif
-
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
@@ -1467,9 +1463,13 @@ int main(int argc, char** argv){
 	}
 	
 	{
-#ifdef WIN32
-		int ret = startAquarium(argc, argv);
-#endif
+		GLint shadeNow = 0;
+		GLfloat vec[2];
+		vec[0] = 0.1;
+		vec[1] = 0.2;
+		glTexCoord2fv((const GLfloat *)&vec, USERSPACE_TGDS_OGL_DL_POINTER);
+
+		glGetIntegerv(GL_SHADE_MODEL, &shadeNow);
 	}
 	
 	return 0;
