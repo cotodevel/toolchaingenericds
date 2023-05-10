@@ -1128,7 +1128,7 @@ enum {
 	GL_ALL_ATTRIB_BITS	= (unsigned int)0x000fffff
 };
 
-#define PHYS_GXFIFO_INTERNAL_SIZE ((int)1024)
+#define PHYS_GXFIFO_INTERNAL_SIZE ((int)2048) //up to 512 unpacked cmds
 
 //Max GL Lists allocated in the OpenGL API
 #define InternalUnpackedGX_DL_workSize	((int)4096) //Max internal DL unpacked GX command/arguments count: up to 4096 in-queue 
@@ -1136,6 +1136,7 @@ enum {
 
 //Display List Descriptor
 #define DL_INVALID (u32)(-1)
+#define DL_VALID_UNASSIGNED (u32)(-2)
 #define DL_TYPE_SIZE (u32)(1)
 #define DL_TYPE_FIFO_PACKED_COMMAND_V1 (u32)(DL_TYPE_SIZE+1)	//FIFO_COMMAND_PACK( FIFO_BEGIN , FIFO_COLOR , FIFO_TEX_COORD , FIFO_NORMAL )
 #define DL_TYPE_FIFO_PACKED_COMMAND_V2 (u32)(DL_TYPE_FIFO_PACKED_COMMAND_V1+1)	//FIFO_COMMAND_PACK( FIFO_VERTEX16 , FIFO_COLOR , FIFO_TEX_COORD , FIFO_NORMAL )
@@ -1170,34 +1171,34 @@ __attribute__((packed)) ;
 
 //////////////////////////////////////////////////////////// Extended Display List OpenGL 1.1 start //////////////////////////////////////////
 
-#define MAX_TGDSOGL_DisplayListContexts ((int)2)
-#define TGDSOGL_DisplayListContext_Internal ((int)0) //VBO & VBA
-#define TGDSOGL_DisplayListContext_External ((int)1) //OpenGL API usermode
-
+#define MAX_TGDS_SpawnOGLDisplayListsPerDisplayListContext ((int)200) //4096 / 11 cmds or about 20 cmds~ (glBegin(2 args)/glEnd(2 args)/glVertex3f(3 args)/glNormal3f(2 args)/glColor(2 args))) = 4096 / 20 = 200 OpenGL Display Lists
 #ifndef _MSC_VER
 #define SingleUnpackedGXCommand_DL_Binary ((u32*)((int)0x06200000+((128*1024)-PHYS_GXFIFO_INTERNAL_SIZE))) //VRAM_C_0x06200000_ENGINE_B_BG: VRAM C Bottom Screen Console, Engine B
 #endif
 
-struct TGDSOGL_DisplayListContext {
-	//Internal Unpacked GX buffer
-	GLsizei InternalUnpackedGX_DL_Binary_Enumerator[InternalUnpackedGX_DL_workSize/sizeof(GLsizei)];
-	u32 LastGXInternalDisplayListPtr;
-	u32 LastActiveOpenGLDisplayList;
-	u32 InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_workSize];
-	u32 InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
+struct TGDSOGL_LogicalDisplayList {
 	bool isAnOpenGLExtendedDisplayListCallList;
 	u32	mode; //GLenum mode: //Specifies the compilation mode, which can be GL_COMPILE or GL_COMPILE_AND_EXECUTE. Set up by glNewList()
+	GLsizei LogicalOGLOffsetToGXOffsetInGXBinary; //maps a single OGL DL to a physical GX DL structure
 };
 
-#define INTERNAL_TGDS_OGL_DL_POINTER ((struct TGDSOGL_DisplayListContext *)&TGDSOGL_DisplayListContextInst[TGDSOGL_DisplayListContext_Internal])
-#define USERSPACE_TGDS_OGL_DL_POINTER ((struct TGDSOGL_DisplayListContext *)&TGDSOGL_DisplayListContextInst[TGDSOGL_DisplayListContext_External])
+struct TGDSOGL_DisplayListContext {
+	u32 InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_workSize]; //Internal Unpacked GX buffer	
+	u32 InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr; //A shared pointer allows to traverse across each logical OGL DL to a single-shared GX command buffer
+	struct TGDSOGL_LogicalDisplayList TGDSOGL_LogicalDisplayListSet[MAX_TGDS_SpawnOGLDisplayListsPerDisplayListContext];
+	int CurrentSpawnOGLDisplayList; //Current free spawn OpenGL Display List
+	int CurrentScratchPadOGLDisplayList; //used between glNewList / glEndList calls only
+};
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern struct TGDSOGL_DisplayListContext TGDSOGL_DisplayListContextInst[MAX_TGDSOGL_DisplayListContexts];
-extern u32 * getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(struct TGDSOGL_DisplayListContext * Inst); 
+extern struct TGDSOGL_DisplayListContext TGDSOGL_DisplayListContextInternal;
+extern struct TGDSOGL_DisplayListContext TGDSOGL_DisplayListContextUser;
+extern bool isInternalDisplayList;
+
+extern u32 * getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(); 
 
 //Scratchpad GX buffer
 #ifdef _MSC_VER
@@ -1212,44 +1213,40 @@ extern u32 SingleUnpackedGXCommand_DL_Binary[PHYS_GXFIFO_INTERNAL_SIZE];
 //struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext = (struct TGDSOGL_DisplayListContext *)&TGDSOGL_DisplayListContextInst[TGDSOGL_DisplayListContext_Internal];
 //.................
 //.................
-extern GLuint glGenLists(GLsizei range, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext);
-extern void glListBase(GLuint base, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext);
-extern GLboolean glIsList(GLuint list, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext);
-extern void glNewList(GLuint list, GLenum mode, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext);
-extern void glEndList(struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext);
-extern void glCallList(GLuint list, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext);
-extern void glCallLists(GLsizei n, GLenum type, const void * lists, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext);
-extern void glDeleteLists(GLuint list, GLsizei range, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext);
+extern GLuint glGenLists(GLsizei range);
+extern void glListBase(GLuint base);
+extern GLboolean glIsList(GLuint list);
+extern void glNewList(GLuint list, GLenum mode);
+extern void glEndList();
+extern void glCallList(GLuint list);
+extern void glCallLists(GLsizei n, GLenum type, const void * lists);
+extern void glDeleteLists(GLuint list, GLsizei range);
 extern enum GL_GLBEGIN_ENUM getDisplayListGLType(struct ndsDisplayListDescriptor * dlInst);
 extern int CompilePackedNDSGXDisplayListFromObject(u32 * bufOut, struct ndsDisplayListDescriptor * dlInst);
-extern void glNormal3dv(const GLdouble *v, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext);
-extern void glVertex3dv(const GLdouble *v, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext);
-extern void glNormal3v10(v10 nx, v10 ny, v10 nz, struct TGDSOGL_DisplayListContext * Inst);
-extern void emitGLShinnyness(float shinyValue, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext);
-extern void  glMultMatrixf(const GLfloat *m, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext);
-extern void  glMultMatrixd(const GLdouble *m, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext);
+extern void glNormal3dv(const GLdouble *v);
+extern void glVertex3dv(const GLdouble *v);
+extern void glNormal3v10(v10 nx, v10 ny, v10 nz);
+extern void emitGLShinnyness(float shinyValue);
+extern void  glMultMatrixf(const GLfloat *m);
+extern void  glMultMatrixd(const GLdouble *m);
 extern void glScalef(
    GLfloat x,
    GLfloat y,
-   GLfloat z,
-   struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext
+   GLfloat z
 );
 extern void glScaled(
    GLdouble x,
    GLdouble y,
-   GLdouble z,
-   struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext
+   GLdouble z
 );
 
-extern void glScalev(GLvector* v, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext);
+extern void glScalev(GLvector* v);
 
-//doesn't rely on struct TGDSOGL_DisplayListContext
 extern void glGetFloatv(
    GLenum pname, 
    GLfloat *params
 );
 
-//doesn't rely on struct TGDSOGL_DisplayListContext
 extern void glGetDoublev(
    GLenum   pname,
    GLdouble *params
@@ -1366,73 +1363,72 @@ extern int OGL_DL_DRAW_ARRAYS_METHOD;
 
 //////////////////////////////////////////////////////////// Extended Vertex Array Buffers and Vertex Buffer Objects OpenGL 1.1 end //////////////////////////////////////////
 
-extern void glEnable(int bits, struct TGDSOGL_DisplayListContext * Inst);
-extern void glDisable(int bits, struct TGDSOGL_DisplayListContext * Inst);
+extern void glEnable(int bits);
+extern void glDisable(int bits);
 
-extern void glLoadMatrixf(const GLfloat *m, struct TGDSOGL_DisplayListContext * Inst);
-extern void glLoadMatrix4x4(m4x4 * m, struct TGDSOGL_DisplayListContext * Inst);
-extern void glLoadMatrix4x3(m4x3 * m, struct TGDSOGL_DisplayListContext * Inst);
-extern void glMultMatrix4x4(m4x4 * m, struct TGDSOGL_DisplayListContext * Inst);
-extern void glMultMatrix4x3(m4x3 * m, struct TGDSOGL_DisplayListContext * Inst);
-extern void glRotateXi(int angle, struct TGDSOGL_DisplayListContext * Inst);
-extern void glRotateYi(int angle, struct TGDSOGL_DisplayListContext * Inst);
-extern void glRotateZi(int angle, struct TGDSOGL_DisplayListContext * Inst);
-extern void glRotateX(float angle, struct TGDSOGL_DisplayListContext * Inst);
-extern void glRotateY(float angle, struct TGDSOGL_DisplayListContext * Inst);
-extern void glRotateZ(float angle, struct TGDSOGL_DisplayListContext * Inst);
-extern void gluLookAtf32(f32 eyex, f32 eyey, f32 eyez, f32 lookAtx, f32 lookAty, f32 lookAtz, f32 upx, f32 upy, f32 upz, struct TGDSOGL_DisplayListContext * Inst);
-extern void gluLookAt(float eyex, float eyey, float eyez, float lookAtx, float lookAty, float lookAtz, float upx, float upy, float upz, struct TGDSOGL_DisplayListContext * Inst);
-extern void gluFrustumf32(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far, struct TGDSOGL_DisplayListContext * Inst);
-extern void gluFrustum(float left, float right, float bottom, float top, float near, float far, struct TGDSOGL_DisplayListContext * Inst);
-extern void gluPerspectivef32(int fovy, f32 aspect, f32 zNear, f32 zFar, struct TGDSOGL_DisplayListContext * Inst);
-extern void gluPerspective(float fovy, float aspect, float zNear, float zFar, struct TGDSOGL_DisplayListContext * Inst);
+extern void glLoadMatrixf(const GLfloat *m);
+extern void glLoadMatrix4x4(m4x4 * m);
+extern void glLoadMatrix4x3(m4x3 * m);
+extern void glMultMatrix4x4(m4x4 * m);
+extern void glMultMatrix4x3(m4x3 * m);
+extern void glRotateXi(int angle);
+extern void glRotateYi(int angle);
+extern void glRotateZi(int angle);
+extern void glRotateX(float angle);
+extern void glRotateY(float angle);
+extern void glRotateZ(float angle);
+extern void gluLookAtf32(f32 eyex, f32 eyey, f32 eyez, f32 lookAtx, f32 lookAty, f32 lookAtz, f32 upx, f32 upy, f32 upz);
+extern void gluLookAt(float eyex, float eyey, float eyez, float lookAtx, float lookAty, float lookAtz, float upx, float upy, float upz);
+extern void gluFrustumf32(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far);
+extern void gluFrustum(float left, float right, float bottom, float top, float near, float far);
+extern void gluPerspectivef32(int fovy, f32 aspect, f32 zNear, f32 zFar);
+extern void gluPerspective(float fovy, float aspect, float zNear, float zFar);
 extern int glTexImage2D(int target, int empty1, int type, int sizeX, int sizeY, int empty2, int param, uint8* texture);
-extern void glBindTexture(int target, int name, struct TGDSOGL_DisplayListContext * Inst);
+extern void glBindTexture(int target, int name);
 extern int glGenTextures(int n, int *names);
 extern void glResetTextures(void);
 extern void glMaterialf(
 	GLenum  face,
 	GLenum  pname,
-	GLfloat param, 
-	struct TGDSOGL_DisplayListContext * Inst
+	GLfloat param
 );
-extern void glResetMatrixStack(struct TGDSOGL_DisplayListContext * Inst);
+extern void glMaterialfv (GLenum face, GLenum pname, const GLfloat *params);
+extern void glResetMatrixStack();
 extern void glSetOutlineColor(int id, rgb color);
 extern void glSetToonTable(uint16 *table);
 extern void glSetToonTableRange(int start, int end, rgb color);
-extern void glReset(struct TGDSOGL_DisplayListContext * Inst);
-extern void glBegin(int mode, struct TGDSOGL_DisplayListContext * Inst);
-extern void glEnd(struct TGDSOGL_DisplayListContext * Inst);  
-extern void glColor3b(uint8 red, uint8 green, uint8 blue, struct TGDSOGL_DisplayListContext * Inst);
-extern void glPushMatrix(struct TGDSOGL_DisplayListContext * Inst);
-extern void glPopMatrix(sint32 index, struct TGDSOGL_DisplayListContext * Inst);
-extern void glRestoreMatrix(sint32 index, struct TGDSOGL_DisplayListContext * Inst);
-extern void glStoreMatrix(sint32 index, struct TGDSOGL_DisplayListContext * Inst);
-extern void glTranslatev(GLvector* v, struct TGDSOGL_DisplayListContext * Inst);
-extern void glTranslate3f32(f32 x, f32 y, f32 z, struct TGDSOGL_DisplayListContext * Inst);
-extern void glTranslatef32(int x, int y, int z, struct TGDSOGL_DisplayListContext * Inst);
-extern void glLight(int id, rgb color, v10 x, v10 y, v10 z, struct TGDSOGL_DisplayListContext * Inst);
-extern void glNormal(uint32 normal, struct TGDSOGL_DisplayListContext * Inst);
-extern void glLoadIdentity(struct TGDSOGL_DisplayListContext * Inst);
-extern void glMatrixMode(int mode, struct TGDSOGL_DisplayListContext * Inst); 
-extern void glMaterialShinnyness(struct TGDSOGL_DisplayListContext * Inst);
-extern void glPolyFmt(u32 GXPolygonAttributes, struct TGDSOGL_DisplayListContext * Inst); 
-extern void glRotatef(int angle, float x, float y, float z, struct TGDSOGL_DisplayListContext * Inst);
-extern void glOrthof32(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far, struct TGDSOGL_DisplayListContext * Inst);
-extern void glOrtho(float left, float right, float bottom, float top, float near, float far, struct TGDSOGL_DisplayListContext * Inst);
-extern void glColor3f(float red, float green, float blue, struct TGDSOGL_DisplayListContext * Inst);
-extern void glColor3fv(const GLfloat * v, struct TGDSOGL_DisplayListContext * Inst);
-extern void glColor4fv(const GLfloat *v, struct TGDSOGL_DisplayListContext * Inst);
+extern void glReset();
+extern void glBegin(int mode);
+extern void glEnd();
+extern void glColor3b(uint8 red, uint8 green, uint8 blue);
+extern void glPushMatrix();
+extern void glPopMatrix(sint32 index);
+extern void glRestoreMatrix(sint32 index);
+extern void glStoreMatrix(sint32 index);
+extern void glTranslatev(GLvector* v);
+extern void glTranslate3f32(f32 x, f32 y, f32 z);
+extern void glTranslatef32(int x, int y, int z);
+extern void glNormal(uint32 normal);
+extern void glLoadIdentity();
+extern void glMatrixMode(int mode); 
+extern void glMaterialShinnyness();
+extern void glPolyFmt(u32 GXPolygonAttributes); 
+extern void glRotatef(int angle, float x, float y, float z);
+extern void glOrthof32(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far);
+extern void glOrtho(float left, float right, float bottom, float top, float near, float far);
+extern void glColor3f(float red, float green, float blue);
+extern void glColor3fv(const GLfloat * v);
+extern void glColor4fv(const GLfloat *v);
 extern struct GLContext globalGLCtx;
 extern void glShadeModel(GLenum mode);
 extern void glInit();
-extern void glVertex2i(int x, int y, struct TGDSOGL_DisplayListContext * Inst); 
-extern void glVertex2f(float x, float y, struct TGDSOGL_DisplayListContext * Inst);
-extern void glVertex3f(GLfloat x, GLfloat y, GLfloat z, struct TGDSOGL_DisplayListContext * Inst);
-extern void glVertex3i(GLint x, GLint y, GLint z, struct TGDSOGL_DisplayListContext * Inst);
-extern void glTranslatef(float x, float y, float z, struct TGDSOGL_DisplayListContext * Inst);
-extern void glFlush(struct TGDSOGL_DisplayListContext * Inst);
-extern void glFinish(struct TGDSOGL_DisplayListContext * Inst);
+extern void glVertex2i(int x, int y); 
+extern void glVertex2f(float x, float y);
+extern void glVertex3f(GLfloat x, GLfloat y, GLfloat z);
+extern void glVertex3i(GLint x, GLint y, GLint z);
+extern void glTranslatef(float x, float y, float z);
+extern void glFlush();
+extern void glFinish();
 extern u8 defaultglClearColorR;
 extern u8 defaultglClearColorG;
 extern u8 defaultglClearColorB;
@@ -1440,63 +1436,54 @@ extern u16 defaultglClearDepth;
 extern void glClear( GLbitfield mask );
 extern void glClearColor(uint8 red, uint8 green, uint8 blue);
 extern void glClearDepth(uint16 depth);
-extern void glViewport(uint8 x1, uint8 y1, uint8 x2, uint8 y2, struct TGDSOGL_DisplayListContext * Inst);
+extern void glViewport(uint8 x1, uint8 y1, uint8 x2, uint8 y2);
 extern void glNormal3b(
 	GLbyte nx,
  	GLbyte ny,
- 	GLbyte nz,
-	struct TGDSOGL_DisplayListContext * Inst
+ 	GLbyte nz
 );
 extern void glNormal3d(
 	GLdouble nx,
  	GLdouble ny,
- 	GLdouble nz,
-	struct TGDSOGL_DisplayListContext * Inst
+ 	GLdouble nz
 );
 extern void glNormal3f(
 	GLfloat nx,
  	GLfloat ny,
- 	GLfloat nz,
-	struct TGDSOGL_DisplayListContext * Inst
+ 	GLfloat nz
 );
 extern void glNormal3s(
 	GLshort nx,
  	GLshort ny,
- 	GLshort nz,
-	struct TGDSOGL_DisplayListContext * Inst
+ 	GLshort nz
 );
 extern void glNormal3i(
 	GLint nx,
  	GLint ny,
- 	GLint nz,
-	struct TGDSOGL_DisplayListContext * Inst
+ 	GLint nz
 );
-extern void glBegin(int primitiveType, struct TGDSOGL_DisplayListContext * Inst);
-extern void glEnd(struct TGDSOGL_DisplayListContext * Inst);
-extern void glTexCoord2t16(t16 u, t16 v, struct TGDSOGL_DisplayListContext * Inst);
-extern void glTexCoord2f(GLfloat s, GLfloat t, struct TGDSOGL_DisplayListContext * Inst);
-extern void glTexCoord2i(GLint s, GLint t, struct TGDSOGL_DisplayListContext * Inst);
-extern void glTexCoord1i(uint32 uv, struct TGDSOGL_DisplayListContext * Inst);
-extern void glTexCoord2fv(const GLfloat *v, struct TGDSOGL_DisplayListContext * Inst);
+extern void glTexCoord2t16(t16 u, t16 v);
+extern void glTexCoord2f(GLfloat s, GLfloat t);
+extern void glTexCoord2i(GLint s, GLint t);
+extern void glTexCoord1i(uint32 uv);
+extern void glTexCoord2fv(const GLfloat *v);
 extern u16 lastVertexColor;
-extern void glColor3b(uint8 red, uint8 green, uint8 blue, struct TGDSOGL_DisplayListContext * Inst);
-extern void glVertex3v16(v16 x, v16 y, v16 z, struct TGDSOGL_DisplayListContext * Inst);
-extern void glVertex3v10(v10 x, v10 y, v10 z, struct TGDSOGL_DisplayListContext * Inst);
-extern void glVertex2v16(v16 x, v16 y, struct TGDSOGL_DisplayListContext * Inst);
-extern void updateGXLights(struct TGDSOGL_DisplayListContext * Inst);
+extern void glVertex3v16(v16 x, v16 y, v16 z);
+extern void glVertex3v10(v10 x, v10 y, v10 z);
+extern void glVertex2v16(v16 x, v16 y);
+extern void updateGXLights();
 extern int getTextureBaseFromTextureSlot(int textureSlot);
 extern uint32 textures[MAX_TEXTURES];
 extern uint32 activeTexture;
 extern uint32* nextBlock;
-extern void glLightfv (GLenum light, GLenum pname, const GLfloat *params, struct TGDSOGL_DisplayListContext * Inst);
-extern void glMaterialfv (GLenum face, GLenum pname, const GLfloat *params, struct TGDSOGL_DisplayListContext * Inst);
-extern void glNormal3fv(const GLfloat *v, struct TGDSOGL_DisplayListContext * Inst);
-extern void glVertex3fv(const GLfloat *v, struct TGDSOGL_DisplayListContext * Inst);
+extern void glLight(int id, rgb color, v10 x, v10 y, v10 z);
+extern void glLightfv(GLenum light, GLenum pname, const GLfloat *params);
+extern void glNormal3fv(const GLfloat *v);
+extern void glVertex3fv(const GLfloat *v);
 extern void glTexParameteri(
 	GLenum target,
 	GLenum pname,
-	GLint  param, 
-	struct TGDSOGL_DisplayListContext * Inst
+	GLint  param
 );
 extern void glCullFace(GLenum mode);
 extern void glGetMaterialfv(

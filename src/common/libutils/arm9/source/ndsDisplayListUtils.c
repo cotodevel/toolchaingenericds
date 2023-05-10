@@ -1122,18 +1122,28 @@ int crc32file( FILE *file, unsigned int *outCrc32){
 
 #ifdef WIN32
 int main(int argc, char** argv){
-	//Quick Unit Test Triangle rendering example: direct OpenGL commands, running in either WIN32 or NDS GX hardware
-	//Simple Triangle GL init
-	struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext = (struct TGDSOGL_DisplayListContext *)&TGDSOGL_DisplayListContextInst[TGDSOGL_DisplayListContext_External];
+	struct TGDSOGL_DisplayListContext * Inst = NULL;
 	float rotateX = 0.0;
 	float rotateY = 0.0;
+	if(isInternalDisplayList == true){
+		Inst = &TGDSOGL_DisplayListContextInternal;
+	}
+	else{
+		Inst = &TGDSOGL_DisplayListContextUser;
+	}
+	//DS can just call glInit(); a lot of times
 	{
+		#ifdef WIN32
+		InitGLOnlyOnce = false;
+		glInit();
+		#endif
+
 		//set mode 0, enable BG0 and set it to 3D
 		#ifdef ARM9
 		SETDISPCNT_MAIN(MODE_0_3D);
 		#endif
 		//this should work the same as the normal gl call
-		glViewport(0,0,255,191, TGDSOGL_DisplayListContext);
+		glViewport(0,0,255,191);
 		
 		glClearColor(0,0,0);
 		glClearDepth(0x7FFF);
@@ -1187,45 +1197,103 @@ int main(int argc, char** argv){
 	}
 	*/
 
+	//Unit Test #0: Multiple spawn glGenLists();
+	{
+		int list = 0;
+		int first = -1;
+		int * dlist = &list;
+		int i = 0;
+		struct TGDSOGL_DisplayListContext * Inst = NULL;
+		if(isInternalDisplayList == true){
+			Inst = &TGDSOGL_DisplayListContextInternal;
+		}
+		else{
+			Inst = &TGDSOGL_DisplayListContextUser;
+		}
+		*dlist = first = glGenLists(1);
+
+		for(i = 0; i < 7; i++){
+			*dlist = glGenLists(1);
+			if (!glIsList(*dlist)) {
+				printf("TGDS ERROR: glIsList() FALSE!: List (%d)", *dlist);
+				while(1==1){}
+				return;
+			}
+			glNewList(*dlist, GL_COMPILE);
+			glBegin(GL_TRIANGLES);
+			glPushMatrix();
+			
+			glPopMatrix(1);
+			glEnd();
+			glEndList();
+			list++;
+		}
+
+		for(i = 0; i < 10; i++){
+			if(i == 6){
+				int debug = 0;
+				debug = debug;
+			}
+			glCallList(i+1);
+		}
+		
+
+		
+		glNewList(first, GL_COMPILE_AND_EXECUTE);
+		glBegin(GL_TRIANGLES);
+		glPushMatrix();
+			
+		glPopMatrix(1);
+		glEnd();
+		glEndList();
+
+		//Inst->CurrentSpawnOGLDisplayList+1
+	}
 	
 
 	//Unit Test #1: Tests OpenGL DisplayLists components functionality then emitting proper GX displaylists, unpacked format.
 	{
-		int list = glGenLists(1, USERSPACE_TGDS_OGL_DL_POINTER);
+		int list = glGenLists(10);
 		if(list){
 			int i = 0;
 			bool ret = 0;
-			glListBase(list, USERSPACE_TGDS_OGL_DL_POINTER);
-			ret = glIsList(list, USERSPACE_TGDS_OGL_DL_POINTER); //should return false (DL generated, but no displaylist-name was generated)
-			glNewList(list, GL_COMPILE, USERSPACE_TGDS_OGL_DL_POINTER);
-			ret = glIsList(list, USERSPACE_TGDS_OGL_DL_POINTER); //should return true (DL generated, and displaylist-name was generated)
+			glListBase(list);
+			ret = glIsList(list); //should return false (DL generated, but no displaylist-name was generated)
+			glNewList(list, GL_COMPILE);
+			ret = glIsList(list); //should return true (DL generated, and displaylist-name was generated)
 			if(ret == true){
+				glBegin(GL_TRIANGLES);
 				for (i = 0; i <10; i ++){ //Draw 10 cubes
-					glPushMatrix(USERSPACE_TGDS_OGL_DL_POINTER);
-					glRotatef(36*i,0.0,0.0,1.0, USERSPACE_TGDS_OGL_DL_POINTER);
-					glTranslatef(10.0,0.0,0.0, USERSPACE_TGDS_OGL_DL_POINTER);
-					glPopMatrix(1, USERSPACE_TGDS_OGL_DL_POINTER);
+					glPushMatrix();
+					glRotatef(36*i,0.0,0.0,1.0);
+					glTranslatef(10.0,0.0,0.0);
+					glPopMatrix(1);
 				}
+				glEnd();
 			}
-			glEndList(USERSPACE_TGDS_OGL_DL_POINTER); 
+			glEndList(); 
 		
-			glListBase(list + 1, USERSPACE_TGDS_OGL_DL_POINTER);
-			glNewList (list + 1, GL_COMPILE, USERSPACE_TGDS_OGL_DL_POINTER);//Create a second display list and execute it
-			ret = glIsList(list + 1, USERSPACE_TGDS_OGL_DL_POINTER); //should return true (DL generated, and displaylist-name was generated)
+			glListBase(list + 1);
+			glNewList (list + 1, GL_COMPILE);//Create a second display list and execute it
+			ret = glIsList(list + 1); //should return true (DL generated, and displaylist-name was generated)
 			if(ret == true){
+				glBegin(GL_TRIANGLES);
 				for (i = 0; i <20; i ++){ //Draw 20 triangles
-					glPushMatrix(USERSPACE_TGDS_OGL_DL_POINTER);
-					glRotatef(18*i,0.0,0.0,1.0, USERSPACE_TGDS_OGL_DL_POINTER);
-					glTranslatef(15.0,0.0,0.0, USERSPACE_TGDS_OGL_DL_POINTER);
-					glPopMatrix(1, USERSPACE_TGDS_OGL_DL_POINTER);
+					glPushMatrix();
+					glRotatef(18*i,0.0,0.0,1.0);
+					glTranslatef(15.0,0.0,0.0);
+					glPopMatrix(1);
 				}
+				glEnd();
 			}
-			glEndList(USERSPACE_TGDS_OGL_DL_POINTER);//The second display list is created
+			glEndList();//The second display list is created
 		}
-		glCallList(1, USERSPACE_TGDS_OGL_DL_POINTER);
-	
+		glCallList(list);
+		
+		glCallList(list + 1);
+
 		//delete
-		glDeleteLists(list, 1, USERSPACE_TGDS_OGL_DL_POINTER); //remove 5 of them
+		glDeleteLists(list, 2); //remove 2 of them
 	}
 	
 	/*
@@ -1298,36 +1366,30 @@ int main(int argc, char** argv){
 	*/
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	//DS can just call glInit(); a lot of times
-	#ifdef WIN32
-	InitGLOnlyOnce = false;
-	glInit();
-	#endif
-	
 	//Sources: https://songho.ca/opengl/gl_vbo.html
 	
 	//NintendoDS: VBO Test #1: Multiple vertex arrays: https://io7m.com/documents/history-vertex-spec/#st200_s4fo3
 	{
-		glReset(USERSPACE_TGDS_OGL_DL_POINTER);
+		glReset();
 	
 		//any floating point gl call is being converted to fixed prior to being implemented
-		gluPerspective(35, 256.0 / 192.0, 0.1, 40,USERSPACE_TGDS_OGL_DL_POINTER);
+		gluPerspective(35, 256.0 / 192.0, 0.1, 40);
 
 		gluLookAt(	0.0, 0.0, 1.0,		//camera possition 
 					0.0, 0.0, 0.0,		//look at
-					0.0, 1.0, 0.0,		//up
-					USERSPACE_TGDS_OGL_DL_POINTER);		
+					0.0, 1.0, 0.0		//up
+		);		
 
-		glPushMatrix(USERSPACE_TGDS_OGL_DL_POINTER);
+		glPushMatrix();
 
 		//move it away from the camera
-		glTranslate3f32(0, 0, floattof32(-1),USERSPACE_TGDS_OGL_DL_POINTER);
+		glTranslate3f32(0, 0, floattof32(-1));
 				
-		glRotateX(rotateX,USERSPACE_TGDS_OGL_DL_POINTER);
-		glRotateY(rotateY,USERSPACE_TGDS_OGL_DL_POINTER);
-		glMatrixMode(GL_MODELVIEW,USERSPACE_TGDS_OGL_DL_POINTER);
+		glRotateX(rotateX);
+		glRotateY(rotateY);
+		glMatrixMode(GL_MODELVIEW);
 		
-		updateGXLights(USERSPACE_TGDS_OGL_DL_POINTER); //Update GX 3D light scene!
+		updateGXLights(); //Update GX 3D light scene!
 		
 		{
 			float vertices[9] = {
@@ -1353,7 +1415,7 @@ int main(int argc, char** argv){
 			glDisableClientState(GL_COLOR_ARRAY);
 		}
 
-		glFlush(USERSPACE_TGDS_OGL_DL_POINTER); //DS: Update 3D buffer onto screen
+		glFlush(); //DS: Update 3D buffer onto screen
 	}
 
 	//VBO Test #2: Creating a single VBO for vertex coordinates + upload to VBO + drawing VBOs (Unsupported by NDS hardware)
@@ -1459,7 +1521,7 @@ int main(int argc, char** argv){
 	//misc tests
 	{
 		GLfloat mat[16] = {1.0f, 1.0f, -1.0f, 0.0f, 1.0f, 1.0f, -1.0f, 0.0f, 1.0f, 1.0f, -1.0f, 0.0f, 1.0f, 1.0f, -1.0f, 0.0f};
-		glLoadMatrixf((const GLfloat *)&mat, USERSPACE_TGDS_OGL_DL_POINTER);
+		glLoadMatrixf((const GLfloat *)&mat);
 	}
 	
 	{
@@ -1467,9 +1529,56 @@ int main(int argc, char** argv){
 		GLfloat vec[2];
 		vec[0] = 0.1;
 		vec[1] = 0.2;
-		glTexCoord2fv((const GLfloat *)&vec, USERSPACE_TGDS_OGL_DL_POINTER);
+		glTexCoord2fv((const GLfloat *)&vec);
 
 		glGetIntegerv(GL_SHADE_MODEL, &shadeNow);
+
+		/////////////////////////////////////// Unit Test #5: Multiple glGenLists(); ///////////////////////////////////////
+		{
+			GLuint index = glGenLists(5);
+			GLubyte lists[5];
+			int i = 0;
+			int DLCount = 0;
+			
+			//Compile display lists: 0
+			for(DLCount = 0; DLCount < 5; DLCount++){
+				glNewList(index + DLCount, GL_COMPILE);   // compile each one
+
+				for (i = 0; i <20; i ++){ //Draw triangles
+					glPushMatrix();
+					glRotatef(18*i,0.0,0.0,1.0);
+					glTranslatef(15.0,0.0,0.0);
+					glPopMatrix(1);
+				}
+
+				glEndList();
+			}
+			// draw odd placed display lists names only (1st, 3rd, 5th, 7th, 9th)
+			lists[0]=0; lists[1]=2; lists[2]=4; lists[3]=6; lists[4]=8;
+			glListBase(index);              // set base offset
+			glCallLists(5, GL_UNSIGNED_BYTE, lists); //only OpenGL Display List names set earlier will run!
+
+			//Compile display list: 1
+			index = glGenLists(5);
+		
+			//Compile display lists
+			for(DLCount = 0; DLCount < 5; DLCount++){
+				glNewList(index + DLCount, GL_COMPILE);   // compile each one
+
+				for (i = 0; i <20; i ++){ //Draw triangles
+					glPushMatrix();
+					glRotatef(18*i,0.0,0.0,1.0);
+					glTranslatef(15.0,0.0,0.0);
+					glPopMatrix(1);
+				}
+
+				glEndList();
+			}
+			// draw odd placed display lists names only (1st, 3rd, 5th, 7th, 9th)
+			lists[0]=0; lists[1]=2; lists[2]=4; lists[3]=6; lists[4]=8;
+			glListBase(index);              // set base offset
+			glCallLists(5, GL_UNSIGNED_BYTE, lists); //only OpenGL Display List names set earlier will run!
+		}
 	}
 	
 	return 0;
