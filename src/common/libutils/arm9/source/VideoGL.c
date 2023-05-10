@@ -94,22 +94,34 @@ void glInit(){
 	globalGLCtx.ambientValue=0;
 	globalGLCtx.specularValue=0;
 	globalGLCtx.emissionValue=0;
-
+	isInternalDisplayList = false;
 	{
-		//Internal
-		struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContextThis = (struct TGDSOGL_DisplayListContext *)&TGDSOGL_DisplayListContextInst[TGDSOGL_DisplayListContext_Internal];
-		TGDSOGL_DisplayListContextThis->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr=0;
-		memset(getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(TGDSOGL_DisplayListContextThis), 0, sizeof(TGDSOGL_DisplayListContextThis->InternalUnpackedGX_DL_Binary));
-		TGDSOGL_DisplayListContextThis->isAnOpenGLExtendedDisplayListCallList = false;
-	
-		//External
-		TGDSOGL_DisplayListContextThis = (struct TGDSOGL_DisplayListContext *)&TGDSOGL_DisplayListContextInst[TGDSOGL_DisplayListContext_External];
-		TGDSOGL_DisplayListContextThis->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr=0; 
-		memset(getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(TGDSOGL_DisplayListContextThis), 0, sizeof(TGDSOGL_DisplayListContextThis->InternalUnpackedGX_DL_Binary));
-		TGDSOGL_DisplayListContextThis->isAnOpenGLExtendedDisplayListCallList = false;
-		
+		int i = 0;
+		//Init Internal		
+		struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContextThis = (struct TGDSOGL_DisplayListContext *)&TGDSOGL_DisplayListContextInternal;
+		memset(TGDSOGL_DisplayListContextThis, 0, sizeof(struct TGDSOGL_DisplayListContext));
+		TGDSOGL_DisplayListContextThis->CurrentSpawnOGLDisplayList = 0;
+		memset(TGDSOGL_DisplayListContextThis->TGDSOGL_LogicalDisplayListSet, 0, sizeof(struct TGDSOGL_LogicalDisplayList));
+		memset(getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(), 0, sizeof(TGDSOGL_DisplayListContextThis->InternalUnpackedGX_DL_Binary));
+		TGDSOGL_DisplayListContextThis->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr=0; //THE only place where THE OGL_DL start offset references GX buffer start offset.
+		for(i = 0; i < MAX_TGDS_SpawnOGLDisplayListsPerDisplayListContext; i++){
+			TGDSOGL_DisplayListContextThis->TGDSOGL_LogicalDisplayListSet[i].LogicalOGLOffsetToGXOffsetInGXBinary=0; //reset to default list start
+			TGDSOGL_DisplayListContextThis->TGDSOGL_LogicalDisplayListSet[i].isAnOpenGLExtendedDisplayListCallList = false;
+		}
+		//Init User
+		TGDSOGL_DisplayListContextThis = (struct TGDSOGL_DisplayListContext *)&TGDSOGL_DisplayListContextUser;
+		memset(TGDSOGL_DisplayListContextThis, 0, sizeof(struct TGDSOGL_DisplayListContext));
+		TGDSOGL_DisplayListContextThis->CurrentSpawnOGLDisplayList = 0;
+		memset(TGDSOGL_DisplayListContextThis->TGDSOGL_LogicalDisplayListSet, 0, sizeof(struct TGDSOGL_LogicalDisplayList));
+		memset(getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(), 0, sizeof(TGDSOGL_DisplayListContextThis->InternalUnpackedGX_DL_Binary));
+		TGDSOGL_DisplayListContextThis->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr=0; //THE only place where THE OGL_DL start offset references GX buffer start offset.
+		for(i = 0; i < MAX_TGDS_SpawnOGLDisplayListsPerDisplayListContext; i++){
+			TGDSOGL_DisplayListContextThis->TGDSOGL_LogicalDisplayListSet[i].LogicalOGLOffsetToGXOffsetInGXBinary=0; //reset to default list start
+			TGDSOGL_DisplayListContextThis->TGDSOGL_LogicalDisplayListSet[i].isAnOpenGLExtendedDisplayListCallList = false;
+		}
+
 		glCullFace(GL_FRONT); 
-		glDisable(GL_LIGHT0|GL_LIGHT1|GL_LIGHT2|GL_LIGHT3|GL_CULL_FACE, TGDSOGL_DisplayListContextThis); //No lights enabled as default. 
+		glDisable(GL_LIGHT0|GL_LIGHT1|GL_LIGHT2|GL_LIGHT3|GL_CULL_FACE); //No lights enabled as default. 
 	}
 	//////////////////////////////////////////////////////VBO & VBA init//////////////////////////////////////////////////////
 
@@ -177,10 +189,10 @@ void glInit(){
 	vboEdgeFlag->VertexBufferObjectStartOffset = -1;
 	vboEdgeFlag->lastPrebuiltDLCRC16 = 0;
 	vboEdgeFlag->ClientStateEnabled = false;
-	{
-		struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext = (struct TGDSOGL_DisplayListContext *)&TGDSOGL_DisplayListContextInst[TGDSOGL_DisplayListContext_Internal];
-		OGL_DL_DRAW_ARRAYS_METHOD = glGenLists(1, TGDSOGL_DisplayListContext);
-	}
+
+	isInternalDisplayList = true; //using internal OGL DL
+	OGL_DL_DRAW_ARRAYS_METHOD = glGenLists(1);
+	isInternalDisplayList = false;
 }
 
 #ifdef ARM9
@@ -191,8 +203,10 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glPushMatrix(struct TGDSOGL_DisplayListContext * Inst){
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+void glPushMatrix(){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			//4000444h 11h -  17  MTX_PUSH - Push Current Matrix on Stack (W)
@@ -217,8 +231,10 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glPopMatrix(sint32 index, struct TGDSOGL_DisplayListContext * Inst){
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+void glPopMatrix(sint32 index){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			//4000448h 12h 1  36  MTX_POP - Pop Current Matrix from Stack (W)
@@ -243,8 +259,10 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glRestoreMatrix(sint32 index, struct TGDSOGL_DisplayListContext * Inst){
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+void glRestoreMatrix(sint32 index){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			//4000450h 14h 1  36  MTX_RESTORE - Restore Current Matrix from Stack (W)
@@ -269,8 +287,10 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glStoreMatrix(sint32 index, struct TGDSOGL_DisplayListContext * Inst){
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+void glStoreMatrix(sint32 index){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			//400044Ch - Cmd 13h - MTX_STORE - Store Current Matrix on Stack (W). Sets [N]=C. The stack pointer S is not used, and is left unchanged.
@@ -295,17 +315,19 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glScalev(GLvector* v, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext){
-	if(TGDSOGL_DisplayListContext->isAnOpenGLExtendedDisplayListCallList == true){
-		u32 ptrVal = TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
+void glScalev(GLvector* v){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
+		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			//400046Ch 1Bh 3  22  MTX_SCALE - Multiply Current Matrix by Scale Matrix (W)
-			TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)getMTX_SCALE; //Unpacked Command format
+			Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)getMTX_SCALE; //Unpacked Command format
 			ptrVal++;
-			TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)v->x; ptrVal++;
-			TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)v->y; ptrVal++;
-			TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)v->z; ptrVal++;
-			TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = ptrVal;
+			Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)v->x; ptrVal++;
+			Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)v->y; ptrVal++;
+			Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)v->z; ptrVal++;
+			Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = ptrVal;
 		}
 	}
 	else{
@@ -325,8 +347,10 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glTranslatev(GLvector* v, struct TGDSOGL_DisplayListContext * Inst){
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+void glTranslatev(GLvector* v){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			//4000470h 1Ch 3  22* MTX_TRANS - Mult. Curr. Matrix by Translation Matrix (W)
@@ -355,8 +379,8 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glTranslatef32(int x, int y, int z, struct TGDSOGL_DisplayListContext * Inst) {
-	glTranslate3f32(inttof32(x),inttof32(y),inttof32(z), Inst);
+void glTranslatef32(int x, int y, int z) {
+	glTranslate3f32(inttof32(x),inttof32(y),inttof32(z));
 }
 
 #ifdef ARM9
@@ -367,10 +391,10 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glTranslate3f32(f32 x, f32 y, f32 z, struct TGDSOGL_DisplayListContext * Inst){
+void glTranslate3f32(f32 x, f32 y, f32 z){
 	GLvector vec;
 	vec.x = x; vec.y = y; vec.z = z; 
-	glTranslatev(&vec, Inst);
+	glTranslatev(&vec);
 }
 
 #ifdef ARM9
@@ -381,8 +405,10 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glLight(int id, rgb color, v10 x, v10 y, v10 z, struct TGDSOGL_DisplayListContext * Inst){
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+void glLight(int id, rgb color, v10 x, v10 y, v10 z){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			id = (id & 3) << 30;
@@ -415,8 +441,10 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glNormal(uint32 normal, struct TGDSOGL_DisplayListContext * Inst){
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+void glNormal(uint32 normal){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			//4000484h 21h 1  9*  NORMAL - Set Normal Vector (W)
@@ -441,8 +469,10 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glLoadIdentity(struct TGDSOGL_DisplayListContext * Inst){
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+void glLoadIdentity(){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			//4000454h 15h -  19  MTX_IDENTITY - Load Unit(Identity) Matrix to Current Matrix (W)
@@ -467,8 +497,10 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glMatrixMode(int mode, struct TGDSOGL_DisplayListContext * Inst){
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+void glMatrixMode(int mode){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			//4000440h 10h 1  1   MTX_MODE - Set Matrix Mode (W)
@@ -493,14 +525,16 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void emitGLShinnyness(float shinyValue, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext){
+void emitGLShinnyness(float shinyValue){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	float shinyFragment = (shinyValue/64.0f);
 	float shinyFragmentCount = 0.0f;
 	globalGLCtx.shininessValue = shinyValue;
-	if(TGDSOGL_DisplayListContext->isAnOpenGLExtendedDisplayListCallList == true){
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		uint32 shiny32[128/4];
 		uint8  *shiny8 = (uint8*)shiny32;	
-		u32 ptrVal = TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
+		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			int i;
 			for (i = 0; i < 128 * 2; i += 2){
@@ -508,12 +542,12 @@ void emitGLShinnyness(float shinyValue, struct TGDSOGL_DisplayListContext * TGDS
 				shinyFragmentCount+=shinyFragment;
 			}
 			//40004D0h 34h 32 32  SHININESS - Specular Reflection Shininess Table (W)
-			TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)getFIFO_SHININESS; //Unpacked Command format
+			Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)getFIFO_SHININESS; //Unpacked Command format
 			ptrVal++;
 			for (i = 0; i < 128 / 4; i++){
-				TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)shiny32[i]; ptrVal++; //Unpacked Command format
+				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)shiny32[i]; ptrVal++; //Unpacked Command format
 			}
-			TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = ptrVal;
+			Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = ptrVal;
 		}
 	}
 	else{
@@ -540,8 +574,8 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glMaterialShinnyness(struct TGDSOGL_DisplayListContext * Inst){
-	emitGLShinnyness(128.0f, Inst);
+void glMaterialShinnyness(){
+	emitGLShinnyness(128.0f);
 }
 
 #ifdef ARM9
@@ -552,8 +586,10 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glPolyFmt(u32 GXPolygonAttributes, struct TGDSOGL_DisplayListContext * Inst){
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+void glPolyFmt(u32 GXPolygonAttributes){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			//40004A4h 29h 1  1   POLYGON_ATTR - Set Polygon Attributes (W)
@@ -578,9 +614,11 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glViewport(uint8 x1, uint8 y1, uint8 x2, uint8 y2, struct TGDSOGL_DisplayListContext * Inst){
+void glViewport(uint8 x1, uint8 y1, uint8 x2, uint8 y2){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	u32 viewPortWrite = (u32)((x1) + (y1 << 8) + (x2 << 16) + (y2 << 24));
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			//4000580h 60h 1  1   VIEWPORT - Set Viewport (W)
@@ -667,8 +705,8 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glTranslatef(float x, float y, float z, struct TGDSOGL_DisplayListContext * Inst){
-	glTranslate3f32(floattof32(x), floattof32(y), floattof32(z), Inst); 
+void glTranslatef(float x, float y, float z){
+	glTranslate3f32(floattof32(x), floattof32(y), floattof32(z)); 
 }
 
 #ifdef ARM9
@@ -679,7 +717,8 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glEnable(int bits, struct TGDSOGL_DisplayListContext * Inst){
+void glEnable(int bits){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
 	if((bits&GL_CULL_FACE) == GL_CULL_FACE){
 		//faces are enabled through glCullFace() because culling occurs per polygon on GX
 	}
@@ -705,7 +744,7 @@ void glEnable(int bits, struct TGDSOGL_DisplayListContext * Inst){
 	#if defined(ARM9)
 	GFX_CONTROL = enable_bits;
 	#endif
-	updateGXLights(Inst);
+	updateGXLights();
 }
 
 #ifdef ARM9
@@ -716,7 +755,8 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glDisable(int bits, struct TGDSOGL_DisplayListContext * Inst){
+void glDisable(int bits){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
 	if((bits&GL_CULL_FACE) == GL_CULL_FACE){
 		u32 polyAttr = (globalGLCtx.GXPolygonAttributes & ~(POLY_CULL_BACK | POLY_CULL_FRONT | POLY_CULL_NONE));
 		globalGLCtx.GXPolygonAttributes = polyAttr | POLY_CULL_NONE;
@@ -743,7 +783,7 @@ void glDisable(int bits, struct TGDSOGL_DisplayListContext * Inst){
 	#ifdef ARM9
 	GFX_CONTROL = enable_bits;
 	#endif
-	updateGXLights(Inst);
+	updateGXLights();
 }
 
 #ifdef ARM9
@@ -754,8 +794,10 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glFlush(struct TGDSOGL_DisplayListContext * Inst){
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+void glFlush(){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			//4000540h 50h 1  392 SWAP_BUFFERS - Swap Rendering Engine Buffer (W)
@@ -781,8 +823,8 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glFinish(struct TGDSOGL_DisplayListContext * Inst){
-	glFlush(Inst);
+void glFinish(){
+	glFlush();
 	while( (volatile u32)(*((volatile u32*)GFX_STATUS_ADDR)) & (1 << 27) ){ //27    Geometry Engine Busy (0=No, 1=Yes; Busy; Commands are executing)
 		
 	}
@@ -801,7 +843,7 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glLoadMatrixf(const GLfloat *m, struct TGDSOGL_DisplayListContext * Inst){
+void glLoadMatrixf(const GLfloat *m){
 	m4x4 inMtx; //Float -> fixed point conversion
 	inMtx.m[0] = floattof32(m[0]); //0
 	inMtx.m[1] = floattof32(m[1]); //1
@@ -819,7 +861,7 @@ void glLoadMatrixf(const GLfloat *m, struct TGDSOGL_DisplayListContext * Inst){
 	inMtx.m[13] = floattof32(m[13]); //13
 	inMtx.m[14] = floattof32(m[14]); //14
 	inMtx.m[15] = floattof32(m[15]); //15
-	glLoadMatrix4x4(&inMtx, Inst);
+	glLoadMatrix4x4(&inMtx);
 }
 
 #ifdef ARM9
@@ -830,8 +872,10 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glLoadMatrix4x4(m4x4 * m, struct TGDSOGL_DisplayListContext * Inst){
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+void glLoadMatrix4x4(m4x4 * m){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			//4000458h 16h 16 34  MTX_LOAD_4x4 - Load 4x4 Matrix to Current Matrix (W)
@@ -889,8 +933,10 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glLoadMatrix4x3(m4x3* m, struct TGDSOGL_DisplayListContext * Inst){
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+void glLoadMatrix4x3(m4x3* m){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			//400045Ch 17h 12 30  MTX_LOAD_4x3 - Load 4x3 Matrix to Current Matrix (W)
@@ -939,8 +985,10 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glMultMatrix4x4(m4x4* m, struct TGDSOGL_DisplayListContext * Inst){
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+void glMultMatrix4x4(m4x4* m){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			//4000460h 18h 16 35* MTX_MULT_4x4 - Multiply Current Matrix by 4x4 Matrix (W)
@@ -998,8 +1046,10 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glMultMatrix4x3(m4x3* m, struct TGDSOGL_DisplayListContext * Inst){
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+void glMultMatrix4x3(m4x3* m){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			//4000464h 19h 12 31* MTX_MULT_4x3 - Multiply Current Matrix by 4x3 Matrix (W)
@@ -1078,10 +1128,12 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glRotateZi(int angle, struct TGDSOGL_DisplayListContext * Inst){
+void glRotateZi(int angle){
 	f32 sine = SIN[angle &  LUT_MASK];
-	f32 cosine = COS[angle & LUT_MASK];	
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+	f32 cosine = COS[angle & LUT_MASK];
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			//Rotate Z DL:
@@ -1139,10 +1191,12 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glRotateYi(int angle, struct TGDSOGL_DisplayListContext * Inst){
+void glRotateYi(int angle){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
 	f32 sine = SIN[angle &  LUT_MASK];
 	f32 cosine = COS[angle & LUT_MASK];
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			//Rotate Y DL:
@@ -1201,10 +1255,12 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glRotateXi(int angle, struct TGDSOGL_DisplayListContext * Inst){
+void glRotateXi(int angle){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
 	f32 sine = SIN[angle &  LUT_MASK];
-	f32 cosine = COS[angle & LUT_MASK];	
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+	f32 cosine = COS[angle & LUT_MASK];
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			//Rotate X DL:
@@ -1264,8 +1320,8 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glRotateX(float angle, struct TGDSOGL_DisplayListContext * Inst){
-	glRotateXi((int)(angle * LUT_SIZE / 360.0), Inst);
+void glRotateX(float angle){
+	glRotateXi((int)(angle * LUT_SIZE / 360.0));
 }
 
 #ifdef ARM9
@@ -1276,8 +1332,8 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glRotateY(float angle, struct TGDSOGL_DisplayListContext * Inst){
-	glRotateYi((int)(angle * LUT_SIZE / 360.0), Inst);
+void glRotateY(float angle){
+	glRotateYi((int)(angle * LUT_SIZE / 360.0));
 }
 
 #ifdef ARM9
@@ -1288,8 +1344,8 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glRotateZ(float angle, struct TGDSOGL_DisplayListContext * Inst){
-	glRotateZi((int)(angle * LUT_SIZE / 360.0), Inst);
+void glRotateZ(float angle){
+	glRotateZi((int)(angle * LUT_SIZE / 360.0));
 }
 
 #ifdef ARM9
@@ -1300,15 +1356,15 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glRotatef(int angle, float x, float y, float z, struct TGDSOGL_DisplayListContext * Inst){
+void glRotatef(int angle, float x, float y, float z){
 	if(x > 0){
-		glRotateX(angle, Inst); 
+		glRotateX(angle);
 	}
 	if(y > 0){
-		glRotateY(angle, Inst); 
+		glRotateY(angle); 
 	}
 	if(z > 0){
-		glRotateZ(angle, Inst);
+		glRotateZ(angle);
 	}
 }
 
@@ -1321,9 +1377,10 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void gluLookAtf32(f32 eyex, f32 eyey, f32 eyez, f32 lookAtx, f32 lookAty, f32 lookAtz, f32 upx, f32 upy, f32 upz, struct TGDSOGL_DisplayListContext * Inst){
+void gluLookAtf32(f32 eyex, f32 eyey, f32 eyez, f32 lookAtx, f32 lookAty, f32 lookAtz, f32 upx, f32 upy, f32 upz){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	f32 x[3], y[3], z[3], up[3];
-
 	z[0] = eyex - lookAtx;
 	z[1] = eyey - lookAty;
 	z[2] = eyez - lookAtz;
@@ -1340,10 +1397,10 @@ void gluLookAtf32(f32 eyex, f32 eyey, f32 eyez, f32 lookAtx, f32 lookAty, f32 lo
 	normalizef32(x);
 	normalizef32(y);
 	
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
-			glMatrixMode(GL_MODELVIEW, Inst);
+			glMatrixMode(GL_MODELVIEW);
 			//400045Ch 17h 12 30  MTX_LOAD_4x3 - Load 4x3 Matrix to Current Matrix (W)
 			Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)getMTX_LOAD_4x3; //Unpacked Command format
 			ptrVal++;
@@ -1365,11 +1422,11 @@ void gluLookAtf32(f32 eyex, f32 eyey, f32 eyez, f32 lookAtx, f32 lookAty, f32 lo
 			Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)floattof32(-1.0); ptrVal++;
 			Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = ptrVal;
 			
-			glTranslate3f32(-eyex, -eyey, -eyez, Inst);			
+			glTranslate3f32(-eyex, -eyey, -eyez);			
 		}
 	}
 	else{
-		glMatrixMode(GL_MODELVIEW, Inst);
+		glMatrixMode(GL_MODELVIEW);
 		#if defined(ARM9)
 		MATRIX_LOAD4x3 = x[0];
 		MATRIX_LOAD4x3 = x[1];
@@ -1387,7 +1444,7 @@ void gluLookAtf32(f32 eyex, f32 eyey, f32 eyez, f32 lookAtx, f32 lookAty, f32 lo
 		MATRIX_LOAD4x3 = 0;
 		MATRIX_LOAD4x3 = floattof32(-1.0);
 		#endif
-		glTranslate3f32(-eyex, -eyey, -eyez, Inst);		
+		glTranslate3f32(-eyex, -eyey, -eyez);		
 	}
 }
 
@@ -1399,12 +1456,11 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void gluLookAt(float eyex, float eyey, float eyez, float lookAtx, float lookAty, float lookAtz, float upx, float upy, float upz, struct TGDSOGL_DisplayListContext * Inst){
+void gluLookAt(float eyex, float eyey, float eyez, float lookAtx, float lookAty, float lookAtz, float upx, float upy, float upz){
 	gluLookAtf32(
 		floattof32(eyex), floattof32(eyey), floattof32(eyez), 
 		floattof32(lookAtx), floattof32(lookAty), floattof32(lookAtz), 
-		floattof32(upx), floattof32(upy), floattof32(upz),
-		Inst
+		floattof32(upx), floattof32(upy), floattof32(upz)
 	);
 }
 
@@ -1416,11 +1472,13 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void gluFrustumf32(f32 left, f32 right, f32 bottom, f32 top, f32 nearVal, f32 farVal, struct TGDSOGL_DisplayListContext * Inst){
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+void gluFrustumf32(f32 left, f32 right, f32 bottom, f32 top, f32 nearVal, f32 farVal){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
-			glMatrixMode(GL_PROJECTION, Inst);
+			glMatrixMode(GL_PROJECTION);
 			//4000458h 16h 16 34  MTX_LOAD_4x4 - Load 4x4 Matrix to Current Matrix (W)
 			Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)getMTX_LOAD_4x4; //Unpacked Command format
 			ptrVal++;
@@ -1445,11 +1503,11 @@ void gluFrustumf32(f32 left, f32 right, f32 bottom, f32 top, f32 nearVal, f32 fa
 			Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)-divf32(2 * mulf32(farVal, nearVal), farVal - nearVal); ptrVal++;
 			Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)0; ptrVal++;
 			Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = ptrVal;
-			glStoreMatrix(0, Inst);			
+			glStoreMatrix(0);
 		}
 	}
 	else{
-		glMatrixMode(GL_PROJECTION, Inst);
+		glMatrixMode(GL_PROJECTION);
 		#if defined(ARM9)
 		MATRIX_LOAD4x4 = divf32(2*nearVal, right - left);     
 		MATRIX_LOAD4x4 = 0;  
@@ -1471,7 +1529,7 @@ void gluFrustumf32(f32 left, f32 right, f32 bottom, f32 top, f32 nearVal, f32 fa
 		MATRIX_LOAD4x4 = -divf32(2 * mulf32(farVal, nearVal), farVal - nearVal);  
 		MATRIX_LOAD4x4 = 0;
 		#endif
-		glStoreMatrix(0, Inst);	   
+		glStoreMatrix(0);
 	}
 }
 
@@ -1483,8 +1541,8 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glOrtho(float left, float right, float bottom, float top, float nearVal, float farVal, struct TGDSOGL_DisplayListContext * Inst){
-	glOrthof32(floattof32(left), floattof32(right), floattof32(bottom), floattof32(top), floattof32(nearVal), floattof32(farVal), Inst);
+void glOrtho(float left, float right, float bottom, float top, float nearVal, float farVal){
+	glOrthof32(floattof32(left), floattof32(right), floattof32(bottom), floattof32(top), floattof32(nearVal), floattof32(farVal));
 }
 
 #ifdef ARM9
@@ -1495,11 +1553,13 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glOrthof32(f32 left, f32 right, f32 bottom, f32 top, f32 nearVal, f32 farVal, struct TGDSOGL_DisplayListContext * Inst){	
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+void glOrthof32(f32 left, f32 right, f32 bottom, f32 top, f32 nearVal, f32 farVal){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
-			glMatrixMode(GL_PROJECTION, Inst);
+			glMatrixMode(GL_PROJECTION);
 			//4000458h 16h 16 34  MTX_LOAD_4x4 - Load 4x4 Matrix to Current Matrix (W)
 			Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)getMTX_LOAD_4x4; //Unpacked Command format
 			ptrVal++;
@@ -1521,13 +1581,13 @@ void glOrthof32(f32 left, f32 right, f32 bottom, f32 top, f32 nearVal, f32 farVa
 			Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)0; ptrVal++;
 			Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)0; ptrVal++;
 			Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)0; ptrVal++;
-			Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)floattof32(1.0F); ptrVal++;			
+			Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)floattof32(1.0F); ptrVal++;
 			Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = ptrVal;
-			glStoreMatrix(0, Inst);			
+			glStoreMatrix(0);
 		}
 	}
 	else{
-		glMatrixMode(GL_PROJECTION, Inst);
+		glMatrixMode(GL_PROJECTION);
 		#if defined(ARM9)
 		MATRIX_LOAD4x4 = divf32(2, right - left);     
 		MATRIX_LOAD4x4 = 0;  
@@ -1549,7 +1609,7 @@ void glOrthof32(f32 left, f32 right, f32 bottom, f32 top, f32 nearVal, f32 farVa
 		MATRIX_LOAD4x4 = 0;  
 		MATRIX_LOAD4x4 = floattof32(1.0F);
 		#endif
-		glStoreMatrix(0, Inst);
+		glStoreMatrix(0);
 	}
 }
 
@@ -1561,8 +1621,8 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void gluFrustum(float left, float right, float bottom, float top, float nearVal, float farVal, struct TGDSOGL_DisplayListContext * Inst){
-	gluFrustumf32(floattof32(left), floattof32(right), floattof32(bottom), floattof32(top), floattof32(nearVal), floattof32(farVal), Inst);
+void gluFrustum(float left, float right, float bottom, float top, float nearVal, float farVal){
+	gluFrustumf32(floattof32(left), floattof32(right), floattof32(bottom), floattof32(top), floattof32(nearVal), floattof32(farVal));
 }
 
 //	Fixed point perspective setting
@@ -1574,7 +1634,7 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void gluPerspectivef32(int fovy, f32 aspect, f32 zNear, f32 zFar, struct TGDSOGL_DisplayListContext * Inst){
+void gluPerspectivef32(int fovy, f32 aspect, f32 zNear, f32 zFar){
    f32 xmin, xmax, ymin, ymax;
 
    ymax = mulf32(zNear, TAN[fovy & LUT_MASK]);
@@ -1582,7 +1642,7 @@ void gluPerspectivef32(int fovy, f32 aspect, f32 zNear, f32 zFar, struct TGDSOGL
    xmin = mulf32(ymin, aspect);
    xmax = mulf32(ymax, aspect);
 
-   gluFrustumf32(xmin, xmax, ymin, ymax, zNear, zFar, Inst);
+   gluFrustumf32(xmin, xmax, ymin, ymax, zNear, zFar);
 }
 
 //  glu wrapper for floating point
@@ -1594,8 +1654,8 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void gluPerspective(float fovy, float aspect, float zNear, float zFar, struct TGDSOGL_DisplayListContext * Inst){
-	gluPerspectivef32((int)(fovy * LUT_SIZE / 360.0), floattof32(aspect), floattof32(zNear), floattof32(zFar), Inst);    
+void gluPerspective(float fovy, float aspect, float zNear, float zFar){
+	gluPerspectivef32((int)(fovy * LUT_SIZE / 360.0), floattof32(aspect), floattof32(zNear), floattof32(zFar));    
 }
 
 //Default OpenGL 1.0 implementation:
@@ -1613,8 +1673,7 @@ __attribute__ ((optnone))
 void glMaterialf(
 	GLenum  face,
 	GLenum  pname,
-	GLfloat param, 
-	struct TGDSOGL_DisplayListContext * Inst
+	GLfloat param
    ){
 	GLfloat params[4];
 	if((GLenum)pname != (GLenum)GL_SHININESS){ //only this command is supported, reject everything else.
@@ -1622,7 +1681,7 @@ void glMaterialf(
 		return;
 	}
 	params[0] = param; 
-	glMaterialfv (face, pname, (const GLfloat *)&params, Inst);
+	glMaterialfv (face, pname, (const GLfloat *)&params);
 }
 
 #ifdef ARM9
@@ -1633,17 +1692,18 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glResetMatrixStack(struct TGDSOGL_DisplayListContext * Inst){
+void glResetMatrixStack(){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
   // stack overflow ack ?
   GFX_STATUS |= 1 << 15;
 
   // pop the stacks to the top...seems projection stack is only 1 deep??
-  glMatrixMode(GL_PROJECTION, Inst);
-  glPopMatrix((GFX_STATUS>>13) & 1, Inst);
+  glMatrixMode(GL_PROJECTION);
+  glPopMatrix((GFX_STATUS>>13) & 1);
   
   // 31 deep modelview matrix
-  glMatrixMode(GL_MODELVIEW, Inst);
-  glPopMatrix((GFX_STATUS >> 8) & 0x1F, Inst);
+  glMatrixMode(GL_MODELVIEW);
+  glPopMatrix((GFX_STATUS >> 8) & 0x1F);
 }
 
 #ifdef ARM9
@@ -1702,7 +1762,7 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glReset(struct TGDSOGL_DisplayListContext * Inst){
+void glReset(){
 	#ifdef ARM9
 	while (GFX_STATUS & (1<<27)); // wait till gfx engine is not busy
   
@@ -1711,16 +1771,16 @@ void glReset(struct TGDSOGL_DisplayListContext * Inst){
 
 	// Clear overflows for list memory
 	GFX_CONTROL = enable_bits = ((1<<12) | (1<<13)) | GL_TEXTURE_2D;
-	glResetMatrixStack(Inst);
+	glResetMatrixStack();
   
 	GFX_TEX_FORMAT = globalGLCtx.textureParamsValue = 0;
 	GFX_POLYGON_ATTR = 0;
   
-	glMatrixMode(GL_PROJECTION, Inst);
-	glLoadIdentity(Inst);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
 
-	glMatrixMode(GL_MODELVIEW, Inst);
-	glLoadIdentity(Inst);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
 	#endif
 }
 
@@ -1785,8 +1845,10 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glBindTexture(int target, int name, struct TGDSOGL_DisplayListContext * Inst){
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+void glBindTexture(int target, int name){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			//40004A8h 2Ah 1  1   TEXIMAGE_PARAM - Set Texture Parameters (W)
@@ -2016,8 +2078,8 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glVertex2i(int x, int y, struct TGDSOGL_DisplayListContext * Inst) {
-    glVertex2v16(inttov16(x), inttov16(y), Inst);
+void glVertex2i(int x, int y) {
+    glVertex2v16(inttov16(x), inttov16(y));
 }
 
 //float x , y vertex coords in v16 format
@@ -2029,8 +2091,8 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glVertex2f(float x, float y, struct TGDSOGL_DisplayListContext * Inst) {
-    glVertex2v16(floattov16(x), floattov16(y), Inst);
+void glVertex2f(float x, float y) {
+    glVertex2v16(floattov16(x), floattov16(y));
 }
 
 //float x , y , z vertex coords in v16 format
@@ -2042,8 +2104,8 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glVertex3f(GLfloat x, GLfloat y, GLfloat z, struct TGDSOGL_DisplayListContext * Inst){
-	glVertex3v16(floattov16(x), floattov16(y), floattov16(z), Inst);
+void glVertex3f(GLfloat x, GLfloat y, GLfloat z){
+	glVertex3v16(floattov16(x), floattov16(y), floattov16(z));
 }
 
 //int x , y , z vertex coords in v16 format
@@ -2055,8 +2117,8 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glVertex3i(GLint x, GLint y, GLint z, struct TGDSOGL_DisplayListContext * Inst){
-	glVertex3v16(inttov16(x), inttov16(y), inttov16(z), Inst);
+void glVertex3i(GLint x, GLint y, GLint z){
+	glVertex3v16(inttov16(x), inttov16(y), inttov16(z));
 }
 
 #ifdef ARM9
@@ -2080,25 +2142,25 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glColor3f(float red, float green, float blue, struct TGDSOGL_DisplayListContext * Inst){
+void glColor3f(float red, float green, float blue){
 	//Detect light sources and apply colors. Normal GL calls resort to glColor to update material color + light color + texture color
-	glColor3b(floattov10(red), floattov10(green), floattov10(blue), Inst);
+	glColor3b(floattov10(red), floattov10(green), floattov10(blue));
 	
 	//Handle light vectors
 	//Note: Light depth is 10bit. Which means only glColor3f(); can colour normals on polygons. glColor3b(); can't. Also don't forget to enable at least one light per scene or colour over normals won't reflect in the light vector.
 	{
 		u32 lightsEnabled = globalGLCtx.GXPolygonAttributes;
 		if((lightsEnabled&GX_LIGHT0) == GX_LIGHT0){
-			glLight(0, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), inttov10(31), inttov10(31), inttov10(31), Inst);
+			glLight(0, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), inttov10(31), inttov10(31), inttov10(31));
 		}
 		if((lightsEnabled&GX_LIGHT1) == GX_LIGHT1){
-			glLight(1, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), inttov10(31), inttov10(31), inttov10(31), Inst);
+			glLight(1, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), inttov10(31), inttov10(31), inttov10(31));
 		}
 		if((lightsEnabled&GX_LIGHT2) == GX_LIGHT2){
-			glLight(2, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), inttov10(31), inttov10(31), inttov10(31), Inst);
+			glLight(2, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), inttov10(31), inttov10(31), inttov10(31));
 		}
 		if((lightsEnabled&GX_LIGHT3) == GX_LIGHT3){
-			glLight(3, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), inttov10(31), inttov10(31), inttov10(31), Inst);
+			glLight(3, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), inttov10(31), inttov10(31), inttov10(31));
 		}
 	}
 }
@@ -2111,11 +2173,11 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glColor3fv(const GLfloat * v, struct TGDSOGL_DisplayListContext * Inst){
+void glColor3fv(const GLfloat * v){
 	float red = v[0];
 	float green = v[1];
 	float blue = v[2];
-	glColor3f(red, green, blue, Inst);
+	glColor3f(red, green, blue);
 }
 
 #ifdef ARM9
@@ -2126,12 +2188,12 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glColor4fv(const GLfloat *v, struct TGDSOGL_DisplayListContext * Inst){
+void glColor4fv(const GLfloat *v){
 	float red = v[0];
 	float green = v[1];
 	float blue = v[2];
 	//alpha channel unsupported by NDS GX hardware
-	glColor3f(red, green, blue, Inst);
+	glColor3f(red, green, blue);
 }
 
 #ifdef ARM9
@@ -2302,7 +2364,7 @@ void glCallListGX(const u32* list) {
 	else{
 		strcpy(displayListName, "CUSTOM DISPLAY LIST OR OTHER CMD");
 	}
-	printf("\n(WIN32)glCallListGX: Executing DL[%s]; Size: %d\n",displayListName, (int)list[0]);
+	printf("(WIN32)glCallListGX: Executing DL[%s]; Size: %d\n",displayListName, (int)list[0]);
 	#endif
 }
 
@@ -2331,11 +2393,10 @@ __attribute__((optnone))
 #endif
 #endif
 void glTexCoord2fv(
-   const GLfloat *v,
-   struct TGDSOGL_DisplayListContext * Inst){
+   const GLfloat *v){
 	float s = v[0];
 	float t = v[1];
-	glTexCoord2f(s, t, Inst);
+	glTexCoord2f(s, t);
 }
 
 #ifdef ARM9
@@ -2346,7 +2407,7 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__((optnone))
 #endif
 #endif
-void glTexCoord2f(GLfloat s, GLfloat t, struct TGDSOGL_DisplayListContext * Inst){
+void glTexCoord2f(GLfloat s, GLfloat t){
 	int texBase = getTextureBaseFromTextureSlot(activeTexture);
 	if(s > 0.0){
 		s = s + (texBase);
@@ -2354,10 +2415,10 @@ void glTexCoord2f(GLfloat s, GLfloat t, struct TGDSOGL_DisplayListContext * Inst
 	if(t > 0.0){
 		t = t + (texBase);
 	}
-	glTexCoord2t16(floattot16(t), floattot16(s), Inst);
+	glTexCoord2t16(floattot16(t), floattot16(s));
 }
 
-void glTexCoord2i(GLint s, GLint t, struct TGDSOGL_DisplayListContext * Inst){
+void glTexCoord2i(GLint s, GLint t){
 	int texBase = getTextureBaseFromTextureSlot(activeTexture);
 	if(s > 0.0){
 		s = s + (texBase);
@@ -2365,7 +2426,7 @@ void glTexCoord2i(GLint s, GLint t, struct TGDSOGL_DisplayListContext * Inst){
 	if(t > 0.0){
 		t = t + (texBase);
 	}
-	glTexCoord2t16(inttot16(t), inttot16(s), Inst);
+	glTexCoord2t16(inttot16(t), inttot16(s));
 }
 
 
@@ -2385,8 +2446,10 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__((optnone))
 #endif
 #endif
-void glTexCoord1i(uint32 uv, struct TGDSOGL_DisplayListContext * Inst){
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+void glTexCoord1i(uint32 uv){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			//4000488h 22h 1  1   TEXCOORD - Set Texture Coordinates (W)
@@ -2411,8 +2474,10 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__((optnone))
 #endif
 #endif
-void glTexCoord2t16(t16 u, t16 v, struct TGDSOGL_DisplayListContext * Inst){
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+void glTexCoord2t16(t16 u, t16 v){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			//4000488h 22h 1  1   TEXCOORD - Set Texture Coordinates (W)
@@ -2442,8 +2507,10 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__((optnone))
 #endif
 #endif
-void glBegin(int primitiveType, struct TGDSOGL_DisplayListContext * Inst){
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+void glBegin(int primitiveType){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			//4000500h 40h 1  1   BEGIN_VTXS - Start of Vertex List (W)
@@ -2468,8 +2535,10 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__((optnone))
 #endif
 #endif
-void glEnd(struct TGDSOGL_DisplayListContext * Inst){
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+void glEnd(){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			//4000504h 41h -  1   END_VTXS - End of Vertex List (W)
@@ -2505,7 +2574,9 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__((optnone))
 #endif
 #endif
-void glColor3b(uint8 red, uint8 green, uint8 blue, struct TGDSOGL_DisplayListContext * Inst){
+void glColor3b(uint8 red, uint8 green, uint8 blue){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	u16 finalColor = 0;
 	switch(globalGLCtx.primitiveShadeModelMode){
 		case(GL_FLAT):{
@@ -2530,7 +2601,7 @@ void glColor3b(uint8 red, uint8 green, uint8 blue, struct TGDSOGL_DisplayListCon
 		}
 		break;
 	}
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			//4000480h 20h 1  1   COLOR - Directly Set Vertex Color (W)
@@ -2561,10 +2632,9 @@ __attribute__((optnone))
 void glNormal3b(
 	GLbyte nx,
  	GLbyte ny,
- 	GLbyte nz,
-	struct TGDSOGL_DisplayListContext * Inst
+ 	GLbyte nz
 ){
-	glNormal3i((GLint)nx, (GLint)ny,(GLint)nz, Inst);
+	glNormal3i((GLint)nx, (GLint)ny,(GLint)nz);
 }
 
 #ifdef ARM9
@@ -2578,10 +2648,9 @@ __attribute__((optnone))
 void glNormal3d(
 	GLdouble nx,
  	GLdouble ny,
- 	GLdouble nz,
-	struct TGDSOGL_DisplayListContext * Inst
+ 	GLdouble nz
 ){
-	glNormal3f((GLfloat)nx, (GLfloat)ny, (GLfloat)nz, Inst);
+	glNormal3f((GLfloat)nx, (GLfloat)ny, (GLfloat)nz);
 }
 
 #ifdef ARM9
@@ -2595,10 +2664,11 @@ __attribute__((optnone))
 void glNormal3f(
 	GLfloat nx,
  	GLfloat ny,
- 	GLfloat nz,
-	struct TGDSOGL_DisplayListContext * Inst
+ 	GLfloat nz
 ){
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			//4000484h 21h 1  9*  NORMAL - Set Normal Vector (W)
@@ -2626,10 +2696,11 @@ __attribute__((optnone))
 void glNormal3v10(
 	v10 nx,
  	v10 ny,
- 	v10 nz,
-	struct TGDSOGL_DisplayListContext * Inst
+ 	v10 nz
 ){
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			//4000484h 21h 1  9*  NORMAL - Set Normal Vector (W)
@@ -2657,10 +2728,9 @@ __attribute__((optnone))
 void glNormal3s(
 	GLshort nx,
  	GLshort ny,
- 	GLshort nz,
-	struct TGDSOGL_DisplayListContext * Inst
+ 	GLshort nz
 ){
-	glNormal3i((GLint)nx, (GLint)ny,(GLint)nz, Inst);
+	glNormal3i((GLint)nx, (GLint)ny,(GLint)nz);
 }
 
 #ifdef ARM9
@@ -2674,10 +2744,11 @@ __attribute__((optnone))
 void glNormal3i(
 	GLint nx,
  	GLint ny,
- 	GLint nz,
-	struct TGDSOGL_DisplayListContext * Inst
+ 	GLint nz
 ){
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			//4000484h 21h 1  9*  NORMAL - Set Normal Vector (W)
@@ -2702,8 +2773,10 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__((optnone))
 #endif
 #endif
-void glVertex3v16(v16 x, v16 y, v16 z, struct TGDSOGL_DisplayListContext * Inst){
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+void glVertex3v16(v16 x, v16 y, v16 z){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			//400048Ch 23h 2  9   VTX_16 - Set Vertex XYZ Coordinates (W)
@@ -2711,7 +2784,6 @@ void glVertex3v16(v16 x, v16 y, v16 z, struct TGDSOGL_DisplayListContext * Inst)
 			ptrVal++;
 			Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)((y << 16) | (x & 0xFFFF)); ptrVal++;
 			Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)(z & 0xFFFF); ptrVal++;
-			
 			Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = ptrVal;
 		}
 	}
@@ -2731,8 +2803,10 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__((optnone))
 #endif
 #endif
-void glVertex3v10(v10 x, v10 y, v10 z, struct TGDSOGL_DisplayListContext * Inst){
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+void glVertex3v10(v10 x, v10 y, v10 z){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			//4000490h 24h 1  8   VTX_10 - Set Vertex XYZ Coordinates (W)
@@ -2758,8 +2832,10 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__((optnone))
 #endif
 #endif
-void glVertex2v16(v16 x, v16 y, struct TGDSOGL_DisplayListContext * Inst){
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+void glVertex2v16(v16 x, v16 y){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			//4000494h 25h 1  8   VTX_XY - Set Vertex XY Coordinates (W)
@@ -2794,8 +2870,8 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__((optnone))
 #endif
 #endif
-void updateGXLights(struct TGDSOGL_DisplayListContext * Inst){
-	glPolyFmt(globalGLCtx.GXPolygonAttributes, Inst);
+void updateGXLights(){
+	glPolyFmt(globalGLCtx.GXPolygonAttributes);
 }
 
 //////////////////////////////////////////////////////////// Standard OpenGL 1.0 end //////////////////////////////////////////
@@ -2810,13 +2886,18 @@ void updateGXLights(struct TGDSOGL_DisplayListContext * Inst){
 //After that, there must be a 1 cycle delay before sending the next command 
 //(ie. one cannot sent more than one command at once with a single opcode, each command must be invoked by a new opcode).
 
+struct TGDSOGL_DisplayListContext TGDSOGL_DisplayListContextInternal;
+struct TGDSOGL_DisplayListContext TGDSOGL_DisplayListContextUser;
+
+#ifdef ARM9
+__attribute__((section(".dtcm")))
+#endif
+bool isInternalDisplayList;
 
 #ifdef _MSC_VER
 //Scratchpad GX buffer
 u32 SingleUnpackedGXCommand_DL_Binary[PHYS_GXFIFO_INTERNAL_SIZE];
 #endif
-
-struct TGDSOGL_DisplayListContext TGDSOGL_DisplayListContextInst[MAX_TGDSOGL_DisplayListContexts];
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -2826,7 +2907,8 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__((optnone))
 #endif
 #endif
-u32 * getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(struct TGDSOGL_DisplayListContext * Inst){
+u32 * getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
 	return (u32 *)&Inst->InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_OpenGLDisplayListStartOffset];
 }
 
@@ -2839,19 +2921,31 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__((optnone))
 #endif
 #endif
-GLuint glGenLists(GLsizei	range, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext){
-    if(range < InternalUnpackedGX_DL_workSize){
-        int i = 0;
-		for(i = 0; i < (InternalUnpackedGX_DL_workSize/sizeof(GLsizei)); i++ ){
-			TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary_Enumerator[i] = DL_INVALID; //Compiled_DL_Binary_Descriptor[i] = InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr; //only mapped from glNewList()
+GLuint glGenLists(GLsizei range){
+	struct TGDSOGL_DisplayListContext * Inst = NULL;
+	if(isInternalDisplayList == true){
+		Inst = &TGDSOGL_DisplayListContextInternal;
+	}
+	else{
+		Inst = &TGDSOGL_DisplayListContextUser;
+	}
+	{
+		int i = 0;
+		int firstSpawnListCurrent = Inst->CurrentSpawnOGLDisplayList;
+		if((firstSpawnListCurrent+range) < MAX_TGDS_SpawnOGLDisplayListsPerDisplayListContext){	
+			//Range lists creation here
+			for(i = 0; i < (range); i++){
+				struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[firstSpawnListCurrent + i];
+				TGDSOGL_LogicalDisplayListSetInst->mode = DL_INVALID;	//updated between glNewList();
+				TGDSOGL_LogicalDisplayListSetInst->LogicalOGLOffsetToGXOffsetInGXBinary = DL_VALID_UNASSIGNED;		//updated between glNewList();
+				TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList = false;	//updated between glNewList();
+				Inst->CurrentSpawnOGLDisplayList++;
+			}
+			//Inst->TGDSOGL_LogicalDisplayListSet[firstSpawnListCurrent].InternalUnpackedGX_DL_Binary_Enumerator[0] = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr; //updated between glNewList();
+			return (firstSpawnListCurrent + 1); //starts from range of said length
 		}
-		TGDSOGL_DisplayListContext->isAnOpenGLExtendedDisplayListCallList = false; //cut-off incoming new OpenGL extended DLs
-		TGDSOGL_DisplayListContext->LastGXInternalDisplayListPtr=0; //reset to default list start
-		TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = 1; //OFFSET 0 IS DL SIZE
-        TGDSOGL_DisplayListContext->LastActiveOpenGLDisplayList = DL_INVALID;
-		return TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr; //starts from range of said length
-    }
-    return 0;
+	}
+	return -1;
 }
 
 //Specifies the offset that's added to the display-list indices in glCallLists() to obtain the final display-list indices. The default display-list base is 0. The list base has no effect on glCallList(), which executes only one display list or on glNewList().
@@ -2864,12 +2958,20 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__((optnone))
 #endif
 #endif
-void glListBase(GLuint base, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext){
+void glListBase(GLuint base){
+	//Reference the OGL DisplayList first
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
 	if(base > 0){
 		base--;
 	}
-	if((u32)TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary_Enumerator[base] != (u32)DL_INVALID){
-		TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary_Enumerator[base];
+	//Inst->CurrentSpawnOGLDisplayList = base; //relative to glNewList();
+	
+	//Set up the initial internal GX offset of just referenced OGL DisplayList
+	{
+		struct TGDSOGL_LogicalDisplayList * thisOGL_DisplayList = &Inst->TGDSOGL_LogicalDisplayListSet[base];
+		if((u32)thisOGL_DisplayList->LogicalOGLOffsetToGXOffsetInGXBinary != (u32)DL_INVALID){
+			Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = thisOGL_DisplayList->LogicalOGLOffsetToGXOffsetInGXBinary;
+		}
 	}
 }
 
@@ -2883,14 +2985,17 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__((optnone))
 #endif
 #endif
-GLboolean glIsList(GLuint list, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext){
+GLboolean glIsList(GLuint list){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
 	if(list > 0){
 		list--;
 	}
-	if((u32)TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary_Enumerator[list] != (u32)DL_INVALID){
-		return GL_TRUE;
+	{
+		struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[list];
+		if((u32)TGDSOGL_LogicalDisplayListSetInst->LogicalOGLOffsetToGXOffsetInGXBinary == (u32)DL_VALID_UNASSIGNED){
+			return GL_TRUE;
+		}
 	}
-
 	return GL_FALSE;
 	//Todo: GL_INVALID_OPERATION;
 }
@@ -2905,21 +3010,25 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__((optnone))
 #endif
 #endif
-void glNewList(GLuint list, GLenum mode, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext){
-	if(list >= 1){
-		list--; //assign current InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr (new) to a List
+void glNewList(GLuint list, GLenum mode){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	if(list > 0){
+		list--;
 	}
-	TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr++; //OFFSET 0 IS DL SIZE
-
-	//Rewind list if out of memory
-	if(TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr > InternalUnpackedGX_DL_workSize){
-		TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = 0 + 1; //OFFSET 0 IS DL SIZE
+	{
+		struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[list];
+		//Allocate next GX buffer free offset
+		Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr++; //OFFSET 0 IS DL SIZE
+		//Rewind list if out of memory
+		if(Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr > InternalUnpackedGX_DL_workSize){
+			Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = 1; //OFFSET 0 IS DL SIZE
+		}
+		TGDSOGL_LogicalDisplayListSetInst->LogicalOGLOffsetToGXOffsetInGXBinary = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr; //updated here: glNewList();
+		TGDSOGL_LogicalDisplayListSetInst->mode = (u32)mode;
+		TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList = true;
+		Inst->CurrentScratchPadOGLDisplayList = Inst->CurrentSpawnOGLDisplayList;
+		Inst->CurrentSpawnOGLDisplayList = (u32)list; //Make it relative if using DisplayLists: (u32)list == Inst->CurrentSpawnOGLDisplayList 
 	}
-
-	TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary_Enumerator[list] = TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr; 
-	TGDSOGL_DisplayListContext->mode = (u32)mode;
-	TGDSOGL_DisplayListContext->LastActiveOpenGLDisplayList = (u32)list;
-	TGDSOGL_DisplayListContext->isAnOpenGLExtendedDisplayListCallList = true;
 }
 
 //When glEndList is encountered, the display-list definition is completed 
@@ -2933,24 +3042,25 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__((optnone))
 #endif
 #endif
-void glEndList(struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext){
+void glEndList(){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	int listSize = 0;
 	//If LAST display-list name is GL_COMPILE: actually builds ALL the Display-list generated through the LAST display-list name generated from glNewList(), then compiles it into a GX binary DL. Such binary will be manually executed when glCallList(display-list name) is called 
 	//Else If LAST display-list name is GL_COMPILE_AND_EXECUTE: actually builds ALL the Display-list generated through the LAST display-list name generated from glNewList(), then compiles it into a GX binary DL and executes it inmediately through GX GLCallList()
 	
 	//define List Size
-	listSize = ((TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr - TGDSOGL_DisplayListContext->LastGXInternalDisplayListPtr) * 4) + 4;
-	TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_OpenGLDisplayListStartOffset + TGDSOGL_DisplayListContext->LastGXInternalDisplayListPtr] = (u32)listSize;
-	TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr++;
-	TGDSOGL_DisplayListContext->LastGXInternalDisplayListPtr = TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;	
+	Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr--;
+	listSize = ((Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr - (TGDSOGL_LogicalDisplayListSetInst->LogicalOGLOffsetToGXOffsetInGXBinary+1)) * 4) + 4;
+	Inst->InternalUnpackedGX_DL_Binary[TGDSOGL_LogicalDisplayListSetInst->LogicalOGLOffsetToGXOffsetInGXBinary-1] = (u32)listSize;
 
-	if(TGDSOGL_DisplayListContext->mode == GL_COMPILE_AND_EXECUTE){
-		TGDSOGL_DisplayListContext->isAnOpenGLExtendedDisplayListCallList = false; //Standard OpenGL DisplayList marked as executable now. Run it through the GX hardware from indirect glCallList(); call
-		glCallList((GLuint)TGDSOGL_DisplayListContext->LastActiveOpenGLDisplayList, TGDSOGL_DisplayListContext);
+	TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList = false; //Standard OpenGL DisplayList marked as executable now. Run it through the GX hardware from indirect glCallList(); call
+	if(TGDSOGL_LogicalDisplayListSetInst->mode == GL_COMPILE_AND_EXECUTE){
+		glCallList((GLuint)Inst->CurrentSpawnOGLDisplayList+1);
 	}
-	TGDSOGL_DisplayListContext->isAnOpenGLExtendedDisplayListCallList = false;
-	TGDSOGL_DisplayListContext->LastActiveOpenGLDisplayList = DL_INVALID;
-	TGDSOGL_DisplayListContext->mode = GL_COMPILE; //Even if Standard OpenGL DisplayList was marked earlier as executable. Disable further calls because it's slow, and precompiled GX Display List can be ran directly later through standard glCallList()
+	TGDSOGL_LogicalDisplayListSetInst->mode = GL_COMPILE; //Even if Standard OpenGL DisplayList was marked earlier as executable. Disable further calls because it's slow, and precompiled GX Display List can be ran directly later through standard glCallList()
+	
+	Inst->CurrentSpawnOGLDisplayList = Inst->CurrentScratchPadOGLDisplayList;
 	/*//disable
 	//fifo overflow/underflow? acknowledge error
 	u32 gxbits = *(u32*)0x04000600;
@@ -2974,347 +3084,345 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__((optnone))
 #endif
 #endif
-void glCallList(GLuint list, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext){
+void glCallList(GLuint list){
 	if(list != DL_INVALID){
-		u32 * InternalDL = getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(TGDSOGL_DisplayListContext);
-		int curDLInCompiledDLOffset = 0;
-		int singleGXDisplayListSize = 0;
+		struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
 		if(list > 0){
 			list--;
 		}
-		curDLInCompiledDLOffset = TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary_Enumerator[list];
-		if((u32)curDLInCompiledDLOffset != DL_INVALID){
-			u32 * currentPhysicalDisplayListStart = (u32 *)&InternalDL[curDLInCompiledDLOffset];
-			//Fixup for first OpenGL DL Entry
-			if(curDLInCompiledDLOffset == 2){
-				currentPhysicalDisplayListStart-=2;
-				*(currentPhysicalDisplayListStart+1)=(*currentPhysicalDisplayListStart)-4;
-				currentPhysicalDisplayListStart++;
-			}
-			else{
-				currentPhysicalDisplayListStart--;
-			}
-			singleGXDisplayListSize = (*currentPhysicalDisplayListStart);
-			if(singleGXDisplayListSize > 0){
-				//Run a single GX Display List, having proper DL size
-				if(TGDSOGL_DisplayListContext->isAnOpenGLExtendedDisplayListCallList == false){ 
-					if(singleGXDisplayListSize > PHYS_GXFIFO_INTERNAL_SIZE){
-						singleGXDisplayListSize = PHYS_GXFIFO_INTERNAL_SIZE;
-					}
+		{
+			struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[list];
+			int curDLInCompiledDLOffset = 0;
+			int singleGXDisplayListSize = 0;
+			curDLInCompiledDLOffset = TGDSOGL_LogicalDisplayListSetInst->LogicalOGLOffsetToGXOffsetInGXBinary;
+			curDLInCompiledDLOffset--;
+			if((u32)curDLInCompiledDLOffset != DL_INVALID){
+				u32 * currentPhysicalDisplayListStart = (u32 *)&Inst->InternalUnpackedGX_DL_Binary[curDLInCompiledDLOffset];
+				singleGXDisplayListSize = (*currentPhysicalDisplayListStart);
+				if(singleGXDisplayListSize > 0){
+					//Run a single GX Display List, having proper DL size
+					if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == false){
+						if(singleGXDisplayListSize > PHYS_GXFIFO_INTERNAL_SIZE){
+							singleGXDisplayListSize = PHYS_GXFIFO_INTERNAL_SIZE;
+						}
 
-					#ifdef WIN32
-					memset(SingleUnpackedGXCommand_DL_Binary, 0, singleGXDisplayListSize);
-					memcpy((u8*)&SingleUnpackedGXCommand_DL_Binary[1], (u8*)&currentPhysicalDisplayListStart[0], singleGXDisplayListSize);
-					#endif
-					#ifdef ARM9
-					dmaFillWord(0, 0, (uint32)SingleUnpackedGXCommand_DL_Binary, (uint32)PHYS_GXFIFO_INTERNAL_SIZE);
-					dmaTransferWord(0, (uint32)&currentPhysicalDisplayListStart[0], (uint32)&SingleUnpackedGXCommand_DL_Binary[1], (uint32)singleGXDisplayListSize);
-					coherent_user_range_by_size((uint32)SingleUnpackedGXCommand_DL_Binary, singleGXDisplayListSize);
-					#endif
-					SingleUnpackedGXCommand_DL_Binary[0] = (u32)singleGXDisplayListSize;
-					//Hardware CallList
-					glCallListGX((const u32*)&SingleUnpackedGXCommand_DL_Binary[0]);
+						#ifdef WIN32
+						memset(SingleUnpackedGXCommand_DL_Binary, 0, singleGXDisplayListSize);
+						memcpy((u8*)&SingleUnpackedGXCommand_DL_Binary[1], (u8*)&currentPhysicalDisplayListStart[0], singleGXDisplayListSize);
+						#endif
+						#ifdef ARM9
+						dmaFillWord(0, 0, (uint32)SingleUnpackedGXCommand_DL_Binary, (uint32)PHYS_GXFIFO_INTERNAL_SIZE);
+						dmaTransferWord(0, (uint32)&currentPhysicalDisplayListStart[0], (uint32)&SingleUnpackedGXCommand_DL_Binary[1], (uint32)singleGXDisplayListSize);
+						coherent_user_range_by_size((uint32)SingleUnpackedGXCommand_DL_Binary, singleGXDisplayListSize);
+						#endif
+						SingleUnpackedGXCommand_DL_Binary[0] = (u32)singleGXDisplayListSize;
+						//Hardware CallList
+						#ifdef WIN32
+						printf("[OpenGLDL:%d]", (list+1));
+						#endif
+						glCallListGX((const u32*)&SingleUnpackedGXCommand_DL_Binary[0]);
 					
-					//Emulated CallList (slow, debugging purposes)
-					/*
-					u32 * currCmd = &SingleUnpackedGXCommand_DL_Binary[1];
-					int leftArgCnt = (singleListSize/4); // -1 is removed command itself from the arg list count 
-					while(leftArgCnt > 0){
-						u8 val = (u8)*currCmd;
-						if (val == (u32)getMTX_STORE) {
-							//write commands
-							currCmd++; 
-							u32 arg1 = *currCmd; currCmd++;
-							#ifdef ARM9
-							MATRIX_STORE = arg1;
-							#endif
-							leftArgCnt-= MTX_STORE_GXCommandParamsCount == 0 ? 1 : MTX_STORE_GXCommandParamsCount;
-						}
-						else if (val == (u32)getMTX_TRANS) {
-							//write commands
-							currCmd++; 
-							u32 arg1 = *currCmd; currCmd++;
-							u32 arg2 = *currCmd; currCmd++;
-							u32 arg3 = *currCmd; currCmd++;
-							#ifdef ARM9
-							MATRIX_TRANSLATE = arg1;
-							MATRIX_TRANSLATE = arg2;
-							MATRIX_TRANSLATE = arg3;
-							#endif
-							leftArgCnt-= MTX_TRANS_GXCommandParamsCount == 0 ? 1 : MTX_TRANS_GXCommandParamsCount;
-						}
-						else if (val == (u32)getMTX_IDENTITY) {
-							//write commands
-							currCmd++; 
-							#ifdef ARM9
-							MATRIX_IDENTITY = 0;
-							#endif
-							leftArgCnt-= MTX_IDENTITY_GXCommandParamsCount == 0 ? 1 : MTX_IDENTITY_GXCommandParamsCount;
-						}
-						else if (val == (u32)getMTX_MODE) {
-							//write commands
-							currCmd++; 
-							u32 arg1 = *currCmd; currCmd++;
-							#ifdef ARM9
-							MATRIX_CONTROL = arg1;
-							#endif
-							leftArgCnt-= MTX_MODE_GXCommandParamsCount == 0 ? 1 : MTX_MODE_GXCommandParamsCount;
-						}
-						else if (val == (u32)getVIEWPORT) {
-							//write commands
-							currCmd++; 
-							u32 arg1 = *currCmd; currCmd++;
-							#ifdef ARM9
-							GFX_VIEWPORT = arg1;
-							#endif
-							leftArgCnt-= VIEWPORT_GXCommandParamsCount == 0 ? 1 : VIEWPORT_GXCommandParamsCount;
-						}
-						else if (val == (u32)getFIFO_TEX_COORD) {
-							//write commands
-							currCmd++; 
-							u32 arg1 = *currCmd; currCmd++;
-							#ifdef ARM9
-							GFX_TEX_COORD = arg1;
-							#endif
-							leftArgCnt-= FIFO_TEX_COORD_GXCommandParamsCount == 0 ? 1 : FIFO_TEX_COORD_GXCommandParamsCount;
-						}
-						else if (val == (u32)getFIFO_BEGIN) {
-							//write commands
-							currCmd++; 
-							u32 arg1 = *currCmd; currCmd++;
-							#ifdef ARM9
-							GFX_BEGIN = arg1;
-							#endif
-							leftArgCnt-= FIFO_BEGIN_GXCommandParamsCount == 0 ? 1 : FIFO_BEGIN_GXCommandParamsCount;
-						}
-						else if (val == (u32)getFIFO_END) {
-							//write commands
-							currCmd++; 
-							#ifdef ARM9
-							GFX_END = 0;
-							#endif
-							leftArgCnt-= FIFO_END_GXCommandParamsCount == 0 ? 1 : FIFO_END_GXCommandParamsCount;
-						}
-						else if (val == (u32)getFIFO_COLOR) {
-							//write commands
-							currCmd++; 
-							u32 arg1 = *currCmd; currCmd++;
-							#ifdef ARM9
-							GFX_COLOR = arg1;
-							#endif
-							leftArgCnt-= FIFO_COLOR_GXCommandParamsCount == 0 ? 1 : FIFO_COLOR_GXCommandParamsCount;
-						}
-						else if (val == (u32)getFIFO_NORMAL) {
-							//write commands
-							currCmd++; 
-							u32 arg1 = *currCmd; currCmd++;
-							#ifdef ARM9
-							GFX_NORMAL = arg1;
-							#endif
-							leftArgCnt-= FIFO_NORMAL_GXCommandParamsCount == 0 ? 1 : FIFO_NORMAL_GXCommandParamsCount;
-						}
-						else if (val == (u32)getFIFO_VERTEX16) { 
-							//write commands
-							currCmd++; 
-							u32 arg1 = *currCmd; currCmd++;
-							u32 arg2 = *currCmd; currCmd++;
-							#ifdef ARM9
-							GFX_VERTEX16 = arg1;
-							GFX_VERTEX16 = arg2;
-							#endif
-							leftArgCnt-= FIFO_VERTEX16_GXCommandParamsCount == 0 ? 1 : FIFO_VERTEX16_GXCommandParamsCount;
-						}
-						else if (val == (u32)getFIFO_VERTEX10) {
-							//write commands
-							currCmd++; 
-							u32 arg1 = *currCmd; currCmd++;
-							#ifdef ARM9
-							GFX_VERTEX10 = arg1;
-							#endif
-							leftArgCnt-= FIFO_VERTEX10_GXCommandParamsCount == 0 ? 1 : FIFO_VERTEX10_GXCommandParamsCount;
-						}
-						else if (val == (u32)getFIFO_VTX_XY()) { 
-							//write commands
-							currCmd++; 
-							u32 arg1 = *currCmd; currCmd++;
-							#ifdef ARM9
-							GFX_VERTEX_XY = arg1;
-							#endif
-							leftArgCnt-= FIFO_VTX_XY_GXCommandParamsCount == 0 ? 1 : FIFO_VTX_XY_GXCommandParamsCount;
-						}
-						else if (val == (u32)getMTX_PUSH) { 
-							//write commands
-							currCmd++; 
-							#ifdef ARM9
-							MATRIX_PUSH = 0;
-							#endif
-							leftArgCnt-= MTX_PUSH_GXCommandParamsCount == 0 ? 1 : MTX_PUSH_GXCommandParamsCount;
-						}
-						else if (val == (u32)getMTX_POP) { 
-							//write commands
-							currCmd++; 
-							u32 arg1 = *currCmd; currCmd++;
-							#ifdef ARM9
-							MATRIX_POP = arg1;
-							#endif
-							leftArgCnt-= MTX_POP_GXCommandParamsCount == 0 ? 1 : MTX_POP_GXCommandParamsCount;
-						}
-						else if (val == (u32)getMTX_MULT_3x3) {
-							//write commands
-							currCmd++; 
-							u32 arg1 = *currCmd; currCmd++;
-							u32 arg2 = *currCmd; currCmd++;
-							u32 arg3 = *currCmd; currCmd++;
-							u32 arg4 = *currCmd; currCmd++;
-							u32 arg5 = *currCmd; currCmd++;
-							u32 arg6 = *currCmd; currCmd++;
-							u32 arg7 = *currCmd; currCmd++;
-							u32 arg8 = *currCmd; currCmd++;
-							u32 arg9 = *currCmd; currCmd++;
-							#ifdef ARM9
-							MATRIX_MULT3x3 = arg1;
-							MATRIX_MULT3x3 = arg2;
-							MATRIX_MULT3x3 = arg3;
-							MATRIX_MULT3x3 = arg4;
-							MATRIX_MULT3x3 = arg5;
-							MATRIX_MULT3x3 = arg6;
-							MATRIX_MULT3x3 = arg7;
-							MATRIX_MULT3x3 = arg8;
-							MATRIX_MULT3x3 = arg9;
-							#endif
-							leftArgCnt-= MTX_MULT_3x3_GXCommandParamsCount == 0 ? 1 : MTX_MULT_3x3_GXCommandParamsCount;
-						}
-						else if (val == (u32)getMTX_MULT_4x4) {
-							//write commands
-							currCmd++; 
-							u32 arg1 = *currCmd; currCmd++;
-							u32 arg2 = *currCmd; currCmd++;
-							u32 arg3 = *currCmd; currCmd++;
-							u32 arg4 = *currCmd; currCmd++;
-							u32 arg5 = *currCmd; currCmd++;
-							u32 arg6 = *currCmd; currCmd++;
-							u32 arg7 = *currCmd; currCmd++;
-							u32 arg8 = *currCmd; currCmd++;
-							u32 arg9 = *currCmd; currCmd++;
-							u32 arg10 = *currCmd; currCmd++;
-							u32 arg11 = *currCmd; currCmd++;
-							u32 arg12 = *currCmd; currCmd++;
-							u32 arg13 = *currCmd; currCmd++;
-							u32 arg14 = *currCmd; currCmd++;
-							u32 arg15 = *currCmd; currCmd++;
-							u32 arg16 = *currCmd; currCmd++;
+						//Emulated CallList (slow, debugging purposes)
+						/*
+						u32 * currCmd = &SingleUnpackedGXCommand_DL_Binary[1];
+						int leftArgCnt = (singleListSize/4); // -1 is removed command itself from the arg list count 
+						while(leftArgCnt > 0){
+							u8 val = (u8)*currCmd;
+							if (val == (u32)getMTX_STORE) {
+								//write commands
+								currCmd++; 
+								u32 arg1 = *currCmd; currCmd++;
+								#ifdef ARM9
+								MATRIX_STORE = arg1;
+								#endif
+								leftArgCnt-= MTX_STORE_GXCommandParamsCount == 0 ? 1 : MTX_STORE_GXCommandParamsCount;
+							}
+							else if (val == (u32)getMTX_TRANS) {
+								//write commands
+								currCmd++; 
+								u32 arg1 = *currCmd; currCmd++;
+								u32 arg2 = *currCmd; currCmd++;
+								u32 arg3 = *currCmd; currCmd++;
+								#ifdef ARM9
+								MATRIX_TRANSLATE = arg1;
+								MATRIX_TRANSLATE = arg2;
+								MATRIX_TRANSLATE = arg3;
+								#endif
+								leftArgCnt-= MTX_TRANS_GXCommandParamsCount == 0 ? 1 : MTX_TRANS_GXCommandParamsCount;
+							}
+							else if (val == (u32)getMTX_IDENTITY) {
+								//write commands
+								currCmd++; 
+								#ifdef ARM9
+								MATRIX_IDENTITY = 0;
+								#endif
+								leftArgCnt-= MTX_IDENTITY_GXCommandParamsCount == 0 ? 1 : MTX_IDENTITY_GXCommandParamsCount;
+							}
+							else if (val == (u32)getMTX_MODE) {
+								//write commands
+								currCmd++; 
+								u32 arg1 = *currCmd; currCmd++;
+								#ifdef ARM9
+								MATRIX_CONTROL = arg1;
+								#endif
+								leftArgCnt-= MTX_MODE_GXCommandParamsCount == 0 ? 1 : MTX_MODE_GXCommandParamsCount;
+							}
+							else if (val == (u32)getVIEWPORT) {
+								//write commands
+								currCmd++; 
+								u32 arg1 = *currCmd; currCmd++;
+								#ifdef ARM9
+								GFX_VIEWPORT = arg1;
+								#endif
+								leftArgCnt-= VIEWPORT_GXCommandParamsCount == 0 ? 1 : VIEWPORT_GXCommandParamsCount;
+							}
+							else if (val == (u32)getFIFO_TEX_COORD) {
+								//write commands
+								currCmd++; 
+								u32 arg1 = *currCmd; currCmd++;
+								#ifdef ARM9
+								GFX_TEX_COORD = arg1;
+								#endif
+								leftArgCnt-= FIFO_TEX_COORD_GXCommandParamsCount == 0 ? 1 : FIFO_TEX_COORD_GXCommandParamsCount;
+							}
+							else if (val == (u32)getFIFO_BEGIN) {
+								//write commands
+								currCmd++; 
+								u32 arg1 = *currCmd; currCmd++;
+								#ifdef ARM9
+								GFX_BEGIN = arg1;
+								#endif
+								leftArgCnt-= FIFO_BEGIN_GXCommandParamsCount == 0 ? 1 : FIFO_BEGIN_GXCommandParamsCount;
+							}
+							else if (val == (u32)getFIFO_END) {
+								//write commands
+								currCmd++; 
+								#ifdef ARM9
+								GFX_END = 0;
+								#endif
+								leftArgCnt-= FIFO_END_GXCommandParamsCount == 0 ? 1 : FIFO_END_GXCommandParamsCount;
+							}
+							else if (val == (u32)getFIFO_COLOR) {
+								//write commands
+								currCmd++; 
+								u32 arg1 = *currCmd; currCmd++;
+								#ifdef ARM9
+								GFX_COLOR = arg1;
+								#endif
+								leftArgCnt-= FIFO_COLOR_GXCommandParamsCount == 0 ? 1 : FIFO_COLOR_GXCommandParamsCount;
+							}
+							else if (val == (u32)getFIFO_NORMAL) {
+								//write commands
+								currCmd++; 
+								u32 arg1 = *currCmd; currCmd++;
+								#ifdef ARM9
+								GFX_NORMAL = arg1;
+								#endif
+								leftArgCnt-= FIFO_NORMAL_GXCommandParamsCount == 0 ? 1 : FIFO_NORMAL_GXCommandParamsCount;
+							}
+							else if (val == (u32)getFIFO_VERTEX16) { 
+								//write commands
+								currCmd++; 
+								u32 arg1 = *currCmd; currCmd++;
+								u32 arg2 = *currCmd; currCmd++;
+								#ifdef ARM9
+								GFX_VERTEX16 = arg1;
+								GFX_VERTEX16 = arg2;
+								#endif
+								leftArgCnt-= FIFO_VERTEX16_GXCommandParamsCount == 0 ? 1 : FIFO_VERTEX16_GXCommandParamsCount;
+							}
+							else if (val == (u32)getFIFO_VERTEX10) {
+								//write commands
+								currCmd++; 
+								u32 arg1 = *currCmd; currCmd++;
+								#ifdef ARM9
+								GFX_VERTEX10 = arg1;
+								#endif
+								leftArgCnt-= FIFO_VERTEX10_GXCommandParamsCount == 0 ? 1 : FIFO_VERTEX10_GXCommandParamsCount;
+							}
+							else if (val == (u32)getFIFO_VTX_XY()) { 
+								//write commands
+								currCmd++; 
+								u32 arg1 = *currCmd; currCmd++;
+								#ifdef ARM9
+								GFX_VERTEX_XY = arg1;
+								#endif
+								leftArgCnt-= FIFO_VTX_XY_GXCommandParamsCount == 0 ? 1 : FIFO_VTX_XY_GXCommandParamsCount;
+							}
+							else if (val == (u32)getMTX_PUSH) { 
+								//write commands
+								currCmd++; 
+								#ifdef ARM9
+								MATRIX_PUSH = 0;
+								#endif
+								leftArgCnt-= MTX_PUSH_GXCommandParamsCount == 0 ? 1 : MTX_PUSH_GXCommandParamsCount;
+							}
+							else if (val == (u32)getMTX_POP) { 
+								//write commands
+								currCmd++; 
+								u32 arg1 = *currCmd; currCmd++;
+								#ifdef ARM9
+								MATRIX_POP = arg1;
+								#endif
+								leftArgCnt-= MTX_POP_GXCommandParamsCount == 0 ? 1 : MTX_POP_GXCommandParamsCount;
+							}
+							else if (val == (u32)getMTX_MULT_3x3) {
+								//write commands
+								currCmd++; 
+								u32 arg1 = *currCmd; currCmd++;
+								u32 arg2 = *currCmd; currCmd++;
+								u32 arg3 = *currCmd; currCmd++;
+								u32 arg4 = *currCmd; currCmd++;
+								u32 arg5 = *currCmd; currCmd++;
+								u32 arg6 = *currCmd; currCmd++;
+								u32 arg7 = *currCmd; currCmd++;
+								u32 arg8 = *currCmd; currCmd++;
+								u32 arg9 = *currCmd; currCmd++;
+								#ifdef ARM9
+								MATRIX_MULT3x3 = arg1;
+								MATRIX_MULT3x3 = arg2;
+								MATRIX_MULT3x3 = arg3;
+								MATRIX_MULT3x3 = arg4;
+								MATRIX_MULT3x3 = arg5;
+								MATRIX_MULT3x3 = arg6;
+								MATRIX_MULT3x3 = arg7;
+								MATRIX_MULT3x3 = arg8;
+								MATRIX_MULT3x3 = arg9;
+								#endif
+								leftArgCnt-= MTX_MULT_3x3_GXCommandParamsCount == 0 ? 1 : MTX_MULT_3x3_GXCommandParamsCount;
+							}
+							else if (val == (u32)getMTX_MULT_4x4) {
+								//write commands
+								currCmd++; 
+								u32 arg1 = *currCmd; currCmd++;
+								u32 arg2 = *currCmd; currCmd++;
+								u32 arg3 = *currCmd; currCmd++;
+								u32 arg4 = *currCmd; currCmd++;
+								u32 arg5 = *currCmd; currCmd++;
+								u32 arg6 = *currCmd; currCmd++;
+								u32 arg7 = *currCmd; currCmd++;
+								u32 arg8 = *currCmd; currCmd++;
+								u32 arg9 = *currCmd; currCmd++;
+								u32 arg10 = *currCmd; currCmd++;
+								u32 arg11 = *currCmd; currCmd++;
+								u32 arg12 = *currCmd; currCmd++;
+								u32 arg13 = *currCmd; currCmd++;
+								u32 arg14 = *currCmd; currCmd++;
+								u32 arg15 = *currCmd; currCmd++;
+								u32 arg16 = *currCmd; currCmd++;
 							
-							#ifdef ARM9
-							MATRIX_MULT4x4 = arg1;
-							MATRIX_MULT4x4 = arg2;
-							MATRIX_MULT4x4 = arg3;
-							MATRIX_MULT4x4 = arg4;
-							MATRIX_MULT4x4 = arg5;
-							MATRIX_MULT4x4 = arg6;
-							MATRIX_MULT4x4 = arg7;
-							MATRIX_MULT4x4 = arg8;
-							MATRIX_MULT4x4 = arg9;
-							MATRIX_MULT4x4 = arg10;
-							MATRIX_MULT4x4 = arg11;
-							MATRIX_MULT4x4 = arg12;
-							MATRIX_MULT4x4 = arg13;
-							MATRIX_MULT4x4 = arg14;
-							MATRIX_MULT4x4 = arg15;
-							MATRIX_MULT4x4 = arg16;
-							#endif
-							leftArgCnt-= MTX_MULT_4x4_GXCommandParamsCount == 0 ? 1 : MTX_MULT_4x4_GXCommandParamsCount;
-						}
+								#ifdef ARM9
+								MATRIX_MULT4x4 = arg1;
+								MATRIX_MULT4x4 = arg2;
+								MATRIX_MULT4x4 = arg3;
+								MATRIX_MULT4x4 = arg4;
+								MATRIX_MULT4x4 = arg5;
+								MATRIX_MULT4x4 = arg6;
+								MATRIX_MULT4x4 = arg7;
+								MATRIX_MULT4x4 = arg8;
+								MATRIX_MULT4x4 = arg9;
+								MATRIX_MULT4x4 = arg10;
+								MATRIX_MULT4x4 = arg11;
+								MATRIX_MULT4x4 = arg12;
+								MATRIX_MULT4x4 = arg13;
+								MATRIX_MULT4x4 = arg14;
+								MATRIX_MULT4x4 = arg15;
+								MATRIX_MULT4x4 = arg16;
+								#endif
+								leftArgCnt-= MTX_MULT_4x4_GXCommandParamsCount == 0 ? 1 : MTX_MULT_4x4_GXCommandParamsCount;
+							}
 
-						else if (val == (u32)getMTX_LOAD_4x4) {
-							//write commands
-							currCmd++; 
-							u32 arg1 = *currCmd; currCmd++;
-							u32 arg2 = *currCmd; currCmd++;
-							u32 arg3 = *currCmd; currCmd++;
-							u32 arg4 = *currCmd; currCmd++;
-							u32 arg5 = *currCmd; currCmd++;
-							u32 arg6 = *currCmd; currCmd++;
-							u32 arg7 = *currCmd; currCmd++;
-							u32 arg8 = *currCmd; currCmd++;
-							u32 arg9 = *currCmd; currCmd++;
-							u32 arg10 = *currCmd; currCmd++;
-							u32 arg11 = *currCmd; currCmd++;
-							u32 arg12 = *currCmd; currCmd++;
-							u32 arg13 = *currCmd; currCmd++;
-							u32 arg14 = *currCmd; currCmd++;
-							u32 arg15 = *currCmd; currCmd++;
-							u32 arg16 = *currCmd; currCmd++;
+							else if (val == (u32)getMTX_LOAD_4x4) {
+								//write commands
+								currCmd++; 
+								u32 arg1 = *currCmd; currCmd++;
+								u32 arg2 = *currCmd; currCmd++;
+								u32 arg3 = *currCmd; currCmd++;
+								u32 arg4 = *currCmd; currCmd++;
+								u32 arg5 = *currCmd; currCmd++;
+								u32 arg6 = *currCmd; currCmd++;
+								u32 arg7 = *currCmd; currCmd++;
+								u32 arg8 = *currCmd; currCmd++;
+								u32 arg9 = *currCmd; currCmd++;
+								u32 arg10 = *currCmd; currCmd++;
+								u32 arg11 = *currCmd; currCmd++;
+								u32 arg12 = *currCmd; currCmd++;
+								u32 arg13 = *currCmd; currCmd++;
+								u32 arg14 = *currCmd; currCmd++;
+								u32 arg15 = *currCmd; currCmd++;
+								u32 arg16 = *currCmd; currCmd++;
 							
-							#ifdef ARM9
-							MATRIX_LOAD4x4 = arg1;     
-							MATRIX_LOAD4x4 = arg2;  
-							MATRIX_LOAD4x4 = arg3;      
-							MATRIX_LOAD4x4 = arg4;
+								#ifdef ARM9
+								MATRIX_LOAD4x4 = arg1;     
+								MATRIX_LOAD4x4 = arg2;  
+								MATRIX_LOAD4x4 = arg3;      
+								MATRIX_LOAD4x4 = arg4;
 
-							MATRIX_LOAD4x4 = arg5;  
-							MATRIX_LOAD4x4 = arg6;     
-							MATRIX_LOAD4x4 = arg7;      
-							MATRIX_LOAD4x4 = arg8;
+								MATRIX_LOAD4x4 = arg5;  
+								MATRIX_LOAD4x4 = arg6;     
+								MATRIX_LOAD4x4 = arg7;      
+								MATRIX_LOAD4x4 = arg8;
 				
-							MATRIX_LOAD4x4 = arg9;  
-							MATRIX_LOAD4x4 = arg10;  
-							MATRIX_LOAD4x4 = arg11;     
-							MATRIX_LOAD4x4 = arg12;
+								MATRIX_LOAD4x4 = arg9;  
+								MATRIX_LOAD4x4 = arg10;  
+								MATRIX_LOAD4x4 = arg11;     
+								MATRIX_LOAD4x4 = arg12;
 				
-							MATRIX_LOAD4x4 = arg13;  
-							MATRIX_LOAD4x4 = arg14;  
-							MATRIX_LOAD4x4 = arg15;  
-							MATRIX_LOAD4x4 = arg16;
-							#endif
-							leftArgCnt-= MTX_LOAD_4x4_GXCommandParamsCount == 0 ? 1 : MTX_LOAD_4x4_GXCommandParamsCount;
-						}
+								MATRIX_LOAD4x4 = arg13;  
+								MATRIX_LOAD4x4 = arg14;  
+								MATRIX_LOAD4x4 = arg15;  
+								MATRIX_LOAD4x4 = arg16;
+								#endif
+								leftArgCnt-= MTX_LOAD_4x4_GXCommandParamsCount == 0 ? 1 : MTX_LOAD_4x4_GXCommandParamsCount;
+							}
 
-						else if (val == (u32)getMTX_LOAD_4x3) {
-							//write commands
-							currCmd++; 
-							u32 arg1 = *currCmd; currCmd++;
-							u32 arg2 = *currCmd; currCmd++;
-							u32 arg3 = *currCmd; currCmd++;
-							u32 arg4 = *currCmd; currCmd++;
-							u32 arg5 = *currCmd; currCmd++;
-							u32 arg6 = *currCmd; currCmd++;
-							u32 arg7 = *currCmd; currCmd++;
-							u32 arg8 = *currCmd; currCmd++;
-							u32 arg9 = *currCmd; currCmd++;
-							u32 arg10 = *currCmd; currCmd++;
-							u32 arg11 = *currCmd; currCmd++;
-							u32 arg12 = *currCmd; currCmd++;
+							else if (val == (u32)getMTX_LOAD_4x3) {
+								//write commands
+								currCmd++; 
+								u32 arg1 = *currCmd; currCmd++;
+								u32 arg2 = *currCmd; currCmd++;
+								u32 arg3 = *currCmd; currCmd++;
+								u32 arg4 = *currCmd; currCmd++;
+								u32 arg5 = *currCmd; currCmd++;
+								u32 arg6 = *currCmd; currCmd++;
+								u32 arg7 = *currCmd; currCmd++;
+								u32 arg8 = *currCmd; currCmd++;
+								u32 arg9 = *currCmd; currCmd++;
+								u32 arg10 = *currCmd; currCmd++;
+								u32 arg11 = *currCmd; currCmd++;
+								u32 arg12 = *currCmd; currCmd++;
 							
-							#ifdef ARM9
-							MATRIX_LOAD4x3 = arg1;
-							MATRIX_LOAD4x3 = arg2;
-							MATRIX_LOAD4x3 = arg3;
+								#ifdef ARM9
+								MATRIX_LOAD4x3 = arg1;
+								MATRIX_LOAD4x3 = arg2;
+								MATRIX_LOAD4x3 = arg3;
 
-							MATRIX_LOAD4x3 = arg4;
-							MATRIX_LOAD4x3 = arg5;
-							MATRIX_LOAD4x3 = arg6;
+								MATRIX_LOAD4x3 = arg4;
+								MATRIX_LOAD4x3 = arg5;
+								MATRIX_LOAD4x3 = arg6;
 
-							MATRIX_LOAD4x3 = arg7;
-							MATRIX_LOAD4x3 = arg8;
-							MATRIX_LOAD4x3 = arg9;
+								MATRIX_LOAD4x3 = arg7;
+								MATRIX_LOAD4x3 = arg8;
+								MATRIX_LOAD4x3 = arg9;
 
-							MATRIX_LOAD4x3 = arg10;
-							MATRIX_LOAD4x3 = arg11;
-							MATRIX_LOAD4x3 = arg12;
-							#endif
-							leftArgCnt-= MTX_LOAD_4x3_GXCommandParamsCount == 0 ? 1 : MTX_LOAD_4x3_GXCommandParamsCount;
+								MATRIX_LOAD4x3 = arg10;
+								MATRIX_LOAD4x3 = arg11;
+								MATRIX_LOAD4x3 = arg12;
+								#endif
+								leftArgCnt-= MTX_LOAD_4x3_GXCommandParamsCount == 0 ? 1 : MTX_LOAD_4x3_GXCommandParamsCount;
+							}
+
+							//N/A      00h -  -   NOP - No Operation (for padding packed GXFIFO commands)
+							else  {  //if (val == (u32)getNOP())
+								//write commands
+								currCmd++; 
+								leftArgCnt-= (NOP_GXCommandParamsCount == 0 ? 1 : NOP_GXCommandParamsCount);
+								//custom command invoked this, so quit
+								//break;
+							}
 						}
-
-						//N/A      00h -  -   NOP - No Operation (for padding packed GXFIFO commands)
-						else  {  //if (val == (u32)getNOP())
-							//write commands
-							currCmd++; 
-							leftArgCnt-= (NOP_GXCommandParamsCount == 0 ? 1 : NOP_GXCommandParamsCount);
-							//custom command invoked this, so quit
-							//break;
-						}
+						*/
 					}
-					*/
 				}
 			}
 		}
@@ -3356,7 +3464,8 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__((optnone))
 #endif
 #endif
-void glCallLists(GLsizei n, GLenum type, const void * lists, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext){
+void glCallLists(GLsizei n, GLenum type, const void * lists){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
 	int offsetSize = -1;
 	GLubyte * u8array = NULL;
 	u16 * u16array = NULL;
@@ -3438,7 +3547,7 @@ void glCallLists(GLsizei n, GLenum type, const void * lists, struct TGDSOGL_Disp
 				&&				//	|| Prevent out-of-bound lists
 				(listName >= 0)	//
 			){
-				glCallList(listName, TGDSOGL_DisplayListContext);
+				glCallList(listName);
 			}
 		}
 	}
@@ -3453,21 +3562,23 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__((optnone))
 #endif
 #endif
-void glDeleteLists(GLuint list, GLsizei range, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext){
+void glDeleteLists(GLuint list, GLsizei range){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
 	int lowestCurDLInCompiledDLOffset = 0;
 	int i = 0;
+	u32 * InternalDL = getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr();
 	if(list >= 1){
 		list--; //assign current InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr (new) to a List
 	}
 	if (list >= DL_DESCRIPTOR_MAX_ITEMS){
 		return;
 	}
+	
 	for(i = 0; i < range; i++){
-		u32 * InternalDL = getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(TGDSOGL_DisplayListContext);
-		int curDLInCompiledDLOffset = TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary_Enumerator[list + i];
+		struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[list + i];
+		int curDLInCompiledDLOffset = TGDSOGL_LogicalDisplayListSetInst->LogicalOGLOffsetToGXOffsetInGXBinary;
 		if((u32)curDLInCompiledDLOffset != DL_INVALID){
-			TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary_Enumerator[list + i] = DL_INVALID;
-
+			TGDSOGL_LogicalDisplayListSetInst->LogicalOGLOffsetToGXOffsetInGXBinary = DL_INVALID;
 			if(lowestCurDLInCompiledDLOffset > curDLInCompiledDLOffset){
 				lowestCurDLInCompiledDLOffset = curDLInCompiledDLOffset;
 			}
@@ -3476,7 +3587,7 @@ void glDeleteLists(GLuint list, GLsizei range, struct TGDSOGL_DisplayListContext
 	
 	//Find the lowest internal buffer offset assigned, just deleted, and rewind it so it points to unallocated Internal DL memory
 	if(lowestCurDLInCompiledDLOffset != -1){
-		TGDSOGL_DisplayListContext->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = lowestCurDLInCompiledDLOffset;
+		Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = lowestCurDLInCompiledDLOffset;
 	}
 }
 
@@ -3528,7 +3639,9 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-void glLightfv (GLenum light, GLenum pname, const GLfloat *params, struct TGDSOGL_DisplayListContext * Inst){
+void glLightfv (GLenum light, GLenum pname, const GLfloat *params){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	//El parámetro params contiene cuatro valores de punto flotante que especifican la intensidad RGBA ambiente de la luz. Los valores de punto flotante se asignan directamente. No se fijan valores enteros ni de punto flotante. La intensidad de luz ambiente predeterminada es (0,0, 0,0, 0,0, 1,0).
 	if(pname == GL_AMBIENT){
 		float rAmbient = params[0];
@@ -3536,7 +3649,7 @@ void glLightfv (GLenum light, GLenum pname, const GLfloat *params, struct TGDSOG
 		float bAmbient = params[2];
 		//float aAmbient = params[3];
 		globalGLCtx.ambientValue = ((floattov10(rAmbient) & 0x1F) << 16) | ((floattov10(gAmbient) & 0x1F) << 21) | ((floattov10(bAmbient) & 0x1F) << 26);
-		if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+		if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 			u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 			if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 				//40004C0h 30h 1  4   DIF_AMB - MaterialColor0 - Diffuse/Ambient Reflect. (W)
@@ -3560,7 +3673,7 @@ void glLightfv (GLenum light, GLenum pname, const GLfloat *params, struct TGDSOG
 		//float aDiffuse = params[3];
 		u8 setVtxColor = 1; //15    Set Vertex Color (0=No, 1=Set Diffuse Reflection Color as Vertex Color)
 		globalGLCtx.diffuseValue = ((floattov10(rDiffuse) & 0x1F) << 0) | ((floattov10(gDiffuse) & 0x1F) << 5) | ((floattov10(bDiffuse) & 0x1F) << 10) | ((setVtxColor & 0x1) << 15);
-		if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+		if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 			u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 			if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 				//40004C0h 30h 1  4   DIF_AMB - MaterialColor0 - Diffuse/Ambient Reflect. (W)
@@ -3584,7 +3697,7 @@ void glLightfv (GLenum light, GLenum pname, const GLfloat *params, struct TGDSOG
 		float y = params[1];
 		float z = params[2];
 		u32 writeVal = id | ((floattov10(z) & 0x3FF) << 20) | ((floattov10(y) & 0x3FF) << 10) | (floattov10(x) & 0x3FF);
-		if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+		if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 			u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 			if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 				id = (id & 3) << 30;
@@ -3609,7 +3722,7 @@ void glLightfv (GLenum light, GLenum pname, const GLfloat *params, struct TGDSOG
 		//float aSpecular = params[3];
 		u8 useSpecularReflectionShininessTable = 0; //15    Specular Reflection Shininess Table (0=Disable, 1=Enable)
 		globalGLCtx.specularValue = ((floattov10(rSpecular) & 0x1F) << 16) | ((floattov10(gSpecular) & 0x1F) << 21) | ((floattov10(bSpecular) & 0x1F) << 26) | ((useSpecularReflectionShininessTable & 0x1) << 15);
-		if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+		if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 			u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 			if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 				//40004C4h 31h 1  4   SPE_EMI - MaterialColor1 - Specular Ref. & Emission (W)
@@ -3641,9 +3754,10 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-void glMaterialfv (GLenum face, GLenum pname, const GLfloat *params, struct TGDSOGL_DisplayListContext * Inst){
+void glMaterialfv (GLenum face, GLenum pname, const GLfloat *params){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	unsigned short emissionValueOut = 0;
-	
 	//GL_FRONT, GL_BACK and GL_FRONT_AND_BACK are ignored in GX because material face attributes aren't supported by hardware.
 	//Just slip through and execute all other supported commands
 	switch(face){
@@ -3660,7 +3774,7 @@ void glMaterialfv (GLenum face, GLenum pname, const GLfloat *params, struct TGDS
 	switch(pname){
 		//	The param parameter is a single integer value that specifies the RGBA specular exponent of the material. Integer values are mapped directly. Only values in the range [0, 128] are accepted. The default specular exponent for both front-facing and back-facing materials is 0.
 		case GL_SHININESS:{
-			emitGLShinnyness((float)params[0], Inst);
+			emitGLShinnyness((float)params[0]);
 			return;
 		}break;
 
@@ -3712,7 +3826,7 @@ void glMaterialfv (GLenum face, GLenum pname, const GLfloat *params, struct TGDS
 		globalGLCtx.emissionValue = (specular_emission >> 16);
 		globalGLCtx.specularValue = (specular_emission&0xFFFF);
 
-		if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+		if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 			u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 			if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 				//40004C0h 30h 1  4   DIF_AMB - MaterialColor0 - Diffuse/Ambient Reflect. (W)
@@ -3744,8 +3858,8 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-void glNormal3dv(const GLdouble *v, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext){
-	glNormal3d(v[0], v[1], v[2], TGDSOGL_DisplayListContext);
+void glNormal3dv(const GLdouble *v){
+	glNormal3d(v[0], v[1], v[2]);
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -3754,8 +3868,8 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-void glNormal3fv(const GLfloat *v, struct TGDSOGL_DisplayListContext * Inst){
-	glNormal3f(v[0], v[1], v[2], Inst);
+void glNormal3fv(const GLfloat *v){
+	glNormal3f(v[0], v[1], v[2]);
 }
 
 //v: A pointer to an array of three elements. The elements are the x, y, and z coordinates of a vertex.
@@ -3765,8 +3879,8 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-void glVertex3fv(const GLfloat *v, struct TGDSOGL_DisplayListContext * Inst){
-	glVertex3f(v[0], v[1], v[2], Inst);
+void glVertex3fv(const GLfloat *v){
+	glVertex3f(v[0], v[1], v[2]);
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -3775,8 +3889,8 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-void glVertex3dv(const GLdouble *v, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext){
-	glVertex3f((float)v[0], (float)v[1], (float)v[2], TGDSOGL_DisplayListContext);
+void glVertex3dv(const GLdouble *v){
+	glVertex3f((float)v[0], (float)v[1], (float)v[2]);
 }
 
 
@@ -3791,9 +3905,10 @@ __attribute__ ((optnone))
 void glTexParameteri(
 	GLenum target,
 	GLenum pname,
-	GLint  param, 
-	struct TGDSOGL_DisplayListContext * Inst
+	GLint  param
 ){
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	target = GL_TEXTURE_2D;
 
 	//16    Repeat in S Direction (0=Clamp Texture, 1=Repeat Texture)
@@ -3835,7 +3950,7 @@ void glTexParameteri(
 		globalGLCtx.textureParamsValue &= ~GL_TEXTURE_FLIP_T;
 	}
 	
-	if(Inst->isAnOpenGLExtendedDisplayListCallList == true){
+	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 		if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 			//40004A8h 2Ah 1  1   TEXIMAGE_PARAM - Set Texture Parameters (W)
@@ -3883,7 +3998,7 @@ void glGetDoublev(
    GLenum   pname,
    GLdouble *params
    ){
-	   glGetIntegerv(pname, (GLfloat*)params);
+	   glGetIntegerv(pname, (GLint*)params);
 }
 
 /*
@@ -3908,8 +4023,8 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-void  glMultMatrixd(const GLdouble *m, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext){
-	glMultMatrixf((GLfloat*)m, TGDSOGL_DisplayListContext);
+void  glMultMatrixd(const GLdouble *m){
+	glMultMatrixf((GLfloat*)m);
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -3918,7 +4033,7 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-void  glMultMatrixf(const GLfloat *m, struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext){
+void  glMultMatrixf(const GLfloat *m){
 	m4x4 inMtx;
 	inMtx.m[0] = floattof32(m[0]); //0
 	inMtx.m[1] = floattof32(m[1]); //1
@@ -3936,7 +4051,7 @@ void  glMultMatrixf(const GLfloat *m, struct TGDSOGL_DisplayListContext * TGDSOG
 	inMtx.m[13] = floattof32(m[13]); //13
 	inMtx.m[14] = floattof32(m[14]); //14
 	inMtx.m[15] = floattof32(m[15]); //15
-	glMultMatrix4x4(&inMtx, TGDSOGL_DisplayListContext);	
+	glMultMatrix4x4(&inMtx);	
 }
 
 //The glScaled and glScalef functions multiply the current matrix by a general scaling matrix.
@@ -3949,14 +4064,13 @@ __attribute__ ((optnone))
 void glScalef(
    GLfloat x,
    GLfloat y,
-   GLfloat z,
-   struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext
+   GLfloat z
 ){
 	GLvector scaleVector;
 	scaleVector.x = floattof32(x);
 	scaleVector.y = floattof32(y);
 	scaleVector.z = floattof32(z);
-	glScalev(&scaleVector, TGDSOGL_DisplayListContext);
+	glScalev(&scaleVector);
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -3968,10 +4082,9 @@ __attribute__ ((optnone))
 void glScaled(
    GLdouble x,
    GLdouble y,
-   GLdouble z,
-   struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext
+   GLdouble z
 ){
-	glScalef((GLfloat)x, (GLfloat)y, (GLfloat)z, TGDSOGL_DisplayListContext);
+	glScalef((GLfloat)x, (GLfloat)y, (GLfloat)z);
 }
 
 void glCullFace(GLenum mode){
@@ -4653,7 +4766,7 @@ void glArrayElement( GLint index ){
 				unsigned char arg0 = (unsigned char)*(colorOffset+0);
 				unsigned char arg1 = (unsigned char)*(colorOffset+1);
 				unsigned char arg2 = (unsigned char)*(colorOffset+2);
-				glColor3b(arg0, arg1, arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+				glColor3b(arg0, arg1, arg2);
 			}break;
 						
 			//unsigned short
@@ -4669,7 +4782,7 @@ void glArrayElement( GLint index ){
 				u8 arg0 = (u8)*(colorOffset+0);
 				u8 arg1 = (u8)*(colorOffset+1);
 				u8 arg2 = (u8)*(colorOffset+2);
-				glColor3b((u8)arg0, (u8)arg1, (u8)arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+				glColor3b((u8)arg0, (u8)arg1, (u8)arg2);
 			}break;
 		}
 	}
@@ -4688,7 +4801,7 @@ void glArrayElement( GLint index ){
 				unsigned short arg0 = (unsigned short)*(normalOffset+0);
 				unsigned short arg1 = (unsigned short)*(normalOffset+1);
 				unsigned short arg2 = (unsigned short)*(normalOffset+2);
-				glNormal3v10((v10)arg0, (v10)arg1, (v10)arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+				glNormal3v10((v10)arg0, (v10)arg1, (v10)arg2);
 			}break;
 			
 			//unsigned int (packed as Float -> v10)
@@ -4697,7 +4810,7 @@ void glArrayElement( GLint index ){
 				v10 arg0 = (v10)*(normalOffset+0);
 				v10 arg1 = (v10)*(normalOffset+1);
 				v10 arg2 = (v10)*(normalOffset+2);
-				glNormal3v10((v10)arg0, (v10)arg1, (v10)arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+				glNormal3v10((v10)arg0, (v10)arg1, (v10)arg2);
 			}break;
 		}
 	}
@@ -4715,7 +4828,7 @@ void glArrayElement( GLint index ){
 				unsigned short * TexCoordOffset = (unsigned short*)( ((int)vboTexCoord->vboArrayMemoryStart) +  (index * sizeof(unsigned short) + ((vboTexCoord->vertexBufferObjectstrideOffset*sizeof(unsigned short)*vboTexCoord->argCount))));
 				unsigned short arg0 = (unsigned short)*(TexCoordOffset+0);
 				unsigned short arg1 = (unsigned short)*(TexCoordOffset+1);
-				glTexCoord2t16((t16)arg0, (t16)arg1, INTERNAL_TGDS_OGL_DL_POINTER);
+				glTexCoord2t16((t16)arg0, (t16)arg1);
 			}break;
 			
 			//unsigned int (packed as Float -> t16)
@@ -4723,7 +4836,7 @@ void glArrayElement( GLint index ){
 				GLfloat * TexCoordOffset = (GLfloat*)( ((int)vboTexCoord->vboArrayMemoryStart) +  (index * sizeof(GLfloat) + ((vboTexCoord->vertexBufferObjectstrideOffset*sizeof(GLfloat)*vboTexCoord->argCount))));
 				t16 arg0 = (t16)*(TexCoordOffset+0);
 				t16 arg1 = (t16)*(TexCoordOffset+1);
-				glTexCoord2t16((t16)arg0, (t16)arg1, INTERNAL_TGDS_OGL_DL_POINTER);
+				glTexCoord2t16((t16)arg0, (t16)arg1);
 			}break;
 		}
 	}
@@ -4742,7 +4855,7 @@ void glArrayElement( GLint index ){
 				v16 arg0 = (v16)*(vertexOffset+0);
 				v16 arg1 = (v16)*(vertexOffset+1);
 				v16 arg2 = (v16)*(vertexOffset+2);
-				glVertex3v16(arg0, arg1, arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+				glVertex3v16(arg0, arg1, arg2);
 			}break;
 			
 			//unsigned int (packed as Float -> v16)
@@ -4751,7 +4864,7 @@ void glArrayElement( GLint index ){
 				v16 arg0 = (v16)*(vertexOffset+0);
 				v16 arg1 = (v16)*(vertexOffset+1);
 				v16 arg2 = (v16)*(vertexOffset+2);
-				glVertex3v16(arg0, arg1, arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+				glVertex3v16(arg0, arg1, arg2);
 			}break;
 		}
 	}
@@ -4897,8 +5010,9 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 		if( (mode == GL_TRIANGLE_STRIP) || (mode == GL_QUAD_STRIP) || (mode == GL_QUADS) ){
 			argCount = 4;
 		}
-		glNewList(OGL_DL_DRAW_ARRAYS_METHOD, GL_COMPILE_AND_EXECUTE, INTERNAL_TGDS_OGL_DL_POINTER);
-			glBegin(mode, INTERNAL_TGDS_OGL_DL_POINTER);
+		isInternalDisplayList = true;
+		glNewList(OGL_DL_DRAW_ARRAYS_METHOD, GL_COMPILE_AND_EXECUTE);
+			glBegin(mode);
 			for(i = 0; i < count; i++){
 				int nextOffset = 0;
 				if(vboColorEnabled == true){
@@ -4909,7 +5023,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 							unsigned char arg0 = (unsigned char)*(colorOffset+0);
 							unsigned char arg1 = (unsigned char)*(colorOffset+1);
 							unsigned char arg2 = (unsigned char)*(colorOffset+2);
-							glColor3b(arg0, arg1, arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+							glColor3b(arg0, arg1, arg2);
 						}break;
 						
 						//unsigned short
@@ -4925,7 +5039,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 							u8 arg0 = (u8)*(colorOffset+0);
 							u8 arg1 = (u8)*(colorOffset+1);
 							u8 arg2 = (u8)*(colorOffset+2);
-							glColor3b((u8)arg0, (u8)arg1, (u8)arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+							glColor3b((u8)arg0, (u8)arg1, (u8)arg2);
 						}break;
 					}
 					nextOffset = (vboColor->argCount-1);
@@ -4945,7 +5059,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 							unsigned short arg0 = (unsigned short)*(normalOffset+0);
 							unsigned short arg1 = (unsigned short)*(normalOffset+1);
 							unsigned short arg2 = (unsigned short)*(normalOffset+2);
-							glNormal3v10((v10)arg0, (v10)arg1, (v10)arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+							glNormal3v10((v10)arg0, (v10)arg1, (v10)arg2);
 						}break;
 						
 						//unsigned int (packed as Float -> v10)
@@ -4954,7 +5068,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 							v10 arg0 = (v10)floattov10(*(normalOffset+0));
 							v10 arg1 = (v10)floattov10(*(normalOffset+1));
 							v10 arg2 = (v10)floattov10(*(normalOffset+2));
-							glNormal3v10((v10)arg0, (v10)arg1, (v10)arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+							glNormal3v10((v10)arg0, (v10)arg1, (v10)arg2);
 						}break;
 					}
 					nextOffset = (vboNormal->argCount-1);
@@ -4973,7 +5087,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 							unsigned short * TexCoordOffset = (unsigned short*)( ((int)vboTexCoord->vboArrayMemoryStart) +  (i * sizeof(unsigned short) + ((vboTexCoord->vertexBufferObjectstrideOffset*sizeof(unsigned short)))));
 							unsigned short arg0 = (unsigned short)*(TexCoordOffset+0);
 							unsigned short arg1 = (unsigned short)*(TexCoordOffset+1);
-							glTexCoord2t16((t16)arg0, (t16)arg1, INTERNAL_TGDS_OGL_DL_POINTER);
+							glTexCoord2t16((t16)arg0, (t16)arg1);
 						}break;
 
 						//unsigned int (packed as Float -> t16)
@@ -4981,7 +5095,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 							GLfloat * TexCoordOffset = (GLfloat*)( ((int)vboTexCoord->vboArrayMemoryStart) +  (i * sizeof(unsigned int) + ((vboTexCoord->vertexBufferObjectstrideOffset*sizeof(unsigned int)))));
 							t16 arg0 = (t16)floattot16(*(TexCoordOffset+0));
 							t16 arg1 = (t16)floattot16(*(TexCoordOffset+1));
-							glTexCoord2t16((t16)arg0, (t16)arg1, INTERNAL_TGDS_OGL_DL_POINTER);
+							glTexCoord2t16((t16)arg0, (t16)arg1);
 						}break;
 					}
 					nextOffset = (vboTexCoord->argCount-1);
@@ -5001,7 +5115,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 							v16 arg0 = (v16)*(vertexOffset+0);
 							v16 arg1 = (v16)*(vertexOffset+1);
 							v16 arg2 = (v16)*(vertexOffset+2);
-							glVertex3v16(arg0, arg1, arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+							glVertex3v16(arg0, arg1, arg2);
 						}break;
 
 						//unsigned int (packed as Float -> v16)
@@ -5010,19 +5124,23 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 							v16 arg0 = (v16)floattov16(*(vertexOffset+0));
 							v16 arg1 = (v16)floattov16(*(vertexOffset+1));
 							v16 arg2 = (v16)floattov16(*(vertexOffset+2));
-							glVertex3v16(arg0, arg1, arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+							glVertex3v16(arg0, arg1, arg2);
 						}break;
 					}
 					nextOffset = (vboVertex->argCount-1);
 				}
 				i += (nextOffset);
 			}
-			glEnd(INTERNAL_TGDS_OGL_DL_POINTER);
-		glEndList(INTERNAL_TGDS_OGL_DL_POINTER); 
+			glEnd();
+		glEndList();
+		isInternalDisplayList = false;
 		//TWLPrintf("glDrawArrays() Count: %d \n", count);
 	}
 	else{
-		glCallList(OGL_DL_DRAW_ARRAYS_METHOD, INTERNAL_TGDS_OGL_DL_POINTER);
+		bool savedInternalDLState = isInternalDisplayList;
+		isInternalDisplayList = true;
+		glCallList(OGL_DL_DRAW_ARRAYS_METHOD);
+		isInternalDisplayList = savedInternalDLState;
 	}
 }
 
@@ -5271,8 +5389,8 @@ void glInterleavedArrays( GLenum format, GLsizei stride, const GLvoid *pointer )
 			isTriangleStrip = true;
 			argCount = 4;
 		}
-		glNewList(OGL_DL_DRAW_ARRAYS_METHOD, GL_COMPILE_AND_EXECUTE, INTERNAL_TGDS_OGL_DL_POINTER);
-			glBegin(mode, INTERNAL_TGDS_OGL_DL_POINTER);
+		glNewList(OGL_DL_DRAW_ARRAYS_METHOD, GL_COMPILE_AND_EXECUTE);
+			glBegin(mode);
 			for(i = 0; i < (countColor+countNormal+countTexCoord+countVertex); i+=(argsTotal*argCount)){
 				if(vboColorEnabled == true){
 					switch(vboColor->ElementsPerVertexBufferObjectUnit){
@@ -5282,7 +5400,7 @@ void glInterleavedArrays( GLenum format, GLsizei stride, const GLvoid *pointer )
 							unsigned char arg0 = (unsigned char)*(colorOffset+0);
 							unsigned char arg1 = (unsigned char)*(colorOffset+1);
 							unsigned char arg2 = (unsigned char)*(colorOffset+2);
-							glColor3b(arg0, arg1, arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+							glColor3b(arg0, arg1, arg2);
 						}break;
 						
 						//unsigned short
@@ -5298,7 +5416,7 @@ void glInterleavedArrays( GLenum format, GLsizei stride, const GLvoid *pointer )
 							u8 arg0 = (u8)*(colorOffset+0);
 							u8 arg1 = (u8)*(colorOffset+1);
 							u8 arg2 = (u8)*(colorOffset+2);
-							glColor3b((u8)arg0, (u8)arg1, (u8)arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+							glColor3b((u8)arg0, (u8)arg1, (u8)arg2);
 						}break;
 					}
 				}
@@ -5317,7 +5435,7 @@ void glInterleavedArrays( GLenum format, GLsizei stride, const GLvoid *pointer )
 							unsigned short arg0 = (unsigned short)*(normalOffset+0);
 							unsigned short arg1 = (unsigned short)*(normalOffset+1);
 							unsigned short arg2 = (unsigned short)*(normalOffset+2);
-							glNormal3v10((v10)arg0, (v10)arg1, (v10)arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+							glNormal3v10((v10)arg0, (v10)arg1, (v10)arg2);
 						}break;
 						
 						//unsigned int (packed as Float -> v10)
@@ -5326,7 +5444,7 @@ void glInterleavedArrays( GLenum format, GLsizei stride, const GLvoid *pointer )
 							v10 arg0 = (v10)floattov10(*(normalOffset+0));
 							v10 arg1 = (v10)floattov10(*(normalOffset+1));
 							v10 arg2 = (v10)floattov10(*(normalOffset+2));
-							glNormal3v10((v10)arg0, (v10)arg1, (v10)arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+							glNormal3v10((v10)arg0, (v10)arg1, (v10)arg2);
 						}break;
 					}
 				}
@@ -5344,7 +5462,7 @@ void glInterleavedArrays( GLenum format, GLsizei stride, const GLvoid *pointer )
 							unsigned short * TexCoordOffset = (unsigned short*)( ((int)targetTexCoordOffset) +  (i * sizeof(unsigned short) + ((stride*sizeof(unsigned short)*argCount))));
 							unsigned short arg0 = (unsigned short)*(TexCoordOffset+0);
 							unsigned short arg1 = (unsigned short)*(TexCoordOffset+1);
-							glTexCoord2t16((t16)arg0, (t16)arg1, INTERNAL_TGDS_OGL_DL_POINTER);
+							glTexCoord2t16((t16)arg0, (t16)arg1);
 						}break;
 						
 						//unsigned int (packed as Float -> t16)
@@ -5352,7 +5470,7 @@ void glInterleavedArrays( GLenum format, GLsizei stride, const GLvoid *pointer )
 							GLfloat * TexCoordOffset = (GLfloat*)( ((int)targetTexCoordOffset) +  (i * sizeof(GLfloat) + ((stride*sizeof(GLfloat)*argCount))));
 							t16 arg0 = (t16)floattot16(*(TexCoordOffset+0));
 							t16 arg1 = (t16)floattot16(*(TexCoordOffset+1));
-							glTexCoord2t16((t16)arg0, (t16)arg1, INTERNAL_TGDS_OGL_DL_POINTER);
+							glTexCoord2t16((t16)arg0, (t16)arg1);
 						}break;
 					}
 				}
@@ -5371,7 +5489,7 @@ void glInterleavedArrays( GLenum format, GLsizei stride, const GLvoid *pointer )
 							v16 arg0 = (v16)*(vertexOffset+0);
 							v16 arg1 = (v16)*(vertexOffset+1);
 							v16 arg2 = (v16)*(vertexOffset+2);
-							glVertex3v16(arg0, arg1, arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+							glVertex3v16(arg0, arg1, arg2);
 						}break;
 						
 						//unsigned int (packed as Float -> v16)
@@ -5380,16 +5498,16 @@ void glInterleavedArrays( GLenum format, GLsizei stride, const GLvoid *pointer )
 							v16 arg0 = (v16)floattov16(*(vertexOffset+0));
 							v16 arg1 = (v16)floattov16(*(vertexOffset+1));
 							v16 arg2 = (v16)floattov16(*(vertexOffset+2));
-							glVertex3v16(arg0, arg1, arg2, INTERNAL_TGDS_OGL_DL_POINTER);
+							glVertex3v16(arg0, arg1, arg2);
 						}break;
 					}
 				}
 			}
-			glEnd(INTERNAL_TGDS_OGL_DL_POINTER);
-		glEndList(INTERNAL_TGDS_OGL_DL_POINTER); 
+			glEnd();
+		glEndList(); 
 	}
 	else{
-		glCallList(OGL_DL_DRAW_ARRAYS_METHOD, INTERNAL_TGDS_OGL_DL_POINTER);
+		glCallList(OGL_DL_DRAW_ARRAYS_METHOD);
 	}
 }
 
