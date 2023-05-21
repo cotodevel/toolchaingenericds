@@ -1121,6 +1121,8 @@ int crc32file( FILE *file, unsigned int *outCrc32){
 }
 
 #ifdef WIN32
+
+
 int main(int argc, char** argv){
 	struct TGDSOGL_DisplayListContext * Inst = NULL;
 	float rotateX = 0.0;
@@ -1391,6 +1393,7 @@ int main(int argc, char** argv){
 		
 		updateGXLights(); //Update GX 3D light scene!
 		
+		
 		{
 			float vertices[9] = {
 				 -1.0f, -1.0f,  0.0f ,
@@ -1407,9 +1410,49 @@ int main(int argc, char** argv){
 			glEnableClientState(GL_VERTEX_ARRAY);
 			glEnableClientState(GL_COLOR_ARRAY);
 
+			system("cls");
+
 			glVertexPointer(3, GL_FLOAT, 0, vertices);
 			glColorPointer(3, GL_FLOAT, 0, colors);
-			glDrawArrays(GL_TRIANGLES, 0, vtxSize);
+			glDrawArrays(GL_TRIANGLES, 0, vtxSize); //should build
+
+			glDrawArrays(GL_TRIANGLES, 0, vtxSize); //should be called from DL
+
+			vertices[0] = 0.9f;
+			glVertexPointer(3, GL_FLOAT, 0, vertices);
+			glDrawArrays(GL_TRIANGLES, 0, vtxSize); //should build
+
+			glDrawArrays(GL_TRIANGLES, 0, vtxSize); //should be called from DL
+
+			vertices[0] = -1.0f;
+			glDrawArrays(GL_TRIANGLES, 0, vtxSize); //should be called from DL
+
+			//now refill the cached DLists and overwrite a new one
+
+			{
+				int j = 0;
+				for(j = 0; j < (VBO_CACHED_PREBUILT_DL_SIZE-2); j++){
+					vertices[0] = (float)j + 2.0f;
+					glVertexPointer(3, GL_FLOAT, 0, vertices);
+
+					if(j == 37){
+						j = j;
+					}
+
+					glDrawArrays(GL_TRIANGLES, 0, vtxSize); //should build
+				}
+
+				vertices[0] = (float)0 + 2.0f;
+				glVertexPointer(3, GL_FLOAT, 0, vertices);
+				glDrawArrays(GL_TRIANGLES, 0, vtxSize); //should be called from DL
+
+				vertices[0] = ((float)100.9) + 2.9f;
+				glVertexPointer(3, GL_FLOAT, 0, vertices);
+				glDrawArrays(GL_TRIANGLES, 0, vtxSize); //should build
+
+				glVertexPointer(3, GL_FLOAT, 0, vertices);
+				glDrawArrays(GL_TRIANGLES, 0, vtxSize); //should be called from DL
+			}
 
 			glDisableClientState(GL_VERTEX_ARRAY);
 			glDisableClientState(GL_COLOR_ARRAY);

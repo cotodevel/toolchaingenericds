@@ -1297,6 +1297,9 @@ extern void glCallListGX(const u32* list);
 #define GL_STREAM_READ                    ((GLenum)0x88E1)
 #define GL_STREAM_COPY                    ((GLenum)0x88E2)
 
+
+#define VBO_CACHED_PREBUILT_DL_SIZE                    ((GLint)40) //save up to N Cached OpenGL DisplayLists when using VBO & VBA drawing methods like void glDrawArrays();
+
 //VBO: 
 struct vertexBufferObject {
   u32 * vboArrayMemoryStart; //attribute storage allocated at runtime 
@@ -1308,9 +1311,6 @@ struct vertexBufferObject {
 
   //A normal array is enabled when you specify the GL_NORMAL_ARRAY constant with glEnableClientState. When enabled, glDrawArrays, glDrawElements and glArrayElement use the selected array. By default the selected array is disabled. Also multiple arrays can be enabled / disabled at the same time
   bool ClientStateEnabled; //each VBA has an descriptor state, toggled at  glEnableClientState and glDisableClientState, and used by subsequent calls
-
-  //cached last DL precompiled to see if new buffer updates are required
-  u16 lastPrebuiltDLCRC16;
 };
 
 //VBA
@@ -1319,6 +1319,9 @@ struct vertexBufferArray {
 	GLint vboName[MAX_VBO_HANDLES_GL]; //OpenGL 1.1 descriptor index. Once it's not VBO_DESCRIPTOR_INVALID it's free for allocation later by glBindBuffer();
 	
 	struct vertexBufferObject vertexBufferObjectInst[MAX_VBO_PER_VBA];
+
+	//cached last DL precompiled to see if new buffer updates are required
+	u16 lastPrebuiltDLCRC16[VBO_CACHED_PREBUILT_DL_SIZE];
 };
 
 //pointers of implemented VBOs
@@ -1359,7 +1362,8 @@ extern void glDrawArrays( GLenum mode, GLint first, GLsizei count );
 extern void glDrawElements( GLenum mode, GLsizei count, GLenum type, const GLvoid *indices );
 extern void glInterleavedArrays( GLenum format, GLsizei stride, const GLvoid *pointer );
 
-extern int OGL_DL_DRAW_ARRAYS_METHOD;
+extern int OGL_DL_DRAW_ARRAYS_METHOD[VBO_CACHED_PREBUILT_DL_SIZE];
+extern int OGL_CURR_DL_DRAW_ARRAYS_METHOD;
 
 //////////////////////////////////////////////////////////// Extended Vertex Array Buffers and Vertex Buffer Objects OpenGL 1.1 end //////////////////////////////////////////
 
