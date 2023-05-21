@@ -152,47 +152,57 @@ void glInit(){
 		TGDSVBAInstance.vertexBufferObjectReferences[i] = NULL;
 		TGDSVBAInstance.vboName[i] = (GLint)VBO_DESCRIPTOR_INVALID;
 	}
-
+	for(i=0; i < VBO_CACHED_PREBUILT_DL_SIZE; i++){
+		TGDSVBAInstance.lastPrebuiltDLCRC16[i] = (GLint)VBO_DESCRIPTOR_INVALID;
+	}
 	//vertex
 	vboVertex->vertexBufferObjectstrideOffset = -1;
 	vboVertex->ElementsPerVertexBufferObjectUnit = -1;
 	vboVertex->VertexBufferObjectStartOffset = -1;
-	vboVertex->lastPrebuiltDLCRC16 = 0;
 	vboVertex->ClientStateEnabled = false;
+	
 	//normal
 	vboNormal->vertexBufferObjectstrideOffset = -1;
 	vboNormal->ElementsPerVertexBufferObjectUnit = -1;
 	vboNormal->VertexBufferObjectStartOffset = -1;
-	vboNormal->lastPrebuiltDLCRC16 = 0;
 	vboNormal->ClientStateEnabled = false;
+	
 	//color
 	vboColor->vertexBufferObjectstrideOffset = -1;
 	vboColor->ElementsPerVertexBufferObjectUnit = -1;
 	vboColor->VertexBufferObjectStartOffset = -1;
-	vboColor->lastPrebuiltDLCRC16 = 0;
 	vboColor->ClientStateEnabled = false;
+	
 	//index
 	vboIndex->vertexBufferObjectstrideOffset = -1;
 	vboIndex->ElementsPerVertexBufferObjectUnit = -1;
 	vboIndex->VertexBufferObjectStartOffset = -1;
-	vboIndex->lastPrebuiltDLCRC16 = 0;
 	vboIndex->ClientStateEnabled = false;
+	
 	//Texture coordinates
 	vboTexCoord->vertexBufferObjectstrideOffset = -1;
 	vboTexCoord->ElementsPerVertexBufferObjectUnit = -1;
 	vboTexCoord->VertexBufferObjectStartOffset = -1;
-	vboTexCoord->lastPrebuiltDLCRC16 = 0;
 	vboTexCoord->ClientStateEnabled = false;
+	
 	//Edge flag
 	vboEdgeFlag->vertexBufferObjectstrideOffset = -1;
 	vboEdgeFlag->ElementsPerVertexBufferObjectUnit = -1;
 	vboEdgeFlag->VertexBufferObjectStartOffset = -1;
-	vboEdgeFlag->lastPrebuiltDLCRC16 = 0;
 	vboEdgeFlag->ClientStateEnabled = false;
 
-	isInternalDisplayList = true; //using internal OGL DL
-	OGL_DL_DRAW_ARRAYS_METHOD = glGenLists(1);
-	isInternalDisplayList = false;
+	{
+		int startDLCachedVBOVBA=-1;
+		int j = 0;
+		isInternalDisplayList = true; //using internal OGL DL
+		startDLCachedVBOVBA = glGenLists(VBO_CACHED_PREBUILT_DL_SIZE);
+		
+		for(j = 0; j < VBO_CACHED_PREBUILT_DL_SIZE; j++){
+			OGL_DL_DRAW_ARRAYS_METHOD[j] = -1;
+			OGL_DL_DRAW_ARRAYS_METHOD[j] = startDLCachedVBOVBA + j;
+		}
+		isInternalDisplayList = false;
+	}
 }
 
 #ifdef ARM9
@@ -4898,7 +4908,12 @@ Vertex attributes that are modified by glDrawArrays have an unspecified value af
 #ifdef ARM9
 __attribute__((section(".dtcm")))
 #endif
-int OGL_DL_DRAW_ARRAYS_METHOD = -1;
+int OGL_DL_DRAW_ARRAYS_METHOD[VBO_CACHED_PREBUILT_DL_SIZE];
+
+#ifdef ARM9
+__attribute__((section(".dtcm")))
+#endif
+int OGL_CURR_DL_DRAW_ARRAYS_METHOD;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -4916,6 +4931,9 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 	bool vboTexCoordEnabled = vboTexCoord->ClientStateEnabled;
 	bool vboEdgeFlagEnabled = vboEdgeFlag->ClientStateEnabled;
 	int argsTotal = 0;
+	int currentOGL_DL_DRAW_ARRAYS_METHOD = DL_INVALID;
+	u16 displayListArrayCrc16Check = 0;
+	int i = 0;
 	if(count < 0){
 		errorStatus = GL_INVALID_ENUM;
 		return;
@@ -4947,45 +4965,25 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 	//When you call glDrawArrays, count sequential elements from each enabled array are used to construct a sequence of geometric primitives, beginning with the first element. The mode parameter specifies what kind of primitive to construct and how to use the array elements to construct the primitives.
 	//1
 	if(vboColorEnabled == true){
-		u16 colorArraycrc16 = swiCRC16(0xffff, (void*)((int)vboColor->vboArrayMemoryStart + first), (uint32)((int)count*sizeof(GLfloat)));
-		u16 * crc16Ptr = &vboColor->lastPrebuiltDLCRC16;
-		if( ((u16)*(crc16Ptr)) != colorArraycrc16){
-			requiresRecompileGXDisplayList = true;
-			*crc16Ptr = colorArraycrc16;
-		}
+		displayListArrayCrc16Check = swiCRC16(0xffff, (void*)((int)vboColor->vboArrayMemoryStart + first), (uint32)((int)count*sizeof(GLfloat)));
 		argsTotal++;
 	}
 	
 	//2
 	if(vboNormalEnabled == true){
-		u16 normalArraycrc16 = swiCRC16(0xffff, (void*)((int)vboNormal->vboArrayMemoryStart + first), (uint32)((int)count*sizeof(GLfloat)));
-		u16 * crc16Ptr = &vboNormal->lastPrebuiltDLCRC16;
-		if( ((u16)*(crc16Ptr)) != normalArraycrc16){
-			requiresRecompileGXDisplayList = true;
-			*crc16Ptr = normalArraycrc16;
-		}
+		displayListArrayCrc16Check = swiCRC16(displayListArrayCrc16Check, (void*)((int)vboNormal->vboArrayMemoryStart + first), (uint32)((int)count*sizeof(GLfloat)));
 		argsTotal++;
 	}
 
 	//3
 	if(vboTexCoordEnabled == true){
-		u16 texcoordArraycrc16 = swiCRC16(0xffff, (void*)((int)vboTexCoord->vboArrayMemoryStart + first), (uint32)((int)count*sizeof(GLfloat)));
-		u16 * crc16Ptr = &vboTexCoord->lastPrebuiltDLCRC16;
-		if( ((u16)*(crc16Ptr)) != texcoordArraycrc16){
-			requiresRecompileGXDisplayList = true;
-			*crc16Ptr = texcoordArraycrc16;
-		}
+		displayListArrayCrc16Check = swiCRC16(displayListArrayCrc16Check, (void*)((int)vboTexCoord->vboArrayMemoryStart + first), (uint32)((int)count*sizeof(GLfloat)));
 		argsTotal++;
 	}
 
 	//4
 	if(vboVertexEnabled == true){
-		u16 vertexArraycrc16 = swiCRC16(0xffff, (void*)((int)vboVertex->vboArrayMemoryStart + first), (uint32)((int)count*sizeof(GLfloat)));
-		u16 * crc16Ptr = &vboVertex->lastPrebuiltDLCRC16;
-		if( ((u16)*(crc16Ptr)) != vertexArraycrc16){
-			requiresRecompileGXDisplayList = true;
-			*crc16Ptr = vertexArraycrc16;
-		}
+		displayListArrayCrc16Check = swiCRC16(displayListArrayCrc16Check, (void*)((int)vboVertex->vboArrayMemoryStart + first), (uint32)((int)count*sizeof(GLfloat)));
 		argsTotal++;
 	}
 
@@ -5003,15 +5001,35 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 	}
 	*/
 
+	//Is OGL DL Cached? Find OpenGL Display List Index 
+	for(i=0; i < VBO_CACHED_PREBUILT_DL_SIZE; i++){
+		//found our DL! use it now
+		if( TGDSVBAInstance.lastPrebuiltDLCRC16[i] == displayListArrayCrc16Check){
+			currentOGL_DL_DRAW_ARRAYS_METHOD=(i + 1);
+			break;
+		}
+	}
+	
+	//not found? allocate a new OpenGL DL Index from 0 to N
+	if(currentOGL_DL_DRAW_ARRAYS_METHOD == DL_INVALID){
+		requiresRecompileGXDisplayList = true;
+		currentOGL_DL_DRAW_ARRAYS_METHOD=(OGL_CURR_DL_DRAW_ARRAYS_METHOD+1);
+		TGDSVBAInstance.lastPrebuiltDLCRC16[OGL_CURR_DL_DRAW_ARRAYS_METHOD] = displayListArrayCrc16Check;
+
+		OGL_CURR_DL_DRAW_ARRAYS_METHOD++;
+		if(OGL_CURR_DL_DRAW_ARRAYS_METHOD>=(VBO_CACHED_PREBUILT_DL_SIZE)){
+			OGL_CURR_DL_DRAW_ARRAYS_METHOD = 0;
+		}
+	}
+
 	//Emit DL and execute it inmediately if arrays are dirty, otherwise run the DL directly
 	if(requiresRecompileGXDisplayList == true){
-		int i = 0;
 		int argCount = 3;
 		if( (mode == GL_TRIANGLE_STRIP) || (mode == GL_QUAD_STRIP) || (mode == GL_QUADS) ){
 			argCount = 4;
 		}
 		isInternalDisplayList = true;
-		glNewList(OGL_DL_DRAW_ARRAYS_METHOD, GL_COMPILE_AND_EXECUTE);
+		glNewList(currentOGL_DL_DRAW_ARRAYS_METHOD, GL_COMPILE_AND_EXECUTE);
 			glBegin(mode);
 			for(i = 0; i < count; i++){
 				int nextOffset = 0;
@@ -5139,7 +5157,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 	else{
 		bool savedInternalDLState = isInternalDisplayList;
 		isInternalDisplayList = true;
-		glCallList(OGL_DL_DRAW_ARRAYS_METHOD);
+		glCallList(currentOGL_DL_DRAW_ARRAYS_METHOD);
 		isInternalDisplayList = savedInternalDLState;
 	}
 }
@@ -5182,6 +5200,9 @@ void glInterleavedArrays( GLenum format, GLsizei stride, const GLvoid *pointer )
 	int countColor = 0;
 	int countTexCoord = 0;
 	int mode = 0;
+	u16 displayListArrayCrc16Check = 0;
+	int i = 0;
+	int currentOGL_DL_DRAW_ARRAYS_METHOD = DL_INVALID;
 	u32* targetVertexOffset = NULL;
 	u32* targetNormalOffset = NULL;
 	u32* targetColorOffset = NULL;
@@ -5324,45 +5345,25 @@ void glInterleavedArrays( GLenum format, GLsizei stride, const GLvoid *pointer )
 	//When you call glDrawArrays, count sequential elements from each enabled array are used to construct a sequence of geometric primitives, beginning with the first element. The mode parameter specifies what kind of primitive to construct and how to use the array elements to construct the primitives.
 	//1
 	if(vboColorEnabled == true){
-		u16 colorArraycrc16 = swiCRC16(0xffff, (void*)((int)targetColorOffset), (uint32)((int)countColor*sizeof(GLfloat)));
-		u16 * crc16Ptr = &vboColor->lastPrebuiltDLCRC16;
-		if( ((u16)*(crc16Ptr)) != colorArraycrc16){
-			requiresRecompileGXDisplayList = true;
-			*crc16Ptr = colorArraycrc16;
-		}
+		displayListArrayCrc16Check = swiCRC16(0xffff, (void*)((int)targetColorOffset), (uint32)((int)countColor*sizeof(GLfloat)));
 		argsTotal++;
 	}
 	
 	//2
 	if(vboNormalEnabled == true){
-		u16 normalArraycrc16 = swiCRC16(0xffff, (void*)((int)targetNormalOffset), (uint32)((int)countNormal*sizeof(GLfloat)));
-		u16 * crc16Ptr = &vboNormal->lastPrebuiltDLCRC16;
-		if( ((u16)*(crc16Ptr)) != normalArraycrc16){
-			requiresRecompileGXDisplayList = true;
-			*crc16Ptr = normalArraycrc16;
-		}
+		displayListArrayCrc16Check = swiCRC16(displayListArrayCrc16Check, (void*)((int)targetNormalOffset), (uint32)((int)countNormal*sizeof(GLfloat)));
 		argsTotal++;
 	}
 
 	//3
 	if(vboTexCoordEnabled == true){
-		u16 texcoordArraycrc16 = swiCRC16(0xffff, (void*)((int)targetTexCoordOffset), (uint32)((int)countTexCoord*sizeof(GLfloat)));
-		u16 * crc16Ptr = &vboTexCoord->lastPrebuiltDLCRC16;
-		if( ((u16)*(crc16Ptr)) != texcoordArraycrc16){
-			requiresRecompileGXDisplayList = true;
-			*crc16Ptr = texcoordArraycrc16;
-		}
+		displayListArrayCrc16Check = swiCRC16(displayListArrayCrc16Check, (void*)((int)targetTexCoordOffset), (uint32)((int)countTexCoord*sizeof(GLfloat)));
 		argsTotal++;
 	}
 
 	//4
 	if(vboVertexEnabled == true){
-		u16 vertexArraycrc16 = swiCRC16(0xffff, (void*)((int)targetVertexOffset), (uint32)((int)countVertex*sizeof(GLfloat)));
-		u16 * crc16Ptr = &vboVertex->lastPrebuiltDLCRC16;
-		if( ((u16)*(crc16Ptr)) != vertexArraycrc16){
-			requiresRecompileGXDisplayList = true;
-			*crc16Ptr = vertexArraycrc16;
-		}
+		displayListArrayCrc16Check = swiCRC16(displayListArrayCrc16Check, (void*)((int)targetVertexOffset), (uint32)((int)countVertex*sizeof(GLfloat)));
 		argsTotal++;
 	}
 
@@ -5380,16 +5381,36 @@ void glInterleavedArrays( GLenum format, GLsizei stride, const GLvoid *pointer )
 	}
 	*/
 
+	//Is OGL DL Cached? Find OpenGL Display List Index 
+	for(i=0; i < VBO_CACHED_PREBUILT_DL_SIZE; i++){
+		//found our DL! use it now
+		if( TGDSVBAInstance.lastPrebuiltDLCRC16[i] == displayListArrayCrc16Check){
+			currentOGL_DL_DRAW_ARRAYS_METHOD=(i + 1);
+			break;
+		}
+	}
+	
+	//not found? allocate a new OpenGL DL Index from 0 to N
+	if(currentOGL_DL_DRAW_ARRAYS_METHOD == DL_INVALID){
+		requiresRecompileGXDisplayList = true;
+		currentOGL_DL_DRAW_ARRAYS_METHOD=(OGL_CURR_DL_DRAW_ARRAYS_METHOD+1);
+		TGDSVBAInstance.lastPrebuiltDLCRC16[OGL_CURR_DL_DRAW_ARRAYS_METHOD] = displayListArrayCrc16Check;
+
+		OGL_CURR_DL_DRAW_ARRAYS_METHOD++;
+		if(OGL_CURR_DL_DRAW_ARRAYS_METHOD>=(VBO_CACHED_PREBUILT_DL_SIZE-1)){
+			OGL_CURR_DL_DRAW_ARRAYS_METHOD = 0;
+		}
+	}
+
 	//Emit DL and execute it inmediately if arrays are dirty, otherwise run the DL directly
 	if(requiresRecompileGXDisplayList == true){
-		int i = 0;
 		bool isTriangleStrip = false; //false = GL_TRIANGLES (3 args) / true = GL_TRIANGLE_STRIP (4 args)
 		int argCount = 3;
 		if(mode == GL_TRIANGLE_STRIP){
 			isTriangleStrip = true;
 			argCount = 4;
 		}
-		glNewList(OGL_DL_DRAW_ARRAYS_METHOD, GL_COMPILE_AND_EXECUTE);
+		glNewList(currentOGL_DL_DRAW_ARRAYS_METHOD, GL_COMPILE_AND_EXECUTE);
 			glBegin(mode);
 			for(i = 0; i < (countColor+countNormal+countTexCoord+countVertex); i+=(argsTotal*argCount)){
 				if(vboColorEnabled == true){
@@ -5507,7 +5528,7 @@ void glInterleavedArrays( GLenum format, GLsizei stride, const GLvoid *pointer )
 		glEndList(); 
 	}
 	else{
-		glCallList(OGL_DL_DRAW_ARRAYS_METHOD);
+		glCallList(currentOGL_DL_DRAW_ARRAYS_METHOD);
 	}
 }
 
