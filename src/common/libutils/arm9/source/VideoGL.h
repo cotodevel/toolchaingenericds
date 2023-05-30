@@ -1503,6 +1503,12 @@ extern void glGetBooleanv(
    GLenum pname,
    GLboolean *params
 );
+
+extern void glFogi(
+   GLenum pname,
+   GLint  param
+);
+
 #ifdef __cplusplus
 }
 #endif
