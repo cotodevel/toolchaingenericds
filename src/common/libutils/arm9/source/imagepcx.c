@@ -191,7 +191,6 @@ int LoadGLSingleTextureAuto(u8 * textureSourceArray, int * textureArray, int tex
 	}
 	
 	//DS supports no filtering of anykind so no need for more than one texture
-	glGenTextures(1, textureArray);
 	glBindTexture(0, textureIndex);
 	glTexImage2D(0, 0, GL_RGB, gxTextureSizeHeight, gxTextureSizeWidth, 0, TEXGEN_TEXCOORD, pcx.image.data8);
 	imageDestroy(&pcx);
