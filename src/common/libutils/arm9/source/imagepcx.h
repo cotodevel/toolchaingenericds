@@ -84,7 +84,7 @@ extern "C" {
 extern int textureID;
 extern void imageDestroy(sImage* img);
 extern void image8to16(sImage* img);
-extern int LoadGLTextures(u8 * textureSource);
+extern int LoadGLSingleTextureAuto(u8 * textureSourceArray, int * textureArray, int textureIndex);
 extern int loadPCX(const unsigned char* pcx, sImage* image);
 extern int LoadLotsOfGLTextures(u32 * textureSourceArray, int * textureArray, int textureCount);
 
