@@ -215,6 +215,7 @@ struct fd {
 #ifdef ARM9
 typedef bool(*SoundStreamStopSoundStreamARM9LibUtils_fn)(struct fd * tgdsStructFD1, struct fd * tgdsStructFD2, int * internalCodecType);
 typedef void(*SoundStreamUpdateSoundStreamARM9LibUtils_fn)();
+typedef void(*loggerARM9LibUtils_fn)(const char *fmt, ...);
 #endif
 
 //This should be implemented in newlib, but it's not exposed 
@@ -256,6 +257,7 @@ extern "C" {
 #ifdef ARM9
 extern SoundStreamStopSoundStreamARM9LibUtils_fn SoundStreamStopSoundStreamARM9LibUtilsCallback;
 extern SoundStreamUpdateSoundStreamARM9LibUtils_fn SoundStreamUpdateSoundStreamARM9LibUtilsCallback;
+extern loggerARM9LibUtils_fn loggerARM9LibUtilsCallback;
 
 extern void initializeLibUtils9(
 	HandleFifoNotEmptyWeakRefLibUtils_fn HandleFifoNotEmptyWeakRefLibUtilsCall, //ARM7 & ARM9
@@ -265,6 +267,9 @@ extern void initializeLibUtils9(
 	wifiDeinitARM7ARM9LibUtils_fn wifiDeinitARM7ARM9LibUtilsCall, //ARM7 & ARM9: DeInitWIFI()
 	wifiswitchDsWnifiModeARM9LibUtils_fn wifiswitchDsWnifiModeARM9LibUtilsCall //ARM9: bool switch_dswnifi_mode(sint32 mode)
 );
+
+extern void setTGDSARM9LoggerCallback(loggerARM9LibUtils_fn loggerCallback);
+
 #endif
 
 // Function prototypes 

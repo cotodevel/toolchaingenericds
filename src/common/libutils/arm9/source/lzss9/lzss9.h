@@ -23,13 +23,14 @@
 #include "typedefsTGDS.h"
 #include "dsregs.h"
 #include "biosTGDS.h"
+#include "utilsTGDS.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define BREAK(text) { printf(text); return; }
-#define EXIT(text)  { printf(text); while(1==1); }
+#define BREAK(text) { loggerARM9LibUtilsCallback(text); return; }
+#define EXIT(text)  { loggerARM9LibUtilsCallback(text); while(1==1); }
 
 #endif
 

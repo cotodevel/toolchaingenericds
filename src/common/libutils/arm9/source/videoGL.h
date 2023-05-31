@@ -1503,6 +1503,17 @@ extern void glGetBooleanv(
    GLenum pname,
    GLboolean *params
 );
+
+extern void glFogi(
+	GLenum pname,
+	GLint  param
+);
+
+extern void glFogfv(
+	GLenum  pname,
+	const GLfloat *params
+);
+
 #ifdef __cplusplus
 }
 #endif

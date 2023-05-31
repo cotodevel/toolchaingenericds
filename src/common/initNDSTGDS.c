@@ -283,6 +283,5 @@ void initHardware(u8 DSHardware) {
 	#endif
 	
 	//Shared ARM Cores
-	
 	disableTGDSDebugging(); //Disable debugging by default
 }

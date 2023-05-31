@@ -820,10 +820,8 @@ int playSoundStream(char * audioStreamFilename, struct fd * _FileHandleVideo, st
 	
 	//If trying to play SoundStream code while Shared RAM is mapped @ ARM7, throw error
 	if((WRAM_CR & WRAM_0KARM9_32KARM7) == WRAM_0KARM9_32KARM7){
-		nocashMessage("TGDS:playSoundStream(): Trying to play a Sound Stream ");
-		nocashMessage("but SharedWRAM is used by ARM7. Aborting.");
-		printf("TGDS:playSoundStream(): Trying to play a Sound Stream ");
-		printf("but SharedWRAM is used by ARM7. Aborting.");
+		loggerARM9LibUtilsCallback("TGDS:playSoundStream(): Trying to play a Sound Stream ");
+		loggerARM9LibUtilsCallback("but SharedWRAM is used by ARM7. Aborting.");
 		return SRC_NONE;
 	}
 	

@@ -2756,7 +2756,7 @@ void print(const char *str, size_t len, char * outBuf, int indexToLeftOut, char 
     if(indexParse != indexToLeftOut){
         char localBuf[MAX_TGDSFILENAME_LENGTH+1];
         snprintf(localBuf,len+1,"%s",str);
-        printf(" %d:%s%s:%d\n", (int)len, localBuf, delim, indexParse);
+        loggerARM9LibUtilsCallback(" %d:%s%s:%d\n", (int)len, localBuf, delim, indexParse);
         indexParse++;
     }
 }

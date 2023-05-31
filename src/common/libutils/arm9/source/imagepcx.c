@@ -141,21 +141,59 @@ int loadPCX(const unsigned char* pcx, sImage* image) {
 	return 1;
 }
 
-int LoadGLTextures(u8 * textureSource)									// Load PCX files And Convert To Textures
-{
+//Loads a texture from a 24-bit BMP file into native uncompressed GX RGB format.
+//Formats supported: 64xN, 128xN, 256xN, 512xN where N is any of the Height / Width sizes listed earlier
+int LoadGLSingleTextureAuto(u8 * textureSourceArray, int * textureArray, int textureIndex){
 	sImage pcx;
+	u32 gxTextureSizeHeight = 0;
+	u32 gxTextureSizeWidth = 0;
 
 	//load our texture
-	loadPCX((u8*)textureSource, &pcx);
+	loadPCX((u8*)textureSourceArray, &pcx);
 	image8to16(&pcx);
-
+	
+	switch(pcx.height){
+		case (64): {
+			gxTextureSizeHeight = TEXTURE_SIZE_64;
+		}break;
+		case (128): {
+			gxTextureSizeHeight = TEXTURE_SIZE_128;
+		}break;
+		case (256): {
+			gxTextureSizeHeight = TEXTURE_SIZE_256;
+		}break;
+		case (512): {
+			gxTextureSizeHeight = TEXTURE_SIZE_512;
+		}break;
+		default:{
+			return -1;
+		}
+		break;
+	}
+	
+	switch(pcx.width){
+		case (64): {
+			gxTextureSizeWidth = TEXTURE_SIZE_64;
+		}break;
+		case (128): {
+			gxTextureSizeWidth = TEXTURE_SIZE_128;
+		}break;
+		case (256): {
+			gxTextureSizeWidth = TEXTURE_SIZE_256;
+		}break;
+		case (512): {
+			gxTextureSizeWidth = TEXTURE_SIZE_512;
+		}break;
+		default:{
+			return -1;
+		}
+		break;
+	}
+	
 	//DS supports no filtering of anykind so no need for more than one texture
-	glGenTextures(1, &textureID);
-	glBindTexture(0, textureID);
-	glTexImage2D(0, 0, GL_RGB, TEXTURE_SIZE_128 , TEXTURE_SIZE_128, 0, TEXGEN_TEXCOORD, pcx.image.data8);
-
+	glBindTexture(0, textureIndex);
+	glTexImage2D(0, 0, GL_RGB, gxTextureSizeHeight, gxTextureSizeWidth, 0, TEXGEN_TEXCOORD, pcx.image.data8);
 	imageDestroy(&pcx);
-
 	return 0;
 }
 
@@ -172,13 +210,9 @@ int LoadLotsOfGLTextures(u32 * textureSourceArray, int * textureArray, int textu
 	glGenTextures(textureCount, textureArray);
 	int curTexture = 0;
 	for(curTexture = 0; curTexture < textureCount; curTexture++){
-		glBindTexture(0, textureArray[curTexture]);
-		sImage pcx;
-		//load our texture
-		loadPCX((u8*)textureSourceArray[curTexture], &pcx);
-		image8to16(&pcx);
-		glTexImage2D(0, 0, GL_RGB, TEXTURE_SIZE_64 , TEXTURE_SIZE_64, 0, TEXGEN_TEXCOORD, pcx.image.data8); //maps textures automatically to VRAM map
-		imageDestroy(&pcx);	
+		if(LoadGLSingleTextureAuto((u8*)textureSourceArray[curTexture], &textureArray[curTexture], curTexture) != 0){
+			loggerARM9LibUtilsCallback("load tex :%d failed", curTexture);
+		}
 	}
 	return curTexture;
 }

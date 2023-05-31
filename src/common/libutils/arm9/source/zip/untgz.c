@@ -180,9 +180,9 @@ char *TGZfname (const char *arcname)
 
 void TGZnotfound (const char *arcname){
   int i;
-  printf("%s: Couldn't find ", prog);
+  loggerARM9LibUtilsCallback("%s: Couldn't find ", prog);
   for (i=0;TGZsuffix[i];i++){
-     printf((TGZsuffix[i+1]) ? "%s%s, " : "or %s%s", arcname, TGZsuffix[i]);
+    loggerARM9LibUtilsCallback((TGZsuffix[i+1]) ? "%s%s, " : "or %s%s", arcname, TGZsuffix[i]);
   }
 }
 
@@ -397,7 +397,7 @@ int makedir (char *newdir)
 	if ((mkdir(buffer, 0755) == -1) && (errno == ENOENT))
 	#endif
 	  {
-          printf("%s: Couldn't create directory %s",prog,buffer);
+          loggerARM9LibUtilsCallback("%s: Couldn't create directory %s",prog,buffer);
           free(buffer);
           return 0;
         }
@@ -599,7 +599,7 @@ int tar (gzFile in,int action,int arg,int argc,char **argv)
             {
               if (fwrite(&buffer,sizeof(char),bytes,outfile) != bytes)
                 {
-				  printf("%s: Error writing %s -- skipping",prog,fname);
+				  loggerARM9LibUtilsCallback("%s: Error writing %s -- skipping",prog,fname);
                   
 				  fclose(outfile);
                   outfile = NULL;
@@ -648,17 +648,17 @@ int tar (gzFile in,int action,int arg,int argc,char **argv)
 void help(int exitval)
 
 {
-  printf("untgz version 0.2.1"
+  loggerARM9LibUtilsCallback("untgz version 0.2.1"
          "  using zlib version %s",
          zlibVersion());
-  printf("Usage: untgz file.tgz            extract all files"
+  loggerARM9LibUtilsCallback("Usage: untgz file.tgz            extract all files"
          "       untgz file.tgz fname ...  extract selected files"
          "       untgz -l file.tgz         list archive contents"
          "       untgz -h                  display this help");
 }
 
 void error(const char *msg){
-  printf("%s: %s", prog, msg);
+  loggerARM9LibUtilsCallback("%s: %s", prog, msg);
   while(1==1){}
 }
 
@@ -725,7 +725,7 @@ int untgzmain(int argc,char **argv)
 		  f = (gzFile*)gzopen(TGZfile,"rb");
         if (f == NULL)
           {
-            printf("%s: Couldn't gzopen %s",prog,TGZfile);
+            loggerARM9LibUtilsCallback("%s: Couldn't gzopen %s",prog,TGZfile);
             return 1;
           }
         tar(f, action, arg, argc, argv);
@@ -733,7 +733,7 @@ int untgzmain(int argc,char **argv)
 
       default:
 		  {
-			printf("Unknown option");
+			loggerARM9LibUtilsCallback("Unknown option");
 		  }
       }
     return 0;

@@ -419,11 +419,11 @@ void _exit (int status){
 	//todo: add some exception handlers to notify ARM cores program has ran	
 	
 	clrscr();
-	printf("----");
-	printf("----");
-	printf("----");
-	printf("----");
-	printf("TGDS APP Halt: Error Status: %d", status);
+	loggerARM9LibUtilsCallback("----");
+	loggerARM9LibUtilsCallback("----");
+	loggerARM9LibUtilsCallback("----");
+	loggerARM9LibUtilsCallback("----");
+	loggerARM9LibUtilsCallback("TGDS APP Halt: Error Status: %d", status);
 	while(1==1){
 		IRQVBlankWait();
 	}
