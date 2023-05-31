@@ -51,8 +51,9 @@ USA
 void IRQInit(u8 DSHardware)  {
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	#ifdef ARM9
-	//DrainWrite
+	//default TGDS Project -> internal logger
 	DrainWriteBuffer();
+	setTGDSARM9LoggerCallback((loggerARM9LibUtils_fn)&nocashMessage);
 	#endif
 	
 	//FIFO IRQ Init
@@ -102,7 +103,9 @@ void IRQInit(u8 DSHardware)  {
 		(DSHardware == 0x63)	//..
 	){
 		__dsimode = false;
-		nocashMessage("TGDS:IRQInit():NTR Mode!");
+		#ifdef ARM9
+		loggerARM9LibUtilsCallback("TGDS:IRQInit():NTR Mode!");
+		#endif
 	}
 	//TWL 
 	else if(DSHardware == 0x57){
@@ -121,7 +124,9 @@ void IRQInit(u8 DSHardware)  {
 			//TWL ARM9 IRQ Init
 			#endif
 		#endif
-		nocashMessage("TGDS:IRQInit():TWL Mode!");
+		#ifdef ARM9
+		loggerARM9LibUtilsCallback("TGDS:IRQInit():TWL Mode!");
+		#endif
 	}
 	else{
 		#ifdef ARM9

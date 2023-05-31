@@ -1106,7 +1106,7 @@ bool TGDSMultibootRunNDSPayload(char * filename) {
 			int ret=FS_deinit();
 			//Copy and relocate current TGDS DLDI section into target ARM9 binary
 			if(strncmp((char*)&dldiGet()->friendlyName[0], "TGDS RAMDISK", 12) == 0){
-				printf("TGDS DLDI detected. Skipping DLDI patch.");
+				loggerARM9LibUtilsCallback("TGDS DLDI detected. Skipping DLDI patch.");
 			}
 			else{
 				bool stat = dldiPatchLoader((data_t *)0x02280000, (u32)tgds_multiboot_payload_size, (u32)&_io_dldi_stub);
@@ -1129,8 +1129,7 @@ bool TGDSMultibootRunNDSPayload(char * filename) {
 		}
 		else{
 			sprintf(msgDebug, "%s%s", "TGDSMultibootRunNDSPayload(): Missing Payload:", TGDSMBPAYLOAD);
-			nocashMessage((char*)&msgDebug[0]);
-			printf((char*)&msgDebug[0]);
+			loggerARM9LibUtilsCallback((char*)&msgDebug[0]);
 		}
 	}
 	return false;
@@ -1177,6 +1176,7 @@ MicInterruptARM7LibUtils_fn MicInterruptARM7LibUtilsCallback = NULL;
 #ifdef ARM9
 SoundStreamStopSoundStreamARM9LibUtils_fn SoundStreamStopSoundStreamARM9LibUtilsCallback = NULL;
 SoundStreamUpdateSoundStreamARM9LibUtils_fn SoundStreamUpdateSoundStreamARM9LibUtilsCallback = NULL;
+loggerARM9LibUtils_fn loggerARM9LibUtilsCallback = NULL;
 #endif
 
 //Setup components to bse used from ARM9 TGDS project because it decides how much functionality used
@@ -1200,6 +1200,14 @@ void initializeLibUtils9(
 	//ARM9 libUtils component initialization
 	fifoInit();
 }
+
+//(ARM9 only) TGDS Usercode project usage:
+//setTGDSARM9LoggerCallback((loggerARM9LibUtils_fn)&printf); //Redirect TGDS logger output to DS screen callback
+//setTGDSARM9LoggerCallback((loggerARM9LibUtils_fn)&nocashMessage); //Redirect TGDS logger output to internal callback
+void setTGDSARM9LoggerCallback(loggerARM9LibUtils_fn loggerCallback){
+	loggerARM9LibUtilsCallback = loggerCallback;
+}
+
 #endif
 
 #ifdef ARM7

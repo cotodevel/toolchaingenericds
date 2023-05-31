@@ -521,7 +521,7 @@ bool dldiPatchLoader(data_t *binData, u32 binSize, u32 physDLDIAddress)
 	if (*((u32*)(pDH + DO_ioType)) == DEVICE_TYPE_DLDI) 
 	{
 		#ifdef ARM9
-		printf("DLDI section not found in NTR binary. ");
+		loggerARM9LibUtilsCallback("DLDI section not found in NTR binary. ");
 		#endif
 	}
 	
@@ -531,7 +531,7 @@ bool dldiPatchLoader(data_t *binData, u32 binSize, u32 physDLDIAddress)
 	if (patchOffset < 0) {
 		// does not have a DLDI section
 		#ifdef ARM9
-		printf("ERR: NO DLDI SECTION");
+		loggerARM9LibUtilsCallback("ERR: NO DLDI SECTION");
 		#endif
 		return false;
 	}
@@ -542,7 +542,7 @@ bool dldiPatchLoader(data_t *binData, u32 binSize, u32 physDLDIAddress)
 	{
 		// Not enough space for patch
 		#ifdef ARM9
-		printf("ERR: NOT ENOUGH SPACE");
+		loggerARM9LibUtilsCallback("ERR: NOT ENOUGH SPACE");
 		#endif
 		return false;
 	}

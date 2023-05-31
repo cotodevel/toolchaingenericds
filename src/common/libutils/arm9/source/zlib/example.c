@@ -81,7 +81,7 @@ uLong uncomprLen
         fprintf(stderr, "bad uncompress\n");
         exit(1);
     } else {
-        printf("uncompress(): %s\n", (char *)uncompr);
+        loggerARM9LibUtilsCallback("uncompress(): %s\n", (char *)uncompr);
     }
 }
 
@@ -133,7 +133,7 @@ void test_gzio(const char *fname,
         fprintf(stderr, "bad gzread: %s\n", (char*)uncompr);
         exit(1);
     } else {
-        printf("gzread(): %s\n", (char*)uncompr);
+        loggerARM9LibUtilsCallback("gzread(): %s\n", (char*)uncompr);
     }
 
     pos = gzseek(file, -8L, SEEK_CUR);
@@ -162,7 +162,7 @@ void test_gzio(const char *fname,
         fprintf(stderr, "bad gzgets after gzseek\n");
         exit(1);
     } else {
-        printf("gzgets() after gzseek: %s\n", (char*)uncompr);
+        loggerARM9LibUtilsCallback("gzgets() after gzseek: %s\n", (char*)uncompr);
     }
 
     gzclose(file);
@@ -242,7 +242,7 @@ void test_inflate(Byte *compr, Byte *uncompr,
         fprintf(stderr, "bad inflate\n");
         exit(1);
     } else {
-        printf("inflate(): %s\n", (char *)uncompr);
+        loggerARM9LibUtilsCallback("inflate(): %s\n", (char *)uncompr);
     }
 }
 
@@ -336,7 +336,7 @@ void test_large_inflate(Byte *compr,Byte *uncompr,
         fprintf(stderr, "bad large inflate: %ld\n", d_stream.total_out);
         exit(1);
     } else {
-        printf("large_inflate(): OK\n");
+        loggerARM9LibUtilsCallback("large_inflate(): OK\n");
     }
 }
 
@@ -418,7 +418,7 @@ Byte *uncompr, uLong uncomprLen)
     err = inflateEnd(&d_stream);
     CHECK_ERR(err, "inflateEnd");
 
-    printf("after inflateSync(): hel%s\n", (char *)uncompr);
+    loggerARM9LibUtilsCallback("after inflateSync(): hel%s\n", (char *)uncompr);
 }
 
 /* ===========================================================================
@@ -504,7 +504,7 @@ uLong uncomprLen)
         fprintf(stderr, "bad inflate with dict\n");
         exit(1);
     } else {
-        printf("inflate with dictionary: %s\n", (char *)uncompr);
+        loggerARM9LibUtilsCallback("inflate with dictionary: %s\n", (char *)uncompr);
     }
 }
 
@@ -528,7 +528,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "warning: different zlib version\n");
     }
 
-    printf("zlib version %s = 0x%04x, compile flags = 0x%lx\n",
+    loggerARM9LibUtilsCallback("zlib version %s = 0x%04x, compile flags = 0x%lx\n",
             ZLIB_VERSION, ZLIB_VERNUM, zlibCompileFlags());
 
     compr    = (Byte*)TGDSARM9Calloc((uInt)comprLen, 1);
@@ -537,7 +537,7 @@ int main(int argc, char *argv[])
      * data and to ensure that uncompr compresses well.
      */
     if (compr == Z_NULL || uncompr == Z_NULL) {
-        printf("out of memory\n");
+        loggerARM9LibUtilsCallback("out of memory\n");
         exit(1);
     }
     test_compress(compr, comprLen, uncompr, uncomprLen);

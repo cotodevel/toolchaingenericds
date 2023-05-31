@@ -45,13 +45,13 @@
 
 void minizip_banner()
 {
-    printf("MiniZip 1.2.0, demo of zLib + MiniZip64 package\n");
-    printf("more info on MiniZip at https://github.com/nmoinvaz/minizip\n\n");
+    loggerARM9LibUtilsCallback("MiniZip 1.2.0, demo of zLib + MiniZip64 package\n");
+    loggerARM9LibUtilsCallback("more info on MiniZip at https://github.com/nmoinvaz/minizip\n\n");
 }
 
 void minizip_help()
 {
-    printf("Usage : minizip [-o] [-a] [-0 to -9] [-p password] [-j] file.zip [files_to_add]\n\n" \
+    loggerARM9LibUtilsCallback("Usage : minizip [-o] [-a] [-0 to -9] [-p password] [-j] file.zip [files_to_add]\n\n" \
            "  -o  Overwrite existing file.zip\n" \
            "  -a  Append to existing file.zip\n" \
            "  -0  Store only\n" \
@@ -84,7 +84,7 @@ int minizip_addfile(zipFile zf, const char *path, const char *filenameinzip, int
 
     if (err != ZIP_OK)
     {
-        printf("error in opening %s in zipfile (%d)\n", filenameinzip, err);
+        loggerARM9LibUtilsCallback("error in opening %s in zipfile (%d)\n", filenameinzip, err);
     }
     else
     {
@@ -92,7 +92,7 @@ int minizip_addfile(zipFile zf, const char *path, const char *filenameinzip, int
         if (fin == NULL)
         {
             err = ZIP_ERRNO;
-            printf("error in opening %s for reading\n", path);
+            loggerARM9LibUtilsCallback("error in opening %s for reading\n", path);
         }
     }
 
@@ -104,7 +104,7 @@ int minizip_addfile(zipFile zf, const char *path, const char *filenameinzip, int
             size_read = (int)fread(buf, 1, sizeof(buf), fin);
             if ((size_read < (int)sizeof(buf)) && (feof(fin) == 0))
             {
-                printf("error in reading %s\n", filenameinzip);
+                loggerARM9LibUtilsCallback("error in reading %s\n", filenameinzip);
                 err = ZIP_ERRNO;
             }
 
@@ -112,7 +112,7 @@ int minizip_addfile(zipFile zf, const char *path, const char *filenameinzip, int
             {
                 err = zipWriteInFileInZip(zf, buf, size_read);
                 if (err < 0)
-                    printf("error in writing %s in the zipfile (%d)\n", filenameinzip, err);
+                    loggerARM9LibUtilsCallback("error in writing %s in the zipfile (%d)\n", filenameinzip, err);
             }
         } while ((err == ZIP_OK) && (size_read > 0));
     }
@@ -128,7 +128,7 @@ int minizip_addfile(zipFile zf, const char *path, const char *filenameinzip, int
     {
         err = zipCloseFileInZip(zf);
         if (err != ZIP_OK)
-            printf("error in closing %s in the zipfile (%d)\n", filenameinzip, err);
+            loggerARM9LibUtilsCallback("error in closing %s in the zipfile (%d)\n", filenameinzip, err);
     }
 
     return err;
@@ -213,7 +213,7 @@ int main(int argc, char *argv[])
             do
             {
                 char answer[128];
-                printf("The file %s exists. Overwrite ? [y]es, [n]o, [a]ppend : ", zipfilename);
+                loggerARM9LibUtilsCallback("The file %s exists. Overwrite ? [y]es, [n]o, [a]ppend : ", zipfilename);
                 if (scanf("%1s", answer) != 1)
                     exit(EXIT_FAILURE);
                 rep = answer[0];
@@ -244,11 +244,11 @@ int main(int argc, char *argv[])
 
     if (zf == NULL)
     {
-        printf("error opening %s\n", zipfilename);
+        loggerARM9LibUtilsCallback("error opening %s\n", zipfilename);
         err = ZIP_ERRNO;
     }
     else
-        printf("creating %s\n", zipfilename);
+        loggerARM9LibUtilsCallback("creating %s\n", zipfilename);
 
     /* Go through command line args looking for files to add to zip */
     for (i = zipfilenamearg + 1; (i < argc) && (err == ZIP_OK); i++)
@@ -291,7 +291,7 @@ int main(int argc, char *argv[])
 
     errclose = zipClose(zf, NULL);
     if (errclose != ZIP_OK)
-        printf("error in closing %s (%d)\n", zipfilename, errclose);
+        loggerARM9LibUtilsCallback("error in closing %s (%d)\n", zipfilename, errclose);
 
     return err;
 }

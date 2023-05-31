@@ -61,11 +61,9 @@ struct LZSSContext LZS_DecodeFromBuffer(unsigned char *pak_buffer, unsigned int 
 	struct LZSSContext LZSSCtx;
 	unsigned char *raw_buffer;
 	unsigned int   raw_len, header;
-	//printf("- decompressing from buffer... ");
-
+	
 	header = *pak_buffer;
 	if (header != CMD_CODE_10) {
-		//printf("ERROR: file is not LZSS encoded!");
 		LZSSCtx.bufferSource = NULL;
 		LZSSCtx.bufferSize = -1;
 		return LZSSCtx;
@@ -78,8 +76,6 @@ struct LZSSContext LZS_DecodeFromBuffer(unsigned char *pak_buffer, unsigned int 
 
 	LZSSCtx.bufferSource = raw_buffer;
 	LZSSCtx.bufferSize = raw_len;
-
-	//printf("LZS_Decode() end.");
 	return LZSSCtx;
 }
 #endif

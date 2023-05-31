@@ -23,7 +23,7 @@
 #include "fatfslayerTGDS.h"
 
 #define min(a,b) ((a)<(b)?(a):(b))
-#define err(e) {clrscr();printf("%s",(char*)e);while(1);}
+#define err(e) {clrscr();loggerARM9LibUtilsCallback("%s",(char*)e);while(1==1);}
 
 //Buffer size: higher value will speed up file compression/decompression
 #define UNZIPBUFFER_SIZE (sint32)(1024 * 64)

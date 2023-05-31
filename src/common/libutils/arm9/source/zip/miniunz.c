@@ -44,13 +44,13 @@
 
 void miniunz_banner()
 {
-    printf("MiniUnz 1.2.0, demo of zLib + Unz package\n");
-    printf("more info at https://github.com/nmoinvaz/minizip\n\n");
+    loggerARM9LibUtilsCallback("MiniUnz 1.2.0, demo of zLib + Unz package\n");
+    loggerARM9LibUtilsCallback("more info at https://github.com/nmoinvaz/minizip\n\n");
 }
 
 void miniunz_help()
 {
-    printf("Usage : miniunz [-e] [-x] [-v] [-l] [-o] [-p password] file.zip [file_to_extr.] [-d extractdir]\n\n" \
+    loggerARM9LibUtilsCallback("Usage : miniunz [-e] [-x] [-v] [-l] [-o] [-p password] file.zip [file_to_extr.] [-d extractdir]\n\n" \
            "  -e  Extract without path (junk paths)\n" \
            "  -x  Extract with path\n" \
            "  -v  list files\n" \
@@ -65,12 +65,12 @@ int miniunz_list(unzFile uf)
     int err = unzGoToFirstFile(uf);
     if (err != UNZ_OK)
     {
-        printf("error %d with zipfile in unzGoToFirstFile\n", err);
+        loggerARM9LibUtilsCallback("error %d with zipfile in unzGoToFirstFile\n", err);
         return 1;
     }
 
-    printf("  Length  Method     Size Ratio   Date    Time   CRC-32     Name\n");
-    printf("  ------  ------     ---- -----   ----    ----   ------     ----\n");
+    loggerARM9LibUtilsCallback("  Length  Method     Size Ratio   Date    Time   CRC-32     Name\n");
+    loggerARM9LibUtilsCallback("  ------  ------     ---- -----   ----    ----   ------     ----\n");
 
     do
     {
@@ -84,7 +84,7 @@ int miniunz_list(unzFile uf)
         err = unzGetCurrentFileInfo64(uf, &file_info, filename_inzip, sizeof(filename_inzip), NULL, 0, NULL, 0);
         if (err != UNZ_OK)
         {
-            printf("error %d with zipfile in unzGetCurrentFileInfo\n", err);
+            loggerARM9LibUtilsCallback("error %d with zipfile in unzGetCurrentFileInfo\n", err);
             break;
         }
 
@@ -117,11 +117,11 @@ int miniunz_list(unzFile uf)
             string_method = "Unkn. ";
 
         display_zpos64(file_info.uncompressed_size, 7);
-        printf("  %6s%c", string_method, char_crypt);
+        loggerARM9LibUtilsCallback("  %6s%c", string_method, char_crypt);
         display_zpos64(file_info.compressed_size, 7);
 
         dosdate_to_tm(file_info.dos_date, &tmu_date);
-        printf(" %3u%%  %2.2u-%2.2u-%2.2u  %2.2u:%2.2u  %8.8x   %s\n", ratio,
+        loggerARM9LibUtilsCallback(" %3u%%  %2.2u-%2.2u-%2.2u  %2.2u:%2.2u  %8.8x   %s\n", ratio,
             (uint32_t)tmu_date.tm_mon + 1, (uint32_t)tmu_date.tm_mday,
             (uint32_t)tmu_date.tm_year % 100,
             (uint32_t)tmu_date.tm_hour, (uint32_t)tmu_date.tm_min,
@@ -133,7 +133,7 @@ int miniunz_list(unzFile uf)
 
     if (err != UNZ_END_OF_LIST_OF_FILE && err != UNZ_OK)
     {
-        printf("error %d with zipfile in unzGoToNextFile\n", err);
+        loggerARM9LibUtilsCallback("error %d with zipfile in unzGoToNextFile\n", err);
         return err;
     }
 
@@ -184,7 +184,7 @@ int miniunz_extract_currentfile(unzFile uf, int opt_extract_without_path, int *p
     buf = (void*)TGDSARM9Malloc(size_buf);
     if (buf == NULL)
     {
-        printf("Error allocating memory\n");
+        loggerARM9LibUtilsCallback("Error allocating memory\n");
         return UNZ_INTERNALERROR;
     }
 	
@@ -347,7 +347,7 @@ int miniunz_extract_onefile(unzFile uf, const char *filename, int opt_extract_wi
 {
     if (unzLocateFile(uf, filename, NULL) != UNZ_OK)
     {
-        printf("file %s not found in the zipfile\n", filename);
+        loggerARM9LibUtilsCallback("file %s not found in the zipfile\n", filename);
         return 2;
     }
     if (miniunz_extract_currentfile(uf, opt_extract_without_path, &opt_overwrite, password, outBuf) == UNZ_OK)

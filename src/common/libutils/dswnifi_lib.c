@@ -930,7 +930,7 @@ bool remoteTcpInit()
 		int s = socket(PF_INET, SOCK_STREAM, 0);
 		remoteListenSocket = s;
 		if(s < 0) {
-			//printf("Error opening socket ");
+			//loggerARM9LibUtilsCallback("Error opening socket ");
 			while(1==1){}
 		}
 		int tmp = 1;
@@ -951,16 +951,16 @@ bool remoteTcpInit()
 			addr.sin_port = htons(ntohs(addr.sin_port)+1);
 		}
 		
-		//printf("Listening for a connection at port %d ",ntohs(addr.sin_port));
+		//loggerARM9LibUtilsCallback("Listening for a connection at port %d ",ntohs(addr.sin_port));
 		if(listen(s, 1)) {
-			//printf("Error listening ");
+			//loggerARM9LibUtilsCallback("Error listening ");
 			while(1==1){}
 		}
 		int len = sizeof(addr);	//socklen_t
 
 		int s2 = accept(s, (struct sockaddr *)&addr, &len);
 		if(s2 > 0) {
-			//printf("Got a connection from %s %d ",inet_ntoa((in_addr)addr.sin_addr),ntohs(addr.sin_port));
+			//loggerARM9LibUtilsCallback("Got a connection from %s %d ",inet_ntoa((in_addr)addr.sin_addr),ntohs(addr.sin_port));
 		}
 		
 		char dummy;
@@ -1092,16 +1092,16 @@ void remotePutPacket(char *packet)
   *p++ = hex[csum>>4];
   *p++ = hex[csum & 15];
   *p++ = 0;
-  //  //printf("Sending %s\n", buffer);
+  //  loggerARM9LibUtilsCallback("Sending %s\n", buffer);
   remoteSendFnc(buffer, count + 4);
 
   char c = 0;
   remoteRecvFnc(&c, 1);
   /*
   if(c == '+')
-    //printf("ACK\n");
+    //loggerARM9LibUtilsCallback("ACK\n");
   else if(c=='-')
-    //printf("NACK\n");
+    //loggerARM9LibUtilsCallback("NACK\n");
   */
   TGDSARM9Free(buffer);
 }
@@ -1180,7 +1180,7 @@ void remoteSendStatus()
           (v >> 24) & 255);
   s += 12;
   *s = 0;
-  //  //printf("Sending %s\n", buffer);
+  //  loggerARM9LibUtilsCallback("Sending %s\n", buffer);
   remotePutPacket(buffer);
   TGDSARM9Free(buffer);
 }
@@ -1193,7 +1193,7 @@ void remoteBinaryWrite(char *p)
   u32 address = 0;
   int count = 0;
   sscanf(p,"%x,%d:", &address, &count);
-  //  //printf("Binary write for %08x %d\n", address, count);
+  //  loggerARM9LibUtilsCallback("Binary write for %08x %d\n", address, count);
 
   p = strchr(p, ':');
   p++;
@@ -1212,7 +1212,7 @@ void remoteBinaryWrite(char *p)
       break;
     }
   }
-  //  //printf("ROM is %08x\n", debuggerReadMemory(0x8000254));
+  //  loggerARM9LibUtilsCallback("ROM is %08x\n", debuggerReadMemory(0x8000254));
   remotePutPacket("OK");
 }
 
@@ -1224,7 +1224,7 @@ void remoteMemoryWrite(char *p)
   u32 address = 0;
   int count = 0;
   sscanf(p,"%x,%d:", &address, &count);
-  //  //printf("Memory write for %08x %d\n", address, count);
+  //  loggerARM9LibUtilsCallback("Memory write for %08x %d\n", address, count);
 
   p = strchr(p, ':');
   p++;
@@ -1244,7 +1244,7 @@ void remoteMemoryWrite(char *p)
     debuggerWriteByte(address, v);
     address++;
   }
-  //  //printf("ROM is %08x\n", debuggerReadMemory(0x8000254));
+  //  loggerARM9LibUtilsCallback("ROM is %08x\n", debuggerReadMemory(0x8000254));
   remotePutPacket("OK");
 }
 
@@ -1302,7 +1302,7 @@ void remoteWriteWatch(char *p, bool active)
   int count = 0;
   sscanf(p, ",%x,%d#", &address, &count);
 
-  //printf("Write watch for %08x %d ", address, count);
+  //loggerARM9LibUtilsCallback("Write watch for %08x %d ", address, count);
 
   if(address < 0x2000000 || address > 0x3007fff) {
     remotePutPacket("E01");
@@ -1409,7 +1409,7 @@ void remoteWriteRegister(char *p)
 	
   v = data[0] | (data[1] << 8) | (data[2] << 16) | (data[3] << 24);
 
-  //  //printf("Write register %d=%08x\n", r, v);
+  //  loggerARM9LibUtilsCallback("Write register %d=%08x\n", r, v);
   
   reg[r].I = v;
   if(r == 15) {
@@ -1513,7 +1513,7 @@ sint32 remoteStubMain(){
 				default:
 				  {
 					*(strchr(p, '#') + 3) = 0;
-					//printf("Unknown packet %s ", --p);
+					//loggerARM9LibUtilsCallback("Unknown packet %s ", --p);
 					remotePutPacket("");
 				  }
 				  break;
@@ -1806,7 +1806,7 @@ int openAsyncConn(char * dnsOrIpAddr, int asyncPort, struct sockaddr_in * sain){
 	if(myhost != NULL){
 		struct in_addr **address_list = (struct in_addr **)myhost->h_addr_list;
 		if((address_list != NULL) && (address_list[0] != NULL)){
-			printf("Server WAN IP Address! %s", inet_ntoa(*address_list[0]));
+			loggerARM9LibUtilsCallback("Server WAN IP Address! %s", inet_ntoa(*address_list[0]));
 		}
 		else{
 			return -1;
@@ -2006,7 +2006,7 @@ int ReceiveDSBinary(u8 * inBuffer, int * inBinSize){
 			
 			binSize = dsnwifisrvStrInst->BinarySize;
 			*inBinSize = binSize;
-			printf("receive start... size: %d ", binSize);
+			loggerARM9LibUtilsCallback("receive start... size: %d ", binSize);
 			
 			dsnwifisrvStrInst->nifiCommand = NIFI_ACK_SEND_BINARY;	//SendDSBinary() continue next frame
 			char frame[frameDSsize];
