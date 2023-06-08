@@ -52,6 +52,8 @@ USA
 #include "tgds_ramdisk_dldi.h"
 #include "cartHeader.h"
 #include "dswnifi_lib.h"
+#include "debugNocash.h"
+#include "libndsFIFO.h"
 #endif
 
 #ifdef ARM7
@@ -73,6 +75,9 @@ int sndRate = 0;
 #endif
 
 #ifdef ARM9
+
+extern char * strdup( const char *str1 );
+
 __attribute__((section(".dtcm")))
 struct soundPlayerContext soundData;
 
@@ -638,20 +643,7 @@ char** getGlobalArgv(){
 	return globalArgv;
 }
 
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
 char thisArgv[argvItems][MAX_TGDSFILENAME_LENGTH];
-
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
 int thisArgc=0;
 
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -1177,6 +1169,7 @@ MicInterruptARM7LibUtils_fn MicInterruptARM7LibUtilsCallback = NULL;
 SoundStreamStopSoundStreamARM9LibUtils_fn SoundStreamStopSoundStreamARM9LibUtilsCallback = NULL;
 SoundStreamUpdateSoundStreamARM9LibUtils_fn SoundStreamUpdateSoundStreamARM9LibUtilsCallback = NULL;
 loggerARM9LibUtils_fn loggerARM9LibUtilsCallback = NULL;
+printfARM9LibUtils_fn printfARM9LibUtilsCallback = NULL;
 #endif
 
 //Setup components to bse used from ARM9 TGDS project because it decides how much functionality used
@@ -1204,8 +1197,32 @@ void initializeLibUtils9(
 //(ARM9 only) TGDS Usercode project usage:
 //setTGDSARM9LoggerCallback((loggerARM9LibUtils_fn)&printf); //Redirect TGDS logger output to DS screen callback
 //setTGDSARM9LoggerCallback((loggerARM9LibUtils_fn)&nocashMessage); //Redirect TGDS logger output to internal callback
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void setTGDSARM9LoggerCallback(loggerARM9LibUtils_fn loggerCallback){
 	loggerARM9LibUtilsCallback = loggerCallback;
+}
+
+//setTGDSARM9PrintfCallback((printfARM9LibUtils_fn)&TGDSCustomPrintf2DConsole); //Redirect printf to custom Console implementation
+//setTGDSARM9PrintfCallback((printfARM9LibUtils_fn)&TGDSDefaultPrintf2DConsole); //Redirect printf to default TGDS 2D Console output
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void setTGDSARM9PrintfCallback(printfARM9LibUtils_fn printfCallback){
+	if( ((u32)printfCallback) == ((u32)&TGDSDefaultPrintf2DConsole) ){
+		isTGDSCustomPrintf2DConsole = false; //default
+	}
+	else{
+		isTGDSCustomPrintf2DConsole = true; //custom
+	}
+	printfARM9LibUtilsCallback = printfCallback;
 }
 
 #endif

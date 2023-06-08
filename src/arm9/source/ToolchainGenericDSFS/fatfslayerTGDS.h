@@ -216,6 +216,8 @@ struct fd {
 typedef bool(*SoundStreamStopSoundStreamARM9LibUtils_fn)(struct fd * tgdsStructFD1, struct fd * tgdsStructFD2, int * internalCodecType);
 typedef void(*SoundStreamUpdateSoundStreamARM9LibUtils_fn)();
 typedef void(*loggerARM9LibUtils_fn)(const char *fmt, ...);
+typedef int(*printfARM9LibUtils_fn)(const char *stringToRender);
+
 #endif
 
 //This should be implemented in newlib, but it's not exposed 
@@ -258,6 +260,7 @@ extern "C" {
 extern SoundStreamStopSoundStreamARM9LibUtils_fn SoundStreamStopSoundStreamARM9LibUtilsCallback;
 extern SoundStreamUpdateSoundStreamARM9LibUtils_fn SoundStreamUpdateSoundStreamARM9LibUtilsCallback;
 extern loggerARM9LibUtils_fn loggerARM9LibUtilsCallback;
+extern printfARM9LibUtils_fn printfARM9LibUtilsCallback;
 
 extern void initializeLibUtils9(
 	HandleFifoNotEmptyWeakRefLibUtils_fn HandleFifoNotEmptyWeakRefLibUtilsCall, //ARM7 & ARM9
@@ -269,6 +272,7 @@ extern void initializeLibUtils9(
 );
 
 extern void setTGDSARM9LoggerCallback(loggerARM9LibUtils_fn loggerCallback);
+extern void setTGDSARM9PrintfCallback(printfARM9LibUtils_fn printfCallback);
 
 #endif
 

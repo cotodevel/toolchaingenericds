@@ -142,7 +142,8 @@ extern int argvCount;
 #ifdef ARM9
 extern int _unlink(const sint8 *path);
 extern void printfCoords(int x, int y, const char *fmt, ...);
-
+extern bool isTGDSCustomPrintf2DConsole;
+extern int TGDSDefaultPrintf2DConsole(char * stringToRenderOnscreen);
 extern void * _sbrk (int size);
 extern void * _sbrk_r (struct _reent * reent, int size);
 
