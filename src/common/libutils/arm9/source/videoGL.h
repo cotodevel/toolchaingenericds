@@ -257,6 +257,13 @@ __attribute__((aligned (4)));
 ;
 #endif
 
+#define GFX_CUTOFF_DEPTH		(*(vu16*)0x04000610)
+//Stop the drawing of polygons that are a certain distance from the camera.
+//wVal polygons that are beyond this W-value(distance from camera) will not be drawn; 15bit value.
+static inline void glCutoffDepth(fixed12d3 wVal) {
+	GFX_CUTOFF_DEPTH = wVal;
+}
+
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 // 3D core control (NDS bits)
@@ -1170,12 +1177,7 @@ __attribute__((packed)) ;
 #endif
 
 //////////////////////////////////////////////////////////// Extended Display List OpenGL 1.1 start //////////////////////////////////////////
-
 #define MAX_TGDS_SpawnOGLDisplayListsPerDisplayListContext ((int)200) //4096 / 11 cmds or about 20 cmds~ (glBegin(2 args)/glEnd(2 args)/glVertex3f(3 args)/glNormal3f(2 args)/glColor(2 args))) = 4096 / 20 = 200 OpenGL Display Lists
-#ifndef _MSC_VER
-#define SingleUnpackedGXCommand_DL_Binary ((u32*)((int)0x06200000+((128*1024)-PHYS_GXFIFO_INTERNAL_SIZE))) //VRAM_C_0x06200000_ENGINE_B_BG: VRAM C Bottom Screen Console, Engine B
-#endif
-
 struct TGDSOGL_LogicalDisplayList {
 	bool isAnOpenGLExtendedDisplayListCallList;
 	u32	mode; //GLenum mode: //Specifies the compilation mode, which can be GL_COMPILE or GL_COMPILE_AND_EXECUTE. Set up by glNewList()
@@ -1201,9 +1203,7 @@ extern bool isInternalDisplayList;
 extern u32 * getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(); 
 
 //Scratchpad GX buffer
-#ifdef _MSC_VER
 extern u32 SingleUnpackedGXCommand_DL_Binary[PHYS_GXFIFO_INTERNAL_SIZE];
-#endif
 
 //Note: TGDS OpenGL usermode apps use always the identifier:
 //struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext = (struct TGDSOGL_DisplayListContext *)&TGDSOGL_DisplayListContextInst[TGDSOGL_DisplayListContext_External];

@@ -750,7 +750,7 @@ void glEnable(int bits){
 		globalGLCtx.GXPolygonAttributes |= GX_LIGHT3;
 	}
 
-	enable_bits |= bits & (GL_TEXTURE_2D|GL_TOON_HIGHLIGHT|GL_OUTLINE|GL_ANTIALIAS);
+	enable_bits |= bits & (GL_TEXTURE_2D|GL_TOON_HIGHLIGHT|GL_OUTLINE|GL_ANTIALIAS|GL_BLEND);
 	#if defined(ARM9)
 	GFX_CONTROL = enable_bits;
 	#endif
@@ -2904,10 +2904,8 @@ __attribute__((section(".dtcm")))
 #endif
 bool isInternalDisplayList;
 
-#ifdef _MSC_VER
 //Scratchpad GX buffer
 u32 SingleUnpackedGXCommand_DL_Binary[PHYS_GXFIFO_INTERNAL_SIZE];
-#endif
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))

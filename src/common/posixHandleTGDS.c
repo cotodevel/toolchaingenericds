@@ -35,7 +35,6 @@ USA
 #include "posixHandleTGDS.h"
 #include "linkerTGDS.h"
 
-
 #include "dsregs_asm.h"
 #include "devoptab_devices.h"
 #include "errno.h"
@@ -47,6 +46,7 @@ USA
 #include "utilsTGDS.h"
 #include "limitsTGDS.h"
 #include "dldi.h"
+#include "busTGDS.h"
 
 uint32 get_lma_libend(){
 	return (uint32)(&__vma_stub_end__);	//linear memory top (start)
@@ -98,9 +98,6 @@ sint32 get_dtcm_size(){
 void *
 _sbrk (int  incr)
 {
-	extern char __heap_start;//set by linker
-	extern char __heap_end;//set by linker
-
 	static char *heap_end;		/* Previous end of heap or 0 if none */
 	char        *prev_heap_end;
 
@@ -307,70 +304,91 @@ void setTGDSMemoryAllocator(struct AllocatorInstance * TGDSMemoryAllocator) {
 	customMallocARM9 = TGDSMemoryAllocator->customMalloc;
 }
 
+bool isTGDSCustomPrintf2DConsole = false;
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+int TGDSDefaultPrintf2DConsole(char * stringToRenderOnscreen){
+	if(isTGDSCustomPrintf2DConsole == false){
+		// TGDS Console render start (Identical Implementation as GUI_printf)
+		bool readAndBlendFromVRAM = false;	//we discard current vram characters here so if we step over the same character in VRAM (through printfCoords), it is discarded.
+		t_GUIZone zone;
+		zone.x1 = 0; zone.y1 = 0; zone.x2 = 256; zone.y2 = 192;
+		zone.font = &smallfont_7_font;
+		
+		int color = (int)TGDSPrintfColor_LightGrey;	//default color
+		//int stringSize = (int)strlen((const char*)stringToRenderOnscreen);
+		
+		//Separate the TGDS Console font color if exists
+		char cpyBuf[256+1] = {0};
+		strcpy(cpyBuf, (const char*)stringToRenderOnscreen);
+		char * outBuf = (char *)TGDSARM9Malloc(256*10);
+		char * colorChar = (char*)((char*)outBuf + (1*256));
+		int matchCount = str_split((char*)cpyBuf, ">", outBuf, 10, 256);
+		if(matchCount > 0){
+			color = atoi(colorChar);
+			stringToRenderOnscreen[strlen((const char*)stringToRenderOnscreen) - (strlen(colorChar)+1) ] = '\0';
+		}
+		GUI_drawText(&zone, 0, GUI.printfy, color, (sint8*)stringToRenderOnscreen, readAndBlendFromVRAM);
+		GUI.printfy += GUI_getFontHeight(&zone);
+		TGDSARM9Free(outBuf);
+		return strlen((const char*)stringToRenderOnscreen)+1;
+		// TGDS Console render end
+	}
+	return 0;
+}
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 int printf(const char *fmt, ...){
-	//Indentical Implementation as GUI_printf
 	va_list args;
 	va_start (args, fmt);
 	vsnprintf ((sint8*)ConsolePrintfBuf, (int)sizeof(ConsolePrintfBuf), fmt, args);
 	va_end (args);
-	
-    // FIXME
-    bool readAndBlendFromVRAM = false;	//we discard current vram characters here so if we step over the same character in VRAM (through printfCoords), it is discarded.
-	t_GUIZone zone;
-    zone.x1 = 0; zone.y1 = 0; zone.x2 = 256; zone.y2 = 192;
-    zone.font = &smallfont_7_font;
-	
-	int color = (int)TGDSPrintfColor_LightGrey;	//default color
-	//int stringSize = (int)strlen((const char*)ConsolePrintfBuf);
-	
-	//Separate the TGDS Console font color if exists
-	char cpyBuf[256+1] = {0};
-	strcpy(cpyBuf, (const char*)ConsolePrintfBuf);
-	char * outBuf = (char *)TGDSARM9Malloc(256*10);
-	char * colorChar = (char*)((char*)outBuf + (1*256));
-	int matchCount = str_split((char*)cpyBuf, ">", outBuf, 10, 256);
-	if(matchCount > 0){
-		color = atoi(colorChar);
-		ConsolePrintfBuf[strlen((const char*)ConsolePrintfBuf) - (strlen(colorChar)+1) ] = '\0';
-	}
-	
-    GUI_drawText(&zone, 0, GUI.printfy, color, (sint8*)ConsolePrintfBuf, readAndBlendFromVRAM);
-    GUI.printfy += GUI_getFontHeight(&zone);
-	TGDSARM9Free(outBuf);
-	return strlen((const char*)ConsolePrintfBuf)+1;
+	return printfARM9LibUtilsCallback((char*)&ConsolePrintfBuf[0]);
 }
 
 //same as printf but having X, Y coords (relative to char width and height)
 void printfCoords(int x, int y, const char *fmt, ...){
-	va_list args;
-	va_start (args, fmt);
-	vsnprintf ((sint8*)ConsolePrintfBuf, 64, fmt, args);
-	va_end (args);
-	
-	// FIXME
-    bool readAndBlendFromVRAM = false;	//we discard current vram characters here so if we step over the same character in VRAM (through printfCoords), it is discarded.
-	t_GUIZone zone;
-    zone.x1 = 0; zone.y1 = 0; zone.x2 = 256; zone.y2 = 192;
-    zone.font = &smallfont_7_font;
-	GUI.printfy = y * GUI_getFontHeight(&zone);
-	x = x * zone.font->height;
-	int color = (int)TGDSPrintfColor_LightGrey;	//default color
-	//int stringSize = (int)strlen((const char*)ConsolePrintfBuf);
-	
-	//Separate the TGDS Console font color if exists
-	char cpyBuf[256+1] = {0};
-	strcpy(cpyBuf, (const char*)ConsolePrintfBuf);
-	char * outBuf = (char *)TGDSARM9Malloc(256*10);
-	char * colorChar = (char*)((char*)outBuf + (1*256));
-	int matchCount = str_split((char*)cpyBuf, ">", outBuf, 10, 256);
-	if(matchCount > 0){
-		color = atoi(colorChar);
-		ConsolePrintfBuf[strlen((const char*)ConsolePrintfBuf) - (strlen(colorChar)+1) ] = '\0';
+	if(isTGDSCustomPrintf2DConsole == false){
+		va_list args;
+		va_start (args, fmt);
+		vsnprintf ((sint8*)ConsolePrintfBuf, 64, fmt, args);
+		va_end (args);
+		
+		// FIXME
+		bool readAndBlendFromVRAM = false;	//we discard current vram characters here so if we step over the same character in VRAM (through printfCoords), it is discarded.
+		t_GUIZone zone;
+		zone.x1 = 0; zone.y1 = 0; zone.x2 = 256; zone.y2 = 192;
+		zone.font = &smallfont_7_font;
+		GUI.printfy = y * GUI_getFontHeight(&zone);
+		x = x * zone.font->height;
+		int color = (int)TGDSPrintfColor_LightGrey;	//default color
+		//int stringSize = (int)strlen((const char*)ConsolePrintfBuf);
+		
+		//Separate the TGDS Console font color if exists
+		char cpyBuf[256+1] = {0};
+		strcpy(cpyBuf, (const char*)ConsolePrintfBuf);
+		char * outBuf = (char *)TGDSARM9Malloc(256*10);
+		char * colorChar = (char*)((char*)outBuf + (1*256));
+		int matchCount = str_split((char*)cpyBuf, ">", outBuf, 10, 256);
+		if(matchCount > 0){
+			color = atoi(colorChar);
+			ConsolePrintfBuf[strlen((const char*)ConsolePrintfBuf) - (strlen(colorChar)+1) ] = '\0';
+		}
+		
+		GUI_drawText(&zone, x, GUI.printfy, color, (sint8*)ConsolePrintfBuf, readAndBlendFromVRAM);
+		GUI.printfy += GUI_getFontHeight(&zone);
+		TGDSARM9Free(outBuf);
 	}
-	
-    GUI_drawText(&zone, x, GUI.printfy, color, (sint8*)ConsolePrintfBuf, readAndBlendFromVRAM);
-    GUI.printfy += GUI_getFontHeight(&zone);
-	TGDSARM9Free(outBuf);
 }
 
 int _vfprintf_r(struct _reent * reent, FILE *fp, const sint8 *fmt, va_list args){

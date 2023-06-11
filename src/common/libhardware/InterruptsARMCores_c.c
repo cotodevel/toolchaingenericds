@@ -51,9 +51,10 @@ USA
 void IRQInit(u8 DSHardware)  {
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	#ifdef ARM9
-	//default TGDS Project -> internal logger
+	
 	DrainWriteBuffer();
-	setTGDSARM9LoggerCallback((loggerARM9LibUtils_fn)&nocashMessage);
+	setTGDSARM9PrintfCallback((printfARM9LibUtils_fn)&TGDSDefaultPrintf2DConsole); //Setup default TGDS Project: console 2D printf 
+	setTGDSARM9LoggerCallback((loggerARM9LibUtils_fn)&nocashMessage); //Setup default TGDS Project: internal logger
 	#endif
 	
 	//FIFO IRQ Init
