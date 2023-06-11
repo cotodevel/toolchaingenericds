@@ -18,13 +18,14 @@ USA
 
 */
 
-#ifndef __nds_video_h__
-#define __nds_video_h__
+#ifndef __videoTGDS_h__
+#define __videoTGDS_h__
 
 #include "typedefsTGDS.h"
 #include "dsregs.h"
 #include "dsregs_asm.h"
 #include <stdbool.h>
+#include "fatfslayerTGDS.h"
 
 #define VRAM_ENABLE		(1<<7)
 #define VRAM_MAX_LETTER_INDEX	(sint32)(9)
@@ -453,11 +454,6 @@ typedef enum
 #define SUB_BLEND_AB   (*(vuint16*)0x04001052)
 #define SUB_BLEND_Y    (*(vuint16*)0x04001054)
 
-#define BLEND_NONE       (0<<6)
-#define BLEND_ALPHA      (1<<6)
-#define BLEND_FADE_WHITE (2<<6)
-#define BLEND_FADE_BLACK (3<<6)
-
 //////////////////////////////////////////////////////////////////////
 // Background control defines
 //////////////////////////////////////////////////////////////////////
@@ -515,6 +511,30 @@ typedef enum
 #define ATTR2_PRIORITY(n)     ((n)<<10)
 #define ATTR2_PALETTE(n)      ((n)<<12)
 
+static inline void SetRegCapture(bool enable, uint8 source, uint8 vram){
+	uint32 value = 0;
+	if (enable) value |= 1 << 31; // 31 is enable
+    
+	value |= (source & 0x3) << 29; // 29-30 Capture Source    (0=Source A, 1=Source B, 2/3=Sources A+B blended)
+	value |= 0 << 26; //VRAM capture Read Offset  (0=00000h)
+	value |= 0 << 24; // 24 : Source A          0=Graphics Screen BG+3D+OBJ 
+	value |= 0 << 25; // 25 : Source B          0=VRAM
+	value |= 0x3 << 20; // 3=256x192 dots
+	value |= 0 << 18; // write offset 00000h
+	value |= (vram & 0xf) << 16; // VRAM Write Block (VRAM A..D LCDC)
+	value |= 0 << 8; // graphics blend evb is 8..12
+	value |= 31 << 0; // ram blend EVA is bits 0..4 
+
+	REG_DISPCAPCNT = value;
+}
+
+#define GFX_ALPHA_TEST        (*(vu16*) 0x04000340)
+//Set the minimum alpha value that will be used;
+//alphaThreshold minimum alpha value that will be used (0-15)
+static inline void glAlphaFunc(int alphaThreshold) {
+	GFX_ALPHA_TEST = alphaThreshold;
+}
+
 #endif
 
 #ifdef __cplusplus
@@ -566,6 +586,11 @@ extern void setOrientation(int orientation, bool mainEngine);
 
 extern void initFBModeMainEngine0x06000000();	//set FB mode, saves old MainEngine context
 extern void restoreFBModeMainEngine();	//restore from old MainEngine context discards such context
+
+//TGDS Dual3D implementation
+extern void InitTGDSDual3DSpecificConsole();
+extern vramSetup * TGDSDUAL3D_VRAM_SETUP();
+extern void TGDS_ProcessDual(TGDS_Voidfunc topscreen, TGDS_Voidfunc downscreen);
 
 #ifdef __cplusplus
 }

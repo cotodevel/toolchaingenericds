@@ -217,7 +217,7 @@ typedef bool(*SoundStreamStopSoundStreamARM9LibUtils_fn)(struct fd * tgdsStructF
 typedef void(*SoundStreamUpdateSoundStreamARM9LibUtils_fn)();
 typedef void(*loggerARM9LibUtils_fn)(const char *fmt, ...);
 typedef int(*printfARM9LibUtils_fn)(const char *stringToRender);
-
+typedef void(*TGDS_Voidfunc)(void);
 #endif
 
 //This should be implemented in newlib, but it's not exposed 

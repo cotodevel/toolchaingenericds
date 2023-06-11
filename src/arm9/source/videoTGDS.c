@@ -21,6 +21,7 @@ USA
 #include "consoleTGDS.h"
 #include "dmaTGDS.h"
 #include "posixHandleTGDS.h"
+#include "fatfslayerTGDS.h"
 
 //power
 void SWAP_LCDS(){
@@ -383,5 +384,139 @@ void setOrientation(int orientation, bool mainEngine){
 			}
 		}
 		break;
+	}
+}
+
+//TGDS Dual3D implementation. See https://bitbucket.org/Coto88/snakegl/src for Dual3D implementation
+static u8 NE_Screen=0;
+
+//Definition that overrides the weaksymbol expected from toolchain to init console video subsystem
+//1) VRAM Layout
+vramSetup * TGDSDUAL3D_VRAM_SETUP(){
+	vramSetup * vramSetupInst = (vramSetup *)&vramSetupDefaultConsole;
+	
+	//Main Engine Setup: 
+	vramSetupInst->vramBankSetupInst[VRAM_A_INDEX].vrambankCR = VRAM_A_ENGINE_A_3DENGINE_TEXTURE; //VRAM A for 2D Textures to-be used with the 3D Engine
+	vramSetupInst->vramBankSetupInst[VRAM_A_INDEX].enabled = true;																		
+	
+	vramSetupInst->vramBankSetupInst[VRAM_B_INDEX].vrambankCR = VRAM_B_LCDC_MODE; //6820000h-683FFFFh
+	vramSetupInst->vramBankSetupInst[VRAM_B_INDEX].enabled = true;
+	
+	//VRAM C: WoopsiTGDS Touchscreen UI
+	vramSetupInst->vramBankSetupInst[VRAM_C_INDEX].vrambankCR = VRAM_C_LCDC_MODE; //6840000h-685FFFFh
+	vramSetupInst->vramBankSetupInst[VRAM_C_INDEX].enabled = true;
+	
+	//VRAM D: ARM7 (128 Ko!)
+	vramSetupInst->vramBankSetupInst[VRAM_D_INDEX].vrambankCR = VRAM_D_0x06000000_ARM7;
+	vramSetupInst->vramBankSetupInst[VRAM_D_INDEX].enabled = true;
+	
+	//VRAM E,F,G,H,I: Unused and reserved
+	vramSetupInst->vramBankSetupInst[VRAM_E_INDEX].vrambankCR = VRAM_E_LCDC_MODE;
+	vramSetupInst->vramBankSetupInst[VRAM_E_INDEX].enabled = true;
+	
+	vramSetupInst->vramBankSetupInst[VRAM_F_INDEX].vrambankCR = VRAM_F_LCDC_MODE;
+	vramSetupInst->vramBankSetupInst[VRAM_F_INDEX].enabled = true;
+	
+	vramSetupInst->vramBankSetupInst[VRAM_G_INDEX].vrambankCR = VRAM_G_LCDC_MODE;
+	vramSetupInst->vramBankSetupInst[VRAM_G_INDEX].enabled = true;
+	
+	vramSetupInst->vramBankSetupInst[VRAM_H_INDEX].vrambankCR = VRAM_H_LCDC_MODE;
+	vramSetupInst->vramBankSetupInst[VRAM_H_INDEX].enabled = true;
+	
+	vramSetupInst->vramBankSetupInst[VRAM_I_INDEX].vrambankCR = VRAM_I_LCDC_MODE;
+	vramSetupInst->vramBankSetupInst[VRAM_I_INDEX].enabled = true;
+	return vramSetupInst;
+}
+
+void InitTGDSDual3DSpecificConsole(){
+	//TGDS Console defaults
+	DefaultSessionConsole = (ConsoleInstance *)(&DefaultConsole);
+	
+	//Set subEngine as TGDS Console
+	GUI.consoleAtTopScreen = false;
+	GUI.consoleBacklightOn = true;	//Backlight On for console
+	SetEngineConsole(subEngine,DefaultSessionConsole);
+	
+	//Set subEngine properties
+	DefaultSessionConsole->ConsoleEngineStatus.ENGINE_DISPCNT	=	(uint32)(MODE_5_2D | DISPLAY_BG3_ACTIVE );
+	
+	// BG3: FrameBuffer : 64(TILE:4) - 128 Kb
+	DefaultSessionConsole->ConsoleEngineStatus.EngineBGS[3].BGNUM = 3;
+	DefaultSessionConsole->ConsoleEngineStatus.EngineBGS[3].REGBGCNT = BG_BMP_BASE(4) | BG_BMP8_256x256 | BG_PRIORITY_1;
+	
+	GUI.DSFrameBuffer = (uint16 *)BG_BMP_RAM_SUB(4);
+	
+	GUI.Palette = &BG_PALETTE_SUB[0];
+	GUI.Palette[0] = 	RGB8(0,0,0);			//Back-ground tile color / Black
+	GUI.Palette[1] =	RGB8(255, 255, 255); 	//White
+	GUI.Palette[2] =  	RGB8(150, 75, 0); 		//Brown
+	GUI.Palette[3] =  	RGB8(255, 127, 0); 		//Orange
+	GUI.Palette[4] = 	RGB8(255, 0, 255); 		//Magenta
+	GUI.Palette[5] = 	RGB8(0, 255, 255); 		//Cyan
+	GUI.Palette[6] = 	RGB8(255, 255, 0); 		//Yellow
+	GUI.Palette[7] = 	RGB8(0, 0, 255); 		//Blue
+	GUI.Palette[8] = 	RGB8(0, 255, 0); 		//Green
+	GUI.Palette[9] = 	RGB8(255, 0, 0); 		//Red
+	GUI.Palette[0xa] = 	RGB8(128, 128, 128); 	//Grey
+	GUI.Palette[0xb] = 	RGB8(240, 240, 240);	//Light-Grey
+	
+	//Fill the Pallette
+	int i = 0;
+	for(i=0;i < (256 - 0xb); i++){
+		GUI.Palette[i + 0xc] = GUI.Palette[TGDSPrintfColor_White];
+	}
+	
+	InitializeConsole(DefaultSessionConsole);
+	
+	REG_BG3X_SUB = 0;
+	REG_BG3Y_SUB = 0;
+	REG_BG3PA_SUB = 1 << 8;
+	REG_BG3PB_SUB = 0;
+	REG_BG3PC_SUB = 0;
+	REG_BG3PD_SUB = 1 << 8;
+	
+	
+	bool mainEngine = true;
+	setOrientation(ORIENTATION_0, mainEngine);
+	mainEngine = false;
+	setOrientation(ORIENTATION_0, mainEngine);
+	
+	glAlphaFunc(BLEND_ALPHA);
+	videoSetMode(MODE_0_3D);
+	REG_BG2CNT_SUB = BG_BMP16_256x256;
+	REG_BG2PA_SUB = 1 << 8;
+	REG_BG2PB_SUB = 0;
+	REG_BG2PC_SUB = 0;
+	REG_BG2PD_SUB = 1 << 8;
+	REG_BG2X_SUB = 0;
+	REG_BG2Y_SUB = 0;
+	
+	VRAMBLOCK_SETBANK_C(VRAM_C_0x06200000_ENGINE_B_BG); //visible VRAM C bank for Sub Engine
+	videoSetModeSub(MODE_5_2D | DISPLAY_BG2_ACTIVE | DISPLAY_SPR_ACTIVE | DISPLAY_SPR_2D_BMP_256);
+	REG_IE |= IRQ_VBLANK;
+}
+
+void TGDS_ProcessDual(TGDS_Voidfunc topscreen, TGDS_Voidfunc downscreen){
+	if( ((REG_VCOUNT&0xFF) >= 192) ){ // is Capture VRAM B done?
+		NE_Screen ^= 1;
+		REG_POWERCNT ^= (POWER_SWAP_LCDS);
+		
+		if(NE_Screen == 0){
+			downscreen();
+		}
+		else{
+			topscreen();
+		}
+		
+		if( !(REG_DISPCAPCNT & (1<<31)) ){	
+			u32 src = 0x6820000;
+			u32 dest = 0x6200000; //Sub Engine is updated here: Move VRAM B into Sub Engine VRAM C
+			dmaTransferWord(3, (u32)src, (u32)dest, 128 * 1024); //B       128K  0    -     6820000h-683FFFFh
+		}
+		IRQWait(0, IRQ_VBLANK);
+	}
+	
+	if( !(REG_DISPCAPCNT & (1<<31)) ){	
+		SetRegCapture(true, 0, 1); //start capture Engine A into VRAM B
 	}
 }
