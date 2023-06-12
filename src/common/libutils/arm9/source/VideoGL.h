@@ -257,10 +257,13 @@ __attribute__((aligned (4)));
 ;
 #endif
 
-#define GFX_CUTOFF_DEPTH		(*(vu16*)0x04000610)
+#define GFX_CUTOFF_DEPTH		(*(volatile unsigned short*)0x04000610)
 //Stop the drawing of polygons that are a certain distance from the camera.
 //wVal polygons that are beyond this W-value(distance from camera) will not be drawn; 15bit value.
-static inline void glCutoffDepth(fixed12d3 wVal) {
+#ifdef ARM9
+inline 
+#endif
+static void glCutoffDepth(fixed12d3 wVal) {
 	GFX_CUTOFF_DEPTH = wVal;
 }
 
