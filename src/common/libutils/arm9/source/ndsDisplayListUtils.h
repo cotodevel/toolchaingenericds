@@ -88,21 +88,8 @@ struct unpackedCmd {
 
 #endif
 
-extern u32 FIFO_COMMAND_PACK_C(u8 c1, u8 c2, u8 c3, u8 c4);
-extern struct unpackedCmd FIFO_COMMAND_PACKED_FMT_UNPACK(u32 cmd);
-extern int BuildNDSGXDisplayListObjectFromFile(char * filename, struct ndsDisplayListDescriptor * dlInst);
-extern int getRawFileSizefromNDSGXDisplayListObject(struct ndsDisplayListDescriptor * dlInst);
-extern bool getDisplayListFilterByCommand(struct ndsDisplayListDescriptor * dlInst, struct ndsDisplayListDescriptor * dlInstOut, u8 targetCommand);
-extern bool getDisplayListFIFO_COLOR(struct ndsDisplayListDescriptor * dlInst, struct ndsDisplayListDescriptor * dlInstOut);
-extern bool getDisplayListFIFO_TEX_COORD(struct ndsDisplayListDescriptor * dlInst, struct ndsDisplayListDescriptor * dlInstOut);
-extern bool getDisplayListFIFO_VERTEX16(struct ndsDisplayListDescriptor * dlInst, struct ndsDisplayListDescriptor * dlInstOut);
-extern bool getDisplayListFIFO_BEGIN(struct ndsDisplayListDescriptor * dlInst, struct ndsDisplayListDescriptor * dlInstOut);
-extern bool getDisplayListFIFO_END(struct ndsDisplayListDescriptor * dlInst, struct ndsDisplayListDescriptor * dlInstOut);
-
 extern bool isAGXCommand(u32 val);
 extern u8 clzero(u32 var);
-extern bool packAndExportSourceCodeFromRawUnpackedDisplayListFormat(char * filenameOut, u32 * rawUnpackedDisplayList);
-extern bool rawUnpackedToRawPackedDisplayListFormat(u32 * inRawUnpackedDisplayList, u32 * outRawPackedDisplayList);
 extern int getAGXParamsCountFromCommand(u32 command);
 
 extern void swap1(char *x, char *y);
@@ -115,12 +102,6 @@ extern unsigned int *crc32_table;
 extern void free_crc32_table (void);
 extern unsigned int crc32 (unsigned int *crc, const void *buffer, unsigned int size);
 extern int crc32file( FILE *file, unsigned int *outCrc32);
-
-//Debug
-//extern bool isNDSDLUtilsAPIStable();
-//extern int mainNDS9(int argc, char** argv);
-//extern bool ndsDisplayListUtilsTestCaseARM9(char * filename, char * outNDSGXBuiltDisplayList);
-
 
 #ifdef __cplusplus
 extern "C" {
