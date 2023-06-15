@@ -257,10 +257,13 @@ __attribute__((aligned (4)));
 ;
 #endif
 
-#define GFX_CUTOFF_DEPTH		(*(vu16*)0x04000610)
+#define GFX_CUTOFF_DEPTH		(*(volatile unsigned short*)0x04000610)
 //Stop the drawing of polygons that are a certain distance from the camera.
 //wVal polygons that are beyond this W-value(distance from camera) will not be drawn; 15bit value.
-static inline void glCutoffDepth(fixed12d3 wVal) {
+#ifdef ARM9
+inline 
+#endif
+static void glCutoffDepth(fixed12d3 wVal) {
 	GFX_CUTOFF_DEPTH = wVal;
 }
 
@@ -456,14 +459,6 @@ enum GL_MATRIX_MODE_ENUM {
 #define MTX_MULT_4x4		REG2ID(MATRIX_MULT4x4)
 #define MTX_MULT_4x3		REG2ID(MATRIX_MULT4x3)
 #define MTX_MULT_3x3		REG2ID(MATRIX_MULT3x3)
-
-//Custom OpenGL Display List -> GX commands. 
-#define MTX_ROTATE_Z	((u8)0x80) //GXFIFO command slot start
-#define MTX_ROTATE_Y	((u8)0x81)
-#define MTX_ROTATE_X	((u8)0x82)
-#define MTX_FRUSTRUM	((u8)0x83)
-#define MTX_LOOKAT		((u8)0x84)
-#define OPENGL_DL_TO_GX_DL_EXEC_CMD		((u8)0x85) //This command enables OpenGL Display Lists to run directly through GX Display List hardware
 
 //Precalculated argument size per command
 #define  MTX_STORE_GXCommandParamsCount ((int)getAGXParamsCountFromCommand(getMTX_STORE))
@@ -1138,8 +1133,8 @@ enum {
 #define PHYS_GXFIFO_INTERNAL_SIZE ((int)2048) //up to 512 unpacked cmds
 
 //Max GL Lists allocated in the OpenGL API
-#define InternalUnpackedGX_DL_workSize	((int)4096) //Max internal DL unpacked GX command/arguments count: up to 4096 in-queue 
-#define InternalUnpackedGX_DL_OpenGLDisplayListStartOffset (InternalUnpackedGX_DL_workSize * 0)
+#define InternalUnpackedGX_DL_workSize	((int)0x10000) 					//
+#define MAX_TGDS_SpawnOGLDisplayListsPerDisplayListContext ((int)512) 	// Up to 512 OpenGL DisplayLists (up to 128 GX commands per OpenGL DisplayList if all 512 OGL DLs were used)
 
 //Display List Descriptor
 #define DL_INVALID (u32)(-1)
@@ -1149,35 +1144,8 @@ enum {
 #define DL_TYPE_FIFO_PACKED_COMMAND_V2 (u32)(DL_TYPE_FIFO_PACKED_COMMAND_V1+1)	//FIFO_COMMAND_PACK( FIFO_VERTEX16 , FIFO_COLOR , FIFO_TEX_COORD , FIFO_NORMAL )
 #define DL_TYPE_FIFO_PACKED_COMMAND_END (u32)(DL_TYPE_FIFO_PACKED_COMMAND_V2+1)	//FIFO_COMMAND_PACK( FIFO_VERTEX16 , FIFO_END , FIFO_NOP , FIFO_NOP )
 #define GX_TOP_PARAMS_SIZE (int)(32)	//32  SHININESS - Specular Reflection Shininess Table (W) -- would be the command having the most parameter count
-#define DL_DESCRIPTOR_MAX_ITEMS (int)(256) //NDS GX commands descriptor format, which is not compiled. Also OpenGL Display Lists limit size
-
-struct ndsDisplayList {
-	int index;
-	u32 displayListType; //Display List Descriptor: FIFO_BEGIN, FIFO_COLOR, FIFO_TEX_COORD, FIFO_NORMAL, FIFO_VERTEX16, FIFO_END, FIFO_NOP, etc... 
-	u32 value; //RGB15(31,31,31), TEXTURE_PACK(floattot16(0.000000),floattot16(128.000000)), NORMAL_PACK(floattov10(0.577349),floattov10(0.577349),floattov10(-0.577349)), VERTEX_PACK(floattov16(1.000000),floattov16(1.000000)) , VERTEX_PACK(floattov16(-1.000000),0), FIFO_END (no value after), FIFO_NOP (no value)
-} 
-#ifdef ARM9
-__attribute__((packed)) ;
-#endif
-#ifdef WIN32
-;
-#endif
-
-struct ndsDisplayListDescriptor {
-	int DisplayListNameAssigned; //Used by the GL List API as a display-list name
-	bool isDisplayListAssigned;
-	int ndsDisplayListSize;
-	struct ndsDisplayList DL[DL_DESCRIPTOR_MAX_ITEMS];
-}
-#ifdef ARM9
-__attribute__((packed)) ;
-#endif
-#ifdef WIN32
-;
-#endif
 
 //////////////////////////////////////////////////////////// Extended Display List OpenGL 1.1 start //////////////////////////////////////////
-#define MAX_TGDS_SpawnOGLDisplayListsPerDisplayListContext ((int)200) //4096 / 11 cmds or about 20 cmds~ (glBegin(2 args)/glEnd(2 args)/glVertex3f(3 args)/glNormal3f(2 args)/glColor(2 args))) = 4096 / 20 = 200 OpenGL Display Lists
 struct TGDSOGL_LogicalDisplayList {
 	bool isAnOpenGLExtendedDisplayListCallList;
 	u32	mode; //GLenum mode: //Specifies the compilation mode, which can be GL_COMPILE or GL_COMPILE_AND_EXECUTE. Set up by glNewList()
@@ -1196,23 +1164,14 @@ struct TGDSOGL_DisplayListContext {
 extern "C" {
 #endif
 
-extern struct TGDSOGL_DisplayListContext TGDSOGL_DisplayListContextInternal;
-extern struct TGDSOGL_DisplayListContext TGDSOGL_DisplayListContextUser;
+extern struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContextInternal;
+extern struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContextUser;
 extern bool isInternalDisplayList;
-
 extern u32 * getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(); 
 
 //Scratchpad GX buffer
 extern u32 SingleUnpackedGXCommand_DL_Binary[PHYS_GXFIFO_INTERNAL_SIZE];
 
-//Note: TGDS OpenGL usermode apps use always the identifier:
-//struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext = (struct TGDSOGL_DisplayListContext *)&TGDSOGL_DisplayListContextInst[TGDSOGL_DisplayListContext_External];
-//.................
-//.................
-//As opposed to internal VBA & VBO which will use always the identifier:
-//struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContext = (struct TGDSOGL_DisplayListContext *)&TGDSOGL_DisplayListContextInst[TGDSOGL_DisplayListContext_Internal];
-//.................
-//.................
 extern GLuint glGenLists(GLsizei range);
 extern void glListBase(GLuint base);
 extern GLboolean glIsList(GLuint list);
@@ -1221,8 +1180,6 @@ extern void glEndList();
 extern void glCallList(GLuint list);
 extern void glCallLists(GLsizei n, GLenum type, const void * lists);
 extern void glDeleteLists(GLuint list, GLsizei range);
-extern enum GL_GLBEGIN_ENUM getDisplayListGLType(struct ndsDisplayListDescriptor * dlInst);
-extern int CompilePackedNDSGXDisplayListFromObject(u32 * bufOut, struct ndsDisplayListDescriptor * dlInst);
 extern void glNormal3dv(const GLdouble *v);
 extern void glVertex3dv(const GLdouble *v);
 extern void glNormal3v10(v10 nx, v10 ny, v10 nz);
@@ -1254,11 +1211,6 @@ extern void glGetDoublev(
 
 extern void glCallListGX(const u32* list);
 //////////////////////////////////////////////////////////// Extended Display List OpenGL 1.1 end //////////////////////////////////////////
-
-
-
-
-
 
 
 
@@ -1296,7 +1248,6 @@ extern void glCallListGX(const u32* list);
 #define GL_DYNAMIC_COPY                   ((GLenum)0x88EA)
 #define GL_STREAM_READ                    ((GLenum)0x88E1)
 #define GL_STREAM_COPY                    ((GLenum)0x88E2)
-
 
 #define VBO_CACHED_PREBUILT_DL_SIZE                    ((GLint)40) //save up to N Cached OpenGL DisplayLists when using VBO & VBA drawing methods like void glDrawArrays();
 

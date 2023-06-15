@@ -94,11 +94,24 @@ void glInit(){
 	globalGLCtx.ambientValue=0;
 	globalGLCtx.specularValue=0;
 	globalGLCtx.emissionValue=0;
+
+	//Init OpenGL DL here
+	if(TGDSOGL_DisplayListContextInternal != NULL){
+		TGDSARM9Free(TGDSOGL_DisplayListContextInternal);
+		TGDSOGL_DisplayListContextInternal = NULL;
+	}
+	if(TGDSOGL_DisplayListContextUser != NULL){
+		TGDSARM9Free(TGDSOGL_DisplayListContextUser);
+		TGDSOGL_DisplayListContextUser = NULL;
+	}
+
+	TGDSOGL_DisplayListContextInternal = (struct TGDSOGL_DisplayListContext *)TGDSARM9Malloc(sizeof(struct TGDSOGL_DisplayListContext));
+	TGDSOGL_DisplayListContextUser = (struct TGDSOGL_DisplayListContext *)TGDSARM9Malloc(sizeof(struct TGDSOGL_DisplayListContext));
 	isInternalDisplayList = false;
 	{
 		int i = 0;
 		//Init Internal		
-		struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContextThis = (struct TGDSOGL_DisplayListContext *)&TGDSOGL_DisplayListContextInternal;
+		struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContextThis = (struct TGDSOGL_DisplayListContext *)TGDSOGL_DisplayListContextInternal;
 		memset(TGDSOGL_DisplayListContextThis, 0, sizeof(struct TGDSOGL_DisplayListContext));
 		TGDSOGL_DisplayListContextThis->CurrentSpawnOGLDisplayList = 0;
 		memset(TGDSOGL_DisplayListContextThis->TGDSOGL_LogicalDisplayListSet, 0, sizeof(struct TGDSOGL_LogicalDisplayList));
@@ -109,7 +122,7 @@ void glInit(){
 			TGDSOGL_DisplayListContextThis->TGDSOGL_LogicalDisplayListSet[i].isAnOpenGLExtendedDisplayListCallList = false;
 		}
 		//Init User
-		TGDSOGL_DisplayListContextThis = (struct TGDSOGL_DisplayListContext *)&TGDSOGL_DisplayListContextUser;
+		TGDSOGL_DisplayListContextThis = (struct TGDSOGL_DisplayListContext *)TGDSOGL_DisplayListContextUser;
 		memset(TGDSOGL_DisplayListContextThis, 0, sizeof(struct TGDSOGL_DisplayListContext));
 		TGDSOGL_DisplayListContextThis->CurrentSpawnOGLDisplayList = 0;
 		memset(TGDSOGL_DisplayListContextThis->TGDSOGL_LogicalDisplayListSet, 0, sizeof(struct TGDSOGL_LogicalDisplayList));
@@ -214,7 +227,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glPushMatrix(){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
@@ -242,7 +255,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glPopMatrix(sint32 index){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
@@ -270,7 +283,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glRestoreMatrix(sint32 index){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
@@ -298,7 +311,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glStoreMatrix(sint32 index){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
@@ -326,7 +339,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glScalev(GLvector* v){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
@@ -358,7 +371,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glTranslatev(GLvector* v){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
@@ -416,7 +429,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glLight(int id, rgb color, v10 x, v10 y, v10 z){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
@@ -452,7 +465,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glNormal(uint32 normal){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
@@ -480,7 +493,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glLoadIdentity(){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
@@ -508,7 +521,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glMatrixMode(int mode){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
@@ -536,7 +549,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 void emitGLShinnyness(float shinyValue){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	float shinyFragment = (shinyValue/64.0f);
 	float shinyFragmentCount = 0.0f;
@@ -597,7 +610,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glPolyFmt(u32 GXPolygonAttributes){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
@@ -625,7 +638,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glViewport(uint8 x1, uint8 y1, uint8 x2, uint8 y2){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	u32 viewPortWrite = (u32)((x1) + (y1 << 8) + (x2 << 16) + (y2 << 24));
 	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
@@ -728,7 +741,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glEnable(int bits){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	if((bits&GL_CULL_FACE) == GL_CULL_FACE){
 		//faces are enabled through glCullFace() because culling occurs per polygon on GX
 	}
@@ -766,7 +779,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glDisable(int bits){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	if((bits&GL_CULL_FACE) == GL_CULL_FACE){
 		u32 polyAttr = (globalGLCtx.GXPolygonAttributes & ~(POLY_CULL_BACK | POLY_CULL_FRONT | POLY_CULL_NONE));
 		globalGLCtx.GXPolygonAttributes = polyAttr | POLY_CULL_NONE;
@@ -805,7 +818,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glFlush(){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
@@ -883,7 +896,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glLoadMatrix4x4(m4x4 * m){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
@@ -944,7 +957,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glLoadMatrix4x3(m4x3* m){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
@@ -996,7 +1009,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glMultMatrix4x4(m4x4* m){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
@@ -1057,7 +1070,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glMultMatrix4x3(m4x3* m){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
@@ -1141,7 +1154,7 @@ __attribute__ ((optnone))
 void glRotateZi(int angle){
 	f32 sine = SIN[angle &  LUT_MASK];
 	f32 cosine = COS[angle & LUT_MASK];
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
@@ -1202,7 +1215,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glRotateYi(int angle){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	f32 sine = SIN[angle &  LUT_MASK];
 	f32 cosine = COS[angle & LUT_MASK];
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
@@ -1266,7 +1279,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glRotateXi(int angle){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	f32 sine = SIN[angle &  LUT_MASK];
 	f32 cosine = COS[angle & LUT_MASK];
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
@@ -1388,7 +1401,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 void gluLookAtf32(f32 eyex, f32 eyey, f32 eyez, f32 lookAtx, f32 lookAty, f32 lookAtz, f32 upx, f32 upy, f32 upz){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	f32 x[3], y[3], z[3], up[3];
 	z[0] = eyex - lookAtx;
@@ -1483,7 +1496,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 void gluFrustumf32(f32 left, f32 right, f32 bottom, f32 top, f32 nearVal, f32 farVal){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
@@ -1564,7 +1577,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glOrthof32(f32 left, f32 right, f32 bottom, f32 top, f32 nearVal, f32 farVal){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
@@ -1703,7 +1716,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glResetMatrixStack(){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
   // stack overflow ack ?
   GFX_STATUS |= 1 << 15;
 
@@ -1856,7 +1869,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glBindTexture(int target, int name){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
@@ -2457,7 +2470,7 @@ __attribute__((optnone))
 #endif
 #endif
 void glTexCoord1i(uint32 uv){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
@@ -2485,7 +2498,7 @@ __attribute__((optnone))
 #endif
 #endif
 void glTexCoord2t16(t16 u, t16 v){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
@@ -2518,7 +2531,7 @@ __attribute__((optnone))
 #endif
 #endif
 void glBegin(int primitiveType){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
@@ -2546,7 +2559,7 @@ __attribute__((optnone))
 #endif
 #endif
 void glEnd(){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
@@ -2585,7 +2598,7 @@ __attribute__((optnone))
 #endif
 #endif
 void glColor3b(uint8 red, uint8 green, uint8 blue){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	u16 finalColor = 0;
 	switch(globalGLCtx.primitiveShadeModelMode){
@@ -2676,7 +2689,7 @@ void glNormal3f(
  	GLfloat ny,
  	GLfloat nz
 ){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
@@ -2708,7 +2721,7 @@ void glNormal3v10(
  	v10 ny,
  	v10 nz
 ){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
@@ -2756,7 +2769,7 @@ void glNormal3i(
  	GLint ny,
  	GLint nz
 ){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
@@ -2784,7 +2797,7 @@ __attribute__((optnone))
 #endif
 #endif
 void glVertex3v16(v16 x, v16 y, v16 z){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
@@ -2814,7 +2827,7 @@ __attribute__((optnone))
 #endif
 #endif
 void glVertex3v10(v10 x, v10 y, v10 z){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
@@ -2843,7 +2856,7 @@ __attribute__((optnone))
 #endif
 #endif
 void glVertex2v16(v16 x, v16 y){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 		u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
@@ -2896,8 +2909,8 @@ void updateGXLights(){
 //After that, there must be a 1 cycle delay before sending the next command 
 //(ie. one cannot sent more than one command at once with a single opcode, each command must be invoked by a new opcode).
 
-struct TGDSOGL_DisplayListContext TGDSOGL_DisplayListContextInternal;
-struct TGDSOGL_DisplayListContext TGDSOGL_DisplayListContextUser;
+struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContextInternal;
+struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContextUser;
 
 #ifdef ARM9
 __attribute__((section(".dtcm")))
@@ -2916,8 +2929,8 @@ __attribute__((optnone))
 #endif
 #endif
 u32 * getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
-	return (u32 *)&Inst->InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_OpenGLDisplayListStartOffset];
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
+	return (u32 *)&Inst->InternalUnpackedGX_DL_Binary[0];
 }
 
 //glGenLists returns the first list name in a range of the length you pass to glGenLists.
@@ -2932,10 +2945,10 @@ __attribute__((optnone))
 GLuint glGenLists(GLsizei range){
 	struct TGDSOGL_DisplayListContext * Inst = NULL;
 	if(isInternalDisplayList == true){
-		Inst = &TGDSOGL_DisplayListContextInternal;
+		Inst = TGDSOGL_DisplayListContextInternal;
 	}
 	else{
-		Inst = &TGDSOGL_DisplayListContextUser;
+		Inst = TGDSOGL_DisplayListContextUser;
 	}
 	{
 		int i = 0;
@@ -2968,7 +2981,7 @@ __attribute__((optnone))
 #endif
 void glListBase(GLuint base){
 	//Reference the OGL DisplayList first
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	if(base > 0){
 		base--;
 	}
@@ -2994,7 +3007,7 @@ __attribute__((optnone))
 #endif
 #endif
 GLboolean glIsList(GLuint list){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	if(list > 0){
 		list--;
 	}
@@ -3019,7 +3032,7 @@ __attribute__((optnone))
 #endif
 #endif
 void glNewList(GLuint list, GLenum mode){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	if(list > 0){
 		list--;
 	}
@@ -3051,7 +3064,7 @@ __attribute__((optnone))
 #endif
 #endif
 void glEndList(){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	int listSize = 0;
 	//If LAST display-list name is GL_COMPILE: actually builds ALL the Display-list generated through the LAST display-list name generated from glNewList(), then compiles it into a GX binary DL. Such binary will be manually executed when glCallList(display-list name) is called 
@@ -3094,7 +3107,7 @@ __attribute__((optnone))
 #endif
 void glCallList(GLuint list){
 	if(list != DL_INVALID){
-		struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+		struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 		if(list > 0){
 			list--;
 		}
@@ -3473,7 +3486,7 @@ __attribute__((optnone))
 #endif
 #endif
 void glCallLists(GLsizei n, GLenum type, const void * lists){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	int offsetSize = -1;
 	GLubyte * u8array = NULL;
 	u16 * u16array = NULL;
@@ -3571,14 +3584,14 @@ __attribute__((optnone))
 #endif
 #endif
 void glDeleteLists(GLuint list, GLsizei range){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	int lowestCurDLInCompiledDLOffset = 0;
 	int i = 0;
 	u32 * InternalDL = getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr();
 	if(list >= 1){
 		list--; //assign current InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr (new) to a List
 	}
-	if (list >= DL_DESCRIPTOR_MAX_ITEMS){
+	if (list >= MAX_TGDS_SpawnOGLDisplayListsPerDisplayListContext){
 		return;
 	}
 	
@@ -3599,47 +3612,6 @@ void glDeleteLists(GLuint list, GLsizei range){
 	}
 }
 
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-enum GL_GLBEGIN_ENUM getDisplayListGLType(struct ndsDisplayListDescriptor * dlInst){
-	if(dlInst != NULL){
-		return (enum GL_GLBEGIN_ENUM)dlInst->DL[1].value;
-	}
-	return (enum GL_GLBEGIN_ENUM)DL_INVALID;
-}
-
-//Compiles a NDS GX Display List / CallList binary using the Command Packed format, from an object one. Understood by the GX hardware.
-//Returns: List count (multiplied by 4 is the file size), DL_INVALID if fails.
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
-int CompilePackedNDSGXDisplayListFromObject(u32 * bufOut, struct ndsDisplayListDescriptor * dlInst){
-	int i = 0; 
-	if( (dlInst != NULL) && (bufOut != NULL)){
-		*(bufOut) = dlInst->ndsDisplayListSize;
-		bufOut++;
-		for(i = 0; i < dlInst->ndsDisplayListSize; i++){
-			struct ndsDisplayList * curDL = &dlInst->DL[i];
-			*(bufOut) = curDL->value;
-			bufOut++;
-		}
-		return i;
-	}
-
-	return DL_INVALID;
-}
-
 //////////////////////////////////////////////////////////// Extended Display List OpenGL 1.x end 
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
@@ -3648,7 +3620,7 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 void glLightfv (GLenum light, GLenum pname, const GLfloat *params){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	//El parámetro params contiene cuatro valores de punto flotante que especifican la intensidad RGBA ambiente de la luz. Los valores de punto flotante se asignan directamente. No se fijan valores enteros ni de punto flotante. La intensidad de luz ambiente predeterminada es (0,0, 0,0, 0,0, 1,0).
 	if(pname == GL_AMBIENT){
@@ -3763,7 +3735,7 @@ __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 __attribute__ ((optnone))
 #endif
 void glMaterialfv (GLenum face, GLenum pname, const GLfloat *params){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	unsigned short emissionValueOut = 0;
 	//GL_FRONT, GL_BACK and GL_FRONT_AND_BACK are ignored in GX because material face attributes aren't supported by hardware.
@@ -3915,7 +3887,7 @@ void glTexParameteri(
 	GLenum pname,
 	GLint  param
 ){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? &TGDSOGL_DisplayListContextInternal : &TGDSOGL_DisplayListContextUser;
+	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
 	target = GL_TEXTURE_2D;
 
