@@ -387,7 +387,7 @@ int crc32file( FILE *file, unsigned int *outCrc32){
     return( 0 );
 }
 
-#ifdef WIN32
+#if defined(_MSC_VER) && !defined(ARM9) //VS2012?
 
 
 int main(int argc, char** argv){
@@ -397,11 +397,12 @@ int main(int argc, char** argv){
 	{
 		#ifdef WIN32
 		InitGLOnlyOnce = false;
-		glInit();
+		int TGDSOpenGLDisplayListWorkBufferSize = (256*1024);
+		glInit(TGDSOpenGLDisplayListWorkBufferSize);
 		#endif
 
 		//set mode 0, enable BG0 and set it to 3D
-		#ifdef ARM9
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		SETDISPCNT_MAIN(MODE_0_3D);
 		#endif
 		//this should work the same as the normal gl call

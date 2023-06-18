@@ -45,7 +45,7 @@
 //////////////////////////////////////////////////////////////////////
 #include "arm9math.h"
 
-#ifdef ARM9
+#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 #include <typedefsTGDS.h>
 #include "videoTGDS.h"
 #include "arm9math.h"
@@ -59,28 +59,12 @@
 #include <string.h>
 #include <math.h>
 
-#ifdef WIN32
+#if defined(_MSC_VER)
 #include "TGDSTypes.h"
-typedef unsigned int GLenum;
-typedef unsigned char GLboolean;
-typedef unsigned int GLbitfield;
-typedef signed char GLbyte;
-typedef short GLshort;
-typedef int GLint;
-typedef int GLsizei;
-typedef unsigned char GLubyte;
-typedef unsigned short GLushort;
-typedef unsigned int GLuint;
-typedef float GLfloat;
-typedef float GLclampf;
-typedef double GLdouble;
-typedef double GLclampd;
-typedef void GLvoid;
+#endif
 
 #define GL_FLAT ((GLenum)0)		// flat shading (primitives are drawn using the same color set before by glColor3b(uint8 red, uint8 green, uint8 blue)) 
 #define GL_SMOOTH ((GLenum)1)	//smooth shading (color comes from either Toon Shading or HighLight shading
-
-#endif
 
 //lut resolution for trig functions (must be power of two and must be the same as LUT resolution)
 //in other words dont change unless you also change your LUTs
@@ -250,7 +234,7 @@ struct GLContext{
 	u32 lastViewport; //(x1) + (y1 << 8) + (x2 << 16) + (y2 << 24) //x1 = x, y1 = y, x2 = 
 } 
 
-#ifdef ARM9
+#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 __attribute__((aligned (4)));
 #endif
 #ifdef WIN32
@@ -260,7 +244,7 @@ __attribute__((aligned (4)));
 #define GFX_CUTOFF_DEPTH		(*(volatile unsigned short*)0x04000610)
 //Stop the drawing of polygons that are a certain distance from the camera.
 //wVal polygons that are beyond this W-value(distance from camera) will not be drawn; 15bit value.
-#ifdef ARM9
+#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 inline 
 #endif
 static void glCutoffDepth(fixed12d3 wVal) {
@@ -1130,10 +1114,9 @@ enum {
 	GL_ALL_ATTRIB_BITS	= (unsigned int)0x000fffff
 };
 
-#define PHYS_GXFIFO_INTERNAL_SIZE ((int)2048) //up to 512 unpacked cmds
+#define PHYS_GXFIFO_INTERNAL_SIZE ((int)4096) //up to 1024 unpacked cmds
 
 //Max GL Lists allocated in the OpenGL API
-#define InternalUnpackedGX_DL_workSize	((int)0x10000) 					//
 #define MAX_TGDS_SpawnOGLDisplayListsPerDisplayListContext ((int)512) 	// Up to 512 OpenGL DisplayLists (up to 128 GX commands per OpenGL DisplayList if all 512 OGL DLs were used)
 
 //Display List Descriptor
@@ -1153,7 +1136,7 @@ struct TGDSOGL_LogicalDisplayList {
 };
 
 struct TGDSOGL_DisplayListContext {
-	u32 InternalUnpackedGX_DL_Binary[InternalUnpackedGX_DL_workSize]; //Internal Unpacked GX buffer	
+	u32 * InternalUnpackedGX_DL_Binary; //Internal Unpacked GX buffer. Allocated dinamically
 	u32 InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr; //A shared pointer allows to traverse across each logical OGL DL to a single-shared GX command buffer
 	struct TGDSOGL_LogicalDisplayList TGDSOGL_LogicalDisplayListSet[MAX_TGDS_SpawnOGLDisplayListsPerDisplayListContext];
 	int CurrentSpawnOGLDisplayList; //Current free spawn OpenGL Display List
@@ -1376,7 +1359,7 @@ extern void glColor3fv(const GLfloat * v);
 extern void glColor4fv(const GLfloat *v);
 extern struct GLContext globalGLCtx;
 extern void glShadeModel(GLenum mode);
-extern void glInit();
+extern void glInit(int TGDSOpenGLDisplayListGXBufferSize);
 extern void glVertex2i(int x, int y); 
 extern void glVertex2f(float x, float y);
 extern void glVertex3f(GLfloat x, GLfloat y, GLfloat z);
@@ -1464,6 +1447,8 @@ extern void glFogfv(
 	GLenum  pname,
 	const GLfloat *params
 );
+
+extern int InternalUnpackedGX_DL_workSize;
 
 #ifdef __cplusplus
 }

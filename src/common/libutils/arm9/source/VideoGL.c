@@ -39,7 +39,7 @@
 #include <math.h>
 #include "ndsDisplayListUtils.h"
 
-#ifdef ARM9
+#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 #include <typedefsTGDS.h>
 #include "dsregs.h"
 #include "videoTGDS.h"
@@ -50,20 +50,24 @@
 #ifdef WIN32
 //disable _CRT_SECURE_NO_WARNINGS message to build this in VC++
 #pragma warning(disable:4996)
-#include "TGDSTypes.h"
 #include "winDir.h"
 #endif
 
 //////////////////////////////////////////////////////////// Standard OpenGL 1.0 start //////////////////////////////////////////
-#ifdef ARM9
+#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 __attribute__((section(".dtcm")))
 #endif
 struct GLContext globalGLCtx;
 
+#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
+__attribute__((section(".dtcm")))
+#endif
+int InternalUnpackedGX_DL_workSize = 0;
+
 static uint16 enable_bits = GL_TEXTURE_2D | GL_POLYGON_VERTEX_RAM_OVERFLOW | REAR_PLANE_MODE_BITMAP;
 	
 //Initializes the NDS OpenGL system
-#ifdef ARM9
+#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 bool InitGLOnlyOnce = false;
 #endif
 
@@ -79,14 +83,16 @@ __attribute__((optimize("Os")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glInit(){
+void glInit(int TGDSOpenGLDisplayListGXBufferSize){
 	int i = 0;
 	//set mode 0, enable BG0 and set it to 3D
-	#ifdef ARM9
+	#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 	SETDISPCNT_MAIN(MODE_0_3D);
 	#endif
 	memset((u8*)&globalGLCtx, 0, sizeof(struct GLContext));
 	glShadeModel(GL_SMOOTH);
+
+	InternalUnpackedGX_DL_workSize = (TGDSOpenGLDisplayListGXBufferSize/4);
 
 	globalGLCtx.GXPolygonAttributes = (POLY_ALPHA(31) | POLY_CULL_NONE);
 	globalGLCtx.textureParamsValue = 0;
@@ -94,52 +100,19 @@ void glInit(){
 	globalGLCtx.ambientValue=0;
 	globalGLCtx.specularValue=0;
 	globalGLCtx.emissionValue=0;
-
-	//Init OpenGL DL here
-	if(TGDSOGL_DisplayListContextInternal != NULL){
-		TGDSARM9Free(TGDSOGL_DisplayListContextInternal);
-		TGDSOGL_DisplayListContextInternal = NULL;
-	}
-	if(TGDSOGL_DisplayListContextUser != NULL){
-		TGDSARM9Free(TGDSOGL_DisplayListContextUser);
-		TGDSOGL_DisplayListContextUser = NULL;
-	}
-
-	TGDSOGL_DisplayListContextInternal = (struct TGDSOGL_DisplayListContext *)TGDSARM9Malloc(sizeof(struct TGDSOGL_DisplayListContext));
-	TGDSOGL_DisplayListContextUser = (struct TGDSOGL_DisplayListContext *)TGDSARM9Malloc(sizeof(struct TGDSOGL_DisplayListContext));
 	isInternalDisplayList = false;
-	{
-		int i = 0;
-		//Init Internal		
-		struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContextThis = (struct TGDSOGL_DisplayListContext *)TGDSOGL_DisplayListContextInternal;
-		memset(TGDSOGL_DisplayListContextThis, 0, sizeof(struct TGDSOGL_DisplayListContext));
-		TGDSOGL_DisplayListContextThis->CurrentSpawnOGLDisplayList = 0;
-		memset(TGDSOGL_DisplayListContextThis->TGDSOGL_LogicalDisplayListSet, 0, sizeof(struct TGDSOGL_LogicalDisplayList));
-		memset(getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(), 0, sizeof(TGDSOGL_DisplayListContextThis->InternalUnpackedGX_DL_Binary));
-		TGDSOGL_DisplayListContextThis->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr=0; //THE only place where THE OGL_DL start offset references GX buffer start offset.
-		for(i = 0; i < MAX_TGDS_SpawnOGLDisplayListsPerDisplayListContext; i++){
-			TGDSOGL_DisplayListContextThis->TGDSOGL_LogicalDisplayListSet[i].LogicalOGLOffsetToGXOffsetInGXBinary=0; //reset to default list start
-			TGDSOGL_DisplayListContextThis->TGDSOGL_LogicalDisplayListSet[i].isAnOpenGLExtendedDisplayListCallList = false;
-		}
-		//Init User
-		TGDSOGL_DisplayListContextThis = (struct TGDSOGL_DisplayListContext *)TGDSOGL_DisplayListContextUser;
-		memset(TGDSOGL_DisplayListContextThis, 0, sizeof(struct TGDSOGL_DisplayListContext));
-		TGDSOGL_DisplayListContextThis->CurrentSpawnOGLDisplayList = 0;
-		memset(TGDSOGL_DisplayListContextThis->TGDSOGL_LogicalDisplayListSet, 0, sizeof(struct TGDSOGL_LogicalDisplayList));
-		memset(getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(), 0, sizeof(TGDSOGL_DisplayListContextThis->InternalUnpackedGX_DL_Binary));
-		TGDSOGL_DisplayListContextThis->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr=0; //THE only place where THE OGL_DL start offset references GX buffer start offset.
-		for(i = 0; i < MAX_TGDS_SpawnOGLDisplayListsPerDisplayListContext; i++){
-			TGDSOGL_DisplayListContextThis->TGDSOGL_LogicalDisplayListSet[i].LogicalOGLOffsetToGXOffsetInGXBinary=0; //reset to default list start
-			TGDSOGL_DisplayListContextThis->TGDSOGL_LogicalDisplayListSet[i].isAnOpenGLExtendedDisplayListCallList = false;
-		}
-
-		glCullFace(GL_FRONT); 
-		glDisable(GL_LIGHT0|GL_LIGHT1|GL_LIGHT2|GL_LIGHT3|GL_CULL_FACE); //No lights enabled as default. 
-	}
-	//////////////////////////////////////////////////////VBO & VBA init//////////////////////////////////////////////////////
 
 	//Start clean once. Because subsequent re-init calls will require array memory to be freed/reallocated
 	if(InitGLOnlyOnce == false){
+		TGDSOGL_DisplayListContextInternal = (struct TGDSOGL_DisplayListContext *)TGDSARM9Malloc(sizeof(struct TGDSOGL_DisplayListContext));
+		TGDSOGL_DisplayListContextInternal->InternalUnpackedGX_DL_Binary = (u32*)TGDSARM9Malloc(TGDSOpenGLDisplayListGXBufferSize);
+		
+		TGDSOGL_DisplayListContextUser = (struct TGDSOGL_DisplayListContext *)TGDSARM9Malloc(sizeof(struct TGDSOGL_DisplayListContext));
+		TGDSOGL_DisplayListContextUser->InternalUnpackedGX_DL_Binary = (u32*)TGDSARM9Malloc(TGDSOpenGLDisplayListGXBufferSize);
+		#if defined(_MSC_VER) && !defined(ARM9) //VS2012?
+		printf("glInit(): NDS DisplayList allocated: %d KB\n", (TGDSOpenGLDisplayListGXBufferSize/1024));
+		#endif
+		//////////////////////////////////////////////////////VBO & VBA init//////////////////////////////////////////////////////
 		memset(&TGDSVBAInstance, 0, sizeof(TGDSVBAInstance));
 		vboVertex	= &TGDSVBAInstance.vertexBufferObjectInst[OBJECT_BUFFER_VERTEX];
 		vboNormal	= &TGDSVBAInstance.vertexBufferObjectInst[OBJECT_BUFFER_NORMAL];
@@ -161,6 +134,37 @@ void glInit(){
 		vboEdgeFlag->vboIsDynamicMemoryAllocated = false;
 		InitGLOnlyOnce = true;
 	}
+
+	{
+		//Init OpenGL DL here
+		int i = 0;
+		{
+			//Init Internal
+			struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContextThis = (struct TGDSOGL_DisplayListContext *)TGDSOGL_DisplayListContextInternal;
+			TGDSOGL_DisplayListContextThis->CurrentSpawnOGLDisplayList = 0;
+			memset(TGDSOGL_DisplayListContextThis->TGDSOGL_LogicalDisplayListSet, 0, sizeof(struct TGDSOGL_LogicalDisplayList));
+			memset(getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(), 0, InternalUnpackedGX_DL_workSize);
+			TGDSOGL_DisplayListContextThis->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr=0; //THE only place where THE OGL_DL start offset references GX buffer start offset.
+			for(i = 0; i < MAX_TGDS_SpawnOGLDisplayListsPerDisplayListContext; i++){
+				TGDSOGL_DisplayListContextThis->TGDSOGL_LogicalDisplayListSet[i].LogicalOGLOffsetToGXOffsetInGXBinary=0; //reset to default list start
+				TGDSOGL_DisplayListContextThis->TGDSOGL_LogicalDisplayListSet[i].isAnOpenGLExtendedDisplayListCallList = false;
+			}
+
+			//Init User
+			TGDSOGL_DisplayListContextThis = (struct TGDSOGL_DisplayListContext *)TGDSOGL_DisplayListContextUser;
+			TGDSOGL_DisplayListContextThis->CurrentSpawnOGLDisplayList = 0;
+			memset(TGDSOGL_DisplayListContextThis->TGDSOGL_LogicalDisplayListSet, 0, sizeof(struct TGDSOGL_LogicalDisplayList));
+			memset(getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(), 0, InternalUnpackedGX_DL_workSize);
+			TGDSOGL_DisplayListContextThis->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr=0; //THE only place where THE OGL_DL start offset references GX buffer start offset.
+			for(i = 0; i < MAX_TGDS_SpawnOGLDisplayListsPerDisplayListContext; i++){
+				TGDSOGL_DisplayListContextThis->TGDSOGL_LogicalDisplayListSet[i].LogicalOGLOffsetToGXOffsetInGXBinary=0; //reset to default list start
+				TGDSOGL_DisplayListContextThis->TGDSOGL_LogicalDisplayListSet[i].isAnOpenGLExtendedDisplayListCallList = false;
+			}
+		}
+		glCullFace(GL_FRONT); 
+		glDisable(GL_LIGHT0|GL_LIGHT1|GL_LIGHT2|GL_LIGHT3|GL_CULL_FACE); //No lights enabled as default.
+	}
+
 	for(i=0; i < MAX_VBO_HANDLES_GL; i++){
 		TGDSVBAInstance.vertexBufferObjectReferences[i] = NULL;
 		TGDSVBAInstance.vboName[i] = (GLint)VBO_DESCRIPTOR_INVALID;
@@ -240,7 +244,7 @@ void glPushMatrix(){
 		}
 	}
 	else{
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		MATRIX_PUSH = 0;
 		#endif
 	}
@@ -268,7 +272,7 @@ void glPopMatrix(sint32 index){
 		}
 	}
 	else{
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		MATRIX_POP = index;
 		#endif
 	}
@@ -296,7 +300,7 @@ void glRestoreMatrix(sint32 index){
 		}
 	}
 	else{
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		MATRIX_RESTORE = index;
 		#endif
 	}
@@ -324,7 +328,7 @@ void glStoreMatrix(sint32 index){
 		}
 	}
 	else{
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		MATRIX_STORE = (u32)(index&0x1f);
 		#endif
 	}
@@ -354,7 +358,7 @@ void glScalev(GLvector* v){
 		}
 	}
 	else{
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		MATRIX_SCALE = v->x;
 		MATRIX_SCALE = v->y;
 		MATRIX_SCALE = v->z;
@@ -386,7 +390,7 @@ void glTranslatev(GLvector* v){
 		}
 	}
 	else{
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		MATRIX_TRANSLATE = v->x;
 		MATRIX_TRANSLATE = v->y;
 		MATRIX_TRANSLATE = v->z;
@@ -449,7 +453,7 @@ void glLight(int id, rgb color, v10 x, v10 y, v10 z){
 	}
 	else{
 		id = (id & 3) << 30;
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		GFX_LIGHT_VECTOR = id | ((z & 0x3FF) << 20) | ((y & 0x3FF) << 10) | (x & 0x3FF);
 		GFX_LIGHT_COLOR = id | color;
 		#endif
@@ -478,7 +482,7 @@ void glNormal(uint32 normal){
 		}
 	}
 	else{
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		GFX_NORMAL = normal;
 		#endif
 	}
@@ -506,7 +510,7 @@ void glLoadIdentity(){
 		}
 	}
 	else{
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		MATRIX_IDENTITY = 0;
 		#endif
 	}
@@ -534,7 +538,7 @@ void glMatrixMode(int mode){
 		}
 	}
 	else{
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		MATRIX_CONTROL = mode;
 		#endif
 	}
@@ -582,7 +586,7 @@ void emitGLShinnyness(float shinyValue){
 			shinyFragmentCount+=shinyFragment;
 		}
 		for (i = 0; i < 128 / 4; i++){
-			#if defined(ARM9)
+			#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 			GFX_SHININESS = shiny32[i];
 			#endif
 		}
@@ -623,7 +627,7 @@ void glPolyFmt(u32 GXPolygonAttributes){
 		}
 	}
 	else{
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		GFX_POLY_FORMAT = GXPolygonAttributes;
 		#endif
 	}
@@ -652,7 +656,7 @@ void glViewport(uint8 x1, uint8 y1, uint8 x2, uint8 y2){
 		}
 	}
 	else{
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		GFX_VIEWPORT = viewPortWrite;
 		#endif
 	}
@@ -676,7 +680,7 @@ void glClearColor(uint8 red, uint8 green, uint8 blue){
 	defaultglClearColorR = red;
 	defaultglClearColorG = green;
 	defaultglClearColorB = blue;
-	#ifdef ARM9
+	#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 	GFX_CLEAR_COLOR = RGB15(red, green, blue);
 	#endif
 }
@@ -691,7 +695,7 @@ __attribute__ ((optnone))
 #endif
 void glClearDepth(uint16 depth){
 	defaultglClearDepth = depth;
-	#ifdef ARM9
+	#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 	GFX_CLEAR_DEPTH = depth;
 	#endif
 }
@@ -764,7 +768,7 @@ void glEnable(int bits){
 	}
 
 	enable_bits |= bits & (GL_TEXTURE_2D|GL_TOON_HIGHLIGHT|GL_OUTLINE|GL_ANTIALIAS|GL_BLEND);
-	#if defined(ARM9)
+	#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 	GFX_CONTROL = enable_bits;
 	#endif
 	updateGXLights();
@@ -803,7 +807,7 @@ void glDisable(int bits){
 	}
 	
 	enable_bits &= ~(bits & (GL_TEXTURE_2D|GL_TOON_HIGHLIGHT|GL_OUTLINE|GL_ANTIALIAS));	
-	#ifdef ARM9
+	#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 	GFX_CONTROL = enable_bits;
 	#endif
 	updateGXLights();
@@ -831,7 +835,7 @@ void glFlush(){
 		}
 	}
 	else{
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		GFX_FLUSH = 2;
 		#endif
 	}
@@ -924,7 +928,7 @@ void glLoadMatrix4x4(m4x4 * m){
 		}
 	}
 	else{
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		MATRIX_LOAD4x4 = m->m[0];
 		MATRIX_LOAD4x4 = m->m[1];
 		MATRIX_LOAD4x4 = m->m[2];
@@ -981,7 +985,7 @@ void glLoadMatrix4x3(m4x3* m){
 		}
 	}
 	else{
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		MATRIX_LOAD4x3 = m->m[0];
 		MATRIX_LOAD4x3 = m->m[1];
 		MATRIX_LOAD4x3 = m->m[2];
@@ -1037,7 +1041,7 @@ void glMultMatrix4x4(m4x4* m){
 		}
 	}
 	else{
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		MATRIX_MULT4x4 = m->m[0];
 		MATRIX_MULT4x4 = m->m[1];
 		MATRIX_MULT4x4 = m->m[2];
@@ -1110,7 +1114,7 @@ void glMultMatrix4x3(m4x3* m){
 		}
 	}
 	else{
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		MATRIX_MULT4x3 = m->m[0];
 		MATRIX_MULT4x3 = m->m[1];
 		MATRIX_MULT4x3 = m->m[2];
@@ -1190,7 +1194,7 @@ void glRotateZi(int angle){
 		}
 	}
 	else{
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		MATRIX_MULT3x3 = cosine;
 		MATRIX_MULT3x3 = sine;
 		MATRIX_MULT3x3 = 0;
@@ -1254,7 +1258,7 @@ void glRotateYi(int angle){
 		}
 	}
 	else{
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		MATRIX_MULT3x3 = cosine;
 		MATRIX_MULT3x3 = 0;
 		MATRIX_MULT3x3 = -sine;
@@ -1318,7 +1322,7 @@ void glRotateXi(int angle){
 		}
 	}
 	else{
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		MATRIX_MULT3x3 = inttof32(1);
 		MATRIX_MULT3x3 = 0;
 		MATRIX_MULT3x3 = 0;
@@ -1450,7 +1454,7 @@ void gluLookAtf32(f32 eyex, f32 eyey, f32 eyez, f32 lookAtx, f32 lookAty, f32 lo
 	}
 	else{
 		glMatrixMode(GL_MODELVIEW);
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		MATRIX_LOAD4x3 = x[0];
 		MATRIX_LOAD4x3 = x[1];
 		MATRIX_LOAD4x3 = x[2];
@@ -1531,7 +1535,7 @@ void gluFrustumf32(f32 left, f32 right, f32 bottom, f32 top, f32 nearVal, f32 fa
 	}
 	else{
 		glMatrixMode(GL_PROJECTION);
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		MATRIX_LOAD4x4 = divf32(2*nearVal, right - left);     
 		MATRIX_LOAD4x4 = 0;  
 		MATRIX_LOAD4x4 = divf32(right + left, right - left);      
@@ -1611,7 +1615,7 @@ void glOrthof32(f32 left, f32 right, f32 bottom, f32 top, f32 nearVal, f32 farVa
 	}
 	else{
 		glMatrixMode(GL_PROJECTION);
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		MATRIX_LOAD4x4 = divf32(2, right - left);     
 		MATRIX_LOAD4x4 = 0;  
 		MATRIX_LOAD4x4 = 0;      
@@ -1738,7 +1742,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glSetOutlineColor(int id, rgb color){
-	#if defined(ARM9)
+	#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 	GFX_EDGE_TABLE[id] = color;
 	#endif
 }
@@ -1754,7 +1758,7 @@ __attribute__ ((optnone))
 void glSetToonTable(uint16 *table){
 	int i;
 	for( i = 0; i < 32; i++ ){
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		GFX_TOON_TABLE[i] = table[i];
 		#endif
 	}
@@ -1771,7 +1775,7 @@ __attribute__ ((optnone))
 void glSetToonTableRange(int start, int end, rgb color){
 	int i;
 	for( i = start; i <= end; i++ ){
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		GFX_TOON_TABLE[i] = color;
 		#endif
 	}
@@ -1786,7 +1790,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glReset(){
-	#ifdef ARM9
+	#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 	while (GFX_STATUS & (1<<27)); // wait till gfx engine is not busy
   
 	// Clear the FIFO
@@ -1882,7 +1886,7 @@ void glBindTexture(int target, int name){
 		}
 	}
 	else{
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		GFX_TEX_FORMAT = globalGLCtx.textureParamsValue = textures[name];
 		#endif
 	}
@@ -1913,7 +1917,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 uint16* vramGetBank(uint16 *addr){
-	#ifdef ARM9
+	#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 	if(addr >= VRAM_A && addr < VRAM_B)
 		return VRAM_A;
 	else if(addr >= VRAM_B && addr < VRAM_C)
@@ -1945,7 +1949,7 @@ __attribute__ ((optnone))
 #endif
 int vramIsTextureBank(uint16 *addr){
 	uint16* vram = vramGetBank(addr);
-	#ifdef ARM9
+	#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 	if(vram == VRAM_A)
 	{
 		if((VRAM_A_CR & 3) == VRAM_A_TEXTURE)
@@ -1983,7 +1987,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 uint32* getNextTextureSlot(int size){
-	#ifdef ARM9
+	#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 	uint32* result = nextBlock;
 	nextBlock += size >> 2;
 
@@ -2058,11 +2062,12 @@ int glTexImage2D(int target, int empty1, int type, int sizeX, int sizeY, int emp
 		return 0;
 
 	glTexParameter(sizeX, sizeY, addr, type, param);
-	#if defined(ARM9)
-	GFX_TEX_FORMAT = globalGLCtx.textureParamsValue = (sizeX << 20) | (sizeY << 23) | ((type == GL_RGB ? GL_RGBA : type ) << 26);
+	globalGLCtx.textureParamsValue = (sizeX << 20) | (sizeY << 23) | ((type == GL_RGB ? GL_RGBA : type ) << 26);
+	#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
+	GFX_TEX_FORMAT = globalGLCtx.textureParamsValue;
 	#endif
 	//unlock texture memory
-	#ifdef ARM9
+	#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 	vramTemp = VRAM_CR; //vramTemp = vramSetMainBanks(VRAM_A_LCD,VRAM_B_LCD,VRAM_C_LCD,VRAM_D_LCD);
 	VRAMBLOCK_SETBANK_A(VRAM_A_LCDC_MODE);	
 	VRAMBLOCK_SETBANK_B(VRAM_B_LCDC_MODE);	
@@ -2302,7 +2307,7 @@ void glPrioritizeTextures (GLsizei n, const GLuint *textures, const GLclampf *pr
 	//DS 3D GPU does not support texture priority. There may be a way by sorting them by color but
 }
 
-#ifdef ARM9
+#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 __attribute__((section(".itcm")))
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
@@ -2312,7 +2317,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glCallListGX(const u32* list) {
-	#ifdef ARM9
+	#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 	u32 count = *list++;
 
 	// flush the area that we are going to DMA
@@ -2483,7 +2488,7 @@ void glTexCoord1i(uint32 uv){
 		}
 	}
 	else{
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		GFX_TEX_COORD = uv;
 		#endif
 	}
@@ -2511,7 +2516,7 @@ void glTexCoord2t16(t16 u, t16 v){
 		}
 	}
 	else{
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		GFX_TEX_COORD = (u32)TEXTURE_PACK(u, v);
 		#endif
 	}
@@ -2544,7 +2549,7 @@ void glBegin(int primitiveType){
 		}
 	}
 	else{
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		GFX_BEGIN = (u32)primitiveType;
 		#endif
 	}
@@ -2572,13 +2577,13 @@ void glEnd(){
 		}
 	}
 	else{
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		GFX_END = 0;
 		#endif
 	}
 }
 
-#ifdef ARM9
+#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 __attribute__((section(".dtcm")))
 #endif
 u16 lastVertexColor = 0;
@@ -2635,7 +2640,7 @@ void glColor3b(uint8 red, uint8 green, uint8 blue){
 		}
 	}
 	else{
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		GFX_COLOR = (u32)finalColor;
 		#endif
 	}
@@ -2702,7 +2707,7 @@ void glNormal3f(
 		}
 	}
 	else{
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		GFX_NORMAL = (u32)NORMAL_PACK(floattov10(nx),floattov10(ny),floattov10(nz));
 		#endif
 	}	
@@ -2734,7 +2739,7 @@ void glNormal3v10(
 		}
 	}
 	else{
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		GFX_NORMAL = (u32)NORMAL_PACK(floattov10(nx),floattov10(ny),floattov10(nz));
 		#endif
 	}	
@@ -2782,7 +2787,7 @@ void glNormal3i(
 		}
 	}
 	else{
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		GFX_NORMAL = (u32)NORMAL_PACK(inttov10(nx),inttov10(ny),inttov10(nz));
 		#endif
 	}
@@ -2811,7 +2816,7 @@ void glVertex3v16(v16 x, v16 y, v16 z){
 		}
 	}
 	else{
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		GFX_VERTEX16 = (y << 16) | (x & 0xFFFF);
 		GFX_VERTEX16 = ((uint32)(uint16)z);
 		#endif
@@ -2840,7 +2845,7 @@ void glVertex3v10(v10 x, v10 y, v10 z){
 		}
 	}
 	else{
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		GFX_VERTEX10 = (u32)VERTEX_PACKv10(x, y, z);
 		#endif
 	}
@@ -2869,7 +2874,7 @@ void glVertex2v16(v16 x, v16 y){
 		}
 	}
 	else{
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		GFX_VERTEX_XY = (u32)VERTEX_PACK(x, y);
 		#endif
 	}
@@ -2912,7 +2917,7 @@ void updateGXLights(){
 struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContextInternal;
 struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContextUser;
 
-#ifdef ARM9
+#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 __attribute__((section(".dtcm")))
 #endif
 bool isInternalDisplayList;
@@ -2920,7 +2925,7 @@ bool isInternalDisplayList;
 //Scratchpad GX buffer
 u32 SingleUnpackedGXCommand_DL_Binary[PHYS_GXFIFO_INTERNAL_SIZE];
 
-#ifdef ARM9
+#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
@@ -2930,7 +2935,7 @@ __attribute__((optnone))
 #endif
 u32 * getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(){
 	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
-	return (u32 *)&Inst->InternalUnpackedGX_DL_Binary[0];
+	return (u32 *)Inst->InternalUnpackedGX_DL_Binary;
 }
 
 //glGenLists returns the first list name in a range of the length you pass to glGenLists.
@@ -3131,7 +3136,7 @@ void glCallList(GLuint list){
 						memset(SingleUnpackedGXCommand_DL_Binary, 0, singleGXDisplayListSize);
 						memcpy((u8*)&SingleUnpackedGXCommand_DL_Binary[1], (u8*)&currentPhysicalDisplayListStart[0], singleGXDisplayListSize);
 						#endif
-						#ifdef ARM9
+						#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 						dmaFillWord(0, 0, (uint32)SingleUnpackedGXCommand_DL_Binary, (uint32)PHYS_GXFIFO_INTERNAL_SIZE);
 						dmaTransferWord(0, (uint32)&currentPhysicalDisplayListStart[0], (uint32)&SingleUnpackedGXCommand_DL_Binary[1], (uint32)singleGXDisplayListSize);
 						coherent_user_range_by_size((uint32)SingleUnpackedGXCommand_DL_Binary, singleGXDisplayListSize);
@@ -3640,7 +3645,7 @@ void glLightfv (GLenum light, GLenum pname, const GLfloat *params){
 			}
 		}
 		else{
-			#if defined(ARM9)
+			#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 			GFX_DIFFUSE_AMBIENT = (u32)( ((globalGLCtx.diffuseValue & 0xFFFF) << 0) | ((globalGLCtx.ambientValue & 0xFFFF) << 16) );
 			#endif
 		}
@@ -3664,7 +3669,7 @@ void glLightfv (GLenum light, GLenum pname, const GLfloat *params){
 			}
 		}
 		else{
-			#if defined(ARM9)
+			#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 			GFX_DIFFUSE_AMBIENT = (u32)( ((globalGLCtx.diffuseValue & 0xFFFF) << 0) | ((globalGLCtx.ambientValue & 0xFFFF) << 16) );
 			#endif
 		}
@@ -3689,7 +3694,7 @@ void glLightfv (GLenum light, GLenum pname, const GLfloat *params){
 			}
 		}
 		else{
-			#if defined(ARM9)
+			#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 			GFX_LIGHT_VECTOR = writeVal;
 			#endif
 		}
@@ -3713,7 +3718,7 @@ void glLightfv (GLenum light, GLenum pname, const GLfloat *params){
 			}
 		}
 		else{
-			#if defined(ARM9)
+			#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 			GFX_SPECULAR_EMISSION = (u32 )( ((globalGLCtx.specularValue & 0xFFFF) << 0) | ((globalGLCtx.emissionValue & 0xFFFF) << 16) );
 			#endif
 		}
@@ -3823,7 +3828,7 @@ void glMaterialfv (GLenum face, GLenum pname, const GLfloat *params){
 			}
 		}
 		else{
-			#if defined(ARM9)
+			#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 			GFX_DIFFUSE_AMBIENT = diffuse_ambient;
 			GFX_SPECULAR_EMISSION = specular_emission;
 			#endif
@@ -3941,7 +3946,7 @@ void glTexParameteri(
 		}
 	}
 	else{
-		#if defined(ARM9)
+		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 		GFX_TEX_FORMAT = globalGLCtx.textureParamsValue;
 		#endif
 	}
@@ -4087,37 +4092,37 @@ void glCullFace(GLenum mode){
 
 //////////////////////////////////////////////////////////// Extended Vertex Array Buffers and Vertex Buffer Objects OpenGL 1.1 start //////////////////////////////////////////
 
-#ifdef ARM9
+#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 __attribute__((section(".dtcm")))
 #endif
 GLenum errorStatus;
 
-#ifdef ARM9
+#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 __attribute__((section(".dtcm")))
 #endif
 struct vertexBufferObject * vboVertex = NULL;
 
-#ifdef ARM9
+#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 __attribute__((section(".dtcm")))
 #endif
 struct vertexBufferObject * vboNormal = NULL;
 
-#ifdef ARM9
+#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 __attribute__((section(".dtcm")))
 #endif
 struct vertexBufferObject * vboColor = NULL;
 
-#ifdef ARM9
+#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 __attribute__((section(".dtcm")))
 #endif
 struct vertexBufferObject * vboIndex = NULL;
 
-#ifdef ARM9
+#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 __attribute__((section(".dtcm")))
 #endif
 struct vertexBufferObject * vboTexCoord = NULL;
 
-#ifdef ARM9
+#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 __attribute__((section(".dtcm")))
 #endif
 struct vertexBufferObject * vboEdgeFlag = NULL;
@@ -4132,7 +4137,7 @@ GLenum glGetError(){
 	return errorStatus;
 }
 
-#ifdef ARM9
+#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 __attribute__((section(".dtcm")))
 #endif
 struct vertexBufferArray TGDSVBAInstance; //Client side (NintendoDS) implements a single one
@@ -4875,12 +4880,12 @@ When glDrawArrays is called, it uses count sequential elements from each enabled
 Vertex attributes that are modified by glDrawArrays have an unspecified value after glDrawArrays returns. Attributes that aren't modified remain well defined.
 */
 
-#ifdef ARM9
+#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 __attribute__((section(".dtcm")))
 #endif
 int OGL_DL_DRAW_ARRAYS_METHOD[VBO_CACHED_PREBUILT_DL_SIZE];
 
-#ifdef ARM9
+#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 __attribute__((section(".dtcm")))
 #endif
 int OGL_CURR_DL_DRAW_ARRAYS_METHOD;
