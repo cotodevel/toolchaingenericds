@@ -43,7 +43,7 @@
 #include "TGDSTypes.h"
 #endif
 
-#ifdef ARM9
+#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 #include "typedefsTGDS.h"
 #include "dsregs.h"
 #include "dsregs_asm.h"

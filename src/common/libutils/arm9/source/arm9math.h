@@ -34,7 +34,11 @@
 
 #include "trig_lut.h"
 
-#ifdef WIN32
+#if defined(_MSC_VER) && defined(ARM9) //ARM9 through NDS DL VS2012
+#include "TGDSTypes.h"
+#endif
+
+#if defined(_MSC_VER) && !defined(ARM9) //NDS DL VS2012?
 #include "TGDSTypes.h"
 #endif
 
@@ -91,12 +95,12 @@ typedef volatile sint64                   vint64;
 //  Fixed point divide
 //  Takes 1.19.12 numerator and denominator
 //  and returns 1.19.12 result
-#ifdef ARM9
+#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 inline 
 #endif
 static f32 divf32(f32 num, f32 den)
 {
-	#ifdef ARM9
+	#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 	DIV_CR = DIV_64_32;
 	
 	while(DIV_CR & DIV_BUSY);
@@ -117,7 +121,7 @@ static f32 divf32(f32 num, f32 den)
 //  Fixed point multiply
 //	Takes 1.19.12 values and returns
 //	1.19.12 result
-#ifdef ARM9
+#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 inline 
 #endif
 static f32 mulf32(f32 a, f32 b)
@@ -130,12 +134,12 @@ static f32 mulf32(f32 a, f32 b)
 //  Fixed point square root
 //	Takes 1.19.12 fixed point value and
 //	returns the fixed point result
-#ifdef ARM9
+#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 inline 
 #endif
 static f32 sqrtf32(f32 a)
 {
-	#ifdef ARM9
+	#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 	SQRT_CR = SQRT_64;
 
 	while(SQRT_CR & SQRT_BUSY);
@@ -148,9 +152,10 @@ static f32 sqrtf32(f32 a)
 	#endif
 	
 	#ifdef WIN32
-	uint32_t op  = a;
-    uint32_t res = 0;
-    uint32_t one = 1uL << 30; // The second-to-top bit is set: use 1u << 14 for uint16_t type; use 1uL<<30 for uint32_t type
+	u32 op  = a;
+    u32 res = 0;
+    u32 one = 0;
+	one = 1uL << 30; // The second-to-top bit is set: use 1u << 14 for uint16_t type; use 1uL<<30 for uint32_t type
 
 
     // "one" starts at the highest power of four <= than the argument.
@@ -180,11 +185,12 @@ static f32 sqrtf32(f32 a)
 //  Integer divide
 //  Takes a 32 bit numerator and 32 bit
 //	denominator and returns 32 bit result
-#ifdef ARM9
+#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 inline 
 #endif
 static int32 div32(int32 num, int32 den)
 {
+	#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 	DIV_CR = DIV_32_32;
 	
 	while(DIV_CR & DIV_BUSY);
@@ -195,17 +201,23 @@ static int32 div32(int32 num, int32 den)
 	while(DIV_CR & DIV_BUSY);
 
 	return (DIV_RESULT32);
+	#endif
+
+	#ifdef WIN32
+	return ((int)((int)num/(int)den));
+	#endif
 }
 
 ///////////////////////////////////////
 //  Interger divide
 //  Takes a 32 bit numerator and 32 bit
 //	denominator and returns 32 bit result
-#ifdef ARM9
+#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 inline 
 #endif
 static int32 mod32(int32 num, int32 den)
 {
+	#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 	DIV_CR = DIV_32_32;
 	
 	while(DIV_CR & DIV_BUSY);
@@ -216,17 +228,23 @@ static int32 mod32(int32 num, int32 den)
 	while(DIV_CR & DIV_BUSY);
 
 	return (DIV_REMANDER32);
+	#endif
+
+	#ifdef WIN32
+	return ((int)((int)num%(int)den));
+	#endif
 }
 
 ///////////////////////////////////////
 //  Integer divide
 //	Takes a 64 bit numerator and 32 bit
 //  denominator are returns 32 bit result
-#ifdef ARM9
+#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 inline 
 #endif
 static int32 div64(int64 num, int32 den)
 {
+	#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 	DIV_CR = DIV_32_32;
 	
 	while(DIV_CR & DIV_BUSY);
@@ -237,17 +255,23 @@ static int32 div64(int64 num, int32 den)
 	while(DIV_CR & DIV_BUSY);
 
 	return (DIV_RESULT32);
+	#endif
+
+	#ifdef WIN32
+	return ((int32)((long int)num/(int)den));
+	#endif
 }
 
 ///////////////////////////////////////
 //  Integer divide
 //	Takes a 64 bit numerator and 32 bit
 //  denominator are returns 32 bit result
-#ifdef ARM9
+#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 inline 
 #endif
 static int32 mod64(int64 num, int32 den)
 {
+	#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 	DIV_CR = DIV_32_32;
 	
 	while(DIV_CR & DIV_BUSY);
@@ -258,16 +282,22 @@ static int32 mod64(int64 num, int32 den)
 	while(DIV_CR & DIV_BUSY);
 
 	return (DIV_REMANDER32);
+	#endif
+
+	#ifdef WIN32
+	return ((int32)((long int)num%(int)den));
+	#endif
 }
 ///////////////////////////////////////
 //  Integer square root
 //  takes a 32 bit integer and returns 
 //	32 bit result
-#ifdef ARM9
+#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 inline 
 #endif
 static int32 sqrt32(int a)
 {
+	#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 	SQRT_CR = SQRT_32;
 
 	while(SQRT_CR & SQRT_BUSY);
@@ -277,6 +307,11 @@ static int32 sqrt32(int a)
 	while(SQRT_CR & SQRT_BUSY);
 	
 	return SQRT_RESULT32;
+	#endif
+	
+	#ifdef WIN32
+	return ((int32)sqrt(a));
+	#endif
 }
 
 ///////////////////////////////////////////////////////////////
@@ -287,7 +322,7 @@ static int32 sqrt32(int a)
 // x = Ay * Bz - By * Az
 // y = Az * Bx - Bz * Ax
 // z = Ax * By - Bx * Ay
-#ifdef ARM9
+#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 inline 
 #endif
 static void crossf32(f32 *a, f32 *b, f32 *result)
@@ -300,7 +335,7 @@ static void crossf32(f32 *a, f32 *b, f32 *result)
 ///////////////////////////////////////
 // Dot Product
 // result = Ax * Bx + Ay * By + Az * Bz
-#ifdef ARM9
+#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 inline 
 #endif
 static f32 dotf32(f32 *a, f32 *b)
@@ -313,7 +348,7 @@ static f32 dotf32(f32 *a, f32 *b)
 // Ax = Ax / mag
 // Ay = Ay / mag
 // Az = Az / mag
-#ifdef ARM9
+#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 inline 
 #endif
 static void normalizef32(f32* a)

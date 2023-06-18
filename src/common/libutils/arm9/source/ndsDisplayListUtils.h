@@ -30,7 +30,7 @@ USA
 #define testSourceFileLocation (char*)"\\cv\\PackedDisplayListCompiled.bin"
 #endif
 
-#ifdef ARM9
+#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 #include "typedefsTGDS.h"
 //testSourceFileLocation is embedded into ARM9
 #endif
