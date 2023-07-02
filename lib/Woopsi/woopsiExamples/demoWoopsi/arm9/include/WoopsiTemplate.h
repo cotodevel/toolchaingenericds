@@ -33,8 +33,6 @@ private:
 };
 #endif
 
-#define TGDSPROJECTNAME ((char*) "demoWoopsi")
-
 #endif
 
 #ifdef __cplusplus
