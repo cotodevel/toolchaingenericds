@@ -113,7 +113,10 @@ static f32 divf32(f32 num, f32 den)
 	#endif
 	
 	#ifdef WIN32
-	return ((num << 8) / den);
+	if(den > 0){
+		return ((num << 8) / den);
+	}	
+	return 0;
 	#endif
 }
 

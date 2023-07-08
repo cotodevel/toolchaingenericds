@@ -1114,10 +1114,13 @@ enum {
 	GL_ALL_ATTRIB_BITS	= (unsigned int)0x000fffff
 };
 
-#define PHYS_GXFIFO_INTERNAL_SIZE ((int)4096) //up to 1024 unpacked cmds
+#define PHYS_GXFIFO_INTERNAL_SIZE ((int)3072) //up to 768 unpacked cmds
 
 //Max GL Lists allocated in the OpenGL API
-#define MAX_TGDS_SpawnOGLDisplayListsPerDisplayListContext ((int)512) 	// Up to 512 OpenGL DisplayLists (up to 128 GX commands per OpenGL DisplayList if all 512 OGL DLs were used)
+#define MAX_TGDS_SpawnOGLDisplayListsPerDisplayListContext ((int)512) 	
+//TGDS API usage: 
+//glGenLists(MAX_TGDS_SpawnOGLDisplayListsPerDisplayListContext) -> results in 
+//(256*1024/4)/512 = up to 128 GX commands for every OpenGL DisplayList allocated: 512
 
 //Display List Descriptor
 #define DL_INVALID (u32)(-1)

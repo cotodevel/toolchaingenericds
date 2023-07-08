@@ -395,9 +395,9 @@ int main(int argc, char** argv){
 	float rotateY = 0.0;
 	//DS can just call glInit(); a lot of times
 	{
+		int TGDSOpenGLDisplayListWorkBufferSize = (256*1024);
 		#ifdef WIN32
 		InitGLOnlyOnce = false;
-		int TGDSOpenGLDisplayListWorkBufferSize = (256*1024);
 		glInit(TGDSOpenGLDisplayListWorkBufferSize);
 		#endif
 
