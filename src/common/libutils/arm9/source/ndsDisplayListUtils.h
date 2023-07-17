@@ -21,11 +21,18 @@ USA
 #ifndef __ndsDisplayListUtils_h__
 #define __ndsDisplayListUtils_h__
 
+//#define TGDSPROJECT_WIN32 //enabled: when ndsDLutils is used in TGDSProject directly
+
 //GX Payload source sample: PackedDisplayListCompiled.bin: 
 //Packed Display List commands generated from VS2012 by running unit tests 1,2,3,4 and 5 
 //(emited DL unpacked, then packed to a GX binary, whose dump ends up being this file)
 
-#ifdef WIN32
+#if defined(_MSC_VER)
+
+#if defined(TGDSPROJECT_WIN32)
+#include <gl\GLUT.h>
+#endif
+
 #include "TGDSTypes.h"
 #define testSourceFileLocation (char*)"\\cv\\PackedDisplayListCompiled.bin"
 #endif
@@ -36,6 +43,7 @@ USA
 #endif
 
 #include "VideoGL.h"
+
 
 //NDS GX C Display List defines
 struct unpackedCmd {
@@ -88,6 +96,9 @@ struct unpackedCmd {
 
 #endif
 
+#define PI 3.14159
+#define TWOPI		    (PI*2)
+
 extern bool isAGXCommand(u32 val);
 extern u8 clzero(u32 var);
 extern int getAGXParamsCountFromCommand(u32 command);
@@ -108,6 +119,18 @@ extern "C" {
 #endif
 
 extern int TWLPrintf(const char *fmt, ...);
+
+//glut shapes 
+extern GLint DLSOLIDCUBE0_06F;
+extern GLint DLSPHERE;
+extern GLint DLCYLINDER;
+
+extern void drawSphere(float r, int lats, int longs);
+extern void glut2SolidCube(float x, float y, float z);
+extern void drawCircle(GLfloat x, GLfloat y, GLfloat r, GLfloat BALL_RADIUS);
+extern void setupGLUTObjects();
+extern void glut2SolidCubeSlow(GLdouble size);
+extern void drawCylinder(int numMajor, int numMinor, float height, float radius);
 
 #ifdef __cplusplus
 }

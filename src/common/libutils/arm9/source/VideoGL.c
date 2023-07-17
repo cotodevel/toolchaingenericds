@@ -220,6 +220,7 @@ void glInit(int TGDSOpenGLDisplayListGXBufferSize){
 		}
 		isInternalDisplayList = false;
 	}
+	setupGLUTObjects(); //ARM9 only
 }
 
 #ifdef ARM9
