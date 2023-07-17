@@ -39,10 +39,9 @@ USA
 
 #if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 #include "typedefsTGDS.h"
+#include "VideoGL.h"
 //testSourceFileLocation is embedded into ARM9
 #endif
-
-#include "VideoGL.h"
 
 
 //NDS GX C Display List defines
