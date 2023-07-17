@@ -47,10 +47,12 @@ USA
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include "VideoGL.h"
 #include "ndsDisplayListUtils.h"
 
+#if !defined(TGDSPROJECT_WIN32)
+
 #ifdef ARM9
+#include "VideoGL.h"
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif
@@ -821,3 +823,219 @@ int TWLPrintf(const char *fmt, ...){
 	return 0;
 }
 #endif
+#endif
+
+//glut shapes 
+GLint DLSOLIDCUBE0_06F=-1;
+GLint DLSPHERE=-1;
+GLint DLCYLINDER=-1;
+
+void glut2SolidCube(float x, float y, float z){
+#ifdef ARM9
+	updateGXLights(); //Update GX 3D light scene!
+#endif
+	glScalef(x, y, y);
+	glCallList(DLSOLIDCUBE0_06F);
+}
+
+//glutSolidSphere(radius, 16, 16);  -> NDS GX Replacement
+void drawSphere(float r, int lats, int longs) {	
+#ifdef ARM9
+	#include "Sphere008.h"
+	glScalef(r, r, r);
+	glCallListGX((u32*)&Sphere008); //comment out when running on NDSDisplayListUtils
+	#endif
+
+	#ifdef WIN32
+	glCallList(DLSPHERE);
+	#endif
+}
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__((optnone))
+#endif
+#endif
+void setupGLUTObjects(){
+	DLSOLIDCUBE0_06F = (GLint)glGenLists(1);
+	//glut2SolidCube(); -> NDS GX Implementation
+	glNewList(DLSOLIDCUBE0_06F, GL_COMPILE);
+	{
+		float size = 0.06f;
+		GLfloat n[6][3] =
+		{
+			{-1.0f, 0.0f, 0.0f},
+			{0.0f, 1.0f, 0.0f},
+			{1.0f, 0.0f, 0.0f},
+			{0.0f, -1.0f, 0.0f},
+			{0.0f, 0.0f, 1.0f},
+			{0.0f, 0.0f, -1.0f}
+		};
+		GLint faces[6][4] =
+		{
+			{0, 1, 2, 3},
+			{3, 2, 6, 7},
+			{7, 6, 5, 4},
+			{4, 5, 1, 0},
+			{5, 6, 2, 1},
+			{7, 4, 0, 3}
+		};
+		GLfloat v[8][3];
+		GLint i;
+
+		v[0][0] = v[1][0] = v[2][0] = v[3][0] = -size / 2;
+		v[4][0] = v[5][0] = v[6][0] = v[7][0] = size / 2;
+		v[0][1] = v[1][1] = v[4][1] = v[5][1] = -size / 2;
+		v[2][1] = v[3][1] = v[6][1] = v[7][1] = size / 2;
+		v[0][2] = v[3][2] = v[4][2] = v[7][2] = -size / 2;
+		v[1][2] = v[2][2] = v[5][2] = v[6][2] = size / 2;
+
+		glScalef(32.0f, 32.0f, 32.0f);
+		for (i = 5; i >= 0; i--)
+		{
+			glBegin(GL_QUADS);
+			//glNormal3fv(&n[i][0]); //object is black when lighting is off
+			glTexCoord2f(0, 0);
+			glVertex3fv(&v[faces[i][0]][0]);
+			glTexCoord2f(1, 0);
+			glVertex3fv(&v[faces[i][1]][0]);
+			glTexCoord2f(1, 1);
+			glVertex3fv(&v[faces[i][2]][0]);
+			glTexCoord2f(0, 1);
+			glVertex3fv(&v[faces[i][3]][0]);
+			glEnd();
+		}
+	}
+	glEndList();
+
+	DLSPHERE = (GLint)glGenLists(1);
+	//drawSphere(); -> NDS GX Implementation
+	glNewList(DLSPHERE, GL_COMPILE);
+	{
+		float r=1; 
+		int lats=8; 
+		int longs=8;
+		int i, j;
+		for (i = 0; i <= lats; i++) {
+			float lat0 = PI * (-0.5 + (float)(i - 1) / lats);
+			float z0 = sin((float)lat0);
+			float zr0 = cos((float)lat0);
+
+			float lat1 = PI * (-0.5 + (float)i / lats);
+			float z1 = sin((float)lat1);
+			float zr1 = cos((float)lat1);
+			glBegin(GL_QUAD_STRIP);
+			for (j = 0; j <= longs; j++) {
+				float lng = 2 * PI * (float)(j - 1) / longs;
+				float x = cos(lng);
+				float y = sin(lng);
+				//glNormal3f(x * zr0, y * zr0, z0); //lights are off
+				glVertex3f(r * x * zr0, r * y * zr0, r * z0);
+				//glNormal3f(x * zr1, y * zr1, z1);
+				glVertex3f(r * x * zr1, r * y * zr1, r * z1);
+			}
+			glEnd();
+		}
+	}
+	glEndList();
+}
+
+//gluDisk(qObj, 0.0, RADIUS, 16, 16); -> NDS GX Implementation
+void drawCircle(GLfloat x, GLfloat y, GLfloat r, GLfloat BALL_RADIUS)
+{
+	#define SLICES_PER_CIRCLE ((int)16)
+	float angle = 360.f / SLICES_PER_CIRCLE;
+	float anglex = cos(angle);
+	float angley = sin(angle);
+	GLfloat lastX = 1;
+	GLfloat lastY = 0;
+	int c = 0; 
+	glBegin(GL_TRIANGLE_STRIP);
+	for (c = 1; c < SLICES_PER_CIRCLE; c++)
+	{
+		x = lastX * anglex - lastY * angley;
+		y = lastX * angley + lastY * anglex;
+		glVertex2f(x * BALL_RADIUS, y * BALL_RADIUS);
+		lastX = x;
+		lastY = y;
+	}
+	glEnd();
+}
+
+void drawCylinder(int numMajor, int numMinor, float height, float radius){
+	double majorStep = height / numMajor;
+	double minorStep = 2.0 * PI / numMinor;
+	int i, j;
+
+	for (i = 0; i < numMajor; ++i) {
+		GLfloat z0 = 0.5 * height - i * majorStep;
+		GLfloat z1 = z0 - majorStep;
+
+		//glBegin(GL_TRIANGLE_STRIP);
+		for (j = 0; j <= numMinor; ++j) {
+			double a = j * minorStep;
+			GLfloat x = radius * cos(a);
+			GLfloat y = radius * sin(a);
+			glNormal3f(x / radius, y / radius, 0.0);
+			
+			glTexCoord2f(j / (GLfloat) numMinor, i / (GLfloat) numMajor);
+			glVertex3f(x, y, z0);
+
+			glNormal3f(x / radius, y / radius, 0.0);
+			glTexCoord2f(j / (GLfloat) numMinor, (i + 1) / (GLfloat) numMajor);
+			glVertex3f(x, y, z1);
+		}
+		//glEnd();
+	}
+}
+
+//slower, but allows multiple cubes of different sizes to upscale textures accurately
+void glut2SolidCubeSlow(GLdouble size){
+    static GLfloat n[6][3] =
+    {
+        {-1.0, 0.0, -1.0},
+        {0.0, 1.0, 0.0},
+        {1.0, 0.0, 0.0},
+        {0.0, -1.0, 0.0},
+        {0.0, 0.0, 1.0},
+        {0.0, 0.0, -1.0}
+    };
+    static GLint faces[6][4] =
+    {
+        {0, 1, 2, 3},
+        {3, 2, 6, 7},
+        {7, 6, 5, 4},
+        {4, 5, 1, 0},
+        {5, 6, 2, 1},
+        {7, 4, 0, 3}
+    };
+    GLfloat v[8][3];
+    GLint i;
+
+    v[0][0] = v[1][0] = v[2][0] = v[3][0] = -size / 2;
+    v[4][0] = v[5][0] = v[6][0] = v[7][0] = size / 2;
+    v[0][1] = v[1][1] = v[4][1] = v[5][1] = -size / 2;
+    v[2][1] = v[3][1] = v[6][1] = v[7][1] = size / 2;
+    v[0][2] = v[3][2] = v[4][2] = v[7][2] = -size / 2;
+    v[1][2] = v[2][2] = v[5][2] = v[6][2] = size / 2;
+
+    for (i = 5; i >= 0; i--)
+    {
+		glBegin(GL_QUADS);
+			//(snake head object)
+			glColor3f(1.0f, 1.0f, 14.0f);
+            glNormal3fv(&n[i][0]);
+            glTexCoord2f(0, 0);
+			glVertex3fv(&v[faces[i][0]][0]);
+            glTexCoord2f(1, 0);
+            glVertex3fv(&v[faces[i][1]][0]);
+            glTexCoord2f(1, 1);
+            glVertex3fv(&v[faces[i][2]][0]);
+            glTexCoord2f(0, 1);
+            glVertex3fv(&v[faces[i][3]][0]);
+        glEnd();
+    }
+}
