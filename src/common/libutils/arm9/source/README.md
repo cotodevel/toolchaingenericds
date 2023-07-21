@@ -80,11 +80,11 @@ NDS:
 ![ToolchainGenericDS](img/neheDisplayListsLesson12_nds.png)
 
 
-0.4: Implementation finished.
+0.4: OpenGL Display Lists Implementation finished.
 
-0.3: Standardized format so it's conformant with Open GL Display Lists: (https://bitbucket.org/Coto88/toolchaingenericds-displaylist/src)
+0.3: Standardized format so it's conformant with Open GL Display Lists.
 
-0.2: Ported to NintendoDS, unit test implemented at: https://bitbucket.org/Coto88/toolchaingenericds-unittest/src (5th Test Case)
+0.2: Ported to NintendoDS.
 
 0.1: First release, WIN32 only.
 
