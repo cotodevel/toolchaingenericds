@@ -225,7 +225,7 @@ void glInit(int TGDSOpenGLDisplayListGXBufferSize){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -253,7 +253,7 @@ void glPushMatrix(){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -281,7 +281,7 @@ void glPopMatrix(sint32 index){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -309,7 +309,7 @@ void glRestoreMatrix(sint32 index){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -337,7 +337,7 @@ void glStoreMatrix(sint32 index){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -369,7 +369,7 @@ void glScalev(GLvector* v){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -401,7 +401,7 @@ void glTranslatev(GLvector* v){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -413,7 +413,7 @@ void glTranslatef32(int x, int y, int z) {
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -427,7 +427,7 @@ void glTranslate3f32(f32 x, f32 y, f32 z){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -463,7 +463,7 @@ void glLight(int id, rgb color, v10 x, v10 y, v10 z){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -491,7 +491,7 @@ void glNormal(uint32 normal){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -519,7 +519,7 @@ void glLoadIdentity(){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -547,7 +547,7 @@ void glMatrixMode(int mode){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -596,7 +596,7 @@ void emitGLShinnyness(float shinyValue){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -608,7 +608,7 @@ void glMaterialShinnyness(){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -636,7 +636,7 @@ void glPolyFmt(u32 GXPolygonAttributes){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -671,7 +671,7 @@ u16 defaultglClearDepth=0;
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -688,7 +688,7 @@ void glClearColor(uint8 red, uint8 green, uint8 blue){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -703,7 +703,7 @@ void glClearDepth(uint16 depth){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -727,7 +727,7 @@ void glClear( GLbitfield mask ){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -739,7 +739,7 @@ void glTranslatef(float x, float y, float z){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -777,7 +777,7 @@ void glEnable(int bits){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -816,7 +816,7 @@ void glDisable(int bits){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -845,7 +845,7 @@ void glFlush(){
 //OpenGL states this behaves the same as glFlush but also CPU waits for all commands to be executed by the GPU
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -865,7 +865,7 @@ A pointer to a 4x4 matrix stored in column-major order as 16 consecutive values.
 */
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -894,7 +894,7 @@ void glLoadMatrixf(const GLfloat *m){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -955,7 +955,7 @@ void glLoadMatrix4x4(m4x4 * m){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1007,7 +1007,7 @@ void glLoadMatrix4x3(m4x3* m){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1068,7 +1068,7 @@ void glMultMatrix4x4(m4x4* m){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1150,7 +1150,7 @@ void glMultMatrix4x3(m4x3* m){
 //	based on 512 degree circle
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1213,7 +1213,7 @@ void glRotateZi(int angle){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1277,7 +1277,7 @@ void glRotateYi(int angle){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1342,7 +1342,7 @@ void glRotateXi(int angle){
 //	rotations wrapped in float...mainly for testing
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1354,7 +1354,7 @@ void glRotateX(float angle){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1366,7 +1366,7 @@ void glRotateY(float angle){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1378,7 +1378,7 @@ void glRotateZ(float angle){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1399,7 +1399,7 @@ void glRotatef(int angle, float x, float y, float z){
 // Fixed point look at function, it appears to work as expected although testing is recomended
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1478,7 +1478,7 @@ void gluLookAtf32(f32 eyex, f32 eyey, f32 eyez, f32 lookAtx, f32 lookAty, f32 lo
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1494,7 +1494,7 @@ void gluLookAt(float eyex, float eyey, float eyez, float lookAtx, float lookAty,
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1563,7 +1563,7 @@ void gluFrustumf32(f32 left, f32 right, f32 bottom, f32 top, f32 nearVal, f32 fa
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1575,7 +1575,7 @@ void glOrtho(float left, float right, float bottom, float top, float nearVal, fl
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1643,7 +1643,7 @@ void glOrthof32(f32 left, f32 right, f32 bottom, f32 top, f32 nearVal, f32 farVa
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1656,7 +1656,7 @@ void gluFrustum(float left, float right, float bottom, float top, float nearVal,
 //	Fixed point perspective setting
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1676,7 +1676,7 @@ void gluPerspectivef32(int fovy, f32 aspect, f32 zNear, f32 zFar){
 //  glu wrapper for floating point
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1692,7 +1692,7 @@ void gluPerspective(float fovy, float aspect, float zNear, float zFar){
 //The default specular exponent for both front-facing and back-facing materials is 0.
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1714,7 +1714,7 @@ void glMaterialf(
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1736,7 +1736,7 @@ void glResetMatrixStack(){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1750,7 +1750,7 @@ void glSetOutlineColor(int id, rgb color){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1767,7 +1767,7 @@ void glSetToonTable(uint16 *table){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1784,7 +1784,7 @@ void glSetToonTableRange(int start, int end, rgb color){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1823,7 +1823,7 @@ uint32* nextBlock = (uint32*)0x06800000;
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1840,7 +1840,7 @@ void glResetTextures(void){
 //  Returns 1 if succesful and 0 if out of texture names
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1867,7 +1867,7 @@ int glGenTextures(int n, int *names){
 //	is ignored as all DS textures are 2D
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1899,7 +1899,7 @@ void glBindTexture(int target, int name){
 //	Effort may be made in the future to make it so.
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1911,7 +1911,7 @@ void glTexParameter(uint8 sizeX, uint8 sizeY, uint32* addr, uint8 mode, uint32 p
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1942,7 +1942,7 @@ uint16* vramGetBank(uint16 *addr){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1981,7 +1981,7 @@ int vramIsTextureBank(uint16 *addr){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -2015,7 +2015,7 @@ uint32* getNextTextureSlot(int size){
 //	type is simply the texture type (GL_RGB, GL_RGB8 ect...)
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -2101,7 +2101,7 @@ int glTexImage2D(int target, int empty1, int type, int sizeX, int sizeY, int emp
 //integer x , y vertex coords in v16 format
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -2114,7 +2114,7 @@ void glVertex2i(int x, int y) {
 //float x , y vertex coords in v16 format
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -2127,7 +2127,7 @@ void glVertex2f(float x, float y) {
 //float x , y , z vertex coords in v16 format
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -2140,7 +2140,7 @@ void glVertex3f(GLfloat x, GLfloat y, GLfloat z){
 //int x , y , z vertex coords in v16 format
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -2152,7 +2152,7 @@ void glVertex3i(GLint x, GLint y, GLint z){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -2165,7 +2165,7 @@ void glShadeModel(GLenum mode){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -2196,7 +2196,7 @@ void glColor3f(float red, float green, float blue){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -2211,7 +2211,7 @@ void glColor3fv(const GLfloat * v){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -2227,7 +2227,7 @@ void glColor4fv(const GLfloat *v){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -2240,7 +2240,7 @@ void glTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 //glTexSubImage*() == glTexSubImage3D
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -2253,7 +2253,7 @@ void glTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset, G
 //glCopyTexImage*() == glCopyTexImage2D
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -2266,7 +2266,7 @@ void glCopyTexImage2D(GLenum target, GLint level, GLenum internalFormat, GLint x
 //glCopyTexSubImage*() == glCopyTexSubImage3D
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -2298,7 +2298,7 @@ void glCopyTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffse
 //glPrioritizeTextures()
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -2309,9 +2309,9 @@ void glPrioritizeTextures (GLsizei n, const GLuint *textures, const GLclampf *pr
 }
 
 #if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
-__attribute__((section(".itcm")))
+
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -2399,7 +2399,7 @@ void glCallListGX(const u32* list) {
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2415,7 +2415,7 @@ int getTextureBaseFromTextureSlot(int textureSlot){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2430,7 +2430,7 @@ void glTexCoord2fv(
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2469,7 +2469,7 @@ void glTexCoord2i(GLint s, GLint t){
 //Note: uv == ((u << 16) | (v & 0xFFFF))
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2497,7 +2497,7 @@ void glTexCoord1i(uint32 uv){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2530,7 +2530,7 @@ void glTexCoord2t16(t16 u, t16 v){
 //3  Quadliteral Strips      ;4+(N-1)*2 vertices per N quads
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2558,7 +2558,7 @@ void glBegin(int primitiveType){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2597,7 +2597,7 @@ u16 lastVertexColor = 0;
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2652,7 +2652,7 @@ void glColor3b(uint8 red, uint8 green, uint8 blue){
 //glNormal: Sets the current normal vector
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2668,7 +2668,7 @@ void glNormal3b(
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2684,7 +2684,7 @@ void glNormal3d(
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2716,7 +2716,7 @@ void glNormal3f(
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2748,7 +2748,7 @@ void glNormal3v10(
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2764,7 +2764,7 @@ void glNormal3s(
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2796,7 +2796,7 @@ void glNormal3i(
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2826,7 +2826,7 @@ void glVertex3v16(v16 x, v16 y, v16 z){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2855,7 +2855,7 @@ void glVertex3v10(v10 x, v10 y, v10 z){
 //Parameters. x. Specifies the x-coordinate of a vertex. y. Specifies the y-coordinate of a vertex
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2893,7 +2893,7 @@ void glVertex2v16(v16 x, v16 y){
 //Usage: https://bitbucket.org/Coto88/toolchaingenericds-unittest/src example
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2928,7 +2928,7 @@ u32 SingleUnpackedGXCommand_DL_Binary[PHYS_GXFIFO_INTERNAL_SIZE];
 
 #if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2942,7 +2942,7 @@ u32 * getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(){
 //glGenLists returns the first list name in a range of the length you pass to glGenLists.
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2979,7 +2979,7 @@ GLuint glGenLists(GLsizei range){
 //Internally, if a new base is set, a pointer to a new section is updated
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -3006,7 +3006,7 @@ void glListBase(GLuint base){
 //A name returned by glGenLists, but not yet associated with a display list by calling glNewList, is not the name of a display list.
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -3031,7 +3031,7 @@ GLboolean glIsList(GLuint list){
 //mode:Specifies the compilation mode, which can be GL_COMPILE or GL_COMPILE_AND_EXECUTE.
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -3063,7 +3063,7 @@ void glNewList(GLuint list, GLenum mode){
 //If a display list with name list already exists, it is replaced only when glEndList is called.
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -3105,7 +3105,7 @@ Specifies the integer name of the display list to be executed.
 */
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -3485,7 +3485,7 @@ Specifies the address of an array of name offsets in the display list. The point
 */
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -3583,7 +3583,7 @@ void glCallLists(GLsizei n, GLenum type, const void * lists){
 //Note: It's assumed DisplayLists are at the end of the physical DL GX Binary. //todo: maybe have 4K of physical DL for direct OGL cmds, and maybe the other 4K for display list OGL cmds
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -3620,7 +3620,7 @@ void glDeleteLists(GLuint list, GLsizei range){
 
 //////////////////////////////////////////////////////////// Extended Display List OpenGL 1.x end 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -3735,7 +3735,7 @@ void glLightfv (GLenum light, GLenum pname, const GLfloat *params){
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -3839,7 +3839,7 @@ void glMaterialfv (GLenum face, GLenum pname, const GLfloat *params){
 
 //glNormal(v): A pointer to an array of three elements: the x, y, and z coordinates of the new current normal.
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -3849,7 +3849,7 @@ void glNormal3dv(const GLdouble *v){
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -3860,7 +3860,7 @@ void glNormal3fv(const GLfloat *v){
 
 //v: A pointer to an array of three elements. The elements are the x, y, and z coordinates of a vertex.
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -3870,7 +3870,7 @@ void glVertex3fv(const GLfloat *v){
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -3883,7 +3883,7 @@ void glVertex3dv(const GLdouble *v){
 //target: The target texture, which must be either GL_TEXTURE_1D or GL_TEXTURE_2D.
 //pname: The symbolic name of a single valued texture parameter. The following symbols are accepted in pname.
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -3962,7 +3962,7 @@ void glTexParameteri(
 //pname: The symbolic name of a single valued texture parameter. The following symbols are accepted in pname.
 //params: misc
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -3975,7 +3975,7 @@ void glGetFloatv(
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4004,7 +4004,7 @@ The m parameter points to a 4x4 matrix of single-precision or double-precision f
 stored in column-major order.
 */
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4014,7 +4014,7 @@ void  glMultMatrixd(const GLdouble *m){
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4042,7 +4042,7 @@ void  glMultMatrixf(const GLfloat *m){
 
 //The glScaled and glScalef functions multiply the current matrix by a general scaling matrix.
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4060,7 +4060,7 @@ void glScalef(
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4129,7 +4129,7 @@ __attribute__((section(".dtcm")))
 struct vertexBufferObject * vboEdgeFlag = NULL;
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4146,7 +4146,7 @@ struct vertexBufferArray TGDSVBAInstance; //Client side (NintendoDS) implements 
 //VBO
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4167,7 +4167,7 @@ void glGenBuffers(GLsizei n, GLuint* ids){
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4190,7 +4190,7 @@ void glDeleteBuffers(GLsizei n, const GLuint* ids){
 
 //Note: Method adapted to work around OpenGL1.5 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4260,7 +4260,7 @@ usage
 Specifies the expected usage pattern of the data store. The symbolic constant must be GL_STREAM_DRAW, GL_STREAM_READ, GL_STREAM_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STATIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, or GL_DYNAMIC_COPY.
 */
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4315,7 +4315,7 @@ void glBufferData(GLenum target, GLsizei size, const void* data, GLenum usage){
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4326,7 +4326,7 @@ void glBufferSubData(GLenum target, GLint offset, GLsizei size, void* data){
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4358,7 +4358,7 @@ void glEnableClientState(GLenum arr){
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4403,7 +4403,7 @@ stride: The byte offset between consecutive vertices. When stride is zero, the v
 pointer: A pointer to the first coordinate of the first vertex in the array.
 */
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4459,7 +4459,7 @@ pointer: A pointer to the first normal in the array.
 NOTE: DS floats ARE TREATED AS v10 in all cases for max GX normal precision
 */
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4506,7 +4506,7 @@ void glNormalPointer( GLenum type, GLsizei stride, const GLvoid *ptr ){
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4566,7 +4566,7 @@ void glColorPointer( GLint size, GLenum type, GLsizei stride, const GLvoid *ptr 
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4610,7 +4610,7 @@ void glIndexPointer( GLenum type, GLsizei stride, const GLvoid *ptr ){
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4658,7 +4658,7 @@ void glTexCoordPointer( GLint size, GLenum type, GLsizei stride, const GLvoid *p
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4669,7 +4669,7 @@ void glEdgeFlagPointer( GLsizei stride, const GLvoid *ptr ){
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4732,7 +4732,7 @@ void		display_rect(int x, int y, int lettre)
 }
 */
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4893,7 +4893,7 @@ int OGL_CURR_DL_DRAW_ARRAYS_METHOD;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -5139,7 +5139,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -5157,7 +5157,7 @@ NOTE: You need to make sure that you set up the data in your structure (or class
 // be confused.
 */
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -5510,7 +5510,7 @@ void glInterleavedArrays( GLenum format, GLsizei stride, const GLvoid *pointer )
 
 //The glGetMaterialfv and glGetMaterialiv functions return material parameters.
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -5595,7 +5595,7 @@ void glGetMaterialfv(
 
 //Note: It's the same because both int and float datatypes are 4-byte on ARM v5t CPU platforms.
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -5695,7 +5695,7 @@ void glGetIntegerv(
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -5708,7 +5708,7 @@ void glGetBooleanv(
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -5721,7 +5721,7 @@ void glFogi(
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
+__attribute__((optimize("Os"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
