@@ -21,7 +21,16 @@ USA
 #ifndef __ndsDisplayListUtils_h__
 #define __ndsDisplayListUtils_h__
 
-//#define TGDSPROJECT_WIN32 //enabled: when ndsDLutils is used in TGDSProject directly
+//#define DIRECT_VS2012_NDSDL_EXEC 1 //enabled: VS2012 + NDSDLUtils env (no direct TGDSProject3D)
+//#define DIRECT_TGDSPROJECT_WIN32 1 //enabled: TGDSProject3D on VS2012. disabled: TGDSProject3D on TGDS ARM9. 
+
+#if defined(DIRECT_VS2012_NDSDL_EXEC) && defined(DIRECT_TGDSPROJECT_WIN32)
+#error "can't choose both direct VS2012 NDSDL and TGDSProject3D environments at the same time, pick either one."
+#endif
+
+#if defined(DIRECT_VS2012_NDSDL_EXEC) || defined(DIRECT_TGDSPROJECT_WIN32)
+#define TGDSPROJECT_WIN32 //enabled: when ndsDLutils is used in TGDSProject3D directly
+#endif
 
 //GX Payload source sample: PackedDisplayListCompiled.bin: 
 //Packed Display List commands generated from VS2012 by running unit tests 1,2,3,4 and 5 
@@ -29,9 +38,15 @@ USA
 
 #if defined(_MSC_VER)
 
-#if defined(TGDSPROJECT_WIN32)
+#if defined(TGDSPROJECT_WIN32) && !defined(DIRECT_VS2012_NDSDL_EXEC)
 #include <gl\GLUT.h>
 #endif
+
+
+#if defined(TGDSPROJECT_WIN32) && defined(DIRECT_VS2012_NDSDL_EXEC)
+#include "VideoGL.h"
+#endif
+
 
 #include "TGDSTypes.h"
 #define testSourceFileLocation (char*)"\\cv\\PackedDisplayListCompiled.bin"
