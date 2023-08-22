@@ -232,6 +232,8 @@ struct GLContext{
 
 	//latest Viewport
 	u32 lastViewport; //(x1) + (y1 << 8) + (x2 << 16) + (y2 << 24) //x1 = x, y1 = y, x2 = 
+	bool blendVertexAndNormalsFromColor;
+	bool glBlendEnabled;
 } 
 
 #if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
@@ -1452,6 +1454,14 @@ extern void glFogfv(
 );
 
 extern int InternalUnpackedGX_DL_workSize;
+extern void glColorMaterial(
+   GLenum face,
+   GLenum mode
+);
+
+extern GLboolean glIsEnabled(
+   GLenum cap
+);
 
 #ifdef __cplusplus
 }

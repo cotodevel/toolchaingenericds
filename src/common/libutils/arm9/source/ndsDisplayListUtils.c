@@ -49,7 +49,7 @@ USA
 #include <string.h>
 #include "ndsDisplayListUtils.h"
 
-#if !defined(TGDSPROJECT_WIN32)
+#if !defined(TGDSPROJECT_WIN32) || defined(DIRECT_VS2012_NDSDL_EXEC)
 
 #ifdef ARM9
 #include "VideoGL.h"
