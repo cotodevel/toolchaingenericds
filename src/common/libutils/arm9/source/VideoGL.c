@@ -90,8 +90,6 @@ void glInit(int TGDSOpenGLDisplayListGXBufferSize){
 	SETDISPCNT_MAIN(MODE_0_3D);
 	#endif
 	memset((u8*)&globalGLCtx, 0, sizeof(struct GLContext));
-	glShadeModel(GL_SMOOTH);
-
 	InternalUnpackedGX_DL_workSize = (TGDSOpenGLDisplayListGXBufferSize/4);
 
 	globalGLCtx.GXPolygonAttributes = (POLY_ALPHA(31) | POLY_CULL_NONE);
@@ -220,6 +218,10 @@ void glInit(int TGDSOpenGLDisplayListGXBufferSize){
 		}
 		isInternalDisplayList = false;
 	}
+
+	glShadeModel(GL_SMOOTH);
+	glDisable(GL_BLEND);
+	glDisable(GL_COLOR_MATERIAL);
 	setupGLUTObjects(); //ARM9 only
 }
 
@@ -768,6 +770,15 @@ void glEnable(int bits){
 		globalGLCtx.GXPolygonAttributes |= GX_LIGHT3;
 	}
 
+	//Enable blending direct colors into both vertice and normal light reflection matrices
+	if((bits&GL_COLOR_MATERIAL) == GL_COLOR_MATERIAL){
+		globalGLCtx.blendVertexAndNormalsFromColor = true;
+	}
+
+	if((bits&GL_BLEND) == GL_BLEND){
+		globalGLCtx.glBlendEnabled = true;
+	}
+
 	enable_bits |= bits & (GL_TEXTURE_2D|GL_TOON_HIGHLIGHT|GL_OUTLINE|GL_ANTIALIAS|GL_BLEND);
 	#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 	GFX_CONTROL = enable_bits;
@@ -805,6 +816,15 @@ void glDisable(int bits){
 
 	if((bits&GL_LIGHT3) == GL_LIGHT3){
 		globalGLCtx.GXPolygonAttributes &= ~(GX_LIGHT3);
+	}
+	
+	//Disable blending direct colors into both vertice and normal light reflection matrices
+	if((bits&GL_COLOR_MATERIAL) == GL_COLOR_MATERIAL){
+		globalGLCtx.blendVertexAndNormalsFromColor = false;
+	}
+
+	if((bits&GL_BLEND) == GL_BLEND){
+		globalGLCtx.glBlendEnabled = false;
 	}
 	
 	enable_bits &= ~(bits & (GL_TEXTURE_2D|GL_TOON_HIGHLIGHT|GL_OUTLINE|GL_ANTIALIAS));	
@@ -2172,12 +2192,11 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glColor3f(float red, float green, float blue){
-	//Detect light sources and apply colors. Normal GL calls resort to glColor to update material color + light color + texture color
-	glColor3b(floattov10(red), floattov10(green), floattov10(blue));
+	glColor3b(floattov10(red), floattov10(green), floattov10(blue));	
 	
-	//Handle light vectors
-	//Note: Light depth is 10bit. Which means only glColor3f(); can colour normals on polygons. glColor3b(); can't. Also don't forget to enable at least one light per scene or colour over normals won't reflect in the light vector.
-	{
+	//Material color update: Blend glColor(s) onto light + normal + texture matrices if necessary.
+	if(globalGLCtx.blendVertexAndNormalsFromColor == true){
+		//Handle light vectors: Light depth is 10bit. Which means only glColor3f(); can colour normals on polygons. glColor3b(); can't. Also don't forget to enable at least one light per scene or colour over normals won't reflect in the light vector.
 		u32 lightsEnabled = globalGLCtx.GXPolygonAttributes;
 		if((lightsEnabled&GX_LIGHT0) == GX_LIGHT0){
 			glLight(0, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), inttov10(31), inttov10(31), inttov10(31));
@@ -5687,6 +5706,11 @@ void glGetIntegerv(
 		case(GL_SHADE_MODEL):{
 			*params = (u32)(globalGLCtx.primitiveShadeModelMode);
 		}break;
+		
+		case(GL_COLOR_MATERIAL_FACE):{
+			*params = (u32)(GL_FRONT); //DS GX does not support hiding either front or back faces because it has no Depth buffer. Thus the polygon closest to camera gets priority unless specified.
+		}break;
+		
 		default:{
 			errorStatus = GL_INVALID_ENUM;
 			return;
@@ -5731,6 +5755,133 @@ void glFogfv(
 	const GLfloat *params
 ){
 	//todo
+}
+
+
+//The glColorMaterial function causes a material color to track the current color.
+//(in other words, allows to blend direct colors into both vertice and normal light reflection matrices)
+
+/*
+The glColorMaterial function specifies which material parameters track the current color. When you enable GL_COLOR_MATERIAL, for each of the material or materials specified by face, the material parameter or parameters specified by mode track the current color at all times. Enable and disable GL_COLOR_MATERIAL with the functions glEnable and glDisable, which you call with GL_COLOR_MATERIAL as their argument. By default, GL_COLOR_MATERIAL is disabled.
+
+With glColorMaterial, you can change a subset of material parameters for each vertex using only the glColor function, without calling glMaterial. If you are going to specify only such a subset of parameters for each vertex, it is better to do so with glColorMaterial than with glMaterial.
+
+The following functions retrieve information related to glColorMaterial:
+
+glGet with argument GL_COLOR_MATERIAL_PARAMETER
+
+glGet with argument GL_COLOR_MATERIAL_FACE
+
+glIsEnabled with argument GL_COLOR_MATERIAL
+*/
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os"))) 
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void glColorMaterial(
+   GLenum face,
+   GLenum mode
+   ){
+	//materials always affect all polygons on GX hardware, using the default GL_FRONT priority.
+	switch(face){
+		default:{
+			errorStatus = GL_INVALID_ENUM;
+		return;
+		}break;
+	}
+	switch(mode){
+	}
+}
+
+//The gllsEnabled function tests whether a capability is enabled.
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os"))) 
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+GLboolean glIsEnabled(
+   GLenum cap
+   ){
+	switch(cap){
+		case GL_ALPHA_TEST:{
+			return GL_FALSE;
+		}break;
+		case GL_AUTO_NORMAL:{
+			return GL_FALSE;
+		}break;
+		case GL_BLEND:{
+			return globalGLCtx.glBlendEnabled;
+		}break;
+		case GL_CLIP_PLANE0:
+		case GL_CLIP_PLANE1:
+		case GL_CLIP_PLANE2:
+		case GL_CLIP_PLANE3:
+		case GL_CLIP_PLANE4:
+		case GL_CLIP_PLANE5:{
+			return GL_FALSE;
+		}break;
+		case GL_COLOR_ARRAY:{
+			return GL_TRUE;
+		}break;
+		case GL_COLOR_MATERIAL:{
+			return globalGLCtx.blendVertexAndNormalsFromColor;
+		}break;
+		case GL_CULL_FACE:{
+			return GL_FALSE;
+		}break;
+		case GL_DEPTH_TEST:{
+			return GL_FALSE;
+		}break;
+		case GL_DITHER:{
+			return GL_FALSE;
+		}break;
+		case GL_FOG:{
+			return GL_TRUE;
+		}break;
+		case GL_INDEX_ARRAY:{
+			return GL_FALSE; //todo
+		}break;
+		case GL_LIGHT0:
+		case GL_LIGHT1:
+		case GL_LIGHT2:
+		case GL_LIGHT3:{
+			return GL_TRUE;
+		}break;
+		case GL_LIGHT4:
+		case GL_LIGHT5:
+		case GL_LIGHT6:
+		case GL_LIGHT7:{
+			return GL_FALSE;
+		}break;
+		case GL_LIGHTING:{
+			return GL_TRUE;
+		}break;
+		case GL_NORMAL_ARRAY:{
+			return GL_TRUE;
+		}break;
+		case GL_NORMALIZE:{
+			return GL_FALSE;
+		}break;
+		case GL_POINT_SMOOTH:{
+			return GL_FALSE;
+		}break;
+		case GL_TEXTURE_1D:{
+			return GL_FALSE;
+		}break;
+		case GL_TEXTURE_2D:{
+			return GL_TRUE;
+		}break;
+		case GL_VERTEX_ARRAY:{
+			return GL_TRUE;
+		}break;
+		default:{
+			errorStatus = GL_INVALID_ENUM;
+		return;
+		}break;
+	}
 }
 
 //////////////////////////////////////////////////////////// Extended Vertex Array Buffers and Vertex Buffer Objects OpenGL 1.1 end //////////////////////////////////////////
