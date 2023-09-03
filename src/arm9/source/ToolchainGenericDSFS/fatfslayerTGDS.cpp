@@ -758,12 +758,8 @@ bool setFileClass(bool iterable, char * fullPath, int FileClassListIndex, int Ty
 bool setFileClassObj(int FileClassListIndex, struct FileClass * FileClassObj, struct FileClassList * lst){
 	if( (lst != NULL) && (FileClassListIndex < FileClassItems) ){	//prevent overlapping current FileClassList		
 		struct FileClass * thisFileClass = getFileClassFromList(FileClassListIndex, lst);
-		if(__dsimode == false){
-			memcpy(((u8*)thisFileClass + 0x400000), (u8*)FileClassObj, sizeof(struct FileClass));	//uncached NTR
-		}
-		else{
-			memcpy(((u8*)thisFileClass + 0x400000), (u8*)FileClassObj, sizeof(struct FileClass));	//uncached TWL
-		}
+		memcpy((u8*)thisFileClass, (u8*)FileClassObj, sizeof(struct FileClass));
+		coherent_user_range_by_size((uint32)thisFileClass, sizeof(struct FileClass)); //update changes on physical ram inmediately
 		lst->FileDirCount++;
 		return true;
 	}
@@ -771,6 +767,9 @@ bool setFileClassObj(int FileClassListIndex, struct FileClass * FileClassObj, st
 }
 
 struct FileClass * getFileClassFromList(int FileClassListIndex, struct FileClassList * lst){
+	if( (lst == NULL) || ( (FileClassListIndex > FileClassItems) || (FileClassListIndex < 0) )  ){ //order is important in order to prevent &catch null referencing of out of bounds FileClass by index
+		return NULL;
+	}
 	return (struct FileClass *)&lst->fileList[FileClassListIndex];
 }
 

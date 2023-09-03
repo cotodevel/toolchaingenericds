@@ -467,12 +467,8 @@ void closeSound(){
 	soundLoaded = false;
 }
 
-__attribute__((section(".itcm")))
 void freeSound()
 {
-	stopSound();
-	freeData();
-	
 	switch(internalCodecType)
 	{
 		case SRC_WAV:{
@@ -490,12 +486,15 @@ void freeSound()
 		break;
 	}
 	
+	stopSound();
+	freeData();
+	
 	if(soundData.filePointer != NULL){
 		fclose(soundData.filePointer);
-		soundData.filePointer = NULL;	
-		soundData.sourceFmt = SRC_NONE;	
 	}
 	
+	soundData.filePointer = NULL;
+	soundData.sourceFmt = SRC_NONE;	
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
