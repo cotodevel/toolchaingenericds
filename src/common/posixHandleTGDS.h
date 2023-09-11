@@ -173,6 +173,7 @@ extern int _vfiprintf_r(struct _reent *reent, FILE *fp,const sint8 *fmt, va_list
 extern int _link(const sint8 *path1, const sint8 *path2);
 extern int	_stat_r ( struct _reent *_r, const char *file, struct stat *pstat );
 extern void _exit (int status);
+extern int exitValue;
 extern int _kill (pid_t pid, int sig);
 extern pid_t _getpid (void);
 extern int _close (int fd);
