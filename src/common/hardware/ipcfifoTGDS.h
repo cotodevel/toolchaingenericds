@@ -148,6 +148,9 @@ USA
 // FIFO_CHANNELS - fifo channel number allowed to work with
 #define FIFO_CHANNELS				(int)(16)
 
+//ARM7 Error handling
+#define TGDS_ARM7_STAGE4_ERROR (u32)(0xFFFFAAD0)
+
 //! Enum values for the different fifo channels.
 typedef enum {
 	FIFO_PM			= (int)(0),	/*!< \brief fifo channel reserved for power management. */
