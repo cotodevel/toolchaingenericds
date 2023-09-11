@@ -680,6 +680,13 @@ void HandleFifoNotEmpty(){
 			}
 			break;
 			
+			case((uint32)TGDS_ARM7_STAGE4_ERROR):{
+				u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
+				int stage = 4;
+				handleDSInitError(stage, (u32)fwNo);		
+			}
+			break;
+
 			#endif
 		}
 		

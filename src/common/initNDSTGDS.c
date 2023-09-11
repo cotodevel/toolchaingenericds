@@ -179,7 +179,7 @@ void initHardware(u8 DSHardware) {
 	initSound();
 	
 	#ifdef TWLMODE
-	u32 SFGEXT7 = *(u32*)0x04004008;
+	u32 SCFG_EXT7 = 0x90FF0B80; //yes, override the ones from TWL header to ensure TGDS TWL projects do work even with tampered extended headers
 	
 	//0     Revised ARM7 DMA Circuit       (0=NITRO, 1=Revised) = NTR
 	//1     Revised Sound DMA              (0=NITRO, 1=Revised) = NTR
@@ -190,32 +190,17 @@ void initHardware(u8 DSHardware) {
 	//9     Extended SPI Clock (8MHz)     (0=NITRO, 1=Extended) (40001C0h) = TGDS Project decides it
 	//10    Extended Sound DMA        ?   (0=NITRO, 1=Extended) (?) = NTR
 
-	//Revised ARM7 DMA Circuit       (0=NITRO, 1=Revised)
-	SFGEXT7 = (SFGEXT7 & ~(0x1 << 0)) | (0x0 << 0);
+	*(u32*)0x04004008 = SCFG_EXT7;
 	
-	//Revised Sound DMA              (0=NITRO, 1=Revised)
-	SFGEXT7 = (SFGEXT7 & ~(0x1 << 1)) | (0x0 << 1);
+	int TGDSInitLoopCount = 0;
+	while( ((u32)*(u32*)0x04004008) != SCFG_EXT7 ) {
+		if(TGDSInitLoopCount > 1048576){
+			SendFIFOWords(TGDS_ARM7_STAGE4_ERROR, 0);
+			swiDelay(1);
+		}
+		TGDSInitLoopCount++;
+	}
 	
-	//Revised Sound                  (0=NITRO, 1=Revised)
-	SFGEXT7 = (SFGEXT7 & ~(0x1 << 2)) | (0x0 << 2);
-	
-	//Extended ARM7 Interrupts      (0=NITRO, 1=Extended) (4000218h)
-	SFGEXT7 = (SFGEXT7 & ~(0x1 << 8)) | (0x1 << 8);
-	
-	
-	//Extended Sound DMA        ?   (0=NITRO, 1=Extended) (?)
-	SFGEXT7 = (SFGEXT7 & ~(0x1 << 10)) | (0x0 << 10);
-	
-	//Access to New DMA Controller   (0=Disable, 1=Enable) (40041xxh)
-	SFGEXT7 = (SFGEXT7 & ~(0x1 << 16)) | (0x1 << 16);
-	
-	//Access to 2nd NDS Cart Slot   (0=Disable, 1=Enable)	(set via ARM7)
-	SFGEXT7 = (SFGEXT7 & ~(0x1 << 24)) | (0x0 << 24);
-	
-	// 25    Access to New Shared WRAM     (0=Disable, 1=Enable)  (set via ARM7) (R)
-	SFGEXT7 = (SFGEXT7 & ~(0x1 << 25)) | (0x0 << 25);
-	
-	*(u32*)0x04004008 = SFGEXT7;
 	#endif
 	
 	handleARM7InitSVC();
@@ -224,7 +209,7 @@ void initHardware(u8 DSHardware) {
 	#ifdef ARM9
 	
 	#ifdef TWLMODE
-	u32 SFGEXT9 = *(u32*)0x04004008;
+	u32 SCFG_EXT9 = 0x80070180; //yes, override the ones from TWL header to ensure TGDS TWL projects do work even with tampered extended headers
 	
 	//7     Revised Card Interface Circuit (0=NITRO, 1=Revised) = TWL
 	//8     Extended ARM9 Interrupts       (0=NITRO, 1=Extended) = TWL
@@ -233,25 +218,17 @@ void initHardware(u8 DSHardware) {
 	//14-15 Main Memory RAM Limit (0..1=4MB/DS, 2=16MB/DSi, 3=32MB/DSiDebugger) = 4MB + (2) mirrors NTR mode
 	//16    Access to New DMA Controller   (0=Disable, 1=Enable) (40041xxh) = TWL
 	
-	//Revised Card Interface Circuit (0=NITRO, 1=Revised) (set via ARM9) (R)
-	SFGEXT9 = (SFGEXT9 & ~(0x1 << 7)) | (0x1 << 7);
+	*(u32*)0x04004008 = SCFG_EXT9;
 	
-	//Extended ARM9 Interrupts       (0=NITRO, 1=Extended)
-	SFGEXT9 = (SFGEXT9 & ~(0x1 << 8)) | (0x1 << 8);
-	
-	//Extended LCD Circuit           (0=NITRO, 1=Extended)
-	SFGEXT9 = (SFGEXT9 & ~(0x1 << 12)) | (0x0 << 12);
-	
-	//Extended VRAM Access           (0=NITRO, 1=Extended)
-	SFGEXT9 = (SFGEXT9 & ~(0x1 << 13)) | (0x0 << 13);
-	
-	//EWRAM: 4MB + (2) mirrors NTR mode
-	SFGEXT9 = (SFGEXT9 & ~(0x3 << 14)) | (0x0 << 14);
-	
-	//Access to New DMA Controller   (0=Disable, 1=Enable) (40041xxh)
-	SFGEXT9 = (SFGEXT9 & ~(0x1 << 16)) | (0x1 << 16);
-	
-	*(u32*)0x04004008 = SFGEXT9;
+	int TGDSInitLoopCount = 0;
+	while( (u32)(*(u32*)0x04004008) != SCFG_EXT9 ) {
+		if(TGDSInitLoopCount > 1048576){
+			u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
+			int stage = 5;
+			handleDSInitError(stage, (u32)fwNo);			
+		}
+		TGDSInitLoopCount++;
+	}
 	
 	setCpuClock(false);	//true: 133Mhz / false: 66Mhz (TWL Mode only)
 	#endif
