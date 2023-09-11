@@ -432,19 +432,12 @@ int fork(){
 }
 
 //C++ requires this
+int exitValue = 0;
 void _exit (int status){
-	
-	//todo: add some exception handlers to notify ARM cores program has ran	
-	
-	clrscr();
-	loggerARM9LibUtilsCallback("----");
-	loggerARM9LibUtilsCallback("----");
-	loggerARM9LibUtilsCallback("----");
-	loggerARM9LibUtilsCallback("----");
-	loggerARM9LibUtilsCallback("TGDS APP Halt: Error Status: %d", status);
-	while(1==1){
-		IRQVBlankWait();
-	}
+	exitValue = status;
+	u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
+	int stage = 6;
+	handleDSInitError(stage, (u32)fwNo);
 }
 
 int _kill (pid_t pid, int sig){
