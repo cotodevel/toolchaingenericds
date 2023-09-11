@@ -247,6 +247,7 @@ void handleDSInitError(int stage, u32 fwNo){
 	//Stage 3 = failed detecting DS model from firmware (2).
 	//Stage 4 = TWL Mode: SCFG_EXT7 locked. ToolchainGenericDS SDK needs it to run from SD in TWL mode.
 	//Stage 5 = TWL Mode: SCFG_EXT9 locked. ToolchainGenericDS SDK needs it to run from SD in TWL mode.
+	//Stage 6 = TGDS App has quit through exit(int status);
 	
 	loggerARM9LibUtilsCallback("TGDS boot fail: Stage %d, firmware model: %d", stage, fwNo);
 	
@@ -266,6 +267,10 @@ void handleDSInitError(int stage, u32 fwNo){
 	}
 	else if(stage == 5){
 		sprintf(tempBuf, "TWL Mode: SCFG_EXT9 locked. Unlaunch and TWiLightMenu++ only supported.\n", stage, fwNo);
+		loggerARM9LibUtilsCallback(tempBuf);
+	}
+	else if(stage == 6){
+		sprintf(tempBuf, "ToolchainGenericDS App has quit through exit(%d); .\n", stage, fwNo, exitValue);
 		loggerARM9LibUtilsCallback(tempBuf);
 	}
 	while(1==1){
