@@ -42,6 +42,7 @@ USA
 
 #ifdef ARM9
 #include "nds_cp15_misc.h"
+#include "debugNocash.h"
 #endif
 
 void setupDefaultExceptionHandler(){
@@ -221,6 +222,8 @@ void exception_handler(uint32 arg){
 int TGDSInitLoopCount=0;
 #ifdef ARM9
 
+char tempBuf[256];
+
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("O0")))
 #endif
@@ -238,12 +241,33 @@ void handleDSInitError(int stage, u32 fwNo){
 	loggerARM9LibUtilsCallback(" ---- ");
 	loggerARM9LibUtilsCallback(" ---- ");
 	
-	//stage 0 = failed detecting DS model from firmware
-	//stage 1 = failed initializing ARM7 DLDI / NDS ARM9 memory allocator
-	//stage 2 = failed initializing DSWIFI (ARM9)
-	//stage 3 = failed detecting DS model from firmware (2).
+	//Stage 0 = failed detecting DS model from firmware
+	//Stage 1 = failed initializing ARM7 DLDI / NDS ARM9 memory allocator
+	//Stage 2 = failed initializing DSWIFI (ARM9)
+	//Stage 3 = failed detecting DS model from firmware (2).
+	//Stage 4 = TWL Mode: SCFG_EXT7 locked. ToolchainGenericDS SDK needs it to run from SD in TWL mode.
+	//Stage 5 = TWL Mode: SCFG_EXT9 locked. ToolchainGenericDS SDK needs it to run from SD in TWL mode.
+	
 	loggerARM9LibUtilsCallback("TGDS boot fail: Stage %d, firmware model: %d", stage, fwNo);
 	
+	
+	//Setup default TGDS Project: internal logger
+	setTGDSARM9LoggerCallback((loggerARM9LibUtils_fn)&nocashMessage); 
+	loggerARM9LibUtilsCallback(" ---- ");
+	loggerARM9LibUtilsCallback(" ---- ");
+	loggerARM9LibUtilsCallback(" ---- ");
+	
+	sprintf(tempBuf, "TGDS boot fail: Stage %d, firmware model: %d\n", stage, fwNo);
+	loggerARM9LibUtilsCallback(tempBuf);
+	
+	if(stage == 4){
+		sprintf(tempBuf, "TWL Mode: SCFG_EXT7 locked. Unlaunch and TWiLightMenu++ only supported.\n", stage, fwNo);
+		loggerARM9LibUtilsCallback(tempBuf);
+	}
+	else if(stage == 5){
+		sprintf(tempBuf, "TWL Mode: SCFG_EXT9 locked. Unlaunch and TWiLightMenu++ only supported.\n", stage, fwNo);
+		loggerARM9LibUtilsCallback(tempBuf);
+	}
 	while(1==1){
 		swiDelay(1);
 	}
