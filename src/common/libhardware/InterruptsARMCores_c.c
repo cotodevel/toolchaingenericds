@@ -54,7 +54,6 @@ void IRQInit(u8 DSHardware)  {
 	
 	DrainWriteBuffer();
 	setTGDSARM9PrintfCallback((printfARM9LibUtils_fn)&TGDSDefaultPrintf2DConsole); //Setup default TGDS Project: console 2D printf 
-	setTGDSARM9LoggerCallback((loggerARM9LibUtils_fn)&nocashMessage); //Setup default TGDS Project: internal logger
 	#endif
 	
 	//FIFO IRQ Init
@@ -105,7 +104,7 @@ void IRQInit(u8 DSHardware)  {
 	){
 		__dsimode = false;
 		#ifdef ARM9
-		loggerARM9LibUtilsCallback("TGDS:IRQInit():NTR Mode!");
+		nocashMessage("TGDS:IRQInit():NTR Mode!");
 		#endif
 	}
 	//TWL 
@@ -126,7 +125,7 @@ void IRQInit(u8 DSHardware)  {
 			#endif
 		#endif
 		#ifdef ARM9
-		loggerARM9LibUtilsCallback("TGDS:IRQInit():TWL Mode!");
+		nocashMessage("TGDS:IRQInit():TWL Mode!");
 		#endif
 	}
 	else{

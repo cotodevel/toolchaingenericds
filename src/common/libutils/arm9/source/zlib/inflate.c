@@ -282,22 +282,22 @@ void makefixed()
     puts("     */");
     puts("");
     size = 1U << 9;
-    loggerARM9LibUtilsCallback("    static const code lenfix[%u] = {", size);
+    nocashMessage("    static const code lenfix[%u] = {", size);
     low = 0;
     for (;;) {
-        if ((low % 7) == 0) loggerARM9LibUtilsCallback("\n        ");
-        loggerARM9LibUtilsCallback("{%u,%u,%d}", state.lencode[low].op, state.lencode[low].bits,
+        if ((low % 7) == 0) nocashMessage("\n        ");
+        nocashMessage("{%u,%u,%d}", state.lencode[low].op, state.lencode[low].bits,
                state.lencode[low].val);
         if (++low == size) break;
         putchar(',');
     }
     puts("\n    };");
     size = 1U << 5;
-    loggerARM9LibUtilsCallback("\n    static const code distfix[%u] = {", size);
+    nocashMessage("\n    static const code distfix[%u] = {", size);
     low = 0;
     for (;;) {
-        if ((low % 6) == 0) loggerARM9LibUtilsCallback("\n        ");
-        loggerARM9LibUtilsCallback("{%u,%u,%d}", state.distcode[low].op, state.distcode[low].bits,
+        if ((low % 6) == 0) nocashMessage("\n        ");
+        nocashMessage("{%u,%u,%d}", state.distcode[low].op, state.distcode[low].bits,
                state.distcode[low].val);
         if (++low == size) break;
         putchar(',');

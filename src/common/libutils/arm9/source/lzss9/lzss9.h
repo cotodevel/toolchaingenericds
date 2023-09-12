@@ -29,8 +29,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define BREAK(text) { loggerARM9LibUtilsCallback(text); return; }
-#define EXIT(text)  { loggerARM9LibUtilsCallback(text); while(1==1); }
+#define BREAK(text) { nocashMessage(text); return; }
+#define EXIT(text)  { nocashMessage(text); while(1==1); }
 
 #endif
 
