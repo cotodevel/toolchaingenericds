@@ -20,6 +20,12 @@
 //zalloc / zfree (zlib) default function prototypes look like:
 //void * 	zalloc (void *opaque, unsigned items, unsigned size)
 //void 		zfree (void *opaque, void *ptr)
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 int funzipstdio(char * inFname, char * outFname){
 	
 	int encrypted;
@@ -195,15 +201,33 @@ int funzipstdio(char * inFname, char * outFname){
 
 
 //UserCode: (char*)"path1ToFileZipped", (char*)Must be an EMPTY char[MAX_TGDSFILENAME_LENGTH+1] as it stores the Zipped internal filename.
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 int load_gz(char *fname, char *newtempfname)
 {
 	return funzipstdio(fname, newtempfname);
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 u8* xenoTGDSARM9Malloc(int size){
 	return TGDSARM9Malloc(size);
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void xenoTGDSARM9Free(void *ptr){
 	TGDSARM9Free(ptr);
 }

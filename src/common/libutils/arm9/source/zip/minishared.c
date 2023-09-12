@@ -264,7 +264,7 @@ int is_large_file(const char *path)
     pos = ftell(handle);
     fclose(handle);
 
-    loggerARM9LibUtilsCallback("file : %s is %lld bytes\n", path, pos);
+    nocashMessage("file : %s is %lld bytes\n", path, pos);
 
     return (pos >= UINT32_MAX);
 }
@@ -290,7 +290,7 @@ void display_zpos64(uint64_t n, int size_char)
 
     size_display_string -= pos_string;
     while (size_char-- > size_display_string){
-        loggerARM9LibUtilsCallback(" ");
+        nocashMessage(" ");
 	}
-    loggerARM9LibUtilsCallback("%s", &number[pos_string]);
+    nocashMessage("%s", &number[pos_string]);
 }

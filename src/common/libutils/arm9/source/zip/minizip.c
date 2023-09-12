@@ -45,13 +45,13 @@
 
 void minizip_banner()
 {
-    loggerARM9LibUtilsCallback("MiniZip 1.2.0, demo of zLib + MiniZip64 package\n");
-    loggerARM9LibUtilsCallback("more info on MiniZip at https://github.com/nmoinvaz/minizip\n\n");
+    nocashMessage("MiniZip 1.2.0, demo of zLib + MiniZip64 package\n");
+    nocashMessage("more info on MiniZip at https://github.com/nmoinvaz/minizip\n\n");
 }
 
 void minizip_help()
 {
-    loggerARM9LibUtilsCallback("Usage : minizip [-o] [-a] [-0 to -9] [-p password] [-j] file.zip [files_to_add]\n\n" \
+    nocashMessage("Usage : minizip [-o] [-a] [-0 to -9] [-p password] [-j] file.zip [files_to_add]\n\n" \
            "  -o  Overwrite existing file.zip\n" \
            "  -a  Append to existing file.zip\n" \
            "  -0  Store only\n" \
@@ -60,6 +60,12 @@ void minizip_help()
            "  -j  exclude path. store only the file name.\n\n");
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 int minizip_addfile(zipFile zf, const char *path, const char *filenameinzip, int level, const char *password)
 {
     zip_fileinfo zi = { 0 };
@@ -84,7 +90,7 @@ int minizip_addfile(zipFile zf, const char *path, const char *filenameinzip, int
 
     if (err != ZIP_OK)
     {
-        loggerARM9LibUtilsCallback("error in opening %s in zipfile (%d)\n", filenameinzip, err);
+        nocashMessage("error in opening %s in zipfile (%d)\n", filenameinzip, err);
     }
     else
     {
@@ -92,7 +98,7 @@ int minizip_addfile(zipFile zf, const char *path, const char *filenameinzip, int
         if (fin == NULL)
         {
             err = ZIP_ERRNO;
-            loggerARM9LibUtilsCallback("error in opening %s for reading\n", path);
+            nocashMessage("error in opening %s for reading\n", path);
         }
     }
 
@@ -104,7 +110,7 @@ int minizip_addfile(zipFile zf, const char *path, const char *filenameinzip, int
             size_read = (int)fread(buf, 1, sizeof(buf), fin);
             if ((size_read < (int)sizeof(buf)) && (feof(fin) == 0))
             {
-                loggerARM9LibUtilsCallback("error in reading %s\n", filenameinzip);
+                nocashMessage("error in reading %s\n", filenameinzip);
                 err = ZIP_ERRNO;
             }
 
@@ -112,7 +118,7 @@ int minizip_addfile(zipFile zf, const char *path, const char *filenameinzip, int
             {
                 err = zipWriteInFileInZip(zf, buf, size_read);
                 if (err < 0)
-                    loggerARM9LibUtilsCallback("error in writing %s in the zipfile (%d)\n", filenameinzip, err);
+                    nocashMessage("error in writing %s in the zipfile (%d)\n", filenameinzip, err);
             }
         } while ((err == ZIP_OK) && (size_read > 0));
     }
@@ -128,13 +134,19 @@ int minizip_addfile(zipFile zf, const char *path, const char *filenameinzip, int
     {
         err = zipCloseFileInZip(zf);
         if (err != ZIP_OK)
-            loggerARM9LibUtilsCallback("error in closing %s in the zipfile (%d)\n", filenameinzip, err);
+            nocashMessage("error in closing %s in the zipfile (%d)\n", filenameinzip, err);
     }
 
     return err;
 }
 
 #ifndef NOMAIN
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 int main(int argc, char *argv[])
 {
     zipFile zf = NULL;
@@ -213,7 +225,7 @@ int main(int argc, char *argv[])
             do
             {
                 char answer[128];
-                loggerARM9LibUtilsCallback("The file %s exists. Overwrite ? [y]es, [n]o, [a]ppend : ", zipfilename);
+                nocashMessage("The file %s exists. Overwrite ? [y]es, [n]o, [a]ppend : ", zipfilename);
                 if (scanf("%1s", answer) != 1)
                     exit(EXIT_FAILURE);
                 rep = answer[0];
@@ -244,11 +256,11 @@ int main(int argc, char *argv[])
 
     if (zf == NULL)
     {
-        loggerARM9LibUtilsCallback("error opening %s\n", zipfilename);
+        nocashMessage("error opening %s\n", zipfilename);
         err = ZIP_ERRNO;
     }
     else
-        loggerARM9LibUtilsCallback("creating %s\n", zipfilename);
+        nocashMessage("creating %s\n", zipfilename);
 
     /* Go through command line args looking for files to add to zip */
     for (i = zipfilenamearg + 1; (i < argc) && (err == ZIP_OK); i++)
@@ -291,7 +303,7 @@ int main(int argc, char *argv[])
 
     errclose = zipClose(zf, NULL);
     if (errclose != ZIP_OK)
-        loggerARM9LibUtilsCallback("error in closing %s (%d)\n", zipfilename, errclose);
+        nocashMessage("error in closing %s (%d)\n", zipfilename, errclose);
 
     return err;
 }

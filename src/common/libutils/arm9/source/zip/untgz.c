@@ -180,9 +180,9 @@ char *TGZfname (const char *arcname)
 
 void TGZnotfound (const char *arcname){
   int i;
-  loggerARM9LibUtilsCallback("%s: Couldn't find ", prog);
+  nocashMessage("%s: Couldn't find ", prog);
   for (i=0;TGZsuffix[i];i++){
-    loggerARM9LibUtilsCallback((TGZsuffix[i+1]) ? "%s%s, " : "or %s%s", arcname, TGZsuffix[i]);
+    nocashMessage((TGZsuffix[i+1]) ? "%s%s, " : "or %s%s", arcname, TGZsuffix[i]);
   }
 }
 
@@ -397,7 +397,7 @@ int makedir (char *newdir)
 	if ((mkdir(buffer, 0755) == -1) && (errno == ENOENT))
 	#endif
 	  {
-          loggerARM9LibUtilsCallback("%s: Couldn't create directory %s",prog,buffer);
+          nocashMessage("%s: Couldn't create directory %s",prog,buffer);
           free(buffer);
           return 0;
         }
@@ -599,7 +599,7 @@ int tar (gzFile in,int action,int arg,int argc,char **argv)
             {
               if (fwrite(&buffer,sizeof(char),bytes,outfile) != bytes)
                 {
-				  loggerARM9LibUtilsCallback("%s: Error writing %s -- skipping",prog,fname);
+				  nocashMessage("%s: Error writing %s -- skipping",prog,fname);
                   
 				  fclose(outfile);
                   outfile = NULL;
@@ -648,17 +648,17 @@ int tar (gzFile in,int action,int arg,int argc,char **argv)
 void help(int exitval)
 
 {
-  loggerARM9LibUtilsCallback("untgz version 0.2.1"
+  nocashMessage("untgz version 0.2.1"
          "  using zlib version %s",
          zlibVersion());
-  loggerARM9LibUtilsCallback("Usage: untgz file.tgz            extract all files"
+  nocashMessage("Usage: untgz file.tgz            extract all files"
          "       untgz file.tgz fname ...  extract selected files"
          "       untgz -l file.tgz         list archive contents"
          "       untgz -h                  display this help");
 }
 
 void error(const char *msg){
-  loggerARM9LibUtilsCallback("%s: %s", prog, msg);
+  nocashMessage("%s: %s", prog, msg);
   while(1==1){}
 }
 
@@ -725,7 +725,7 @@ int untgzmain(int argc,char **argv)
 		  f = (gzFile*)gzopen(TGZfile,"rb");
         if (f == NULL)
           {
-            loggerARM9LibUtilsCallback("%s: Couldn't gzopen %s",prog,TGZfile);
+            nocashMessage("%s: Couldn't gzopen %s",prog,TGZfile);
             return 1;
           }
         tar(f, action, arg, argc, argv);
@@ -733,7 +733,7 @@ int untgzmain(int argc,char **argv)
 
       default:
 		  {
-			loggerARM9LibUtilsCallback("Unknown option");
+			nocashMessage("Unknown option");
 		  }
       }
     return 0;
