@@ -34,8 +34,8 @@ d_objs_arm9:=	${file_arm9_src_c:.c=.d}	${file_arm9_src_s:.s=.d}	${file_arm9_src_
 #ARM9 specific definitions. -fno-common so we force initialized data to rodata
 MAPFILE = $(DIR_ARM9).map
 AS_ASFLAGS		=	$(GLOBAL_SHARED_FLAGS_9)	$(SPECIFIC_AS_COMPILER_FLAGS_9)		$(GLOBAL_AS_COMPILER_FLAGS)
-CC_ASFLAGS		=	-march=armv5te	-mthumb-interwork	-mfloat-abi=soft	-Ofast	-fno-short-enums	-marm	-Wall	-FPIC	-DNDS	-DARM9	-DNTRMODE	-fno-exceptions	-std=c99	-ffunction-sections	-fdata-sections	-fno-unwind-tables -fno-asynchronous-unwind-tables -fno-tree-loop-distribute-patterns -fomit-frame-pointer	-DTGDSBinVersion='$(TOOLCHAIN_GENERIC_DS_VER)'
-CPP_FLAGS		=	$(CC_ASFLAGS)	-nostdinc++	-fno-rtti	
+CC_FLAGS		=	-march=armv5te	-mthumb-interwork	-mfloat-abi=soft	-Ofast	-fno-short-enums	-marm	-Wall	-FPIC	-DNDS	-DARM9	-DNTRMODE	-fno-exceptions	-std=c99	-ffunction-sections	-fdata-sections	-fno-unwind-tables -fno-asynchronous-unwind-tables -fno-tree-loop-distribute-patterns -fomit-frame-pointer	-DTGDSBinVersion='$(TOOLCHAIN_GENERIC_DS_VER)'
+CPP_FLAGS		=	$(CC_FLAGS)	-nostdinc++	-fno-rtti	
 BUILD			= 	$(BUILD_ARM9)
 DIR_SRC			=	$(DIRS_ARM9_SRC)
 ################################################################################################
@@ -58,13 +58,13 @@ $(OBJDIR):
 $(OBJDIR)/%.o : %.bin
 	-@echo 'trying to convert .BIN ($<) -> .C output: ${@:.o=.c} : arrayName: $(subst build/,,${@:.o=})'
 	$(BIN2C)	$<	${@:.o=.c}	$(subst build/,,${@:.o=})
-	$(CC)	$(CC_ASFLAGS)	$(DIRLIBS_HDR)	$(DIRLIBS_SRC)	$(DIRLIBS_PROHIBITED)	-o $@ -c ${@:.o=.c}
+	$(CC)	$(CC_FLAGS)	$(DIRLIBS_HDR)	$(DIRLIBS_SRC)	$(DIRLIBS_PROHIBITED)	-o $@ -c ${@:.o=.c}
 
 
 #Do C Compile now!
 $(OBJDIR)/%.o : %.c
 	-@echo 'C Compile start: $@'
-	$(CC)	$(CC_ASFLAGS)	$(DIRLIBS_HDR)	$(DIRLIBS_SRC)	$(DIRLIBS_PROHIBITED)	-o $@ -c $<
+	$(CC)	$(CC_FLAGS)	$(DIRLIBS_HDR)	$(DIRLIBS_SRC)	$(DIRLIBS_PROHIBITED)	-o $@ -c $<
 	-@echo 'C Compile End: $@'
 
 #Do C++ (CXX) Compile now!
@@ -86,7 +86,7 @@ $(OBJDIR)/%.o : %.s
 #Do S (GCC CC) Compile now!
 $(OBJDIR)/%.o : %.S
 	-@echo 'S Compile start: $@'
-	$(CPP)	-x assembler-with-cpp	$(DIRLIBS_HDR)	$(DIRLIBS_SRC)	$(CC_ASFLAGS)	-o $@ -c $<
+	$(CPP)	-x assembler-with-cpp	$(DIRLIBS_HDR)	$(DIRLIBS_SRC)	$(CC_FLAGS)	-o $@ -c $<
 	-@echo 'S Compile end: $@'
 
 #Builder.
