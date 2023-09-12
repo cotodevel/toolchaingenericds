@@ -21,7 +21,7 @@
 #ToolchainGenericDS specific: Use Makefiles from either TGDS, or custom
 #Note: Woopsi template mostly targets ARM9 SDK. Thus the default ARM7 template is used
 export SOURCE_MAKEFILE7 = default
-export SOURCE_MAKEFILE9 = default
+export SOURCE_MAKEFILE9 = custom
 
 #Shared
 include $(DEFAULT_GCC_PATH)/Makefile.basenewlib
@@ -119,7 +119,11 @@ endif
 $(EXECUTABLE_FNAME)	:	compile
 	-@echo 'ndstool begin'
 	$(NDSTOOL)	-v	-c $@	-7  $(CURDIR)/arm7/$(BINSTRIP_RULE_7)	-e7  0x03800000	-9 $(CURDIR)/arm9/$(BINSTRIP_RULE_9) -e9  0x02000000	-b	icon.bmp "ToolchainGenericDS SDK;$(TGDSPROJECTNAME) NDS Binary; "
-	$(NDSTOOL)	-c 	${@:.nds=.srl} -g "TGDS" "NN" "NDS.TinyFB" -b	icon.bmp "ToolchainGenericDS SDK;$(TGDSPROJECTNAME) TWL Binary;" -7 arm7/arm7-nonstripped_dsi.elf -9 $(CURDIR)/arm9/${BINSTRIP_RULE_9:.bin=_twl.bin} -e9  0x02000000
+	$(NDSTOOL)	-c 	${@:.nds=.srl} -7  $(CURDIR)/arm7/arm7-nonstripped_dsi.elf		-9 $(CURDIR)/arm9/arm9_twl.bin -e9  0x02000800	\
+	-g "TGDS" "NN" "NDS.TinyFB"	\
+	-z 80040000 -u 00030004 -a 00000138 \
+	-b icon.bmp "$(TGDSPROJECTNAME);$(TGDSPROJECTNAME) TWL Binary;" \
+	-h "twlheader.bin"
 	-mv ${@:.nds=.srl}	/E
 	-@echo 'ndstool end: built: $@'
 	
