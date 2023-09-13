@@ -271,7 +271,6 @@ extern void initializeLibUtils9(
 	wifiswitchDsWnifiModeARM9LibUtils_fn wifiswitchDsWnifiModeARM9LibUtilsCall //ARM9: bool switch_dswnifi_mode(sint32 mode)
 );
 
-extern void setTGDSARM9LoggerCallback(loggerARM9LibUtils_fn loggerCallback);
 extern void setTGDSARM9PrintfCallback(printfARM9LibUtils_fn printfCallback);
 
 #endif
