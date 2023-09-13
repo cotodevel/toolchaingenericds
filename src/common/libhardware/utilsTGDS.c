@@ -1098,7 +1098,7 @@ bool TGDSMultibootRunNDSPayload(char * filename) {
 			int ret=FS_deinit();
 			//Copy and relocate current TGDS DLDI section into target ARM9 binary
 			if(strncmp((char*)&dldiGet()->friendlyName[0], "TGDS RAMDISK", 12) == 0){
-				loggerARM9LibUtilsCallback("TGDS DLDI detected. Skipping DLDI patch.");
+				nocashMessage("TGDS DLDI detected. Skipping DLDI patch.");
 			}
 			else{
 				bool stat = dldiPatchLoader((data_t *)0x02280000, (u32)tgds_multiboot_payload_size, (u32)&_io_dldi_stub);
@@ -1121,7 +1121,7 @@ bool TGDSMultibootRunNDSPayload(char * filename) {
 		}
 		else{
 			sprintf(msgDebug, "%s%s", "TGDSMultibootRunNDSPayload(): Missing Payload:", TGDSMBPAYLOAD);
-			loggerARM9LibUtilsCallback((char*)&msgDebug[0]);
+			nocashMessage((char*)&msgDebug[0]);
 		}
 	}
 	return false;
@@ -1194,18 +1194,6 @@ void initializeLibUtils9(
 	fifoInit();
 }
 
-//(ARM9 only) TGDS Usercode project usage:
-//setTGDSARM9LoggerCallback((loggerARM9LibUtils_fn)&printf); //Redirect TGDS logger output to DS screen callback
-//setTGDSARM9LoggerCallback((loggerARM9LibUtils_fn)&nocashMessage); //Redirect TGDS logger output to internal callback
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-void setTGDSARM9LoggerCallback(loggerARM9LibUtils_fn loggerCallback){
-	loggerARM9LibUtilsCallback = loggerCallback;
-}
 
 //setTGDSARM9PrintfCallback((printfARM9LibUtils_fn)&TGDSCustomPrintf2DConsole); //Redirect printf to custom Console implementation
 //setTGDSARM9PrintfCallback((printfARM9LibUtils_fn)&TGDSDefaultPrintf2DConsole); //Redirect printf to default TGDS 2D Console output

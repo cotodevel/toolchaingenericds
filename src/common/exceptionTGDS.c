@@ -130,17 +130,19 @@ static bool GDBSession;
 
 //__attribute__((section(".itcm"))) //cant be at ITCM
 void exception_handler(uint32 arg){
+	bool isTGDSCustomConsole = false;	//set default console or custom console: default console
+	GUI_init(isTGDSCustomConsole);
 	GUI_clear();
-	loggerARM9LibUtilsCallback(" -- ");
+	printf(" -- ");
 	if(arg == (uint32)unexpectedsysexit_9){
-		loggerARM9LibUtilsCallback("ARM9 Exception:Unexpected main() exit.");
+		printf("ARM9 Exception:Unexpected main() exit.");
 		while(1==1){
 			IRQVBlankWait();
 		}
 	}
 	
 	else if(arg == (uint32)unexpectedsysexit_7){
-		loggerARM9LibUtilsCallback("ARM7 Exception:Unexpected main() exit.");
+		printf("ARM7 Exception:Unexpected main() exit.");
 		while(1==1){
 			IRQVBlankWait();
 		}
@@ -148,16 +150,16 @@ void exception_handler(uint32 arg){
 	
 	else{
 		if(arg == (uint32)generalARM7Exception){
-			loggerARM9LibUtilsCallback("ARM7: Hardware Exception. ");
-			loggerARM9LibUtilsCallback("ARM7 Debug Vector: ");
+			printf("ARM7: Hardware Exception. ");
+			printf("ARM7 Debug Vector: ");
 			coherent_user_range_by_size((uint32)&exceptionArmRegs[0], sizeof(exceptionArmRegs));
 		}
 		else if(arg == (uint32)generalARM9Exception){
-			loggerARM9LibUtilsCallback("ARM9: Hardware Exception. ");
-			loggerARM9LibUtilsCallback("ARM9 Debug Vector: ");
+			printf("ARM9: Hardware Exception. ");
+			printf("ARM9 Debug Vector: ");
 		}
 		else{
-			loggerARM9LibUtilsCallback("?????????: Unhandled Exception.");
+			printf("?????????: Unhandled Exception.");
 		}
 		
 		uint32 * debugVector = (uint32 *)&exceptionArmRegs[0]; //Shared buffer ARM7 / ARM9
@@ -168,12 +170,12 @@ void exception_handler(uint32 arg){
 		}
 		
 		//add support for GDB session.
-		loggerARM9LibUtilsCallback("R0[%x] R1[%X] R2[%X] ",debugVector[0],debugVector[1],debugVector[2]);
-		loggerARM9LibUtilsCallback("R3[%x] R4[%X] R5[%X] ",debugVector[3],debugVector[4],debugVector[5]);
-		loggerARM9LibUtilsCallback("R6[%x] R7[%X] R8[%X] ",debugVector[6],debugVector[7],debugVector[8]);
-		loggerARM9LibUtilsCallback("R9[%x] R10[%X] R11[%X] ",debugVector[9],debugVector[0xa],debugVector[0xb]);
-		loggerARM9LibUtilsCallback("R12[%x] R13[%X] R14[%X]  ",debugVector[0xc],debugVector[0xd],debugVector[0xe]);
-		loggerARM9LibUtilsCallback("R15[%x] SPSR[%x] CPSR[%X]  ",debugVector[0xf],debugVector[17],debugVector[16]);
+		printf("R0[%x] R1[%X] R2[%X] ",debugVector[0],debugVector[1],debugVector[2]);
+		printf("R3[%x] R4[%X] R5[%X] ",debugVector[3],debugVector[4],debugVector[5]);
+		printf("R6[%x] R7[%X] R8[%X] ",debugVector[6],debugVector[7],debugVector[8]);
+		printf("R9[%x] R10[%X] R11[%X] ",debugVector[9],debugVector[0xa],debugVector[0xb]);
+		printf("R12[%x] R13[%X] R14[%X]  ",debugVector[0xc],debugVector[0xd],debugVector[0xe]);
+		printf("R15[%x] SPSR[%x] CPSR[%X]  ",debugVector[0xf],debugVector[17],debugVector[16]);
 		
 		//red
 		//BG_PALETTE_SUB[0] = RGB15(31,0,0);
@@ -187,9 +189,9 @@ void exception_handler(uint32 arg){
 		BG_PALETTE_SUB[0] = RGB15(0,0,31);
 		BG_PALETTE_SUB[255] = RGB15(31,31,31);
 		
-		loggerARM9LibUtilsCallback("A: Enable GDB Debugging. ");
-		loggerARM9LibUtilsCallback("(check: toolchaingenericds-gdbstub-example project)");
-		loggerARM9LibUtilsCallback("B: Skip GDB Debugging");
+		printf("A: Enable GDB Debugging. ");
+		printf("(check: toolchaingenericds-gdbstub-example project)");
+		printf("B: Skip GDB Debugging");
 		
 		while(1){
 			scanKeys();
@@ -233,13 +235,12 @@ __attribute__ ((optnone))
 #endif
 void handleDSInitError(int stage, u32 fwNo){
 	bool isTGDSCustomConsole = false;	//set default console
-	setTGDSARM9LoggerCallback((loggerARM9LibUtils_fn)&printf);
 	GUI_init(isTGDSCustomConsole);
 	clrscr();
 	
-	loggerARM9LibUtilsCallback(" ---- ");
-	loggerARM9LibUtilsCallback(" ---- ");
-	loggerARM9LibUtilsCallback(" ---- ");
+	printf(" ---- ");
+	printf(" ---- ");
+	printf(" ---- ");
 	
 	//Stage 0 = failed detecting DS model from firmware
 	//Stage 1 = failed initializing ARM7 DLDI / NDS ARM9 memory allocator
@@ -249,29 +250,23 @@ void handleDSInitError(int stage, u32 fwNo){
 	//Stage 5 = TWL Mode: SCFG_EXT9 locked. ToolchainGenericDS SDK needs it to run from SD in TWL mode.
 	//Stage 6 = TGDS App has quit through exit(int status);
 	
-	loggerARM9LibUtilsCallback("TGDS boot fail: Stage %d, firmware model: %d", stage, fwNo);
 	
 	
-	//Setup default TGDS Project: internal logger
-	setTGDSARM9LoggerCallback((loggerARM9LibUtils_fn)&nocashMessage); 
-	loggerARM9LibUtilsCallback(" ---- ");
-	loggerARM9LibUtilsCallback(" ---- ");
-	loggerARM9LibUtilsCallback(" ---- ");
 	
 	sprintf(tempBuf, "TGDS boot fail: Stage %d, firmware model: %d\n", stage, fwNo);
-	loggerARM9LibUtilsCallback(tempBuf);
+	printf(tempBuf);
 	
 	if(stage == 4){
 		sprintf(tempBuf, "TWL Mode: SCFG_EXT7 locked. Unlaunch and TWiLightMenu++ only supported.\n", stage, fwNo);
-		loggerARM9LibUtilsCallback(tempBuf);
+		printf(tempBuf);
 	}
 	else if(stage == 5){
 		sprintf(tempBuf, "TWL Mode: SCFG_EXT9 locked. Unlaunch and TWiLightMenu++ only supported.\n", stage, fwNo);
-		loggerARM9LibUtilsCallback(tempBuf);
+		printf(tempBuf);
 	}
 	else if(stage == 6){
 		sprintf(tempBuf, "ToolchainGenericDS App has quit through exit(%d); .\n", stage, fwNo, exitValue);
-		loggerARM9LibUtilsCallback(tempBuf);
+		printf(tempBuf);
 	}
 	while(1==1){
 		swiDelay(1);

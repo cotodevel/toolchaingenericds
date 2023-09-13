@@ -211,7 +211,7 @@ int LoadLotsOfGLTextures(u32 * textureSourceArray, int * textureArray, int textu
 	int curTexture = 0;
 	for(curTexture = 0; curTexture < textureCount; curTexture++){
 		if(LoadGLSingleTextureAuto((u8*)textureSourceArray[curTexture], &textureArray[curTexture], curTexture) != 0){
-			loggerARM9LibUtilsCallback("load tex :%d failed", curTexture);
+			nocashMessage("load tex :%d failed", curTexture);
 		}
 	}
 	return curTexture;

@@ -159,7 +159,7 @@ typedef struct
 } unz64_internal;
 
 /* Read a byte from a gz_stream; Return EOF for end of file. */
-static int unzReadUInt8(const zlib_filefunc64_32_def *pzlib_filefunc_def, voidpf filestream, uint8_t *value)
+ int unzReadUInt8(const zlib_filefunc64_32_def *pzlib_filefunc_def, voidpf filestream, uint8_t *value)
 {
     uint8_t c = 0;
     if (ZREAD64(*pzlib_filefunc_def, filestream, &c, 1) == 1)
@@ -173,7 +173,7 @@ static int unzReadUInt8(const zlib_filefunc64_32_def *pzlib_filefunc_def, voidpf
     return UNZ_EOF;
 }
 
-static int unzReadUInt16(const zlib_filefunc64_32_def *pzlib_filefunc_def, voidpf filestream, uint16_t *value)
+ int unzReadUInt16(const zlib_filefunc64_32_def *pzlib_filefunc_def, voidpf filestream, uint16_t *value)
 {
     uint16_t x;
     uint8_t c = 0;
@@ -192,7 +192,7 @@ static int unzReadUInt16(const zlib_filefunc64_32_def *pzlib_filefunc_def, voidp
     return err;
 }
 
-static int unzReadUInt32(const zlib_filefunc64_32_def *pzlib_filefunc_def, voidpf filestream, uint32_t *value)
+ int unzReadUInt32(const zlib_filefunc64_32_def *pzlib_filefunc_def, voidpf filestream, uint32_t *value)
 {
     uint32_t x = 0;
     uint8_t c = 0;
@@ -217,7 +217,7 @@ static int unzReadUInt32(const zlib_filefunc64_32_def *pzlib_filefunc_def, voidp
     return err;
 }
 
-static int unzReadUInt64(const zlib_filefunc64_32_def *pzlib_filefunc_def, voidpf filestream, uint64_t *value)
+ int unzReadUInt64(const zlib_filefunc64_32_def *pzlib_filefunc_def, voidpf filestream, uint64_t *value)
 {
     uint64_t x = 0;
     uint8_t i = 0;
@@ -255,7 +255,7 @@ static int unzReadUInt64(const zlib_filefunc64_32_def *pzlib_filefunc_def, voidp
 }
 
 /* Locate the Central directory of a zip file (at the end, just before the global comment) */
-static int unzSearchCentralDir(const zlib_filefunc64_32_def *pzlib_filefunc_def, uint64_t *pos_found, voidpf filestream)
+ int unzSearchCentralDir(const zlib_filefunc64_32_def *pzlib_filefunc_def, uint64_t *pos_found, voidpf filestream)
 {
     uint8_t buf[BUFREADCOMMENT + 4];
     uint64_t file_size = 0;
@@ -305,7 +305,7 @@ static int unzSearchCentralDir(const zlib_filefunc64_32_def *pzlib_filefunc_def,
 }
 
 /* Locate the Central directory 64 of a zipfile (at the end, just before the global comment) */
-static int unzSearchCentralDir64(const zlib_filefunc64_32_def *pzlib_filefunc_def, uint64_t *offset, voidpf filestream,
+ int unzSearchCentralDir64(const zlib_filefunc64_32_def *pzlib_filefunc_def, uint64_t *offset, voidpf filestream,
     const uint64_t endcentraloffset)
 {
     uint32_t value32 = 0;
@@ -341,7 +341,7 @@ static int unzSearchCentralDir64(const zlib_filefunc64_32_def *pzlib_filefunc_de
     return UNZ_OK;
 }
 
-static unzFile unzOpenInternal(const void *path, zlib_filefunc64_32_def *pzlib_filefunc64_32_def)
+ unzFile unzOpenInternal(const void *path, zlib_filefunc64_32_def *pzlib_filefunc64_32_def)
 {
     unz64_internal us = { 0 };
     unz64_internal *s = NULL;
@@ -557,7 +557,7 @@ extern int ZEXPORT unzClose(unzFile file)
 }
 
 /* Goto to the next available disk for spanned archives */
-static int unzGoToNextDisk(unzFile file)
+ int unzGoToNextDisk(unzFile file)
 {
     unz64_internal *s;
     uint32_t number_disk_next = 0;
@@ -649,7 +649,7 @@ extern int ZEXPORT unzGetGlobalComment(unzFile file, char *comment, uint16_t com
     return (int)bytes_to_read;
 }
 
-static int unzGetCurrentFileInfoField(unzFile file, uint32_t *seek, void *field, uint16_t field_size, uint16_t size_file_field, int null_terminated_field)
+ int unzGetCurrentFileInfoField(unzFile file, uint32_t *seek, void *field, uint16_t field_size, uint16_t size_file_field, int null_terminated_field)
 {
     unz64_internal *s = NULL;
     uint32_t bytes_to_read = 0;
@@ -696,7 +696,7 @@ static int unzGetCurrentFileInfoField(unzFile file, uint32_t *seek, void *field,
 }
 
 /* Get info about the current file in the zipfile, with internal only info */
-static int unzGetCurrentFileInfoInternal(unzFile file, unz_file_info64 *pfile_info,
+ int unzGetCurrentFileInfoInternal(unzFile file, unz_file_info64 *pfile_info,
     unz_file_info64_internal *pfile_info_internal, char *filename, uint16_t filename_size, void *extrafield,
     uint16_t extrafield_size, char *comment, uint16_t comment_size)
 {
@@ -940,7 +940,7 @@ extern int ZEXPORT unzGetCurrentFileInfo64(unzFile file, unz_file_info64 * pfile
 /* Read the local header of the current zipfile. Check the coherency of the local header and info in the
    end of central directory about this file store in *piSizeVar the size of extra info in local header
    (filename and size of extra field data) */
-static int unzCheckCurrentFileCoherencyHeader(unz64_internal *s, uint32_t *psize_variable, uint64_t *poffset_local_extrafield,
+ int unzCheckCurrentFileCoherencyHeader(unz64_internal *s, uint32_t *psize_variable, uint64_t *poffset_local_extrafield,
     uint16_t *psize_local_extrafield)
 {
     uint32_t magic = 0;

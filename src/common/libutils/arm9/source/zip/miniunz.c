@@ -42,15 +42,27 @@
 #include "minishared.h"
 #include "posixHandleTGDS.h"
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void miniunz_banner()
 {
-    loggerARM9LibUtilsCallback("MiniUnz 1.2.0, demo of zLib + Unz package\n");
-    loggerARM9LibUtilsCallback("more info at https://github.com/nmoinvaz/minizip\n\n");
+    nocashMessage("MiniUnz 1.2.0, demo of zLib + Unz package\n");
+    nocashMessage("more info at https://github.com/nmoinvaz/minizip\n\n");
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void miniunz_help()
 {
-    loggerARM9LibUtilsCallback("Usage : miniunz [-e] [-x] [-v] [-l] [-o] [-p password] file.zip [file_to_extr.] [-d extractdir]\n\n" \
+    nocashMessage("Usage : miniunz [-e] [-x] [-v] [-l] [-o] [-p password] file.zip [file_to_extr.] [-d extractdir]\n\n" \
            "  -e  Extract without path (junk paths)\n" \
            "  -x  Extract with path\n" \
            "  -v  list files\n" \
@@ -60,17 +72,23 @@ void miniunz_help()
            "  -p  extract crypted file using password\n\n");
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 int miniunz_list(unzFile uf)
 {
     int err = unzGoToFirstFile(uf);
     if (err != UNZ_OK)
     {
-        loggerARM9LibUtilsCallback("error %d with zipfile in unzGoToFirstFile\n", err);
+        nocashMessage("error %d with zipfile in unzGoToFirstFile\n", err);
         return 1;
     }
 
-    loggerARM9LibUtilsCallback("  Length  Method     Size Ratio   Date    Time   CRC-32     Name\n");
-    loggerARM9LibUtilsCallback("  ------  ------     ---- -----   ----    ----   ------     ----\n");
+    nocashMessage("  Length  Method     Size Ratio   Date    Time   CRC-32     Name\n");
+    nocashMessage("  ------  ------     ---- -----   ----    ----   ------     ----\n");
 
     do
     {
@@ -84,7 +102,7 @@ int miniunz_list(unzFile uf)
         err = unzGetCurrentFileInfo64(uf, &file_info, filename_inzip, sizeof(filename_inzip), NULL, 0, NULL, 0);
         if (err != UNZ_OK)
         {
-            loggerARM9LibUtilsCallback("error %d with zipfile in unzGetCurrentFileInfo\n", err);
+            nocashMessage("error %d with zipfile in unzGetCurrentFileInfo\n", err);
             break;
         }
 
@@ -117,11 +135,11 @@ int miniunz_list(unzFile uf)
             string_method = "Unkn. ";
 
         display_zpos64(file_info.uncompressed_size, 7);
-        loggerARM9LibUtilsCallback("  %6s%c", string_method, char_crypt);
+        nocashMessage("  %6s%c", string_method, char_crypt);
         display_zpos64(file_info.compressed_size, 7);
 
         dosdate_to_tm(file_info.dos_date, &tmu_date);
-        loggerARM9LibUtilsCallback(" %3u%%  %2.2u-%2.2u-%2.2u  %2.2u:%2.2u  %8.8x   %s\n", ratio,
+        nocashMessage(" %3u%%  %2.2u-%2.2u-%2.2u  %2.2u:%2.2u  %8.8x   %s\n", ratio,
             (uint32_t)tmu_date.tm_mon + 1, (uint32_t)tmu_date.tm_mday,
             (uint32_t)tmu_date.tm_year % 100,
             (uint32_t)tmu_date.tm_hour, (uint32_t)tmu_date.tm_min,
@@ -133,13 +151,19 @@ int miniunz_list(unzFile uf)
 
     if (err != UNZ_END_OF_LIST_OF_FILE && err != UNZ_OK)
     {
-        loggerARM9LibUtilsCallback("error %d with zipfile in unzGoToNextFile\n", err);
+        nocashMessage("error %d with zipfile in unzGoToNextFile\n", err);
         return err;
     }
 
     return 0;
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 int miniunz_extract_currentfile(unzFile uf, int opt_extract_without_path, int *popt_overwrite, const char *password, char * outBuf)
 {
     unz_file_info64 file_info = {0};
@@ -151,7 +175,7 @@ int miniunz_extract_currentfile(unzFile uf, int opt_extract_without_path, int *p
     int skip = 0;
     char filename_inzip[256] = {0};
     char *filename_withoutpath = NULL;
-    const char *write_filename = NULL;
+    char *write_filename = NULL;
     char *p = NULL;
 	char msg[256];
     err = unzGetCurrentFileInfo64(uf, &file_info, filename_inzip, sizeof(filename_inzip), NULL, 0, NULL, 0);
@@ -184,7 +208,7 @@ int miniunz_extract_currentfile(unzFile uf, int opt_extract_without_path, int *p
     buf = (void*)TGDSARM9Malloc(size_buf);
     if (buf == NULL)
     {
-        loggerARM9LibUtilsCallback("Error allocating memory\n");
+        nocashMessage("Error allocating memory\n");
         return UNZ_INTERNALERROR;
     }
 	
@@ -311,6 +335,12 @@ int miniunz_extract_currentfile(unzFile uf, int opt_extract_without_path, int *p
     return err;
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 int miniunz_extract_all(unzFile uf, int opt_extract_without_path, int opt_overwrite, const char *password, char * outBuf)
 {
 	char msg[256];
@@ -342,12 +372,18 @@ int miniunz_extract_all(unzFile uf, int opt_extract_without_path, int opt_overwr
     return 0;
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 int miniunz_extract_onefile(unzFile uf, const char *filename, int opt_extract_without_path, int opt_overwrite,
     const char *password, char * outBuf)
 {
     if (unzLocateFile(uf, filename, NULL) != UNZ_OK)
     {
-        loggerARM9LibUtilsCallback("file %s not found in the zipfile\n", filename);
+        nocashMessage("file %s not found in the zipfile\n", filename);
         return 2;
     }
     if (miniunz_extract_currentfile(uf, opt_extract_without_path, &opt_overwrite, password, outBuf) == UNZ_OK)
@@ -356,11 +392,17 @@ int miniunz_extract_onefile(unzFile uf, const char *filename, int opt_extract_wi
 }
 
 #ifndef NOMAIN
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 int miniunz_main(int argc, const char *argv[], char * outBuf)
 {
-    const char *zipfilename = NULL;
-    const char *filename_to_extract = NULL;
-    const char *password = NULL;
+    char *zipfilename = NULL;
+    char *filename_to_extract = NULL;
+    char *password = NULL;
     int i = 0;
     int ret = 0;
     int opt_do_list = 0;
