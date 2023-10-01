@@ -52,7 +52,7 @@ USA
 #if !defined(TGDSPROJECT_WIN32) || defined(DIRECT_VS2012_NDSDL_EXEC)
 
 #ifdef ARM9
-#include "VideoGL.h"
+#include "videoGL.h"
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("Os"))) __attribute__((section(".itcm")))
 #endif

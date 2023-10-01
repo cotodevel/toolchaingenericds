@@ -24,7 +24,9 @@ export SOURCE_MAKEFILE9 = custom
 
 
 #Shared
-include $(DEFAULT_GCC_PATH)/Makefile.basenewlib
+ifeq ($(TGDS_ENV),windows)
+	include $(DEFAULT_GCC_PATH)/Makefile.basenewlib
+endif
 
 #Custom
 export BINSTRIP_RULE_7 =	arm7.bin
