@@ -57,9 +57,9 @@ TWL support: Normatt (SD dldi code) / fincs (codec) / WinterMute / others (updat
 ---------------------------------------------
 Guidelines:
 - TGDS homebrew fully implements NTR (DS mode) and TWL (DSi mode) support. All programs compiled for NTR mode will automatically generate a TWL binary counterpart. Both scenarios having support for DLDI or internal SD through SDK functions.  
-- Booting TGDS Hombrew:
+- Booting TGDS Homebrew:
 	NTR(DS mode): If TGDS homebrew doesn't boot, or boots incorrectly (dead touchscreen, no audio, etc), first try to reload such homebrew through ToolchainGenericDS-multiboot, otherwise, notify me.
-	TWL(DSi mode): Make sure you copy all /release /arm7dldi-twl files into root SD path (the top level directory of the SD card). Supported loaders: Unlaunch (2.0) and TWiLightMenu++. Try either one when running TGDS TWL homebrew, it's guaranteed to work.
+	TWL(DSi mode): Make sure you copy all /release /arm7dldi-twl files into root SD path (the top level directory of the SD card), then run the homebrew. Supported loaders: Unlaunch (2.0) and TWiLightMenu++. Try either one when running TGDS TWL homebrew, it's guaranteed to work.
 	
 - If TGDS homebrew doesn't initialize filesystem, make sure you use FAT32 64K/32K/16K/4K, or FAT16 64K/32K/16K/4K, anything else is untested and unsupported.
 - NTR Mode: Make sure to DLDI patch TGDS homebrew. For TGDS homebrew development, you can use TGDS-RAMDISK DLDI or others. TWL mode doesn't care because it maps the internal SD as filesystem.
