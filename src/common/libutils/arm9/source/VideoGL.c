@@ -32,7 +32,7 @@
 //	 0.5: Extend GL specs on OpenGL 1.1 by implementing Vertex Array Buffers and Vertex Buffer Objects support using GX hardware (Coto)
 //////////////////////////////////////////////////////////////////////
 
-#include "VideoGL.h"
+#include "videoGL.h"
 #include "arm9math.h"
 #include <stdio.h>
 #include <string.h>
