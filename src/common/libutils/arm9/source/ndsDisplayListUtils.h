@@ -44,7 +44,7 @@ USA
 
 
 #if defined(TGDSPROJECT_WIN32) && defined(DIRECT_VS2012_NDSDL_EXEC)
-#include "VideoGL.h"
+#include "videoGL.h"
 #endif
 
 
@@ -54,7 +54,7 @@ USA
 
 #if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 #include "typedefsTGDS.h"
-#include "VideoGL.h"
+#include "videoGL.h"
 //testSourceFileLocation is embedded into ARM9
 #endif
 

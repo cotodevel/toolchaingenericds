@@ -29,7 +29,7 @@
 #include "typedefsTGDS.h"
 #include <stdio.h>
 #include "posixHandleTGDS.h"
-#include "VideoGL.h"
+#include "videoGL.h"
 #include "videoTGDS.h"
 #include "Texture_Cube.h"
 
