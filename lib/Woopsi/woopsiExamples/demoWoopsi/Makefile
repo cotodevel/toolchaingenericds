@@ -177,4 +177,29 @@ switchMaster:
 #ToolchainGenericDS Package deploy format required by ToolchainGenericDS-OnlineApp.
 BuildTGDSPKG:
 	-@echo 'Build TGDS Package. '
-	-$(TGDSPKGBUILDER) $(TGDSPROJECTNAME) $(TGDSPKG_TARGET_NAME) $(LIBPATH) /release/arm7dldi-ntr/
+	-$(TGDSPKGBUILDER) $(TGDSPROJECTNAME) $(TGDSPKG_TARGET_PATH) $(LIBPATH) /release/arm7dldi-ntr/
+
+#---------------------------------------------------------------------------------
+remotebootTWL:
+	-mv $(TGDSPROJECTNAME).srl	$(CURDIR)/release/arm7dldi-twl
+	-chmod 777 -R $(CURDIR)/release/arm7dldi-twl
+	-$(TGDSREMOTEBOOTER) /release/arm7dldi-twl $(TGDSREMOTEBOOTER_SERVER_IP_ADDR) twl_mode $(TGDSPROJECTNAME) $(TGDSPKG_TARGET_PATH) $(LIBPATH) remotepackage	nogdb
+	-rm -rf remotepackage.zip
+
+remotegdbTWL:
+	-mv $(TGDSPROJECTNAME).srl	$(CURDIR)/release/arm7dldi-twl
+	-chmod 777 -R $(CURDIR)/release/arm7dldi-twl
+	-$(TGDSREMOTEBOOTER) /release/arm7dldi-twl $(TGDSREMOTEBOOTER_SERVER_IP_ADDR) twl_mode $(TGDSPROJECTNAME) $(TGDSPKG_TARGET_PATH) $(LIBPATH) remotepackage	gdbenable
+	-rm -rf remotepackage.zip
+
+remotebootNTR:
+	-mv $(TGDSPROJECTNAME).nds	$(CURDIR)/release/arm7dldi-ntr
+	-chmod 777 -R $(CURDIR)/release/arm7dldi-ntr
+	-$(TGDSREMOTEBOOTER) /release/arm7dldi-ntr $(TGDSREMOTEBOOTER_SERVER_IP_ADDR) ntr_mode $(TGDSPROJECTNAME) $(TGDSPKG_TARGET_PATH) $(LIBPATH) remotepackage	nogdb
+	-rm -rf remotepackage.zip
+
+remotegdbNTR:
+	-mv $(TGDSPROJECTNAME).nds	$(CURDIR)/release/arm7dldi-ntr
+	-chmod 777 -R $(CURDIR)/release/arm7dldi-ntr
+	-$(TGDSREMOTEBOOTER) /release/arm7dldi-ntr $(TGDSREMOTEBOOTER_SERVER_IP_ADDR) ntr_mode $(TGDSPROJECTNAME) $(TGDSPKG_TARGET_PATH) $(LIBPATH) remotepackage	gdbenable
+	-rm -rf remotepackage.zip
