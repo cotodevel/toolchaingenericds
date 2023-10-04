@@ -38,7 +38,8 @@ export TGDSPROJECTNAME = demoWoopsi
 export EXECUTABLE_FNAME = $(TGDSPROJECTNAME).nds
 export EXECUTABLE_VERSION_HEADER =	0.1
 export EXECUTABLE_VERSION =	"$(EXECUTABLE_VERSION_HEADER)"
-export TGDSPKG_TARGET_NAME := /
+export TGDSPKG_TARGET_PATH := '//'
+export TGDSREMOTEBOOTER_SERVER_IP_ADDR := '192.168.43.22'
 #The ndstool I use requires to have the elf section removed, so these rules create elf headerless- binaries.
 export BINSTRIP_RULE_7 =	arm7.bin
 export BINSTRIP_RULE_9 =	arm9.bin
