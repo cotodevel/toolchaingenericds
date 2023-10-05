@@ -39,7 +39,8 @@ export EXECUTABLE_FNAME = $(TGDSPROJECTNAME).nds
 export EXECUTABLE_VERSION_HEADER =	0.1
 export EXECUTABLE_VERSION =	"$(EXECUTABLE_VERSION_HEADER)"
 export TGDSPKG_TARGET_PATH := '//'
-export TGDSREMOTEBOOTER_SERVER_IP_ADDR := '192.168.43.22'
+export TGDSREMOTEBOOTER_SERVER_IP_ADDR := '192.168.1.83'
+export TGDSREMOTEBOOTER_SERVER_PORT := 1040
 #The ndstool I use requires to have the elf section removed, so these rules create elf headerless- binaries.
 export BINSTRIP_RULE_7 =	arm7.bin
 export BINSTRIP_RULE_9 =	arm9.bin
@@ -184,23 +185,23 @@ BuildTGDSPKG:
 remotebootTWL:
 	-mv $(TGDSPROJECTNAME).srl	$(CURDIR)/release/arm7dldi-twl
 	-chmod 777 -R $(CURDIR)/release/arm7dldi-twl
-	-$(TGDSREMOTEBOOTER) /release/arm7dldi-twl $(TGDSREMOTEBOOTER_SERVER_IP_ADDR) twl_mode $(TGDSPROJECTNAME) $(TGDSPKG_TARGET_PATH) $(LIBPATH) remotepackage	nogdb
+	-$(TGDSREMOTEBOOTER) /release/arm7dldi-twl $(TGDSREMOTEBOOTER_SERVER_IP_ADDR) twl_mode $(TGDSPROJECTNAME) $(TGDSPKG_TARGET_PATH) $(LIBPATH) remotepackage	nogdb	$(TGDSREMOTEBOOTER_SERVER_PORT)
 	-rm -rf remotepackage.zip
 
 remotegdbTWL:
 	-mv $(TGDSPROJECTNAME).srl	$(CURDIR)/release/arm7dldi-twl
 	-chmod 777 -R $(CURDIR)/release/arm7dldi-twl
-	-$(TGDSREMOTEBOOTER) /release/arm7dldi-twl $(TGDSREMOTEBOOTER_SERVER_IP_ADDR) twl_mode $(TGDSPROJECTNAME) $(TGDSPKG_TARGET_PATH) $(LIBPATH) remotepackage	gdbenable
+	-$(TGDSREMOTEBOOTER) /release/arm7dldi-twl $(TGDSREMOTEBOOTER_SERVER_IP_ADDR) twl_mode $(TGDSPROJECTNAME) $(TGDSPKG_TARGET_PATH) $(LIBPATH) remotepackage	gdbenable	$(TGDSREMOTEBOOTER_SERVER_PORT)
 	-rm -rf remotepackage.zip
 
 remotebootNTR:
 	-mv $(TGDSPROJECTNAME).nds	$(CURDIR)/release/arm7dldi-ntr
 	-chmod 777 -R $(CURDIR)/release/arm7dldi-ntr
-	-$(TGDSREMOTEBOOTER) /release/arm7dldi-ntr $(TGDSREMOTEBOOTER_SERVER_IP_ADDR) ntr_mode $(TGDSPROJECTNAME) $(TGDSPKG_TARGET_PATH) $(LIBPATH) remotepackage	nogdb
+	-$(TGDSREMOTEBOOTER) /release/arm7dldi-ntr $(TGDSREMOTEBOOTER_SERVER_IP_ADDR) ntr_mode $(TGDSPROJECTNAME) $(TGDSPKG_TARGET_PATH) $(LIBPATH) remotepackage	nogdb	$(TGDSREMOTEBOOTER_SERVER_PORT)
 	-rm -rf remotepackage.zip
 
 remotegdbNTR:
 	-mv $(TGDSPROJECTNAME).nds	$(CURDIR)/release/arm7dldi-ntr
 	-chmod 777 -R $(CURDIR)/release/arm7dldi-ntr
-	-$(TGDSREMOTEBOOTER) /release/arm7dldi-ntr $(TGDSREMOTEBOOTER_SERVER_IP_ADDR) ntr_mode $(TGDSPROJECTNAME) $(TGDSPKG_TARGET_PATH) $(LIBPATH) remotepackage	gdbenable
+	-$(TGDSREMOTEBOOTER) /release/arm7dldi-ntr $(TGDSREMOTEBOOTER_SERVER_IP_ADDR) ntr_mode $(TGDSPROJECTNAME) $(TGDSPKG_TARGET_PATH) $(LIBPATH) remotepackage	gdbenable	$(TGDSREMOTEBOOTER_SERVER_PORT)
 	-rm -rf remotepackage.zip
