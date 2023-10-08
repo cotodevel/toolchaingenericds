@@ -24,9 +24,15 @@
 #include "zombie.h"
 #include "spitscTGDS.h"
 
-__attribute__((section(".dtcm")))
 WoopsiTemplate * WoopsiTemplateProc = NULL;
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void WoopsiTemplate::startup(int argc, char **argv) {
 	Rect rect;
 
@@ -281,10 +287,6 @@ void WoopsiTemplate::startup(int argc, char **argv) {
 	_alert = new Alert(2, 2, 200, 80, "Welcome!", "Welcome to Woopsi!");
 	newScreen2->addGadget(_alert);
 	
-	if(__dsimode == true){
-		TWLSetTouchscreenTWLMode();
-	}
-	
 	enableDrawing();	// Ensure Woopsi can now draw itself
 	redraw();			// Draw initial state
 
@@ -300,6 +302,13 @@ void WoopsiTemplate::shutdown() {
 	Woopsi::shutdown();
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void WoopsiTemplate::handleLidClosed() {
 	// Lid has just been closed
 	_lidClosed = true;
@@ -312,6 +321,13 @@ void WoopsiTemplate::handleLidClosed() {
 	}
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void WoopsiTemplate::handleLidOpen() {
 	// Lid has just been opened
 	_lidClosed = false;
@@ -325,7 +341,15 @@ void WoopsiTemplate::handleLidOpen() {
 }
 
 //Called once Woopsi events are ended: TGDS Main Loop
+//Called once Woopsi events are ended: TGDS Main Loop
 __attribute__((section(".itcm")))
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void Woopsi::ApplicationMainLoop(){
 	//Earlier.. main from Woopsi SDK.
 	

@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
 	
     while (1) {
 		handleARM7SVC();	/* Do not remove, handles TGDS services */
-		IRQWait(0, IRQ_VBLANK);
+		IRQWait(0, IRQ_VBLANK | IRQ_VCOUNT | IRQ_IPCSYNC | IRQ_RECVFIFO_NOT_EMPTY | IRQ_SCREENLID);
 	}
 	return 0;
 }
