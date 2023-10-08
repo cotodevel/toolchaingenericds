@@ -265,7 +265,12 @@ void handleDSInitError(int stage, u32 fwNo){
 		printf(tempBuf);
 	}
 	else if(stage == 6){
-		sprintf(tempBuf, "ToolchainGenericDS App has quit through exit(%d); .\n", stage, fwNo, exitValue);
+		if(exitValue != -10000){
+			sprintf(tempBuf, "ToolchainGenericDS App has quit through exit(%d); .\n", stage, fwNo, exitValue);
+		}
+		else{
+			sprintf(tempBuf, "ToolchainGenericDS App: abort(); .\n", stage, fwNo, exitValue);
+		}
 		printf(tempBuf);
 	}
 	while(1==1){
