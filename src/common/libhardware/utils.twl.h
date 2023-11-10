@@ -106,7 +106,7 @@ typedef struct FifoMessage {
 		} MicBufferFull;
 
 		struct{
-			touchPosition touch;
+			struct touchPosition touch;
 			u16 keys;
 		} SystemInput;
 		

@@ -213,7 +213,9 @@ void HandleFifoNotEmpty(){
 			
 			case ARM7COMMAND_START_SOUND:{
 				if(SoundStreamSetupSoundARM7LibUtilsCallback != NULL){
-					SoundStreamSetupSoundARM7LibUtilsCallback();
+					uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
+					u32 SoundBuffARM7 = getValueSafe(&fifomsg[63]);
+					SoundStreamSetupSoundARM7LibUtilsCallback(SoundBuffARM7);	//data0 == ARM7 Sound Buffer source for streaming
 				}
 			}
 			break;
@@ -225,17 +227,17 @@ void HandleFifoNotEmpty(){
 			break;
 			case ARM7COMMAND_SOUND_SETRATE:{
 				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-				sndRate = fifomsg[60];
+				sndRate = getValueSafe(&fifomsg[60]);
 			}
 			break;
 			case ARM7COMMAND_SOUND_SETLEN:{
 				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-				sampleLen = fifomsg[61];
+				sampleLen = getValueSafe(&fifomsg[61]);
 			}
 			break;
 			case ARM7COMMAND_SOUND_SETMULT:{
 				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-				multRate = fifomsg[62];
+				multRate = getValueSafe(&fifomsg[62]);
 			}
 			break;
 			case ARM7COMMAND_SOUND_COPY:

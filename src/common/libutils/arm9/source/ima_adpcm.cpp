@@ -558,7 +558,13 @@ __attribute__((optimize("O0")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-int IMA_Adpcm_Player::play( FILE * ADFileHandle, bool loop_audio, bool automatic_updates, int buffer_length, closeSoundHandle closeHandle )	{
+int IMA_Adpcm_Player::play( FILE * ADFileHandle, bool loop_audio, bool automatic_updates, int buffer_length, closeSoundHandle closeHandle, uint32 sourceBuf)	{
+	if(sourceBuf == 0){
+		printf("IMA-ADPCM failure");
+		while(1==1){}
+		return -1;
+	}
+	
 	active = false;
 	stop();
 	autofill = automatic_updates;
@@ -598,7 +604,7 @@ int IMA_Adpcm_Player::play( FILE * ADFileHandle, bool loop_audio, bool automatic
 	IMAADPCMDecode();
 	soundData.sourceFmt = SRC_WAV;
 	internalCodecType = SRC_WAVADPCM;
-	startSound9();
+	startSound9(sourceBuf);
 	return 0;
 }
 

@@ -438,6 +438,7 @@ void _exit (int status){
 	u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
 	int stage = 6;
 	handleDSInitError(stage, (u32)fwNo);
+	while(1==1){}
 }
 
 int _kill (pid_t pid, int sig){

@@ -241,7 +241,7 @@ int main(int argc, char **argv) {
 	MPUSet();
 	//TGDS-Projects -> legacy NTR TSC compatibility
 	if(__dsimode == true){
-		TWLSetTouchscreenNTRMode();
+		TWLSetTouchscreenTWLMode();
 	}
 	REG_IME = 1;
 	
