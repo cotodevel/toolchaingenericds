@@ -166,12 +166,15 @@ void cdcTouchInit(void) {
 //---------------------------------------------------------------------------------
 bool cdcTouchPenDown(void) {
 //---------------------------------------------------------------------------------
-
-	return (cdcReadReg(CDC_TOUCHCNT, 0x09) & 0xC0) != 0x40 && !(cdcReadReg(CDC_TOUCHCNT, 0x0E) & 0x02);
+	int oldIME = REG_IME;
+	REG_IME = 0;
+	bool res = (cdcReadReg(CDC_TOUCHCNT, 0x09) & 0xC0) != 0x40 && !(cdcReadReg(CDC_TOUCHCNT, 0x0E) & 0x02);
+	REG_IME = oldIME;
+	return res;
 }
 
 //---------------------------------------------------------------------------------
-bool cdcTouchRead(touchPosition* pos) {
+bool cdcTouchRead(struct touchPosition* pos) {
 //---------------------------------------------------------------------------------
 
 	u8 raw[2*2*5];

@@ -60,7 +60,7 @@ void cdcWriteRegArray(u8 bank, u8 reg, const void* data, u8 size);
 // Touchscreen functions
 void cdcTouchInit(void);
 bool cdcTouchPenDown(void);
-bool cdcTouchRead(touchPosition* pos);
+bool cdcTouchRead(struct touchPosition* pos);
 
 #ifdef __cplusplus
 }

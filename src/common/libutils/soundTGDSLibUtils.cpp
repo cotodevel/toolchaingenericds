@@ -63,10 +63,10 @@ __attribute__((optimize("O0")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-void mallocData(int size) 
+void mallocDataARM7(int size, uint16* sourceBuf)
 {
     // this no longer uses malloc due to using vram bank d.
-	strpcmL0 = VRAM_D;
+	strpcmL0 = (s16*)sourceBuf;
 	strpcmL1 = strpcmL0 + (size >> 1);
 	strpcmR0 = strpcmL1 + (size >> 1);
 	strpcmR1 = strpcmR0 + (size >> 1);
@@ -133,7 +133,7 @@ __attribute__((optimize("O0")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-void setupSound() {
+void setupSound(uint32 sourceBuf) {
 	//Init SoundSampleContext
 	initSound();
 
@@ -142,7 +142,7 @@ void setupSound() {
 		multRate = 1;
 	}
 	
-	mallocData(sampleLen * 2 * multRate);
+	mallocDataARM7(sampleLen * 2 * multRate, (uint16*)sourceBuf);
     
 	TIMERXDATA(0) = SOUND_FREQ((sndRate * multRate));
 	TIMERXCNT(0) = TIMER_DIV_1 | TIMER_ENABLE;
@@ -447,17 +447,17 @@ int getSoundLength()
 	return sndLen;
 }
 
-void startSound9()
-{	
-	if(!playing)
-		SendFIFOWords(ARM7COMMAND_START_SOUND, 0xFF);
+void startSound9(uint32 sourceBuf)
+{
+	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
+	setValueSafe(&fifomsg[63], (uint32)sourceBuf);
+	SendFIFOWords(ARM7COMMAND_START_SOUND, 0xFF);
 	playing = true;
 }
 
 void stopSound()
 {
-	if(playing)
-		SendFIFOWords(ARM7COMMAND_STOP_SOUND, 0xFF);
+	SendFIFOWords(ARM7COMMAND_STOP_SOUND, 0xFF);
 	playing = false;
 }
 
@@ -815,7 +815,7 @@ __attribute__((optimize("O0")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-int playSoundStream(char * audioStreamFilename, struct fd * _FileHandleVideo, struct fd * _FileHandleAudio) {
+int playSoundStream(char * audioStreamFilename, struct fd * _FileHandleVideo, struct fd * _FileHandleAudio, uint32 sourceBuf) {
 	
 	//If trying to play SoundStream code while Shared RAM is mapped @ ARM7, throw error
 	if((WRAM_CR & WRAM_0KARM9_32KARM7) == WRAM_0KARM9_32KARM7){
@@ -830,11 +830,11 @@ int playSoundStream(char * audioStreamFilename, struct fd * _FileHandleVideo, st
 		//OK
 		_FileHandleVideo = getStructFD(physFh1);
 		_FileHandleAudio = getStructFD(physFh2);
-		int intCodecType = initSoundStreamFromStructFD(_FileHandleAudio, (char*)".wav");
+		int intCodecType = initSoundStreamFromStructFD(_FileHandleAudio, (char*)".wav", sourceBuf);
 		if(intCodecType == SRC_WAVADPCM){
 			bool loop_audio = false;
 			bool automatic_updates = false;
-			if(player.play(getPosixFileHandleByStructFD(_FileHandleAudio, "r"), loop_audio, automatic_updates, ADPCM_SIZE, stopSoundStreamUser) == 0){
+			if(player.play(getPosixFileHandleByStructFD(_FileHandleAudio, "r"), loop_audio, automatic_updates, ADPCM_SIZE, stopSoundStreamUser, sourceBuf) == 0){
 				//ADPCM Playback!
 			}
 		}
@@ -876,7 +876,7 @@ __attribute__((optimize("O0")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-int initSoundStream(char * audioStreamFilename) {
+int initSoundStream(char * audioStreamFilename, uint32 sourceBuf) {
 	char tmpName[256];
 	char ext[256];
 	
@@ -893,7 +893,7 @@ int initSoundStream(char * audioStreamFilename) {
 	FILE *fp = fopen(audioStreamFilename, "r");
 	int StructFD = fileno(fp);
 	struct fd *tgdsfd = getStructFD(StructFD);
-	return initSoundStreamFromStructFD(tgdsfd, ext);
+	return initSoundStreamFromStructFD(tgdsfd, ext, sourceBuf);
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -902,7 +902,7 @@ __attribute__((optimize("O0")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-int initSoundStreamFromStructFD(struct fd * _FileHandleAudio, char * ext) {	//ARM9 Impl.
+int initSoundStreamFromStructFD(struct fd * _FileHandleAudio, char * ext, uint32 sourceBuf) {	//ARM9 Impl.
 	// try this first to prevent false positives with other streams
 	/*
 	if(isURL(fName))
@@ -1066,7 +1066,7 @@ int initSoundStreamFromStructFD(struct fd * _FileHandleAudio, char * ext) {	//AR
 			
 			memoryContents = NULL;
 			wavDecode();
-			startSound9();
+			startSound9(sourceBuf);
 			internalCodecType = SRC_WAV;
 			return SRC_WAV;
 		}

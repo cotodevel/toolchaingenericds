@@ -133,7 +133,7 @@ void resetMemory_ARMCores(u8 DSHardware) {
 		VRAM_H_CR = 0;
 		VRAM_I_CR = 0;
 		VRAM_CR   = 0x03000000;
-		REG_POWERCNT  = 0x820F;
+		REG_POWERCNT  = 0x820F; //NDS9 - POWCNT1 
     
 		//set WORKRAM 32K to ARM9 by default
 		WRAM_CR = WRAM_32KARM9_0KARM7;
@@ -152,6 +152,14 @@ void resetMemory_ARMCores(u8 DSHardware) {
 		#endif
 		
 	}
+	
+	#ifdef ARM7
+	//Bit   Expl.
+	//0     Sound Speakers (0=Disable, 1=Enable) (Initial setting = 1)
+	//1     Wifi           (0=Disable, 1=Enable) (Initial setting = 0)
+	//2-31  Not used
+	REG_POWERCNT  = 0x3;	// NDS7 - POWCNT2
+	#endif
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))

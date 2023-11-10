@@ -25,11 +25,7 @@ USA
 #include "dsregs.h"
 #include <stdbool.h>
 
-
-/* Firmware Header */
-//Firmware Header (00000h-001FFh)
-
-
+//Firmware Header (00000h-00029h)
 struct sDSFWHEADER {
   //Addr Size Expl.
   //            FFh=Nintendo DS
@@ -46,15 +42,13 @@ struct sDSFWHEADER {
   //            Bit5   seems to be DS-Lite related
   //            Bit6   indicates presence of "extended" user settings (DSi/iQue)
   //            Bit7   zero
-  //02Ah-1FFh Wifi Calibration Data ignored
   uint8	stub[512];
 };	//must match DS_FW_HEADER_SIZE
 
 #define DS_FW_HEADER_ADDRESS (uint32)(0x00000000)
 #define DS_FW_HEADER_SIZE (sint32)(sizeof(struct sDSFWHEADER))
 
-//DS Firmware Wifi Internet Access Points
-
+//DS Firmware Wifi Internet Access Points (0002Ah-001FFh)
 typedef struct sDSFWInternetAP {
 //  Addr Siz Expl.
 uint8	unk1[64];	//  000h 64  Unknown (usually 00h-filled) (no Proxy supported on NDS)
@@ -84,18 +78,13 @@ uint8	crc16WinternenAP[2];	//  0FEh 2   CRC16 for Entries 00h..FDh (with initial
 }tDSFWInternetAP;
 
 
-
-/* User Settings */
-
 /*
 	http://problemkaputt.de/gbatek.htm
   
-  DS Firmware User Settings
-
-Current Settings (RAM 27FFC80h-27FFCEFh)
+DS Firmware User Settings:
 User Settings 0 (Firmware 3FE00h-3FEFFh) ;(DSi & iQue use different address,
 User Settings 1 (Firmware 3FF00h-3FFFFh) ;see Firmware Header [020h])  
-*/  
+*/
 
 #define DS_FW_USERSETTINGS_SIZE 0x100
 #define DS_FW_USERSETTINGS0ADDR (uint32)(0x0003FE00)

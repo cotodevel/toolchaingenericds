@@ -224,18 +224,16 @@ extern u32 sampleLen;
 extern int sndRate;
 extern void freeData();
 extern void setSwapChannel();
-extern void setupSound();
+extern void setupSound(uint32 sourceBuf);
+extern void mallocDataARM7(int size, uint16* sourceBuf);
 #endif
 
 extern void initSound();
 extern void stopSound();
-extern void mallocData(int size);
-
-#ifdef ARM7
-extern void initSoundStream(u32 srcFmt);
-#endif
 
 #ifdef ARM9
+extern void mallocData(int size);
+
 //weak symbols : the implementation of these is project-defined, also abstracted from the hardware IPC FIFO Implementation for easier programming.
 extern     void updateStreamCustomDecoder(u32 srcFrmt);
 extern     void freeSoundCustomDecoder(u32 srcFrmt);
@@ -262,8 +260,8 @@ extern int getSoundLength();
 extern void TIMER1Handler();
 
 #ifdef ARM9
-extern int initSoundStream(char * audioStreamFilename);
-extern int initSoundStreamFromStructFD(struct fd * _FileHandleAudio, char * ext);
+extern int initSoundStream(char * audioStreamFilename, uint32 sourceBuf);
+extern int initSoundStreamFromStructFD(struct fd * _FileHandleAudio, char * ext, uint32 sourceBuf);
 extern void setWavDecodeCallback(void (*cb)());
 
 extern int parseWaveData(struct fd * fdinst, u32 u32chunkToSeek);
@@ -308,11 +306,11 @@ extern void wavDecode24Bit();
 extern void wavDecode32Bit();
 extern void updateStream();
 extern void freeSound();
-extern void startSound9();
+extern void startSound9(uint32 sourceBuf);
 
 //Usercode: Opens a .WAV or IMA-ADPCM (Intel) file and begins to stream it.
 //Returns: the stream format.
-extern int playSoundStream(char * audioStreamFilename, struct fd * _FileHandleVideo, struct fd * _FileHandleAudio);
+extern int playSoundStream(char * audioStreamFilename, struct fd * _FileHandleVideo, struct fd * _FileHandleAudio, uint32 sourceBuf);
 
 //Usercode: Stops an audiostream playback.
 //Returns: true if successfully halted, false if no audiostream available.

@@ -390,7 +390,7 @@ __attribute__((optimize("O0")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-void touchReadXY(touchPosition *touchPos) {
+void touchReadXY(struct touchPosition *touchPos) {
 //---------------------------------------------------------------------------------	
 	if ( !touchInit ) {
 		xscale = ((PersonalData->calX2px - PersonalData->calX1px) << 19) / ((PersonalData->calX2) - (PersonalData->calX1));
@@ -546,9 +546,10 @@ void TWLSetTouchscreenTWLMode(){
 	SFGEXT7 = (SFGEXT7 & ~(0x1 << 9)) | (0x1 << 9); //TWL / Extended
 	*(u32*)0x04004008 = SFGEXT7;
 	#endif
+	#endif
+	
 	#ifdef ARM9
 	SendFIFOWords(TGDS_ARM7_TWL_SET_TSC_TWLMODE, 0xFF);
-	#endif
 	#endif
 }
 
@@ -571,8 +572,9 @@ void TWLSetTouchscreenNTRMode(){
 	*(u32*)0x04004008 = SFGEXT7;
 	
 	#endif
+	#endif
+	
 	#ifdef ARM9
 	SendFIFOWords(TGDS_ARM7_TWL_SET_TSC_NTRMODE, 0xFF);
-	#endif
 	#endif
 }
