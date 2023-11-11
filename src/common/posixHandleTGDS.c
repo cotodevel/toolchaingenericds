@@ -47,6 +47,7 @@ USA
 #include "limitsTGDS.h"
 #include "dldi.h"
 #include "busTGDS.h"
+#include "initNDSTGDS.h"
 
 uint32 get_lma_libend(){
 	return (uint32)(&__vma_stub_end__);	//linear memory top (start)
@@ -224,7 +225,6 @@ void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,									
 						u32 * freeHandler, u32 * MallocFreeMemoryHandler, bool customAllocator, u32 dldiMemAddress,
 						u32 TargetARM7DLDIAddress
 ) {
-	
 	if (_io_dldi_stub.ioInterface.features & FEATURE_SLOT_GBA) {
 		SetBusSLOT1ARM9SLOT2ARM7();
 	}
@@ -234,11 +234,11 @@ void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,									
 	
 	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-	fifomsg[0] = (uint32)ARM7MallocStartAddress;
-	fifomsg[1] = (uint32)ARM7MallocSize;
-	fifomsg[2] = (uint32)customAllocator;
-	fifomsg[3] = (uint32)dldiMemAddress;
-	fifomsg[4] = (uint32)TargetARM7DLDIAddress;
+	setValueSafe(&fifomsg[0], (uint32)ARM7MallocStartAddress);
+	setValueSafe(&fifomsg[1], (uint32)ARM7MallocSize);
+	setValueSafe(&fifomsg[2], (uint32)customAllocator);
+	setValueSafe(&fifomsg[3], (uint32)dldiMemAddress);
+	setValueSafe(&fifomsg[4], (uint32)TargetARM7DLDIAddress);
 	
 	setTGDSARM9MallocBaseAddress(ARM9MallocStartaddress);
 	if(customAllocator == true){
@@ -258,7 +258,7 @@ void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,									
 	TGDSInitLoopCount = 0;
 	setupLibUtils(); //ARM9 libUtils Setup
 	SendFIFOWords(TGDS_ARM7_SETUPMALLOCDLDI, 0xFF);	//ARM7 Setup: DLDI, and extensions if enabled through libutils
-	while(fifomsg[4] == TargetARM7DLDIAddress){
+	while(getValueSafe(&fifomsg[4]) == TargetARM7DLDIAddress){
 		if(TGDSInitLoopCount > (1048576 << 3) ){
 			u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
 			int stage = 1;
