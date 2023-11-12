@@ -23,6 +23,7 @@ USA
 #include "dsregs.h"
 #include "dsregs_asm.h"
 #include "timerTGDS.h"
+#include "InterruptsARMCores_h.h"
 
 ///////////////////////////////////Usercode Timer///////////////////////////////////
 //Note: IRQ Timer 3 is used. So Wifi can't be used at the same time when counting up

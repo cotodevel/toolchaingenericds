@@ -748,7 +748,7 @@ void shutdownNDSHardware(){
 			uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 			fifomsg[60] = (uint32)FIFO_SHUTDOWN_DS;
 			fifomsg[61] = (uint32)0;
-			SendFIFOWordsITCM(FIFO_POWERMGMT_WRITE, (uint32)fifomsg);
+			SendFIFOWords(FIFO_POWERMGMT_WRITE, (uint32)fifomsg);
 		#endif
 	#endif
 	
@@ -783,7 +783,7 @@ int	setBacklight(int flags){
 		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 		fifomsg[60] = (uint32)FIFO_SCREENPOWER_WRITE;
 		fifomsg[61] = (uint32)(flags);
-		SendFIFOWordsITCM(FIFO_POWERMGMT_WRITE, (uint32)fifomsg);
+		SendFIFOWords(FIFO_POWERMGMT_WRITE, (uint32)fifomsg);
 	#endif
 	return 0;
 }
@@ -1095,7 +1095,7 @@ bool TGDSMultibootRunNDSPayload(char * filename) {
 			fread((u32*)0x02280000, 1, tgds_multiboot_payload_size, tgdsPayloadFh);
 			coherent_user_range_by_size(0x02280000, (int)tgds_multiboot_payload_size);
 			fclose(tgdsPayloadFh);
-			int ret=FS_deinit();
+			FS_deinit();
 			//Copy and relocate current TGDS DLDI section into target ARM9 binary
 			if(strncmp((char*)&dldiGet()->friendlyName[0], "TGDS RAMDISK", 12) == 0){
 				nocashMessage("TGDS DLDI detected. Skipping DLDI patch.");

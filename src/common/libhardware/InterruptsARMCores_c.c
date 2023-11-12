@@ -49,7 +49,6 @@ USA
 #endif
 
 void IRQInit(u8 DSHardware)  {
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	#ifdef ARM9
 	
 	DrainWriteBuffer();
@@ -146,7 +145,6 @@ static bool penDown = false;
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
-__attribute__((target("arm")))
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("O0")))
 #endif
@@ -158,7 +156,9 @@ void NDS_IRQHandler(){
 	volatile uint32 REG_IE_SET = (volatile uint32)(REG_IF & REG_IE);
 	
 	#ifdef TWLMODE
+	#ifdef ARM7
 	u32 handledIRQAUX = REG_AUXIE & REG_AUXIF;
+	#endif
 	#endif
 	
 	////			Common
@@ -216,7 +216,6 @@ void NDS_IRQHandler(){
 	if(REG_IE_SET & IRQ_VCOUNT){
 		#ifdef ARM7		
 		struct sIPCSharedTGDS * sIPCSharedTGDSInst = (struct sIPCSharedTGDS *)TGDSIPCStartAddress;
-		struct sEXTKEYIN * sEXTKEYINInst = (struct sEXTKEYIN *)&sIPCSharedTGDSInst->EXTKEYINInst;
 		struct touchPosition * sTouchPosition = (struct touchPosition *)&sIPCSharedTGDSInst->tscIPC;
 		
 		//ARM7 Keypad has access to X/Y/Hinge/Pen down bits

@@ -60,8 +60,6 @@ export DIRS_ARM9_SRCLIB = ../../libutils/	\
 			../../../arm9/source/console/	\
 			../../../arm9/source/dswifi_arm9/	\
 			../../../arm9/source/imadecoder/	\
-			../../../arm9/source/ToolchainGenericDSFS/	\
-			../../../arm9/source/ToolchainGenericDSFS/fatfs/source/	\
 			../arm9twl/	\
 			../arm9/source/	\
 			../arm9/source/dswifi_arm9/	\

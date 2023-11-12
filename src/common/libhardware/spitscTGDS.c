@@ -18,9 +18,10 @@ USA
 
 */
 
-#include "ipcfifoTGDS.h"
 #include "spitscTGDS.h"
 #include <stdbool.h>
+#include "ipcfifoTGDS.h"
+#include "utils.twl.h"
 
 #ifdef ARM7
 
@@ -491,10 +492,6 @@ void touchReadXY(struct touchPosition *touchPos) {
 }
 
 //Source http://problemkaputt.de/gbatek.htm & devkitARM
-#ifdef ARM7
-static bool penDown = false;
-#endif
-
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("O0")))
 #endif
@@ -504,9 +501,9 @@ __attribute__ ((optnone))
 #endif
 void doSPIARM7IO(){
 	#ifdef ARM7
-	struct sIPCSharedTGDS * sIPCSharedTGDSInst = (struct sIPCSharedTGDS *)0x027FF000;
+	//struct sIPCSharedTGDS * sIPCSharedTGDSInst = (struct sIPCSharedTGDS *)0x027FF000;
 	//Handle Clock (should this one run on IRQs instead?)
-	//sIPCSharedTGDSInst->ndsRTCSeconds = nds_get_time7(); //disable clock, uneeded by snemulds
+	//sIPCSharedTGDSInst->ndsRTCSeconds = nds_get_time7(); //disable clock by default, re-enable it if TGDS Project needs it
 	#endif
 }
 #endif

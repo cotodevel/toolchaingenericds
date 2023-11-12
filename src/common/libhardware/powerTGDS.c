@@ -48,7 +48,7 @@ void powerON(uint32 values){
 		struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 		setValueSafe(&fifomsg[60], (uint32)values);
-		SendFIFOWords(FIFO_POWERCNT_ON, fifomsg);
+		SendFIFOWords(FIFO_POWERCNT_ON, (u32)fifomsg);
 	}
 	else{
 		REG_POWERCNT |= values;
@@ -68,7 +68,7 @@ void powerOFF(uint32 values){
 		struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 		setValueSafe(&fifomsg[60], (uint32)values);
-		SendFIFOWords(FIFO_POWERCNT_OFF, fifomsg);
+		SendFIFOWords(FIFO_POWERCNT_OFF, (u32)fifomsg);
 	}
 	else{
 		REG_POWERCNT &= ~values;

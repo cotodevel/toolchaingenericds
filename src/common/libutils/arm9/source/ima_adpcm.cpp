@@ -741,8 +741,8 @@ void IMAADPCMDecode(){
 	coherent_user_range((uint32)tmpData, (uint32)(ADPCMchunksize* 2 * ADPCMchannels));
 	if(soundData.channels == 2)
 	{
-		uint i=0;
-		for(i=0;i<(ADPCMchunksize * 2);++i)
+		int i=0;
+		for(i=0; i<(ADPCMchunksize * 2);++i)
 		{					
 			lBuffer[i] = tmpData[i << 1];
 			rBuffer[i] = tmpData[(i << 1) | 1];
@@ -750,7 +750,7 @@ void IMAADPCMDecode(){
 	}
 	else
 	{
-		uint i=0;
+		int i=0;
 		for(i=0;i<(ADPCMchunksize * 2);++i)
 		{
 			lBuffer[i] = tmpData[i];

@@ -269,7 +269,7 @@ void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,									
 	
 	__dsimode = (bool)fifomsg[2];
 	TWLModeInternalSDAccess = fifomsg[3]; //ARM7 DLDI decides the current TGDS FS mode
-	bool dldiInitStatus = (bool)fifomsg[4]; //DLDI / SDIO init: true: OK, false: error
+	//bool dldiInitStatus = (bool)fifomsg[4]; //DLDI / SDIO init: true: OK, false: error
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -558,13 +558,13 @@ int _gettimeofday(struct timeval *tv, struct timezone *tz){
 	tv->tv_usec = 0L;
 	if (tz != NULL)
     {
-		const time_t timer = tv->tv_sec;
-		struct tm tm;
-		const long int save_timezone = 0; //__timezone;
-		const long int save_daylight = 0; //__daylight;
-		char *save_tzname[2];
-		save_tzname[0] = ""; //__tzname[0];
-		save_tzname[1] = "";//__tzname[1];
+		//const time_t timer = tv->tv_sec;
+		//struct tm tm;
+		//const long int save_timezone = 0; //__timezone;
+		//const long int save_daylight = 0; //__daylight;
+		//char *save_tzname[2];
+		//save_tzname[0] = ""; //__tzname[0];
+		//save_tzname[1] = "";//__tzname[1];
 		//tmp = localtime_r (&timer, &tm);
 		//tz->tz_minuteswest = 0; //__timezone / 60;
 		//tz->tz_dsttime = 0; //__daylight;

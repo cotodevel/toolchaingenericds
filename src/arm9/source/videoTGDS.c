@@ -22,6 +22,7 @@ USA
 #include "dmaTGDS.h"
 #include "posixHandleTGDS.h"
 #include "fatfslayerTGDS.h"
+#include "biosTGDS.h"
 
 //power
 void SWAP_LCDS(){

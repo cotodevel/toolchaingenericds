@@ -38,7 +38,7 @@
 #include <string.h>
 #include <math.h>
 #include "ndsDisplayListUtils.h"
-
+#include "biosTGDS.h"
 #if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 #include <typedefsTGDS.h>
 #include "dsregs.h"
@@ -748,7 +748,6 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glEnable(int bits){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	if((bits&GL_CULL_FACE) == GL_CULL_FACE){
 		//faces are enabled through glCullFace() because culling occurs per polygon on GX
 	}
@@ -795,7 +794,6 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glDisable(int bits){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	if((bits&GL_CULL_FACE) == GL_CULL_FACE){
 		u32 polyAttr = (globalGLCtx.GXPolygonAttributes & ~(POLY_CULL_BACK | POLY_CULL_FRONT | POLY_CULL_NONE));
 		globalGLCtx.GXPolygonAttributes = polyAttr | POLY_CULL_NONE;
@@ -1741,7 +1739,6 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glResetMatrixStack(){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
   // stack overflow ack ?
   GFX_STATUS |= 1 << 15;
 
@@ -2042,9 +2039,8 @@ __attribute__ ((optnone))
 #endif
 #endif
 int glTexImage2D(int target, int empty1, int type, int sizeX, int sizeY, int empty2, int param, uint8* texture){
-	uint16 alpha = 0;
+	//uint16 alpha = 0;
 	uint32 size = 0;
-	uint16 palette = 0;
 	uint32* addr;
 	uint32 vramTemp;
 	
@@ -2052,7 +2048,7 @@ int glTexImage2D(int target, int empty1, int type, int sizeX, int sizeY, int emp
 	
 	if(type == GL_RGB)
 	{
-		alpha = (1 << 15);
+		//alpha = (1 << 15);
 		type--;
 	}
 	
@@ -2064,14 +2060,14 @@ int glTexImage2D(int target, int empty1, int type, int sizeX, int sizeY, int emp
 		break;
 	case GL_RGB4:
 		size = size >> 2;
-		palette = 4 * 2;
+		//palette = 4 * 2;
 		break;
 	case GL_RGB16:
 		size = size >> 1;
-		palette = 16 * 2;
+		//palette = 16 * 2;
 		break;
 	case GL_RGB256:
-		palette = 256 * 2;
+		//palette = 256 * 2;
 		break;
 	default:
 		break;
@@ -3511,7 +3507,6 @@ __attribute__((optnone))
 #endif
 #endif
 void glCallLists(GLsizei n, GLenum type, const void * lists){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	int offsetSize = -1;
 	GLubyte * u8array = NULL;
 	u16 * u16array = NULL;
@@ -3612,7 +3607,6 @@ void glDeleteLists(GLuint list, GLsizei range){
 	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	int lowestCurDLInCompiledDLOffset = 0;
 	int i = 0;
-	u32 * InternalDL = getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr();
 	if(list >= 1){
 		list--; //assign current InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr (new) to a List
 	}
@@ -4198,7 +4192,7 @@ void glDeleteBuffers(GLsizei n, const GLuint* ids){
 			n--;
 		}
 		for(i = 0; i < MAX_VBO_PER_VBA; i++){
-			if( (ids[i] != NULL) && ((GLint)TGDSVBAInstance.vboName[i] == (GLint)ids[i]) ){
+			if( (ids != NULL) && ((GLint)TGDSVBAInstance.vboName[i] == (GLint)ids[i]) ){
 				GLuint * ptr = (GLuint * )(ids + i);
 				*ptr = (GLuint)VBO_DESCRIPTOR_INVALID;
 				TGDSVBAInstance.vboName[i] = (GLint)VBO_DESCRIPTOR_INVALID;
@@ -4760,9 +4754,9 @@ void glArrayElement( GLint index ){
 	bool vboVertexEnabled = vboVertex->ClientStateEnabled;
 	bool vboNormalEnabled = vboNormal->ClientStateEnabled;
 	bool vboColorEnabled = vboColor->ClientStateEnabled;
-	bool vboIndexEnabled = vboIndex->ClientStateEnabled;
+	//bool vboIndexEnabled = vboIndex->ClientStateEnabled;
 	bool vboTexCoordEnabled = vboTexCoord->ClientStateEnabled;
-	bool vboEdgeFlagEnabled = vboEdgeFlag->ClientStateEnabled;
+	//bool vboEdgeFlagEnabled = vboEdgeFlag->ClientStateEnabled;
 	if(vboColorEnabled == true){
 		switch(vboColor->ElementsPerVertexBufferObjectUnit){
 			//unsigned char
@@ -4922,9 +4916,9 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 	bool vboVertexEnabled = vboVertex->ClientStateEnabled;
 	bool vboNormalEnabled = vboNormal->ClientStateEnabled;
 	bool vboColorEnabled = vboColor->ClientStateEnabled;
-	bool vboIndexEnabled = vboIndex->ClientStateEnabled;
+	//bool vboIndexEnabled = vboIndex->ClientStateEnabled;
 	bool vboTexCoordEnabled = vboTexCoord->ClientStateEnabled;
-	bool vboEdgeFlagEnabled = vboEdgeFlag->ClientStateEnabled;
+	//bool vboEdgeFlagEnabled = vboEdgeFlag->ClientStateEnabled;
 	int argsTotal = 0;
 	int currentOGL_DL_DRAW_ARRAYS_METHOD = DL_INVALID;
 	u16 displayListArrayCrc16Check = 0;
@@ -4936,21 +4930,29 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 	if((count > 6144)){
 		count = 6144; //DS can only render up to 6144 vertices / 2048 polys 
 	}
+
 	switch(mode){
 		//unsupported by DS hardware
-		case	GL_POINTS:
-				GL_LINE_STRIP:
-				GL_LINE_LOOP:
-				GL_LINES:
-				GL_LINE_STRIP_ADJACENCY:
-				GL_LINES_ADJACENCY:
-				GL_TRIANGLE_FAN:
-				GL_TRIANGLE_STRIP_ADJACENCY:
-				GL_TRIANGLES_ADJACENCY:{
+		case	GL_POINTS:{
 			errorStatus = GL_INVALID_ENUM;
 			return;
 		}break;
-		
+		case	GL_LINE_STRIP:{
+			errorStatus = GL_INVALID_ENUM;
+			return;
+		}break;
+		case	GL_LINE_LOOP:{
+			errorStatus = GL_INVALID_ENUM;
+			return;
+		}break;
+		case	GL_LINES:{
+			errorStatus = GL_INVALID_ENUM;
+			return;
+		}break;
+		case	GL_TRIANGLE_FAN:{
+			errorStatus = GL_INVALID_ENUM;
+			return;
+		}break;
 		//Otherwise, supported modes natively by DS hardware: GL_TRIANGLE_STRIP, GL_TRIANGLES, 
 	}
 
@@ -5019,10 +5021,6 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 
 	//Emit DL and execute it inmediately if arrays are dirty, otherwise run the DL directly
 	if(requiresRecompileGXDisplayList == true){
-		int argCount = 3;
-		if( (mode == GL_TRIANGLE_STRIP) || (mode == GL_QUAD_STRIP) || (mode == GL_QUADS) ){
-			argCount = 4;
-		}
 		isInternalDisplayList = true;
 		glNewList(currentOGL_DL_DRAW_ARRAYS_METHOD, GL_COMPILE_AND_EXECUTE);
 			glBegin(mode);
@@ -5182,349 +5180,7 @@ __attribute__((optimize("Os")))
 __attribute__ ((optnone))
 #endif
 void glInterleavedArrays( GLenum format, GLsizei stride, const GLvoid *pointer ){
-	bool requiresRecompileGXDisplayList = false;
-	bool vboVertexEnabled = true; //Vertex coordinates are always extracted.
-	bool vboNormalEnabled = false;
-	bool vboColorEnabled = false;
-	bool vboIndexEnabled = false;
-	bool vboTexCoordEnabled = false;
-	bool vboEdgeFlagEnabled = false;
-	int argsTotal = 0;
-	int countVertex = 0;
-	int countNormal = 0;
-	int countColor = 0;
-	int countTexCoord = 0;
-	int mode = 0;
-	u16 displayListArrayCrc16Check = 0;
-	int i = 0;
-	int currentOGL_DL_DRAW_ARRAYS_METHOD = DL_INVALID;
-	u32* targetVertexOffset = NULL;
-	u32* targetNormalOffset = NULL;
-	u32* targetColorOffset = NULL;
-	u32* targetTexCoordOffset = NULL;
-
-	switch(format){
-		//format: If format contains a T, then texture coordinates are extracted from the interleaved array.
-		//If C is present, color values are extracted.
-		//If N is present, normal coordinates are extracted.
-		//Vertex coordinates are always extracted.
-		//The digits 2, 3, and 4 denote how many values are extracted.
-		//F indicates that values are extracted as floating point values.
-		//If 4UB follows the C, colors may also be extracted as 4 unsigned bytes. If a color is extracted as 4 unsigned bytes, the vertex array element that follows is located at the first possible floating-point aligned address.
-
-		case GL_V2F:{
-			mode = GL_TRIANGLES;
-			countVertex = 2 * sizeof(GLfloat);
-			targetVertexOffset = (u32*)( ((int)pointer) +  (0 * countVertex));
-		}break;
-
-		case GL_V3F:{
-			mode = GL_TRIANGLES;
-			countVertex = 3 * sizeof(GLfloat);
-			targetVertexOffset = (u32*)( ((int)pointer) +  (0 * countVertex));
-		}break;
-		
-		//unsupported by NDS hardware
-		/*
-		case GL_C4UB_V2F:{
-			
-		}break;
-		
-		case GL_C4UB_V3F:{
-		}break;
-		*/
-
-		case GL_C3F_V3F:{
-			mode = GL_TRIANGLES;
-			countColor = 3 * sizeof(GLfloat);
-			vboColorEnabled = true;
-			countVertex = 3 * sizeof(GLfloat);
-			vboVertexEnabled = true;
-			targetColorOffset = (u32*)( ((int)pointer) +  (0 * countColor));
-			targetVertexOffset = (u32*)( ((int)pointer) +  (1 * countVertex));
-		}break;
-		
-		case GL_N3F_V3F:{
-			mode = GL_TRIANGLES;
-			countNormal = 3 * sizeof(GLfloat);
-			vboNormalEnabled = true;
-			countVertex = 3 * sizeof(GLfloat);
-			vboVertexEnabled = true;
-			targetNormalOffset = (u32*)( ((int)pointer) +  (0 * countNormal));
-			targetVertexOffset = (u32*)( ((int)pointer) +  (1 * countVertex));
-		}break;
-		
-		//unsupported by NDS hardware
-		/*
-		case GL_C4F_N3F_V3F:{
-		}break;
-		*/
-
-		case GL_T2F_V3F:{
-			mode = GL_TRIANGLES;
-			countTexCoord = 2 * sizeof(GLfloat);
-			vboTexCoordEnabled = true;
-			countVertex = 3 * sizeof(GLfloat);
-			vboVertexEnabled = true;
-			targetTexCoordOffset = (u32*)( ((int)pointer) +  (0 * countTexCoord));
-			targetVertexOffset = (u32*)( ((int)pointer) +  (1 * countVertex));
-		}break;
-		
-		//unsupported by NDS hardware
-		/*
-		case GL_T4F_V4F:{
-		}break;
-		
-		case GL_T2F_C4UB_V3F:{
-		}break;
-		*/
-
-		case GL_T2F_C3F_V3F:{
-			mode = GL_TRIANGLES;
-			countTexCoord = 2 * sizeof(GLfloat);
-			vboTexCoordEnabled = true;
-			countColor = 3 * sizeof(GLfloat);
-			vboColorEnabled = true;
-			countVertex = 3 * sizeof(GLfloat);
-			vboVertexEnabled = true;
-			targetTexCoordOffset = (u32*)( ((int)pointer) +  (0 * countTexCoord));
-			targetColorOffset = (u32*)( ((int)pointer) +  (1 * countColor));
-			targetVertexOffset = (u32*)( ((int)pointer) +  (2 * countVertex));
-		}break;
-		
-		case GL_T2F_N3F_V3F:{
-			mode = GL_TRIANGLES;
-			countTexCoord = 2 * sizeof(GLfloat);
-			vboTexCoordEnabled = true;
-			countNormal = 3 * sizeof(GLfloat);
-			vboNormalEnabled = true;
-			countVertex = 3 * sizeof(GLfloat);
-			vboVertexEnabled = true;
-			targetTexCoordOffset = (u32*)( ((int)pointer) +  (0 * countTexCoord));
-			targetNormalOffset = (u32*)( ((int)pointer) +  (1 * countNormal));
-			targetVertexOffset = (u32*)( ((int)pointer) +  (2 * countVertex));
-		}break;
-
-		case GL_T2F_C4F_N3F_V3F:{
-			mode = GL_TRIANGLES;
-			countTexCoord = 2 * sizeof(GLfloat);
-			vboTexCoordEnabled = true;
-			countColor = 3 * sizeof(GLfloat); //max 3 colors
-			vboColorEnabled = true;
-			countNormal = 3 * sizeof(GLfloat);
-			vboNormalEnabled = true;
-			countVertex = 3 * sizeof(GLfloat);
-			vboVertexEnabled = true;
-			targetTexCoordOffset = (u32*)( ((int)pointer) +  (0 * countTexCoord));
-			targetColorOffset = (u32*)( ((int)pointer) +  (1 * countColor));
-			targetNormalOffset = (u32*)( ((int)pointer) +  (2 * countNormal));
-			targetVertexOffset = (u32*)( ((int)pointer) +  (3 * countVertex));
-		}break;
-		
-		//Unsupported by NDS hardware
-		/*
-		case GL_T4F_C4F_N3F_V4F:{
-		}break;
-		*/
-
-		default:{
-			errorStatus = GL_INVALID_ENUM;
-			return;
-		}break;
-	}
-
-
-	//////////!!!!!!!!!!!!!!!!!!ORDER IS IMPORTANT DUE TO HOW GX DISPLAYLISTS ARE BUILT ON NDS HARDWARE!!!!!!!!!!!!!!!!!!
-	//////////////////////////Build DisplayLists and CRC all buffers generated from each VBO buffer//////////////////////////
-	//With glDrawArrays, you can specify multiple geometric primitives to render. Instead of calling separate OpenGL functions to pass each individual vertex, normal, or color, you can specify separate arrays of vertices, normals, and colors to define a sequence of primitives (all the same kind) with a single call to glDrawArrays.
-	//When you call glDrawArrays, count sequential elements from each enabled array are used to construct a sequence of geometric primitives, beginning with the first element. The mode parameter specifies what kind of primitive to construct and how to use the array elements to construct the primitives.
-	//1
-	if(vboColorEnabled == true){
-		displayListArrayCrc16Check = swiCRC16(0xffff, (void*)((int)targetColorOffset), (uint32)((int)countColor*sizeof(GLfloat)));
-		argsTotal++;
-	}
-	
-	//2
-	if(vboNormalEnabled == true){
-		displayListArrayCrc16Check = swiCRC16(displayListArrayCrc16Check, (void*)((int)targetNormalOffset), (uint32)((int)countNormal*sizeof(GLfloat)));
-		argsTotal++;
-	}
-
-	//3
-	if(vboTexCoordEnabled == true){
-		displayListArrayCrc16Check = swiCRC16(displayListArrayCrc16Check, (void*)((int)targetTexCoordOffset), (uint32)((int)countTexCoord*sizeof(GLfloat)));
-		argsTotal++;
-	}
-
-	//4
-	if(vboVertexEnabled == true){
-		displayListArrayCrc16Check = swiCRC16(displayListArrayCrc16Check, (void*)((int)targetVertexOffset), (uint32)((int)countVertex*sizeof(GLfloat)));
-		argsTotal++;
-	}
-
-	//todo
-	/*
-	if(vboIndexEnabled == true){
-
-	}
-	*/
-	
-	//unused
-	/*
-	if(vboEdgeFlagEnabled == true){
-
-	}
-	*/
-
-	//Is OGL DL Cached? Find OpenGL Display List Index 
-	for(i=0; i < VBO_CACHED_PREBUILT_DL_SIZE; i++){
-		//found our DL! use it now
-		if( TGDSVBAInstance.lastPrebuiltDLCRC16[i] == displayListArrayCrc16Check){
-			currentOGL_DL_DRAW_ARRAYS_METHOD=(i + 1);
-			break;
-		}
-	}
-	
-	//not found? allocate a new OpenGL DL Index from 0 to N
-	if(currentOGL_DL_DRAW_ARRAYS_METHOD == DL_INVALID){
-		requiresRecompileGXDisplayList = true;
-		currentOGL_DL_DRAW_ARRAYS_METHOD=(OGL_CURR_DL_DRAW_ARRAYS_METHOD+1);
-		TGDSVBAInstance.lastPrebuiltDLCRC16[OGL_CURR_DL_DRAW_ARRAYS_METHOD] = displayListArrayCrc16Check;
-
-		OGL_CURR_DL_DRAW_ARRAYS_METHOD++;
-		if(OGL_CURR_DL_DRAW_ARRAYS_METHOD>=(VBO_CACHED_PREBUILT_DL_SIZE-1)){
-			OGL_CURR_DL_DRAW_ARRAYS_METHOD = 0;
-		}
-	}
-
-	//Emit DL and execute it inmediately if arrays are dirty, otherwise run the DL directly
-	if(requiresRecompileGXDisplayList == true){
-		bool isTriangleStrip = false; //false = GL_TRIANGLES (3 args) / true = GL_TRIANGLE_STRIP (4 args)
-		int argCount = 3;
-		if(mode == GL_TRIANGLE_STRIP){
-			isTriangleStrip = true;
-			argCount = 4;
-		}
-		glNewList(currentOGL_DL_DRAW_ARRAYS_METHOD, GL_COMPILE_AND_EXECUTE);
-			glBegin(mode);
-			for(i = 0; i < (countColor+countNormal+countTexCoord+countVertex); i+=(argsTotal*argCount)){
-				if(vboColorEnabled == true){
-					switch(vboColor->ElementsPerVertexBufferObjectUnit){
-						//unsigned char
-						case 1:{
-							unsigned char * colorOffset = (unsigned char*)( ((int)targetColorOffset) +  (i * sizeof(unsigned char) + ((stride*sizeof(unsigned char)*argCount))));
-							unsigned char arg0 = (unsigned char)*(colorOffset+0);
-							unsigned char arg1 = (unsigned char)*(colorOffset+1);
-							unsigned char arg2 = (unsigned char)*(colorOffset+2);
-							glColor3b(arg0, arg1, arg2);
-						}break;
-						
-						//unsigned short
-						/*
-						case 2:{
-						//no GX methods for 2 byte colors
-						}break;
-						*/
-						
-						//unsigned int (packed as Float -> u8)
-						case 4:{
-							GLfloat * colorOffset = (GLfloat*)( ((int)targetColorOffset) +  (i * sizeof(GLfloat) + ((stride*sizeof(GLfloat)*argCount))));
-							u8 arg0 = (u8)*(colorOffset+0);
-							u8 arg1 = (u8)*(colorOffset+1);
-							u8 arg2 = (u8)*(colorOffset+2);
-							glColor3b((u8)arg0, (u8)arg1, (u8)arg2);
-						}break;
-					}
-				}
-
-				if(vboNormalEnabled == true){
-					switch(vboNormal->ElementsPerVertexBufferObjectUnit){
-						/*
-						//unsigned char
-						case 1:{
-							//Normals are 10bit at least
-						}break;
-						*/
-						//unsigned short
-						case 2:{
-							unsigned short * normalOffset = (unsigned short*)( ((int)targetNormalOffset) +  (i * sizeof(unsigned short) + ((stride*sizeof(unsigned short)*argCount))));
-							unsigned short arg0 = (unsigned short)*(normalOffset+0);
-							unsigned short arg1 = (unsigned short)*(normalOffset+1);
-							unsigned short arg2 = (unsigned short)*(normalOffset+2);
-							glNormal3v10((v10)arg0, (v10)arg1, (v10)arg2);
-						}break;
-						
-						//unsigned int (packed as Float -> v10)
-						case 4:{
-							GLfloat * normalOffset = (GLfloat*)( ((int)targetNormalOffset) +  (i * sizeof(GLfloat) + ((stride*sizeof(GLfloat)*argCount))));
-							v10 arg0 = (v10)floattov10(*(normalOffset+0));
-							v10 arg1 = (v10)floattov10(*(normalOffset+1));
-							v10 arg2 = (v10)floattov10(*(normalOffset+2));
-							glNormal3v10((v10)arg0, (v10)arg1, (v10)arg2);
-						}break;
-					}
-				}
-
-				if(vboTexCoordEnabled == true){
-					switch(vboTexCoord->ElementsPerVertexBufferObjectUnit){
-						/*
-						//unsigned char
-						case 1:{
-							//GX texture coordinates are at least 12.4bit
-						}break;
-						*/
-						//unsigned short
-						case 2:{
-							unsigned short * TexCoordOffset = (unsigned short*)( ((int)targetTexCoordOffset) +  (i * sizeof(unsigned short) + ((stride*sizeof(unsigned short)*argCount))));
-							unsigned short arg0 = (unsigned short)*(TexCoordOffset+0);
-							unsigned short arg1 = (unsigned short)*(TexCoordOffset+1);
-							glTexCoord2t16((t16)arg0, (t16)arg1);
-						}break;
-						
-						//unsigned int (packed as Float -> t16)
-						case 4:{
-							GLfloat * TexCoordOffset = (GLfloat*)( ((int)targetTexCoordOffset) +  (i * sizeof(GLfloat) + ((stride*sizeof(GLfloat)*argCount))));
-							t16 arg0 = (t16)floattot16(*(TexCoordOffset+0));
-							t16 arg1 = (t16)floattot16(*(TexCoordOffset+1));
-							glTexCoord2t16((t16)arg0, (t16)arg1);
-						}break;
-					}
-				}
-
-				if(vboVertexEnabled == true){
-					switch(vboVertex->ElementsPerVertexBufferObjectUnit){
-						/*
-						//unsigned char
-						case 1:{
-							//GX vertex are at least 10bit
-						}break;
-						*/
-						//unsigned short
-						case 2:{
-							u16 * vertexOffset = (u16*)( ((int)targetVertexOffset) +  (i * sizeof(v16) + ((stride*sizeof(v16)*argCount))));
-							v16 arg0 = (v16)*(vertexOffset+0);
-							v16 arg1 = (v16)*(vertexOffset+1);
-							v16 arg2 = (v16)*(vertexOffset+2);
-							glVertex3v16(arg0, arg1, arg2);
-						}break;
-						
-						//unsigned int (packed as Float -> v16)
-						case 4:{
-							GLfloat * vertexOffset = (GLfloat*)( ((int)targetVertexOffset) +  (i * sizeof(GLfloat) + ((stride*sizeof(GLfloat)*argCount))));
-							v16 arg0 = (v16)floattov16(*(vertexOffset+0));
-							v16 arg1 = (v16)floattov16(*(vertexOffset+1));
-							v16 arg2 = (v16)floattov16(*(vertexOffset+2));
-							glVertex3v16(arg0, arg1, arg2);
-						}break;
-					}
-				}
-			}
-			glEnd();
-		glEndList(); 
-	}
-	else{
-		glCallList(currentOGL_DL_DRAW_ARRAYS_METHOD);
-	}
+	errorStatus = GL_INVALID_ENUM; //unsupported
 }
 
 //The glGetMaterialfv and glGetMaterialiv functions return material parameters.
@@ -5879,9 +5535,9 @@ GLboolean glIsEnabled(
 		}break;
 		default:{
 			errorStatus = GL_INVALID_ENUM;
-		return;
 		}break;
 	}
+	return GL_FALSE;
 }
 
 //////////////////////////////////////////////////////////// Extended Vertex Array Buffers and Vertex Buffer Objects OpenGL 1.1 end //////////////////////////////////////////

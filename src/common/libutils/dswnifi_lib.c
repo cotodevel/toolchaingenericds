@@ -46,6 +46,7 @@ USA
 #include "timerTGDS.h"
 #include "sgIP_sockets.h"
 #include "nds_cp15_misc.h"
+#include "debugNocash.h"
 
 extern int read(int fd, void *buf, int count);
 extern int write(int fd, const void *buf, int count);
@@ -1806,7 +1807,7 @@ int openAsyncConn(char * dnsOrIpAddr, int asyncPort, struct sockaddr_in * sain){
 	if(myhost != NULL){
 		struct in_addr **address_list = (struct in_addr **)myhost->h_addr_list;
 		if((address_list != NULL) && (address_list[0] != NULL)){
-			nocashMessage("Server WAN IP Address! %s", inet_ntoa(*address_list[0]));
+			//printf("Server WAN IP Address! %s", inet_ntoa(*address_list[0]));
 		}
 		else{
 			return -1;
@@ -2006,7 +2007,7 @@ int ReceiveDSBinary(u8 * inBuffer, int * inBinSize){
 			
 			binSize = dsnwifisrvStrInst->BinarySize;
 			*inBinSize = binSize;
-			nocashMessage("receive start... size: %d ", binSize);
+			//printf("receive start... size: %d ", binSize);
 			
 			dsnwifisrvStrInst->nifiCommand = NIFI_ACK_SEND_BINARY;	//SendDSBinary() continue next frame
 			char frame[frameDSsize];

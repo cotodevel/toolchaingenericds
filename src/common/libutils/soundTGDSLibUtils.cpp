@@ -784,7 +784,7 @@ int parseWaveData(struct fd * fdinst, u32 u32chunkToSeek){
 		u8 lastVar3 = 0;
 		//int match = 0;
 		int j = 0;
-		for(j=0; j < sizeof(bytesNonAligned); j++){
+		for(j=0; j < (int)sizeof(bytesNonAligned); j++){
 			if(j>0){
 				lastVar0 = bytesNonAligned[j-1];
 			}
