@@ -185,8 +185,7 @@ __attribute__ ((optnone))
 #endif
 void Xfree(const void *ptr) {
 
-	int block,sblock;
-	
+	int block;
 	while (1) {
 		if ((unsigned char*)ptr < xmem_blocks) {
 			//printf("XM: Free: NXML %8.8X ",(unsigned int)ptr);
@@ -196,11 +195,7 @@ void Xfree(const void *ptr) {
 			//printf("XM: Free: NXMG %8.8X ",(u32)ptr);
 			break;
 		}
-		
 		block = ((unsigned int)ptr - (unsigned int)xmem_blocks) / XMEM_BLOCKSIZE;
-		
-		sblock = block;
-		
 		// clear table from block til we find an end block
 		if (xmem_table[block] & XMEM_STARTBLOCK) {
 			while(1) {

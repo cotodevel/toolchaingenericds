@@ -62,7 +62,7 @@ void Write8bitAddrExtArm(uint32 address, uint8 value){
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[54] = address;
 	fifomsg[55] = (uint32)value;
-	SendFIFOWordsITCM(WRITE_EXTARM_8, (uint32)fifomsg);
+	SendFIFOWords(WRITE_EXTARM_8, (uint32)fifomsg);
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -77,7 +77,7 @@ void Write16bitAddrExtArm(uint32 address, uint16 value){
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[56] = address;
 	fifomsg[57] = (uint32)value;
-	SendFIFOWordsITCM(WRITE_EXTARM_16, (uint32)fifomsg);
+	SendFIFOWords(WRITE_EXTARM_16, (uint32)fifomsg);
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -92,7 +92,7 @@ void Write32bitAddrExtArm(uint32 address, uint32 value){
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[58] = address;
 	fifomsg[59] = (uint32)value;
-	SendFIFOWordsITCM(WRITE_EXTARM_32, (uint32)fifomsg);
+	SendFIFOWords(WRITE_EXTARM_32, (uint32)fifomsg);
 }
 
 //Hardware IPC struct packed 
@@ -103,23 +103,6 @@ struct sIPCSharedTGDS* getsIPCSharedTGDS(){
 	struct sIPCSharedTGDS* getsIPCSharedTGDSInst = (__attribute__((aligned (4))) struct sIPCSharedTGDS*)0x027FF000;
 	return getsIPCSharedTGDSInst;
 }
-
-//Async FIFO Sender
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-void SendFIFOWordsITCM(uint32 data0, uint32 data1){	//format: arg0: cmd, arg1: value
-	REG_IPC_FIFO_TX = (uint32)data1;	
-	REG_IPC_FIFO_TX = (uint32)data0;	//last message should always be command
-}
-
 
 #ifdef ARM9
 __attribute__((section(".itcm")))
@@ -568,7 +551,7 @@ void HandleFifoNotEmpty(){
 				//NTR mode: define DLDI initialization and ARM7DLDI operating mode
 				if((detectedTWLModeInternalSDAccess == TWLModeDLDIAccessDisabledInternalSDDisabled) && (TargetARM7DLDIAddress != 0)){
 					DLDIARM7Address = (u32*)TargetARM7DLDIAddress; 
-					memcpy (DLDIARM7Address, dldiStartAddress, 16*1024);
+					memcpy (DLDIARM7Address, (void*)dldiStartAddress, 16*1024);
 					DLDIARM7FSInitStatus = dldi_handler_init();
 					if(DLDIARM7FSInitStatus == true){
 						detectedTWLModeInternalSDAccess = TWLModeDLDIAccessEnabledInternalSDDisabled;

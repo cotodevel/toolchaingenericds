@@ -2,6 +2,7 @@
 #include <string.h>
 #include "dldi.h"
 #include "typedefsTGDS.h"
+#include "debugNocash.h"
 #if defined(WIN32) || defined(ARM9)
 #include "fatfslayerTGDS.h"
 #endif
@@ -67,24 +68,10 @@ struct DLDI_INTERFACE* dldiGet(void) {
 
 #ifdef ARM7
 //DLDI bits
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
 u32 * DLDIARM7Address = NULL;
 #endif
 
 #ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
 u8 ARM7SharedDLDI[32768];	//Required by ARM7 DLDI read/write dldi calls
 #endif
 
@@ -392,13 +379,15 @@ bool dldiRelocateLoader(bool clearBSS, u32 DldiRelocatedAddress, u32 dldiSourceI
 
 	data_t *pDH;
 	data_t *pAH;
-
+	#ifdef ARM9
 	size_t dldiFileSize = 0;
-	
+	#endif
 	// Target the DLDI we want to use as stub copy and then relocate it to a DldiRelocatedAddress address
 	pDH = (data_t*)dldiOutWriteAddress;
 	pAH = (data_t *)dldiSourceInRam;
+	#ifdef ARM9
 	dldiFileSize = 1 << pAH[DO_driverSize];
+	#endif
 	// Copy the DLDI patch into the application
 	#if defined(WIN32)
 	memcpy((void *)pDH, (const void *)pAH, dldiFileSize);
@@ -515,8 +504,6 @@ bool dldiPatchLoader(data_t *binData, u32 binSize, u32 physDLDIAddress)
 	data_t *pAH;
 	size_t dldiFileSize = 0;
 	pDH = (data_t*)physDLDIAddress;
-	//DS DLDI
-	struct  DLDI_INTERFACE* dldiInterface = (struct  DLDI_INTERFACE*)pDH;
 	
 	if (*((u32*)(pDH + DO_ioType)) == DEVICE_TYPE_DLDI) 
 	{

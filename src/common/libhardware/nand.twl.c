@@ -7,6 +7,8 @@
 #include "utils.twl.h"
 #include "nds_cp15_misc.h"
 #include "ipcfifoTGDS.h"
+#include "utilsTGDS.h" //isDSiMode
+#include "libndsFIFO.h"
 
 //---------------------------------------------------------------------------------
 bool nand_Startup() {

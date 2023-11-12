@@ -26,6 +26,7 @@
 
 #include "sha1.h"
 #include "utils.twl.h"
+#include "utilsTGDS.h"
 
 void swiSHA1InitTWL(swiSHA1context_t *ctx);
 void swiSHA1UpdateTWL(swiSHA1context_t *ctx, const void *data, size_t len);

@@ -65,7 +65,7 @@ void setupDefaultExceptionHandler(){
 	
 	#ifdef ARM9
 	*(uint32*)0x02FFFD9C = (uint32)DebugException;
-	SendFIFOWordsITCM(TGDS_ARM7_SETUPEXCEPTIONHANDLER, (u32)&exceptionArmRegs[0]);
+	SendFIFOWords(TGDS_ARM7_SETUPEXCEPTIONHANDLER, (u32)&exceptionArmRegs[0]);
 	#endif
 	
 	#endif
@@ -100,7 +100,7 @@ uint32 exceptionArmRegs[0x20];
 void exception_sysexit(){
 	#ifdef ARM7
 	
-	SendFIFOWordsITCM(EXCEPTION_ARM7, unexpectedsysexit_7);
+	SendFIFOWords(EXCEPTION_ARM7, unexpectedsysexit_7);
 	while(1){
 		IRQWait(1, IRQ_VBLANK);
 	}
@@ -115,7 +115,7 @@ void exception_sysexit(){
 void generalARMExceptionHandler(){
 	#ifdef ARM7
 	
-	SendFIFOWordsITCM(EXCEPTION_ARM7, generalARM7Exception);
+	SendFIFOWords(EXCEPTION_ARM7, generalARM7Exception);
 	while(1==1){
 		IRQVBlankWait();
 	}
@@ -257,19 +257,17 @@ void handleDSInitError(int stage, u32 fwNo){
 	printf(tempBuf);
 	
 	if(stage == 4){
-		sprintf(tempBuf, "TWL Mode: SCFG_EXT7 locked. Unlaunch and TWiLightMenu++ only supported.\n", stage, fwNo);
-		printf(tempBuf);
+		printf("TWL Mode: SCFG_EXT7 locked. Unlaunch and TWiLightMenu++ only supported.");
 	}
 	else if(stage == 5){
-		sprintf(tempBuf, "TWL Mode: SCFG_EXT9 locked. Unlaunch and TWiLightMenu++ only supported.\n", stage, fwNo);
-		printf(tempBuf);
+		printf("TWL Mode: SCFG_EXT9 locked. Unlaunch and TWiLightMenu++ only supported.");
 	}
 	else if(stage == 6){
 		if(exitValue != -10000){
-			sprintf(tempBuf, "ToolchainGenericDS App has quit through exit(%d); .\n", stage, fwNo, exitValue);
+			sprintf(tempBuf, "ToolchainGenericDS App has quit through exit(%d); .\n", exitValue);
 		}
 		else{
-			sprintf(tempBuf, "ToolchainGenericDS App: abort(); .\n", stage, fwNo, exitValue);
+			sprintf(tempBuf, "ToolchainGenericDS App: abort(); .\n");
 		}
 		printf(tempBuf);
 	}

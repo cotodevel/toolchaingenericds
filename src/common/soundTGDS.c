@@ -22,6 +22,7 @@ USA
 #include "soundTGDS.h"
 #include "ipcfifoTGDS.h"
 #include "utilsTGDS.h"
+#include "biosTGDS.h"
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -53,11 +54,11 @@ void writeARM7SoundChannelFromSource(int channel, u32 cnt, u16 freq, u32 dataSrc
 	TGDSIPC->soundIPC.psgChannel = channel;
 	TGDSIPC->soundIPC.cr = cnt;
 	TGDSIPC->soundIPC.timer = SOUND_FREQ(freq);
-	TGDSIPC->soundIPC.arm9L = (u32)dataSrc;
+	TGDSIPC->soundIPC.arm9L = (void*)dataSrc;
 	TGDSIPC->soundIPC.volume = (int)dataSize; //volume == size
 	SendFIFOWords(ARM7COMMAND_SND_COMMAND, 0xFF);
 	
-	while(getValueSafe((u32)&TGDSIPC->soundIPC.volume) != (u32)0){
+	while(getValueSafe((u32*)&TGDSIPC->soundIPC.volume) != (u32)0){
 		swiDelay(1);
 	}
 }

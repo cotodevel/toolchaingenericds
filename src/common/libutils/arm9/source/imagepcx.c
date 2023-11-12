@@ -32,6 +32,7 @@
 #include "videoGL.h"
 #include "videoTGDS.h"
 #include "Texture_Cube.h"
+#include "debugNocash.h"
 
 int textureID=0;
 //---------------------------------------------------------------------------------
@@ -211,7 +212,9 @@ int LoadLotsOfGLTextures(u32 * textureSourceArray, int * textureArray, int textu
 	int curTexture = 0;
 	for(curTexture = 0; curTexture < textureCount; curTexture++){
 		if(LoadGLSingleTextureAuto((u8*)textureSourceArray[curTexture], &textureArray[curTexture], curTexture) != 0){
-			nocashMessage("load tex :%d failed", curTexture);
+			char buf[64];
+			sprintf(buf, "load tex :%d failed", curTexture);
+			nocashMessage(buf);
 		}
 	}
 	return curTexture;

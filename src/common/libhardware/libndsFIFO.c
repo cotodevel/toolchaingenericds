@@ -55,9 +55,8 @@ bool fifoInit(){
 
 //Format: fifoSendAddress(int channel, void *data) --> [ARM core external installed user receive handler: void *data = fifoGetAddress(int channel)]
 bool fifoSendAddress(int channel, void *address){
-	u8 buf[4];	//4 == sizeof(address)
-	*(u32*)&buf[0] = (u32)address;
-	return fifoSendDatamsg(channel, sizeof(address), (u8 *)&buf[0]);
+	u32 buf = (u32)address;	//4 == sizeof(address)
+	return fifoSendDatamsg(channel, sizeof(address), (u8 *)&buf);
 }
 
 //Format: fifoSendValue32(int channel, u32 value32) --> [ARM core external installed user receive handler: u32 value32 = fifoGetValue32(int channel)]
@@ -113,9 +112,9 @@ bool fifoCheckDatamsg(int channel){
 }
 
 void * fifoGetAddress(int channel){
-	u8 buf[4];	//4 == sizeof(buf)
-	if(fifoGetDatamsg(channel, sizeof(buf), (u8 *)&buf[0]) > 0){
-		return (void *)*(u32*)&buf[0];
+	u32 buf = 0;	//4 == sizeof(buf)
+	if(fifoGetDatamsg(channel, sizeof(buf), (u8 *)&buf) > 0){
+		return (void *)buf;
 	}
 	return NULL;
 }

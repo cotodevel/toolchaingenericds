@@ -1,4 +1,5 @@
 #include "Sphere008.h"
+#include "videoGL.h"
 
 u32 Sphere008[] = {
 402,
