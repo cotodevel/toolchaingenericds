@@ -544,11 +544,11 @@ void HandleFifoNotEmpty(){
 				if(isDLDITWLSD == false){
 					if( (!sdio_Startup()) || (!sdio_IsInserted()) ){
 						detectedTWLModeInternalSDAccess = TWLModeDLDIAccessDisabledInternalSDDisabled;
-						//__dsimode = false; //already set in IRQInit
+						__dsimode = false; //already set in IRQInit
 					}
 					else{
 						detectedTWLModeInternalSDAccess = TWLModeDLDIAccessDisabledInternalSDEnabled;
-						//__dsimode = true; //already set in IRQInit
+						__dsimode = true; //already set in IRQInit
 						DLDIARM7FSInitStatus = true;
 					}
 					nocashMessage("not NTR payload or no TWL DLDI\n");
