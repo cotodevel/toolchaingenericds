@@ -43,6 +43,7 @@ USA
 #ifdef ARM9
 #include "nds_cp15_misc.h"
 #include "debugNocash.h"
+#include "dldi.h"
 #endif
 
 void setupDefaultExceptionHandler(){
@@ -256,7 +257,10 @@ void handleDSInitError(int stage, u32 fwNo){
 	sprintf(tempBuf, "TGDS boot fail: Stage %d, firmware model: %d\n", stage, fwNo);
 	printf(tempBuf);
 	
-	if(stage == 4){
+	if(stage == 1){
+		printf("DLDI: [%s]", (char*)&dldiGet()->friendlyName[0]);
+	}
+	else if(stage == 4){
 		printf("TWL Mode: SCFG_EXT7 locked. Unlaunch and TWiLightMenu++ only supported.");
 	}
 	else if(stage == 5){
