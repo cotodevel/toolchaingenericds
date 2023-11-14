@@ -30,6 +30,7 @@ USA
 #include "biosTGDS.h"
 #include "dldi.h"
 #include "loader.h"
+#include "debugNocash.h"
 
 #ifdef ARM7
 #include <string.h>
@@ -526,26 +527,42 @@ void HandleFifoNotEmpty(){
 			case(TGDS_ARM7_SETUPMALLOCDLDI):{	//ARM7
 				struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-				u32 ARM7MallocStartaddress = fifomsg[0];
-				u32 ARM7MallocSize = fifomsg[1];
+				u32 ARM7MallocStartaddress = getValueSafe(&fifomsg[0]);
+				u32 ARM7MallocSize = getValueSafe(&fifomsg[1]);
 				//bool customAllocator = (bool)getValueSafe(&fifomsg[2]);
-				u32 dldiStartAddress = fifomsg[3];
-				u32 TargetARM7DLDIAddress = fifomsg[4];
+				u32 dldiStartAddress = getValueSafe(&fifomsg[3]);
+				u32 TargetARM7DLDIAddress = getValueSafe(&fifomsg[4]);
+				bool isDLDITWLSD = getValueSafe(&fifomsg[5]);
 				
 				setupLibUtils(); //ARM7 libUtils Setup
 				
 				//DSi in NTR mode throws false positives about TWL mode, enforce DSi SD initialization to define, NTR or TWL mode.
 				int detectedTWLModeInternalSDAccess = 0;
 				bool DLDIARM7FSInitStatus = false;
-					
-				if( (!sdio_Startup()) || (!sdio_IsInserted()) ){
-					detectedTWLModeInternalSDAccess = TWLModeDLDIAccessDisabledInternalSDDisabled;
-					__dsimode = false;
+				
+				//Try TWL internal SD init if TGDS TWL payload
+				if(isDLDITWLSD == false){
+					if( (!sdio_Startup()) || (!sdio_IsInserted()) ){
+						detectedTWLModeInternalSDAccess = TWLModeDLDIAccessDisabledInternalSDDisabled;
+						//__dsimode = false; //already set in IRQInit
+					}
+					else{
+						detectedTWLModeInternalSDAccess = TWLModeDLDIAccessDisabledInternalSDEnabled;
+						//__dsimode = true; //already set in IRQInit
+						DLDIARM7FSInitStatus = true;
+					}
+					nocashMessage("not NTR payload or no TWL DLDI\n");
 				}
+				//Try TWL internal SD init if TGDS NTR payload + TWL ARM7 DLDI
 				else{
-					detectedTWLModeInternalSDAccess = TWLModeDLDIAccessDisabledInternalSDEnabled;
-					__dsimode = true;
-					DLDIARM7FSInitStatus = true;
+					if(__dsimode == true){
+						detectedTWLModeInternalSDAccess = TWLModeDLDIAccessDisabledInternalSDDisabled; //TGDS NTR Payload + TWL SD DLDI + TWL Mode
+						nocashMessage("NTR payload: TWL Mode + TWL DLDI\n");
+					}
+					else{
+						detectedTWLModeInternalSDAccess = TWLModeDLDIAccessDisabledInternalSDDisabled; //TGDS NTR Payload + TWL SD DLDI + NTR Mode: Will cause DLDI init failure because the loader failed to DLDI patch the TGDS NTR payload.
+						nocashMessage("FAIL: NTR payload: NTR Mode + TWL DLDI\n");
+					}
 				}
 				
 				//NTR mode: define DLDI initialization and ARM7DLDI operating mode
