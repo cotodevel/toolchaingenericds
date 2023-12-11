@@ -3093,7 +3093,7 @@ void glEndList(){
 	
 	//define List Size
 	Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr--;
-	listSize = ((Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr - (TGDSOGL_LogicalDisplayListSetInst->LogicalOGLOffsetToGXOffsetInGXBinary+1)) * 4) + 4;
+	listSize = ((Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr - (TGDSOGL_LogicalDisplayListSetInst->LogicalOGLOffsetToGXOffsetInGXBinary)) * 4);
 	Inst->InternalUnpackedGX_DL_Binary[TGDSOGL_LogicalDisplayListSetInst->LogicalOGLOffsetToGXOffsetInGXBinary-1] = (u32)listSize;
 
 	TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList = false; //Standard OpenGL DisplayList marked as executable now. Run it through the GX hardware from indirect glCallList(); call
@@ -3641,7 +3641,7 @@ __attribute__ ((optnone))
 void glLightfv (GLenum light, GLenum pname, const GLfloat *params){
 	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
-	//El parámetro params contiene cuatro valores de punto flotante que especifican la intensidad RGBA ambiente de la luz. Los valores de punto flotante se asignan directamente. No se fijan valores enteros ni de punto flotante. La intensidad de luz ambiente predeterminada es (0,0, 0,0, 0,0, 1,0).
+	//El par�metro params contiene cuatro valores de punto flotante que especifican la intensidad RGBA ambiente de la luz. Los valores de punto flotante se asignan directamente. No se fijan valores enteros ni de punto flotante. La intensidad de luz ambiente predeterminada es (0,0, 0,0, 0,0, 1,0).
 	if(pname == GL_AMBIENT){
 		float rAmbient = params[0];
 		float gAmbient = params[1];
@@ -3664,7 +3664,7 @@ void glLightfv (GLenum light, GLenum pname, const GLfloat *params){
 			#endif
 		}
 	}
-	//El parámetro params contiene cuatro valores de punto flotante que especifican la intensidad RGBA difusa de la luz. Los valores de punto flotante se asignan directamente. No se fijan valores enteros ni de punto flotante. La intensidad difusa predeterminada es (0,0, 0,0, 0,0, 1,0) para todas las luces que no sean cero. La intensidad difusa predeterminada de la luz cero es (1,0, 1,0, 1,0, 1,0).
+	//El par�metro params contiene cuatro valores de punto flotante que especifican la intensidad RGBA difusa de la luz. Los valores de punto flotante se asignan directamente. No se fijan valores enteros ni de punto flotante. La intensidad difusa predeterminada es (0,0, 0,0, 0,0, 1,0) para todas las luces que no sean cero. La intensidad difusa predeterminada de la luz cero es (1,0, 1,0, 1,0, 1,0).
 	if(pname == GL_DIFFUSE){
 		float rDiffuse = params[0];
 		float gDiffuse = params[1];
@@ -3688,8 +3688,8 @@ void glLightfv (GLenum light, GLenum pname, const GLfloat *params){
 			#endif
 		}
 	}
-	//El parámetro params contiene cuatro valores de punto flotante que especifican la posición de la luz en coordenadas de objeto homogéneas. Los valores enteros y de punto flotante se asignan directamente. No se fijan valores enteros ni de punto flotante.
-	//La posición se transforma mediante la matriz modelview cuando se llama a glLightfv (como si fuera un punto) y se almacena en coordenadas oculares. Si el componente w de la posición es 0,0, la luz se trata como una fuente direccional. Los cálculos de iluminación difusa y especular toman la dirección de la luz, pero no su posición real, en cuenta y la atenuación está deshabilitada. De lo contrario, los cálculos de iluminación difusa y especular se basan en la ubicación real de la luz en coordenadas oculares y se habilita la atenuación. La posición predeterminada es (0,0,1,0); por lo tanto, la fuente de luz predeterminada es direccional, paralela a y en la dirección del eje -z .
+	//El par�metro params contiene cuatro valores de punto flotante que especifican la posici�n de la luz en coordenadas de objeto homog�neas. Los valores enteros y de punto flotante se asignan directamente. No se fijan valores enteros ni de punto flotante.
+	//La posici�n se transforma mediante la matriz modelview cuando se llama a glLightfv (como si fuera un punto) y se almacena en coordenadas oculares. Si el componente w de la posici�n es 0,0, la luz se trata como una fuente direccional. Los c�lculos de iluminaci�n difusa y especular toman la direcci�n de la luz, pero no su posici�n real, en cuenta y la atenuaci�n est� deshabilitada. De lo contrario, los c�lculos de iluminaci�n difusa y especular se basan en la ubicaci�n real de la luz en coordenadas oculares y se habilita la atenuaci�n. La posici�n predeterminada es (0,0,1,0); por lo tanto, la fuente de luz predeterminada es direccional, paralela a y en la direcci�n del eje -z .
 	if(pname == GL_POSITION){
 		int id = ((((int)light) & 3) << 30);
 		float x = params[0];
@@ -3713,7 +3713,7 @@ void glLightfv (GLenum light, GLenum pname, const GLfloat *params){
 			#endif
 		}
 	}
-	//El parámetro params contiene cuatro valores de punto flotante que especifican la intensidad RGBA especular de la luz. Los valores de punto flotante se asignan directamente. No se fijan valores enteros ni de punto flotante. La intensidad especular predeterminada es (0,0, 0,0, 0,0, 1,0) para todas las luces que no sean cero. La intensidad especular predeterminada del cero claro es (1,0, 1,0, 1,0, 1,0).
+	//El par�metro params contiene cuatro valores de punto flotante que especifican la intensidad RGBA especular de la luz. Los valores de punto flotante se asignan directamente. No se fijan valores enteros ni de punto flotante. La intensidad especular predeterminada es (0,0, 0,0, 0,0, 1,0) para todas las luces que no sean cero. La intensidad especular predeterminada del cero claro es (1,0, 1,0, 1,0, 1,0).
 	if(pname == GL_SPECULAR){
 		float rSpecular = params[0];
 		float gSpecular = params[1];
@@ -3727,13 +3727,13 @@ void glLightfv (GLenum light, GLenum pname, const GLfloat *params){
 				//40004C4h 31h 1  4   SPE_EMI - MaterialColor1 - Specular Ref. & Emission (W)
 				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)getFIFO_SPECULAR_EMISSION; //Unpacked Command format
 				ptrVal++;
-				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)((u32 )( ((globalGLCtx.specularValue & 0xFFFF) << 0) | ((globalGLCtx.emissionValue & 0xFFFF) << 16) )); ptrVal++;
+				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)((u32 )( ((globalGLCtx.specularValue & 0xFFFF) << 0) | ((globalGLCtx.emissionValue & 0xFFFF) << 16) ) | (1 << 15))  ; ptrVal++;
 				Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = ptrVal;
 			}
 		}
 		else{
 			#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
-			GFX_SPECULAR_EMISSION = (u32 )( ((globalGLCtx.specularValue & 0xFFFF) << 0) | ((globalGLCtx.emissionValue & 0xFFFF) << 16) );
+			GFX_SPECULAR_EMISSION = (u32 )( ((globalGLCtx.specularValue & 0xFFFF) << 0) | ((globalGLCtx.emissionValue & 0xFFFF) << 16) | (1 << 15));
 			#endif
 		}
 	}
@@ -3788,7 +3788,6 @@ void glMaterialfv (GLenum face, GLenum pname, const GLfloat *params){
 			float bEmission = params[2];
 			//float aEmission = params[3]; //GX can't do alpha emission through GX cmds
 			emissionValueOut = RGB15(((int)rEmission),((int)gEmission),((int)bEmission));
-			//glMaterialGX((int)pname, colOut, Inst);
 		}break;
 		default:{
 			errorStatus = GL_INVALID_ENUM;
@@ -3834,9 +3833,9 @@ void glMaterialfv (GLenum face, GLenum pname, const GLfloat *params){
 				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)(diffuse_ambient); ptrVal++;
 				
 				//40004C4h 31h 1  4   SPE_EMI - MaterialColor1 - Specular Ref. & Emission (W)
-				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)getFIFO_SPECULAR_EMISSION; //Unpacked Command format
+				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)(getFIFO_SPECULAR_EMISSION); //Unpacked Command format
 				ptrVal++;
-				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)(specular_emission); ptrVal++;
+				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)(specular_emission | (1 << 15)); ptrVal++;
 				
 				Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = ptrVal;
 			}
@@ -3844,7 +3843,7 @@ void glMaterialfv (GLenum face, GLenum pname, const GLfloat *params){
 		else{
 			#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 			GFX_DIFFUSE_AMBIENT = diffuse_ambient;
-			GFX_SPECULAR_EMISSION = specular_emission;
+			GFX_SPECULAR_EMISSION = (specular_emission | (1 << 15));
 			#endif
 		}
 	}
@@ -5541,3 +5540,4 @@ GLboolean glIsEnabled(
 }
 
 //////////////////////////////////////////////////////////// Extended Vertex Array Buffers and Vertex Buffer Objects OpenGL 1.1 end //////////////////////////////////////////
+
