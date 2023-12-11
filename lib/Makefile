@@ -5,5 +5,6 @@ buildWoopsiEnv:
 	$(MAKE)	-R	-C	Woopsi/woopsiExamples/demoWoopsi
 	
 clean:
-	$(MAKE)	clean	-C	Woopsi/libwoopsi/
-	$(MAKE)	clean	-C	Woopsi/woopsiExamples/demoWoopsi
+	$(MAKE)	-R	-C	Woopsi/libwoopsi/ clean
+	$(MAKE)	-R	-C	Woopsi/woopsiExamples/demoWoopsi clean
+	
