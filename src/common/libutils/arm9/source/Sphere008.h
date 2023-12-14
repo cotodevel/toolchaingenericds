@@ -2,6 +2,10 @@
 #define __Sphere008_h__
 
 #include "typedefsTGDS.h"
+#include "dsregs.h"
+#include "fatfslayerTGDS.h"
+#include "utilsTGDS.h"
+#include "videoGL.h"
 
 #endif
 
