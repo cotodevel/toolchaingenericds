@@ -29,3 +29,9 @@ __attribute__((section(".secure")))
 __attribute__((weak))
 const char __secure_area__[2048];
 #endif
+
+#ifdef NTRMODE
+bool setCpuClock(bool speed){ //stubbed in NTR mode
+
+}
+#endif
