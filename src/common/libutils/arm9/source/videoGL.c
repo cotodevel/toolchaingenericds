@@ -84,6 +84,7 @@ __attribute__ ((optnone))
 #endif
 #endif
 void glInit(int TGDSOpenGLDisplayListGXBufferSize){
+	glReset();
 	int i = 0;
 	//set mode 0, enable BG0 and set it to 3D
 	#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
@@ -94,10 +95,15 @@ void glInit(int TGDSOpenGLDisplayListGXBufferSize){
 
 	globalGLCtx.GXPolygonAttributes = (POLY_ALPHA(31) | POLY_CULL_NONE);
 	globalGLCtx.textureParamsValue = 0;
-	globalGLCtx.diffuseValue=0;
-	globalGLCtx.ambientValue=0;
-	globalGLCtx.specularValue=0;
-	globalGLCtx.emissionValue=0;
+	
+	globalGLCtx.lightDiffuseValue=RGB15(31,31,31); //By default, GL_DIFFUSE is (1.0, 1.0, 1.0, 1.0)
+	//globalGLCtx.lightAmbientValue=0;
+
+	globalGLCtx.materialDiffuseValue=0;
+	globalGLCtx.materialAmbientValue=0;
+
+	globalGLCtx.materialSpecularValue=0;
+	globalGLCtx.materialEmissionValue=0;
 	isInternalDisplayList = false;
 
 	//Start clean once. Because subsequent re-init calls will require array memory to be freed/reallocated
@@ -1820,7 +1826,8 @@ void glReset(){
   
 	GFX_TEX_FORMAT = globalGLCtx.textureParamsValue = 0;
 	GFX_POLYGON_ATTR = 0;
-  
+	glResetTextures();
+
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 
@@ -1834,8 +1841,11 @@ void glReset(){
 /////////////////////////////////////////////////////////////////////
 // Texture globals
 
-uint32 textures[MAX_TEXTURES];
-uint32 activeTexture = 0;
+//These 2 are-will be used and replaced for every existing TGDS project using custom texture index arrays
+uint32 textures[MAX_TEXTURES]; //internal index per GFX_TEX_FORMAT register
+struct GLtextureProperties textureSizePixelCoords[MAX_TEXTURES]; //OpenGL usermode
+
+uint32 activeTexture = 0; //texture index "name" in VideoGL terms. Same index points to internal index per GFX_TEX_FORMAT register, held currently inside textureSizePixelCoords[newestTextureIndex written to activeTexture] structure
 uint32* nextBlock = (uint32*)0x06800000;
 
 #ifdef ARM9
@@ -1846,7 +1856,22 @@ __attribute__((optimize("Os")))
 __attribute__ ((optnone))
 #endif
 #endif
+int getTextureNameFromIndex(int index){
+	return textureSizePixelCoords[index].textureIndex;
+}
+
+int currentInternalTextureName = 0;
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os"))) 
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
 void glResetTextures(void){
+	currentInternalTextureName = 0;
 	activeTexture = 0;
 	nextBlock = (uint32*)0x06800000;
 }
@@ -1864,16 +1889,14 @@ __attribute__ ((optnone))
 #endif
 #endif
 int glGenTextures(int n, int *names){
-	static int name = 0;
-
 	int index = 0;
 
 	for(index = 0; index < n; index++)
 	{
-		if(name >= MAX_TEXTURES)
+		if(currentInternalTextureName >= MAX_TEXTURES)
 			return 0;
 		else
-			names[index] = name++;
+			names[index] = currentInternalTextureName++;
 	}
 
 	return 1;
@@ -1905,15 +1928,13 @@ void glBindTexture(int target, int name){
 	}
 	else{
 		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
-		GFX_TEX_FORMAT = globalGLCtx.textureParamsValue = textures[name];
+		GFX_TEX_FORMAT = textures[name];
 		#endif
 	}
 	activeTexture = name;
 }
 
-// glTexParameter although named the same 
-//	as its gl counterpart it is not compatible
-//	Effort may be made in the future to make it so.
+// GX glTexParameter, internal use. 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("Os"))) 
@@ -1922,8 +1943,8 @@ __attribute__((optimize("Os")))
 __attribute__ ((optnone))
 #endif
 #endif
-void glTexParameter(uint8 sizeX, uint8 sizeY, uint32* addr, uint8 mode, uint32 param){
-	textures[activeTexture] = param | (sizeX << 20) | (sizeY << 23) | (((uint32)addr >> 3) & 0xFFFF) | (mode << 26);
+void glTexParmInternal(uint8 sizeX, uint8 sizeY, uint32* addr, uint8 mode, uint32 param, int texIndex){
+	textures[texIndex] = param | (sizeX << 20) | (sizeY << 23) | (((uint32)addr >> 3) & 0xFFFF) | (mode << 26);
 }
 
 #ifdef ARM9
@@ -2078,11 +2099,15 @@ int glTexImage2D(int target, int empty1, int type, int sizeX, int sizeY, int emp
 	if(!addr)
 		return 0;
 
-	glTexParameter(sizeX, sizeY, addr, type, param);
-	globalGLCtx.textureParamsValue = (sizeX << 20) | (sizeY << 23) | ((type == GL_RGB ? GL_RGBA : type ) << 26);
+	glTexParmInternal(sizeX, sizeY, addr, type, param, target);
+	
+	//removed
+	/*
+	u32 GFX_TEX_FORMATName = (sizeX << 20) | (sizeY << 23) | ((type == GL_RGB ? GL_RGBA : type ) << 26);
 	#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
-	GFX_TEX_FORMAT = globalGLCtx.textureParamsValue;
+	GFX_TEX_FORMAT = GFX_TEX_FORMATName;
 	#endif
+	*/
 	//unlock texture memory
 	#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 	vramTemp = VRAM_CR; //vramTemp = vramSetMainBanks(VRAM_A_LCD,VRAM_B_LCD,VRAM_C_LCD,VRAM_D_LCD);
@@ -2195,16 +2220,16 @@ void glColor3f(float red, float green, float blue){
 		//Handle light vectors: Light depth is 10bit. Which means only glColor3f(); can colour normals on polygons. glColor3b(); can't. Also don't forget to enable at least one light per scene or colour over normals won't reflect in the light vector.
 		u32 lightsEnabled = globalGLCtx.GXPolygonAttributes;
 		if((lightsEnabled&GX_LIGHT0) == GX_LIGHT0){
-			glLight(0, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), inttov10(31), inttov10(31), inttov10(31));
+			glLight(0, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), globalGLCtx.GL_POSITION_LIGHT_VECTOR_X, globalGLCtx.GL_POSITION_LIGHT_VECTOR_Y, globalGLCtx.GL_POSITION_LIGHT_VECTOR_Z);
 		}
 		if((lightsEnabled&GX_LIGHT1) == GX_LIGHT1){
-			glLight(1, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), inttov10(31), inttov10(31), inttov10(31));
+			glLight(1, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), globalGLCtx.GL_POSITION_LIGHT_VECTOR_X, globalGLCtx.GL_POSITION_LIGHT_VECTOR_Y, globalGLCtx.GL_POSITION_LIGHT_VECTOR_Z);
 		}
 		if((lightsEnabled&GX_LIGHT2) == GX_LIGHT2){
-			glLight(2, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), inttov10(31), inttov10(31), inttov10(31));
+			glLight(2, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), globalGLCtx.GL_POSITION_LIGHT_VECTOR_X, globalGLCtx.GL_POSITION_LIGHT_VECTOR_Y, globalGLCtx.GL_POSITION_LIGHT_VECTOR_Z);
 		}
 		if((lightsEnabled&GX_LIGHT3) == GX_LIGHT3){
-			glLight(3, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), inttov10(31), inttov10(31), inttov10(31));
+			glLight(3, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), globalGLCtx.GL_POSITION_LIGHT_VECTOR_X, globalGLCtx.GL_POSITION_LIGHT_VECTOR_Y, globalGLCtx.GL_POSITION_LIGHT_VECTOR_Z);
 		}
 	}
 }
@@ -2420,22 +2445,6 @@ __attribute__((optimize("Os")))
 __attribute__((optnone))
 #endif
 #endif
-int getTextureBaseFromTextureSlot(int textureSlot){
-	u32 textureDescriptor = textures[textureSlot];
-	u8 baseTexSize1 = ((textureDescriptor >> 20) & TEXTURE_SIZE_1024);
-	u8 baseTexSize2 = ((textureDescriptor >> 23) & TEXTURE_SIZE_1024);
-	int res = (baseTexSize1*baseTexSize2*7);
-	return ((res != 0) ? res : 8);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__((optnone))
-#endif
-#endif
 void glTexCoord2fv(
    const GLfloat *v){
 	float s = v[0];
@@ -2452,27 +2461,18 @@ __attribute__((optnone))
 #endif
 #endif
 void glTexCoord2f(GLfloat s, GLfloat t){
-	int texBase = getTextureBaseFromTextureSlot(activeTexture);
-	if(s > 0.0){
-		s = s + (texBase);
-	}
-	if(t > 0.0){
-		t = t + (texBase);
-	}
+	struct GLtextureProperties * curTextureProperties = &textureSizePixelCoords[(int)activeTexture];
+	s = s * (curTextureProperties->textureSizeWidth);
+	t = t * (curTextureProperties->textureSizeHeight);
 	glTexCoord2t16(floattot16(t), floattot16(s));
 }
 
 void glTexCoord2i(GLint s, GLint t){
-	int texBase = getTextureBaseFromTextureSlot(activeTexture);
-	if(s > 0.0){
-		s = s + (texBase);
-	}
-	if(t > 0.0){
-		t = t + (texBase);
-	}
+	struct GLtextureProperties * curTextureProperties = &textureSizePixelCoords[(int)activeTexture];
+	s = s * (curTextureProperties->textureSizeWidth);
+	t = t * (curTextureProperties->textureSizeHeight);
 	glTexCoord2t16(inttot16(t), inttot16(s));
 }
-
 
 //////////////////////////////////////////////////////////////////////
 //glTexCoord specifies texture coordinates in one, two, three, or four dimensions. 
@@ -3093,7 +3093,7 @@ void glEndList(){
 	
 	//define List Size
 	Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr--;
-	listSize = ((Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr - (TGDSOGL_LogicalDisplayListSetInst->LogicalOGLOffsetToGXOffsetInGXBinary)) * 4);
+	listSize = ((Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr - (TGDSOGL_LogicalDisplayListSetInst->LogicalOGLOffsetToGXOffsetInGXBinary+1)) * 4) + 4;
 	Inst->InternalUnpackedGX_DL_Binary[TGDSOGL_LogicalDisplayListSetInst->LogicalOGLOffsetToGXOffsetInGXBinary-1] = (u32)listSize;
 
 	TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList = false; //Standard OpenGL DisplayList marked as executable now. Run it through the GX hardware from indirect glCallList(); call
@@ -3641,50 +3641,58 @@ __attribute__ ((optnone))
 void glLightfv (GLenum light, GLenum pname, const GLfloat *params){
 	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
+	
+	int gx_light = -1;
+	switch(light){
+		case(GL_LIGHT0):{
+			gx_light = 0;
+		}break;
+		case(GL_LIGHT1):{
+			gx_light = 1;
+		}break;
+		case(GL_LIGHT2):{
+			gx_light = 2;
+		}break;
+		case(GL_LIGHT3):{
+			gx_light = 3;
+		}break;
+		default:{
+			return;
+		}break;
+	}
+	
 	//El par�metro params contiene cuatro valores de punto flotante que especifican la intensidad RGBA ambiente de la luz. Los valores de punto flotante se asignan directamente. No se fijan valores enteros ni de punto flotante. La intensidad de luz ambiente predeterminada es (0,0, 0,0, 0,0, 1,0).
 	if(pname == GL_AMBIENT){
-		float rAmbient = params[0];
-		float gAmbient = params[1];
-		float bAmbient = params[2];
-		//float aAmbient = params[3];
-		globalGLCtx.ambientValue = ((floattov10(rAmbient) & 0x1F) << 16) | ((floattov10(gAmbient) & 0x1F) << 21) | ((floattov10(bAmbient) & 0x1F) << 26);
-		if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
-			u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
-			if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
-				//40004C0h 30h 1  4   DIF_AMB - MaterialColor0 - Diffuse/Ambient Reflect. (W)
-				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)getFIFO_DIFFUSE_AMBIENT; //Unpacked Command format
-				ptrVal++;
-				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = ((u32)( ((globalGLCtx.diffuseValue & 0xFFFF) << 0) | ((globalGLCtx.ambientValue & 0xFFFF) << 16) )); ptrVal++;
-				Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = ptrVal;
-			}
-		}
-		else{
-			#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
-			GFX_DIFFUSE_AMBIENT = (u32)( ((globalGLCtx.diffuseValue & 0xFFFF) << 0) | ((globalGLCtx.ambientValue & 0xFFFF) << 16) );
-			#endif
-		}
+		//GX hardware does not support any ambient parameters for light. Only through glMaterialFv
+		//globalGLCtx.lightAmbientValue = 0;
 	}
-	//El par�metro params contiene cuatro valores de punto flotante que especifican la intensidad RGBA difusa de la luz. Los valores de punto flotante se asignan directamente. No se fijan valores enteros ni de punto flotante. La intensidad difusa predeterminada es (0,0, 0,0, 0,0, 1,0) para todas las luces que no sean cero. La intensidad difusa predeterminada de la luz cero es (1,0, 1,0, 1,0, 1,0).
+
+	//https://www.glprogramming.com/red/chapter05.html
+	//The GL_DIFFUSE parameter probably most closely correlates with what you naturally think of as "the color of a light." 
+	//It defines the RGBA color of the diffuse light that a particular light source adds to a scene. By default, GL_DIFFUSE is (1.0, 1.0, 1.0, 1.0) for GL_LIGHT0, 
+	//which produces a bright, white light as shown in the left side of "Plate 13" in Appendix I. 
+	//The default value for any other light (GL_LIGHT1, ... , GL_LIGHT7) is (0.0, 0.0, 0.0, 0.0).
 	if(pname == GL_DIFFUSE){
 		float rDiffuse = params[0];
 		float gDiffuse = params[1];
 		float bDiffuse = params[2];
 		//float aDiffuse = params[3];
 		u8 setVtxColor = 1; //15    Set Vertex Color (0=No, 1=Set Diffuse Reflection Color as Vertex Color)
-		globalGLCtx.diffuseValue = ((floattov10(rDiffuse) & 0x1F) << 0) | ((floattov10(gDiffuse) & 0x1F) << 5) | ((floattov10(bDiffuse) & 0x1F) << 10) | ((setVtxColor & 0x1) << 15);
+		globalGLCtx.lightDiffuseValue = (u16)(RGB15((int)rDiffuse, (int)gDiffuse, (int)bDiffuse) | ((setVtxColor & 0x1) << 15));
+		gx_light = (gx_light & 3) << 30;
 		if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 			u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 			if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
-				//40004C0h 30h 1  4   DIF_AMB - MaterialColor0 - Diffuse/Ambient Reflect. (W)
-				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)getFIFO_DIFFUSE_AMBIENT; //Unpacked Command format
+				//40004CCh 33h 1  1   LIGHT_COLOR - Set Light Color (W)
+				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)getFIFO_LIGHT_COLOR; 
 				ptrVal++;
-				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)(( ((globalGLCtx.diffuseValue & 0xFFFF) << 0) | ((globalGLCtx.ambientValue & 0xFFFF) << 16) )); ptrVal++;
+				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)(gx_light | globalGLCtx.lightDiffuseValue); ptrVal++;
 				Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = ptrVal;
 			}
 		}
 		else{
 			#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
-			GFX_DIFFUSE_AMBIENT = (u32)( ((globalGLCtx.diffuseValue & 0xFFFF) << 0) | ((globalGLCtx.ambientValue & 0xFFFF) << 16) );
+			GFX_LIGHT_COLOR = gx_light | globalGLCtx.lightDiffuseValue;
 			#endif
 		}
 	}
@@ -3692,14 +3700,16 @@ void glLightfv (GLenum light, GLenum pname, const GLfloat *params){
 	//La posici�n se transforma mediante la matriz modelview cuando se llama a glLightfv (como si fuera un punto) y se almacena en coordenadas oculares. Si el componente w de la posici�n es 0,0, la luz se trata como una fuente direccional. Los c�lculos de iluminaci�n difusa y especular toman la direcci�n de la luz, pero no su posici�n real, en cuenta y la atenuaci�n est� deshabilitada. De lo contrario, los c�lculos de iluminaci�n difusa y especular se basan en la ubicaci�n real de la luz en coordenadas oculares y se habilita la atenuaci�n. La posici�n predeterminada es (0,0,1,0); por lo tanto, la fuente de luz predeterminada es direccional, paralela a y en la direcci�n del eje -z .
 	if(pname == GL_POSITION){
 		int id = ((((int)light) & 3) << 30);
-		float x = params[0];
-		float y = params[1];
-		float z = params[2];
-		u32 writeVal = id | ((floattov10(z) & 0x3FF) << 20) | ((floattov10(y) & 0x3FF) << 10) | (floattov10(x) & 0x3FF);
+		v10 x = floattov10((float)params[0]);
+		v10 y = floattov10((float)params[1]);
+		v10 z = floattov10((float)params[2]);
+		u32 writeVal = id | ((z & 0x3FF) << 20) | ((y & 0x3FF) << 10) | (x & 0x3FF);
+		globalGLCtx.GL_POSITION_LIGHT_VECTOR_X = x;
+		globalGLCtx.GL_POSITION_LIGHT_VECTOR_Y = y;
+		globalGLCtx.GL_POSITION_LIGHT_VECTOR_Z = z;
 		if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 			u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 			if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
-				id = (id & 3) << 30;
 				//40004C8h 32h 1  6   LIGHT_VECTOR - Set Light's Directional Vector (W)
 				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)getFIFO_LIGHT_VECTOR; //Unpacked Command format
 				ptrVal++;
@@ -3715,27 +3725,7 @@ void glLightfv (GLenum light, GLenum pname, const GLfloat *params){
 	}
 	//El par�metro params contiene cuatro valores de punto flotante que especifican la intensidad RGBA especular de la luz. Los valores de punto flotante se asignan directamente. No se fijan valores enteros ni de punto flotante. La intensidad especular predeterminada es (0,0, 0,0, 0,0, 1,0) para todas las luces que no sean cero. La intensidad especular predeterminada del cero claro es (1,0, 1,0, 1,0, 1,0).
 	if(pname == GL_SPECULAR){
-		float rSpecular = params[0];
-		float gSpecular = params[1];
-		float bSpecular = params[2];
-		//float aSpecular = params[3];
-		u8 useSpecularReflectionShininessTable = 0; //15    Specular Reflection Shininess Table (0=Disable, 1=Enable)
-		globalGLCtx.specularValue = ((floattov10(rSpecular) & 0x1F) << 16) | ((floattov10(gSpecular) & 0x1F) << 21) | ((floattov10(bSpecular) & 0x1F) << 26) | ((useSpecularReflectionShininessTable & 0x1) << 15);
-		if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
-			u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
-			if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
-				//40004C4h 31h 1  4   SPE_EMI - MaterialColor1 - Specular Ref. & Emission (W)
-				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)getFIFO_SPECULAR_EMISSION; //Unpacked Command format
-				ptrVal++;
-				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)((u32 )( ((globalGLCtx.specularValue & 0xFFFF) << 0) | ((globalGLCtx.emissionValue & 0xFFFF) << 16) ) | (1 << 15))  ; ptrVal++;
-				Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = ptrVal;
-			}
-		}
-		else{
-			#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
-			GFX_SPECULAR_EMISSION = (u32 )( ((globalGLCtx.specularValue & 0xFFFF) << 0) | ((globalGLCtx.emissionValue & 0xFFFF) << 16) | (1 << 15));
-			#endif
-		}
+		//GX hardware does not support any specular parameters for light. Only through glMaterialFv
 	}
 	
 	//Unimplemented:
@@ -3795,8 +3785,8 @@ void glMaterialfv (GLenum face, GLenum pname, const GLfloat *params){
 		}break;
 	}
 	{
-		u32 diffuse_ambient = ((globalGLCtx.ambientValue << 16) | globalGLCtx.diffuseValue);
-		u32 specular_emission = ((globalGLCtx.emissionValue << 16) | globalGLCtx.specularValue);
+		u32 diffuse_ambient = ((globalGLCtx.materialAmbientValue << 16) | globalGLCtx.materialDiffuseValue);
+		u32 specular_emission = ((globalGLCtx.materialEmissionValue << 16) | globalGLCtx.materialSpecularValue);
 		switch(pname){
 			case GL_AMBIENT:{
 				diffuse_ambient = (emissionValueOut << 16) | (diffuse_ambient & 0xFFFF); //high part = ambient
@@ -3819,31 +3809,34 @@ void glMaterialfv (GLenum face, GLenum pname, const GLfloat *params){
 		}
 
 		//Update GX properties
-		globalGLCtx.ambientValue = (diffuse_ambient >> 16);
-		globalGLCtx.diffuseValue = (diffuse_ambient&0xFFFF);
-		globalGLCtx.emissionValue = (specular_emission >> 16);
-		globalGLCtx.specularValue = (specular_emission&0xFFFF);
-
+		globalGLCtx.materialAmbientValue = (diffuse_ambient >> 16);
+		globalGLCtx.materialDiffuseValue = (diffuse_ambient&0xFFFF);
+		globalGLCtx.materialEmissionValue = (specular_emission >> 16);
+		globalGLCtx.materialSpecularValue = (specular_emission&0xFFFF);
+		
+		u8 useSpecularReflectionShininessTable = 1; //15    Specular Reflection Shininess Table (0=Disable, 1=Enable)
+		u8 useReflectionColorAsVertexColor = 1; //15    Set Vertex Color (0=No, 1=Set Diffuse Reflection Color as Vertex Color
+		
 		if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 			u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 			if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 				//40004C0h 30h 1  4   DIF_AMB - MaterialColor0 - Diffuse/Ambient Reflect. (W)
 				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)getFIFO_DIFFUSE_AMBIENT; //Unpacked Command format
 				ptrVal++;
-				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)(diffuse_ambient); ptrVal++;
+				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)(diffuse_ambient| ((useReflectionColorAsVertexColor & 0x1) << 15)); ptrVal++;
 				
 				//40004C4h 31h 1  4   SPE_EMI - MaterialColor1 - Specular Ref. & Emission (W)
 				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)(getFIFO_SPECULAR_EMISSION); //Unpacked Command format
 				ptrVal++;
-				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)(specular_emission | (1 << 15)); ptrVal++;
+				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)(specular_emission | ((useSpecularReflectionShininessTable & 0x1) << 15)); ptrVal++;
 				
 				Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = ptrVal;
 			}
 		}
 		else{
 			#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
-			GFX_DIFFUSE_AMBIENT = diffuse_ambient;
-			GFX_SPECULAR_EMISSION = (specular_emission | (1 << 15));
+			GFX_DIFFUSE_AMBIENT = (u32)(diffuse_ambient| ((useReflectionColorAsVertexColor & 0x1) << 15));
+			GFX_SPECULAR_EMISSION = (u32)(specular_emission | ((useSpecularReflectionShininessTable & 0x1) << 15));
 			#endif
 		}
 	}
@@ -3954,7 +3947,7 @@ void glTexParameteri(
 			//40004A8h 2Ah 1  1   TEXIMAGE_PARAM - Set Texture Parameters (W)
 			Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)getFIFO_TEX_FORMAT; //Unpacked Command format
 			ptrVal++;
-			Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)(globalGLCtx.textureParamsValue); ptrVal++;
+			/*todo: Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)(globalGLCtx.textureParamsValue);*/ ptrVal++;
 			Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = ptrVal;
 		}
 	}
@@ -5220,9 +5213,9 @@ void glGetMaterialfv(
 			//Integer values, when requested, are linearly mapped from the internal floating-point representation such that 1.0 maps to 
 			//the most positive representable integer value, and -1.0 maps to the most negative representable integer value. 
 			//If the internal value is outside the range [-1,1], the corresponding integer return value is undefined.
-			*(params+0) = ((float)((globalGLCtx.ambientValue>>0)&0x1f)); //r
-			*(params+1) = ((float)((globalGLCtx.ambientValue>>5)&0x1f)); //g
-			*(params+2) = ((float)((globalGLCtx.ambientValue>>10)&0x1f)); //b
+			*(params+0) = ((float)((globalGLCtx.materialAmbientValue>>0)&0x1f)); //r
+			*(params+1) = ((float)((globalGLCtx.materialAmbientValue>>5)&0x1f)); //g
+			*(params+2) = ((float)((globalGLCtx.materialAmbientValue>>10)&0x1f)); //b
 			*(params+3) = 0;
 		}break;
 		case GL_DIFFUSE:{
@@ -5230,9 +5223,9 @@ void glGetMaterialfv(
 			//Integer values, when requested, are linearly mapped from the internal floating-point representation such that 1.0 maps to 
 			//the most positive representable integer value, and -1.0 maps to the most negative representable integer value. 
 			//If the internal value is outside the range [-1,1], the corresponding integer return value is undefined.
-			*(params+0) = ((float)((globalGLCtx.diffuseValue>>0)&0x1f)); //r
-			*(params+1) = ((float)((globalGLCtx.diffuseValue>>5)&0x1f)); //g
-			*(params+2) = ((float)((globalGLCtx.diffuseValue>>10)&0x1f)); //b
+			*(params+0) = ((float)((globalGLCtx.materialDiffuseValue>>0)&0x1f)); //r
+			*(params+1) = ((float)((globalGLCtx.materialDiffuseValue>>5)&0x1f)); //g
+			*(params+2) = ((float)((globalGLCtx.materialDiffuseValue>>10)&0x1f)); //b
 			*(params+3) = 0;
 		}break;
 		case GL_SPECULAR:{
@@ -5240,9 +5233,9 @@ void glGetMaterialfv(
 			//Integer values, when requested, are linearly mapped from the internal floating-point representation such that 1.0 maps to 
 			//the most positive representable integer value, and -1.0 maps to the most negative representable integer value. 
 			//If the internal value is outside the range [-1,1], the corresponding integer return value is undefined.
-			*(params+0) = ((float)((globalGLCtx.specularValue>>0)&0x1f)); //r
-			*(params+1) = ((float)((globalGLCtx.specularValue>>5)&0x1f)); //g
-			*(params+2) = ((float)((globalGLCtx.specularValue>>10)&0x1f)); //b
+			*(params+0) = ((float)((globalGLCtx.materialSpecularValue>>0)&0x1f)); //r
+			*(params+1) = ((float)((globalGLCtx.materialSpecularValue>>5)&0x1f)); //g
+			*(params+2) = ((float)((globalGLCtx.materialSpecularValue>>10)&0x1f)); //b
 			*(params+3) = 0;
 		}break;
 		case GL_SHININESS:{
@@ -5255,9 +5248,9 @@ void glGetMaterialfv(
 			//Integer values, when requested, are linearly mapped from the internal floating-point representation such that 1.0 maps to 
 			//the most positive representable integer value, and -1.0 maps to the most negative representable integer value. 
 			//If the internal value is outside the range [-1,1], the corresponding integer return value is undefined.
-			*(params+0) = ((float)((globalGLCtx.emissionValue>>0)&0x1f)); //r
-			*(params+1) = ((float)((globalGLCtx.emissionValue>>5)&0x1f)); //g
-			*(params+2) = ((float)((globalGLCtx.emissionValue>>10)&0x1f)); //b
+			*(params+0) = ((float)((globalGLCtx.materialEmissionValue>>0)&0x1f)); //r
+			*(params+1) = ((float)((globalGLCtx.materialEmissionValue>>5)&0x1f)); //g
+			*(params+2) = ((float)((globalGLCtx.materialEmissionValue>>10)&0x1f)); //b
 			*(params+3) = 0;
 		}break;
 		default:{
@@ -5299,9 +5292,8 @@ void glGetIntegerv(
 		//the internal floating-point representation such that 1.0 returns the most positive representable integer value, 
 		//and -1.0 returns the most negative representable integer value.
 		case(GL_LIGHT_MODEL_AMBIENT):{
-			u32 specVal = globalGLCtx.specularValue;
+			u32 specVal = globalGLCtx.materialSpecularValue;
 			u32 * paramOut = (u32*)params;
-			//globalGLCtx.specularValue = ((floattov10(rSpecular) & 0x1F) << 16) | ((floattov10(gSpecular) & 0x1F) << 21) | ((floattov10(bSpecular) & 0x1F) << 26);
 			int rIntAmb = v10toint((specVal >> 16) & 0x1F); 
 			int gIntAmb = v10toint((specVal >> 21) & 0x1F); 
 			int bIntAmb = v10toint((specVal >> 26) & 0x1F); 

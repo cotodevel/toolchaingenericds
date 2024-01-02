@@ -31,10 +31,8 @@
 #include "posixHandleTGDS.h"
 #include "videoGL.h"
 #include "videoTGDS.h"
-#include "Texture_Cube.h"
 #include "debugNocash.h"
 
-int textureID=0;
 //---------------------------------------------------------------------------------
 void imageDestroy(sImage* img) {
 //---------------------------------------------------------------------------------
@@ -142,13 +140,15 @@ int loadPCX(const unsigned char* pcx, sImage* image) {
 	return 1;
 }
 
+
+
 //Loads a texture from a 24-bit BMP file into native uncompressed GX RGB format.
 //Formats supported: 64xN, 128xN, 256xN, 512xN where N is any of the Height / Width sizes listed earlier
-int LoadGLSingleTextureAuto(u8 * textureSourceArray, int * textureArray, int textureIndex){
+int LoadGLSingleTextureAuto(u8 * textureSourceArray, struct GLtextureProperties * textureProperties){
 	sImage pcx;
 	u32 gxTextureSizeHeight = 0;
 	u32 gxTextureSizeWidth = 0;
-
+	
 	//load our texture
 	loadPCX((u8*)textureSourceArray, &pcx);
 	image8to16(&pcx);
@@ -191,9 +191,13 @@ int LoadGLSingleTextureAuto(u8 * textureSourceArray, int * textureArray, int tex
 		break;
 	}
 	
-	//DS supports no filtering of anykind so no need for more than one texture
-	glBindTexture(0, textureIndex);
-	glTexImage2D(0, 0, GL_RGB, gxTextureSizeHeight, gxTextureSizeWidth, 0, TEXGEN_TEXCOORD, pcx.image.data8);
+	textureProperties->textureSizeHeight = (float)pcx.height;
+	textureProperties->textureSizeWidth = (float)pcx.width;
+
+	//IN THIS ORDER:
+	glGenTextures(1, &textureProperties->textureIndex); //emit tex name
+	glTexImage2D(textureProperties->textureIndex, 0, GL_RGB, gxTextureSizeHeight, gxTextureSizeWidth, 0, TEXGEN_TEXCOORD, pcx.image.data8); //use tex name
+	glBindTexture(0, textureProperties->textureIndex); //update tex name in GX 3D engine
 	imageDestroy(&pcx);
 	return 0;
 }
@@ -203,17 +207,16 @@ int LoadGLSingleTextureAuto(u8 * textureSourceArray, int * textureArray, int tex
 //u32 arrayOfTextures[2]; 
 //arrayOfTextures[0] = (u32)&Texture_Cube; //textures required to be in memory.
 //arrayOfTextures[1] = (u32)&Texture_Cellphone;
-//int textureArrayNDS[2]; //0 : Cube tex / 1 : Cellphone tex... enumerated as NDS GX texture format
-//int texturesInSlot = LoadLotsOfGLTextures((u32*)&arrayOfTextures, (int*)&textureArrayNDS, 2);	
+//int texturesInSlot = LoadLotsOfGLTextures((u32*)&arrayOfTextures, 2);	
 
 //returns: texture count generated
-int LoadLotsOfGLTextures(u32 * textureSourceArray, int * textureArray, int textureCount){	// Load lots of PCX files And Convert To Textures
-	glGenTextures(textureCount, textureArray);
+int LoadLotsOfGLTextures(u32 * textureSourceArray, int textureCount){	// Load lots of PCX/BMP files And Convert To Textures
 	int curTexture = 0;
 	for(curTexture = 0; curTexture < textureCount; curTexture++){
-		if(LoadGLSingleTextureAuto((u8*)textureSourceArray[curTexture], &textureArray[curTexture], curTexture) != 0){
+		struct GLtextureProperties * curTextureProperties = &textureSizePixelCoords[curTexture];
+		if(LoadGLSingleTextureAuto((u8*)textureSourceArray[curTexture], curTextureProperties) != 0){
 			char buf[64];
-			sprintf(buf, "load tex :%d failed", curTexture);
+			sprintf(buf, "Load tex. idx: %d failed", curTexture);
 			nocashMessage(buf);
 		}
 	}
