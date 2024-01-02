@@ -191,6 +191,14 @@ typedef struct {
   f32 x,y,z;
 } GLvector;
 
+//Texture properties per TextureIndex 
+struct GLtextureProperties {
+	//height x width = TEXTURE_PACK(floattot16(TextureSizeHeight),floattot16(TextureSizeWidth)),
+	float textureSizeHeight; 
+	float textureSizeWidth;
+	int textureIndex; //texture index "name" in VideoGL terms. Same index points to internal index per GFX_TEX_FORMAT register
+};
+
 #ifndef GL_VERSION_1_1
 #define GL_VERSION_1_1 1
 
@@ -223,13 +231,22 @@ typedef void GLvoid;
 struct GLContext{
 	GLenum primitiveShadeModelMode;	//glShadeModel(GLenum mode: [GL_FLAT/GL_SMOOTH]);
 	u32 GXPolygonAttributes; //Current GX Polygon Attributes
-	u32 textureParamsValue;
-	u16 diffuseValue;
-	u16 ambientValue;
-	u16 specularValue;
-	u16 emissionValue;
-	float shininessValue;
+	u32 textureParamsValue; //current texture attributes (OpenGL client context)
 
+	u16 lightDiffuseValue;
+	//u16 lightAmbientValue; //GX hardware does not support any ambient parameters for light. Only through glMaterialFv
+	u16 materialDiffuseValue;
+	u16 materialAmbientValue;
+	
+	u16 materialSpecularValue;
+	u16 materialEmissionValue;
+	float shininessValue;
+	
+	//Set up by glLightfv() -> GL_POSITION
+	v10 GL_POSITION_LIGHT_VECTOR_X;
+	v10 GL_POSITION_LIGHT_VECTOR_Y;
+	v10 GL_POSITION_LIGHT_VECTOR_Z;
+	
 	//latest Viewport
 	u32 lastViewport; //(x1) + (y1 << 8) + (x2 << 16) + (y2 << 24) //x1 = x, y1 = y, x2 = 
 	bool blendVertexAndNormalsFromColor;
@@ -1152,6 +1169,8 @@ struct TGDSOGL_DisplayListContext {
 extern "C" {
 #endif
 
+extern int getTextureNameFromIndex(int index);
+
 extern struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContextInternal;
 extern struct TGDSOGL_DisplayListContext * TGDSOGL_DisplayListContextUser;
 extern bool isInternalDisplayList;
@@ -1415,8 +1434,14 @@ extern void glVertex3v16(v16 x, v16 y, v16 z);
 extern void glVertex3v10(v10 x, v10 y, v10 z);
 extern void glVertex2v16(v16 x, v16 y);
 extern void updateGXLights();
-extern int getTextureBaseFromTextureSlot(int textureSlot);
+
+extern void glTexParmInternal(uint8 sizeX, uint8 sizeY, uint32* addr, uint8 mode, uint32 param, int texIndex);
+
+//These 2 are-will be used and replaced for every existing TGDS project using custom texture index arrays
 extern uint32 textures[MAX_TEXTURES];
+extern struct GLtextureProperties textureSizePixelCoords[MAX_TEXTURES]; 
+extern int currentInternalTextureName;
+
 extern uint32 activeTexture;
 extern uint32* nextBlock;
 extern void glLight(int id, rgb color, v10 x, v10 y, v10 z);

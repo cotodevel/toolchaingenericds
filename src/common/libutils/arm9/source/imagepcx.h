@@ -31,6 +31,7 @@
 #include "limitsTGDS.h"
 #include "dldi.h"
 #include "utilsTGDS.h"
+#include "videoGL.h"
 
 typedef struct PCXHeader
 {
@@ -81,12 +82,11 @@ typedef struct sImage
 extern "C" {
 #endif
 
-extern int textureID;
 extern void imageDestroy(sImage* img);
 extern void image8to16(sImage* img);
-extern int LoadGLSingleTextureAuto(u8 * textureSourceArray, int * textureArray, int textureIndex);
 extern int loadPCX(const unsigned char* pcx, sImage* image);
-extern int LoadLotsOfGLTextures(u32 * textureSourceArray, int * textureArray, int textureCount);
+extern int LoadGLSingleTextureAuto(u8 * textureSourceArray, struct GLtextureProperties * textureProperties);
+extern int LoadLotsOfGLTextures(u32 * textureSourceArray, int textureCount);
 
 #ifdef __cplusplus
 }
