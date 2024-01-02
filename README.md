@@ -58,7 +58,7 @@ https://forum.gbadev.org/viewtopic.php?f=18&t=16289
 - CUE : LZSS compression routines
 TWL support: Normatt (SD dldi code) / fincs (codec) / WinterMute / others (updated NDSTools, TWL hardware, VideoGL 3D code related to Texture mapping when using Call Lists )
 - lifehackerhansol: Testing and debugging a lot of TGDS compatibility across different NTR / TWL hardware.
-
+- nibbles27: Donated a TWL: DSi LL (Japanese) unit with IPS screens. Thank you! It really helped me to update all TGDS Projects in 2023 in TWL units. Greetings from Chile to Canada!
 ---------------------------------------------
 Guidelines:
 - TGDS homebrew fully implements NTR (DS mode) and TWL (DSi mode) support. All programs compiled for NTR mode will automatically generate a TWL binary counterpart. Both scenarios having support for DLDI or internal SD through SDK functions.  
