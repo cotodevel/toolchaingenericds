@@ -61,12 +61,12 @@ typedef double GLdouble;
 typedef double GLclampd;
 typedef void GLvoid;
 
-#ifndef __cplusplus
-typedef unsigned char bool;
-static bool false = 0;
-static bool true = 1;
-#endif
+#pragma once
 
+#define false   0
+#define true    1
+
+#define bool int
 #define RGB15(r,g,b)  ((r)|((g)<<5)|((b)<<10))
 #define RGB5(r,g,b)  ((r)|((g)<<5)|((b)<<10))
 #define RGB8(r,g,b)  (((r)>>3)|(((g)>>3)<<5)|(((b)>>3)<<10))
