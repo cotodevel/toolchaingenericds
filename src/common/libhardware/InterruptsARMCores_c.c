@@ -49,7 +49,6 @@ USA
 #endif
 
 void IRQInit(u8 DSHardware)  {
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	#ifdef ARM9
 	
 	DrainWriteBuffer();
@@ -115,7 +114,8 @@ void IRQInit(u8 DSHardware)  {
 			//TWL ARM7 IRQ Init
 			REG_AUXIE = 0;
 			REG_AUXIF = ~0;
-			irqEnableAUX(GPIO33_2);
+			irqEnableAUX(IRQ_I2C);
+			
 			//TGDS-Projects -> TWL TSC
 			TWLSetTouchscreenNTRMode();
 			#endif
@@ -146,7 +146,6 @@ static bool penDown = false;
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
-__attribute__((target("arm")))
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("O0")))
 #endif
@@ -158,7 +157,9 @@ void NDS_IRQHandler(){
 	volatile uint32 REG_IE_SET = (volatile uint32)(REG_IF & REG_IE);
 	
 	#ifdef TWLMODE
+	#ifdef ARM7
 	u32 handledIRQAUX = REG_AUXIE & REG_AUXIF;
+	#endif
 	#endif
 	
 	////			Common
@@ -216,7 +217,6 @@ void NDS_IRQHandler(){
 	if(REG_IE_SET & IRQ_VCOUNT){
 		#ifdef ARM7		
 		struct sIPCSharedTGDS * sIPCSharedTGDSInst = (struct sIPCSharedTGDS *)TGDSIPCStartAddress;
-		struct sEXTKEYIN * sEXTKEYINInst = (struct sEXTKEYIN *)&sIPCSharedTGDSInst->EXTKEYINInst;
 		struct touchPosition * sTouchPosition = (struct touchPosition *)&sIPCSharedTGDSInst->tscIPC;
 		
 		//ARM7 Keypad has access to X/Y/Hinge/Pen down bits
@@ -437,16 +437,13 @@ void NDS_IRQHandler(){
 		#ifdef TWLMODE
 		if(handledIRQAUX & IRQ_I2C){
 			i2cIRQHandler();
+			REG_AUXIF = IRQ_I2C;
 		}
 		
 		if(handledIRQAUX & IRQ_SDMMC){
-			
+			//todo
+			REG_AUXIF = IRQ_SDMMC;
 		}
-		
-		if(handledIRQAUX & GPIO33_2){
-			
-		}
-		
 		#endif
 		
 	#endif
@@ -468,31 +465,26 @@ __attribute__((section(".itcm")))
 void irqDisable(uint32 IRQ){
 	REG_IE	&=	~(IRQ);
 }
-#ifdef TWLMODE
-	#ifdef ARM7
-	//---------------------------------------------------------------------------------
-	TWL_CODE void i2cIRQHandler() {
-	//---------------------------------------------------------------------------------
-		int cause = (i2cReadRegister(I2C_PM, I2CREGPM_PWRIF) & 0x3) | (i2cReadRegister(I2C_GPIO, 0x02)<<2);
 
-		switch (cause & 3) {
-			case 1:{
-				if (/*__powerbuttonCB*/ 1 == 1) {
-					//__powerbuttonCB();
-				} 
-				else {
-					i2cWriteRegister(I2C_PM, I2CREGPM_RESETFLAG, 1);
-					i2cWriteRegister(I2C_PM, I2CREGPM_PWRCNT, 1);
-				}
-			}
-			break;
-			case 2:{
-				shutdownNDSHardware(); //todo: maybe this call doesn't work in TWL mode? writePowerManagement(PM_CONTROL_REG,PM_SYSTEM_PWR);
-			}
-			break;
+#ifdef TWLMODE
+#ifdef ARM7
+	//---------------------------------------------------------------------------------
+	void i2cIRQHandler() {
+	//---------------------------------------------------------------------------------
+		int cause = (i2cReadRegister(I2C_PM, I2CREGPM_PWRIF) & 0xb);
+
+		switch (cause & 0xb) {
+			//bit 0 & bit 3
+			case 1:
+			case 8:{
+				i2cWriteRegister(I2C_PM, I2CREGPM_RESETFLAG, 1);
+			}break;
+			case 2:{ //bit 1
+				i2cWriteRegister(I2C_PM, I2CREGPM_PWRCNT, 1);
+			}break;
 		}
 	}
-	
+
 	//---------------------------------------------------------------------------------
 	TWL_CODE void irqDisableAUX(uint32 irq) {
 	//---------------------------------------------------------------------------------

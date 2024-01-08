@@ -309,8 +309,6 @@ extern void Write8bitAddrExtArm(uint32 address, uint8 value);
 extern u32 fifoFunc[FIFO_CHANNELS][2];	//context is only passed on callback prototype stage, because, the channel index generates the callee callback
 
 extern struct sIPCSharedTGDS* getsIPCSharedTGDS();
-extern void SendFIFOWordsITCM(uint32 data0, uint32 data1);
-
 extern void XYReadScrPosUser(struct touchPosition * StouchScrPosInst);
 extern u8 ARM7ReadFWVersionFromFlashByFIFOIRQ();
 extern void ReadMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead);

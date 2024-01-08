@@ -8,6 +8,7 @@
 /*-----------------------------------------------------------------------*/
 
 #include "diskio.h"		/* FatFs lower layer API */
+#include "posixHandleTGDS.h"
 
 #if defined(WIN32)
 #include "dldiWin32.h"
@@ -86,8 +87,14 @@ DSTATUS disk_initialize (
 		
 		//Init DLDI: 
 		//NTR Mode: Already taken care by ARM7 DLDI
-		//TWL Mode: Initialize DLDI from ARM9 regardless.
-		if(__dsimode == true){
+		//TWL Mode: Initialize DLDI from ARM9 ONLY if no TGDS DLDI TWL is available
+		struct AllocatorInstance * customMemoryAllocator = &CustomAllocatorInstance;
+		
+		if(
+			(__dsimode == true)
+			&&
+			(customMemoryAllocator->useTWLSDThroughDLDI == false) 
+		){
 			if(dldi_handler_init() == true){	//Init DLDI: ARM9 version
 				ret = 0;	//init OK!
 			}

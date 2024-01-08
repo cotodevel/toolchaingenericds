@@ -4,6 +4,7 @@
 #include "utils.twl.h"
 #include "debugNocash.h"
 #include "ipcfifoTGDS.h"
+#include "biosTGDS.h"
 
 #ifdef TWLMODE
 #include "sdmmc.h"
@@ -127,7 +128,7 @@ bool sdio_WriteSectors(sec_t sector, sec_t numSectors, const void* buffer) {
 	#endif
 	#ifdef TWLMODE
 		#ifdef ARM7
-		if(sdmmc_writesectors(&deviceSD, sector, numSectors, (const void*)buffer) == 0){
+		if(sdmmc_writesectors(&deviceSD, sector, numSectors, (void*)buffer) == 0){
 			return true;
 		}
 		return false;

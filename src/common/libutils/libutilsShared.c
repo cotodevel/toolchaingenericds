@@ -14,6 +14,15 @@
 #include "debugNocash.h"
 #include "libndsFIFO.h"
 #include "wifi_shared.h"
+#include "microphoneShared.h"
+
+#ifdef ARM7
+#include "wifi_arm7.h"
+#endif
+
+#ifdef ARM9
+#include "wifi_arm9.h"
+#endif
 
 SoundRegion * getSoundIPC(){
 	struct sIPCSharedTGDS * TGDSIPC = (struct sIPCSharedTGDS *)TGDSIPCStartAddress;

@@ -149,7 +149,7 @@ bool closeFileFromStructFD(int StructFD){
 int FileExists(char * filename){
 	int Type = FT_NONE;
 	FILINFO fno;
-	FRESULT result = f_stat((const TCHAR*)filename, &fno);
+	f_stat((const TCHAR*)filename, &fno);
 	if ((fno.fattrib & AM_MASK) & AM_DIR) {
 		Type = FT_DIR;
 	}
@@ -499,13 +499,6 @@ u8 FAT_SetFileAttributes (const char* filename, u8 attributes, u8 mask){
 	u8	libfatAttributesOut= 0;
 	FILINFO finfo;
 	struct FileClass fileInst;
-	int sizeToCopy = 0;
-	if(strlen(filename) > sizeof(fileInst.fd_namefullPath)){
-		sizeToCopy = sizeof(fileInst.fd_namefullPath);
-	}
-	else{
-		sizeToCopy = strlen(filename);
-	}
 	sprintf(fileInst.fd_namefullPath, "%s", filename);
 	if(getFileFILINFOfromFileClass(&fileInst, &finfo) == true){	
 		libfatAttributesIn = (uint8)fatfs2libfatAttrib((int)finfo.fattrib);
@@ -1002,7 +995,6 @@ bool readDirectoryIntoFileClass(char * dir, struct FileClassList * thisClassList
 	thisClassList->FileDirCount = 0;
 	
 	//Use TGDS Dir API context
-	int pressed = 0;
 	struct FileClass filStub;
 	{
 		filStub.type = FT_FILE;
@@ -1061,7 +1053,7 @@ __attribute__ ((optnone))
 int buildFileClassByExtensionFromList(struct FileClassList * inputClassList, struct FileClassList * targetClassList, char ** scratchPadMemory, char * filterString){
 	char * outBuf = (char *)scratchPadMemory;
 	int i = 0, j = 0;
-	int matchCount = str_split((char*)filterString, "/", outBuf, 50, 256); //30 items
+	int matchCount = str_split((char*)filterString, (char*)"/", outBuf, 50, 256); //30 items
 	for(i = 0; i < (matchCount + 3); i++){
 		char * token_rootpath = (char*)&outBuf[256*i];
 		char extToFind[256];

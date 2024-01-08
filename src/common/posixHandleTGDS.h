@@ -82,6 +82,9 @@ struct AllocatorInstance
 	
 	//Target IO ARM7 DLDI to run
 	u32 TargetARM7DLDIAddress;
+	
+	//Only enabled when running NTR mode homebrew through TWL mode + TWL DLDI NOT through a slot 1 DLDI device (TGDS NTR + TWL SD mode)
+	bool useTWLSDThroughDLDI;
 };
 
 #ifdef __cplusplus
@@ -111,7 +114,8 @@ extern void initARMCoresMalloc(
 								u32 * callocHandler, u32 * freeHandler, u32 * MallocFreeMemoryHandler, 
 								bool customAllocator,
 								u32 dldiMemAddress,	//ARM9 source physical DLDI Location
-								u32 TargetARM7DLDIAddress //ARM7 target physical DLDI Location (ARM7DLDI runs from here)
+								u32 TargetARM7DLDIAddress, //ARM7 target physical DLDI Location (ARM7DLDI runs from here)
+								bool isDLDITWLSD //is DLDI TWL SD?
 							);
 
 

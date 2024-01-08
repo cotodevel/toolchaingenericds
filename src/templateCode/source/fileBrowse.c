@@ -56,8 +56,7 @@ bool ShowBrowser(char * Path, char * outBuf){
 	
 	int j = 1;
 	int startFromIndex = 1;
-	struct FileClass * fileClassInst = NULL;
-	fileClassInst = FAT_FindFirstFile(curPath, fileClassListCtx, startFromIndex);
+	FAT_FindFirstFile(curPath, fileClassListCtx, startFromIndex);
 	
 	//Sort list alphabetically
 	bool ignoreFirstFileClass = true;
