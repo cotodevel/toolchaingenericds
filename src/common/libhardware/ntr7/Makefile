@@ -38,8 +38,8 @@ export BUILD_ARM9	=	build
 export ELF_ARM7 = arm7.elf
 export ELF_ARM9 = arm9.elf
 #NTR TGDS7 & TGDS9
-export TARGET_LIBRARY_NAME_7 = 
-export TARGET_LIBRARY_NAME_9 = hardware7
+export TARGET_LIBRARY_NAME_7 = hardware7
+export TARGET_LIBRARY_NAME_9 = 
 export TARGET_LIBRARY_FILE_7	=	lib$(TARGET_LIBRARY_NAME_7).a
 export TARGET_LIBRARY_FILE_9	=	lib$(TARGET_LIBRARY_NAME_9).a
 export TARGET_LIBRARY_LIBNAME_7	=	l$(TARGET_LIBRARY_NAME_7)
@@ -48,14 +48,14 @@ export TARGET_LIBRARY_LIBNAME_9	=	l$(TARGET_LIBRARY_NAME_9)
 .SUFFIXES: .all
 #####################################################ARM9#####################################################
 
-export DIRS_ARM9_SRCLIB = ../../libhardware	\
+export DIRS_ARM7_SRCLIB = ../../libhardware	\
 			../../libhardware/arm7twl	\
 			../../libhardware/arm7	\
 			data/	\
 			build/	\
 			$(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_MAKEFILES_SRC)/templateCode/
 			
-export DIRS_ARM9_HEADERLIB = ../../libhardware	\
+export DIRS_ARM7_HEADERLIB = ../../libhardware	\
 			../../libhardware/arm7twl	\
 			../../libhardware/arm7	\
 			../../	\
@@ -76,50 +76,50 @@ export DIRS_ARM9_HEADERLIB = ../../libhardware	\
 RELATIVE_PATH =	
 
 #Prepare ARM9 dirs
-DIRLIBS_HDR = $(foreach dirres,$(DIRS_ARM9_HEADERLIB),-I "$(RELATIVE_PATH)$(dirres)" )	$(DIRLIBS_ALLOWED)	$(TARGET_LIBRARY_HEADERS_9_INC)	
-DIRLIBS_SRC = $(foreach dirres,$(DIRS_ARM9_SRCLIB),-I "/$(dirres)" )
+DIRLIBS_HDR = $(foreach dirres,$(DIRS_ARM7_HEADERLIB),-I "$(RELATIVE_PATH)$(dirres)" )	$(DIRLIBS_ALLOWED)	$(TARGET_LIBRARY_HEADERS_9_INC)	
+DIRLIBS_SRC = $(foreach dirres,$(DIRS_ARM7_SRCLIB),-I "/$(dirres)" )
 
-file_arm9_src_c=  $(foreach dir,$(DIRS_ARM9_SRCLIB), $(subst $(CURDIR)/$(RELATIVE_PATH)/$(dir)/,,$(wildcard $(CURDIR)/$(RELATIVE_PATH)/$(dir)/*.c))  )
-file_arm9_src_s=  $(foreach dir,$(DIRS_ARM9_SRCLIB), $(subst $(CURDIR)/$(RELATIVE_PATH)/$(dir)/,,$(wildcard $(CURDIR)/$(RELATIVE_PATH)/$(dir)/*.s))  )
-file_arm9_src_SUPP=  $(foreach dir,$(DIRS_ARM9_SRCLIB), $(subst $(CURDIR)/$(RELATIVE_PATH)/$(dir)/,,$(wildcard $(CURDIR)/$(RELATIVE_PATH)/$(dir)/*.S))  )
-file_arm9_src_cpp=  $(foreach dir,$(DIRS_ARM9_SRCLIB), $(subst $(CURDIR)/$(RELATIVE_PATH)/$(dir)/,,$(wildcard $(CURDIR)/$(RELATIVE_PATH)/$(dir)/*.cpp))  )
-file_arm9_src_bin=  $(foreach dir,$(DIRS_ARM9_SRCLIB), $(subst $(CURDIR)/$(RELATIVE_PATH)/$(dir)/,,$(wildcard $(CURDIR)/$(RELATIVE_PATH)/$(dir)/*.bin))  )
+file_arm7_src_c=  $(foreach dir,$(DIRS_ARM7_SRCLIB), $(subst $(CURDIR)/$(RELATIVE_PATH)/$(dir)/,,$(wildcard $(CURDIR)/$(RELATIVE_PATH)/$(dir)/*.c))  )
+file_arm7_src_s=  $(foreach dir,$(DIRS_ARM7_SRCLIB), $(subst $(CURDIR)/$(RELATIVE_PATH)/$(dir)/,,$(wildcard $(CURDIR)/$(RELATIVE_PATH)/$(dir)/*.s))  )
+file_arm7_src_SUPP=  $(foreach dir,$(DIRS_ARM7_SRCLIB), $(subst $(CURDIR)/$(RELATIVE_PATH)/$(dir)/,,$(wildcard $(CURDIR)/$(RELATIVE_PATH)/$(dir)/*.S))  )
+file_arm7_src_cpp=  $(foreach dir,$(DIRS_ARM7_SRCLIB), $(subst $(CURDIR)/$(RELATIVE_PATH)/$(dir)/,,$(wildcard $(CURDIR)/$(RELATIVE_PATH)/$(dir)/*.cpp))  )
+file_arm7_src_bin=  $(foreach dir,$(DIRS_ARM7_SRCLIB), $(subst $(CURDIR)/$(RELATIVE_PATH)/$(dir)/,,$(wildcard $(CURDIR)/$(RELATIVE_PATH)/$(dir)/*.bin))  )
 
 # Object Target
-objs_arm9:=	${file_arm9_src_bin:.bin=.o}	${file_arm9_src_c:.c=.o}	${file_arm9_src_s:.s=.o}	${file_arm9_src_SUPP:.S=.o}		${file_arm9_src_cpp:.cpp=.o}
-d_objs_arm9:=	${file_arm9_src_c:.c=.d}	${file_arm9_src_s:.s=.d}	${file_arm9_src_SUPP:.S=.d}	${file_arm9_src_cpp:.cpp=.d}
+objs_arm7:=	${file_arm7_src_bin:.bin=.o}	${file_arm7_src_c:.c=.o}	${file_arm7_src_s:.s=.o}	${file_arm7_src_SUPP:.S=.o}		${file_arm7_src_cpp:.cpp=.o}
+d_objs_arm7:=	${file_arm7_src_c:.c=.d}	${file_arm7_src_s:.s=.d}	${file_arm7_src_SUPP:.S=.d}	${file_arm7_src_cpp:.cpp=.d}
 
 #ARM9 specific definitions. -fno-common so we force initialized data to rodata
 MAPFILE = $(DIR_ARM9).map
-AS_ASFLAGS		=	$(GLOBAL_SHARED_FLAGS_9)	$(SPECIFIC_AS_COMPILER_FLAGS_9)		$(GLOBAL_AS_COMPILER_FLAGS)
-CC_FLAGS		=	-march=armv4t	-mthumb-interwork	-mfloat-abi=soft	-Ofast	-fno-short-enums	-marm	-Wall	-FPIC	-DNDS	-DARM7	-DNTRMODE	-fno-exceptions	-ffunction-sections	-fdata-sections	-DTGDSBinVersion='$(TOOLCHAIN_GENERIC_DS_VER)'
+AS_ASFLAGS		=	$(GLOBAL_AS_COMPILER_FLAGS)	$(GLOBAL_SHARED_FLAGS_7)	$(SPECIFIC_AS_COMPILER_FLAGS_7)	
+CC_FLAGS		=	-march=armv4t	-mthumb-interwork	-mfloat-abi=soft	-Os	-fno-short-enums	-marm	-Wall	-FPIC	-DNDS	-DARM7	-DNTRMODE	-fno-exceptions	-ffunction-sections	-fdata-sections	-DTGDSBinVersion='$(TOOLCHAIN_GENERIC_DS_VER)'
 CPP_FLAGS		=	$(CC_FLAGS)	-nostdinc++	-fno-rtti	
-BUILD			= 	$(BUILD_ARM9)
-DIR_SRC			=	$(DIRS_ARM9_SRCLIB)
+BUILD			= 	$(BUILD_ARM7)
+DIR_SRC			=	$(DIRS_ARM7_SRCLIB)
 ################################################################################################
 
 #Dont modify anything else if not necessary ..
-OBJECTS = 	$(objs_arm9)
+OBJECTS = 	$(objs_arm7)
 OBJDIR 	=	./$(BUILD)
 VPATH 	=	$(DIR_SRC)
-OBJPROG = 	$(addprefix $(OBJDIR)/, $(TARGET_LIBRARY_FILE_9))
+OBJPROG = 	$(addprefix $(OBJDIR)/, $(TARGET_LIBRARY_FILE_7))
 
 all: $(OBJDIR)|forceDelete	$(OBJPROG)
 #all: debug
 
 forceDelete:
-	-@rm -fr ./$(BUILD)/$(TARGET_LIBRARY_FILE_9)	$(TARGET_LIBRARY_PATH)/$(TARGET_LIBRARY_FILE_9)	
+	-@rm -fr ./$(BUILD)/$(TARGET_LIBRARY_FILE_7)	$(TARGET_LIBRARY_PATH)/$(TARGET_LIBRARY_FILE_7)	
 
 #Check $(OBJDIR) if not exists: create it
 $(OBJDIR):
 	@echo "Folder $(OBJDIR) does not exist. Creating"
 	mkdir -p $@
+	
 #rule for reading *.bin in /data folder, converts to .C source code, which then gets compiled as object so it can be linked later
 $(OBJDIR)/%.o : %.bin
 	-@echo 'trying to convert .BIN ($<) -> .C output: ${@:.o=.c} : arrayName: $(subst build/,,${@:.o=})'
 	$(BIN2C)	$<	${@:.o=.c}	$(subst build/,,${@:.o=})
 	$(CC)	$(CC_FLAGS)	-std=c99	$(DIRLIBS_HDR)	$(DIRLIBS_SRC)	$(DIRLIBS_PROHIBITED)	-o $@ -c ${@:.o=.c}
-
 
 #Do C Compile now!
 $(OBJDIR)/%.o : %.c
@@ -163,10 +163,10 @@ endif
 	
 ################################################################################################
 clean:
-	-@echo 'cleanup $(TARGET_LIBRARY_FILE_9)'
+	-@echo 'cleanup $(TARGET_LIBRARY_FILE_7)'
 ifeq ($(TGDS_ENV),windows)
-	-@rm -fr $(OBJDIR)	$(TARGET_LIBRARY_FILE_9)	$(MAPFILE)	$(TARGET_LIBRARY_PATH)/$(TARGET_LIBRARY_FILE_9)
+	-@rm -fr $(OBJDIR)	$(TARGET_LIBRARY_FILE_7)	$(MAPFILE)	$(TARGET_LIBRARY_PATH)/$(TARGET_LIBRARY_FILE_7)
 endif
 ifeq ($(TGDS_ENV),linux)
-	-@sudo rm -fr $(OBJDIR)	$(TARGET_LIBRARY_FILE_9)	$(MAPFILE)	$(TARGET_LIBRARY_PATH)/$(TARGET_LIBRARY_FILE_9)	
+	-@sudo rm -fr $(OBJDIR)	$(TARGET_LIBRARY_FILE_7)	$(MAPFILE)	$(TARGET_LIBRARY_PATH)/$(TARGET_LIBRARY_FILE_7)	
 endif

@@ -840,7 +840,7 @@ void glut2SolidCube(float x, float y, float z){
 
 //glutSolidSphere(radius, 16, 16);  -> NDS GX Replacement
 void drawSphere(float r, int lats, int longs) {	
-#ifdef ARM9
+	#ifdef ARM9
 	#include "Sphere008.h"
 	glScalef(r, r, r);
 	glCallListGX((u32*)&Sphere008); //comment out when running on NDSDisplayListUtils
@@ -865,7 +865,7 @@ void setupGLUTObjects(){
 	glNewList(DLSOLIDCUBE0_06F, GL_COMPILE);
 	{
 		float size = 0.06f;
-		GLfloat n[6][3] =
+		/*GLfloat n[6][3] =
 		{
 			{-1.0f, 0.0f, 0.0f},
 			{0.0f, 1.0f, 0.0f},
@@ -874,6 +874,7 @@ void setupGLUTObjects(){
 			{0.0f, 0.0f, 1.0f},
 			{0.0f, 0.0f, -1.0f}
 		};
+		*/
 		GLint faces[6][4] =
 		{
 			{0, 1, 2, 3},

@@ -21,6 +21,7 @@
 #include "biosTGDS.h"
 #include "fatfslayerTGDS.h"
 #include "posixHandleTGDS.h"
+#include "debugNocash.h"
 
 /*
 int main(int argc, char **argv) {
@@ -134,12 +135,13 @@ char *Memory(int length, int size) {
 
 /*----------------------------------------------------------------------------*/
 bool LZS_Decode(const char *filenameIn, const  char *filenameOut) {
-  unsigned char *pak_buffer, *raw_buffer;
-  unsigned int   pak_len, raw_len, header;
-  
+  char *pak_buffer, *raw_buffer;
+  int   pak_len, raw_len;
+  unsigned int header;
+
   //printf("- decompressing... '%s' ", filenameIn);
 
-  pak_buffer = Load(filenameIn, &pak_len, LZS_MINIM, LZS_MAXIM);
+  pak_buffer = (char *)Load((char*)filenameIn, &pak_len, LZS_MINIM, LZS_MAXIM);
 
   header = *pak_buffer;
   if (header != CMD_CODE_10) {
@@ -149,10 +151,10 @@ bool LZS_Decode(const char *filenameIn, const  char *filenameOut) {
   }
   
   raw_len = *(unsigned int *)pak_buffer >> 8;
-  raw_buffer = (unsigned char *) Memory(raw_len, sizeof(char));
+  raw_buffer = (char *) Memory(raw_len, sizeof(char));
   
   swiDecompressLZSSWram((void *)pak_buffer, (void *)raw_buffer);
-  Save(filenameOut, raw_buffer, raw_len);
+  Save((char*)filenameOut, raw_buffer, raw_len);
 
   TGDSARM9Free(raw_buffer);
   TGDSARM9Free(pak_buffer);
@@ -165,21 +167,21 @@ bool LZS_Decode(const char *filenameIn, const  char *filenameOut) {
 void LZS_Encode(const char *filenameIn, const char *filenameOut) {
   int mode = LZS_WBEST;
   unsigned char *raw_buffer, *pak_buffer, *new_buffer;
-  unsigned int   raw_len, pak_len, new_len;
+  int   raw_len, pak_len, new_len;
 
   lzs_vram = mode & 0xF;
 
   //printf("- compressing... '%s' ", filenameIn);
 
-  raw_buffer = Load(filenameIn, &raw_len, RAW_MINIM, RAW_MAXIM);
+  raw_buffer = (unsigned char *)Load((char*)filenameIn, &raw_len, RAW_MINIM, RAW_MAXIM);
   pak_buffer = NULL;
   pak_len = LZS_MAXIM + 1;
 
   if (!(mode & LZS_FAST)) {
     mode = mode & LZS_BEST ? 1 : 0;
-    new_buffer = LZS_Code(raw_buffer, raw_len, &new_len, mode);
+    new_buffer = (unsigned char *)LZS_Code(raw_buffer, raw_len, &new_len, mode);
   } else {
-    new_buffer = LZS_Fast(raw_buffer, raw_len, &new_len);
+    new_buffer = (unsigned char *)LZS_Fast(raw_buffer, raw_len, &new_len);
   }
   if (new_len < pak_len) {
     if (pak_buffer != NULL) TGDSARM9Free(pak_buffer);
@@ -187,7 +189,7 @@ void LZS_Encode(const char *filenameIn, const char *filenameOut) {
     pak_len = new_len;
   }
 
-  Save(filenameOut, pak_buffer, pak_len);
+  Save((char*)filenameOut, (char *)pak_buffer, pak_len);
 
   TGDSARM9Free(pak_buffer);
   TGDSARM9Free(raw_buffer);
@@ -197,11 +199,12 @@ void LZS_Encode(const char *filenameIn, const char *filenameOut) {
 
 /*----------------------------------------------------------------------------*/
 char *LZS_Code(unsigned char *raw_buffer, int raw_len, int *new_len, int best) {
-  unsigned char *pak_buffer, *pak, *raw, *raw_end, *flg;
+  unsigned char *pak_buffer, *pak, *raw, *raw_end, *flg=NULL;
   unsigned int   pak_len, len, pos, len_best, pos_best;
   unsigned int   len_next, pos_next, len_post, pos_post;
   unsigned char  mask;
-
+  (void)pos_post;
+  (void)pos_next;
 #define SEARCH(l,p) { \
   l = LZS_THRESHOLD;                                          \
                                                               \
@@ -269,12 +272,12 @@ char *LZS_Code(unsigned char *raw_buffer, int raw_len, int *new_len, int best) {
 
   *new_len = pak - pak_buffer;
 
-  return(pak_buffer);
+  return((char *)pak_buffer);
 }
 
 /*----------------------------------------------------------------------------*/
 char *LZS_Fast(unsigned char *raw_buffer, int raw_len, int *new_len) {
-  unsigned char *pak_buffer, *pak, *raw, *raw_end, *flg;
+  unsigned char *pak_buffer, *pak, *raw, *raw_end, *flg=NULL;
   unsigned int   pak_len, len, r, s, len_tmp, i;
   unsigned char  mask; 
 
@@ -338,7 +341,7 @@ char *LZS_Fast(unsigned char *raw_buffer, int raw_len, int *new_len) {
 
   *new_len = pak - pak_buffer;
 
-  return(pak_buffer);
+  return((char*)pak_buffer);
 }
 
 /*----------------------------------------------------------------------------*/

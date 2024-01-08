@@ -47,6 +47,7 @@ USA
 #include "limitsTGDS.h"
 #include "dldi.h"
 #include "busTGDS.h"
+#include "initNDSTGDS.h"
 
 uint32 get_lma_libend(){
 	return (uint32)(&__vma_stub_end__);	//linear memory top (start)
@@ -222,9 +223,8 @@ __attribute__ ((optnone))
 void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,											//ARM7
 						u32 ARM9MallocStartaddress, u32 ARM9MallocSize, u32 * mallocHandler, u32 * callocHandler, //ARM9
 						u32 * freeHandler, u32 * MallocFreeMemoryHandler, bool customAllocator, u32 dldiMemAddress,
-						u32 TargetARM7DLDIAddress
+						u32 TargetARM7DLDIAddress, bool isDLDITWLSD
 ) {
-	
 	if (_io_dldi_stub.ioInterface.features & FEATURE_SLOT_GBA) {
 		SetBusSLOT1ARM9SLOT2ARM7();
 	}
@@ -234,11 +234,12 @@ void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,									
 	
 	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-	fifomsg[0] = (uint32)ARM7MallocStartAddress;
-	fifomsg[1] = (uint32)ARM7MallocSize;
-	fifomsg[2] = (uint32)customAllocator;
-	fifomsg[3] = (uint32)dldiMemAddress;
-	fifomsg[4] = (uint32)TargetARM7DLDIAddress;
+	setValueSafe(&fifomsg[0], (uint32)ARM7MallocStartAddress);
+	setValueSafe(&fifomsg[1], (uint32)ARM7MallocSize);
+	setValueSafe(&fifomsg[2], (uint32)customAllocator);
+	setValueSafe(&fifomsg[3], (uint32)dldiMemAddress);
+	setValueSafe(&fifomsg[4], (uint32)TargetARM7DLDIAddress);
+	setValueSafe(&fifomsg[5], (uint32)isDLDITWLSD);
 	
 	setTGDSARM9MallocBaseAddress(ARM9MallocStartaddress);
 	if(customAllocator == true){
@@ -258,7 +259,7 @@ void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,									
 	TGDSInitLoopCount = 0;
 	setupLibUtils(); //ARM9 libUtils Setup
 	SendFIFOWords(TGDS_ARM7_SETUPMALLOCDLDI, 0xFF);	//ARM7 Setup: DLDI, and extensions if enabled through libutils
-	while(fifomsg[4] == TargetARM7DLDIAddress){
+	while(getValueSafe(&fifomsg[4]) == TargetARM7DLDIAddress){
 		if(TGDSInitLoopCount > (1048576 << 3) ){
 			u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
 			int stage = 1;
@@ -269,7 +270,7 @@ void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,									
 	
 	__dsimode = (bool)fifomsg[2];
 	TWLModeInternalSDAccess = fifomsg[3]; //ARM7 DLDI decides the current TGDS FS mode
-	bool dldiInitStatus = (bool)fifomsg[4]; //DLDI / SDIO init: true: OK, false: error
+	//bool dldiInitStatus = (bool)fifomsg[4]; //DLDI / SDIO init: true: OK, false: error
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -287,7 +288,8 @@ void setTGDSMemoryAllocator(struct AllocatorInstance * TGDSMemoryAllocator) {
 			TGDSMemoryAllocator->ARM7MallocStartAddress, TGDSMemoryAllocator->ARM7MallocSize,	//ARM7 Malloc
 			ARM9MallocStartaddress, getMaxRam(), NULL, NULL, NULL, NULL, customMallocARM9,		//ARM9 Malloc
 			TGDSMemoryAllocator->DLDI9StartAddress,
-			TGDSMemoryAllocator->TargetARM7DLDIAddress
+			TGDSMemoryAllocator->TargetARM7DLDIAddress,
+			TGDSMemoryAllocator->useTWLSDThroughDLDI
 		);
 	}
 	else{
@@ -298,7 +300,8 @@ void setTGDSMemoryAllocator(struct AllocatorInstance * TGDSMemoryAllocator) {
 			(u32 *)TGDSMemoryAllocator->CustomTGDSMalloc9, (u32 *)TGDSMemoryAllocator->CustomTGDSCalloc9, 
 			(u32 *)TGDSMemoryAllocator->CustomTGDSFree9, (u32 *)TGDSMemoryAllocator->CustomTGDSMallocFreeMemory9, customMallocARM9,
 			TGDSMemoryAllocator->DLDI9StartAddress,
-			TGDSMemoryAllocator->TargetARM7DLDIAddress
+			TGDSMemoryAllocator->TargetARM7DLDIAddress,
+			TGDSMemoryAllocator->useTWLSDThroughDLDI
 		);
 	}
 	customMallocARM9 = TGDSMemoryAllocator->customMalloc;
@@ -438,6 +441,7 @@ void _exit (int status){
 	u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
 	int stage = 6;
 	handleDSInitError(stage, (u32)fwNo);
+	while(1==1){}
 }
 
 int _kill (pid_t pid, int sig){
@@ -557,13 +561,13 @@ int _gettimeofday(struct timeval *tv, struct timezone *tz){
 	tv->tv_usec = 0L;
 	if (tz != NULL)
     {
-		const time_t timer = tv->tv_sec;
-		struct tm tm;
-		const long int save_timezone = 0; //__timezone;
-		const long int save_daylight = 0; //__daylight;
-		char *save_tzname[2];
-		save_tzname[0] = ""; //__tzname[0];
-		save_tzname[1] = "";//__tzname[1];
+		//const time_t timer = tv->tv_sec;
+		//struct tm tm;
+		//const long int save_timezone = 0; //__timezone;
+		//const long int save_daylight = 0; //__daylight;
+		//char *save_tzname[2];
+		//save_tzname[0] = ""; //__tzname[0];
+		//save_tzname[1] = "";//__tzname[1];
 		//tmp = localtime_r (&timer, &tm);
 		//tz->tz_minuteswest = 0; //__timezone / 60;
 		//tz->tz_dsttime = 0; //__daylight;

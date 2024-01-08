@@ -38,7 +38,7 @@
 #include <string.h>
 #include <math.h>
 #include "ndsDisplayListUtils.h"
-
+#include "biosTGDS.h"
 #if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 #include <typedefsTGDS.h>
 #include "dsregs.h"
@@ -77,13 +77,14 @@ bool InitGLOnlyOnce;
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
 #endif
 void glInit(int TGDSOpenGLDisplayListGXBufferSize){
+	glReset();
 	int i = 0;
 	//set mode 0, enable BG0 and set it to 3D
 	#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
@@ -94,10 +95,15 @@ void glInit(int TGDSOpenGLDisplayListGXBufferSize){
 
 	globalGLCtx.GXPolygonAttributes = (POLY_ALPHA(31) | POLY_CULL_NONE);
 	globalGLCtx.textureParamsValue = 0;
-	globalGLCtx.diffuseValue=0;
-	globalGLCtx.ambientValue=0;
-	globalGLCtx.specularValue=0;
-	globalGLCtx.emissionValue=0;
+	
+	globalGLCtx.lightDiffuseValue=RGB15(31,31,31); //By default, GL_DIFFUSE is (1.0, 1.0, 1.0, 1.0)
+	//globalGLCtx.lightAmbientValue=0;
+
+	globalGLCtx.materialDiffuseValue=0;
+	globalGLCtx.materialAmbientValue=0;
+
+	globalGLCtx.materialSpecularValue=0;
+	globalGLCtx.materialEmissionValue=0;
 	isInternalDisplayList = false;
 
 	//Start clean once. Because subsequent re-init calls will require array memory to be freed/reallocated
@@ -227,7 +233,7 @@ void glInit(int TGDSOpenGLDisplayListGXBufferSize){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -255,7 +261,7 @@ void glPushMatrix(){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -283,7 +289,7 @@ void glPopMatrix(sint32 index){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -311,7 +317,7 @@ void glRestoreMatrix(sint32 index){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -339,7 +345,7 @@ void glStoreMatrix(sint32 index){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -371,7 +377,7 @@ void glScalev(GLvector* v){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -403,7 +409,7 @@ void glTranslatev(GLvector* v){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -415,7 +421,7 @@ void glTranslatef32(int x, int y, int z) {
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -429,7 +435,7 @@ void glTranslate3f32(f32 x, f32 y, f32 z){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -465,7 +471,7 @@ void glLight(int id, rgb color, v10 x, v10 y, v10 z){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -493,7 +499,7 @@ void glNormal(uint32 normal){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -521,7 +527,7 @@ void glLoadIdentity(){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -549,7 +555,7 @@ void glMatrixMode(int mode){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -598,7 +604,7 @@ void emitGLShinnyness(float shinyValue){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -610,7 +616,7 @@ void glMaterialShinnyness(){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -638,7 +644,7 @@ void glPolyFmt(u32 GXPolygonAttributes){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -673,7 +679,7 @@ u16 defaultglClearDepth=0;
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -690,7 +696,7 @@ void glClearColor(uint8 red, uint8 green, uint8 blue){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -705,7 +711,7 @@ void glClearDepth(uint16 depth){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -729,7 +735,7 @@ void glClear( GLbitfield mask ){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -741,14 +747,13 @@ void glTranslatef(float x, float y, float z){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
 #endif
 void glEnable(int bits){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	if((bits&GL_CULL_FACE) == GL_CULL_FACE){
 		//faces are enabled through glCullFace() because culling occurs per polygon on GX
 	}
@@ -788,14 +793,13 @@ void glEnable(int bits){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
 #endif
 void glDisable(int bits){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	if((bits&GL_CULL_FACE) == GL_CULL_FACE){
 		u32 polyAttr = (globalGLCtx.GXPolygonAttributes & ~(POLY_CULL_BACK | POLY_CULL_FRONT | POLY_CULL_NONE));
 		globalGLCtx.GXPolygonAttributes = polyAttr | POLY_CULL_NONE;
@@ -836,7 +840,7 @@ void glDisable(int bits){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -865,7 +869,7 @@ void glFlush(){
 //OpenGL states this behaves the same as glFlush but also CPU waits for all commands to be executed by the GPU
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -885,7 +889,7 @@ A pointer to a 4x4 matrix stored in column-major order as 16 consecutive values.
 */
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -914,7 +918,7 @@ void glLoadMatrixf(const GLfloat *m){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -975,7 +979,7 @@ void glLoadMatrix4x4(m4x4 * m){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1027,7 +1031,7 @@ void glLoadMatrix4x3(m4x3* m){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1088,7 +1092,7 @@ void glMultMatrix4x4(m4x4* m){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1170,7 +1174,7 @@ void glMultMatrix4x3(m4x3* m){
 //	based on 512 degree circle
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1233,7 +1237,7 @@ void glRotateZi(int angle){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1297,7 +1301,7 @@ void glRotateYi(int angle){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1362,7 +1366,7 @@ void glRotateXi(int angle){
 //	rotations wrapped in float...mainly for testing
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1374,7 +1378,7 @@ void glRotateX(float angle){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1386,7 +1390,7 @@ void glRotateY(float angle){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1398,7 +1402,7 @@ void glRotateZ(float angle){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1419,7 +1423,7 @@ void glRotatef(int angle, float x, float y, float z){
 // Fixed point look at function, it appears to work as expected although testing is recomended
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1498,7 +1502,7 @@ void gluLookAtf32(f32 eyex, f32 eyey, f32 eyez, f32 lookAtx, f32 lookAty, f32 lo
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1514,7 +1518,7 @@ void gluLookAt(float eyex, float eyey, float eyez, float lookAtx, float lookAty,
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1583,7 +1587,7 @@ void gluFrustumf32(f32 left, f32 right, f32 bottom, f32 top, f32 nearVal, f32 fa
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1595,7 +1599,7 @@ void glOrtho(float left, float right, float bottom, float top, float nearVal, fl
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1663,7 +1667,7 @@ void glOrthof32(f32 left, f32 right, f32 bottom, f32 top, f32 nearVal, f32 farVa
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1676,7 +1680,7 @@ void gluFrustum(float left, float right, float bottom, float top, float nearVal,
 //	Fixed point perspective setting
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1696,7 +1700,7 @@ void gluPerspectivef32(int fovy, f32 aspect, f32 zNear, f32 zFar){
 //  glu wrapper for floating point
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1712,7 +1716,7 @@ void gluPerspective(float fovy, float aspect, float zNear, float zFar){
 //The default specular exponent for both front-facing and back-facing materials is 0.
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1734,14 +1738,13 @@ void glMaterialf(
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
 #endif
 void glResetMatrixStack(){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
   // stack overflow ack ?
   GFX_STATUS |= 1 << 15;
 
@@ -1756,7 +1759,7 @@ void glResetMatrixStack(){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1770,7 +1773,7 @@ void glSetOutlineColor(int id, rgb color){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1787,7 +1790,7 @@ void glSetToonTable(uint16 *table){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1804,7 +1807,7 @@ void glSetToonTableRange(int start, int end, rgb color){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1823,7 +1826,8 @@ void glReset(){
   
 	GFX_TEX_FORMAT = globalGLCtx.textureParamsValue = 0;
 	GFX_POLYGON_ATTR = 0;
-  
+	glResetTextures();
+
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 
@@ -1837,19 +1841,37 @@ void glReset(){
 /////////////////////////////////////////////////////////////////////
 // Texture globals
 
-uint32 textures[MAX_TEXTURES];
-uint32 activeTexture = 0;
+//These 2 are-will be used and replaced for every existing TGDS project using custom texture index arrays
+uint32 textures[MAX_TEXTURES]; //internal index per GFX_TEX_FORMAT register
+struct GLtextureProperties textureSizePixelCoords[MAX_TEXTURES]; //OpenGL usermode
+
+uint32 activeTexture = 0; //texture index "name" in VideoGL terms. Same index points to internal index per GFX_TEX_FORMAT register, held currently inside textureSizePixelCoords[newestTextureIndex written to activeTexture] structure
 uint32* nextBlock = (uint32*)0x06800000;
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
+int getTextureNameFromIndex(int index){
+	return textureSizePixelCoords[index].textureIndex;
+}
+
+int currentInternalTextureName = 0;
+
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
 #endif
 void glResetTextures(void){
+	currentInternalTextureName = 0;
 	activeTexture = 0;
 	nextBlock = (uint32*)0x06800000;
 }
@@ -1860,23 +1882,21 @@ void glResetTextures(void){
 //  Returns 1 if succesful and 0 if out of texture names
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
 #endif
 int glGenTextures(int n, int *names){
-	static int name = 0;
-
 	int index = 0;
 
 	for(index = 0; index < n; index++)
 	{
-		if(name >= MAX_TEXTURES)
+		if(currentInternalTextureName >= MAX_TEXTURES)
 			return 0;
 		else
-			names[index] = name++;
+			names[index] = currentInternalTextureName++;
 	}
 
 	return 1;
@@ -1887,7 +1907,7 @@ int glGenTextures(int n, int *names){
 //	is ignored as all DS textures are 2D
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1908,30 +1928,28 @@ void glBindTexture(int target, int name){
 	}
 	else{
 		#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
-		GFX_TEX_FORMAT = globalGLCtx.textureParamsValue = textures[name];
+		GFX_TEX_FORMAT = textures[name];
 		#endif
 	}
 	activeTexture = name;
 }
 
-// glTexParameter although named the same 
-//	as its gl counterpart it is not compatible
-//	Effort may be made in the future to make it so.
+// GX glTexParameter, internal use. 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
 #endif
-void glTexParameter(uint8 sizeX, uint8 sizeY, uint32* addr, uint8 mode, uint32 param){
-	textures[activeTexture] = param | (sizeX << 20) | (sizeY << 23) | (((uint32)addr >> 3) & 0xFFFF) | (mode << 26);
+void glTexParmInternal(uint8 sizeX, uint8 sizeY, uint32* addr, uint8 mode, uint32 param, int texIndex){
+	textures[texIndex] = param | (sizeX << 20) | (sizeY << 23) | (((uint32)addr >> 3) & 0xFFFF) | (mode << 26);
 }
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -1962,7 +1980,7 @@ uint16* vramGetBank(uint16 *addr){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -2001,7 +2019,7 @@ int vramIsTextureBank(uint16 *addr){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -2035,16 +2053,15 @@ uint32* getNextTextureSlot(int size){
 //	type is simply the texture type (GL_RGB, GL_RGB8 ect...)
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
 #endif
 int glTexImage2D(int target, int empty1, int type, int sizeX, int sizeY, int empty2, int param, uint8* texture){
-	uint16 alpha = 0;
+	//uint16 alpha = 0;
 	uint32 size = 0;
-	uint16 palette = 0;
 	uint32* addr;
 	uint32 vramTemp;
 	
@@ -2052,7 +2069,7 @@ int glTexImage2D(int target, int empty1, int type, int sizeX, int sizeY, int emp
 	
 	if(type == GL_RGB)
 	{
-		alpha = (1 << 15);
+		//alpha = (1 << 15);
 		type--;
 	}
 	
@@ -2064,14 +2081,14 @@ int glTexImage2D(int target, int empty1, int type, int sizeX, int sizeY, int emp
 		break;
 	case GL_RGB4:
 		size = size >> 2;
-		palette = 4 * 2;
+		//palette = 4 * 2;
 		break;
 	case GL_RGB16:
 		size = size >> 1;
-		palette = 16 * 2;
+		//palette = 16 * 2;
 		break;
 	case GL_RGB256:
-		palette = 256 * 2;
+		//palette = 256 * 2;
 		break;
 	default:
 		break;
@@ -2082,11 +2099,15 @@ int glTexImage2D(int target, int empty1, int type, int sizeX, int sizeY, int emp
 	if(!addr)
 		return 0;
 
-	glTexParameter(sizeX, sizeY, addr, type, param);
-	globalGLCtx.textureParamsValue = (sizeX << 20) | (sizeY << 23) | ((type == GL_RGB ? GL_RGBA : type ) << 26);
+	glTexParmInternal(sizeX, sizeY, addr, type, param, target);
+	
+	//removed
+	/*
+	u32 GFX_TEX_FORMATName = (sizeX << 20) | (sizeY << 23) | ((type == GL_RGB ? GL_RGBA : type ) << 26);
 	#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
-	GFX_TEX_FORMAT = globalGLCtx.textureParamsValue;
+	GFX_TEX_FORMAT = GFX_TEX_FORMATName;
 	#endif
+	*/
 	//unlock texture memory
 	#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 	vramTemp = VRAM_CR; //vramTemp = vramSetMainBanks(VRAM_A_LCD,VRAM_B_LCD,VRAM_C_LCD,VRAM_D_LCD);
@@ -2121,7 +2142,7 @@ int glTexImage2D(int target, int empty1, int type, int sizeX, int sizeY, int emp
 //integer x , y vertex coords in v16 format
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -2134,7 +2155,7 @@ void glVertex2i(int x, int y) {
 //float x , y vertex coords in v16 format
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -2147,7 +2168,7 @@ void glVertex2f(float x, float y) {
 //float x , y , z vertex coords in v16 format
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -2160,7 +2181,7 @@ void glVertex3f(GLfloat x, GLfloat y, GLfloat z){
 //int x , y , z vertex coords in v16 format
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -2172,7 +2193,7 @@ void glVertex3i(GLint x, GLint y, GLint z){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -2185,7 +2206,7 @@ void glShadeModel(GLenum mode){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -2199,23 +2220,23 @@ void glColor3f(float red, float green, float blue){
 		//Handle light vectors: Light depth is 10bit. Which means only glColor3f(); can colour normals on polygons. glColor3b(); can't. Also don't forget to enable at least one light per scene or colour over normals won't reflect in the light vector.
 		u32 lightsEnabled = globalGLCtx.GXPolygonAttributes;
 		if((lightsEnabled&GX_LIGHT0) == GX_LIGHT0){
-			glLight(0, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), inttov10(31), inttov10(31), inttov10(31));
+			glLight(0, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), globalGLCtx.GL_POSITION_LIGHT_VECTOR_X, globalGLCtx.GL_POSITION_LIGHT_VECTOR_Y, globalGLCtx.GL_POSITION_LIGHT_VECTOR_Z);
 		}
 		if((lightsEnabled&GX_LIGHT1) == GX_LIGHT1){
-			glLight(1, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), inttov10(31), inttov10(31), inttov10(31));
+			glLight(1, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), globalGLCtx.GL_POSITION_LIGHT_VECTOR_X, globalGLCtx.GL_POSITION_LIGHT_VECTOR_Y, globalGLCtx.GL_POSITION_LIGHT_VECTOR_Z);
 		}
 		if((lightsEnabled&GX_LIGHT2) == GX_LIGHT2){
-			glLight(2, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), inttov10(31), inttov10(31), inttov10(31));
+			glLight(2, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), globalGLCtx.GL_POSITION_LIGHT_VECTOR_X, globalGLCtx.GL_POSITION_LIGHT_VECTOR_Y, globalGLCtx.GL_POSITION_LIGHT_VECTOR_Z);
 		}
 		if((lightsEnabled&GX_LIGHT3) == GX_LIGHT3){
-			glLight(3, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), inttov10(31), inttov10(31), inttov10(31));
+			glLight(3, RGB15(floatto12d3(red)<<1,floatto12d3(green)<<1,floatto12d3(blue)<<1), globalGLCtx.GL_POSITION_LIGHT_VECTOR_X, globalGLCtx.GL_POSITION_LIGHT_VECTOR_Y, globalGLCtx.GL_POSITION_LIGHT_VECTOR_Z);
 		}
 	}
 }
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -2230,7 +2251,7 @@ void glColor3fv(const GLfloat * v){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -2246,7 +2267,7 @@ void glColor4fv(const GLfloat *v){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -2259,7 +2280,7 @@ void glTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 //glTexSubImage*() == glTexSubImage3D
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -2272,7 +2293,7 @@ void glTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset, G
 //glCopyTexImage*() == glCopyTexImage2D
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -2285,7 +2306,7 @@ void glCopyTexImage2D(GLenum target, GLint level, GLenum internalFormat, GLint x
 //glCopyTexSubImage*() == glCopyTexSubImage3D
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -2317,7 +2338,7 @@ void glCopyTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffse
 //glPrioritizeTextures()
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -2330,7 +2351,7 @@ void glPrioritizeTextures (GLsizei n, const GLuint *textures, const GLclampf *pr
 #if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -2418,23 +2439,7 @@ void glCallListGX(const u32* list) {
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__((optnone))
-#endif
-#endif
-int getTextureBaseFromTextureSlot(int textureSlot){
-	u32 textureDescriptor = textures[textureSlot];
-	u8 baseTexSize1 = ((textureDescriptor >> 20) & TEXTURE_SIZE_1024);
-	u8 baseTexSize2 = ((textureDescriptor >> 23) & TEXTURE_SIZE_1024);
-	int res = (baseTexSize1*baseTexSize2*7);
-	return ((res != 0) ? res : 8);
-}
-
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2449,34 +2454,25 @@ void glTexCoord2fv(
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
 #endif
 #endif
 void glTexCoord2f(GLfloat s, GLfloat t){
-	int texBase = getTextureBaseFromTextureSlot(activeTexture);
-	if(s > 0.0){
-		s = s + (texBase);
-	}
-	if(t > 0.0){
-		t = t + (texBase);
-	}
+	struct GLtextureProperties * curTextureProperties = &textureSizePixelCoords[(int)activeTexture];
+	s = s * (curTextureProperties->textureSizeWidth);
+	t = t * (curTextureProperties->textureSizeHeight);
 	glTexCoord2t16(floattot16(t), floattot16(s));
 }
 
 void glTexCoord2i(GLint s, GLint t){
-	int texBase = getTextureBaseFromTextureSlot(activeTexture);
-	if(s > 0.0){
-		s = s + (texBase);
-	}
-	if(t > 0.0){
-		t = t + (texBase);
-	}
+	struct GLtextureProperties * curTextureProperties = &textureSizePixelCoords[(int)activeTexture];
+	s = s * (curTextureProperties->textureSizeWidth);
+	t = t * (curTextureProperties->textureSizeHeight);
 	glTexCoord2t16(inttot16(t), inttot16(s));
 }
-
 
 //////////////////////////////////////////////////////////////////////
 //glTexCoord specifies texture coordinates in one, two, three, or four dimensions. 
@@ -2488,7 +2484,7 @@ void glTexCoord2i(GLint s, GLint t){
 //Note: uv == ((u << 16) | (v & 0xFFFF))
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2516,7 +2512,7 @@ void glTexCoord1i(uint32 uv){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2549,7 +2545,7 @@ void glTexCoord2t16(t16 u, t16 v){
 //3  Quadliteral Strips      ;4+(N-1)*2 vertices per N quads
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2577,7 +2573,7 @@ void glBegin(int primitiveType){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2616,7 +2612,7 @@ u16 lastVertexColor = 0;
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2671,7 +2667,7 @@ void glColor3b(uint8 red, uint8 green, uint8 blue){
 //glNormal: Sets the current normal vector
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2687,7 +2683,7 @@ void glNormal3b(
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2703,7 +2699,7 @@ void glNormal3d(
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2735,7 +2731,7 @@ void glNormal3f(
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2767,7 +2763,7 @@ void glNormal3v10(
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2783,7 +2779,7 @@ void glNormal3s(
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2815,7 +2811,7 @@ void glNormal3i(
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2845,7 +2841,7 @@ void glVertex3v16(v16 x, v16 y, v16 z){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2874,7 +2870,7 @@ void glVertex3v10(v10 x, v10 y, v10 z){
 //Parameters. x. Specifies the x-coordinate of a vertex. y. Specifies the y-coordinate of a vertex
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2912,7 +2908,7 @@ void glVertex2v16(v16 x, v16 y){
 //Usage: https://bitbucket.org/Coto88/toolchaingenericds-unittest/src example
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2947,7 +2943,7 @@ u32 SingleUnpackedGXCommand_DL_Binary[PHYS_GXFIFO_INTERNAL_SIZE];
 
 #if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2961,7 +2957,7 @@ u32 * getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr(){
 //glGenLists returns the first list name in a range of the length you pass to glGenLists.
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -2998,7 +2994,7 @@ GLuint glGenLists(GLsizei range){
 //Internally, if a new base is set, a pointer to a new section is updated
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -3025,7 +3021,7 @@ void glListBase(GLuint base){
 //A name returned by glGenLists, but not yet associated with a display list by calling glNewList, is not the name of a display list.
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -3050,7 +3046,7 @@ GLboolean glIsList(GLuint list){
 //mode:Specifies the compilation mode, which can be GL_COMPILE or GL_COMPILE_AND_EXECUTE.
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -3082,7 +3078,7 @@ void glNewList(GLuint list, GLenum mode){
 //If a display list with name list already exists, it is replaced only when glEndList is called.
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -3124,7 +3120,7 @@ Specifies the integer name of the display list to be executed.
 */
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -3504,14 +3500,13 @@ Specifies the address of an array of name offsets in the display list. The point
 */
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
 #endif
 #endif
 void glCallLists(GLsizei n, GLenum type, const void * lists){
-	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	int offsetSize = -1;
 	GLubyte * u8array = NULL;
 	u16 * u16array = NULL;
@@ -3602,7 +3597,7 @@ void glCallLists(GLsizei n, GLenum type, const void * lists){
 //Note: It's assumed DisplayLists are at the end of the physical DL GX Binary. //todo: maybe have 4K of physical DL for direct OGL cmds, and maybe the other 4K for display list OGL cmds
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__((optnone))
@@ -3612,7 +3607,6 @@ void glDeleteLists(GLuint list, GLsizei range){
 	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	int lowestCurDLInCompiledDLOffset = 0;
 	int i = 0;
-	u32 * InternalDL = getInternalUnpackedDisplayListBuffer_OpenGLDisplayListBaseAddr();
 	if(list >= 1){
 		list--; //assign current InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr (new) to a List
 	}
@@ -3639,7 +3633,7 @@ void glDeleteLists(GLuint list, GLsizei range){
 
 //////////////////////////////////////////////////////////// Extended Display List OpenGL 1.x end 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -3647,65 +3641,75 @@ __attribute__ ((optnone))
 void glLightfv (GLenum light, GLenum pname, const GLfloat *params){
 	struct TGDSOGL_DisplayListContext * Inst = (isInternalDisplayList == true) ? TGDSOGL_DisplayListContextInternal : TGDSOGL_DisplayListContextUser;
 	struct TGDSOGL_LogicalDisplayList * TGDSOGL_LogicalDisplayListSetInst = &Inst->TGDSOGL_LogicalDisplayListSet[Inst->CurrentSpawnOGLDisplayList];
-	//El parámetro params contiene cuatro valores de punto flotante que especifican la intensidad RGBA ambiente de la luz. Los valores de punto flotante se asignan directamente. No se fijan valores enteros ni de punto flotante. La intensidad de luz ambiente predeterminada es (0,0, 0,0, 0,0, 1,0).
-	if(pname == GL_AMBIENT){
-		float rAmbient = params[0];
-		float gAmbient = params[1];
-		float bAmbient = params[2];
-		//float aAmbient = params[3];
-		globalGLCtx.ambientValue = ((floattov10(rAmbient) & 0x1F) << 16) | ((floattov10(gAmbient) & 0x1F) << 21) | ((floattov10(bAmbient) & 0x1F) << 26);
-		if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
-			u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
-			if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
-				//40004C0h 30h 1  4   DIF_AMB - MaterialColor0 - Diffuse/Ambient Reflect. (W)
-				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)getFIFO_DIFFUSE_AMBIENT; //Unpacked Command format
-				ptrVal++;
-				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = ((u32)( ((globalGLCtx.diffuseValue & 0xFFFF) << 0) | ((globalGLCtx.ambientValue & 0xFFFF) << 16) )); ptrVal++;
-				Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = ptrVal;
-			}
-		}
-		else{
-			#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
-			GFX_DIFFUSE_AMBIENT = (u32)( ((globalGLCtx.diffuseValue & 0xFFFF) << 0) | ((globalGLCtx.ambientValue & 0xFFFF) << 16) );
-			#endif
-		}
+	
+	int gx_light = -1;
+	switch(light){
+		case(GL_LIGHT0):{
+			gx_light = 0;
+		}break;
+		case(GL_LIGHT1):{
+			gx_light = 1;
+		}break;
+		case(GL_LIGHT2):{
+			gx_light = 2;
+		}break;
+		case(GL_LIGHT3):{
+			gx_light = 3;
+		}break;
+		default:{
+			return;
+		}break;
 	}
-	//El parámetro params contiene cuatro valores de punto flotante que especifican la intensidad RGBA difusa de la luz. Los valores de punto flotante se asignan directamente. No se fijan valores enteros ni de punto flotante. La intensidad difusa predeterminada es (0,0, 0,0, 0,0, 1,0) para todas las luces que no sean cero. La intensidad difusa predeterminada de la luz cero es (1,0, 1,0, 1,0, 1,0).
+	
+	//El par�metro params contiene cuatro valores de punto flotante que especifican la intensidad RGBA ambiente de la luz. Los valores de punto flotante se asignan directamente. No se fijan valores enteros ni de punto flotante. La intensidad de luz ambiente predeterminada es (0,0, 0,0, 0,0, 1,0).
+	if(pname == GL_AMBIENT){
+		//GX hardware does not support any ambient parameters for light. Only through glMaterialFv
+		//globalGLCtx.lightAmbientValue = 0;
+	}
+
+	//https://www.glprogramming.com/red/chapter05.html
+	//The GL_DIFFUSE parameter probably most closely correlates with what you naturally think of as "the color of a light." 
+	//It defines the RGBA color of the diffuse light that a particular light source adds to a scene. By default, GL_DIFFUSE is (1.0, 1.0, 1.0, 1.0) for GL_LIGHT0, 
+	//which produces a bright, white light as shown in the left side of "Plate 13" in Appendix I. 
+	//The default value for any other light (GL_LIGHT1, ... , GL_LIGHT7) is (0.0, 0.0, 0.0, 0.0).
 	if(pname == GL_DIFFUSE){
 		float rDiffuse = params[0];
 		float gDiffuse = params[1];
 		float bDiffuse = params[2];
 		//float aDiffuse = params[3];
 		u8 setVtxColor = 1; //15    Set Vertex Color (0=No, 1=Set Diffuse Reflection Color as Vertex Color)
-		globalGLCtx.diffuseValue = ((floattov10(rDiffuse) & 0x1F) << 0) | ((floattov10(gDiffuse) & 0x1F) << 5) | ((floattov10(bDiffuse) & 0x1F) << 10) | ((setVtxColor & 0x1) << 15);
+		globalGLCtx.lightDiffuseValue = (u16)(RGB15((int)rDiffuse, (int)gDiffuse, (int)bDiffuse) | ((setVtxColor & 0x1) << 15));
+		gx_light = (gx_light & 3) << 30;
 		if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 			u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 			if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
-				//40004C0h 30h 1  4   DIF_AMB - MaterialColor0 - Diffuse/Ambient Reflect. (W)
-				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)getFIFO_DIFFUSE_AMBIENT; //Unpacked Command format
+				//40004CCh 33h 1  1   LIGHT_COLOR - Set Light Color (W)
+				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)getFIFO_LIGHT_COLOR; 
 				ptrVal++;
-				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)(( ((globalGLCtx.diffuseValue & 0xFFFF) << 0) | ((globalGLCtx.ambientValue & 0xFFFF) << 16) )); ptrVal++;
+				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)(gx_light | globalGLCtx.lightDiffuseValue); ptrVal++;
 				Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = ptrVal;
 			}
 		}
 		else{
 			#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
-			GFX_DIFFUSE_AMBIENT = (u32)( ((globalGLCtx.diffuseValue & 0xFFFF) << 0) | ((globalGLCtx.ambientValue & 0xFFFF) << 16) );
+			GFX_LIGHT_COLOR = gx_light | globalGLCtx.lightDiffuseValue;
 			#endif
 		}
 	}
-	//El parámetro params contiene cuatro valores de punto flotante que especifican la posición de la luz en coordenadas de objeto homogéneas. Los valores enteros y de punto flotante se asignan directamente. No se fijan valores enteros ni de punto flotante.
-	//La posición se transforma mediante la matriz modelview cuando se llama a glLightfv (como si fuera un punto) y se almacena en coordenadas oculares. Si el componente w de la posición es 0,0, la luz se trata como una fuente direccional. Los cálculos de iluminación difusa y especular toman la dirección de la luz, pero no su posición real, en cuenta y la atenuación está deshabilitada. De lo contrario, los cálculos de iluminación difusa y especular se basan en la ubicación real de la luz en coordenadas oculares y se habilita la atenuación. La posición predeterminada es (0,0,1,0); por lo tanto, la fuente de luz predeterminada es direccional, paralela a y en la dirección del eje -z .
+	//El par�metro params contiene cuatro valores de punto flotante que especifican la posici�n de la luz en coordenadas de objeto homog�neas. Los valores enteros y de punto flotante se asignan directamente. No se fijan valores enteros ni de punto flotante.
+	//La posici�n se transforma mediante la matriz modelview cuando se llama a glLightfv (como si fuera un punto) y se almacena en coordenadas oculares. Si el componente w de la posici�n es 0,0, la luz se trata como una fuente direccional. Los c�lculos de iluminaci�n difusa y especular toman la direcci�n de la luz, pero no su posici�n real, en cuenta y la atenuaci�n est� deshabilitada. De lo contrario, los c�lculos de iluminaci�n difusa y especular se basan en la ubicaci�n real de la luz en coordenadas oculares y se habilita la atenuaci�n. La posici�n predeterminada es (0,0,1,0); por lo tanto, la fuente de luz predeterminada es direccional, paralela a y en la direcci�n del eje -z .
 	if(pname == GL_POSITION){
 		int id = ((((int)light) & 3) << 30);
-		float x = params[0];
-		float y = params[1];
-		float z = params[2];
-		u32 writeVal = id | ((floattov10(z) & 0x3FF) << 20) | ((floattov10(y) & 0x3FF) << 10) | (floattov10(x) & 0x3FF);
+		v10 x = floattov10((float)params[0]);
+		v10 y = floattov10((float)params[1]);
+		v10 z = floattov10((float)params[2]);
+		u32 writeVal = id | ((z & 0x3FF) << 20) | ((y & 0x3FF) << 10) | (x & 0x3FF);
+		globalGLCtx.GL_POSITION_LIGHT_VECTOR_X = x;
+		globalGLCtx.GL_POSITION_LIGHT_VECTOR_Y = y;
+		globalGLCtx.GL_POSITION_LIGHT_VECTOR_Z = z;
 		if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 			u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 			if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
-				id = (id & 3) << 30;
 				//40004C8h 32h 1  6   LIGHT_VECTOR - Set Light's Directional Vector (W)
 				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)getFIFO_LIGHT_VECTOR; //Unpacked Command format
 				ptrVal++;
@@ -3719,29 +3723,9 @@ void glLightfv (GLenum light, GLenum pname, const GLfloat *params){
 			#endif
 		}
 	}
-	//El parámetro params contiene cuatro valores de punto flotante que especifican la intensidad RGBA especular de la luz. Los valores de punto flotante se asignan directamente. No se fijan valores enteros ni de punto flotante. La intensidad especular predeterminada es (0,0, 0,0, 0,0, 1,0) para todas las luces que no sean cero. La intensidad especular predeterminada del cero claro es (1,0, 1,0, 1,0, 1,0).
+	//El par�metro params contiene cuatro valores de punto flotante que especifican la intensidad RGBA especular de la luz. Los valores de punto flotante se asignan directamente. No se fijan valores enteros ni de punto flotante. La intensidad especular predeterminada es (0,0, 0,0, 0,0, 1,0) para todas las luces que no sean cero. La intensidad especular predeterminada del cero claro es (1,0, 1,0, 1,0, 1,0).
 	if(pname == GL_SPECULAR){
-		float rSpecular = params[0];
-		float gSpecular = params[1];
-		float bSpecular = params[2];
-		//float aSpecular = params[3];
-		u8 useSpecularReflectionShininessTable = 0; //15    Specular Reflection Shininess Table (0=Disable, 1=Enable)
-		globalGLCtx.specularValue = ((floattov10(rSpecular) & 0x1F) << 16) | ((floattov10(gSpecular) & 0x1F) << 21) | ((floattov10(bSpecular) & 0x1F) << 26) | ((useSpecularReflectionShininessTable & 0x1) << 15);
-		if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
-			u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
-			if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
-				//40004C4h 31h 1  4   SPE_EMI - MaterialColor1 - Specular Ref. & Emission (W)
-				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)getFIFO_SPECULAR_EMISSION; //Unpacked Command format
-				ptrVal++;
-				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)((u32 )( ((globalGLCtx.specularValue & 0xFFFF) << 0) | ((globalGLCtx.emissionValue & 0xFFFF) << 16) )); ptrVal++;
-				Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = ptrVal;
-			}
-		}
-		else{
-			#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
-			GFX_SPECULAR_EMISSION = (u32 )( ((globalGLCtx.specularValue & 0xFFFF) << 0) | ((globalGLCtx.emissionValue & 0xFFFF) << 16) );
-			#endif
-		}
+		//GX hardware does not support any specular parameters for light. Only through glMaterialFv
 	}
 	
 	//Unimplemented:
@@ -3754,7 +3738,7 @@ void glLightfv (GLenum light, GLenum pname, const GLfloat *params){
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -3794,7 +3778,6 @@ void glMaterialfv (GLenum face, GLenum pname, const GLfloat *params){
 			float bEmission = params[2];
 			//float aEmission = params[3]; //GX can't do alpha emission through GX cmds
 			emissionValueOut = RGB15(((int)rEmission),((int)gEmission),((int)bEmission));
-			//glMaterialGX((int)pname, colOut, Inst);
 		}break;
 		default:{
 			errorStatus = GL_INVALID_ENUM;
@@ -3802,8 +3785,8 @@ void glMaterialfv (GLenum face, GLenum pname, const GLfloat *params){
 		}break;
 	}
 	{
-		u32 diffuse_ambient = ((globalGLCtx.ambientValue << 16) | globalGLCtx.diffuseValue);
-		u32 specular_emission = ((globalGLCtx.emissionValue << 16) | globalGLCtx.specularValue);
+		u32 diffuse_ambient = ((globalGLCtx.materialAmbientValue << 16) | globalGLCtx.materialDiffuseValue);
+		u32 specular_emission = ((globalGLCtx.materialEmissionValue << 16) | globalGLCtx.materialSpecularValue);
 		switch(pname){
 			case GL_AMBIENT:{
 				diffuse_ambient = (emissionValueOut << 16) | (diffuse_ambient & 0xFFFF); //high part = ambient
@@ -3826,31 +3809,34 @@ void glMaterialfv (GLenum face, GLenum pname, const GLfloat *params){
 		}
 
 		//Update GX properties
-		globalGLCtx.ambientValue = (diffuse_ambient >> 16);
-		globalGLCtx.diffuseValue = (diffuse_ambient&0xFFFF);
-		globalGLCtx.emissionValue = (specular_emission >> 16);
-		globalGLCtx.specularValue = (specular_emission&0xFFFF);
-
+		globalGLCtx.materialAmbientValue = (diffuse_ambient >> 16);
+		globalGLCtx.materialDiffuseValue = (diffuse_ambient&0xFFFF);
+		globalGLCtx.materialEmissionValue = (specular_emission >> 16);
+		globalGLCtx.materialSpecularValue = (specular_emission&0xFFFF);
+		
+		u8 useSpecularReflectionShininessTable = 1; //15    Specular Reflection Shininess Table (0=Disable, 1=Enable)
+		u8 useReflectionColorAsVertexColor = 1; //15    Set Vertex Color (0=No, 1=Set Diffuse Reflection Color as Vertex Color
+		
 		if(TGDSOGL_LogicalDisplayListSetInst->isAnOpenGLExtendedDisplayListCallList == true){
 			u32 ptrVal = Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr;
 			if(((int)(ptrVal+1) < (int)(InternalUnpackedGX_DL_workSize)) ){
 				//40004C0h 30h 1  4   DIF_AMB - MaterialColor0 - Diffuse/Ambient Reflect. (W)
 				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)getFIFO_DIFFUSE_AMBIENT; //Unpacked Command format
 				ptrVal++;
-				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)(diffuse_ambient); ptrVal++;
+				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)(diffuse_ambient| ((useReflectionColorAsVertexColor & 0x1) << 15)); ptrVal++;
 				
 				//40004C4h 31h 1  4   SPE_EMI - MaterialColor1 - Specular Ref. & Emission (W)
-				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)getFIFO_SPECULAR_EMISSION; //Unpacked Command format
+				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)(getFIFO_SPECULAR_EMISSION); //Unpacked Command format
 				ptrVal++;
-				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)(specular_emission); ptrVal++;
+				Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)(specular_emission | ((useSpecularReflectionShininessTable & 0x1) << 15)); ptrVal++;
 				
 				Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = ptrVal;
 			}
 		}
 		else{
 			#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
-			GFX_DIFFUSE_AMBIENT = diffuse_ambient;
-			GFX_SPECULAR_EMISSION = specular_emission;
+			GFX_DIFFUSE_AMBIENT = (u32)(diffuse_ambient| ((useReflectionColorAsVertexColor & 0x1) << 15));
+			GFX_SPECULAR_EMISSION = (u32)(specular_emission | ((useSpecularReflectionShininessTable & 0x1) << 15));
 			#endif
 		}
 	}
@@ -3858,7 +3844,7 @@ void glMaterialfv (GLenum face, GLenum pname, const GLfloat *params){
 
 //glNormal(v): A pointer to an array of three elements: the x, y, and z coordinates of the new current normal.
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -3868,7 +3854,7 @@ void glNormal3dv(const GLdouble *v){
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -3879,7 +3865,7 @@ void glNormal3fv(const GLfloat *v){
 
 //v: A pointer to an array of three elements. The elements are the x, y, and z coordinates of a vertex.
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -3889,7 +3875,7 @@ void glVertex3fv(const GLfloat *v){
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -3902,7 +3888,7 @@ void glVertex3dv(const GLdouble *v){
 //target: The target texture, which must be either GL_TEXTURE_1D or GL_TEXTURE_2D.
 //pname: The symbolic name of a single valued texture parameter. The following symbols are accepted in pname.
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -3961,7 +3947,7 @@ void glTexParameteri(
 			//40004A8h 2Ah 1  1   TEXIMAGE_PARAM - Set Texture Parameters (W)
 			Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)getFIFO_TEX_FORMAT; //Unpacked Command format
 			ptrVal++;
-			Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)(globalGLCtx.textureParamsValue); ptrVal++;
+			/*todo: Inst->InternalUnpackedGX_DL_Binary[ptrVal] = (u32)(globalGLCtx.textureParamsValue);*/ ptrVal++;
 			Inst->InternalUnpackedGX_DL_Binary_OpenGLDisplayListPtr = ptrVal;
 		}
 	}
@@ -3981,7 +3967,7 @@ void glTexParameteri(
 //pname: The symbolic name of a single valued texture parameter. The following symbols are accepted in pname.
 //params: misc
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -3994,7 +3980,7 @@ void glGetFloatv(
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4023,7 +4009,7 @@ The m parameter points to a 4x4 matrix of single-precision or double-precision f
 stored in column-major order.
 */
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4033,7 +4019,7 @@ void  glMultMatrixd(const GLdouble *m){
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4061,7 +4047,7 @@ void  glMultMatrixf(const GLfloat *m){
 
 //The glScaled and glScalef functions multiply the current matrix by a general scaling matrix.
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4079,7 +4065,7 @@ void glScalef(
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4148,7 +4134,7 @@ __attribute__((section(".dtcm")))
 struct vertexBufferObject * vboEdgeFlag = NULL;
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4165,7 +4151,7 @@ struct vertexBufferArray TGDSVBAInstance; //Client side (NintendoDS) implements 
 //VBO
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4186,7 +4172,7 @@ void glGenBuffers(GLsizei n, GLuint* ids){
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4198,7 +4184,7 @@ void glDeleteBuffers(GLsizei n, const GLuint* ids){
 			n--;
 		}
 		for(i = 0; i < MAX_VBO_PER_VBA; i++){
-			if( (ids[i] != NULL) && ((GLint)TGDSVBAInstance.vboName[i] == (GLint)ids[i]) ){
+			if( (ids != NULL) && ((GLint)TGDSVBAInstance.vboName[i] == (GLint)ids[i]) ){
 				GLuint * ptr = (GLuint * )(ids + i);
 				*ptr = (GLuint)VBO_DESCRIPTOR_INVALID;
 				TGDSVBAInstance.vboName[i] = (GLint)VBO_DESCRIPTOR_INVALID;
@@ -4209,7 +4195,7 @@ void glDeleteBuffers(GLsizei n, const GLuint* ids){
 
 //Note: Method adapted to work around OpenGL1.5 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4279,7 +4265,7 @@ usage
 Specifies the expected usage pattern of the data store. The symbolic constant must be GL_STREAM_DRAW, GL_STREAM_READ, GL_STREAM_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STATIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, or GL_DYNAMIC_COPY.
 */
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4334,7 +4320,7 @@ void glBufferData(GLenum target, GLsizei size, const void* data, GLenum usage){
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4345,7 +4331,7 @@ void glBufferSubData(GLenum target, GLint offset, GLsizei size, void* data){
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4377,7 +4363,7 @@ void glEnableClientState(GLenum arr){
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4422,7 +4408,7 @@ stride: The byte offset between consecutive vertices. When stride is zero, the v
 pointer: A pointer to the first coordinate of the first vertex in the array.
 */
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4478,7 +4464,7 @@ pointer: A pointer to the first normal in the array.
 NOTE: DS floats ARE TREATED AS v10 in all cases for max GX normal precision
 */
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4525,7 +4511,7 @@ void glNormalPointer( GLenum type, GLsizei stride, const GLvoid *ptr ){
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4585,7 +4571,7 @@ void glColorPointer( GLint size, GLenum type, GLsizei stride, const GLvoid *ptr 
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4629,7 +4615,7 @@ void glIndexPointer( GLenum type, GLsizei stride, const GLvoid *ptr ){
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4677,7 +4663,7 @@ void glTexCoordPointer( GLint size, GLenum type, GLsizei stride, const GLvoid *p
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4688,7 +4674,7 @@ void glEdgeFlagPointer( GLsizei stride, const GLvoid *ptr ){
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4751,7 +4737,7 @@ void		display_rect(int x, int y, int lettre)
 }
 */
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4760,9 +4746,9 @@ void glArrayElement( GLint index ){
 	bool vboVertexEnabled = vboVertex->ClientStateEnabled;
 	bool vboNormalEnabled = vboNormal->ClientStateEnabled;
 	bool vboColorEnabled = vboColor->ClientStateEnabled;
-	bool vboIndexEnabled = vboIndex->ClientStateEnabled;
+	//bool vboIndexEnabled = vboIndex->ClientStateEnabled;
 	bool vboTexCoordEnabled = vboTexCoord->ClientStateEnabled;
-	bool vboEdgeFlagEnabled = vboEdgeFlag->ClientStateEnabled;
+	//bool vboEdgeFlagEnabled = vboEdgeFlag->ClientStateEnabled;
 	if(vboColorEnabled == true){
 		switch(vboColor->ElementsPerVertexBufferObjectUnit){
 			//unsigned char
@@ -4912,7 +4898,7 @@ int OGL_CURR_DL_DRAW_ARRAYS_METHOD;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -4922,9 +4908,9 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 	bool vboVertexEnabled = vboVertex->ClientStateEnabled;
 	bool vboNormalEnabled = vboNormal->ClientStateEnabled;
 	bool vboColorEnabled = vboColor->ClientStateEnabled;
-	bool vboIndexEnabled = vboIndex->ClientStateEnabled;
+	//bool vboIndexEnabled = vboIndex->ClientStateEnabled;
 	bool vboTexCoordEnabled = vboTexCoord->ClientStateEnabled;
-	bool vboEdgeFlagEnabled = vboEdgeFlag->ClientStateEnabled;
+	//bool vboEdgeFlagEnabled = vboEdgeFlag->ClientStateEnabled;
 	int argsTotal = 0;
 	int currentOGL_DL_DRAW_ARRAYS_METHOD = DL_INVALID;
 	u16 displayListArrayCrc16Check = 0;
@@ -4936,21 +4922,29 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 	if((count > 6144)){
 		count = 6144; //DS can only render up to 6144 vertices / 2048 polys 
 	}
+
 	switch(mode){
 		//unsupported by DS hardware
-		case	GL_POINTS:
-				GL_LINE_STRIP:
-				GL_LINE_LOOP:
-				GL_LINES:
-				GL_LINE_STRIP_ADJACENCY:
-				GL_LINES_ADJACENCY:
-				GL_TRIANGLE_FAN:
-				GL_TRIANGLE_STRIP_ADJACENCY:
-				GL_TRIANGLES_ADJACENCY:{
+		case	GL_POINTS:{
 			errorStatus = GL_INVALID_ENUM;
 			return;
 		}break;
-		
+		case	GL_LINE_STRIP:{
+			errorStatus = GL_INVALID_ENUM;
+			return;
+		}break;
+		case	GL_LINE_LOOP:{
+			errorStatus = GL_INVALID_ENUM;
+			return;
+		}break;
+		case	GL_LINES:{
+			errorStatus = GL_INVALID_ENUM;
+			return;
+		}break;
+		case	GL_TRIANGLE_FAN:{
+			errorStatus = GL_INVALID_ENUM;
+			return;
+		}break;
 		//Otherwise, supported modes natively by DS hardware: GL_TRIANGLE_STRIP, GL_TRIANGLES, 
 	}
 
@@ -5019,10 +5013,6 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 
 	//Emit DL and execute it inmediately if arrays are dirty, otherwise run the DL directly
 	if(requiresRecompileGXDisplayList == true){
-		int argCount = 3;
-		if( (mode == GL_TRIANGLE_STRIP) || (mode == GL_QUAD_STRIP) || (mode == GL_QUADS) ){
-			argCount = 4;
-		}
 		isInternalDisplayList = true;
 		glNewList(currentOGL_DL_DRAW_ARRAYS_METHOD, GL_COMPILE_AND_EXECUTE);
 			glBegin(mode);
@@ -5158,7 +5148,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count ){
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -5176,360 +5166,18 @@ NOTE: You need to make sure that you set up the data in your structure (or class
 // be confused.
 */
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
 void glInterleavedArrays( GLenum format, GLsizei stride, const GLvoid *pointer ){
-	bool requiresRecompileGXDisplayList = false;
-	bool vboVertexEnabled = true; //Vertex coordinates are always extracted.
-	bool vboNormalEnabled = false;
-	bool vboColorEnabled = false;
-	bool vboIndexEnabled = false;
-	bool vboTexCoordEnabled = false;
-	bool vboEdgeFlagEnabled = false;
-	int argsTotal = 0;
-	int countVertex = 0;
-	int countNormal = 0;
-	int countColor = 0;
-	int countTexCoord = 0;
-	int mode = 0;
-	u16 displayListArrayCrc16Check = 0;
-	int i = 0;
-	int currentOGL_DL_DRAW_ARRAYS_METHOD = DL_INVALID;
-	u32* targetVertexOffset = NULL;
-	u32* targetNormalOffset = NULL;
-	u32* targetColorOffset = NULL;
-	u32* targetTexCoordOffset = NULL;
-
-	switch(format){
-		//format: If format contains a T, then texture coordinates are extracted from the interleaved array.
-		//If C is present, color values are extracted.
-		//If N is present, normal coordinates are extracted.
-		//Vertex coordinates are always extracted.
-		//The digits 2, 3, and 4 denote how many values are extracted.
-		//F indicates that values are extracted as floating point values.
-		//If 4UB follows the C, colors may also be extracted as 4 unsigned bytes. If a color is extracted as 4 unsigned bytes, the vertex array element that follows is located at the first possible floating-point aligned address.
-
-		case GL_V2F:{
-			mode = GL_TRIANGLES;
-			countVertex = 2 * sizeof(GLfloat);
-			targetVertexOffset = (u32*)( ((int)pointer) +  (0 * countVertex));
-		}break;
-
-		case GL_V3F:{
-			mode = GL_TRIANGLES;
-			countVertex = 3 * sizeof(GLfloat);
-			targetVertexOffset = (u32*)( ((int)pointer) +  (0 * countVertex));
-		}break;
-		
-		//unsupported by NDS hardware
-		/*
-		case GL_C4UB_V2F:{
-			
-		}break;
-		
-		case GL_C4UB_V3F:{
-		}break;
-		*/
-
-		case GL_C3F_V3F:{
-			mode = GL_TRIANGLES;
-			countColor = 3 * sizeof(GLfloat);
-			vboColorEnabled = true;
-			countVertex = 3 * sizeof(GLfloat);
-			vboVertexEnabled = true;
-			targetColorOffset = (u32*)( ((int)pointer) +  (0 * countColor));
-			targetVertexOffset = (u32*)( ((int)pointer) +  (1 * countVertex));
-		}break;
-		
-		case GL_N3F_V3F:{
-			mode = GL_TRIANGLES;
-			countNormal = 3 * sizeof(GLfloat);
-			vboNormalEnabled = true;
-			countVertex = 3 * sizeof(GLfloat);
-			vboVertexEnabled = true;
-			targetNormalOffset = (u32*)( ((int)pointer) +  (0 * countNormal));
-			targetVertexOffset = (u32*)( ((int)pointer) +  (1 * countVertex));
-		}break;
-		
-		//unsupported by NDS hardware
-		/*
-		case GL_C4F_N3F_V3F:{
-		}break;
-		*/
-
-		case GL_T2F_V3F:{
-			mode = GL_TRIANGLES;
-			countTexCoord = 2 * sizeof(GLfloat);
-			vboTexCoordEnabled = true;
-			countVertex = 3 * sizeof(GLfloat);
-			vboVertexEnabled = true;
-			targetTexCoordOffset = (u32*)( ((int)pointer) +  (0 * countTexCoord));
-			targetVertexOffset = (u32*)( ((int)pointer) +  (1 * countVertex));
-		}break;
-		
-		//unsupported by NDS hardware
-		/*
-		case GL_T4F_V4F:{
-		}break;
-		
-		case GL_T2F_C4UB_V3F:{
-		}break;
-		*/
-
-		case GL_T2F_C3F_V3F:{
-			mode = GL_TRIANGLES;
-			countTexCoord = 2 * sizeof(GLfloat);
-			vboTexCoordEnabled = true;
-			countColor = 3 * sizeof(GLfloat);
-			vboColorEnabled = true;
-			countVertex = 3 * sizeof(GLfloat);
-			vboVertexEnabled = true;
-			targetTexCoordOffset = (u32*)( ((int)pointer) +  (0 * countTexCoord));
-			targetColorOffset = (u32*)( ((int)pointer) +  (1 * countColor));
-			targetVertexOffset = (u32*)( ((int)pointer) +  (2 * countVertex));
-		}break;
-		
-		case GL_T2F_N3F_V3F:{
-			mode = GL_TRIANGLES;
-			countTexCoord = 2 * sizeof(GLfloat);
-			vboTexCoordEnabled = true;
-			countNormal = 3 * sizeof(GLfloat);
-			vboNormalEnabled = true;
-			countVertex = 3 * sizeof(GLfloat);
-			vboVertexEnabled = true;
-			targetTexCoordOffset = (u32*)( ((int)pointer) +  (0 * countTexCoord));
-			targetNormalOffset = (u32*)( ((int)pointer) +  (1 * countNormal));
-			targetVertexOffset = (u32*)( ((int)pointer) +  (2 * countVertex));
-		}break;
-
-		case GL_T2F_C4F_N3F_V3F:{
-			mode = GL_TRIANGLES;
-			countTexCoord = 2 * sizeof(GLfloat);
-			vboTexCoordEnabled = true;
-			countColor = 3 * sizeof(GLfloat); //max 3 colors
-			vboColorEnabled = true;
-			countNormal = 3 * sizeof(GLfloat);
-			vboNormalEnabled = true;
-			countVertex = 3 * sizeof(GLfloat);
-			vboVertexEnabled = true;
-			targetTexCoordOffset = (u32*)( ((int)pointer) +  (0 * countTexCoord));
-			targetColorOffset = (u32*)( ((int)pointer) +  (1 * countColor));
-			targetNormalOffset = (u32*)( ((int)pointer) +  (2 * countNormal));
-			targetVertexOffset = (u32*)( ((int)pointer) +  (3 * countVertex));
-		}break;
-		
-		//Unsupported by NDS hardware
-		/*
-		case GL_T4F_C4F_N3F_V4F:{
-		}break;
-		*/
-
-		default:{
-			errorStatus = GL_INVALID_ENUM;
-			return;
-		}break;
-	}
-
-
-	//////////!!!!!!!!!!!!!!!!!!ORDER IS IMPORTANT DUE TO HOW GX DISPLAYLISTS ARE BUILT ON NDS HARDWARE!!!!!!!!!!!!!!!!!!
-	//////////////////////////Build DisplayLists and CRC all buffers generated from each VBO buffer//////////////////////////
-	//With glDrawArrays, you can specify multiple geometric primitives to render. Instead of calling separate OpenGL functions to pass each individual vertex, normal, or color, you can specify separate arrays of vertices, normals, and colors to define a sequence of primitives (all the same kind) with a single call to glDrawArrays.
-	//When you call glDrawArrays, count sequential elements from each enabled array are used to construct a sequence of geometric primitives, beginning with the first element. The mode parameter specifies what kind of primitive to construct and how to use the array elements to construct the primitives.
-	//1
-	if(vboColorEnabled == true){
-		displayListArrayCrc16Check = swiCRC16(0xffff, (void*)((int)targetColorOffset), (uint32)((int)countColor*sizeof(GLfloat)));
-		argsTotal++;
-	}
-	
-	//2
-	if(vboNormalEnabled == true){
-		displayListArrayCrc16Check = swiCRC16(displayListArrayCrc16Check, (void*)((int)targetNormalOffset), (uint32)((int)countNormal*sizeof(GLfloat)));
-		argsTotal++;
-	}
-
-	//3
-	if(vboTexCoordEnabled == true){
-		displayListArrayCrc16Check = swiCRC16(displayListArrayCrc16Check, (void*)((int)targetTexCoordOffset), (uint32)((int)countTexCoord*sizeof(GLfloat)));
-		argsTotal++;
-	}
-
-	//4
-	if(vboVertexEnabled == true){
-		displayListArrayCrc16Check = swiCRC16(displayListArrayCrc16Check, (void*)((int)targetVertexOffset), (uint32)((int)countVertex*sizeof(GLfloat)));
-		argsTotal++;
-	}
-
-	//todo
-	/*
-	if(vboIndexEnabled == true){
-
-	}
-	*/
-	
-	//unused
-	/*
-	if(vboEdgeFlagEnabled == true){
-
-	}
-	*/
-
-	//Is OGL DL Cached? Find OpenGL Display List Index 
-	for(i=0; i < VBO_CACHED_PREBUILT_DL_SIZE; i++){
-		//found our DL! use it now
-		if( TGDSVBAInstance.lastPrebuiltDLCRC16[i] == displayListArrayCrc16Check){
-			currentOGL_DL_DRAW_ARRAYS_METHOD=(i + 1);
-			break;
-		}
-	}
-	
-	//not found? allocate a new OpenGL DL Index from 0 to N
-	if(currentOGL_DL_DRAW_ARRAYS_METHOD == DL_INVALID){
-		requiresRecompileGXDisplayList = true;
-		currentOGL_DL_DRAW_ARRAYS_METHOD=(OGL_CURR_DL_DRAW_ARRAYS_METHOD+1);
-		TGDSVBAInstance.lastPrebuiltDLCRC16[OGL_CURR_DL_DRAW_ARRAYS_METHOD] = displayListArrayCrc16Check;
-
-		OGL_CURR_DL_DRAW_ARRAYS_METHOD++;
-		if(OGL_CURR_DL_DRAW_ARRAYS_METHOD>=(VBO_CACHED_PREBUILT_DL_SIZE-1)){
-			OGL_CURR_DL_DRAW_ARRAYS_METHOD = 0;
-		}
-	}
-
-	//Emit DL and execute it inmediately if arrays are dirty, otherwise run the DL directly
-	if(requiresRecompileGXDisplayList == true){
-		bool isTriangleStrip = false; //false = GL_TRIANGLES (3 args) / true = GL_TRIANGLE_STRIP (4 args)
-		int argCount = 3;
-		if(mode == GL_TRIANGLE_STRIP){
-			isTriangleStrip = true;
-			argCount = 4;
-		}
-		glNewList(currentOGL_DL_DRAW_ARRAYS_METHOD, GL_COMPILE_AND_EXECUTE);
-			glBegin(mode);
-			for(i = 0; i < (countColor+countNormal+countTexCoord+countVertex); i+=(argsTotal*argCount)){
-				if(vboColorEnabled == true){
-					switch(vboColor->ElementsPerVertexBufferObjectUnit){
-						//unsigned char
-						case 1:{
-							unsigned char * colorOffset = (unsigned char*)( ((int)targetColorOffset) +  (i * sizeof(unsigned char) + ((stride*sizeof(unsigned char)*argCount))));
-							unsigned char arg0 = (unsigned char)*(colorOffset+0);
-							unsigned char arg1 = (unsigned char)*(colorOffset+1);
-							unsigned char arg2 = (unsigned char)*(colorOffset+2);
-							glColor3b(arg0, arg1, arg2);
-						}break;
-						
-						//unsigned short
-						/*
-						case 2:{
-						//no GX methods for 2 byte colors
-						}break;
-						*/
-						
-						//unsigned int (packed as Float -> u8)
-						case 4:{
-							GLfloat * colorOffset = (GLfloat*)( ((int)targetColorOffset) +  (i * sizeof(GLfloat) + ((stride*sizeof(GLfloat)*argCount))));
-							u8 arg0 = (u8)*(colorOffset+0);
-							u8 arg1 = (u8)*(colorOffset+1);
-							u8 arg2 = (u8)*(colorOffset+2);
-							glColor3b((u8)arg0, (u8)arg1, (u8)arg2);
-						}break;
-					}
-				}
-
-				if(vboNormalEnabled == true){
-					switch(vboNormal->ElementsPerVertexBufferObjectUnit){
-						/*
-						//unsigned char
-						case 1:{
-							//Normals are 10bit at least
-						}break;
-						*/
-						//unsigned short
-						case 2:{
-							unsigned short * normalOffset = (unsigned short*)( ((int)targetNormalOffset) +  (i * sizeof(unsigned short) + ((stride*sizeof(unsigned short)*argCount))));
-							unsigned short arg0 = (unsigned short)*(normalOffset+0);
-							unsigned short arg1 = (unsigned short)*(normalOffset+1);
-							unsigned short arg2 = (unsigned short)*(normalOffset+2);
-							glNormal3v10((v10)arg0, (v10)arg1, (v10)arg2);
-						}break;
-						
-						//unsigned int (packed as Float -> v10)
-						case 4:{
-							GLfloat * normalOffset = (GLfloat*)( ((int)targetNormalOffset) +  (i * sizeof(GLfloat) + ((stride*sizeof(GLfloat)*argCount))));
-							v10 arg0 = (v10)floattov10(*(normalOffset+0));
-							v10 arg1 = (v10)floattov10(*(normalOffset+1));
-							v10 arg2 = (v10)floattov10(*(normalOffset+2));
-							glNormal3v10((v10)arg0, (v10)arg1, (v10)arg2);
-						}break;
-					}
-				}
-
-				if(vboTexCoordEnabled == true){
-					switch(vboTexCoord->ElementsPerVertexBufferObjectUnit){
-						/*
-						//unsigned char
-						case 1:{
-							//GX texture coordinates are at least 12.4bit
-						}break;
-						*/
-						//unsigned short
-						case 2:{
-							unsigned short * TexCoordOffset = (unsigned short*)( ((int)targetTexCoordOffset) +  (i * sizeof(unsigned short) + ((stride*sizeof(unsigned short)*argCount))));
-							unsigned short arg0 = (unsigned short)*(TexCoordOffset+0);
-							unsigned short arg1 = (unsigned short)*(TexCoordOffset+1);
-							glTexCoord2t16((t16)arg0, (t16)arg1);
-						}break;
-						
-						//unsigned int (packed as Float -> t16)
-						case 4:{
-							GLfloat * TexCoordOffset = (GLfloat*)( ((int)targetTexCoordOffset) +  (i * sizeof(GLfloat) + ((stride*sizeof(GLfloat)*argCount))));
-							t16 arg0 = (t16)floattot16(*(TexCoordOffset+0));
-							t16 arg1 = (t16)floattot16(*(TexCoordOffset+1));
-							glTexCoord2t16((t16)arg0, (t16)arg1);
-						}break;
-					}
-				}
-
-				if(vboVertexEnabled == true){
-					switch(vboVertex->ElementsPerVertexBufferObjectUnit){
-						/*
-						//unsigned char
-						case 1:{
-							//GX vertex are at least 10bit
-						}break;
-						*/
-						//unsigned short
-						case 2:{
-							u16 * vertexOffset = (u16*)( ((int)targetVertexOffset) +  (i * sizeof(v16) + ((stride*sizeof(v16)*argCount))));
-							v16 arg0 = (v16)*(vertexOffset+0);
-							v16 arg1 = (v16)*(vertexOffset+1);
-							v16 arg2 = (v16)*(vertexOffset+2);
-							glVertex3v16(arg0, arg1, arg2);
-						}break;
-						
-						//unsigned int (packed as Float -> v16)
-						case 4:{
-							GLfloat * vertexOffset = (GLfloat*)( ((int)targetVertexOffset) +  (i * sizeof(GLfloat) + ((stride*sizeof(GLfloat)*argCount))));
-							v16 arg0 = (v16)floattov16(*(vertexOffset+0));
-							v16 arg1 = (v16)floattov16(*(vertexOffset+1));
-							v16 arg2 = (v16)floattov16(*(vertexOffset+2));
-							glVertex3v16(arg0, arg1, arg2);
-						}break;
-					}
-				}
-			}
-			glEnd();
-		glEndList(); 
-	}
-	else{
-		glCallList(currentOGL_DL_DRAW_ARRAYS_METHOD);
-	}
+	errorStatus = GL_INVALID_ENUM; //unsupported
 }
 
 //The glGetMaterialfv and glGetMaterialiv functions return material parameters.
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -5565,9 +5213,9 @@ void glGetMaterialfv(
 			//Integer values, when requested, are linearly mapped from the internal floating-point representation such that 1.0 maps to 
 			//the most positive representable integer value, and -1.0 maps to the most negative representable integer value. 
 			//If the internal value is outside the range [-1,1], the corresponding integer return value is undefined.
-			*(params+0) = ((float)((globalGLCtx.ambientValue>>0)&0x1f)); //r
-			*(params+1) = ((float)((globalGLCtx.ambientValue>>5)&0x1f)); //g
-			*(params+2) = ((float)((globalGLCtx.ambientValue>>10)&0x1f)); //b
+			*(params+0) = ((float)((globalGLCtx.materialAmbientValue>>0)&0x1f)); //r
+			*(params+1) = ((float)((globalGLCtx.materialAmbientValue>>5)&0x1f)); //g
+			*(params+2) = ((float)((globalGLCtx.materialAmbientValue>>10)&0x1f)); //b
 			*(params+3) = 0;
 		}break;
 		case GL_DIFFUSE:{
@@ -5575,9 +5223,9 @@ void glGetMaterialfv(
 			//Integer values, when requested, are linearly mapped from the internal floating-point representation such that 1.0 maps to 
 			//the most positive representable integer value, and -1.0 maps to the most negative representable integer value. 
 			//If the internal value is outside the range [-1,1], the corresponding integer return value is undefined.
-			*(params+0) = ((float)((globalGLCtx.diffuseValue>>0)&0x1f)); //r
-			*(params+1) = ((float)((globalGLCtx.diffuseValue>>5)&0x1f)); //g
-			*(params+2) = ((float)((globalGLCtx.diffuseValue>>10)&0x1f)); //b
+			*(params+0) = ((float)((globalGLCtx.materialDiffuseValue>>0)&0x1f)); //r
+			*(params+1) = ((float)((globalGLCtx.materialDiffuseValue>>5)&0x1f)); //g
+			*(params+2) = ((float)((globalGLCtx.materialDiffuseValue>>10)&0x1f)); //b
 			*(params+3) = 0;
 		}break;
 		case GL_SPECULAR:{
@@ -5585,9 +5233,9 @@ void glGetMaterialfv(
 			//Integer values, when requested, are linearly mapped from the internal floating-point representation such that 1.0 maps to 
 			//the most positive representable integer value, and -1.0 maps to the most negative representable integer value. 
 			//If the internal value is outside the range [-1,1], the corresponding integer return value is undefined.
-			*(params+0) = ((float)((globalGLCtx.specularValue>>0)&0x1f)); //r
-			*(params+1) = ((float)((globalGLCtx.specularValue>>5)&0x1f)); //g
-			*(params+2) = ((float)((globalGLCtx.specularValue>>10)&0x1f)); //b
+			*(params+0) = ((float)((globalGLCtx.materialSpecularValue>>0)&0x1f)); //r
+			*(params+1) = ((float)((globalGLCtx.materialSpecularValue>>5)&0x1f)); //g
+			*(params+2) = ((float)((globalGLCtx.materialSpecularValue>>10)&0x1f)); //b
 			*(params+3) = 0;
 		}break;
 		case GL_SHININESS:{
@@ -5600,9 +5248,9 @@ void glGetMaterialfv(
 			//Integer values, when requested, are linearly mapped from the internal floating-point representation such that 1.0 maps to 
 			//the most positive representable integer value, and -1.0 maps to the most negative representable integer value. 
 			//If the internal value is outside the range [-1,1], the corresponding integer return value is undefined.
-			*(params+0) = ((float)((globalGLCtx.emissionValue>>0)&0x1f)); //r
-			*(params+1) = ((float)((globalGLCtx.emissionValue>>5)&0x1f)); //g
-			*(params+2) = ((float)((globalGLCtx.emissionValue>>10)&0x1f)); //b
+			*(params+0) = ((float)((globalGLCtx.materialEmissionValue>>0)&0x1f)); //r
+			*(params+1) = ((float)((globalGLCtx.materialEmissionValue>>5)&0x1f)); //g
+			*(params+2) = ((float)((globalGLCtx.materialEmissionValue>>10)&0x1f)); //b
 			*(params+3) = 0;
 		}break;
 		default:{
@@ -5614,7 +5262,7 @@ void glGetMaterialfv(
 
 //Note: It's the same because both int and float datatypes are 4-byte on ARM v5t CPU platforms.
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -5644,9 +5292,8 @@ void glGetIntegerv(
 		//the internal floating-point representation such that 1.0 returns the most positive representable integer value, 
 		//and -1.0 returns the most negative representable integer value.
 		case(GL_LIGHT_MODEL_AMBIENT):{
-			u32 specVal = globalGLCtx.specularValue;
+			u32 specVal = globalGLCtx.materialSpecularValue;
 			u32 * paramOut = (u32*)params;
-			//globalGLCtx.specularValue = ((floattov10(rSpecular) & 0x1F) << 16) | ((floattov10(gSpecular) & 0x1F) << 21) | ((floattov10(bSpecular) & 0x1F) << 26);
 			int rIntAmb = v10toint((specVal >> 16) & 0x1F); 
 			int gIntAmb = v10toint((specVal >> 21) & 0x1F); 
 			int bIntAmb = v10toint((specVal >> 26) & 0x1F); 
@@ -5719,7 +5366,7 @@ void glGetIntegerv(
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -5732,7 +5379,7 @@ void glGetBooleanv(
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -5745,7 +5392,7 @@ void glFogi(
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -5775,7 +5422,7 @@ glGet with argument GL_COLOR_MATERIAL_FACE
 glIsEnabled with argument GL_COLOR_MATERIAL
 */
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -5797,7 +5444,7 @@ void glColorMaterial(
 
 //The gllsEnabled function tests whether a capability is enabled.
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) 
+__attribute__((optimize("Ofast"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -5879,9 +5526,10 @@ GLboolean glIsEnabled(
 		}break;
 		default:{
 			errorStatus = GL_INVALID_ENUM;
-		return;
 		}break;
 	}
+	return GL_FALSE;
 }
 
 //////////////////////////////////////////////////////////// Extended Vertex Array Buffers and Vertex Buffer Objects OpenGL 1.1 end //////////////////////////////////////////
+

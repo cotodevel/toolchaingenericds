@@ -30,6 +30,7 @@ USA
 #include "biosTGDS.h"
 #include "dldi.h"
 #include "loader.h"
+#include "debugNocash.h"
 
 #ifdef ARM7
 #include <string.h>
@@ -62,7 +63,7 @@ void Write8bitAddrExtArm(uint32 address, uint8 value){
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[54] = address;
 	fifomsg[55] = (uint32)value;
-	SendFIFOWordsITCM(WRITE_EXTARM_8, (uint32)fifomsg);
+	SendFIFOWords(WRITE_EXTARM_8, (uint32)fifomsg);
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -77,7 +78,7 @@ void Write16bitAddrExtArm(uint32 address, uint16 value){
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[56] = address;
 	fifomsg[57] = (uint32)value;
-	SendFIFOWordsITCM(WRITE_EXTARM_16, (uint32)fifomsg);
+	SendFIFOWords(WRITE_EXTARM_16, (uint32)fifomsg);
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -92,7 +93,7 @@ void Write32bitAddrExtArm(uint32 address, uint32 value){
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
 	fifomsg[58] = address;
 	fifomsg[59] = (uint32)value;
-	SendFIFOWordsITCM(WRITE_EXTARM_32, (uint32)fifomsg);
+	SendFIFOWords(WRITE_EXTARM_32, (uint32)fifomsg);
 }
 
 //Hardware IPC struct packed 
@@ -103,23 +104,6 @@ struct sIPCSharedTGDS* getsIPCSharedTGDS(){
 	struct sIPCSharedTGDS* getsIPCSharedTGDSInst = (__attribute__((aligned (4))) struct sIPCSharedTGDS*)0x027FF000;
 	return getsIPCSharedTGDSInst;
 }
-
-//Async FIFO Sender
-#ifdef ARM9
-__attribute__((section(".itcm")))
-#endif
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-void SendFIFOWordsITCM(uint32 data0, uint32 data1){	//format: arg0: cmd, arg1: value
-	REG_IPC_FIFO_TX = (uint32)data1;	
-	REG_IPC_FIFO_TX = (uint32)data0;	//last message should always be command
-}
-
 
 #ifdef ARM9
 __attribute__((section(".itcm")))
@@ -213,7 +197,9 @@ void HandleFifoNotEmpty(){
 			
 			case ARM7COMMAND_START_SOUND:{
 				if(SoundStreamSetupSoundARM7LibUtilsCallback != NULL){
-					SoundStreamSetupSoundARM7LibUtilsCallback();
+					uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
+					u32 SoundBuffARM7 = getValueSafe(&fifomsg[63]);
+					SoundStreamSetupSoundARM7LibUtilsCallback(SoundBuffARM7);	//data0 == ARM7 Sound Buffer source for streaming
 				}
 			}
 			break;
@@ -225,17 +211,17 @@ void HandleFifoNotEmpty(){
 			break;
 			case ARM7COMMAND_SOUND_SETRATE:{
 				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-				sndRate = fifomsg[60];
+				sndRate = getValueSafe(&fifomsg[60]);
 			}
 			break;
 			case ARM7COMMAND_SOUND_SETLEN:{
 				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-				sampleLen = fifomsg[61];
+				sampleLen = getValueSafe(&fifomsg[61]);
 			}
 			break;
 			case ARM7COMMAND_SOUND_SETMULT:{
 				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-				multRate = fifomsg[62];
+				multRate = getValueSafe(&fifomsg[62]);
 			}
 			break;
 			case ARM7COMMAND_SOUND_COPY:
@@ -541,32 +527,48 @@ void HandleFifoNotEmpty(){
 			case(TGDS_ARM7_SETUPMALLOCDLDI):{	//ARM7
 				struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
 				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-				u32 ARM7MallocStartaddress = fifomsg[0];
-				u32 ARM7MallocSize = fifomsg[1];
+				u32 ARM7MallocStartaddress = getValueSafe(&fifomsg[0]);
+				u32 ARM7MallocSize = getValueSafe(&fifomsg[1]);
 				//bool customAllocator = (bool)getValueSafe(&fifomsg[2]);
-				u32 dldiStartAddress = fifomsg[3];
-				u32 TargetARM7DLDIAddress = fifomsg[4];
+				u32 dldiStartAddress = getValueSafe(&fifomsg[3]);
+				u32 TargetARM7DLDIAddress = getValueSafe(&fifomsg[4]);
+				bool isDLDITWLSD = getValueSafe(&fifomsg[5]);
 				
 				setupLibUtils(); //ARM7 libUtils Setup
 				
 				//DSi in NTR mode throws false positives about TWL mode, enforce DSi SD initialization to define, NTR or TWL mode.
 				int detectedTWLModeInternalSDAccess = 0;
 				bool DLDIARM7FSInitStatus = false;
-					
-				if( (!sdio_Startup()) || (!sdio_IsInserted()) ){
-					detectedTWLModeInternalSDAccess = TWLModeDLDIAccessDisabledInternalSDDisabled;
-					__dsimode = false;
+				
+				//Try TWL internal SD init if TGDS TWL payload
+				if(isDLDITWLSD == false){
+					if( (!sdio_Startup()) || (!sdio_IsInserted()) ){
+						detectedTWLModeInternalSDAccess = TWLModeDLDIAccessDisabledInternalSDDisabled;
+						__dsimode = false; //already set in IRQInit
+					}
+					else{
+						detectedTWLModeInternalSDAccess = TWLModeDLDIAccessDisabledInternalSDEnabled;
+						__dsimode = true; //already set in IRQInit
+						DLDIARM7FSInitStatus = true;
+					}
+					nocashMessage("not NTR payload or no TWL DLDI\n");
 				}
+				//Try TWL internal SD init if TGDS NTR payload + TWL ARM7 DLDI
 				else{
-					detectedTWLModeInternalSDAccess = TWLModeDLDIAccessDisabledInternalSDEnabled;
-					__dsimode = true;
-					DLDIARM7FSInitStatus = true;
+					if(__dsimode == true){
+						detectedTWLModeInternalSDAccess = TWLModeDLDIAccessDisabledInternalSDDisabled; //TGDS NTR Payload + TWL SD DLDI + TWL Mode
+						nocashMessage("NTR payload: TWL Mode + TWL DLDI\n");
+					}
+					else{
+						detectedTWLModeInternalSDAccess = TWLModeDLDIAccessDisabledInternalSDDisabled; //TGDS NTR Payload + TWL SD DLDI + NTR Mode: Will cause DLDI init failure because the loader failed to DLDI patch the TGDS NTR payload.
+						nocashMessage("FAIL: NTR payload: NTR Mode + TWL DLDI\n");
+					}
 				}
 				
 				//NTR mode: define DLDI initialization and ARM7DLDI operating mode
 				if((detectedTWLModeInternalSDAccess == TWLModeDLDIAccessDisabledInternalSDDisabled) && (TargetARM7DLDIAddress != 0)){
 					DLDIARM7Address = (u32*)TargetARM7DLDIAddress; 
-					memcpy (DLDIARM7Address, dldiStartAddress, 16*1024);
+					memcpy (DLDIARM7Address, (void*)dldiStartAddress, 16*1024);
 					DLDIARM7FSInitStatus = dldi_handler_init();
 					if(DLDIARM7FSInitStatus == true){
 						detectedTWLModeInternalSDAccess = TWLModeDLDIAccessEnabledInternalSDDisabled;
