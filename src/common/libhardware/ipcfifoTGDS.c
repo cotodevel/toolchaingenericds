@@ -37,6 +37,10 @@ USA
 #include "spifwTGDS.h"
 #include "powerTGDS.h"
 #include "soundTGDS.h"
+
+#ifdef TWLMODE
+#include "i2c.h"
+#endif
 #endif
 
 #ifdef ARM9
@@ -478,7 +482,7 @@ void HandleFifoNotEmpty(){
 			}
 			break;
 			//Power Management: 
-				//Supported mode(s): NTR
+				//Supported mode(s): NTR / TWL
 			case((uint32)FIFO_POWERMGMT_WRITE):{
 				
 				struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
@@ -486,20 +490,40 @@ void HandleFifoNotEmpty(){
 				uint32 cmd = (uint32)fifomsg[60];
 				uint32 flags = (uint32)fifomsg[61];
 				switch(cmd){
-					//screen power write
+					//Screen power write (NTR/TWL)
 					case(FIFO_SCREENPOWER_WRITE):{
 						int PMBitsRead = PowerManagementDeviceRead((int)POWMAN_READ_BIT);
 						PMBitsRead &= ~(POWMAN_BACKLIGHT_BOTTOM_BIT|POWMAN_BACKLIGHT_TOP_BIT);
 						PMBitsRead |= (int)(flags & (POWMAN_BACKLIGHT_BOTTOM_BIT|POWMAN_BACKLIGHT_TOP_BIT));
-						PowerManagementDeviceWrite(POWMAN_WRITE_BIT, (int)PMBitsRead);				
+						PowerManagementDeviceWrite(POWMAN_WRITE_BIT, (int)PMBitsRead);						
 					}
 					break;
 					
-					//Shutdown NDS hardware
+					//Shutdown NDS hardware (NTR/TWL)
 					case(FIFO_SHUTDOWN_DS):{
-						int PMBitsRead = PowerManagementDeviceRead((int)POWMAN_READ_BIT);
-						PMBitsRead |= (int)(POWMAN_SYSTEM_PWR_BIT);
-						PowerManagementDeviceWrite(POWMAN_WRITE_BIT, (int)PMBitsRead);				
+						if(__dsimode == false){
+							int PMBitsRead = PowerManagementDeviceRead((int)POWMAN_READ_BIT);
+							PMBitsRead |= (int)(POWMAN_SYSTEM_PWR_BIT);
+							PowerManagementDeviceWrite(POWMAN_WRITE_BIT, (int)PMBitsRead);
+						}
+						else{
+							#ifdef TWLMODE
+							i2cWriteRegister(I2C_PM, I2CREGPM_PWRCNT, 1);
+							#endif
+						}
+					}
+					break;
+					
+					//Reset TWL hardware (only)
+					case(FIFO_RESET_DS):{
+						if(__dsimode == false){
+							//reset supported on TWL only
+						}
+						else{
+							#ifdef TWLMODE
+							i2cWriteRegister(I2C_PM, I2CREGPM_RESETFLAG, 1);
+							#endif
+						}
 					}
 					break;
 				}
