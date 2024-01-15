@@ -198,6 +198,7 @@ extern void enableSlot1();
 
 extern bool sleepIsEnabled;
 extern void shutdownNDSHardware();
+extern void resetNDSHardware();
 extern bool isDSiMode();
 
 extern int enterCriticalSection();
