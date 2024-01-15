@@ -68,10 +68,12 @@ USA
 //PowerManagementWrite
 #define FIFO_POWERMGMT_WRITE	(uint32)(0xffff020C)
 	//power management commands:
-	//screen power write
+	//screen power NTR/TWL write
 	#define FIFO_SCREENPOWER_WRITE	(uint32)(0xffff020D)
-	//shut down (NTR) DS unit
+	//shut down NTR/TWL unit
 	#define FIFO_SHUTDOWN_DS	(uint32)(0xffff021A)
+	//reset NTR/TWL unit
+	#define FIFO_RESET_DS	(uint32)(0xffff021B)
 	
 //DLDI ARM7
 #define TGDS_DLDI_ARM7_STATUS_INIT	(int)(0xffff0300)

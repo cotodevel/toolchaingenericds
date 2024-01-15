@@ -37,7 +37,6 @@ USA
 #endif
 
 #ifdef TWLMODE
-
 #ifdef ARM7
 #include "i2c.h"
 #endif
@@ -734,33 +733,46 @@ void handleARGV(){
 
 #endif
 
-//Shuts off the NDS
+//Shuts off NTR/TWL unit
 void shutdownNDSHardware(){
-	#ifdef NTRMODE
-		#ifdef ARM7
+	#ifdef ARM7
+		#ifdef NTRMODE
 			int PMBitsRead = PowerManagementDeviceRead((int)POWMAN_READ_BIT);
 			PMBitsRead |= (int)(POWMAN_SYSTEM_PWR_BIT);
-			PowerManagementDeviceWrite(POWMAN_WRITE_BIT, (int)PMBitsRead);
+			PowerManagementDeviceWrite(POWMAN_WRITE_BIT, (int)PMBitsRead);		
 		#endif
 		
-		#ifdef ARM9
-			struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-			uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-			fifomsg[60] = (uint32)FIFO_SHUTDOWN_DS;
-			fifomsg[61] = (uint32)0;
-			SendFIFOWords(FIFO_POWERMGMT_WRITE, (uint32)fifomsg);
+		#ifdef TWLMODE
+			i2cWriteRegister(I2C_PM, I2CREGPM_PWRCNT, 1);
+		#endif		
+	#endif
+	#ifdef ARM9
+		struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
+		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+		fifomsg[60] = (uint32)FIFO_SHUTDOWN_DS;
+		fifomsg[61] = (uint32)0;
+		SendFIFOWords(FIFO_POWERMGMT_WRITE, (uint32)fifomsg);
+	#endif
+}
+
+//Resets TWL unit (only)
+void resetNDSHardware(){
+	#ifdef ARM7
+		#ifdef NTRMODE
+			//reset supported on TWL only
 		#endif
+		
+		#ifdef TWLMODE
+			i2cWriteRegister(I2C_PM, I2CREGPM_RESETFLAG, 1);
+		#endif		
 	#endif
 	
-	#ifdef TWLMODE
-		#ifdef ARM7
-		i2cWriteRegister(I2C_PM, I2CREGPM_RESETFLAG, 1);
-		i2cWriteRegister(I2C_PM, I2CREGPM_PWRCNT, 1);
-		#endif
-		#ifdef ARM9
-		//todo
-		#endif
-		
+	#ifdef ARM9
+		struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
+		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
+		fifomsg[60] = (uint32)FIFO_RESET_DS;
+		fifomsg[61] = (uint32)0;
+		SendFIFOWords(FIFO_POWERMGMT_WRITE, (uint32)fifomsg);
 	#endif
 }
 
