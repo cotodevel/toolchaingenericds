@@ -166,6 +166,8 @@ extern bool sdio_WriteSectors(sec_t sector, sec_t numSectors,const void* buffer)
 extern bool sdio_ClearStatus();
 extern bool sdio_Shutdown();
 extern int TWLModeInternalSDAccess;
+extern const data_t dldiMagicString[12];
+extern addr_t quickFind (const data_t* data, const data_t* search, size_t dataLen, size_t searchLen);
 
 #ifdef __cplusplus
 }

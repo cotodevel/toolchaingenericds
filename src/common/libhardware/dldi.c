@@ -280,7 +280,7 @@ bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buff
 	return false;
 }
 
-static const data_t dldiMagicString[12] = "\xED\xA5\x8D\xBF Chishm";	// Normal DLDI file
+const data_t dldiMagicString[12] = "\xED\xA5\x8D\xBF Chishm";	// Normal DLDI file
 //static const data_t dldiMagicLoaderString[12] = "\xEE\xA5\x8D\xBF Chishm";	// Different to a normal DLDI file
 
 enum DldiOffsets {
@@ -344,7 +344,7 @@ __attribute__((optimize("O0")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-static inline addr_t quickFind (const data_t* data, const data_t* search, size_t dataLen, size_t searchLen) {
+addr_t quickFind (const data_t* data, const data_t* search, size_t dataLen, size_t searchLen) {
 	const int* dataChunk = (const int*) data;
 	int searchChunk = ((const int*)search)[0];
 	addr_t i;
