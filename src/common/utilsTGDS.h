@@ -56,9 +56,11 @@ typedef	struct {
 typedef void(*splitCustom_fn)(const char *, size_t, char * ,int indexToLeftOut, char * delim);
 
 //NTR/TWL Binary descriptors
-#define isNDSBinaryV1 ((int)0)
-#define isNDSBinaryV2 ((int)1)
-#define isTWLBinary ((int)2)
+#define isNDSBinaryV1Slot2 ((int)0)
+#define isNDSBinaryV1 ((int)1)
+#define isNDSBinaryV2 ((int)2)
+#define isNDSBinaryV3 ((int)3)
+#define isTWLBinary ((int)4)
 #define notTWLOrNTRBinary ((int)-1)
 
 //Interfaces / Callbacks to connect to libutils
