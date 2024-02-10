@@ -166,7 +166,7 @@ void initHardware(u8 DSHardware) {
 	*(u32*)0x04004008 = SCFG_EXT7;
 	
 	int TGDSInitLoopCount = 0;
-	while( ((u32)*(u32*)0x04004008) != SCFG_EXT7 ) {
+	while( (((u32)*(u32*)0x04004008) != SCFG_EXT7) && (DSHardware == 0x57) ) {
 		if(TGDSInitLoopCount > 1048576){
 			SendFIFOWords(TGDS_ARM7_STAGE4_ERROR, 0);
 			swiDelay(1);
@@ -194,7 +194,7 @@ void initHardware(u8 DSHardware) {
 	*(u32*)0x04004008 = SCFG_EXT9;
 	
 	int TGDSInitLoopCount = 0;
-	while( (u32)(*(u32*)0x04004008) != SCFG_EXT9 ) {
+	while( ((u32)(*(u32*)0x04004008) != SCFG_EXT9) && (DSHardware == 0x57) ) {
 		if(TGDSInitLoopCount > 1048576){
 			u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
 			int stage = 5;

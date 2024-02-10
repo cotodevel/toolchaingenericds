@@ -225,6 +225,21 @@ void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,									
 						u32 * freeHandler, u32 * MallocFreeMemoryHandler, bool customAllocator, u32 dldiMemAddress,
 						u32 TargetARM7DLDIAddress, bool isDLDITWLSD
 ) {
+	//Are we trying to run a TWL mode ARM9 payload in NTR mode? If yes, notify the user so he/she must run a NTR binary instead. Because TWL hardware & TWL binaries are not backwards compatible with NTR units.
+	int isNTRTWLBinary = isThisPayloadNTROrTWLMode();
+	if ( (isNTRTWLBinary == isTWLBinary) && (__dsimode == false) ){
+		int stage = 7;
+		u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
+		handleDSInitError(stage, (u32)fwNo);
+	}
+	
+	//Are we trying to run a NTR mode ARM9 payload in TWL mode? If yes, notify the user so he/she must run a TWL binary instead. Because TWL hardware & NTR binaries are not compatible.
+	else if ( (isNTRTWLBinary == isNDSBinaryV3) && (__dsimode == true) ){
+		int stage = 8;
+		u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
+		handleDSInitError(stage, (u32)fwNo);
+	}
+	
 	if (_io_dldi_stub.ioInterface.features & FEATURE_SLOT_GBA) {
 		SetBusSLOT1ARM9SLOT2ARM7();
 	}
