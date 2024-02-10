@@ -85,11 +85,11 @@ bool updateRequested = false;
 
 bool __dsimode = false; // set by detecting DS model from firmware
 #ifdef NTRMODE
-char * TGDSPayloadMode = "NTRModePayload";
+char * TGDSPayloadMode = NTRIdentifier;
 #endif
 
 #ifdef TWLMODE
-char * TGDSPayloadMode = "TWLModePayload";
+char * TGDSPayloadMode = TWLIdentifier;
 #endif
 
 #ifdef ARM9
@@ -116,6 +116,18 @@ void reportTGDSPayloadMode(u32 bufferSource, char * ARM7OutLog, char * ARM9OutLo
 	
 	nocashMessage(ARM7OutLog);
 	nocashMessage(ARM9OutLog);
+}
+
+//TGDS binaries are always Passme Slot 1 v3+.
+//Note: Since the scope of detecting internal state of current NTR/TWL binary is already ToolchainGenericDS, this method is reliable as a mean to detect internal NTR/TWL mode from the current ARM9 binary running.
+int isThisPayloadNTROrTWLMode(){
+	if(strncasecmp((char*)TGDSPayloadMode, NTRIdentifier, 14) == 0){
+		return isNDSBinaryV3;
+	}
+	else if(strncasecmp((char*)TGDSPayloadMode, TWLIdentifier, 14) == 0){
+		return isTWLBinary;
+	}
+	return notTWLOrNTRBinary;
 }
 #endif
 
@@ -1083,11 +1095,11 @@ bool TGDSMultibootRunNDSPayload(char * filename) {
 	memset(msgDebug, 0, sizeof(msgDebug));
 	int isNTRTWLBinary = isNTROrTWLBinary(filename);
 	//NTR mode? Can only boot valid NTR binaries, the rest is skipped.
-	if((__dsimode == false) && !(isNTRTWLBinary == isNDSBinaryV1) && !(isNTRTWLBinary == isNDSBinaryV2) ){
+	if((__dsimode == false) && !(isNTRTWLBinary == isNDSBinaryV1) && !(isNTRTWLBinary == isNDSBinaryV2) && !(isNTRTWLBinary == isNDSBinaryV3) ){
 		return false;
 	}
 	//TWL mode? Can only boot valid NTR and TWL binaries, the rest is skipped.
-	else if((__dsimode == true) && !(isNTRTWLBinary == isNDSBinaryV1) && !(isNTRTWLBinary == isNDSBinaryV2) && !(isNTRTWLBinary == isTWLBinary) ){
+	else if((__dsimode == true) && !(isNTRTWLBinary == isNDSBinaryV1) && !(isNTRTWLBinary == isNDSBinaryV2) && !(isNTRTWLBinary == isNDSBinaryV3) && !(isNTRTWLBinary == isTWLBinary) ){
 		return false;
 	}
 	else{

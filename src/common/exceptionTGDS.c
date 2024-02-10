@@ -44,6 +44,8 @@ USA
 #include "nds_cp15_misc.h"
 #include "debugNocash.h"
 #include "dldi.h"
+#include "videoTGDS.h"
+
 #endif
 
 void setupDefaultExceptionHandler(){
@@ -228,42 +230,43 @@ int TGDSInitLoopCount=0;
 char tempBuf[256];
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
+__attribute__((optimize("Os")))
 #endif
 
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
 void handleDSInitError(int stage, u32 fwNo){
-	bool isTGDSCustomConsole = false;	//set default console
+	VRAMBLOCK_SETBANK_C(VRAM_C_0x06200000_ENGINE_B_BG);	
+	
+	bool isTGDSCustomConsole = false;	//reloading cause issues. Thus this ensures Console to be inited even when reloading
 	GUI_init(isTGDSCustomConsole);
-	clrscr();
+	sint32 fwlanguage = (sint32)getLanguage();
+	GUI_clear();
 	
 	printf(" ---- ");
 	printf(" ---- ");
 	printf(" ---- ");
 	
-	//Stage 0 = failed detecting DS model from firmware
-	//Stage 1 = failed initializing ARM7 DLDI / NDS ARM9 memory allocator
-	//Stage 2 = failed initializing DSWIFI (ARM9)
-	//Stage 3 = failed detecting DS model from firmware (2).
+	//Stage 0 = Failed detecting DS model from firmware.
+	//Stage 1 = Failed initializing ARM7 DLDI / NDS ARM9 memory allocator.
+	//Stage 2 = Failed initializing DSWIFI (ARM9).
+	//Stage 3 = Failed detecting DS model from firmware (2).
 	//Stage 4 = TWL Mode: SCFG_EXT7 locked. ToolchainGenericDS SDK needs it to run from SD in TWL mode.
 	//Stage 5 = TWL Mode: SCFG_EXT9 locked. ToolchainGenericDS SDK needs it to run from SD in TWL mode.
 	//Stage 6 = TGDS App has quit through exit(int status);
-	
-	
-	
-	
-	sprintf(tempBuf, "TGDS boot fail: Stage %d, firmware model: %d\n", stage, fwNo);
+	//Stage 7 = TGDS TWL App trying to be ran in NTR mode.
+	//Stage 8 = TGDS NTR App trying to be ran in TWL mode.
+	sprintf(tempBuf, "TGDS boot fail: Stage %d, firmware model: %d", stage, fwNo);
 	printf(tempBuf);
 	
 	if(stage == 1){
 		printf("DLDI: [%s]", (char*)&dldiGet()->friendlyName[0]);
 	}
-	else if(stage == 4){
+	else if((stage == 4) && (__dsimode == true)){
 		printf("TWL Mode: SCFG_EXT7 locked. Unlaunch and TWiLightMenu++ only supported.");
 	}
-	else if(stage == 5){
+	else if((stage == 5) && (__dsimode == true)){
 		printf("TWL Mode: SCFG_EXT9 locked. Unlaunch and TWiLightMenu++ only supported.");
 	}
 	else if(stage == 6){
@@ -274,6 +277,20 @@ void handleDSInitError(int stage, u32 fwNo){
 			sprintf(tempBuf, "ToolchainGenericDS App: abort(); .\n");
 		}
 		printf(tempBuf);
+	}
+	else if(stage == 7){
+		printf("Unsupported [TWL] binary running on NTR mode hardware. >%d", TGDSPrintfColor_Yellow);
+		printf("Please run the same TGDS Project, >%d", TGDSPrintfColor_Yellow);
+		printf("but using its [NTR] binary counterpart.>%d", TGDSPrintfColor_Yellow);
+	}
+	else if(stage == 8){
+		printf("Unsupported [NTR] binary running on TWL mode hardware. >%d", TGDSPrintfColor_Yellow);
+		printf("Please run the same TGDS Project, >%d", TGDSPrintfColor_Yellow);
+		printf("but using its [TWL] binary counterpart.>%d", TGDSPrintfColor_Yellow);
+	}
+	else{
+		printf("handleDSInitError(); Unhandled event. Contact developer. >%d", TGDSPrintfColor_Yellow);
+		printf("Halting system. >%d", TGDSPrintfColor_Yellow);
 	}
 	while(1==1){
 		swiDelay(1);

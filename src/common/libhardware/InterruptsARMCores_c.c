@@ -89,6 +89,10 @@ void IRQInit(u8 DSHardware)  {
 	INTERRUPT_VECTOR = (uint32)&NDS_IRQHandler;
 	REG_IME = 1;
 	
+	#ifdef ARM9
+	int isNTRTWLBinary = isThisPayloadNTROrTWLMode();
+	#endif
+	
 	//NTR
 	if(
 		(DSHardware == 0xFF)	//DS Phat
@@ -104,11 +108,24 @@ void IRQInit(u8 DSHardware)  {
 		__dsimode = false;
 		#ifdef ARM9
 		nocashMessage("TGDS:IRQInit():NTR Mode!");
+		//Are we trying to run a TWL mode ARM9 payload in NTR mode? If yes, notify the user so he/she must run a NTR binary instead. Because TWL hardware & TWL binaries are not backwards compatible with NTR units.
+		if ( (isNTRTWLBinary == isTWLBinary) && (__dsimode == false) ){
+			int stage = 7;
+			handleDSInitError(stage, (u32)DSHardware);
+		}
 		#endif
 	}
 	//TWL 
 	else if(DSHardware == 0x57){
 		__dsimode = true;
+		#ifdef ARM9
+		nocashMessage("TGDS:IRQInit():TWL Mode!");
+		//Are we trying to run a NTR mode ARM9 payload in TWL mode? If yes, notify the user so he/she must run a TWL binary instead. Because TWL hardware & NTR binaries are not compatible.
+		if ( (isNTRTWLBinary == isNDSBinaryV3) && (__dsimode == true) ){
+			int stage = 8;
+			handleDSInitError(stage, (u32)DSHardware);
+		}
+		#endif
 		#ifdef TWLMODE
 			#ifdef ARM7
 			//TWL ARM7 IRQ Init
@@ -123,9 +140,6 @@ void IRQInit(u8 DSHardware)  {
 			#ifdef ARM9
 			//TWL ARM9 IRQ Init
 			#endif
-		#endif
-		#ifdef ARM9
-		nocashMessage("TGDS:IRQInit():TWL Mode!");
 		#endif
 	}
 	else{
