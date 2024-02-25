@@ -695,11 +695,11 @@ void HandleFifoNotEmpty(){
 			case((uint32)EXCEPTION_ARM7):{
 				switch((uint32)data0){
 					case(generalARM7Exception):{
-						exception_handler((uint32)generalARM7Exception);
+						exception_handler((uint32)generalARM7Exception, 0, 0);
 					}
 					break;
 					case(unexpectedsysexit_7):{
-						exception_handler((uint32)unexpectedsysexit_7);
+						exception_handler((uint32)unexpectedsysexit_7, 0, 0);
 					}
 					break;
 				}

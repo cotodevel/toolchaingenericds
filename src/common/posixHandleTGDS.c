@@ -48,6 +48,7 @@ USA
 #include "dldi.h"
 #include "busTGDS.h"
 #include "initNDSTGDS.h"
+#include "exceptionTGDS.h"
 
 uint32 get_lma_libend(){
 	return (uint32)(&__vma_stub_end__);	//linear memory top (start)
@@ -273,6 +274,7 @@ void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,									
 	}
 	TGDSInitLoopCount = 0;
 	setupLibUtils(); //ARM9 libUtils Setup
+	setupDefaultExceptionHandler();	//Setup ARM7 & ARM9 Exception Handler
 	SendFIFOWords(TGDS_ARM7_SETUPMALLOCDLDI, 0xFF);	//ARM7 Setup: DLDI, and extensions if enabled through libutils
 	while(getValueSafe(&fifomsg[4]) == TargetARM7DLDIAddress){
 		if(TGDSInitLoopCount > (1048576 << 3) ){

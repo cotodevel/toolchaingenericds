@@ -110,21 +110,20 @@ void exception_sysexit(){
 	#endif
 	
 	#ifdef ARM9
-	exception_handler((uint32)unexpectedsysexit_9);
+	exception_handler((uint32)unexpectedsysexit_9, 0, 0);
 	#endif
 }
 
 //__attribute__((section(".itcm")))	//cant be at ITCM
 void generalARMExceptionHandler(){
 	#ifdef ARM7
-	
 	SendFIFOWords(EXCEPTION_ARM7, generalARM7Exception);
 	while(1==1){
 		IRQVBlankWait();
 	}
 	#endif
 	#ifdef ARM9
-	exception_handler((uint32)generalARM9Exception);
+	exception_handler((uint32)generalARM9Exception, 0, 0);
 	#endif
 }
 
@@ -132,20 +131,24 @@ void generalARMExceptionHandler(){
 static bool GDBSession;
 
 //__attribute__((section(".itcm"))) //cant be at ITCM
-void exception_handler(uint32 arg){
-	bool isTGDSCustomConsole = false;	//set default console or custom console: default console
+void exception_handler(uint32 arg, int stage, u32 fwNo){
+	bool isTGDSCustomConsole = false;	//reloading cause issues. Thus this ensures Console to be inited even when reloading
 	GUI_init(isTGDSCustomConsole);
+	sint32 fwlanguage = (sint32)getLanguage();
 	GUI_clear();
-	printf(" -- ");
+	VRAMBLOCK_SETBANK_C(VRAM_C_0x06200000_ENGINE_B_BG);	
+	
+	GUI_printf(" ---- ");
+	
 	if(arg == (uint32)unexpectedsysexit_9){
-		printf("ARM9 Exception:Unexpected main() exit.");
+		GUI_printf("ARM9 Exception:Unexpected main() exit.");
 		while(1==1){
 			IRQVBlankWait();
 		}
 	}
 	
 	else if(arg == (uint32)unexpectedsysexit_7){
-		printf("ARM7 Exception:Unexpected main() exit.");
+		GUI_printf("ARM7 Exception:Unexpected main() exit.");
 		while(1==1){
 			IRQVBlankWait();
 		}
@@ -153,16 +156,19 @@ void exception_handler(uint32 arg){
 	
 	else{
 		if(arg == (uint32)generalARM7Exception){
-			printf("ARM7: Hardware Exception. ");
-			printf("ARM7 Debug Vector: ");
+			GUI_printf("ARM7: Hardware Exception. ");
+			GUI_printf("ARM7 Debug Vector: ");
 			coherent_user_range_by_size((uint32)&exceptionArmRegs[0], sizeof(exceptionArmRegs));
 		}
 		else if(arg == (uint32)generalARM9Exception){
-			printf("ARM9: Hardware Exception. ");
-			printf("ARM9 Debug Vector: ");
+			GUI_printf("ARM9: Hardware Exception. ");
+			GUI_printf("ARM9 Debug Vector: ");
 		}
-		else{
-			printf("?????????: Unhandled Exception.");
+		else if(arg == (uint32)manualexception_9){
+			GUI_printf("ARM9: User Exception.");
+		}
+		else {
+			GUI_printf("ARM9: Unhandled Exception.");
 		}
 		
 		uint32 * debugVector = (uint32 *)&exceptionArmRegs[0]; //Shared buffer ARM7 / ARM9
@@ -172,14 +178,71 @@ void exception_handler(uint32 arg){
 			debugVector[0xf] = pc_abort - 8;
 		}
 		
-		//add support for GDB session.
-		printf("R0[%x] R1[%X] R2[%X] ",debugVector[0],debugVector[1],debugVector[2]);
-		printf("R3[%x] R4[%X] R5[%X] ",debugVector[3],debugVector[4],debugVector[5]);
-		printf("R6[%x] R7[%X] R8[%X] ",debugVector[6],debugVector[7],debugVector[8]);
-		printf("R9[%x] R10[%X] R11[%X] ",debugVector[9],debugVector[0xa],debugVector[0xb]);
-		printf("R12[%x] R13[%X] R14[%X]  ",debugVector[0xc],debugVector[0xd],debugVector[0xe]);
-		printf("R15[%x] SPSR[%x] CPSR[%X]  ",debugVector[0xf],debugVector[17],debugVector[16]);
-		
+		if(
+			(arg == (uint32)generalARM7Exception)
+			||
+			(arg == (uint32)generalARM9Exception)
+		){
+			GUI_printf("R0[%x] R1[%X] R2[%X] ",debugVector[0],debugVector[1],debugVector[2]);
+			GUI_printf("R3[%x] R4[%X] R5[%X] ",debugVector[3],debugVector[4],debugVector[5]);
+			GUI_printf("R6[%x] R7[%X] R8[%X] ",debugVector[6],debugVector[7],debugVector[8]);
+			GUI_printf("R9[%x] R10[%X] R11[%X] ",debugVector[9],debugVector[0xa],debugVector[0xb]);
+			GUI_printf("R12[%x] R13[%X] R14[%X]  ",debugVector[0xc],debugVector[0xd],debugVector[0xe]);
+			GUI_printf("R15[%x] SPSR[%x] CPSR[%X]  ",debugVector[0xf],debugVector[17],debugVector[16]);
+		}
+		else{
+			//Stage 0 = Failed detecting DS model from firmware.
+			//Stage 1 = Failed initializing ARM7 DLDI / NDS ARM9 memory allocator.
+			//Stage 2 = Failed initializing DSWIFI (ARM9).
+			//Stage 3 = Failed detecting DS model from firmware (2).
+			//Stage 4 = TWL Mode: SCFG_EXT7 locked. ToolchainGenericDS SDK needs it to run from SD in TWL mode.
+			//Stage 5 = TWL Mode: SCFG_EXT9 locked. ToolchainGenericDS SDK needs it to run from SD in TWL mode.
+			//Stage 6 = TGDS App has quit through exit(int status);
+			//Stage 7 = TGDS TWL App trying to be ran in NTR mode.
+			//Stage 8 = TGDS NTR App trying to be ran in TWL mode.
+			GUI_printf("TGDS boot fail: Stage [%d], firmware model: [%d]", stage, fwNo);
+			
+			if((stage == 0) || (stage == 3)){
+				GUI_printf("DS Firmware detection fail.");
+			}
+			else if(stage == 1){
+				GUI_printf("ARM7DLDI failed to initialize.");
+				GUI_printf("Manually DLDI patch the TGDS binary, ");
+				GUI_printf("ant try again. ");
+				GUI_printf("DLDI: [%s]", (char*)&dldiGet()->friendlyName[0]);
+			}
+			else if(stage == 2){
+				GUI_printf("DSWIFI (ARM9) init fail. Didn't link the dswifi lib in ARM9?");
+			}
+			else if((stage == 4) && (__dsimode == true)){
+				GUI_printf("TWL Mode: SCFG_EXT7 locked. Unlaunch and TWiLightMenu++ only supported.");
+			}
+			else if((stage == 5) && (__dsimode == true)){
+				GUI_printf("TWL Mode: SCFG_EXT9 locked. Unlaunch and TWiLightMenu++ only supported.");
+			}
+			else if(stage == 6){
+				if(exitValue != -10000){
+					GUI_printf("ToolchainGenericDS App has quit through exit(%d); .", exitValue);
+				}
+				else{
+					GUI_printf("ToolchainGenericDS App: abort(); .");
+				}
+			}
+			else if(stage == 7){
+				GUI_printf("Unsupported [TWL] binary running on NTR mode hardware. ");
+				GUI_printf("Please run the same TGDS Project,");
+				GUI_printf("but using its [NTR] binary counterpart.");
+			}
+			else if(stage == 8){
+				GUI_printf("Unsupported [NTR] binary running on TWL mode hardware. ");
+				GUI_printf("Please run the same TGDS Project, ");
+				GUI_printf("but using its [TWL] binary counterpart.");
+			}
+			else{
+				GUI_printf("handleDSInitError(); Unhandled event. Contact developer.");
+				GUI_printf("Halting system. ");
+			}
+		}
 		//red
 		//BG_PALETTE_SUB[0] = RGB15(31,0,0);
 		//BG_PALETTE_SUB[255] = RGB15(31,31,31);
@@ -192,9 +255,10 @@ void exception_handler(uint32 arg){
 		BG_PALETTE_SUB[0] = RGB15(0,0,31);
 		BG_PALETTE_SUB[255] = RGB15(31,31,31);
 		
-		printf("A: Enable GDB Debugging. ");
-		printf("(check: toolchaingenericds-gdbstub-example project)");
-		printf("B: Skip GDB Debugging");
+		//Todo: Restore GDB support from TGDS1.64
+		//GUI_printf("A: Enable GDB Debugging. ");
+		//GUI_printf("(check: toolchaingenericds-gdbstub-example project)");
+		//GUI_printf("B: Skip GDB Debugging");
 		
 		while(1){
 			scanKeys();
@@ -214,11 +278,9 @@ void exception_handler(uint32 arg){
 		if(GDBSession == true){
 			LeaveExceptionMode();	//code works in ITCM now
 		}
-		
 	}
 	
 	while(1){
-		
 		IRQVBlankWait();
 	}
 }
@@ -237,63 +299,6 @@ __attribute__((optimize("Os")))
 __attribute__ ((optnone))
 #endif
 void handleDSInitError(int stage, u32 fwNo){
-	VRAMBLOCK_SETBANK_C(VRAM_C_0x06200000_ENGINE_B_BG);	
-	
-	bool isTGDSCustomConsole = false;	//reloading cause issues. Thus this ensures Console to be inited even when reloading
-	GUI_init(isTGDSCustomConsole);
-	sint32 fwlanguage = (sint32)getLanguage();
-	GUI_clear();
-	
-	printf(" ---- ");
-	printf(" ---- ");
-	printf(" ---- ");
-	
-	//Stage 0 = Failed detecting DS model from firmware.
-	//Stage 1 = Failed initializing ARM7 DLDI / NDS ARM9 memory allocator.
-	//Stage 2 = Failed initializing DSWIFI (ARM9).
-	//Stage 3 = Failed detecting DS model from firmware (2).
-	//Stage 4 = TWL Mode: SCFG_EXT7 locked. ToolchainGenericDS SDK needs it to run from SD in TWL mode.
-	//Stage 5 = TWL Mode: SCFG_EXT9 locked. ToolchainGenericDS SDK needs it to run from SD in TWL mode.
-	//Stage 6 = TGDS App has quit through exit(int status);
-	//Stage 7 = TGDS TWL App trying to be ran in NTR mode.
-	//Stage 8 = TGDS NTR App trying to be ran in TWL mode.
-	sprintf(tempBuf, "TGDS boot fail: Stage %d, firmware model: %d", stage, fwNo);
-	printf(tempBuf);
-	
-	if(stage == 1){
-		printf("DLDI: [%s]", (char*)&dldiGet()->friendlyName[0]);
-	}
-	else if((stage == 4) && (__dsimode == true)){
-		printf("TWL Mode: SCFG_EXT7 locked. Unlaunch and TWiLightMenu++ only supported.");
-	}
-	else if((stage == 5) && (__dsimode == true)){
-		printf("TWL Mode: SCFG_EXT9 locked. Unlaunch and TWiLightMenu++ only supported.");
-	}
-	else if(stage == 6){
-		if(exitValue != -10000){
-			sprintf(tempBuf, "ToolchainGenericDS App has quit through exit(%d); .\n", exitValue);
-		}
-		else{
-			sprintf(tempBuf, "ToolchainGenericDS App: abort(); .\n");
-		}
-		printf(tempBuf);
-	}
-	else if(stage == 7){
-		printf("Unsupported [TWL] binary running on NTR mode hardware. >%d", TGDSPrintfColor_Yellow);
-		printf("Please run the same TGDS Project, >%d", TGDSPrintfColor_Yellow);
-		printf("but using its [NTR] binary counterpart.>%d", TGDSPrintfColor_Yellow);
-	}
-	else if(stage == 8){
-		printf("Unsupported [NTR] binary running on TWL mode hardware. >%d", TGDSPrintfColor_Yellow);
-		printf("Please run the same TGDS Project, >%d", TGDSPrintfColor_Yellow);
-		printf("but using its [TWL] binary counterpart.>%d", TGDSPrintfColor_Yellow);
-	}
-	else{
-		printf("handleDSInitError(); Unhandled event. Contact developer. >%d", TGDSPrintfColor_Yellow);
-		printf("Halting system. >%d", TGDSPrintfColor_Yellow);
-	}
-	while(1==1){
-		swiDelay(1);
-	}
+	exception_handler(manualexception_9, stage, fwNo);
 }
 #endif
