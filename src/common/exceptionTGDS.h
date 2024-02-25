@@ -57,6 +57,7 @@ USA
 //Software Exceptions
 #define unexpectedsysexit_9	(u32)(0xdeaddea9)
 #define unexpectedsysexit_7	(u32)(0xdeaddea7)
+#define manualexception_9	(u32)(0xdead0009)
 
 #endif
 
@@ -77,7 +78,7 @@ extern void setupDefaultExceptionHandler();
 extern void exception_sysexit();
 extern void generalARMExceptionHandler();
 
-extern void exception_handler(uint32 arg);
+extern void exception_handler(uint32 arg, int stage, u32 fwNo);
 extern void DebugException();
 
 //custom handler
