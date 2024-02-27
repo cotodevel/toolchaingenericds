@@ -725,7 +725,7 @@ void handleARGV(){
 					}
 					
 					//build the command line vector
-					cmdLineVectorPosixCompatible[i] = (char *)&thisArgv[i];
+					cmdLineVectorPosixCompatible[argCount] = (char *)&thisArgv[i];
 					argCount++;
 				}
 			}
@@ -737,6 +737,7 @@ void handleARGV(){
 		thisArgc = 0;
 	}
 	
+	__system_argv->length = thisArgc;
 	setGlobalArgc(thisArgc);
 	setGlobalArgv((char**)cmdLineVectorPosixCompatible);
 	//extern int main(int argc, char **argv);
