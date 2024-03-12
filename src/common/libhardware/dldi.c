@@ -3,6 +3,9 @@
 #include "dldi.h"
 #include "typedefsTGDS.h"
 #include "debugNocash.h"
+#include "utilsTGDS.h"
+#include "ipcfifoTGDS.h"
+
 #if defined(WIN32) || defined(ARM9)
 #include "fatfslayerTGDS.h"
 #endif
@@ -30,6 +33,51 @@
 #if defined(WIN32)
 FILE * virtualDLDIDISKImg = NULL;
 u8 _io_dldi_stub[16384];
+#endif
+
+#ifdef ARM7
+__attribute__((optimize("O0")))
+bool ARM7InitDLDI(u32 ARM7MallocStartaddress, int ARM7MallocSize, u32 TargetARM7DLDIAddress){
+	u32 dldiStartAddress = getValueSafe((u32*)0x02FFDFE8);	//ARM7_ARM9_DLDI_STATUS
+	
+	setupLibUtils(); //ARM7 libUtils Setup
+	
+	//DSi in NTR mode throws false positives about TWL mode, enforce DSi SD initialization to define, NTR or TWL mode.
+	int detectedTWLModeInternalSDAccess = 0;
+	bool DLDIARM7FSInitStatus = false;
+	
+	if( (!sdio_Startup()) || (!sdio_IsInserted()) ){
+		detectedTWLModeInternalSDAccess = TWLModeDLDIAccessDisabledInternalSDDisabled;
+	}
+	else{
+		detectedTWLModeInternalSDAccess = TWLModeDLDIAccessDisabledInternalSDEnabled;
+		DLDIARM7FSInitStatus = true;
+	}
+	
+	//NTR mode: define DLDI initialization and ARM7DLDI operating mode
+	if((detectedTWLModeInternalSDAccess == TWLModeDLDIAccessDisabledInternalSDDisabled) && (TargetARM7DLDIAddress != 0)){
+		DLDIARM7Address = (u32*)TargetARM7DLDIAddress; 
+		memcpy (DLDIARM7Address, (void*)dldiStartAddress, 16*1024);
+		DLDIARM7FSInitStatus = dldi_handler_init();
+		if(DLDIARM7FSInitStatus == true){
+			detectedTWLModeInternalSDAccess = TWLModeDLDIAccessEnabledInternalSDDisabled;
+		}
+		else{
+			detectedTWLModeInternalSDAccess = TWLModeDLDIAccessDisabledInternalSDDisabled;
+		}					
+	}
+	
+	//ARM7 custom Malloc libutils implementation
+	if(initMallocARM7LibUtilsCallback != NULL){
+		initMallocARM7LibUtilsCallback(ARM7MallocStartaddress, ARM7MallocSize);
+	}
+	
+	TWLModeInternalSDAccess = detectedTWLModeInternalSDAccess;
+	setValueSafe(0x02FFDFE8, TWLModeInternalSDAccess); //arm9's FS_init(); go @ARM7_ARM9_DLDI_STATUS
+	
+	return DLDIARM7FSInitStatus;
+}
+
 #endif
 
 const uint32  DLDI_MAGIC_NUMBER = 
@@ -195,7 +243,7 @@ bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer) {
 	//DLDI Mode
 	if(TWLModeInternalSDAccess == TWLModeDLDIAccessEnabledInternalSDDisabled){
 		#ifdef ARM7
-		struct  DLDI_INTERFACE* dldiInterface = (struct DLDI_INTERFACE*)DLDIARM7Address;
+		struct DLDI_INTERFACE* dldiInterface = dldiGet();
 		return dldiInterface->ioInterface.readSectors(sector, numSectors, buffer);
 		#endif
 		#ifdef ARM9

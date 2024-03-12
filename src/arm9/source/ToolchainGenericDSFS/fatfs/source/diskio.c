@@ -9,6 +9,7 @@
 
 #include "diskio.h"		/* FatFs lower layer API */
 #include "posixHandleTGDS.h"
+#include "videoTGDS.h"
 
 #if defined(WIN32)
 #include "dldiWin32.h"
@@ -19,6 +20,7 @@
 #include "dldi.h"
 #include <stdbool.h>
 #include "global_settings.h"
+#include "exceptionTGDS.h"
 #endif
 
 #include "ff.h"
@@ -63,47 +65,18 @@ DSTATUS disk_initialize (
 	BYTE pdrv				/* Physical drive nmuber to identify the drive */
 )
 {
-	DSTATUS ret = 0;
+	DSTATUS ret = 0; //init OK!
+	
+	TWLModeInternalSDAccess = getValueSafe((u32*)0x02FFDFE8); //ARM7DLDI mode: TWL SD @ ARM7 or DLDI SD @ ARM7: @ARM7_ARM9_DLDI_STATUS
+	if(TWLModeInternalSDAccess == TWLModeDLDIAccessDisabledInternalSDDisabled){
 		
-		//3DS
-        /*
-		static uint32 sdmmcInitResult = 4;
+		//Throw exception always
+		u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
+		int stage = 1;
+		handleDSInitError(stage, (u32)fwNo);
 		
-        if(sdmmcInitResult == 4) sdmmcInitResult = sdmmc_sdcard_init();
-		
-        if(pdrv == CTRNAND)
-        {
-            if(!(sdmmcInitResult & 1))
-            {
-                ctrNandInit();
-                ret = 0;
-            }
-            else ret = STA_NOINIT;
-        }
-        else 
-		
-		ret = (!(sdmmcInitResult & 2)) ? 0 : STA_NOINIT;
-		*/
-		
-		//Init DLDI: 
-		//NTR Mode: Already taken care by ARM7 DLDI
-		//TWL Mode: Initialize DLDI from ARM9 ONLY if no TGDS DLDI TWL is available
-		struct AllocatorInstance * customMemoryAllocator = &CustomAllocatorInstance;
-		
-		if(
-			(__dsimode == true)
-			&&
-			(customMemoryAllocator->useTWLSDThroughDLDI == false) 
-		){
-			if(dldi_handler_init() == true){	//Init DLDI: ARM9 version
-				ret = 0;	//init OK!
-			}
-			else{
-				ret = STA_NOINIT;
-			}
-		}
-		
-		ret = 0;	//init OK!
+		ret = STA_NOINIT;
+	}
 	return ret;
 }
 

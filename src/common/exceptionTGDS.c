@@ -48,13 +48,45 @@ USA
 
 #endif
 
-void setupDefaultExceptionHandler(){
-	
-	//27FFD9Ch - RAM - NDS9 Debug Stacktop / Debug Vector (0=None)
+#ifdef ARM7
+char * sharedStringExceptionMessageOutput = NULL;
+#endif
+
+#ifdef ARM9
+char sharedStringExceptionMessage[256];
+#endif
+
+//27FFD9Ch - RAM - NDS9 Debug Stacktop / Debug Vector (0=None)
 	//380FFDCh - RAM - NDS7 Debug Stacktop / Debug Vector (0=None)
 	//These addresses contain a 32bit pointer to the Debug Handler, and, memory below of the addresses is used as Debug Stack. 
 	//The debug handler is called on undefined instruction exceptions, on data/prefetch aborts (caused by the protection unit), 
 	//on FIQ (possibly caused by hardware debuggers). It is also called by accidental software-jumps to the reset vector, and by unused SWI numbers within range 0..1Fh.
+	
+
+void setupDisabledExceptionHandler(){
+	#ifdef EXCEPTION_VECTORS_0x00000000
+	//todo: replace projects that their own exception vectors @ 0x00000000 methods for raising exceptions
+	#endif
+	
+	#ifdef EXCEPTION_VECTORS_0xffff0000
+	
+	#ifdef ARM7
+	*(uint32*)0x0380FFDC = (uint32)0;
+	#endif
+	
+	#ifdef ARM9
+	*(uint32*)0x02FFFD9C = (uint32)0;
+	SendFIFOWords(TGDS_ARM7_SETUPDISABLEDEXCEPTIONHANDLER, (u32)&exceptionArmRegs[0]);
+	#endif
+	
+	#endif
+}
+
+
+u32 sharedBufHandler[2];
+
+void setupDefaultExceptionHandler(){
+	
 	
 	#ifdef EXCEPTION_VECTORS_0x00000000
 	//todo: replace projects that their own exception vectors @ 0x00000000 methods for raising exceptions
@@ -68,7 +100,9 @@ void setupDefaultExceptionHandler(){
 	
 	#ifdef ARM9
 	*(uint32*)0x02FFFD9C = (uint32)DebugException;
-	SendFIFOWords(TGDS_ARM7_SETUPEXCEPTIONHANDLER, (u32)&exceptionArmRegs[0]);
+	setValueSafe(&sharedBufHandler[0], &exceptionArmRegs[0]);
+	setValueSafe(&sharedBufHandler[1], &sharedStringExceptionMessage[0]);
+	SendFIFOWords(TGDS_ARM7_SETUPEXCEPTIONHANDLER, (u32)&sharedBufHandler);
 	#endif
 	
 	#endif
@@ -102,7 +136,6 @@ uint32 exceptionArmRegs[0x20];
 //__attribute__((section(".itcm"))) //cant be at ITCM
 void exception_sysexit(){
 	#ifdef ARM7
-	
 	SendFIFOWords(EXCEPTION_ARM7, unexpectedsysexit_7);
 	while(1){
 		IRQWait(1, IRQ_VBLANK);
@@ -129,7 +162,7 @@ void generalARMExceptionHandler(){
 
 #ifdef ARM9
 static bool GDBSession;
-
+char msgDebugException[MAX_TGDSFILENAME_LENGTH];
 //__attribute__((section(".itcm"))) //cant be at ITCM
 void exception_handler(uint32 arg, int stage, u32 fwNo){
 	bool isTGDSCustomConsole = false;	//reloading cause issues. Thus this ensures Console to be inited even when reloading
@@ -167,6 +200,9 @@ void exception_handler(uint32 arg, int stage, u32 fwNo){
 		else if(arg == (uint32)manualexception_9){
 			GUI_printf("ARM9: User Exception.");
 		}
+		else if(arg == (uint32)manualexception_7){
+			GUI_printf("ARM7: User Exception.");
+		}
 		else {
 			GUI_printf("ARM9: Unhandled Exception.");
 		}
@@ -191,28 +227,45 @@ void exception_handler(uint32 arg, int stage, u32 fwNo){
 			GUI_printf("R15[%x] SPSR[%x] CPSR[%X]  ",debugVector[0xf],debugVector[17],debugVector[16]);
 		}
 		else{
-			//Stage 0 = Failed detecting DS model from firmware.
-			//Stage 1 = Failed initializing ARM7 DLDI / NDS ARM9 memory allocator.
+			//Stage 0 = TGDS-MB's compatibility on isNDSBinaryV1Slot2 binaries are on the to-do list
+			//Stage 1 = Failed initializing ARM7 DLDI.
 			//Stage 2 = Failed initializing DSWIFI (ARM9).
-			//Stage 3 = Failed detecting DS model from firmware (2).
+			//Stage 3 = Trying to reload ToolchainGenericDS-multiboot, but missing payload (ARM9).
 			//Stage 4 = TWL Mode: SCFG_EXT7 locked. ToolchainGenericDS SDK needs it to run from SD in TWL mode.
 			//Stage 5 = TWL Mode: SCFG_EXT9 locked. ToolchainGenericDS SDK needs it to run from SD in TWL mode.
 			//Stage 6 = TGDS App has quit through exit(int status);
-			//Stage 7 = TGDS TWL App trying to be ran in NTR mode.
-			//Stage 8 = TGDS NTR App trying to be ran in TWL mode.
-			GUI_printf("TGDS boot fail: Stage [%d], firmware model: [%d]", stage, fwNo);
+			//Stage 7 = TGDS TWL App trying to be ran in NTR mode. (unused)
+			//Stage 8 = TGDS NTR App trying to be ran in TWL mode. (unused)
+			//Stage 10 = Custom manual exception (ARM7)
+			GUI_printf("TGDS boot fail: Stage [%d], firmware model: [0x%x]", stage, fwNo);
 			
-			if((stage == 0) || (stage == 3)){
-				GUI_printf("DS Firmware detection fail.");
+			int isNTRTWLBinary = isThisPayloadNTROrTWLMode();
+			if (isNTRTWLBinary == isTWLBinary){
+				GUI_printf("TGDS ARM9 Payload: [TWL] mode");
+			}
+			else if (isNTRTWLBinary == isNDSBinaryV3){
+				GUI_printf("TGDS ARM9 Payload: [NTR] mode");
+			} 
+			else{
+				GUI_printf("TGDS ARM9 Payload: Failed to detect ");
+			}
+			if(stage == 0){
+				GUI_printf("Unsupported isNDSBinaryV1Slot2 binary format .ds.gba ");
+				GUI_printf("for the time being. ");
 			}
 			else if(stage == 1){
 				GUI_printf("ARM7DLDI failed to initialize.");
-				GUI_printf("Manually DLDI patch the TGDS binary, ");
-				GUI_printf("ant try again. ");
+				GUI_printf("Manually patch the correct DLDI for , ");
+				GUI_printf("your card into this TGDS binary ");
+				GUI_printf("and try again. ");
 				GUI_printf("DLDI: [%s]", (char*)&dldiGet()->friendlyName[0]);
 			}
 			else if(stage == 2){
 				GUI_printf("DSWIFI (ARM9) init fail. Didn't link the dswifi lib in ARM9?");
+			}
+			else if(stage == 3){
+				GUI_printf("ToolchainGenericDS-multiboot: missing [%s] payload.", msgDebugException);
+				GUI_printf("Copy [%s] payload in SD root and try again", msgDebugException);
 			}
 			else if((stage == 4) && (__dsimode == true)){
 				GUI_printf("TWL Mode: SCFG_EXT7 locked. Unlaunch and TWiLightMenu++ only supported.");
@@ -237,6 +290,9 @@ void exception_handler(uint32 arg, int stage, u32 fwNo){
 				GUI_printf("Unsupported [NTR] binary running on TWL mode hardware. ");
 				GUI_printf("Please run the same TGDS Project, ");
 				GUI_printf("but using its [TWL] binary counterpart.");
+			}
+			else if(stage == 10){
+				GUI_printf(sharedStringExceptionMessage);
 			}
 			else{
 				GUI_printf("handleDSInitError(); Unhandled event. Contact developer.");
@@ -287,6 +343,44 @@ void exception_handler(uint32 arg, int stage, u32 fwNo){
 #endif
 
 int TGDSInitLoopCount=0;
+
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void handleDSInitOutputMessage(char * msg){
+	#ifdef ARM7
+	strcpy(sharedStringExceptionMessageOutput, msg);
+	#endif
+	#ifdef ARM9
+	strcpy(sharedStringExceptionMessage, msg);
+	#endif
+}
+
+#ifdef ARM7
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void handleDSInitError7(int stage, u32 fwNo){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+	setValueSafe(&fifomsg[0], (u32)stage);
+	setValueSafe(&fifomsg[1], (u32)fwNo);
+	SendFIFOWords(EXCEPTION_ARM7, manualexception_7);
+	while(1==1){
+		IRQVBlankWait();
+	}
+}
+#endif
+
 #ifdef ARM9
 
 char tempBuf[256];

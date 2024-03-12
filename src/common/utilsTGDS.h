@@ -157,7 +157,13 @@ extern int	setBacklight(int flags);
 extern void RenderTGDSLogoMainEngine(u8 * compressedLZSSBMP, int compressedLZSSBMPSize);
 
 //ARGV 
-extern int thisArgc;
+extern void setGlobalArgc(int argcVal);
+extern int getGlobalArgc();
+extern void setGlobalArgv(char** argvVal);
+extern char** getGlobalArgv();
+extern int globalArgc;
+extern char **globalArgv;
+extern char * thisArgvPosix[argvItems];
 extern char thisArgv[argvItems][MAX_TGDSFILENAME_LENGTH];
 extern void handleARGV();
 
@@ -255,11 +261,9 @@ extern void initializeLibUtils7(
 
 #ifdef ARM9
 extern struct soundPlayerContext soundData;
-extern u32 reloadStatus;
 extern bool updateRequested;
 #endif
 
-extern bool TGDSMultibootRunNDSPayload(char * filename);
 extern char * TGDSPayloadMode;
 
 #ifdef ARM7
@@ -274,23 +278,17 @@ extern void reportTGDSPayloadMode(u32 bufferSource, char * ARM7OutLog, char * AR
 extern char bufModeARM7[256];
 extern void addARGV(int argc, char *argv);
 extern int isNTROrTWLBinary(char * filename);
-extern int isThisPayloadNTROrTWLMode();
 #endif
 
+extern int isThisPayloadNTROrTWLMode();
 extern void initSound();
 extern void setupLibUtils();
 
-extern void setGlobalArgc(int argcVal);
-extern int getGlobalArgc();
-extern void setGlobalArgv(char** argvVal);
-extern char** getGlobalArgv();
-
-extern int globalArgc;
-extern char **globalArgv;
 extern bool debugEnabled;
 extern void enableTGDSDebugging();
 extern void disableTGDSDebugging();
 extern bool getTGDSDebuggingState();
+
 #ifdef __cplusplus
 }
 #endif

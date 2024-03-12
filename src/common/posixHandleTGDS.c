@@ -221,10 +221,8 @@ __attribute__((optimize("O0")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,											//ARM7
-						u32 ARM9MallocStartaddress, u32 ARM9MallocSize, u32 * mallocHandler, u32 * callocHandler, //ARM9
-						u32 * freeHandler, u32 * MallocFreeMemoryHandler, bool customAllocator, u32 dldiMemAddress,
-						u32 TargetARM7DLDIAddress, bool isDLDITWLSD
+void initARMCoresMalloc(u32 ARM9MallocStartaddress, u32 ARM9MallocSize, u32 * mallocHandler, u32 * callocHandler, //ARM9
+						u32 * freeHandler, u32 * MallocFreeMemoryHandler, bool customAllocator
 ) {
 	//Are we trying to run a TWL mode ARM9 payload in NTR mode? If yes, notify the user so he/she must run a NTR binary instead. Because TWL hardware & TWL binaries are not backwards compatible with NTR units.
 	int isNTRTWLBinary = isThisPayloadNTROrTWLMode();
@@ -248,14 +246,6 @@ void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,									
 		SetBusSLOT1ARM7SLOT2ARM9();
 	}
 	
-	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-	setValueSafe(&fifomsg[0], (uint32)ARM7MallocStartAddress);
-	setValueSafe(&fifomsg[1], (uint32)ARM7MallocSize);
-	setValueSafe(&fifomsg[2], (uint32)customAllocator);
-	setValueSafe(&fifomsg[3], (uint32)dldiMemAddress);
-	setValueSafe(&fifomsg[4], (uint32)TargetARM7DLDIAddress);
-	setValueSafe(&fifomsg[5], (uint32)isDLDITWLSD);
 	
 	setTGDSARM9MallocBaseAddress(ARM9MallocStartaddress);
 	if(customAllocator == true){
@@ -272,22 +262,8 @@ void initARMCoresMalloc(u32 ARM7MallocStartAddress, int ARM7MallocSize,									
 			TGDSMallocFreeMemory9 = (TGDSARM9MallocFreeMemoryHandler)MallocFreeMemoryHandler;
 		}
 	}
-	TGDSInitLoopCount = 0;
 	setupLibUtils(); //ARM9 libUtils Setup
 	setupDefaultExceptionHandler();	//Setup ARM7 & ARM9 Exception Handler
-	SendFIFOWords(TGDS_ARM7_SETUPMALLOCDLDI, 0xFF);	//ARM7 Setup: DLDI, and extensions if enabled through libutils
-	while(getValueSafe(&fifomsg[4]) == TargetARM7DLDIAddress){
-		if(TGDSInitLoopCount > (1048576 << 3) ){
-			u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
-			int stage = 1;
-			handleDSInitError(stage, (u32)fwNo);
-		}
-		TGDSInitLoopCount++;
-	}
-	
-	__dsimode = (bool)fifomsg[2];
-	TWLModeInternalSDAccess = fifomsg[3]; //ARM7 DLDI decides the current TGDS FS mode
-	//bool dldiInitStatus = (bool)fifomsg[4]; //DLDI / SDIO init: true: OK, false: error
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -302,23 +278,15 @@ void setTGDSMemoryAllocator(struct AllocatorInstance * TGDSMemoryAllocator) {
 	u32 ARM9MallocStartaddress = (u32)sbrk(0);
 	if(TGDSMemoryAllocator->customMalloc == false){
 		initARMCoresMalloc(
-			TGDSMemoryAllocator->ARM7MallocStartAddress, TGDSMemoryAllocator->ARM7MallocSize,	//ARM7 Malloc
-			ARM9MallocStartaddress, getMaxRam(), NULL, NULL, NULL, NULL, customMallocARM9,		//ARM9 Malloc
-			TGDSMemoryAllocator->DLDI9StartAddress,
-			TGDSMemoryAllocator->TargetARM7DLDIAddress,
-			TGDSMemoryAllocator->useTWLSDThroughDLDI
+			ARM9MallocStartaddress, getMaxRam(), NULL, NULL, NULL, NULL, customMallocARM9		//ARM9 Malloc
 		);
 	}
 	else{
 		customMallocARM9 = true;
 		initARMCoresMalloc(
-			TGDSMemoryAllocator->ARM7MallocStartAddress, TGDSMemoryAllocator->ARM7MallocSize,				//ARM7 Malloc
 			(u32)TGDSMemoryAllocator->ARM9MallocStartaddress, (u32)TGDSMemoryAllocator->memoryToAllocate,		//ARM9 Malloc
 			(u32 *)TGDSMemoryAllocator->CustomTGDSMalloc9, (u32 *)TGDSMemoryAllocator->CustomTGDSCalloc9, 
-			(u32 *)TGDSMemoryAllocator->CustomTGDSFree9, (u32 *)TGDSMemoryAllocator->CustomTGDSMallocFreeMemory9, customMallocARM9,
-			TGDSMemoryAllocator->DLDI9StartAddress,
-			TGDSMemoryAllocator->TargetARM7DLDIAddress,
-			TGDSMemoryAllocator->useTWLSDThroughDLDI
+			(u32 *)TGDSMemoryAllocator->CustomTGDSFree9, (u32 *)TGDSMemoryAllocator->CustomTGDSMallocFreeMemory9, customMallocARM9
 		);
 	}
 	customMallocARM9 = TGDSMemoryAllocator->customMalloc;

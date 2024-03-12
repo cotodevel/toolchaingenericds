@@ -94,7 +94,7 @@ d_objs_arm7:=	${file_arm7_src_c:.c=.d}	${file_arm7_src_s:.s=.d}	${file_arm7_src_
 #ARM9 specific definitions. -fno-common so we force initialized data to rodata
 MAPFILE = $(DIR_ARM9).map
 AS_ASFLAGS		=	$(GLOBAL_AS_COMPILER_FLAGS)	$(GLOBAL_SHARED_FLAGS_7)	$(SPECIFIC_AS_COMPILER_FLAGS_7)	
-CC_FLAGS		=	-march=armv4t	-mthumb-interwork	-mfloat-abi=soft	-Os	-fno-short-enums	-marm	-Wall	-FPIC	-DNDS	-DARM7	-DTWLMODE	-fno-exceptions	-ffunction-sections	-fdata-sections	-DTGDSBinVersion='$(TOOLCHAIN_GENERIC_DS_VER)'
+CC_FLAGS		=	-march=armv4t	-mthumb-interwork	-mfloat-abi=soft	-O2	-marm	-Wall	-DNDS	-DARM7	-DTWLMODE	-fno-common	-DTGDSBinVersion='$(TOOLCHAIN_GENERIC_DS_VER)'
 CPP_FLAGS		=	$(CC_FLAGS)	-nostdinc++	-fno-rtti	
 BUILD			= 	$(BUILD_ARM7)
 DIR_SRC			=	$(DIRS_ARM7_SRCLIB)

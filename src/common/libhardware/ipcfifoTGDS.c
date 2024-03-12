@@ -462,11 +462,19 @@ void HandleFifoNotEmpty(){
 			break;
 			
 			case((uint32)TGDS_ARM7_SETUPEXCEPTIONHANDLER):{
-				exceptionArmRegsShared = (uint8*)data0;		//data0 == ARM9's exceptionArmRegs
+				u32 * sharedBuf = (uint32*)data0; //data0 == ARM9's sharedBuf
+				exceptionArmRegsShared = (uint8*)(getValueSafe(sharedBuf+0));
 				memset(exceptionArmRegsShared, 0, 0x20);	//same as exceptionArmRegs[0x20]
+				sharedStringExceptionMessageOutput = (char*)(getValueSafe(sharedBuf+1));
 				setupDefaultExceptionHandler();	//ARM7 TGDS Exception Handler
 			}
 			break;
+			
+			case((uint32)TGDS_ARM7_SETUPDISABLEDEXCEPTIONHANDLER):{
+				setupDisabledExceptionHandler();	//ARM7 TGDS Exception Handler
+			}
+			break;
+			
 			
 			case((uint32)FIFO_INITSOUND):{
 				initSound();
@@ -531,89 +539,22 @@ void HandleFifoNotEmpty(){
 			}
 			break;
 			
-			//ARM7 TGDS-Multiboot loader code here
-						case(FIFO_ARM7_RELOAD):{	
+			//ARM7 TGDS-Multiboot loader 
+						case(FIFO_ARM7_RELOAD):{	//TGDS-MB v3 VRAM Loader's tgds_multiboot_payload.bin: void executeARM7Payload(u32 arm7entryaddress, int arm7BootCodeSize);
 							struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 							uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
 							u32 arm7EntryAddressPhys = getValueSafe(&fifomsg[0]);
 							int arm7BootCodeSize = getValueSafe(&fifomsg[1]);
 							u32 arm7entryaddress = getValueSafe(&fifomsg[2]);
 							memcpy((void *)arm7entryaddress,(const void *)arm7EntryAddressPhys, arm7BootCodeSize);
-							reloadARMCore((u32)arm7entryaddress);	//Run Bootstrap7 
+							setValueSafe((u32*)0x02FFFE34, (u32)arm7entryaddress);
+							swiSoftReset();	// Jump to boot loader
 						}
 						break;
-						case(FIFO_TGDSMBRELOAD_SETUP):{
-							reloadNDSBootstub();
-						}
-						break;
-						
 			
-			case(TGDS_ARM7_SETUPMALLOCDLDI):{	//ARM7
-				struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-				u32 ARM7MallocStartaddress = getValueSafe(&fifomsg[0]);
-				u32 ARM7MallocSize = getValueSafe(&fifomsg[1]);
-				//bool customAllocator = (bool)getValueSafe(&fifomsg[2]);
-				u32 dldiStartAddress = getValueSafe(&fifomsg[3]);
-				u32 TargetARM7DLDIAddress = getValueSafe(&fifomsg[4]);
-				bool isDLDITWLSD = getValueSafe(&fifomsg[5]);
-				
-				setupLibUtils(); //ARM7 libUtils Setup
-				
-				//DSi in NTR mode throws false positives about TWL mode, enforce DSi SD initialization to define, NTR or TWL mode.
-				int detectedTWLModeInternalSDAccess = 0;
-				bool DLDIARM7FSInitStatus = false;
-				
-				//Try TWL internal SD init if TGDS TWL payload
-				if(isDLDITWLSD == false){
-					if( (!sdio_Startup()) || (!sdio_IsInserted()) ){
-						detectedTWLModeInternalSDAccess = TWLModeDLDIAccessDisabledInternalSDDisabled;
-						__dsimode = false; //already set in IRQInit
-					}
-					else{
-						detectedTWLModeInternalSDAccess = TWLModeDLDIAccessDisabledInternalSDEnabled;
-						__dsimode = true; //already set in IRQInit
-						DLDIARM7FSInitStatus = true;
-					}
-					nocashMessage("not NTR payload or no TWL DLDI\n");
-				}
-				//Try TWL internal SD init if TGDS NTR payload + TWL ARM7 DLDI
-				else{
-					if(__dsimode == true){
-						detectedTWLModeInternalSDAccess = TWLModeDLDIAccessDisabledInternalSDDisabled; //TGDS NTR Payload + TWL SD DLDI + TWL Mode
-						nocashMessage("NTR payload: TWL Mode + TWL DLDI\n");
-					}
-					else{
-						detectedTWLModeInternalSDAccess = TWLModeDLDIAccessDisabledInternalSDDisabled; //TGDS NTR Payload + TWL SD DLDI + NTR Mode: Will cause DLDI init failure because the loader failed to DLDI patch the TGDS NTR payload.
-						nocashMessage("FAIL: NTR payload: NTR Mode + TWL DLDI\n");
-					}
-				}
-				
-				//NTR mode: define DLDI initialization and ARM7DLDI operating mode
-				if((detectedTWLModeInternalSDAccess == TWLModeDLDIAccessDisabledInternalSDDisabled) && (TargetARM7DLDIAddress != 0)){
-					DLDIARM7Address = (u32*)TargetARM7DLDIAddress; 
-					memcpy (DLDIARM7Address, (void*)dldiStartAddress, 16*1024);
-					DLDIARM7FSInitStatus = dldi_handler_init();
-					if(DLDIARM7FSInitStatus == true){
-						detectedTWLModeInternalSDAccess = TWLModeDLDIAccessEnabledInternalSDDisabled;
-					}
-					else{
-						detectedTWLModeInternalSDAccess = TWLModeDLDIAccessDisabledInternalSDDisabled;
-					}					
-				}
-				
-				//ARM7 custom Malloc libutils implementation
-				if(initMallocARM7LibUtilsCallback != NULL){
-					initMallocARM7LibUtilsCallback(ARM7MallocStartaddress, ARM7MallocSize);
-				}
-				
-				fifomsg[0] = 0;
-				fifomsg[1] = 0;
-				fifomsg[2] = (u32)__dsimode;
-				fifomsg[3] = TWLModeInternalSDAccess = detectedTWLModeInternalSDAccess;
-				fifomsg[4] = DLDIARM7FSInitStatus;
-			}
-			break;
+						case(BOOT_FILE_TGDSMB):{	//TGDS-MB v3 VRAM Loader's tgds_multiboot_payload.bin: arm9 bootloader: char * homebrewToBoot
+							bootfile();
+						}break;
 			
 			case TGDS_ARMCORES_REPORT_PAYLOAD_MODE:{
 				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
@@ -650,7 +591,7 @@ void HandleFifoNotEmpty(){
 			//ARM9 command handler
 			#ifdef ARM9
 			//tgds-mb loader code here (ARM9)
-						case(FIFO_ARM7_RELOAD_OK):{
+						case(FIFO_ARM7_RELOAD):{
 							reloadStatus = 0;
 						}
 						break;
@@ -700,6 +641,14 @@ void HandleFifoNotEmpty(){
 					break;
 					case(unexpectedsysexit_7):{
 						exception_handler((uint32)unexpectedsysexit_7, 0, 0);
+					}
+					break;
+					case(manualexception_7):{
+						struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+						uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+						int stage = (int)getValueSafe(&fifomsg[0]);
+						u8 fwNo = (u8)getValueSafe(&fifomsg[1]);
+						exception_handler((uint32)manualexception_7, stage, fwNo);
 					}
 					break;
 				}

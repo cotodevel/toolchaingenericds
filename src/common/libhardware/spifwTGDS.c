@@ -158,3 +158,5 @@ int PowerManagementDeviceWrite(int reg, int command) {	//aka writePowerManagemen
 }
 
 #endif
+
+u32 savedDSHardware = 0;

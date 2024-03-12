@@ -18,6 +18,7 @@ USA
 
 */
 
+#include <stdio.h>
 #include "main.h"
 #include "typedefsTGDS.h"
 #include "dsregs.h"
@@ -27,7 +28,6 @@ USA
 #include "fileBrowse.h"	//generic template functions from TGDS: maintain 1 source, whose changes are globally accepted by all TGDS Projects.
 #include "biosTGDS.h"
 #include "ipcfifoTGDSUser.h"
-#include "dldi.h"
 #include "global_settings.h"
 #include "posixHandleTGDS.h"
 #include "TGDSMemoryAllocator.h"
@@ -42,14 +42,9 @@ USA
 #include "dldi.h"
 #include "utils.twl.h"
 #include "spitscTGDS.h"
-
-// Includes
 #include "WoopsiTemplate.h"
 #include "dmaTGDS.h"
-#include "nds_cp15_misc.h"
-#include "fatfslayerTGDS.h"
-
-#include <stdio.h>
+#include "loader.h"
 
 //TGDS Soundstreaming API
 int internalCodecType = SRC_NONE; //Returns current sound stream format: WAV, ADPCM or NONE
@@ -102,9 +97,6 @@ static inline void menuShow(){
 	printf("Available heap memory: %d >%d", getMaxRam(), TGDSPrintfColor_Cyan);
 }
 
-char args[8][MAX_TGDSFILENAME_LENGTH];
-char *argvs[8];
-
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("Os")))
 #endif
@@ -121,21 +113,10 @@ int main(int argc, char **argv) {
 	
 	printf("              ");
 	printf("              ");
-	
-	//xmalloc init removes args, so save them
-	int i = 0;
-	for(i = 0; i < argc; i++){
-		argvs[i] = argv[i];
-	}
 
 	bool isCustomTGDSMalloc = true;
-	setTGDSMemoryAllocator(getProjectSpecificMemoryAllocatorSetup(TGDS_ARM7_MALLOCSTART, TGDS_ARM7_MALLOCSIZE, isCustomTGDSMalloc, TGDSDLDI_ARM7_ADDRESS));
+	setTGDSMemoryAllocator(getProjectSpecificMemoryAllocatorSetup(isCustomTGDSMalloc));
 	sint32 fwlanguage = (sint32)getLanguage();
-	
-	//argv destroyed here because of xmalloc init, thus restore them
-	for(i = 0; i < argc; i++){
-		argv[i] = argvs[i];
-	}
 
 	int ret=FS_init();
 	if (ret == 0)
@@ -171,7 +152,7 @@ int main(int argc, char **argv) {
 		}
 		//Force ARM7 reload once 
 		if( 
-			(argc < 3) 
+			(argc < 2) 
 			&& 
 			(strncmp(argv[1], TGDSProj, strlen(TGDSProj)) != 0) 	
 		){
@@ -199,36 +180,20 @@ int main(int argc, char **argv) {
 			
 			//pass incoming launcher's ARGV0
 			char arg0[256];
-			int newArgc = 3;
+			int newArgc = 2;
 			if (argc > 2) {
-				printf(" ---- test");
-				printf(" ---- test");
-				printf(" ---- test");
-				printf(" ---- test");
-				printf(" ---- test");
-				printf(" ---- test");
-				printf(" ---- test");
-				printf(" ---- test");
-				
-				//arg 0: original NDS caller
-				//arg 1: this NDS binary
-				//arg 2: this NDS binary's ARG0: filepath
+				//Arg0:	Chainload caller: TGDS-MB
+				//Arg1:	This NDS Binary reloaded through ChainLoad
+				//Arg2: This NDS Binary reloaded through ChainLoad's Argument0
 				strcpy(arg0, (const char *)argv[2]);
 				newArgc++;
 			}
-			//or else stub out an incoming arg0 for relaunched TGDS binary
-			else {
-				strcpy(arg0, (const char *)"0:/incomingCommand.bin");
-				newArgc++;
-			}
-			//debug end
 			
-			char thisArgv[4][MAX_TGDSFILENAME_LENGTH];
+			char thisArgv[3][MAX_TGDSFILENAME_LENGTH];
 			memset(thisArgv, 0, sizeof(thisArgv));
-			strcpy(&thisArgv[0][0], thisTGDSProject);	//Arg0:	This Binary loaded
-			strcpy(&thisArgv[1][0], curChosenBrowseFile);	//Arg1:	Chainload caller: TGDS-MB
-			strcpy(&thisArgv[2][0], thisTGDSProject);	//Arg2:	NDS Binary reloaded through ChainLoad
-			strcpy(&thisArgv[3][0], (char*)&arg0[0]);//Arg3: NDS Binary reloaded through ChainLoad's ARG0
+			strcpy(&thisArgv[0][0], curChosenBrowseFile);	//Arg0:	Chainload caller: TGDS-MB
+			strcpy(&thisArgv[1][0], thisTGDSProject);	//Arg1:	NDS Binary reloaded through ChainLoad
+			strcpy(&thisArgv[2][0], (char*)arg0);	//Arg2: NDS Binary reloaded through ChainLoad's ARG0
 			addARGV(newArgc, (char*)&thisArgv);				
 			if(TGDSMultibootRunNDSPayload(curChosenBrowseFile) == false){ //should never reach here, nor even return true. Should fail it returns false
 				
@@ -238,12 +203,14 @@ int main(int argc, char **argv) {
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
 	REG_IME = 0;
-	MPUSet();
+	set0xFFFF0000FastMPUSettings();
 	//TGDS-Projects -> legacy NTR TSC compatibility
 	if(__dsimode == true){
 		TWLSetTouchscreenTWLMode();
 	}
 	REG_IME = 1;
+	
+	setupDisabledExceptionHandler();
 	
 	// Create Woopsi UI
 	WoopsiTemplate WoopsiTemplateApp;

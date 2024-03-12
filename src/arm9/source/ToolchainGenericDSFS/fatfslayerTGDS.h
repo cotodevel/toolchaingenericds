@@ -363,8 +363,6 @@ extern void sortFileClassListAsc(struct FileClassList * thisClassList, char ** s
 
 
 ////////////////////////////////////////////////////////////////////////////INTERNAL CODE START/////////////////////////////////////////////////////////////////////////////////////
-extern int fatfs_init();
-extern int fatfs_deinit();
 extern int fatfs_write (int fd, u8 *ptr, int len);
 extern int fatfs_read (int fd, u8 *ptr, int len);
 extern int fatfs_close (int fd);

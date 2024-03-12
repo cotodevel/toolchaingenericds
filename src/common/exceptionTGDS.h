@@ -51,13 +51,14 @@ USA
 #endif
 
 //Hardware Exceptions
-#define generalARM7Exception	0xdead1000	//ARM7 can be: accidental software-jumps to the reset vector / unused SWI numbers within range 0..1Fh. / undefined exception / prefetch abort
-#define generalARM9Exception	0xdead1001	//ARM9 can be: accidental software-jumps to the reset vector / unused SWI numbers within range 0..1Fh. / undefined exception / prefetch abort / MPU Data Abort
+#define generalARM7Exception	0xdead1000	//Memory Protection Unit signaled ARM7 Exception: accidental software-jumps to the reset vector / unused SWI numbers within range 0..1Fh. / undefined exception / prefetch abort
+#define generalARM9Exception	0xdead1001	//Memory Protection Unit signaled ARM9 Exception: accidental software-jumps to the reset vector / unused SWI numbers within range 0..1Fh. / undefined exception / prefetch abort / MPU Data Abort
 
 //Software Exceptions
-#define unexpectedsysexit_9	(u32)(0xdeaddea9)
-#define unexpectedsysexit_7	(u32)(0xdeaddea7)
-#define manualexception_9	(u32)(0xdead0009)
+#define unexpectedsysexit_9	(u32)(0xdeaddea9) 	//when ARM9's main() quits
+#define unexpectedsysexit_7	(u32)(0xdeaddea7)	//when ARM7's main() quits
+#define manualexception_9	(u32)(0xdead0001)	//ARM9 wrapper for handleDSInitError(int stage, u32 fwNo). Used by User Code exceptions triggered from ARM9
+#define manualexception_7	(u32)(0xdead0002)	//ARM7 wrapper for handleDSInitError(int stage, u32 fwNo). Used by User Code exceptions triggered from ARM7
 
 #endif
 
@@ -66,15 +67,20 @@ USA
 extern "C" {
 #endif
 
+extern void handleDSInitOutputMessage(char * msg);
+
 #ifdef ARM7
 extern uint8 * exceptionArmRegsShared;
+extern void handleDSInitError7(int stage, u32 fwNo);
 #endif
 
 #ifdef ARM9
 extern uint32 exceptionArmRegs[0x20];
+extern char msgDebugException[MAX_TGDSFILENAME_LENGTH];
 #endif
 
 extern void setupDefaultExceptionHandler();
+extern void setupDisabledExceptionHandler();
 extern void exception_sysexit();
 extern void generalARMExceptionHandler();
 
@@ -89,6 +95,15 @@ extern void LeaveExceptionMode();
 
 extern void handleDSInitError(int stage, u32 fwNo);
 extern int TGDSInitLoopCount;
+
+#ifdef ARM7
+extern char * sharedStringExceptionMessageOutput;
+#endif
+
+#ifdef ARM9
+extern char sharedStringExceptionMessage[256];
+extern u32 sharedBufHandler[2];
+#endif
 
 #ifdef __cplusplus
 }

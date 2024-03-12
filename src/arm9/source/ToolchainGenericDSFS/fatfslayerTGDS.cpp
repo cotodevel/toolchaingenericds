@@ -32,6 +32,7 @@ USA
 #include "dldi.h"
 #include "clockTGDS.h"
 #include "typedefsTGDS.h"
+#include "exceptionTGDS.h"
 #endif
 
 #if defined(WIN32)
@@ -56,21 +57,32 @@ struct fd * files = NULL;	//File/Dir MAX handles: OPEN_MAXTGDS
 //if FS_init() init SD equals true: Init success
 //else  FS_init() equals false: Could not init the card SD access 
 int		FS_init(){
-	int ret = fatfs_init();
-	if (ret == 0){
-		FS_InitStatus = true;
+	char * devoptabFSName = (char*)"0:/";
+	initTGDS(devoptabFSName);
+	FRESULT ret = (f_mount(&dldiFs, (const TCHAR*)"0:", 1));
+	if(ret != FR_OK){	//FRESULT: FR_OK == 0
+		//Throw exception always
+		u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
+		int stage = 1;
+		handleDSInitError(stage, (u32)fwNo);
 	}
-	else{
-		FS_InitStatus = false;
-	}
-	return ret;
+    return (int)ret; 
 }
 
 //Usercall: For de-initializing Filesystem
 //if FS_deinit() or sd driver uninitialized (after calling FS_init()) equals true: Deinit sucess
 //else  FS_deinit() equals false: Could not deinit/free the card SD access 
 int		FS_deinit(){
-	int ret = fatfs_deinit();
+	if(files != NULL){
+		int fd = 0;
+		/* search in all struct fd instances, close file handle if open*/
+		for (fd = 0; fd < OPEN_MAXTGDS; fd++){	
+			fatfs_close(fd);
+		}
+		TGDSARM9Free(files);
+	}
+	int ret = f_unmount((const TCHAR*)"0:");
+	//dldi_handler_deinit(); //can't because disables SD card permanently 
 	if (ret == 0){
 		FS_InitStatus = false;
 	}
@@ -713,7 +725,7 @@ Call this before exiting back to the GBAMP
 bool return OUT: true if successful.
 -----------------------------------------------------------------*/
 bool FAT_FreeFiles (void){
-	fatfs_deinit();
+	FS_deinit();
 	// Return status of card
 	DLDI_INTERFACE* dldiInterface = dldiGet();
 	return (bool)dldiInterface->ioInterface.isInserted();
@@ -2146,40 +2158,6 @@ void fatfs_seekdir(DIR *dirp, long loc){
     else{
         /* POSIX says no errors are defined */
     }
-}
-
-//internal: SD init code: call fatfs_init() to have TGDS Filesystem support (posix file functions fopen/fread/fwrite/fclose/etc working). Always call first.
-int fatfs_init(){
-	char * devoptabFSName = (char*)"0:/";
-	initTGDS(devoptabFSName);
-    return (f_mount(&dldiFs, (const TCHAR*)"0:", 1));
-}
-
-//internal: SD de-init code: requires to call fatfs_init() at least once before.
-int fatfs_deinit(){
-	
-	if(files != NULL){
-		
-		int fd = 0;
-		/* search in all struct fd instances, close file handle if open*/
-		for (fd = 0; fd < OPEN_MAXTGDS; fd++){	
-			fatfs_close(fd);
-		}
-	}
-	
-	int ret = f_unmount((const TCHAR*)"0:");
-	//dldi_handler_deinit();
-	
-	//remove TGDS FS file handle context
-	if(files != NULL){
-		TGDSARM9Free(files);
-	}
-	
-	#if defined(WIN32)
-	//Skip
-	#endif
-	
-	return ret;
 }
 
 //this copies stat from internal struct fd to output stat

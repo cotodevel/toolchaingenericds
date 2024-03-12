@@ -162,60 +162,6 @@ swiChangeSoundBias:
 	
 #endif
 
-@void swiSoftReset(void);
-.global 	swiSoftReset
-.type   	swiSoftReset STT_FUNC
-swiSoftReset:
-REG_IME = 0;
-#ifdef ARM7
-	ldr	r0,=0x02FFFE34
-#endif
-
-#ifdef ARM9
-	.arch	armv5te
-	.cpu	arm946e-s
-	ldr	r1, =0x00002078			@ disable TCM and protection unit
-	mcr	p15, 0, r1, c1, c0
-	@ Disable cache
-	mov	r0, #0
-	mcr	p15, 0, r0, c7, c5, 0		@ Instruction cache
-	mcr	p15, 0, r0, c7, c6, 0		@ Data cache
-
-	@ Wait for write buffer to empty 
-	mcr	p15, 0, r0, c7, c10, 4
-	
-	ldr	r0,=0x02FFFE24
-#endif
-
-	ldr	r0,[r0]
-	bx	r0
-
-@void swiSoftResetByAddress(u32 address);
-.global 	swiSoftResetByAddress
-.type   	swiSoftResetByAddress STT_FUNC
-swiSoftResetByAddress:
-	mov r4, r0
-	#ifdef ARM9
-	.arch	armv5te
-	.cpu	arm946e-s
-	ldr	r1, =0x00002078			@ disable TCM and protection unit
-	mcr	p15, 0, r1, c1, c0
-	
-	@ Disable cache
-	mov	r0, #0
-	mcr	p15, 0, r0, c7, c5, 0		@ Instruction cache
-	mcr	p15, 0, r0, c7, c6, 0		@ Data cache
-	#endif
-	
-	@Enter SYS Mode, irqs disabled
-	mrs r0, cpsr
-	bic r0, r0, #(0x1F)
-	orr r0, r0, #(0x1F)
-	msr	cpsr, r0
-	
-	msr	spsr, r0
-	bx	r4
-
 
 @void swiDecompressLZSSWram(void * source, void * destination);
 .global 	swiDecompressLZSSWram
@@ -230,6 +176,48 @@ swiDecompressLZSSWram:
 swiDecompressLZSSVramByCallback:
 	swi	0x00120000
 	bx	lr
+
+
+
+
+
+#ifdef ARM9
+.text	@can not be at caches because we disable them prior to running a new payload, otherwise ARM9 crashes
+#endif
+@void swiSoftReset(void);
+.global 	swiSoftReset
+.type   	swiSoftReset STT_FUNC
+swiSoftReset:
+REG_IME = 0;
+#ifdef ARM7
+	ldr	r0,=0x02FFFE34
+#endif
+
+#ifdef ARM9
+	.arch	armv5te
+	.cpu	arm946e-s
+	ldr	r1, =0x00002078			@ disable TCM and protection unit
+	mcr	p15, 0, r1, c1, c0
+	
+	@ Disable cache
+	mov	r0, #0
+	mcr	p15, 0, r0, c7, c5, 0		@ Instruction cache
+	mcr	p15, 0, r0, c7, c6, 0		@ Data cache
+
+	@ Wait for write buffer to empty 
+	mcr	p15, 0, r0, c7, c10, 4
+	
+	@Enter SYS Mode, irqs disabled
+	mrs r0, cpsr
+	bic r0, r0, #(0x9F)
+	orr r0, r0, #(0x9F)
+	msr	cpsr, r0
+	
+	ldr	r0,=0x02FFFE24
+#endif
+
+	ldr	r0,[r0]
+	bx	r0
 
 .pool
 .end
