@@ -25,7 +25,7 @@ USA
 #include "dsregs.h"
 
 ////////[For custom Memory Allocator implementation]:////////
-//You need to override getProjectSpecificMemoryAllocatorSetup():
+//You need to override getProjectSpecificMemoryAllocatorSetup(...):
 //After that, TGDS project initializes the default/custom allocator automatically.
 
 
@@ -39,12 +39,10 @@ __attribute__((optimize("O0")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-struct AllocatorInstance * getProjectSpecificMemoryAllocatorSetup(u32 ARM7MallocStartAddress, int ARM7MallocSize, bool isCustomTGDSMalloc, u32 TargetARM7DLDIAddress) {
+struct AllocatorInstance * getProjectSpecificMemoryAllocatorSetup(bool isCustomTGDSMalloc) {
 	struct AllocatorInstance * customMemoryAllocator = &CustomAllocatorInstance;
 	memset((u8*)customMemoryAllocator, 0, sizeof(CustomAllocatorInstance));
 	customMemoryAllocator->customMalloc = isCustomTGDSMalloc;
-	customMemoryAllocator->ARM7MallocStartAddress = ARM7MallocStartAddress;
-	customMemoryAllocator->ARM7MallocSize = ARM7MallocSize;
 	
 	customMemoryAllocator->ARM9MallocStartaddress = (u32)sbrk(0);
 	customMemoryAllocator->memoryToAllocate = (768*1024);
@@ -59,10 +57,6 @@ struct AllocatorInstance * getProjectSpecificMemoryAllocatorSetup(u32 ARM7Malloc
 	xmemsize = xmemsize - (xmemsize%1024);
 	XmemSetup(xmemsize, XMEM_BS);
 	XmemInit(customMemoryAllocator->ARM9MallocStartaddress, (u32)customMemoryAllocator->memoryToAllocate);
-	
-	//DLDI
-	customMemoryAllocator->DLDI9StartAddress = (u32)&_io_dldi_stub;
-	customMemoryAllocator->TargetARM7DLDIAddress = TargetARM7DLDIAddress;
 	
 	//Memory Setup: ARM7 TGDS 64K = 0x03800000 ~ 0x03810000. TGDS Sound Streaming code: Enabled
 	WRAM_CR = WRAM_32KARM9_0KARM7;

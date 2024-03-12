@@ -127,6 +127,7 @@ void resetMemory_ARMCores(u8 DSHardware) {
 	#endif
 }
 
+//Initializes NTR/TWL hardware context for the ToolchainGenericDS ecosystem in ARM7 / ARM9 and sets the current NTR/TWL(__dsimode) mode globally.
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("O0")))
 #endif
@@ -135,7 +136,6 @@ __attribute__ ((optnone))
 #endif
 void initHardware(u8 DSHardware) {
 //---------------------------------------------------------------------------------
-	swiDelay(15000);
 	#ifdef ARM7
 	//Init Shared Address Region and get NDS Header
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
@@ -180,7 +180,7 @@ void initHardware(u8 DSHardware) {
 	#endif
 	
 	#ifdef ARM9
-	
+	swiDelay(15000);
 	#ifdef TWLMODE
 	u32 SCFG_EXT9 = 0x80070180; //yes, override the ones from TWL header to ensure TGDS TWL projects do work even with tampered extended headers
 	
@@ -227,10 +227,12 @@ void initHardware(u8 DSHardware) {
 	TryToDefragmentMemory();
 	
 	//Enable TSC
-	setTouchScreenEnabled(true);	
+	setTouchScreenEnabled(true);
 	
-	handleARM9InitSVC();	
+	handleARM9InitSVC();
 	#endif
+	
+	savedDSHardware = (u32)DSHardware; //Global DS Firmware ARM7/ARM9
 	
 	//Shared ARM Cores
 	disableTGDSDebugging(); //Disable debugging by default

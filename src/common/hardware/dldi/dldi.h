@@ -101,10 +101,10 @@ typedef struct DLDI_INTERFACE {
 #define DEVICE_TYPE_DSI_SD ('_') | ('S' << 8) | ('D' << 16) | ('_' << 24)
 
 //ARM7DLDI operating mode: Internal SD / DLDI bits used by int TWLModeInternalSDAccess
-#define TWLModeDLDIAccessDisabledInternalSDDisabled ((int)-1) //TWL Mode: neither DLDI or SDIO access (default at startup)
-#define TWLModeDLDIAccessEnabledInternalSDDisabled ((int)1) //TWL Mode: DLDI access only
-#define TWLModeDLDIAccessDisabledInternalSDEnabled ((int)2) //TWL Mode: SDIO access only
-#define TWLModeDLDIAccessEnabledInternalSDEnabled ((int)3) //TWL Mode: DLDI + SDIO access
+#define TWLModeDLDIAccessDisabledInternalSDDisabled ((u32)0xFFFFFF01) //TWL Mode: neither DLDI or SDIO access (default at startup)
+#define TWLModeDLDIAccessEnabledInternalSDDisabled ((u32)0xFFFFFF02) //TWL Mode: DLDI access only
+#define TWLModeDLDIAccessDisabledInternalSDEnabled ((u32)0xFFFFFF03) //TWL Mode: SDIO access only
+#define TWLModeDLDIAccessEnabledInternalSDEnabled ((u32)0xFFFFFF04) //TWL Mode: DLDI + SDIO access
 
 #endif
 
@@ -168,6 +168,10 @@ extern bool sdio_Shutdown();
 extern int TWLModeInternalSDAccess;
 extern const data_t dldiMagicString[12];
 extern addr_t quickFind (const data_t* data, const data_t* search, size_t dataLen, size_t searchLen);
+
+#ifdef ARM7
+extern bool ARM7InitDLDI(u32 ARM7MallocStartaddress, int ARM7MallocSize, u32 TargetARM7DLDIAddress);
+#endif
 
 #ifdef __cplusplus
 }

@@ -53,6 +53,7 @@ USA
 #include "dswnifi_lib.h"
 #include "debugNocash.h"
 #include "libndsFIFO.h"
+#include "exceptionTGDS.h"
 #endif
 
 #ifdef ARM7
@@ -117,6 +118,7 @@ void reportTGDSPayloadMode(u32 bufferSource, char * ARM7OutLog, char * ARM9OutLo
 	nocashMessage(ARM7OutLog);
 	nocashMessage(ARM9OutLog);
 }
+#endif
 
 //TGDS binaries are always Passme Slot 1 v3+.
 //Note: Since the scope of detecting internal state of current NTR/TWL binary is already ToolchainGenericDS, this method is reliable as a mean to detect internal NTR/TWL mode from the current ARM9 binary running.
@@ -129,7 +131,6 @@ int isThisPayloadNTROrTWLMode(){
 	}
 	return notTWLOrNTRBinary;
 }
-#endif
 
 //!	Checks whether the application is running in DSi mode.
 bool isDSiMode() {
@@ -654,8 +655,8 @@ char** getGlobalArgv(){
 	return globalArgv;
 }
 
-char thisArgv[argvItems][MAX_TGDSFILENAME_LENGTH];
-int thisArgc=0;
+char thisArgv[argvItems][MAX_TGDSFILENAME_LENGTH];	//TGDS's internal ARGV
+char * thisArgvPosix[argvItems]; //TGDS's internal ARGV reference buffer 
 
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("Os")))
@@ -664,16 +665,12 @@ __attribute__((optimize("Os")))
 __attribute__ ((optnone))
 #endif
 void handleARGV(){
-	//Command line vector. Will be reused.
-	char** cmdLineVectorPosixCompatible = ((char**)0x02FFFE70);
-	
 	if(__system_argv->length > 0){
 		//get string count (argc) from commandLine
 		int argCount=0;
 		int internalOffset = 0;
 		int i = 0;
 		for(i = 0; i < __system_argv->length; i++){
-			
 			//End of N ARGV? Pass the pointer into the command line vector
 			if(__system_argv->commandLine[i] == '\0'){
 				thisArgv[argCount][internalOffset] = '\0';
@@ -686,62 +683,55 @@ void handleARGV(){
 			}
 		}
 		
-		//Actually re-count Args, because garbage may be in ARGV code causing false positives.
-		//Also it is safe to trash the original __system_argv->commandLine struct
-		int argBugged = argCount;
-		argCount = 0;
-		
-		//Reset the command line vector
-		memset(cmdLineVectorPosixCompatible, 0, sizeof(struct __argv));
-		
-		for (i=0; i<argBugged; i++){
-			if (thisArgv[i]) {
-				if(strlen(thisArgv[i]) > 8){
-					//Libnds compatibility: If (recv) mainARGV fat:/ change to 0:/
-					char thisARGV[MAX_TGDSFILENAME_LENGTH+1];
-					memset(thisARGV, 0, sizeof(thisARGV));
-					strcpy(thisARGV, thisArgv[i]);
-					
-					if(
-						(thisARGV[0] == 'f')
-						&&
-						(thisARGV[1] == 'a')
-						&&
-						(thisARGV[2] == 't')
-						&&
-						(thisARGV[3] == ':')
-						&&
-						(thisARGV[4] == '/')
-						){
-						char thisARGV2[MAX_TGDSFILENAME_LENGTH+1];
-						memset(thisARGV2, 0, sizeof(thisARGV2));
-						strcpy(thisARGV2, "0:/");
-						strcat(thisARGV2, &thisARGV[5]);
-						
-						//copy back
-						memset(thisArgv[i], 0, 256);
-						strcpy(thisArgv[i], thisARGV2);
-						
-					}
-					
-					//build the command line vector
-					cmdLineVectorPosixCompatible[argCount] = (char *)&thisArgv[i];
-					argCount++;
+		for(i = 0; i < argCount; i++){
+			//Libnds compatibility: If (recv) mainARGV fat:/ change to 0:/
+			char tmpARGV[MAX_TGDSFILENAME_LENGTH];
+			strcpy(tmpARGV, &thisArgv[i][0]);
+			if(
+				(tmpARGV[0] == 'f')
+				&&
+				(tmpARGV[1] == 'a')
+				&&
+				(tmpARGV[2] == 't')
+				&&
+				(tmpARGV[3] == ':')
+				&&
+				(tmpARGV[4] == '/')
+				){
+				char tmpARGV2[MAX_TGDSFILENAME_LENGTH];
+				memset(tmpARGV2, 0, sizeof(tmpARGV2));
+				strcpy(tmpARGV2, "0:/");
+				strcat(tmpARGV2, &tmpARGV[5]);
+				strcpy(tmpARGV, tmpARGV2);
+			}
+			
+			//Build the command line vector, but sanitize each argument parsed, to prevent corrupted entries.
+			if(i < argvItems){
+				if(strlen((char *)tmpARGV) > 3){ //"0:/x"
+					memset(&thisArgv[i][0], 0, MAX_TGDSFILENAME_LENGTH);
+					strcpy(&thisArgv[i][0], tmpARGV);
+					thisArgv[i][strlen(tmpARGV) + 1] = '\0';
+					thisArgvPosix[i] = (char *)&thisArgv[i][0];
+				}
+				else{
+					thisArgvPosix[i] = NULL;
 				}
 			}
 		}
-		
-		thisArgc = argCount;
+		__system_argv->argc = argCount;
 	}
 	else{
-		thisArgc = 0;
+		__system_argv->argc = 0;
 	}
 	
-	__system_argv->length = thisArgc;
-	setGlobalArgc(thisArgc);
-	setGlobalArgv((char**)cmdLineVectorPosixCompatible);
+	__system_argv->argvMagic = (int)ARGV_MAGIC;
+	__system_argv->argv = (char **)&thisArgv[0][0];
+	__system_argv->commandLine = (char**)&thisArgvPosix[0];
+	__system_argv->length = argvItems;
+	setGlobalArgc(__system_argv->argc);
+	setGlobalArgv(__system_argv->commandLine);
 	//extern int main(int argc, char **argv);
-	//main(thisArgc,  (char**)cmdLineVectorPosixCompatible);
+	//main(__system_argv->length, __system_argv->commandLine);
 }
 
 #endif
@@ -1062,12 +1052,12 @@ void addARGV(int argc, char *argv){
 	
 	if(strlen(cmdline) <= 3){
 		strcpy(cmdline,"");
-		__system_argv->argvMagic = ARGV_MAGIC;
+		__system_argv->argvMagic = (int)ARGV_MAGIC;
 		__system_argv->commandLine = cmdline;
 		__system_argv->length = 0;
 	}
 	else{
-		__system_argv->argvMagic = ARGV_MAGIC;
+		__system_argv->argvMagic = (int)ARGV_MAGIC;
 		__system_argv->commandLine = cmdline;
 		__system_argv->length = cmdlineLen;
 		
@@ -1075,81 +1065,6 @@ void addARGV(int argc, char *argv){
 		//__system_argv->argc = ;
 		//__system_argv->argv = ;
 	}
-}
-#endif
-
-#ifdef ARM9
-__attribute__((section(".dtcm")))
-u32 reloadStatus = 0;
-
-//ToolchainGenericDS-multiboot NDS Binary loader: Requires tgds_multiboot_payload_ntr.bin / tgds_multiboot_payload_twl.bin (TGDS-multiboot Project) in SD root.
-__attribute__((section(".itcm")))
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-bool TGDSMultibootRunNDSPayload(char * filename) {
-	char msgDebug[96];
-	memset(msgDebug, 0, sizeof(msgDebug));
-	int isNTRTWLBinary = isNTROrTWLBinary(filename);
-	//NTR mode? Can only boot valid NTR binaries, the rest is skipped.
-	if((__dsimode == false) && !(isNTRTWLBinary == isNDSBinaryV1) && !(isNTRTWLBinary == isNDSBinaryV2) && !(isNTRTWLBinary == isNDSBinaryV3) ){
-		return false;
-	}
-	//TWL mode? Can only boot valid NTR and TWL binaries, the rest is skipped.
-	else if((__dsimode == true) && !(isNTRTWLBinary == isNDSBinaryV1) && !(isNTRTWLBinary == isNDSBinaryV2) && !(isNTRTWLBinary == isNDSBinaryV3) && !(isNTRTWLBinary == isTWLBinary) ){
-		return false;
-	}
-	else{
-		strcpy((char*)(0x02280000 - (MAX_TGDSFILENAME_LENGTH+1)), filename);	//Arg0:	
-		#ifdef NTRMODE
-		char * TGDSMBPAYLOAD = "0:/tgds_multiboot_payload_ntr.bin";	//TGDS NTR SDK (ARM9 binaries) emits TGDSMultibootRunNDSPayload() which reloads into NTR TGDS-MB Reload payload
-		#endif
-		
-		#ifdef TWLMODE
-		char * TGDSMBPAYLOAD = "0:/tgds_multiboot_payload_twl.bin";	//TGDS TWL SDK (ARM9i binaries) emits TGDSMultibootRunNDSPayload() which reloads into TWL TGDS-MB Reload payload
-		#endif
-		
-		FILE * tgdsPayloadFh = fopen(TGDSMBPAYLOAD, "r");
-		if(tgdsPayloadFh != NULL){
-			fseek(tgdsPayloadFh, 0, SEEK_SET);
-			int	tgds_multiboot_payload_size = FS_getFileSizeFromOpenHandle(tgdsPayloadFh);
-			fread((u32*)0x02280000, 1, tgds_multiboot_payload_size, tgdsPayloadFh);
-			coherent_user_range_by_size(0x02280000, (int)tgds_multiboot_payload_size);
-			fclose(tgdsPayloadFh);
-			FS_deinit();
-			//Copy and relocate current TGDS DLDI section into target ARM9 binary
-			if(strncmp((char*)&dldiGet()->friendlyName[0], "TGDS RAMDISK", 12) == 0){
-				nocashMessage("TGDS DLDI detected. Skipping DLDI patch.");
-			}
-			else{
-				bool stat = dldiPatchLoader((data_t *)0x02280000, (u32)tgds_multiboot_payload_size, (u32)&_io_dldi_stub);
-				if(stat == false){
-					sprintf(msgDebug, "%s%s", "TGDSMultibootRunNDSPayload():DLDI Patch failed. APP does not support DLDI format.", "");
-					nocashMessage((char*)&msgDebug[0]);
-				}
-				else{
-					sprintf(msgDebug, "%s%s", "TGDSMultibootRunNDSPayload():DLDI Patch OK.", "");
-					nocashMessage((char*)&msgDebug[0]);
-				}
-			}
-			
-			REG_IME = 0;
-			typedef void (*t_bootAddr)();
-			t_bootAddr bootARM9Payload = (t_bootAddr)0x02280000;
-			bootARM9Payload();
-			
-			return true; //should never jump here
-		}
-		else{
-			sprintf(msgDebug, "%s%s", "TGDSMultibootRunNDSPayload(): Missing Payload:", TGDSMBPAYLOAD);
-			nocashMessage((char*)&msgDebug[0]);
-		}
-	}
-	return false;
 }
 #endif
 
@@ -1266,7 +1181,7 @@ void initializeLibUtils7(
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os")))
+__attribute__((optimize("O0")))
 #endif
 
 #if (!defined(__GNUC__) && defined(__clang__))
@@ -1292,6 +1207,7 @@ int isNTROrTWLBinary(char * filename){
 	u32 arm9EntryAddress = NDSHdr->arm9entryaddress;
 	u32 arm7EntryAddress = NDSHdr->arm7entryaddress;
 	u32 arm9BootCodeOffsetInFile = NDSHdr->arm9romoffset;
+	int arm7BootCodeSize = NDSHdr->arm7size;
 	int arm9BootCodeSize = NDSHdr->arm9size;
 	int checkCounter = 0;
 	int i = 0;
@@ -1437,7 +1353,7 @@ int isNTROrTWLBinary(char * filename){
 	
 	//TWL Slot 1 / Internal SD mode: (2009+ TWL homebrew)
 	else if( 
-		(checkCounter >= 0) && (arm9EntryAddress >= 0x02000000) && (arm9EntryAddress <= 0x02FFFFFF) &&
+		(checkCounter > 0) && (arm9EntryAddress >= 0x02000000) && (arm9EntryAddress <= 0x02FFFFFF) &&
 		(
 			((arm7EntryAddress >= 0x02000000) && (arm7EntryAddress <= 0x02FFFFFF))
 			||
@@ -1448,6 +1364,26 @@ int isNTROrTWLBinary(char * filename){
 	){
 		mode = isTWLBinary;
 	}
+	
+	//Check for Headerless NTR binary (2004 homebrew on custom devkits, or custom devkits overall)
+	if( 
+		(arm7EntryAddress >= 0x02000000)
+		&&
+		(arm9EntryAddress >= 0x02000000)
+		&&
+		(arm7BootCodeSize > 0)
+		&&
+		(arm9BootCodeSize > 0)
+		&&
+		(arm9BootCodeOffsetInFile > 0) //even headerless Passme NTR binaries reserve the NTR header section of 0x200 bytes
+		&&
+		(mode == notTWLOrNTRBinary)
+		&&
+		(checkCounter == 0)
+	){
+		mode = isNDSBinaryV1;
+	}
+	
 	TGDSARM9Free(NDSHeader);
 	fclose(fh);
 	return mode;

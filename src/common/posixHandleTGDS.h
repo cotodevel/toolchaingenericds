@@ -65,10 +65,6 @@ struct AllocatorInstance
 {
 	bool customMalloc;
 	
-	//ARM7 Malloc settings
-	u32 ARM7MallocStartAddress;
-	int ARM7MallocSize;
-	
 	//ARM9 Malloc settings
 	TGDSARM9MallocHandler 			CustomTGDSMalloc9;
 	TGDSARM9CallocHandler 			CustomTGDSCalloc9;
@@ -79,12 +75,6 @@ struct AllocatorInstance
 	
 	//EWRAM DLDI ARM9 physical address
 	u32 DLDI9StartAddress;
-	
-	//Target IO ARM7 DLDI to run
-	u32 TargetARM7DLDIAddress;
-	
-	//Only enabled when running NTR mode homebrew through TWL mode + TWL DLDI NOT through a slot 1 DLDI device (TGDS NTR + TWL SD mode)
-	bool useTWLSDThroughDLDI;
 };
 
 #ifdef __cplusplus
@@ -96,8 +86,9 @@ extern int getMaxRam();
 
 //TGDS Malloc implementation, before using them requires a call from ARM9: void initARM7Malloc(u32 ARM7MallocStartaddress, u32 memSizeBytes)
 extern bool customMallocARM9;
+
 //weak symbols : the implementation of this is project-defined
-extern  struct AllocatorInstance * getProjectSpecificMemoryAllocatorSetup(u32 ARM7MallocStartAddress, int ARM7MallocSize, bool isCustomTGDSMalloc, u32 TargetARM7DLDIAddress);
+extern  struct AllocatorInstance * getProjectSpecificMemoryAllocatorSetup(bool isCustomTGDSMalloc);
 
 extern struct AllocatorInstance CustomAllocatorInstance;
 extern TGDSARM9MallocHandler 			TGDSMalloc9;
@@ -108,14 +99,9 @@ extern TGDSARM9MallocFreeMemoryHandler	TGDSMallocFreeMemory9;
 extern u32 ARM9MallocBaseAddress;
 extern void setTGDSARM9MallocBaseAddress(u32 address);
 extern u32 getTGDSARM9MallocBaseAddress();
-extern void initARMCoresMalloc(
-								u32 ARM7MallocStartAddress, int ARM7MallocSize, //ARM7
-								u32 ARM9MallocStartaddress, u32 ARM9MallocSize, u32 * mallocHandler, //ARM9
+extern void initARMCoresMalloc(u32 ARM9MallocStartaddress, u32 ARM9MallocSize, u32 * mallocHandler, //ARM9
 								u32 * callocHandler, u32 * freeHandler, u32 * MallocFreeMemoryHandler, 
-								bool customAllocator,
-								u32 dldiMemAddress,	//ARM9 source physical DLDI Location
-								u32 TargetARM7DLDIAddress, //ARM7 target physical DLDI Location (ARM7DLDI runs from here)
-								bool isDLDITWLSD //is DLDI TWL SD?
+								bool customAllocator
 							);
 
 

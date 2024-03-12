@@ -42,14 +42,10 @@ struct sIPCSharedTGDSSpecific {
 	uint32 frameCounter9;	//VBLANK counter9
 };
 
-#ifdef ARM9
-
 //TGDS Memory Layout ARM7/ARM9 Cores
 #define TGDS_ARM7_MALLOCSTART (u32)(0x06000000)
 #define TGDS_ARM7_MALLOCSIZE (int)(112*1024)
 #define TGDSDLDI_ARM7_ADDRESS (u32)(TGDS_ARM7_MALLOCSTART + TGDS_ARM7_MALLOCSIZE)
-
-#endif
 
 #endif
 
