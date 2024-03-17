@@ -20,7 +20,7 @@
 
 #ToolchainGenericDS specific: 
 export SOURCE_MAKEFILE7 = default
-export SOURCE_MAKEFILE9 = custom
+export SOURCE_MAKEFILE9 = default
 
 #Shared
 ifeq ($(TGDS_ENV),windows)
@@ -137,8 +137,8 @@ endif
 	
 $(EXECUTABLE_FNAME)	:	compile
 	-@echo 'ndstool begin'
-	$(NDSTOOL)	-v	-c $@	-7  $(CURDIR)/arm7/$(BINSTRIP_RULE_7)	-e7  0x03800000	-9 $(CURDIR)/arm9/$(BINSTRIP_RULE_9) -e9  0x02000000	-b	icon.bmp "ToolchainGenericDS SDK;$(TGDSPROJECTNAME) NDS Binary; "
-	$(NDSTOOL)	-c 	${@:.nds=.srl} -7 $(CURDIR)/arm7/arm7_twl.bin -e7  0x02380000		-9 $(CURDIR)/arm9/arm9_twl.bin -e9  0x02000800	\
+	$(NDSTOOL)	-v	-c $@	-7  $(CURDIR)/arm7/$(BINSTRIP_RULE_7)	-e7  0x02380000	-9 $(CURDIR)/arm9/$(BINSTRIP_RULE_9) -e9  0x02000800	-r9 0x02000000	-b	icon.bmp "ToolchainGenericDS SDK;$(TGDSPROJECTNAME) NDS Binary; "
+	$(NDSTOOL)	-c 	${@:.nds=.srl} -7 $(CURDIR)/arm7/arm7_twl.bin -e7  0x02380000		-9 $(CURDIR)/arm9/arm9_twl.bin -e9  0x02000800	-r9 0x02000000	\
 	-g "TGDS" "NN" "NDS.TinyFB"	\
 	-z 80040000 -u 00030004 -a 00000138 \
 	-b icon.bmp "$(TGDSPROJECTNAME);$(TGDSPROJECTNAME) TWL Binary;" \
