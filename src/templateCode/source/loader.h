@@ -40,6 +40,7 @@ USA
 #define ARM9_TWLORNTRPAYLOAD_MODE ((u32*)(TGDS_MB_V3_MEMBASE-(4*5)))
 #define ARM7_ARM9_DLDI_STATUS ((u32*)(TGDS_MB_V3_MEMBASE-(4*6))) //0x02FFDFE8 global TGDS ARM7DLDI register
 #define ARM7_ARM9_SAVED_DSFIRMWARE ((u32*)(TGDS_MB_V3_MEMBASE-(4*7)))	//0x02FFDFE4
+#define ARM7i_HEADER_SCFG_EXT7 ((u32*)(TGDS_MB_V3_MEMBASE-(4*8)))	//1B8h 4    ARM7 SCFG_EXT7 setting (bit0,1,2,10,18,31) //Note: TWL Header does not have a SCFG_EXT9 section due to important custom layout memory for TWL mode is being set through SCFG_EXT7 flags such as "Access to New Shared WRAM" as well "Access to 2nd NDS Cart Slot". The rest is entirely ARM9i dependant for TWL circuitry and does not affect IO memory mapping for execution, but for extended cuircuitry features not needed for base TWL homebrew. 
 
 //tgds_mb_payload.bin (NTR/TWL): 
 //304K  0x02280000 -> 0x02400000 - 304K (0x4C000) = Entrypoint: 0x023B0000
