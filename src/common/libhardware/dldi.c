@@ -18,6 +18,7 @@
 #include "ipcfifoTGDS.h"
 #include "global_settings.h"
 #include "utilsTGDS.h"
+#include "nds_cp15_misc.h"
 #endif
 
 #ifdef TWLMODE
@@ -650,7 +651,9 @@ bool dldiPatchLoader(data_t *binData, u32 binSize, u32 physDLDIAddress)
 		memset (&pAH[readAddr(pDH, DO_bss_start) - ddmemStart] , 0, readAddr(pDH, DO_bss_end) - readAddr(pDH, DO_bss_start));
 	}
 	*/
-
+	#ifdef ARM9
+	coherent_user_range_by_size((uint32)binData, (int)binSize); //Make ARM9 changes coherent
+	#endif
 	return true;
 }
 
