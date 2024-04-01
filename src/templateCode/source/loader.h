@@ -30,7 +30,7 @@ USA
 //TGDS-MB v3 VRAM Loader
 #define BOOT_FILE_TGDSMB ((u32)0xFF883232)
 #define FIFO_ARM7_RELOAD (u32)(0xFFFFABCA)
-#define TGDS_MB_V3_WORKBUFFER ((int)(0x02000000 + (512*1024)))
+
 #define TGDS_MB_V3_MEMBASE ((int)0x02FFE000) //can't be 0x02FFF000 or 0x027FF000 due to shared ram IO and header section otherwise breaks stuff
 #define ARM9_STRING_PTR ((u32*)(TGDS_MB_V3_MEMBASE-(4*0)))
 #define ARM9_BOOT_SIZE ((u32*)(TGDS_MB_V3_MEMBASE-(4*1)))
@@ -52,9 +52,13 @@ USA
 
 
 //tgds_mb_payload.bin (NTR/TWL): 
-//304K  0x02280000 -> 0x02400000 - 304K (0x4C000) = Entrypoint: 0x023B0000
-//Workram (0x02000000 ~ 0x80000) = 512K 
+//0x02400000 - 304K (0x4C000) = Entrypoint: 0x023B0000
 #define TGDS_MB_V3_PAYLOAD_ADDR ((u32*)0x023B0000)
+#define TGDS_MB_V3_ARM7_STAGE1_ADDR ( ((int)TGDS_MB_V3_PAYLOAD_ADDR) -  (96*1024) )	//0x02398000
+
+//Workram (0x02000000 ~ 0x80000) = 512K 
+#define TGDS_MB_V3_WORKBUFFER ((int)(0x02000000 + (512*1024)))
+
 
 
 #endif
@@ -65,8 +69,8 @@ extern "C"{
 #endif
 
 #ifdef ARM9
-extern u32 reloadStatus;
 extern bool TGDSMultibootRunNDSPayload(char * filename);
+extern void executeARM7Payload(u32 arm7entryaddress, int arm7BootCodeSize, u32 * payload);
 #endif
 
 #ifdef __cplusplus

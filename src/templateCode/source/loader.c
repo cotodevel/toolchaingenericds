@@ -26,10 +26,10 @@ USA
 #include "biosTGDS.h"
 #include "debugNocash.h"
 #include "dldi.h"
+#include "exceptionTGDS.h"
 
 #ifdef ARM9
-__attribute__((section(".dtcm")))
-u32 reloadStatus = 0;
+#include "videoTGDS.h"
 
 //ToolchainGenericDS-multiboot NDS Binary loader: Requires tgds_multiboot_payload_ntr.bin / tgds_multiboot_payload_twl.bin (TGDS-multiboot Project) in SD root.
 __attribute__((section(".itcm")))
@@ -69,20 +69,14 @@ bool TGDSMultibootRunNDSPayload(char * filename) {
 			coherent_user_range_by_size(TGDS_MB_V3_PAYLOAD_ADDR, (int)tgds_multiboot_payload_size);
 			fclose(tgdsPayloadFh);
 			FS_deinit();
-			//Copy and relocate current TGDS DLDI section into target ARM9 binary
-			if(strncmp((char*)&dldiGet()->friendlyName[0], "TGDS RAMDISK", 12) == 0){
-				nocashMessage("TGDS DLDI detected. Skipping DLDI patch.");
+			bool stat = dldiPatchLoader((data_t *)TGDS_MB_V3_PAYLOAD_ADDR, (u32)tgds_multiboot_payload_size, (u32)&_io_dldi_stub);
+			if(stat == false){
+				sprintf(msgDebugException, "%s%s", "TGDSMultibootRunNDSPayload(): DLDI Patch failed. NTR/TWL binary missing DLDI section.", "");
+				nocashMessage((char*)&msgDebugException[0]);
 			}
 			else{
-				bool stat = dldiPatchLoader((data_t *)TGDS_MB_V3_PAYLOAD_ADDR, (u32)tgds_multiboot_payload_size, (u32)&_io_dldi_stub);
-				if(stat == false){
-					sprintf(msgDebugException, "%s%s", "TGDSMultibootRunNDSPayload(): DLDI Patch failed. NTR/TWL binary missing DLDI section.", "");
-					nocashMessage((char*)&msgDebugException[0]);
-				}
-				else{
-					sprintf(msgDebugException, "%s", "TGDSMultibootRunNDSPayload(): DLDI Patch OK.");
-					nocashMessage((char*)&msgDebugException[0]);
-				}
+				sprintf(msgDebugException, "%s", "TGDSMultibootRunNDSPayload(): DLDI Patch OK.");
+				nocashMessage((char*)&msgDebugException[0]);
 			}
 			REG_IME = 0;
 			typedef void (*t_bootAddr)();
@@ -98,5 +92,40 @@ bool TGDSMultibootRunNDSPayload(char * filename) {
 		}
 	}
 	return false;
+}
+
+
+//ARM9: Executes ARM7 payload at runtime
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void executeARM7Payload(u32 arm7entryaddress, int arm7BootCodeSize, u32 * payload){
+	//1) Give VRAM_D to ARM7 @0x06000000
+	*(u8*)0x04000243 = (VRAM_D_0x06000000_ARM7 | VRAM_ENABLE);
+	//2) Initialize ARM7DLDI: ARM9 passes its DLDI section to ARM7
+	setValueSafe(ARM7_ARM9_DLDI_STATUS, (u32)&_io_dldi_stub);
+	if(payload != ((u32*)0)){
+		coherent_user_range_by_size((u32)payload, arm7BootCodeSize);
+	}
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+	setValueSafe(&fifomsg[0], (u32)payload);
+	setValueSafe(&fifomsg[1], (u32)arm7BootCodeSize);
+	setValueSafe(&fifomsg[2], (u32)arm7entryaddress);
+	int TGDSInitLoopCount = 0;
+	SendFIFOWords(FIFO_ARM7_RELOAD, 0xFF); //ARM9: Execute ARM7 payload-> ARM7
+	while( getValueSafe(ARM7_ARM9_DLDI_STATUS) == ((u32)&_io_dldi_stub) ){
+		if(TGDSInitLoopCount > 1048576){
+			u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
+			int stage = 9;
+			handleDSInitError(stage, (u32)fwNo);			
+		}
+		TGDSInitLoopCount++;
+		swiDelay(1);
+	}
 }
 #endif

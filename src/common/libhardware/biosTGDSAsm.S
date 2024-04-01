@@ -189,6 +189,7 @@ swiDecompressLZSSVramByCallback:
 .type   	swiSoftReset STT_FUNC
 swiSoftReset:
 REG_IME = 0;
+bl setupDisabledExceptionHandler
 #ifdef ARM7
 	ldr	r0,=0x02FFFE34
 #endif

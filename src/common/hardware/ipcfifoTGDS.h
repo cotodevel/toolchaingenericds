@@ -58,8 +58,6 @@ USA
 
 //FIFO - WIFI
 #define WIFI_SYNC (uint32)(0xffff0207)
-#define WIFI_INIT (uint32)(0xffff0208)
-#define WIFI_DEINIT (uint32)(0xffff0209)
 
 //Exception Handling
 #define EXCEPTION_ARM7 (uint32)(0xffff020A)
@@ -127,10 +125,14 @@ USA
 	#define IPC_READ_ARM7_TWLSD_REQBYIRQ		(u8)(6)
 	#define IPC_WRITE_ARM7_TWLSD_REQBYIRQ		(u8)(7)
 	
-	#define IPC_STARTUP_ARM7_TWLSD_REQBYIRQ		(u8)(8)
+	#define IPC_STARTUP_ARM7_TWLSD_REQBYIRQ				(u8)(8)
 	#define IPC_SD_IS_INSERTED_ARM7_TWLSD_REQBYIRQ		(u8)(9)
-	
-#define IPC_TGDSUSER_START_FREE_INDEX	(u8)(10)	//TGDS User Project rely on it
+
+
+#define IPC_ARM7DISABLE_WIFI_REQBYIRQ	(u8)(10)
+#define IPC_ARM7ENABLE_WIFI_REQBYIRQ	(u8)(11)
+
+#define IPC_TGDSUSER_START_FREE_INDEX	(u8)(12)	//TGDS User Project rely on it
 
 #define TGDS_GETEXTERNALPAYLOAD_MODE (u32)(0xFFFFAAC2)
 

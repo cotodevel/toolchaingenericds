@@ -37,6 +37,7 @@ USA
 #include "debugNocash.h"
 #include "utilsTGDS.h"
 #include "timerTGDS.h"
+#include "wifi_shared.h"
 
 #ifdef TWLMODE
 #include "utils.twl.h"
@@ -385,6 +386,27 @@ void NDS_IRQHandler(){
 					break;
 				#endif
 				
+			case(IPC_ARM7DISABLE_WIFI_REQBYIRQ):{
+				// Deinit WIFI
+				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
+				if(DeInitWIFIARM7LibUtilsCallback != NULL){
+					DeInitWIFIARM7LibUtilsCallback();
+				}
+				setValueSafe(&fifomsg[3], (u32)0);				
+			}
+			break;
+			
+			//arm9 wants to send a WIFI context block address / userdata is always zero here
+			case(IPC_ARM7ENABLE_WIFI_REQBYIRQ):{
+				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
+				if(wifiAddressHandlerARM7LibUtilsCallback != NULL){
+					//	wifiAddressHandler( void * address, void * userdata )
+					wifiAddressHandlerARM7LibUtilsCallback((Wifi_MainStruct *)getValueSafe(&fifomsg[0]), 0);
+				}
+				setValueSafe(&fifomsg[0], (u32)0);				
+			}
+			break;
+			
 			#endif
 			
 			default:{
