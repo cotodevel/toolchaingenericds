@@ -546,7 +546,9 @@ void HandleFifoNotEmpty(){
 							u32 arm7EntryAddressPhys = getValueSafe(&fifomsg[0]);
 							int arm7BootCodeSize = getValueSafe(&fifomsg[1]);
 							u32 arm7entryaddress = getValueSafe(&fifomsg[2]);
-							memcpy((void *)arm7entryaddress,(const void *)arm7EntryAddressPhys, arm7BootCodeSize);
+							if(arm7EntryAddressPhys != ((u32)0) ){
+								memcpy((void *)arm7entryaddress,(const void *)arm7EntryAddressPhys, arm7BootCodeSize);
+							}
 							setValueSafe((u32*)0x02FFFE34, (u32)arm7entryaddress);
 							swiSoftReset();	// Jump to boot loader
 						}
@@ -590,12 +592,6 @@ void HandleFifoNotEmpty(){
 			
 			//ARM9 command handler
 			#ifdef ARM9
-			//tgds-mb loader code here (ARM9)
-						case(FIFO_ARM7_RELOAD):{
-							reloadStatus = 0;
-						}
-						break;
-			
 			case ARM9COMMAND_UPDATE_BUFFER:{
 				updateRequested = true;
 					

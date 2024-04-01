@@ -144,17 +144,16 @@ extern u32 * DLDIARM7Address;
 
 #ifdef ARM9
 extern u8 ARM7SharedDLDI[32768];
-
-//Coto: RAM Disk DLDI Implementation. DLDI RW Works (32MB @ 0x08000000) in emulators now!
 extern bool _DLDI_isInserted(void);
 extern bool _DLDI_clearStatus(void);
 extern bool _DLDI_shutdown(void);
 extern bool _DLDI_startup(void);
 extern bool _DLDI_readSectors(uint32 sector, uint32 sectorCount, uint8* buffer);
 extern bool _DLDI_writeSectors(uint32 sector, uint32 sectorCount, const uint8* buffer);
-extern bool dldiRelocateLoader(bool clearBSS, u32 DldiRelocatedAddress, u32 dldiSourceInRam, u32 dldiOutWriteAddress);
 extern bool dldiPatchLoader(data_t *binData, u32 binSize, u32 physDLDIAddress);
 #endif
+
+extern bool dldiRelocateLoader(u32 DldiRelocatedAddress, u32 dldiSourceInRam);
 
 ///////////////////////////////////TWL mode SD ARM9i DLDI Access///////////////////////////////////
 extern const struct DISC_INTERFACE_STRUCT __io_dsisd;

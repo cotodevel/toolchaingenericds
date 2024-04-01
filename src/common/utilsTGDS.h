@@ -78,6 +78,9 @@ typedef void(*wifiDeinitARM7ARM9LibUtils_fn)();
 typedef void(*wifiUpdateVBLANKARM7LibUtils_fn)();
 typedef void(*wifiInterruptARM7LibUtils_fn)();
 typedef void(*timerWifiInterruptARM9LibUtils_fn)();
+typedef void(*DeInitWIFIARM7LibUtils_fn)();
+typedef void(*wifiAddressHandlerARM7LibUtils_fn)(void * address, void * userdata);
+
 
 //Wifi (ARM9)
 typedef bool(*wifiswitchDsWnifiModeARM9LibUtils_fn)(sint32 dswnifi_mode); 
@@ -230,6 +233,8 @@ extern wifiDeinitARM7ARM9LibUtils_fn wifiDeinitARM7ARM9LibUtilsCallback;
 extern wifiUpdateVBLANKARM7LibUtils_fn wifiUpdateVBLANKARM7LibUtilsCallback;
 extern wifiInterruptARM7LibUtils_fn wifiInterruptARM7LibUtilsCallback;
 extern timerWifiInterruptARM9LibUtils_fn timerWifiInterruptARM9LibUtilsCallback;
+extern DeInitWIFIARM7LibUtils_fn	DeInitWIFIARM7LibUtilsCallback;
+extern wifiAddressHandlerARM7LibUtils_fn	wifiAddressHandlerARM7LibUtilsCallback;
 
 //Wifi (ARM9)
 extern wifiswitchDsWnifiModeARM9LibUtils_fn wifiswitchDsWnifiModeARM9LibUtilsCallback;
@@ -255,7 +260,9 @@ extern void initializeLibUtils7(
 	SoundStreamSetupSoundARM7LibUtils_fn SoundStreamSetupSoundARM7LibUtilsCall,	//ARM7: void setupSound(uint32 sourceBuf)
 	initMallocARM7LibUtils_fn initMallocARM7LibUtilsCall,	//ARM7: void initARM7Malloc(u32 ARM7MallocStartaddress, u32 ARM7MallocSize);
 	wifiDeinitARM7ARM9LibUtils_fn wifiDeinitARM7ARM9LibUtilsCall, //ARM7: DeInitWIFI()
-	MicInterruptARM7LibUtils_fn MicInterruptARM7LibUtilsCall //ARM7: micInterrupt()
+	MicInterruptARM7LibUtils_fn MicInterruptARM7LibUtilsCall, //ARM7: micInterrupt()
+	DeInitWIFIARM7LibUtils_fn DeInitWIFIARM7LibUtilsCall, //ARM7: DeInitWIFI();
+	wifiAddressHandlerARM7LibUtils_fn	wifiAddressHandlerARM7LibUtilsCall //ARM7: void wifiAddressHandler( void * address, void * userdata )
 );
 #endif
 

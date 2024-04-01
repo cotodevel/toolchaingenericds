@@ -28,6 +28,13 @@ void DeInitWIFI(){
 	#ifdef ARM9
 	Wifi_DisconnectAP();
 	Wifi_DisableWifi();
+	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
+	setValueSafe(&fifomsg[3], ((u32)0xFFFFFFFF));
+	sendByteIPC(IPC_ARM7DISABLE_WIFI_REQBYIRQ);
+	while(getValueSafe(&fifomsg[3]) == ((u32)0xFFFFFFFF)){
+		swiDelay(1);
+	}
+	
 	irqDisable(IRQ_TIMER3);
 	Wifi_SetSyncHandler(NULL);
 	if(WifiData != NULL){
@@ -36,8 +43,6 @@ void DeInitWIFI(){
 	sgIP_Hub_RemoveHardwareInterface(wifi_hw);
 	TIMERXDATA(3) = 0;
 	TIMERXCNT(3) = 0;
-	SendFIFOWords(WIFI_DEINIT, 0xFF);
-	
 	if(wifi_connect_point != NULL){
 		TGDSARM9Free((u8*)wifi_connect_point);
 	}
@@ -46,5 +51,4 @@ void DeInitWIFI(){
 		TGDSARM9Free((u8*)WifiData);
 	}
 	#endif
-	swiDelay(8888);
 }

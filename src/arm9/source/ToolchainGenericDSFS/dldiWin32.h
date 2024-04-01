@@ -150,7 +150,7 @@ extern bool _DLDI_shutdown(void);
 extern bool _DLDI_startup(void);
 extern bool _DLDI_readSectors(uint32 sector, uint32 sectorCount, uint8* buffer);
 extern bool _DLDI_writeSectors(uint32 sector, uint32 sectorCount, const uint8* buffer);
-extern bool dldiRelocateLoader(bool clearBSS, u32 DldiRelocatedAddress, u32 dldiSourceInRam, u32 dldiOutWriteAddress);
+extern bool dldiRelocateLoader(u32 DldiRelocatedAddress, u32 dldiSourceInRam);
 extern bool dldiPatchLoader(data_t *binData, u32 binSize, u32 physDLDIAddress);
 #endif
 

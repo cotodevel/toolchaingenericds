@@ -1088,8 +1088,15 @@ void wifiValue32Handler(u32 value, void* data) {
 }
 */
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
 
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 bool Wifi_InitDefault(bool useFirmwareSettings) {
+	irqDisable(IRQ_TIMER3);
 	
 	//These are already freed.
 	wifi_connect_point = (Wifi_AccessPoint*)TGDSARM9Malloc(sizeof(Wifi_AccessPoint));
@@ -1099,25 +1106,24 @@ bool Wifi_InitDefault(bool useFirmwareSettings) {
 	
 	if(!wifi_pass) return false;
 
-	irqEnable(IRQ_TIMER3);
-
 	Wifi_SetSyncHandler(arm9_synctoarm7); // tell wifi lib to use our handler to notify arm7
 
 	// set timer3
 	TIMERXDATA(3) = -6553; // 6553.1 * 256 cycles = ~50ms;
 	TIMERXCNT(3) = 0x00C2; // enable, irq, 1/256 clock
+	irqEnable(IRQ_TIMER3);
 
 	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
-	setValueSafe(&fifomsg[60], (u32)wifi_pass);
-	SendFIFOWords(WIFI_INIT, 0xFF);
+	setValueSafe(&fifomsg[0], (u32)wifi_pass);
 	TGDSInitLoopCount = 0;
-	while(Wifi_CheckInit()==0) {
+	sendByteIPC(IPC_ARM7ENABLE_WIFI_REQBYIRQ);
+	while( ( ((u32)getValueSafe(&fifomsg[0])) == ((u32)wifi_pass)) || (Wifi_CheckInit()==0) ){
 		if(TGDSInitLoopCount > 1048576){
 			u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
 			int stage = 2;
 			handleDSInitError(stage, (u32)fwNo);
 		}
-		swiDelay(1);
+		HaltUntilIRQ();
 		TGDSInitLoopCount++;
 	}
 

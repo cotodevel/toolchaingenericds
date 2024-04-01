@@ -236,6 +236,7 @@ void exception_handler(uint32 arg, int stage, u32 fwNo){
 			//Stage 6 = TGDS App has quit through exit(int status);
 			//Stage 7 = TGDS TWL App trying to be ran in NTR mode. (unused)
 			//Stage 8 = TGDS NTR App trying to be ran in TWL mode. (unused)
+			//Stage 9 = TGDS ARM7 Payload reloading failed.
 			//Stage 10 = Custom manual exception (ARM7)
 			GUI_printf("TGDS boot fail: Stage [%d], firmware model: [0x%x]", stage, fwNo);
 			
@@ -290,6 +291,9 @@ void exception_handler(uint32 arg, int stage, u32 fwNo){
 				GUI_printf("Unsupported [NTR] binary running on TWL mode hardware. ");
 				GUI_printf("Please run the same TGDS Project, ");
 				GUI_printf("but using its [TWL] binary counterpart.");
+			}
+			else if(stage == 9){
+				GUI_printf("TGDS ARM7 Payload reloading failed. ");
 			}
 			else if(stage == 10){
 				GUI_printf(sharedStringExceptionMessage);
