@@ -460,7 +460,7 @@ void bootfile(){
 			}
 			
 			//Bios can now be changed @ ARM7
-			if( (__dsimode == true) && (isNTRTWLBinary == isTWLBinary) ){
+			if(__dsimode == true){
 				//- DSi7 - SCFG_ROM - ROM Control (R/W, Set-Once)
 				u16 * SCFG_ROM = 0x04004000;
 				//4004000h - DSi7 - SCFG_ROM - ROM Control (R/W, Set-Once)
