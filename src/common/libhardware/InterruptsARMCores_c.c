@@ -289,6 +289,34 @@ void NDS_IRQHandler(){
 	if(REG_IE_SET & IRQ_IPCSYNC){
 		uint8 ipcByte = receiveByteIPC();
 		switch(ipcByte){
+			case(IPC_SEND_TGDS_CMD):{
+				#ifdef ARM7
+				//ARM7_DLDI
+				//Slot-1 or slot-2 access
+				uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
+				uint32 TGDS_CMD = (uint32)getValueSafe(&fifomsg[23]);
+				switch(TGDS_CMD){
+					case(IPC_READ_ARM7DLDI_REQBYIRQ):{
+						struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
+						uint32 sector = getValueSafe(&fifomsg[20]);
+						uint32 numSectors = getValueSafe(&fifomsg[21]);
+						uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[22]);
+						dldiInterface->ioInterface.readSectors(sector, numSectors, targetMem);
+					}break;
+					case(IPC_WRITE_ARM7DLDI_REQBYIRQ):{
+						struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
+						uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
+						uint32 sector = getValueSafe(&fifomsg[20]);
+						uint32 numSectors = getValueSafe(&fifomsg[21]);
+						uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[22]);
+						dldiInterface->ioInterface.writeSectors(sector, numSectors, targetMem);
+					}break;
+				}
+				setValueSafe(&fifomsg[23], (uint32)0);
+				#endif
+			}
+			break;
+			
 			case(IPC_ARM7READMEMORY_REQBYIRQ):{
 				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 				uint32 srcMemory = getValueSafe(&fifomsg[28]);
@@ -318,37 +346,6 @@ void NDS_IRQHandler(){
 			break;
 			
 			#ifdef ARM7
-			//ARM7_DLDI
-				//Slot-1 or slot-2 access
-				case(IPC_READ_ARM7DLDI_REQBYIRQ):{
-					struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
-					uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-					uint32 sector = getValueSafe(&fifomsg[20]);
-					uint32 numSectors = getValueSafe(&fifomsg[21]);
-					uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[22]);
-					dldiInterface->ioInterface.readSectors(sector, numSectors, targetMem);
-					setValueSafe(&fifomsg[20], (u32)0);
-					setValueSafe(&fifomsg[21], (u32)0);
-					setValueSafe(&fifomsg[22], (u32)0);
-					setValueSafe(&fifomsg[23], (u32)0);
-				}
-				break;
-				
-				
-				case(IPC_WRITE_ARM7DLDI_REQBYIRQ):{
-					struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
-					uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-					uint32 sector = getValueSafe(&fifomsg[24]);
-					uint32 numSectors = getValueSafe(&fifomsg[25]);
-					uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[26]);
-					dldiInterface->ioInterface.writeSectors(sector, numSectors, targetMem);
-					setValueSafe(&fifomsg[24], (u32)0);
-					setValueSafe(&fifomsg[25], (u32)0);
-					setValueSafe(&fifomsg[26], (u32)0);
-					setValueSafe(&fifomsg[27], (u32)0);
-				}
-				break;
-				
 				//TWL SD Hardware
 				#ifdef TWLMODE
 					case(IPC_READ_ARM7_TWLSD_REQBYIRQ):{
