@@ -1114,10 +1114,11 @@ bool Wifi_InitDefault(bool useFirmwareSettings) {
 	irqEnable(IRQ_TIMER3);
 
 	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
-	setValueSafe(&fifomsg[0], (u32)wifi_pass);
+	setValueSafe(&fifomsg[22], (u32)wifi_pass);
+	setValueSafe(&fifomsg[23], (uint32)IPC_ARM7ENABLE_WIFI_REQBYIRQ);
+	sendByteIPC(IPC_SEND_TGDS_CMD);
 	TGDSInitLoopCount = 0;
-	sendByteIPC(IPC_ARM7ENABLE_WIFI_REQBYIRQ);
-	while( ( ((u32)getValueSafe(&fifomsg[0])) == ((u32)wifi_pass)) || (Wifi_CheckInit()==0) ){
+	while( ( ((uint32)getValueSafe(&fifomsg[23])) != ((u32)0)) || (Wifi_CheckInit()==0) ){
 		if(TGDSInitLoopCount > 1048576){
 			u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
 			int stage = 2;
@@ -1126,7 +1127,6 @@ bool Wifi_InitDefault(bool useFirmwareSettings) {
 		HaltUntilIRQ();
 		TGDSInitLoopCount++;
 	}
-
 	if(useFirmwareSettings) {  
 		int wifiStatus = ASSOCSTATUS_DISCONNECTED;
 

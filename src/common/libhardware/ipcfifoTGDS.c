@@ -681,18 +681,13 @@ void HandleFifoNotEmpty(){
 //u32 * srcMemory == External ARM Core Base Address
 void ReadMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead){
 	dmaFillWord(0, 0, (uint32)targetMemory, (uint32)bytesToRead);
-	#ifdef ARM7
-	uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-	#endif
-	#ifdef ARM9
 	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
-	#endif
-	setValueSafe(&fifomsg[28], (uint32)srcMemory);
-	setValueSafe(&fifomsg[29], (uint32)targetMemory);
-	setValueSafe(&fifomsg[30], (uint32)bytesToRead);
-	setValueSafe(&fifomsg[31], (uint32)0xFFFFFFFF);
-	sendByteIPC(IPC_ARM7READMEMORY_REQBYIRQ);
-	while((uint32)fifomsg[31] != (uint32)0){
+	setValueSafe(&fifomsg[20], (uint32)srcMemory);
+	setValueSafe(&fifomsg[21], (uint32)targetMemory);
+	setValueSafe(&fifomsg[22], (uint32)bytesToRead);
+	setValueSafe(&fifomsg[23], (uint32)IPC_ARM7READMEMORY_REQBYIRQ);
+	sendByteIPC(IPC_SEND_TGDS_CMD);
+	while( ( ((uint32)getValueSafe(&fifomsg[23])) != ((u32)0)) ){
 		swiDelay(1);
 	}
 	#ifdef ARM9
@@ -707,18 +702,13 @@ void SaveMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead){
 	#ifdef ARM9
 	coherent_user_range_by_size((uint32)targetMemory, (sint32)bytesToRead);
 	#endif
-	#ifdef ARM7
-	uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-	#endif
-	#ifdef ARM9
 	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
-	#endif
-	setValueSafe(&fifomsg[32], (uint32)srcMemory);
-	setValueSafe(&fifomsg[33], (uint32)targetMemory);
-	setValueSafe(&fifomsg[34], (uint32)bytesToRead);
-	setValueSafe(&fifomsg[35], (uint32)0xFFFFFFFF);
-	sendByteIPC(IPC_ARM7SAVEMEMORY_REQBYIRQ);
-	while((u32)getValueSafe(&fifomsg[35]) != (u32)0){
+	setValueSafe(&fifomsg[20], (uint32)srcMemory);
+	setValueSafe(&fifomsg[21], (uint32)targetMemory);
+	setValueSafe(&fifomsg[22], (uint32)bytesToRead);
+	setValueSafe(&fifomsg[23], (uint32)IPC_ARM7SAVEMEMORY_REQBYIRQ);
+	sendByteIPC(IPC_SEND_TGDS_CMD);
+	while( ( ((uint32)getValueSafe(&fifomsg[23])) != ((u32)0)) ){
 		swiDelay(1);
 	}
 }

@@ -110,11 +110,8 @@ USA
 
 //TGDS IPC Command Interrupt Index
 #define IPC_NULL_CMD					(u8)(0)	//NULL cmd is unused by TGDS, fallbacks to TGDS project IPCIRQ Handler
-#define IPC_SEND_TGDS_CMD			(u8)(1)
-
-//ARM7 Direct Memory
-#define IPC_ARM7READMEMORY_REQBYIRQ		(u8)(2)
-#define IPC_ARM7SAVEMEMORY_REQBYIRQ		(u8)(3)
+#define IPC_SEND_TGDS_CMD				(u8)(1)	//Internal TGDS IPC hardware Command handler
+#define IPC_TGDSUSER_START_FREE_INDEX	(u8)(2)	//TGDS User Project rely on it
 
 //ARM7DLDI Hardware
 	//Slot1 or slot2 access
@@ -126,10 +123,11 @@ USA
 	#define IPC_WRITE_ARM7_TWLSD_REQBYIRQ		(u32)(0xFFFFAACC)
 	#define IPC_STARTUP_ARM7_TWLSD_REQBYIRQ		(u32)(0xFFFFAACD)
 	
-#define IPC_ARM7DISABLE_WIFI_REQBYIRQ	(u8)(10)
-#define IPC_ARM7ENABLE_WIFI_REQBYIRQ	(u8)(11)
+#define IPC_ARM7DISABLE_WIFI_REQBYIRQ	(u32)(0xFFFFAACE)
+#define IPC_ARM7ENABLE_WIFI_REQBYIRQ	(u32)(0xFFFFAACF)
 
-#define IPC_TGDSUSER_START_FREE_INDEX	(u8)(12)	//TGDS User Project rely on it
+#define IPC_ARM7READMEMORY_REQBYIRQ		(u32)(0xFFFFAAD1)
+#define IPC_ARM7SAVEMEMORY_REQBYIRQ		(u32)(0xFFFFAAD2)
 
 #define TGDS_GETEXTERNALPAYLOAD_MODE (u32)(0xFFFFAAC2)
 
