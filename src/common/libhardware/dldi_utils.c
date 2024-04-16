@@ -208,12 +208,12 @@ bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer) {
 		#ifdef ARM9
 		void * targetMem = (void *)((int)&ARM7SharedDLDI[0] + 0x400000); //Uncached NTR, TWL is implemented below
 		uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
-		fifomsg[20] = (uint32)sector;
-		fifomsg[21] = (uint32)numSectors;
-		fifomsg[22] = (uint32)targetMem;
-		fifomsg[23] = (uint32)0xFFFFFFFF;
-		sendByteIPC(IPC_READ_ARM7DLDI_REQBYIRQ);
-		while(fifomsg[23] != (uint32)0){
+		setValueSafe(&fifomsg[20], (uint32)sector);
+		setValueSafe(&fifomsg[21], (uint32)numSectors);
+		setValueSafe(&fifomsg[22], (uint32)targetMem);
+		setValueSafe(&fifomsg[23], (uint32)IPC_READ_ARM7DLDI_REQBYIRQ);
+		sendByteIPC(IPC_SEND_TGDS_CMD);
+		while( ((uint32)getValueSafe(&fifomsg[23])) != ((uint32)0) ){
 			swiDelay(1);
 		}
 		memcpy((uint16_t*)buffer, (uint16_t*)targetMem, (numSectors * 512));
@@ -259,12 +259,12 @@ bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buff
 		void * targetMem = (void *)((int)&ARM7SharedDLDI[0] + 0x400000);	//Uncached NTR, TWL is implemented below
 		memcpy((uint16_t*)targetMem, (uint16_t*)buffer, (numSectors * 512));
 		uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
-		fifomsg[24] = (uint32)sector;
-		fifomsg[25] = (uint32)numSectors;
-		fifomsg[26] = (uint32)targetMem;
-		fifomsg[27] = (uint32)0xFFFFFFFF;
-		sendByteIPC(IPC_WRITE_ARM7DLDI_REQBYIRQ);
-		while(fifomsg[27] != (uint32)0){
+		setValueSafe(&fifomsg[20], (uint32)sector);
+		setValueSafe(&fifomsg[21], (uint32)numSectors);
+		setValueSafe(&fifomsg[22], (uint32)targetMem);
+		setValueSafe(&fifomsg[23], (uint32)IPC_WRITE_ARM7DLDI_REQBYIRQ);
+		sendByteIPC(IPC_SEND_TGDS_CMD);
+		while( ((uint32)getValueSafe(&fifomsg[23])) != ((uint32)0) ){
 			swiDelay(1);
 		}
 		return true;

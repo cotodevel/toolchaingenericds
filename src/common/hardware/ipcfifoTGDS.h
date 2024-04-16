@@ -110,7 +110,7 @@ USA
 
 //TGDS IPC Command Interrupt Index
 #define IPC_NULL_CMD					(u8)(0)	//NULL cmd is unused by TGDS, fallbacks to TGDS project IPCIRQ Handler
-#define IPC_SEND_MULTIPLE_CMDS			(u8)(1)
+#define IPC_SEND_TGDS_CMD			(u8)(1)
 
 //ARM7 Direct Memory
 #define IPC_ARM7READMEMORY_REQBYIRQ		(u8)(2)
@@ -118,8 +118,8 @@ USA
 
 //ARM7DLDI Hardware
 	//Slot1 or slot2 access
-	#define IPC_READ_ARM7DLDI_REQBYIRQ		(u8)(4)
-	#define IPC_WRITE_ARM7DLDI_REQBYIRQ		(u8)(5)
+	#define IPC_READ_ARM7DLDI_REQBYIRQ		(u32)(0xFFFFAAC9)
+	#define IPC_WRITE_ARM7DLDI_REQBYIRQ		(u32)(0xFFFFAACA)
 
 	//SD TWL Access
 	#define IPC_READ_ARM7_TWLSD_REQBYIRQ		(u8)(6)
