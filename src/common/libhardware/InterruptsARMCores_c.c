@@ -290,12 +290,12 @@ void NDS_IRQHandler(){
 		uint8 ipcByte = receiveByteIPC();
 		switch(ipcByte){
 			case(IPC_SEND_TGDS_CMD):{
-				#ifdef ARM7
-				//ARM7_DLDI
-				//Slot-1 or slot-2 access
 				uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
 				uint32 TGDS_CMD = (uint32)getValueSafe(&fifomsg[23]);
 				switch(TGDS_CMD){
+					#ifdef ARM7
+					//ARM7_DLDI
+					//Slot-1 or slot-2 access
 					case(IPC_READ_ARM7DLDI_REQBYIRQ):{
 						struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
 						uint32 sector = getValueSafe(&fifomsg[20]);
@@ -311,9 +311,38 @@ void NDS_IRQHandler(){
 						uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[22]);
 						dldiInterface->ioInterface.writeSectors(sector, numSectors, targetMem);
 					}break;
+					
+					//TWL SD Hardware
+						#ifdef TWLMODE
+						case(IPC_READ_ARM7_TWLSD_REQBYIRQ):{
+							int sector = getValueSafeInt(&fifomsg[20]);
+							int numSectors = getValueSafeInt(&fifomsg[21]);
+							uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[22]);
+							bool retval = sdio_ReadSectors(sector, numSectors, (void*)targetMem);
+							setValueSafe(&fifomsg[24], (u32)retval);	//last value has ret status & release ARM9 dldi cmd
+						}
+						break;
+						
+						case(IPC_WRITE_ARM7_TWLSD_REQBYIRQ):{
+							uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
+							int sector = getValueSafeInt(&fifomsg[20]);
+							int numSectors = getValueSafeInt(&fifomsg[21]);
+							uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[22]);
+							bool retval = sdio_WriteSectors(sector, numSectors, (void*)targetMem);
+							setValueSafe(&fifomsg[24], (u32)retval);	//last value has ret status & release ARM9 dldi cmd
+						}
+						break;
+						
+						case(IPC_STARTUP_ARM7_TWLSD_REQBYIRQ):{
+							bool result = sdio_Startup();
+						}
+						break;
+						
+						#endif
+					
+					#endif
 				}
 				setValueSafe(&fifomsg[23], (uint32)0);
-				#endif
 			}
 			break;
 			
@@ -346,43 +375,6 @@ void NDS_IRQHandler(){
 			break;
 			
 			#ifdef ARM7
-				//TWL SD Hardware
-				#ifdef TWLMODE
-					case(IPC_READ_ARM7_TWLSD_REQBYIRQ):{
-						uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-						int sector = getValueSafeInt(&fifomsg[20]);
-						int numSectors = getValueSafeInt(&fifomsg[21]);
-						uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[22]);
-						bool retval = sdio_ReadSectors(sector, numSectors, (void*)targetMem);
-						setValueSafe(&fifomsg[23], (u32)retval);	//last value has ret status & release ARM9 dldi cmd
-					}
-					break;
-					
-					case(IPC_WRITE_ARM7_TWLSD_REQBYIRQ):{
-						uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-						uint32 sector = getValueSafe(&fifomsg[24]);
-						uint32 numSectors = getValueSafe(&fifomsg[25]);
-						uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[26]);
-						bool retval = sdio_WriteSectors(sector, numSectors, (void*)targetMem);
-						setValueSafe(&fifomsg[27], (u32)retval);	//last value has ret status & release ARM9 dldi cmd
-					}
-					break;
-					
-					case(IPC_STARTUP_ARM7_TWLSD_REQBYIRQ):{
-						uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-						bool result = sdio_Startup();
-						setValueSafe(&fifomsg[23], (u32)result);	//last value has ret status	
-					}
-					break;
-					
-					case(IPC_SD_IS_INSERTED_ARM7_TWLSD_REQBYIRQ):{
-						uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-						bool result = sdio_IsInserted();
-						setValueSafe(&fifomsg[23], (u32)result);	//last value has ret status
-					}
-					break;
-				#endif
-				
 			case(IPC_ARM7DISABLE_WIFI_REQBYIRQ):{
 				// Deinit WIFI
 				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
