@@ -100,8 +100,6 @@ USA
 #define TGDS_ARM7_SETUPDISABLEDEXCEPTIONHANDLER (uint32)(0xFFFF022B)
 #define TGDS_ARM7_DETECTTURNOFFCONSOLE (uint32)(0xFFFF022D)
 
-#define TGDS_ARM7_RELOADFLASH (u32)(0xFFFFABC0)
-
 #define TGDS_ARM7_REQ_SLOT1_DISABLE (uint32)(0xFFFF0231)
 #define TGDS_ARM7_REQ_SLOT1_ENABLE (uint32)(0xFFFF0232)
 
@@ -309,7 +307,6 @@ extern u32 fifoFunc[FIFO_CHANNELS][2];	//context is only passed on callback prot
 
 extern struct sIPCSharedTGDS* getsIPCSharedTGDS();
 extern void XYReadScrPosUser(struct touchPosition * StouchScrPosInst);
-extern u8 ARM7ReadFWVersionFromFlashByFIFOIRQ();
 extern void ReadMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead);
 
 extern bool getNTRorTWLModeFromExternalProcessor();

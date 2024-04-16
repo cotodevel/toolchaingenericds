@@ -181,24 +181,6 @@ void HandleFifoNotEmpty(){
 			
 			//ARM7 command handler
 			#ifdef ARM7
-			
-			case (TGDS_ARM7_RELOADFLASH):{
-				//Init Shared Address Region and get NDS Header
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-				memcpy((u8*)&TGDSIPC->DSHeader,(u8*)0x027FFE00, sizeof(TGDSIPC->DSHeader)); //save Header flags
-				
-				//Read DHCP settings (in order)
-				LoadFirmwareSettingsFromFlash();
-				
-				//Hardware ARM7 Init
-				u8 DSHardwareReadFromFlash = TGDSIPC->DSFWHEADERInst.stub[0x1d];
-				
-				memcpy((u8*)0x027FFE00, (u8*)&TGDSIPC->DSHeader, sizeof(TGDSIPC->DSHeader));	//restore Header flags
-				setValueSafe(&fifomsg[58], (u32)DSHardwareReadFromFlash);
-			}
-			break;
-			
 			case ARM7COMMAND_START_SOUND:{
 				if(SoundStreamSetupSoundARM7LibUtilsCallback != NULL){
 					uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
@@ -724,18 +706,6 @@ void XYReadScrPosUser(struct touchPosition * StouchScrPosInst)   {
 	StouchScrPosInst->py = sTouchPosition->py;
 	StouchScrPosInst->z1   =   sTouchPosition->z1;
 	StouchScrPosInst->z2   =   sTouchPosition->z2;
-}
-
-//Reloads ARM7 Flash memory and returns DS hardware model by FIFO IRQ
-u8 ARM7ReadFWVersionFromFlashByFIFOIRQ(){
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-	setValueSafe(&fifomsg[58], (u32)0xFFFFFFFF);
-	SendFIFOWords(TGDS_ARM7_RELOADFLASH, 0xFF);
-	while(getValueSafe(&fifomsg[58]) == 0xFFFFFFFF){
-		swiDelay(2);
-	}
-	return (u8)fifomsg[58];
 }
 
 bool getNTRorTWLModeFromExternalProcessor(){
