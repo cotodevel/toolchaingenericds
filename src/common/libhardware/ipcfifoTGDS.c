@@ -113,6 +113,13 @@ void HandleFifoNotEmpty(){
 				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
 				uint32 FIFO_SEND_TGDS_CMD_in = (uint32)getValueSafe(&fifomsg[7]);
 				switch(FIFO_SEND_TGDS_CMD_in){
+					
+					//Shared
+					case(TGDS_GETEXTERNALPAYLOAD_MODE):{
+						setValueSafe(&fifomsg[8], (u32)__dsimode);
+					}
+					break;
+					
 					#ifdef ARM7
 						//ARM7 TGDS-Multiboot loader 
 						case(FIFO_ARM7_RELOAD):{	//TGDS-MB v3 VRAM Loader's tgds_multiboot_payload.bin: void executeARM7Payload(u32 arm7entryaddress, int arm7BootCodeSize);
@@ -136,17 +143,6 @@ void HandleFifoNotEmpty(){
 				setValueSafe(&fifomsg[7], (u32)0);
 			}break;
 			
-			
-			// ARM7IO from ARM9
-			//	||
-			// ARM9IO from ARM7
-			
-			case(TGDS_GETEXTERNALPAYLOAD_MODE):{
-				struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-				fifomsg[58] = (u32)__dsimode;
-			}
-			break;
 			
 			//ARM7 command handler
 			#ifdef ARM7
@@ -661,12 +657,12 @@ void XYReadScrPosUser(struct touchPosition * StouchScrPosInst)   {
 bool getNTRorTWLModeFromExternalProcessor(){
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-	setValueSafe(&fifomsg[58], (u32)0xFFFFFFFF);
-	SendFIFOWords(TGDS_GETEXTERNALPAYLOAD_MODE, 0xFF);
-	while(getValueSafe(&fifomsg[58]) == 0xFFFFFFFF){
-		swiDelay(2);
+	setValueSafe(&fifomsg[7], (u32)TGDS_GETEXTERNALPAYLOAD_MODE);
+	SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
+	while( ( ((uint32)getValueSafe(&fifomsg[7])) != ((uint32)0)) ){
+		swiDelay(1);
 	}
-	return (bool)fifomsg[58];
+	return (bool)getValueSafe(&fifomsg[8]);
 }
 
 #endif
