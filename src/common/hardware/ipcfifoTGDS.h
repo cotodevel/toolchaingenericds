@@ -45,6 +45,8 @@ USA
 #endif
 
 //FIFO Hardware
+#define FIFO_SEND_TGDS_CMD				(uint32)(0xffff0101)	//Internal TGDS FIFO hardware Command handler
+
 //void Write8bitAddrExtArm
 //void Write16bitAddrExtArm
 //void Write32bitAddrExtArm

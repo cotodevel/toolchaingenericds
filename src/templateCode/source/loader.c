@@ -116,8 +116,9 @@ void executeARM7Payload(u32 arm7entryaddress, int arm7BootCodeSize, u32 * payloa
 	setValueSafe(&fifomsg[0], (u32)payload);
 	setValueSafe(&fifomsg[1], (u32)arm7BootCodeSize);
 	setValueSafe(&fifomsg[2], (u32)arm7entryaddress);
+	setValueSafe(&fifomsg[7], (u32)FIFO_ARM7_RELOAD);	//ARM9: Execute ARM7 payload-> ARM7
 	int TGDSInitLoopCount = 0;
-	SendFIFOWords(FIFO_ARM7_RELOAD, 0xFF); //ARM9: Execute ARM7 payload-> ARM7
+	SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF); 
 	while( getValueSafe(ARM7_ARM9_DLDI_STATUS) == ((u32)&_io_dldi_stub) ){
 		if(TGDSInitLoopCount > 1048576){
 			u8 fwNo = *(u8*)(0x027FF000 + 0x5D);

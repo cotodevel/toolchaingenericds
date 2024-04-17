@@ -143,6 +143,34 @@ void HandleFifoNotEmpty(){
 		
 		//Execute ToolchainGenericDS FIFO commands
 		switch (data1) {
+			case(FIFO_SEND_TGDS_CMD):{
+				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+				uint32 FIFO_SEND_TGDS_CMD_in = (uint32)getValueSafe(&fifomsg[7]);
+				switch(FIFO_SEND_TGDS_CMD_in){
+					#ifdef ARM7
+						//ARM7 TGDS-Multiboot loader 
+						case(FIFO_ARM7_RELOAD):{	//TGDS-MB v3 VRAM Loader's tgds_multiboot_payload.bin: void executeARM7Payload(u32 arm7entryaddress, int arm7BootCodeSize);
+							u32 arm7EntryAddressPhys = getValueSafe(&fifomsg[0]);
+							int arm7BootCodeSize = getValueSafe(&fifomsg[1]);
+							u32 arm7entryaddress = getValueSafe(&fifomsg[2]);
+							if(arm7EntryAddressPhys != ((u32)0) ){
+								memcpy((void *)arm7entryaddress,(const void *)arm7EntryAddressPhys, arm7BootCodeSize);
+							}
+							setValueSafe((u32*)0x02FFFE34, (u32)arm7entryaddress);
+							swiSoftReset();	// Jump to boot loader
+						}
+						break;
+			
+						case(BOOT_FILE_TGDSMB):{	//TGDS-MB v3 VRAM Loader's tgds_multiboot_payload.bin: arm9 bootloader: char * homebrewToBoot
+							bootfile();
+						}break;
+					#endif
+				}
+				
+				setValueSafe(&fifomsg[7], (u32)0);
+			}break;
+			
 			
 			// ARM7IO from ARM9
 			//	||
@@ -520,25 +548,6 @@ void HandleFifoNotEmpty(){
 				fifomsg[61] = fifomsg[60] = 0;
 			}
 			break;
-			
-			//ARM7 TGDS-Multiboot loader 
-						case(FIFO_ARM7_RELOAD):{	//TGDS-MB v3 VRAM Loader's tgds_multiboot_payload.bin: void executeARM7Payload(u32 arm7entryaddress, int arm7BootCodeSize);
-							struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-							uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
-							u32 arm7EntryAddressPhys = getValueSafe(&fifomsg[0]);
-							int arm7BootCodeSize = getValueSafe(&fifomsg[1]);
-							u32 arm7entryaddress = getValueSafe(&fifomsg[2]);
-							if(arm7EntryAddressPhys != ((u32)0) ){
-								memcpy((void *)arm7entryaddress,(const void *)arm7EntryAddressPhys, arm7BootCodeSize);
-							}
-							setValueSafe((u32*)0x02FFFE34, (u32)arm7entryaddress);
-							swiSoftReset();	// Jump to boot loader
-						}
-						break;
-			
-						case(BOOT_FILE_TGDSMB):{	//TGDS-MB v3 VRAM Loader's tgds_multiboot_payload.bin: arm9 bootloader: char * homebrewToBoot
-							bootfile();
-						}break;
 			
 			case TGDS_ARMCORES_REPORT_PAYLOAD_MODE:{
 				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
