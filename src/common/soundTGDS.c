@@ -38,7 +38,10 @@ void writeARM7SoundChannel(int channel, u32 cnt, u16 freq){
 	TGDSIPC->soundIPC.psgChannel = channel;
 	TGDSIPC->soundIPC.cr = cnt;
 	TGDSIPC->soundIPC.timer = SOUND_FREQ(freq);
-	SendFIFOWords(ARM7COMMAND_PSG_COMMAND, 0xFF);
+	
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+	setValueSafe(&fifomsg[7], (u32)ARM7COMMAND_PSG_COMMAND);
+	SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -56,9 +59,11 @@ void writeARM7SoundChannelFromSource(int channel, u32 cnt, u16 freq, u32 dataSrc
 	TGDSIPC->soundIPC.timer = SOUND_FREQ(freq);
 	TGDSIPC->soundIPC.arm9L = (void*)dataSrc;
 	TGDSIPC->soundIPC.volume = (int)dataSize; //volume == size
-	SendFIFOWords(ARM7COMMAND_SND_COMMAND, 0xFF);
 	
-	while(getValueSafe((u32*)&TGDSIPC->soundIPC.volume) != (u32)0){
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+	setValueSafe(&fifomsg[7], (u32)ARM7COMMAND_SND_COMMAND);
+	SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
+	while( ( ((uint32)getValueSafe(&fifomsg[7])) != ((uint32)0)) ){
 		swiDelay(1);
 	}
 }

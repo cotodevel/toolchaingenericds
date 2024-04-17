@@ -137,7 +137,54 @@ void HandleFifoNotEmpty(){
 						case(BOOT_FILE_TGDSMB):{	//TGDS-MB v3 VRAM Loader's tgds_multiboot_payload.bin: arm9 bootloader: char * homebrewToBoot
 							bootfile();
 						}break;
+						
+						//TGDS ARM7 Sound streaming 
+						case ARM7COMMAND_START_SOUND:{
+							if(SoundStreamSetupSoundARM7LibUtilsCallback != NULL){
+								u32 SoundBuffARM7 = getValueSafe(&fifomsg[0]);
+								SoundStreamSetupSoundARM7LibUtilsCallback(SoundBuffARM7);	//data0 == ARM7 Sound Buffer source for streaming
+							}
+						}
+						break;
+						case ARM7COMMAND_STOP_SOUND:{
+							if(SoundStreamStopSoundARM7LibUtilsCallback != NULL){
+								SoundStreamStopSoundARM7LibUtilsCallback();
+							}
+						}
+						break;
+						case ARM7COMMAND_SOUND_SETRATE:{
+							sndRate = getValueSafe(&fifomsg[0]);
+						}
+						break;
+						case ARM7COMMAND_SOUND_SETLEN:{
+							sampleLen = getValueSafe(&fifomsg[0]);
+						}
+						break;
+						case ARM7COMMAND_SOUND_SETMULT:{
+							multRate = getValueSafe(&fifomsg[0]);
+						}
+						break;
+						case ARM7COMMAND_PSG_COMMAND:
+						{
+							struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 	
+							SCHANNEL_CR(TGDSIPC->soundIPC.psgChannel) = TGDSIPC->soundIPC.cr;
+							SCHANNEL_TIMER(TGDSIPC->soundIPC.psgChannel) = TGDSIPC->soundIPC.timer;
+						}
+						break;
+						
+						case ARM7COMMAND_SND_COMMAND:{
+							struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 	
+							SCHANNEL_CR(TGDSIPC->soundIPC.psgChannel) = TGDSIPC->soundIPC.cr;
+							SCHANNEL_TIMER(TGDSIPC->soundIPC.psgChannel) = TGDSIPC->soundIPC.timer;
+							SCHANNEL_SOURCE(TGDSIPC->soundIPC.psgChannel) = (u32)TGDSIPC->soundIPC.arm9L;
+							SCHANNEL_LENGTH(TGDSIPC->soundIPC.psgChannel) = (TGDSIPC->soundIPC.volume >> 2); //volume == size
+						}
+						break;
+						
 					#endif
+					
+					
+					
 				}
 				
 				setValueSafe(&fifomsg[7], (u32)0);
@@ -146,35 +193,6 @@ void HandleFifoNotEmpty(){
 			
 			//ARM7 command handler
 			#ifdef ARM7
-			case ARM7COMMAND_START_SOUND:{
-				if(SoundStreamSetupSoundARM7LibUtilsCallback != NULL){
-					uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-					u32 SoundBuffARM7 = getValueSafe(&fifomsg[63]);
-					SoundStreamSetupSoundARM7LibUtilsCallback(SoundBuffARM7);	//data0 == ARM7 Sound Buffer source for streaming
-				}
-			}
-			break;
-			case ARM7COMMAND_STOP_SOUND:{
-				if(SoundStreamStopSoundARM7LibUtilsCallback != NULL){
-					SoundStreamStopSoundARM7LibUtilsCallback();
-				}
-			}
-			break;
-			case ARM7COMMAND_SOUND_SETRATE:{
-				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-				sndRate = getValueSafe(&fifomsg[60]);
-			}
-			break;
-			case ARM7COMMAND_SOUND_SETLEN:{
-				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-				sampleLen = getValueSafe(&fifomsg[61]);
-			}
-			break;
-			case ARM7COMMAND_SOUND_SETMULT:{
-				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-				multRate = getValueSafe(&fifomsg[62]);
-			}
-			break;
 			case ARM7COMMAND_SOUND_COPY:
 			{
 				s16 *lbuf = NULL;
@@ -390,24 +408,6 @@ void HandleFifoNotEmpty(){
 				VblankUser();
 			}
 			break;
-			case ARM7COMMAND_PSG_COMMAND:
-			{
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 	
-				SCHANNEL_CR(TGDSIPC->soundIPC.psgChannel) = TGDSIPC->soundIPC.cr;
-				SCHANNEL_TIMER(TGDSIPC->soundIPC.psgChannel) = TGDSIPC->soundIPC.timer;
-			}
-			break;
-			
-			case ARM7COMMAND_SND_COMMAND:{
-				struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 	
-				SCHANNEL_CR(TGDSIPC->soundIPC.psgChannel) = TGDSIPC->soundIPC.cr;
-				SCHANNEL_TIMER(TGDSIPC->soundIPC.psgChannel) = TGDSIPC->soundIPC.timer;
-				SCHANNEL_SOURCE(TGDSIPC->soundIPC.psgChannel) = (u32)TGDSIPC->soundIPC.arm9L;
-				SCHANNEL_LENGTH(TGDSIPC->soundIPC.psgChannel) = (TGDSIPC->soundIPC.volume >> 2); //volume == size
-				TGDSIPC->soundIPC.volume = 0;
-			}
-			break;
-			
 			case((uint32)TGDS_ARM7_SETUPEXCEPTIONHANDLER):{
 				u32 * sharedBuf = (uint32*)data0; //data0 == ARM9's sharedBuf
 				exceptionArmRegsShared = (uint8*)(getValueSafe(sharedBuf+0));
