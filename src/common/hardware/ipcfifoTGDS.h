@@ -47,13 +47,6 @@ USA
 //FIFO Hardware
 #define FIFO_SEND_TGDS_CMD				(uint32)(0xffff0101)	//Internal TGDS FIFO hardware Command handler
 
-//void Write8bitAddrExtArm
-//void Write16bitAddrExtArm
-//void Write32bitAddrExtArm
-#define WRITE_EXTARM_8	(uint32)(0xffff0200)
-#define WRITE_EXTARM_16	(uint32)(0xffff0201)
-#define WRITE_EXTARM_32	(uint32)(0xffff0202)
-
 //PowerCnt Read / PowerCnt Write
 #define FIFO_POWERCNT_ON	(uint32)(0xffff0205)
 #define FIFO_POWERCNT_OFF	(uint32)(0xffff0206)
@@ -299,9 +292,10 @@ extern __attribute__((weak))	void HandleFifoEmptyWeakRef(uint32 cmd1,uint32 cmd2
 extern void HandleFifoNotEmpty();
 extern void HandleFifoEmpty();
 
-extern void Write32bitAddrExtArm(uint32 address, uint32 value);
-extern void Write16bitAddrExtArm(uint32 address, uint16 value);
-extern void Write8bitAddrExtArm(uint32 address, uint8 value);
+#ifdef ARM9
+extern u32 sharedbufferIOReadWrite;
+extern void Write16bitAddrExtArm(u32 address, u16 bits);
+#endif
 
 //arg 0: channel
 //arg 1: arg0: handler, arg1: userdata
@@ -309,7 +303,6 @@ extern u32 fifoFunc[FIFO_CHANNELS][2];	//context is only passed on callback prot
 
 extern struct sIPCSharedTGDS* getsIPCSharedTGDS();
 extern void XYReadScrPosUser(struct touchPosition * StouchScrPosInst);
-extern void ReadMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead);
 
 extern bool getNTRorTWLModeFromExternalProcessor();
 

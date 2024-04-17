@@ -358,6 +358,9 @@ void NDS_IRQHandler(){
 						uint32 srcMemory = getValueSafe(&fifomsg[20]);
 						uint32 targetMemory = getValueSafe(&fifomsg[21]);
 						int bytesToRead = (int)getValueSafe(&fifomsg[22]);
+						#ifdef ARM9
+						coherent_user_range((uint32)srcMemory, bytesToRead);
+						#endif
 						memcpy((u8*)targetMemory,(u8*)srcMemory, bytesToRead);
 					}
 					break;
@@ -365,7 +368,9 @@ void NDS_IRQHandler(){
 						uint32 srcMemory = getValueSafe(&fifomsg[20]);
 						uint32 targetMemory = getValueSafe(&fifomsg[21]);
 						int bytesToRead = (int)getValueSafe(&fifomsg[22]);
-						dmaFillWord(0, 0, (uint32)srcMemory, (uint32)bytesToRead);
+						#ifdef ARM9
+						coherent_user_range((uint32)targetMemory, bytesToRead);
+						#endif
 						memcpy((u8*)srcMemory, (u8*)targetMemory, bytesToRead);
 					}
 					break;

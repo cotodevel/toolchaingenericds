@@ -56,49 +56,14 @@ USA
 //arg 1: arg0: handler, arg1: userdata
 u32 fifoFunc[FIFO_CHANNELS][2];	//context is only passed on callback prototype stage, because, the channel index generates the callee callback
 
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-void Write8bitAddrExtArm(uint32 address, uint8 value){
-	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-	fifomsg[54] = address;
-	fifomsg[55] = (uint32)value;
-	SendFIFOWords(WRITE_EXTARM_8, (uint32)fifomsg);
+#ifdef ARM9
+//EWRAM
+u32 sharedbufferIOReadWrite = 0;
+void Write16bitAddrExtArm(u32 address, u16 bits){
+	sharedbufferIOReadWrite = (u32)(bits & 0x0000FFFF);
+	SaveMemoryExt((u32*)address, (u32 *)&sharedbufferIOReadWrite, 2);
 }
-
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
 #endif
-
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-void Write16bitAddrExtArm(uint32 address, uint16 value){
-	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-	fifomsg[56] = address;
-	fifomsg[57] = (uint32)value;
-	SendFIFOWords(WRITE_EXTARM_16, (uint32)fifomsg);
-}
-
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-void Write32bitAddrExtArm(uint32 address, uint32 value){
-	struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-	fifomsg[58] = address;
-	fifomsg[59] = (uint32)value;
-	SendFIFOWords(WRITE_EXTARM_32, (uint32)fifomsg);
-}
 
 //Hardware IPC struct packed 
 #ifdef ARM9
@@ -175,30 +140,6 @@ void HandleFifoNotEmpty(){
 			// ARM7IO from ARM9
 			//	||
 			// ARM9IO from ARM7
-			case((uint32)WRITE_EXTARM_8):{
-				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg
-				uint32* address = (uint32*)fifomsg[54];
-				uint8 value = (uint8)((uint32)(fifomsg[55]&0xff));
-				*(uint8*)address = (uint8)(value);
-				fifomsg[55] = fifomsg[54] = 0;
-			}
-			break;
-			case((uint32)WRITE_EXTARM_16):{
-				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg
-				uint32* address = (uint32*)fifomsg[56];
-				uint16 value = (uint16)((uint32)(fifomsg[57]&0xffff));
-				*(uint16*)address = (uint16)(value);
-				fifomsg[57] = fifomsg[56] = 0;
-			}
-			break;
-			case((uint32)WRITE_EXTARM_32):{
-				uint32* fifomsg = (uint32*)data0;		//data0 == uint32 * fifomsg
-				uint32* address = (uint32*)fifomsg[58];
-				uint32 value = (uint32)fifomsg[59];
-				*(uint32*)address = (uint32)(value);
-				fifomsg[59] = fifomsg[58] = 0;
-			}
-			break;
 			
 			case(TGDS_GETEXTERNALPAYLOAD_MODE):{
 				struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
