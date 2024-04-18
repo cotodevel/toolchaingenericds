@@ -181,6 +181,19 @@ void HandleFifoNotEmpty(){
 						}
 						break;
 						
+						case((uint32)TGDS_ARM7_SETUPEXCEPTIONHANDLER):{
+							u32 * sharedBuf = (uint32*)getValueSafe(&fifomsg[0]); //arg0 == ARM9's sharedBuf
+							exceptionArmRegsShared = (uint8*)(getValueSafe(sharedBuf+0));
+							memset(exceptionArmRegsShared, 0, 0x20);	//same as exceptionArmRegs[0x20]
+							sharedStringExceptionMessageOutput = (char*)(getValueSafe(sharedBuf+1));
+							setupDefaultExceptionHandler();	//ARM7 TGDS Exception Handler
+						} break;
+						
+						case((uint32)TGDS_ARM7_SETUPDISABLEDEXCEPTIONHANDLER):{
+							setupDisabledExceptionHandler();	//ARM7 TGDS Exception Handler
+						}
+						break;
+						
 					#endif
 					
 					
@@ -408,20 +421,6 @@ void HandleFifoNotEmpty(){
 				VblankUser();
 			}
 			break;
-			case((uint32)TGDS_ARM7_SETUPEXCEPTIONHANDLER):{
-				u32 * sharedBuf = (uint32*)data0; //data0 == ARM9's sharedBuf
-				exceptionArmRegsShared = (uint8*)(getValueSafe(sharedBuf+0));
-				memset(exceptionArmRegsShared, 0, 0x20);	//same as exceptionArmRegs[0x20]
-				sharedStringExceptionMessageOutput = (char*)(getValueSafe(sharedBuf+1));
-				setupDefaultExceptionHandler();	//ARM7 TGDS Exception Handler
-			}
-			break;
-			
-			case((uint32)TGDS_ARM7_SETUPDISABLEDEXCEPTIONHANDLER):{
-				setupDisabledExceptionHandler();	//ARM7 TGDS Exception Handler
-			}
-			break;
-			
 			
 			case((uint32)FIFO_INITSOUND):{
 				initSound();
