@@ -194,6 +194,67 @@ void HandleFifoNotEmpty(){
 						}
 						break;
 						
+						
+						case((uint32)FIFO_INITSOUND):{
+							initSound();
+						}
+						break;
+						
+						case((uint32)FIFO_POWERCNT_ON):{
+							powerON((uint16)(getValueSafe(&fifomsg[0]) & 0xFFFF));
+						}
+						break;
+						case((uint32)FIFO_POWERCNT_OFF):{
+							powerOFF((uint16)(getValueSafe(&fifomsg[0]) & 0xFFFF));
+						}
+						break;
+						//Power Management: 
+							//Supported mode(s): NTR / TWL
+						case((uint32)FIFO_POWERMGMT_WRITE):{
+							uint32 cmd = (uint32)getValueSafe(&fifomsg[8]);
+							uint32 flags = (uint32)getValueSafe(&fifomsg[9]);
+							switch(cmd){
+								//Screen power write (NTR/TWL)
+								case(FIFO_SCREENPOWER_WRITE):{
+									int PMBitsRead = PowerManagementDeviceRead((int)POWMAN_READ_BIT);
+									PMBitsRead &= ~(POWMAN_BACKLIGHT_BOTTOM_BIT|POWMAN_BACKLIGHT_TOP_BIT);
+									PMBitsRead |= (int)(flags & (POWMAN_BACKLIGHT_BOTTOM_BIT|POWMAN_BACKLIGHT_TOP_BIT));
+									PowerManagementDeviceWrite(POWMAN_WRITE_BIT, (int)PMBitsRead);						
+								}
+								break;
+								
+								//Shutdown NDS hardware (NTR/TWL)
+								case(FIFO_SHUTDOWN_DS):{
+									if(__dsimode == false){
+										int PMBitsRead = PowerManagementDeviceRead((int)POWMAN_READ_BIT);
+										PMBitsRead |= (int)(POWMAN_SYSTEM_PWR_BIT);
+										PowerManagementDeviceWrite(POWMAN_WRITE_BIT, (int)PMBitsRead);
+									}
+									else{
+										#ifdef TWLMODE
+										i2cWriteRegister(I2C_PM, I2CREGPM_PWRCNT, 1);
+										#endif
+									}
+								}
+								break;
+								
+								//Reset TWL hardware (only)
+								case(FIFO_RESET_DS):{
+									if(__dsimode == false){
+										//reset supported on TWL only
+									}
+									else{
+										#ifdef TWLMODE
+										i2cWriteRegister(I2C_PM, I2CREGPM_RESETFLAG, 1);
+										#endif
+									}
+								}
+								break;
+							}
+							fifomsg[61] = fifomsg[60] = 0;
+						}
+						break;
+						
 					#endif
 					
 					
@@ -419,69 +480,6 @@ void HandleFifoNotEmpty(){
 					break;
 				}
 				VblankUser();
-			}
-			break;
-			
-			case((uint32)FIFO_INITSOUND):{
-				initSound();
-			}
-			break;
-			
-			case((uint32)FIFO_POWERCNT_ON):{
-				powerON((uint16)data0);
-			}
-			break;
-			case((uint32)FIFO_POWERCNT_OFF):{
-				powerOFF((uint16)data0);
-			}
-			break;
-			//Power Management: 
-				//Supported mode(s): NTR / TWL
-			case((uint32)FIFO_POWERMGMT_WRITE):{
-				
-				struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-				uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-				uint32 cmd = (uint32)fifomsg[60];
-				uint32 flags = (uint32)fifomsg[61];
-				switch(cmd){
-					//Screen power write (NTR/TWL)
-					case(FIFO_SCREENPOWER_WRITE):{
-						int PMBitsRead = PowerManagementDeviceRead((int)POWMAN_READ_BIT);
-						PMBitsRead &= ~(POWMAN_BACKLIGHT_BOTTOM_BIT|POWMAN_BACKLIGHT_TOP_BIT);
-						PMBitsRead |= (int)(flags & (POWMAN_BACKLIGHT_BOTTOM_BIT|POWMAN_BACKLIGHT_TOP_BIT));
-						PowerManagementDeviceWrite(POWMAN_WRITE_BIT, (int)PMBitsRead);						
-					}
-					break;
-					
-					//Shutdown NDS hardware (NTR/TWL)
-					case(FIFO_SHUTDOWN_DS):{
-						if(__dsimode == false){
-							int PMBitsRead = PowerManagementDeviceRead((int)POWMAN_READ_BIT);
-							PMBitsRead |= (int)(POWMAN_SYSTEM_PWR_BIT);
-							PowerManagementDeviceWrite(POWMAN_WRITE_BIT, (int)PMBitsRead);
-						}
-						else{
-							#ifdef TWLMODE
-							i2cWriteRegister(I2C_PM, I2CREGPM_PWRCNT, 1);
-							#endif
-						}
-					}
-					break;
-					
-					//Reset TWL hardware (only)
-					case(FIFO_RESET_DS):{
-						if(__dsimode == false){
-							//reset supported on TWL only
-						}
-						else{
-							#ifdef TWLMODE
-							i2cWriteRegister(I2C_PM, I2CREGPM_RESETFLAG, 1);
-							#endif
-						}
-					}
-					break;
-				}
-				fifomsg[61] = fifomsg[60] = 0;
 			}
 			break;
 			

@@ -45,10 +45,11 @@ void powerON(uint32 values){
 	
 	#ifdef ARM9
 	if(!(values & POWERMAN_ARM9)){
-		struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-		setValueSafe(&fifomsg[60], (uint32)values);
-		SendFIFOWords(FIFO_POWERCNT_ON, (u32)fifomsg);
+		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+		setValueSafe(&fifomsg[0], (uint32)values);
+		setValueSafe(&fifomsg[7], (u32)FIFO_POWERCNT_ON);
+		SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
 	}
 	else{
 		REG_POWERCNT |= values;
@@ -65,10 +66,11 @@ void powerOFF(uint32 values){
 	
 	#ifdef ARM9
 	if(!(values & POWERMAN_ARM9)){
-		struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-		setValueSafe(&fifomsg[60], (uint32)values);
-		SendFIFOWords(FIFO_POWERCNT_OFF, (u32)fifomsg);
+		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+		setValueSafe(&fifomsg[0], (uint32)values);
+		setValueSafe(&fifomsg[7], (u32)FIFO_POWERCNT_OFF);
+		SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
 	}
 	else{
 		REG_POWERCNT &= ~values;

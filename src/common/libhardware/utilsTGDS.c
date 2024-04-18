@@ -750,11 +750,11 @@ void shutdownNDSHardware(){
 		#endif		
 	#endif
 	#ifdef ARM9
-		struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-		fifomsg[60] = (uint32)FIFO_SHUTDOWN_DS;
-		fifomsg[61] = (uint32)0;
-		SendFIFOWords(FIFO_POWERMGMT_WRITE, (uint32)fifomsg);
+		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+		setValueSafe(&fifomsg[7], (u32)FIFO_POWERMGMT_WRITE);
+		setValueSafe(&fifomsg[8], (u32)FIFO_SHUTDOWN_DS);
+		SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
 	#endif
 }
 
@@ -771,11 +771,11 @@ void resetNDSHardware(){
 	#endif
 	
 	#ifdef ARM9
-		struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-		fifomsg[60] = (uint32)FIFO_RESET_DS;
-		fifomsg[61] = (uint32)0;
-		SendFIFOWords(FIFO_POWERMGMT_WRITE, (uint32)fifomsg);
+		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+		setValueSafe(&fifomsg[7], (u32)FIFO_POWERMGMT_WRITE);
+		setValueSafe(&fifomsg[8], (u32)FIFO_RESET_DS);
+		SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
 	#endif
 }
 
@@ -794,11 +794,12 @@ int	setBacklight(int flags){
 	#endif
 	
 	#ifdef ARM9
-		struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-		fifomsg[60] = (uint32)FIFO_SCREENPOWER_WRITE;
-		fifomsg[61] = (uint32)(flags);
-		SendFIFOWords(FIFO_POWERMGMT_WRITE, (uint32)fifomsg);
+		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+		setValueSafe(&fifomsg[7], (u32)FIFO_POWERMGMT_WRITE);
+		setValueSafe(&fifomsg[8], (u32)FIFO_SCREENPOWER_WRITE);
+		setValueSafe(&fifomsg[9], (u32)flags);
+		SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
 	#endif
 	return 0;
 }
@@ -1074,7 +1075,13 @@ void initSound(){
 	#endif
 	
 	#ifdef ARM9
-	SendFIFOWords(FIFO_INITSOUND, 0xFF);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+	setValueSafe(&fifomsg[7], (u32)FIFO_INITSOUND);
+	SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
+	while( ( ((uint32)getValueSafe(&fifomsg[7])) != ((uint32)0)) ){
+		swiDelay(1);
+	}
 	#endif
 }
 
