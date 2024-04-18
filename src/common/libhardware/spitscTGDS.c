@@ -546,7 +546,13 @@ void TWLSetTouchscreenTWLMode(){
 	#endif
 	
 	#ifdef ARM9
-	SendFIFOWords(TGDS_ARM7_TWL_SET_TSC_TWLMODE, 0xFF);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+	setValueSafe(&fifomsg[7], (u32)TGDS_ARM7_TWL_SET_TSC_TWLMODE);
+	SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
+	while( ( ((uint32)getValueSafe(&fifomsg[7])) != ((uint32)0)) ){
+		swiDelay(1);
+	}
 	#endif
 }
 
@@ -572,6 +578,12 @@ void TWLSetTouchscreenNTRMode(){
 	#endif
 	
 	#ifdef ARM9
-	SendFIFOWords(TGDS_ARM7_TWL_SET_TSC_NTRMODE, 0xFF);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+	setValueSafe(&fifomsg[7], (u32)TGDS_ARM7_TWL_SET_TSC_NTRMODE);
+	SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
+	while( ( ((uint32)getValueSafe(&fifomsg[7])) != ((uint32)0)) ){
+		swiDelay(1);
+	}
 	#endif
 }

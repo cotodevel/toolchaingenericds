@@ -41,6 +41,10 @@ extern "C"{
 extern void initHardware(u8 DSHardware);
 extern void resetMemory_ARMCores(u8 DSHardware);
 
+#ifdef ARM7
+extern void detectAndTurnOffTGDSConsole();
+#endif
+
 #ifdef __cplusplus
 }
 #endif

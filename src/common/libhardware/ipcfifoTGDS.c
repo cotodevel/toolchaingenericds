@@ -255,9 +255,71 @@ void HandleFifoNotEmpty(){
 						}
 						break;
 						
+						case TGDS_ARMCORES_REPORT_PAYLOAD_MODE:{
+							reportTGDSPayloadMode7(getValueSafe(&fifomsg[0]));
+						}
+						break;
+						
+						#ifdef TWLMODE
+						case TGDS_ARM7_REQ_SLOT1_DISABLE:{
+							disableSlot1();
+						}
+						break;
+						
+						case TGDS_ARM7_REQ_SLOT1_ENABLE:{
+							enableSlot1();
+						}
+						break;
+						
+						case TGDS_ARM7_TWL_SET_TSC_NTRMODE:{
+							TWLSetTouchscreenNTRMode();	//resets TSC controller
+						}
+						break;
+						
+						case TGDS_ARM7_TWL_SET_TSC_TWLMODE:{
+							TWLSetTouchscreenTWLMode(); //resets TSC controller
+						}
+						break;
+						
+						#endif
+						
 					#endif
 					
-					
+					#ifdef ARM9
+						case((uint32)TGDS_ARM7_DETECTTURNOFFCONSOLE):{
+							detectAndTurnOffConsole();
+						}
+						break;
+						
+						//ARM9 Side -> ARM7: Exception Handler
+						case((uint32)EXCEPTION_ARM7):{
+							uint32 exception_cmd = (uint32)getValueSafe(&fifomsg[0]);
+							switch((uint32)exception_cmd){
+								case(generalARM7Exception):{
+									exception_handler((uint32)generalARM7Exception, 0, 0);
+								}
+								break;
+								case(unexpectedsysexit_7):{
+									exception_handler((uint32)unexpectedsysexit_7, 0, 0);
+								}
+								break;
+								case(manualexception_7):{
+									int stage = (int)getValueSafe(&fifomsg[1]);
+									u8 fwNo = (u8)getValueSafe(&fifomsg[2]);
+									exception_handler((uint32)manualexception_7, stage, fwNo);
+								}
+								break;
+							}
+						}
+						break;
+						
+						case((uint32)TGDS_ARM7_STAGE4_ERROR):{
+							u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
+							int stage = 4;
+							handleDSInitError(stage, (u32)fwNo);		
+						}
+						break;
+					#endif
 					
 				}
 				
@@ -265,7 +327,7 @@ void HandleFifoNotEmpty(){
 			}break;
 			
 			
-			//ARM7 command handler
+			//ARM7 hardware FIFO commands
 			#ifdef ARM7
 			case ARM7COMMAND_SOUND_COPY:
 			{
@@ -482,40 +544,9 @@ void HandleFifoNotEmpty(){
 				VblankUser();
 			}
 			break;
-			
-			case TGDS_ARMCORES_REPORT_PAYLOAD_MODE:{
-				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-				reportTGDSPayloadMode7(data0);
-				setValueSafe(&fifomsg[45], (uint32)0);
-			}
-			break;
-			
-			#ifdef TWLMODE
-			case TGDS_ARM7_REQ_SLOT1_DISABLE:{
-				disableSlot1();
-			}
-			break;
-			
-			case TGDS_ARM7_REQ_SLOT1_ENABLE:{
-				enableSlot1();
-			}
-			break;
-			
-			case TGDS_ARM7_TWL_SET_TSC_NTRMODE:{
-				TWLSetTouchscreenNTRMode();	//resets TSC controller
-			}
-			break;
-			
-			case TGDS_ARM7_TWL_SET_TSC_TWLMODE:{
-				TWLSetTouchscreenTWLMode(); //resets TSC controller
-			}
-			break;
-			
 			#endif
 			
-			#endif
-			
-			//ARM9 command handler
+			//ARM9 hardware FIFO commands
 			#ifdef ARM9
 			case ARM9COMMAND_UPDATE_BUFFER:{
 				updateRequested = true;
@@ -548,41 +579,6 @@ void HandleFifoNotEmpty(){
 				}
 			}	
 			break;
-			case((uint32)TGDS_ARM7_DETECTTURNOFFCONSOLE):{
-				detectAndTurnOffConsole();
-			}
-			break;
-			
-			//ARM7: Exception Handler
-			case((uint32)EXCEPTION_ARM7):{
-				switch((uint32)data0){
-					case(generalARM7Exception):{
-						exception_handler((uint32)generalARM7Exception, 0, 0);
-					}
-					break;
-					case(unexpectedsysexit_7):{
-						exception_handler((uint32)unexpectedsysexit_7, 0, 0);
-					}
-					break;
-					case(manualexception_7):{
-						struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
-						uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
-						int stage = (int)getValueSafe(&fifomsg[0]);
-						u8 fwNo = (u8)getValueSafe(&fifomsg[1]);
-						exception_handler((uint32)manualexception_7, stage, fwNo);
-					}
-					break;
-				}
-			}
-			break;
-			
-			case((uint32)TGDS_ARM7_STAGE4_ERROR):{
-				u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
-				int stage = 4;
-				handleDSInitError(stage, (u32)fwNo);		
-			}
-			break;
-
 			#endif
 		}
 		

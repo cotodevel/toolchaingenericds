@@ -106,12 +106,15 @@ void reportTGDSPayloadMode7(u32 bufferSource){
 #ifdef ARM9
 void reportTGDSPayloadMode(u32 bufferSource, char * ARM7OutLog, char * ARM9OutLog){
 	//send ARM7 signal, wait for it to be ready, then continue
-	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
-	setValueSafe(&fifomsg[45], (u32)0xFFFFFFFF);
-	SendFIFOWords(TGDS_ARMCORES_REPORT_PAYLOAD_MODE, (u32)bufferSource);	//ARM7 Setup
-	while((u32)getValueSafe(&fifomsg[45]) == (u32)0xFFFFFFFF){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+	setValueSafe(&fifomsg[0], (u32)bufferSource); //ARM7 Setup
+	setValueSafe(&fifomsg[7], (u32)TGDS_ARMCORES_REPORT_PAYLOAD_MODE);
+	SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
+	while( ( ((uint32)getValueSafe(&fifomsg[7])) != ((uint32)0)) ){
 		swiDelay(1);
 	}
+	
 	sprintf(ARM7OutLog, "TGDS ARM7.bin Payload Mode: %s", (char*)bufferSource);
 	sprintf(ARM9OutLog, "TGDS ARM9.bin Payload Mode: %s", (char*)TGDSPayloadMode);
 	
@@ -894,7 +897,13 @@ void enableSlot1() {
 	if(isDSiMode()) twlEnableSlot1();
 	#endif
 	#ifdef ARM9
-	SendFIFOWords(TGDS_ARM7_REQ_SLOT1_ENABLE, 0xFF);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+	setValueSafe(&fifomsg[7], (u32)TGDS_ARM7_REQ_SLOT1_ENABLE);
+	SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
+	while( ( ((uint32)getValueSafe(&fifomsg[7])) != ((uint32)0)) ){
+		swiDelay(1);
+	}
 	#endif
 }
 
@@ -905,7 +914,13 @@ void disableSlot1() {
 	if(isDSiMode()) twlDisableSlot1();
 	#endif
 	#ifdef ARM9
-	SendFIFOWords(TGDS_ARM7_REQ_SLOT1_DISABLE, 0xFF);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+	setValueSafe(&fifomsg[7], (u32)TGDS_ARM7_REQ_SLOT1_DISABLE);
+	SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
+	while( ( ((uint32)getValueSafe(&fifomsg[7])) != ((uint32)0)) ){
+		swiDelay(1);
+	}
 	#endif
 }
 
