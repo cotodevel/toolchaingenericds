@@ -1,3 +1,4 @@
+#ifdef ARM9
 /*
 
 			Copyright (C) 2017  Coto
@@ -45,7 +46,7 @@ USA
 
 //ARM9
 #ifdef ARM9
-#include <in.h>
+#include "in.h"
 #include <netdb.h>
 #include "fatfslayerTGDS.h"
 #include "wifi_arm9.h"
@@ -423,5 +424,7 @@ extern void closeGDBMapBuffer();
 extern uint32 readu32GDBMapBuffer(uint32 address);
 
 #endif //ARM9 end
+
+#endif
 
 #endif
