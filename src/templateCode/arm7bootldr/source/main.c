@@ -633,8 +633,11 @@ void bootfile(){
 			setValueSafe((u32*)0x02FFFE34, (u32)arm7EntryAddress);
 			setValueSafe((u32*)0x02FFFE24, (u32)arm9EntryAddress); //ARM9 go (skip NTR v3/TWL ARM9(i) secure section)
 			
-			//Reload ARM7 core
-			swiSoftReset();
+			//Reload ARM7 core. //Note: swiSoftReset(); can't be used here because ARM Core needs to switch to Thumb1 v4t or ARM v4t now
+			typedef void (*t_bootAddr)();
+			t_bootAddr bootARMPayload = (t_bootAddr)arm7EntryAddress;
+			bootARMPayload();
+			
 			///////////////////////////////////////////////////ARM7 Loader end ///////////////////////////////////////////////////////
 			
 			//Should never read this
