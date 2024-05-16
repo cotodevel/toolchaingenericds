@@ -1088,6 +1088,9 @@ void wifiValue32Handler(u32 value, void* data) {
 }
 */
 
+Wifi_MainStruct wifiSharedContext;
+Wifi_AccessPoint wifiAPContext;
+
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("O0")))
 #endif
@@ -1099,10 +1102,10 @@ bool Wifi_InitDefault(bool useFirmwareSettings) {
 	irqDisable(IRQ_TIMER3);
 	
 	//These are already freed.
-	wifi_connect_point = (Wifi_AccessPoint*)TGDSARM9Malloc(sizeof(Wifi_AccessPoint));
-	WifiData = (Wifi_MainStruct *)TGDSARM9Malloc(sizeof(Wifi_MainStruct));
+	wifi_connect_point = &wifiAPContext;
+	WifiData = &wifiSharedContext;
 	
-	uint32 wifi_pass = Wifi_Init(WIFIINIT_OPTION_USELED|WIFIINIT_OPTION_USEHEAP_96);	//use 96K DSWIFI stack
+	uint32 wifi_pass = Wifi_Init(WIFIINIT_OPTION_USELED|WIFIINIT_OPTION_USEHEAP_128);	//use 128K DSWIFI stack
 	
 	if(!wifi_pass) return false;
 

@@ -39,15 +39,8 @@ void DeInitWIFI(){
 	if(WifiData != NULL){
 		memset((void *)WifiData, 0, sizeof(Wifi_MainStruct));
 	}
-	sgIP_Hub_RemoveHardwareInterface(wifi_hw);
 	TIMERXDATA(3) = 0;
 	TIMERXCNT(3) = 0;
-	if(wifi_connect_point != NULL){
-		TGDSARM9Free((u8*)wifi_connect_point);
-	}
 	
-	if(WifiData != NULL){
-		TGDSARM9Free((u8*)WifiData);
-	}
 	#endif
 }
