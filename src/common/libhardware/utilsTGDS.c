@@ -106,12 +106,15 @@ void reportTGDSPayloadMode7(u32 bufferSource){
 #ifdef ARM9
 void reportTGDSPayloadMode(u32 bufferSource, char * ARM7OutLog, char * ARM9OutLog){
 	//send ARM7 signal, wait for it to be ready, then continue
-	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
-	setValueSafe(&fifomsg[45], (u32)0xFFFFFFFF);
-	SendFIFOWords(TGDS_ARMCORES_REPORT_PAYLOAD_MODE, (u32)bufferSource);	//ARM7 Setup
-	while((u32)getValueSafe(&fifomsg[45]) == (u32)0xFFFFFFFF){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+	setValueSafe(&fifomsg[0], (u32)bufferSource); //ARM7 Setup
+	setValueSafe(&fifomsg[7], (u32)TGDS_ARMCORES_REPORT_PAYLOAD_MODE);
+	SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
+	while( ( ((uint32)getValueSafe(&fifomsg[7])) != ((uint32)0)) ){
 		swiDelay(1);
 	}
+	
 	sprintf(ARM7OutLog, "TGDS ARM7.bin Payload Mode: %s", (char*)bufferSource);
 	sprintf(ARM9OutLog, "TGDS ARM9.bin Payload Mode: %s", (char*)TGDSPayloadMode);
 	
@@ -750,11 +753,11 @@ void shutdownNDSHardware(){
 		#endif		
 	#endif
 	#ifdef ARM9
-		struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-		fifomsg[60] = (uint32)FIFO_SHUTDOWN_DS;
-		fifomsg[61] = (uint32)0;
-		SendFIFOWords(FIFO_POWERMGMT_WRITE, (uint32)fifomsg);
+		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+		setValueSafe(&fifomsg[7], (u32)FIFO_POWERMGMT_WRITE);
+		setValueSafe(&fifomsg[8], (u32)FIFO_SHUTDOWN_DS);
+		SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
 	#endif
 }
 
@@ -771,11 +774,11 @@ void resetNDSHardware(){
 	#endif
 	
 	#ifdef ARM9
-		struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-		fifomsg[60] = (uint32)FIFO_RESET_DS;
-		fifomsg[61] = (uint32)0;
-		SendFIFOWords(FIFO_POWERMGMT_WRITE, (uint32)fifomsg);
+		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+		setValueSafe(&fifomsg[7], (u32)FIFO_POWERMGMT_WRITE);
+		setValueSafe(&fifomsg[8], (u32)FIFO_RESET_DS);
+		SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
 	#endif
 }
 
@@ -794,11 +797,12 @@ int	setBacklight(int flags){
 	#endif
 	
 	#ifdef ARM9
-		struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-		fifomsg[60] = (uint32)FIFO_SCREENPOWER_WRITE;
-		fifomsg[61] = (uint32)(flags);
-		SendFIFOWords(FIFO_POWERMGMT_WRITE, (uint32)fifomsg);
+		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+		setValueSafe(&fifomsg[7], (u32)FIFO_POWERMGMT_WRITE);
+		setValueSafe(&fifomsg[8], (u32)FIFO_SCREENPOWER_WRITE);
+		setValueSafe(&fifomsg[9], (u32)flags);
+		SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
 	#endif
 	return 0;
 }
@@ -893,7 +897,13 @@ void enableSlot1() {
 	if(isDSiMode()) twlEnableSlot1();
 	#endif
 	#ifdef ARM9
-	SendFIFOWords(TGDS_ARM7_REQ_SLOT1_ENABLE, 0xFF);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+	setValueSafe(&fifomsg[7], (u32)TGDS_ARM7_REQ_SLOT1_ENABLE);
+	SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
+	while( ( ((uint32)getValueSafe(&fifomsg[7])) != ((uint32)0)) ){
+		swiDelay(1);
+	}
 	#endif
 }
 
@@ -904,7 +914,13 @@ void disableSlot1() {
 	if(isDSiMode()) twlDisableSlot1();
 	#endif
 	#ifdef ARM9
-	SendFIFOWords(TGDS_ARM7_REQ_SLOT1_DISABLE, 0xFF);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+	setValueSafe(&fifomsg[7], (u32)TGDS_ARM7_REQ_SLOT1_DISABLE);
+	SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
+	while( ( ((uint32)getValueSafe(&fifomsg[7])) != ((uint32)0)) ){
+		swiDelay(1);
+	}
 	#endif
 }
 
@@ -1074,7 +1090,13 @@ void initSound(){
 	#endif
 	
 	#ifdef ARM9
-	SendFIFOWords(FIFO_INITSOUND, 0xFF);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+	setValueSafe(&fifomsg[7], (u32)FIFO_INITSOUND);
+	SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
+	while( ( ((uint32)getValueSafe(&fifomsg[7])) != ((uint32)0)) ){
+		swiDelay(1);
+	}
 	#endif
 }
 
@@ -1396,6 +1418,23 @@ int isNTROrTWLBinary(char * filename){
 }
 #endif
 
+
+#ifdef ARM9
+/*
+	Array used to fill secure area, marked weak to allow nds files to be
+	built with no secure area.
+
+	To disable this add 'const int __secure_area__ = 0;'
+
+	Value and type are unimportant the symbol only needs to exist
+	elsewhere to prevent this one being linked.
+
+*/
+
+__attribute__((section(".secure")))
+__attribute__((weak))
+const char __secure_area__[2048];
+#endif
 
 bool debugEnabled = false;
 void enableTGDSDebugging(){

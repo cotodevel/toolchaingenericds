@@ -422,23 +422,38 @@ void initComplexSound() {
 
 void setSoundFrequency(u32 freq)
 {
-	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
-	setValueSafe(&fifomsg[60], (uint32)freq);
-	SendFIFOWords(ARM7COMMAND_SOUND_SETRATE, 0xFF);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+	setValueSafe(&fifomsg[0], (uint32)freq);
+	setValueSafe(&fifomsg[7], (u32)ARM7COMMAND_SOUND_SETRATE);
+	SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
+	while( ( ((uint32)getValueSafe(&fifomsg[7])) != ((uint32)0)) ){
+		swiDelay(1);
+	}
 }
 
 void setSoundInterpolation(u32 mult)
 {
-	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
-	setValueSafe(&fifomsg[62], (uint32)mult);
-	SendFIFOWords(ARM7COMMAND_SOUND_SETMULT, 0xFF);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+	setValueSafe(&fifomsg[0], (uint32)mult);
+	setValueSafe(&fifomsg[7], (u32)ARM7COMMAND_SOUND_SETMULT);
+	SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
+	while( ( ((uint32)getValueSafe(&fifomsg[7])) != ((uint32)0)) ){
+		swiDelay(1);
+	}	
 }
 
 void setSoundLength(u32 len)
 {
-	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
-	setValueSafe(&fifomsg[61], (uint32)len);
-	SendFIFOWords(ARM7COMMAND_SOUND_SETLEN, 0xFF);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+	setValueSafe(&fifomsg[0], (uint32)len);
+	setValueSafe(&fifomsg[7], (u32)ARM7COMMAND_SOUND_SETLEN);
+	SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
+	while( ( ((uint32)getValueSafe(&fifomsg[7])) != ((uint32)0)) ){
+		swiDelay(1);
+	}
 	sndLen = len;
 }
 
@@ -449,15 +464,26 @@ int getSoundLength()
 
 void startSound9(uint32 sourceBuf)
 {
-	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
-	setValueSafe(&fifomsg[63], (uint32)sourceBuf);
-	SendFIFOWords(ARM7COMMAND_START_SOUND, 0xFF);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+	setValueSafe(&fifomsg[0], (uint32)sourceBuf);
+	setValueSafe(&fifomsg[7], (u32)ARM7COMMAND_START_SOUND);
+	SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
+	while( ( ((uint32)getValueSafe(&fifomsg[7])) != ((uint32)0)) ){
+		swiDelay(1);
+	}
 	playing = true;
 }
 
 void stopSound()
 {
-	SendFIFOWords(ARM7COMMAND_STOP_SOUND, 0xFF);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+	setValueSafe(&fifomsg[7], (u32)ARM7COMMAND_STOP_SOUND);
+	SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
+	while( ( ((uint32)getValueSafe(&fifomsg[7])) != ((uint32)0)) ){
+		swiDelay(1);
+	}
 	playing = false;
 }
 

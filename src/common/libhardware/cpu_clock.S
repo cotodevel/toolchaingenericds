@@ -18,6 +18,7 @@
 	.arm
 
 BEGIN_ASM_FUNC setCpuClock
+#ifdef TWLMODE
 	mov	r12, #0x4000000			@ temp = REG_IME;
 	ldrb	r3,  [r12, #0x208]
 	strb	r12, [r12, #0x208]		@ REG_IME = 0;
@@ -40,5 +41,6 @@ BEGIN_ASM_FUNC setCpuClock
 restoreIrq:
 	pop	{r3}				@ REG_IME = temp;
 	strb	r3, [r12, #0x208]
+#endif
 	bx	lr
 #endif

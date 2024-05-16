@@ -29,26 +29,18 @@ void DeInitWIFI(){
 	Wifi_DisconnectAP();
 	Wifi_DisableWifi();
 	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
-	setValueSafe(&fifomsg[3], ((u32)0xFFFFFFFF));
-	sendByteIPC(IPC_ARM7DISABLE_WIFI_REQBYIRQ);
-	while(getValueSafe(&fifomsg[3]) == ((u32)0xFFFFFFFF)){
+	setValueSafe(&fifomsg[23], (uint32)IPC_ARM7DISABLE_WIFI_REQBYIRQ);
+	sendByteIPC(IPC_SEND_TGDS_CMD);
+	while( ((uint32)getValueSafe(&fifomsg[23])) != ((uint32)0) ){
 		swiDelay(1);
 	}
-	
 	irqDisable(IRQ_TIMER3);
 	Wifi_SetSyncHandler(NULL);
 	if(WifiData != NULL){
 		memset((void *)WifiData, 0, sizeof(Wifi_MainStruct));
 	}
-	sgIP_Hub_RemoveHardwareInterface(wifi_hw);
 	TIMERXDATA(3) = 0;
 	TIMERXCNT(3) = 0;
-	if(wifi_connect_point != NULL){
-		TGDSARM9Free((u8*)wifi_connect_point);
-	}
 	
-	if(WifiData != NULL){
-		TGDSARM9Free((u8*)WifiData);
-	}
 	#endif
 }

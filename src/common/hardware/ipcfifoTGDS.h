@@ -45,12 +45,7 @@ USA
 #endif
 
 //FIFO Hardware
-//void Write8bitAddrExtArm
-//void Write16bitAddrExtArm
-//void Write32bitAddrExtArm
-#define WRITE_EXTARM_8	(uint32)(0xffff0200)
-#define WRITE_EXTARM_16	(uint32)(0xffff0201)
-#define WRITE_EXTARM_32	(uint32)(0xffff0202)
+#define FIFO_SEND_TGDS_CMD				(uint32)(0xffff0101)	//Internal TGDS FIFO hardware Command handler
 
 //PowerCnt Read / PowerCnt Write
 #define FIFO_POWERCNT_ON	(uint32)(0xffff0205)
@@ -100,8 +95,6 @@ USA
 #define TGDS_ARM7_SETUPDISABLEDEXCEPTIONHANDLER (uint32)(0xFFFF022B)
 #define TGDS_ARM7_DETECTTURNOFFCONSOLE (uint32)(0xFFFF022D)
 
-#define TGDS_ARM7_RELOADFLASH (u32)(0xFFFFABC0)
-
 #define TGDS_ARM7_REQ_SLOT1_DISABLE (uint32)(0xFFFF0231)
 #define TGDS_ARM7_REQ_SLOT1_ENABLE (uint32)(0xFFFF0232)
 
@@ -110,11 +103,8 @@ USA
 
 //TGDS IPC Command Interrupt Index
 #define IPC_NULL_CMD					(u8)(0)	//NULL cmd is unused by TGDS, fallbacks to TGDS project IPCIRQ Handler
-#define IPC_SEND_TGDS_CMD			(u8)(1)
-
-//ARM7 Direct Memory
-#define IPC_ARM7READMEMORY_REQBYIRQ		(u8)(2)
-#define IPC_ARM7SAVEMEMORY_REQBYIRQ		(u8)(3)
+#define IPC_SEND_TGDS_CMD				(u8)(1)	//Internal TGDS IPC hardware Command handler
+#define IPC_TGDSUSER_START_FREE_INDEX	(u8)(2)	//TGDS User Project rely on it
 
 //ARM7DLDI Hardware
 	//Slot1 or slot2 access
@@ -122,17 +112,15 @@ USA
 	#define IPC_WRITE_ARM7DLDI_REQBYIRQ		(u32)(0xFFFFAACA)
 
 	//SD TWL Access
-	#define IPC_READ_ARM7_TWLSD_REQBYIRQ		(u8)(6)
-	#define IPC_WRITE_ARM7_TWLSD_REQBYIRQ		(u8)(7)
+	#define IPC_READ_ARM7_TWLSD_REQBYIRQ		(u32)(0xFFFFAACB)
+	#define IPC_WRITE_ARM7_TWLSD_REQBYIRQ		(u32)(0xFFFFAACC)
+	#define IPC_STARTUP_ARM7_TWLSD_REQBYIRQ		(u32)(0xFFFFAACD)
 	
-	#define IPC_STARTUP_ARM7_TWLSD_REQBYIRQ				(u8)(8)
-	#define IPC_SD_IS_INSERTED_ARM7_TWLSD_REQBYIRQ		(u8)(9)
+#define IPC_ARM7DISABLE_WIFI_REQBYIRQ	(u32)(0xFFFFAACE)
+#define IPC_ARM7ENABLE_WIFI_REQBYIRQ	(u32)(0xFFFFAACF)
 
-
-#define IPC_ARM7DISABLE_WIFI_REQBYIRQ	(u8)(10)
-#define IPC_ARM7ENABLE_WIFI_REQBYIRQ	(u8)(11)
-
-#define IPC_TGDSUSER_START_FREE_INDEX	(u8)(12)	//TGDS User Project rely on it
+#define IPC_ARM7READMEMORY_REQBYIRQ		(u32)(0xFFFFAAD1)
+#define IPC_ARM7SAVEMEMORY_REQBYIRQ		(u32)(0xFFFFAAD2)
 
 #define TGDS_GETEXTERNALPAYLOAD_MODE (u32)(0xFFFFAAC2)
 
@@ -304,9 +292,10 @@ extern __attribute__((weak))	void HandleFifoEmptyWeakRef(uint32 cmd1,uint32 cmd2
 extern void HandleFifoNotEmpty();
 extern void HandleFifoEmpty();
 
-extern void Write32bitAddrExtArm(uint32 address, uint32 value);
-extern void Write16bitAddrExtArm(uint32 address, uint16 value);
-extern void Write8bitAddrExtArm(uint32 address, uint8 value);
+#ifdef ARM9
+extern u32 sharedbufferIOReadWrite;
+extern void Write16bitAddrExtArm(u32 address, u16 bits);
+#endif
 
 //arg 0: channel
 //arg 1: arg0: handler, arg1: userdata
@@ -314,8 +303,6 @@ extern u32 fifoFunc[FIFO_CHANNELS][2];	//context is only passed on callback prot
 
 extern struct sIPCSharedTGDS* getsIPCSharedTGDS();
 extern void XYReadScrPosUser(struct touchPosition * StouchScrPosInst);
-extern u8 ARM7ReadFWVersionFromFlashByFIFOIRQ();
-extern void ReadMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead);
 
 extern bool getNTRorTWLModeFromExternalProcessor();
 

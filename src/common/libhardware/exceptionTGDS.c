@@ -76,7 +76,11 @@ void setupDisabledExceptionHandler(){
 	
 	#ifdef ARM9
 	*(uint32*)0x02FFFD9C = (uint32)0;
-	SendFIFOWords(TGDS_ARM7_SETUPDISABLEDEXCEPTIONHANDLER, (u32)&exceptionArmRegs[0]);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+	setValueSafe(&fifomsg[0], (u32)&exceptionArmRegs[0]);
+	setValueSafe(&fifomsg[7], (u32)TGDS_ARM7_SETUPDISABLEDEXCEPTIONHANDLER);
+	SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
 	#endif
 	
 	#endif
@@ -86,7 +90,6 @@ void setupDisabledExceptionHandler(){
 u32 sharedBufHandler[2];
 
 void setupDefaultExceptionHandler(){
-	
 	
 	#ifdef EXCEPTION_VECTORS_0x00000000
 	//todo: replace projects that their own exception vectors @ 0x00000000 methods for raising exceptions
@@ -102,7 +105,12 @@ void setupDefaultExceptionHandler(){
 	*(uint32*)0x02FFFD9C = (uint32)DebugException;
 	setValueSafe(&sharedBufHandler[0], &exceptionArmRegs[0]);
 	setValueSafe(&sharedBufHandler[1], &sharedStringExceptionMessage[0]);
-	SendFIFOWords(TGDS_ARM7_SETUPEXCEPTIONHANDLER, (u32)&sharedBufHandler);
+	
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+	setValueSafe(&fifomsg[0], (u32)&sharedBufHandler);
+	setValueSafe(&fifomsg[7], (u32)TGDS_ARM7_SETUPEXCEPTIONHANDLER);
+	SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
 	#endif
 	
 	#endif
@@ -136,7 +144,11 @@ uint32 exceptionArmRegs[0x20];
 //__attribute__((section(".itcm"))) //cant be at ITCM
 void exception_sysexit(){
 	#ifdef ARM7
-	SendFIFOWords(EXCEPTION_ARM7, unexpectedsysexit_7);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+	setValueSafe(&fifomsg[0], (u32)unexpectedsysexit_7);
+	setValueSafe(&fifomsg[7], (u32)EXCEPTION_ARM7);
+	SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
 	while(1){
 		IRQWait(1, IRQ_VBLANK);
 	}
@@ -150,7 +162,11 @@ void exception_sysexit(){
 //__attribute__((section(".itcm")))	//cant be at ITCM
 void generalARMExceptionHandler(){
 	#ifdef ARM7
-	SendFIFOWords(EXCEPTION_ARM7, generalARM7Exception);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+	setValueSafe(&fifomsg[0], (u32)generalARM7Exception);
+	setValueSafe(&fifomsg[7], (u32)EXCEPTION_ARM7);
+	SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
 	while(1==1){
 		IRQVBlankWait();
 	}
@@ -376,9 +392,11 @@ __attribute__ ((optnone))
 void handleDSInitError7(int stage, u32 fwNo){
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
-	setValueSafe(&fifomsg[0], (u32)stage);
-	setValueSafe(&fifomsg[1], (u32)fwNo);
-	SendFIFOWords(EXCEPTION_ARM7, manualexception_7);
+	setValueSafe(&fifomsg[0], (u32)manualexception_7);
+	setValueSafe(&fifomsg[1], (u32)stage);
+	setValueSafe(&fifomsg[2], (u32)fwNo);
+	setValueSafe(&fifomsg[7], (u32)EXCEPTION_ARM7);
+	SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
 	while(1==1){
 		IRQVBlankWait();
 	}

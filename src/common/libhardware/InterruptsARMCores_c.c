@@ -290,12 +290,12 @@ void NDS_IRQHandler(){
 		uint8 ipcByte = receiveByteIPC();
 		switch(ipcByte){
 			case(IPC_SEND_TGDS_CMD):{
-				#ifdef ARM7
-				//ARM7_DLDI
-				//Slot-1 or slot-2 access
 				uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
 				uint32 TGDS_CMD = (uint32)getValueSafe(&fifomsg[23]);
 				switch(TGDS_CMD){
+					#ifdef ARM7
+					//ARM7_DLDI
+					//Slot-1 or slot-2 access
 					case(IPC_READ_ARM7DLDI_REQBYIRQ):{
 						struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
 						uint32 sector = getValueSafe(&fifomsg[20]);
@@ -305,106 +305,81 @@ void NDS_IRQHandler(){
 					}break;
 					case(IPC_WRITE_ARM7DLDI_REQBYIRQ):{
 						struct DLDI_INTERFACE * dldiInterface = (struct DLDI_INTERFACE *)DLDIARM7Address;
-						uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
 						uint32 sector = getValueSafe(&fifomsg[20]);
 						uint32 numSectors = getValueSafe(&fifomsg[21]);
 						uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[22]);
 						dldiInterface->ioInterface.writeSectors(sector, numSectors, targetMem);
 					}break;
+					
+						//TWL SD Hardware
+						#ifdef TWLMODE
+						case(IPC_READ_ARM7_TWLSD_REQBYIRQ):{
+							int sector = getValueSafeInt(&fifomsg[20]);
+							int numSectors = getValueSafeInt(&fifomsg[21]);
+							uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[22]);
+							bool retval = sdio_ReadSectors(sector, numSectors, (void*)targetMem);
+							setValueSafe(&fifomsg[24], (u32)retval);	//last value has ret status & release ARM9 dldi cmd
+						}
+						break;
+						
+						case(IPC_WRITE_ARM7_TWLSD_REQBYIRQ):{
+							int sector = getValueSafeInt(&fifomsg[20]);
+							int numSectors = getValueSafeInt(&fifomsg[21]);
+							uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[22]);
+							bool retval = sdio_WriteSectors(sector, numSectors, (void*)targetMem);
+							setValueSafe(&fifomsg[24], (u32)retval);	//last value has ret status & release ARM9 dldi cmd
+						}
+						break;
+						
+						case(IPC_STARTUP_ARM7_TWLSD_REQBYIRQ):{
+							bool result = sdio_Startup();
+						}
+						break;
+						#endif
+					
+					case(IPC_ARM7DISABLE_WIFI_REQBYIRQ):{
+						// Deinit WIFI
+						if(DeInitWIFIARM7LibUtilsCallback != NULL){
+							DeInitWIFIARM7LibUtilsCallback();
+						}		
+					}break;			
+					
+					//arm9 wants to send a WIFI context block address / userdata is always zero here
+					case(IPC_ARM7ENABLE_WIFI_REQBYIRQ):{
+						if(wifiAddressHandlerARM7LibUtilsCallback != NULL){
+							//	wifiAddressHandler( void * address, void * userdata )
+							wifiAddressHandlerARM7LibUtilsCallback((Wifi_MainStruct *)getValueSafe(&fifomsg[22]), 0);
+						}			
+					}
+					break;
+					
+					
+					case(IPC_ARM7READMEMORY_REQBYIRQ):{
+						uint32 srcMemory = getValueSafe(&fifomsg[20]);
+						uint32 targetMemory = getValueSafe(&fifomsg[21]);
+						int bytesToRead = (int)getValueSafe(&fifomsg[22]);
+						#ifdef ARM9
+						coherent_user_range((uint32)srcMemory, bytesToRead);
+						#endif
+						memcpy((u8*)targetMemory,(u8*)srcMemory, bytesToRead);
+					}
+					break;
+					case(IPC_ARM7SAVEMEMORY_REQBYIRQ):{
+						uint32 srcMemory = getValueSafe(&fifomsg[20]);
+						uint32 targetMemory = getValueSafe(&fifomsg[21]);
+						int bytesToRead = (int)getValueSafe(&fifomsg[22]);
+						#ifdef ARM9
+						coherent_user_range((uint32)targetMemory, bytesToRead);
+						#endif
+						memcpy((u8*)srcMemory, (u8*)targetMemory, bytesToRead);
+					}
+					break;
+					
+					#endif
 				}
 				setValueSafe(&fifomsg[23], (uint32)0);
-				#endif
 			}
 			break;
-			
-			case(IPC_ARM7READMEMORY_REQBYIRQ):{
-				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-				uint32 srcMemory = getValueSafe(&fifomsg[28]);
-				uint32 targetMemory = getValueSafe(&fifomsg[29]);
-				int bytesToRead = (int)getValueSafe(&fifomsg[30]);
-				memcpy((u8*)targetMemory,(u8*)srcMemory, bytesToRead);
-				setValueSafe(&fifomsg[28], (uint32)0);
-				setValueSafe(&fifomsg[29], (uint32)0);
-				setValueSafe(&fifomsg[30], (uint32)0);
-				setValueSafe(&fifomsg[31], (uint32)0);
-			}
-			break;
-			case(IPC_ARM7SAVEMEMORY_REQBYIRQ):{
-				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-				uint32 srcMemory = getValueSafe(&fifomsg[32]);
-				uint32 targetMemory = getValueSafe(&fifomsg[33]);
-				int bytesToRead = (int)getValueSafe(&fifomsg[34]);
-				#ifdef ARM9
-				dmaFillWord(0, 0, (uint32)srcMemory, (uint32)bytesToRead);
-				#endif
-				memcpy((u8*)srcMemory, (u8*)targetMemory, bytesToRead);
-				setValueSafe(&fifomsg[32], (uint32)0);
-				setValueSafe(&fifomsg[33], (uint32)0);
-				setValueSafe(&fifomsg[34], (uint32)0);
-				setValueSafe(&fifomsg[35], (uint32)0);
-			}
-			break;
-			
-			#ifdef ARM7
-				//TWL SD Hardware
-				#ifdef TWLMODE
-					case(IPC_READ_ARM7_TWLSD_REQBYIRQ):{
-						uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-						int sector = getValueSafeInt(&fifomsg[20]);
-						int numSectors = getValueSafeInt(&fifomsg[21]);
-						uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[22]);
-						bool retval = sdio_ReadSectors(sector, numSectors, (void*)targetMem);
-						setValueSafe(&fifomsg[23], (u32)retval);	//last value has ret status & release ARM9 dldi cmd
-					}
-					break;
-					
-					case(IPC_WRITE_ARM7_TWLSD_REQBYIRQ):{
-						uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-						uint32 sector = getValueSafe(&fifomsg[24]);
-						uint32 numSectors = getValueSafe(&fifomsg[25]);
-						uint32 * targetMem = (uint32*)getValueSafe(&fifomsg[26]);
-						bool retval = sdio_WriteSectors(sector, numSectors, (void*)targetMem);
-						setValueSafe(&fifomsg[27], (u32)retval);	//last value has ret status & release ARM9 dldi cmd
-					}
-					break;
-					
-					case(IPC_STARTUP_ARM7_TWLSD_REQBYIRQ):{
-						uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-						bool result = sdio_Startup();
-						setValueSafe(&fifomsg[23], (u32)result);	//last value has ret status	
-					}
-					break;
-					
-					case(IPC_SD_IS_INSERTED_ARM7_TWLSD_REQBYIRQ):{
-						uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-						bool result = sdio_IsInserted();
-						setValueSafe(&fifomsg[23], (u32)result);	//last value has ret status
-					}
-					break;
-				#endif
-				
-			case(IPC_ARM7DISABLE_WIFI_REQBYIRQ):{
-				// Deinit WIFI
-				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-				if(DeInitWIFIARM7LibUtilsCallback != NULL){
-					DeInitWIFIARM7LibUtilsCallback();
-				}
-				setValueSafe(&fifomsg[3], (u32)0);				
-			}
-			break;
-			
-			//arm9 wants to send a WIFI context block address / userdata is always zero here
-			case(IPC_ARM7ENABLE_WIFI_REQBYIRQ):{
-				uint32 * fifomsg = (uint32 *)NDS_CACHED_SCRATCHPAD;
-				if(wifiAddressHandlerARM7LibUtilsCallback != NULL){
-					//	wifiAddressHandler( void * address, void * userdata )
-					wifiAddressHandlerARM7LibUtilsCallback((Wifi_MainStruct *)getValueSafe(&fifomsg[0]), 0);
-				}
-				setValueSafe(&fifomsg[0], (u32)0);				
-			}
-			break;
-			
-			#endif
 			
 			default:{
 				IpcSynchandlerUser(ipcByte);//ipcByte should be the byte you sent from external ARM Core through sendByteIPC(ipcByte);

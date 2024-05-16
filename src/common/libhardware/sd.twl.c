@@ -39,9 +39,9 @@ bool sdio_Startup() {
 	nocashMessage("TGDS:sdio_Startup():TWL Mode: If this gets stuck, most likely you're running a TGDS NTR Binary in TWL Mode.");
 	int retryCount = 0;
 	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
-	fifomsg[23] = (uint32)0xABCDABCD;
-	sendByteIPC(IPC_STARTUP_ARM7_TWLSD_REQBYIRQ);
-	while(fifomsg[23] == (uint32)0xABCDABCD){
+	setValueSafe(&fifomsg[23], (uint32)IPC_STARTUP_ARM7_TWLSD_REQBYIRQ);
+	sendByteIPC(IPC_SEND_TGDS_CMD);
+	while( ((uint32)getValueSafe(&fifomsg[23])) != ((uint32)0) ){
 		swiDelay(1);
 		retryCount++;
 		if(retryCount > 1048576){
@@ -97,17 +97,17 @@ bool sdio_ReadSectors(sec_t sector, sec_t numSectors,void* buffer) {
 		#ifdef ARM9
 		void * targetMem = (void *)((int)&ARM7SharedDLDI[0]	+ 0x400000); //TWL uncached EWRAM
 		uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
-		fifomsg[20] = sector;
-		fifomsg[21] = numSectors;
-		fifomsg[22] = (uint32)targetMem;
-		fifomsg[23] = (uint32)0xFFAAFFAA;
-		sendByteIPC(IPC_READ_ARM7_TWLSD_REQBYIRQ);
-		while(fifomsg[23] == (uint32)0xFFAAFFAA){
-			swiDelay(333);
+		setValueSafe(&fifomsg[20], (uint32)sector);
+		setValueSafe(&fifomsg[21], (uint32)numSectors);
+		setValueSafe(&fifomsg[22], (uint32)targetMem);
+		setValueSafe(&fifomsg[23], (uint32)IPC_READ_ARM7_TWLSD_REQBYIRQ);
+		sendByteIPC(IPC_SEND_TGDS_CMD);
+		while( ((uint32)getValueSafe(&fifomsg[23])) != ((uint32)0) ){
+			swiDelay(1);
 		}
 		memcpy((uint16_t*)buffer, (uint16_t*)targetMem, (numSectors * 512));
 		coherent_user_range_by_size((uint32)buffer, (numSectors * 512)); //make coherent writes to dest buffer
-		return true;
+		return ((bool)getValueSafe(&fifomsg[24]));
 		#endif
 	#endif
 }
@@ -139,15 +139,15 @@ bool sdio_WriteSectors(sec_t sector, sec_t numSectors, const void* buffer) {
 		coherent_user_range_by_size((uint32)buffer, (numSectors * 512)); //make coherent reads from src buffer
 		memcpy((uint16_t*)targetMem, (uint16_t*)buffer, (numSectors * 512));
 		uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
-		fifomsg[24] = (uint32)sector;
-		fifomsg[25] = (uint32)numSectors;
-		fifomsg[26] = (uint32)targetMem;
-		fifomsg[27] = (uint32)0xFFBBCCAA;
-		sendByteIPC(IPC_WRITE_ARM7_TWLSD_REQBYIRQ);
-		while(fifomsg[27] == (uint32)0xFFBBCCAA){
+		setValueSafe(&fifomsg[20], (uint32)sector);
+		setValueSafe(&fifomsg[21], (uint32)numSectors);
+		setValueSafe(&fifomsg[22], (uint32)targetMem);
+		setValueSafe(&fifomsg[23], (uint32)IPC_WRITE_ARM7_TWLSD_REQBYIRQ);
+		sendByteIPC(IPC_SEND_TGDS_CMD);
+		while( ((uint32)getValueSafe(&fifomsg[23])) != ((uint32)0) ){
 			swiDelay(1);
 		}
-		return true;
+		return ((bool)getValueSafe(&fifomsg[24]));
 		#endif	
 	#endif
 }

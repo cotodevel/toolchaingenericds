@@ -27,6 +27,38 @@ USA
 #include "dldi.h"
 #include "exceptionTGDS.h"
 #include "dmaTGDS.h"
+#include "spiTGDS.h"
+#include "timerTGDS.h"
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Firmware stuff
+
+void boot_readFirmware (uint32 address, uint8 * buffer, uint32 size) {
+  uint32 index;
+
+  // Read command
+  while (REG_SPI_CR & SPI_BUSY);
+  REG_SPI_CR = SPI_ENABLE | SPI_CONTINUOUS | SPI_DEVICE_NVRAM;
+  REG_SPIDATA = FW_READ;
+  while (REG_SPI_CR & SPI_BUSY);
+
+  // Set the address
+  REG_SPIDATA =  (address>>16) & 0xFF;
+  while (REG_SPI_CR & SPI_BUSY);
+  REG_SPIDATA =  (address>>8) & 0xFF;
+  while (REG_SPI_CR & SPI_BUSY);
+  REG_SPIDATA =  (address) & 0xFF;
+  while (REG_SPI_CR & SPI_BUSY);
+
+  for (index = 0; index < size; index++) {
+    REG_SPIDATA = 0;
+    while (REG_SPI_CR & SPI_BUSY);
+    buffer[index] = REG_SPIDATA & 0xFF;
+  }
+  REG_SPI_CR = 0;
+}
+
+
 
 ////////////////////////////////TGDS-MB v3 VRAM Bootcode start////////////////////////////////
 FATFS fileHandle;					// Petit-FatFs work area 
@@ -450,7 +482,7 @@ void bootfile(){
 			//Turn off IRQs right now because an interrupt calling to ARM7 exception handler (through bios) crashes ARM7 
 			REG_IME = 0;
 			REG_IE = 0;
-			REG_IF = 0;
+			REG_IF = ~0;
 			
 			//Bios can now be changed @ ARM9 (from ARM7, keep reading)
 			//BIOS NTR/TWL switch (backwards compatibility mode): ARM9 has 4004000h - DSi9 - SCFG_A9ROM - ROM Status (R) [0000h] bits as read-only. 
@@ -630,11 +662,58 @@ void bootfile(){
 			setValueSafe((u32*)ARM7_BOOT_SIZE, (u32)arm7BootCodeSize);
 			setValueSafe((u32*)ARM7_BOOTCODE_OFST, (u32)arm7BootCodeOffsetInFile);
 			setValueSafe((u32*)ARM9_BOOTCODE_OFST, (u32)arm9BootCodeOffsetInFile);
+			
+			
+			// Reload DS Firmware settings start
+			int i;
+			u8 settings1, settings2;
+			u32 settingsOffset = 0;
+			
+			for (i=0; i<16; i++) {
+				SCHANNEL_CR(i) = 0;
+				SCHANNEL_TIMER(i) = 0;
+				SCHANNEL_SOURCE(i) = 0;
+				SCHANNEL_LENGTH(i) = 0;
+			}
+
+			REG_SOUNDCNT = 0;
+
+			//clear out ARM7 DMA channels and timers
+			for (i=0; i<4; i++) {
+				DMAXCNT(i) = 0;
+				DMAXSAD(i) = 0;
+				DMAXDAD(i) = 0;
+				TIMERXCNT(i) = 0;
+				TIMERXDATA(i) = 0;
+			}
+			
+			(*(vu32*)(0x04000000-4)) = 0;  //IRQ_HANDLER ARM7 version
+			(*(vu32*)(0x04000000-8)) = ~0; //VBLANK_INTR_WAIT_FLAGS, ARM7 version
+			REG_POWERCNT = 1;  //turn off power to stuff
+
+			// Get settings location
+			boot_readFirmware((u32)0x00020, (u8*)&settingsOffset, 0x2);
+			settingsOffset *= 8;
+
+			boot_readFirmware(settingsOffset + 0x070, &settings1, 0x1);
+			boot_readFirmware(settingsOffset + 0x170, &settings2, 0x1);
+
+			if ((settings1 & 0x7F) == ((settings2+1) & 0x7F)) {
+				boot_readFirmware(settingsOffset + 0x000, (u8*)0x027FFC80, 0x70);
+			} else {
+				boot_readFirmware(settingsOffset + 0x100, (u8*)0x027FFC80, 0x70);
+			}
+			
+			// Reload DS Firmware settings end
+			
 			setValueSafe((u32*)0x02FFFE34, (u32)arm7EntryAddress);
 			setValueSafe((u32*)0x02FFFE24, (u32)arm9EntryAddress); //ARM9 go (skip NTR v3/TWL ARM9(i) secure section)
 			
-			//Reload ARM7 core
-			swiSoftReset();
+			//Reload ARM7 core. //Note: swiSoftReset(); can't be used here because ARM Core needs to switch to Thumb1 v4t or ARM v4t now
+			typedef void (*t_bootAddr)();
+			t_bootAddr bootARMPayload = (t_bootAddr)arm7EntryAddress;
+			bootARMPayload();
+			
 			///////////////////////////////////////////////////ARM7 Loader end ///////////////////////////////////////////////////////
 			
 			//Should never read this

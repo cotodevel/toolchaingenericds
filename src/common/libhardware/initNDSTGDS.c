@@ -168,8 +168,9 @@ void initHardware(u8 DSHardware) {
 	int TGDSInitLoopCount = 0;
 	while( (((u32)*(u32*)0x04004008) != SCFG_EXT7) && (DSHardware == 0x57) ) {
 		if(TGDSInitLoopCount > 1048576){
-			SendFIFOWords(TGDS_ARM7_STAGE4_ERROR, 0);
-			swiDelay(1);
+			uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+			setValueSafe(&fifomsg[7], (u32)TGDS_ARM7_STAGE4_ERROR);
+			SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
 		}
 		TGDSInitLoopCount++;
 	}
@@ -237,3 +238,15 @@ void initHardware(u8 DSHardware) {
 	//Shared ARM Cores
 	disableTGDSDebugging(); //Disable debugging by default
 }
+
+#ifdef ARM7
+void detectAndTurnOffTGDSConsole(){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+	setValueSafe(&fifomsg[7], (u32)TGDS_ARM7_DETECTTURNOFFCONSOLE);
+	SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
+	while( ( ((uint32)getValueSafe(&fifomsg[7])) != ((uint32)0)) ){
+		swiDelay(1);
+	}
+}
+#endif
