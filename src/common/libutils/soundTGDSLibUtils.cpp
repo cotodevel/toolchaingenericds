@@ -344,9 +344,9 @@ __attribute__ ((optnone))
 #endif
 void updateStream() 
 {	
-	if(!updateRequested)
+	if((!updateRequested) || (soundData.sourceFmt == SRC_SPC))
 	{
-		// exit if nothing is needed
+		// exit if nothing is needed or if SPC as it's handled by ARM7 SPC
 		return;
 	}
 	
