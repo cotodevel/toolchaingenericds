@@ -291,6 +291,7 @@ extern __attribute__((weak))	void HandleFifoEmptyWeakRef(uint32 cmd1,uint32 cmd2
 
 extern void HandleFifoNotEmpty();
 extern void HandleFifoEmpty();
+extern void ReadMemoryExt(u32 * srcMemory, u32 * targetMemory, int bytesToRead);
 
 #ifdef ARM9
 extern u32 sharedbufferIOReadWrite;
@@ -303,9 +304,7 @@ extern u32 fifoFunc[FIFO_CHANNELS][2];	//context is only passed on callback prot
 
 extern struct sIPCSharedTGDS* getsIPCSharedTGDS();
 extern void XYReadScrPosUser(struct touchPosition * StouchScrPosInst);
-
 extern bool getNTRorTWLModeFromExternalProcessor();
-
 #ifdef __cplusplus
 }
 #endif
