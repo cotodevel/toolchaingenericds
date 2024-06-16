@@ -56,10 +56,15 @@ typedef	struct {
 typedef void(*splitCustom_fn)(const char *, size_t, char * ,int indexToLeftOut, char * delim);
 
 //NTR/TWL Binary descriptors
-#define isNDSBinaryV1 ((int)0)
-#define isNDSBinaryV2 ((int)1)
-#define isTWLBinary ((int)2)
+#define isNDSBinaryV1Slot2 ((int)0)
+#define isNDSBinaryV1 ((int)1)
+#define isNDSBinaryV2 ((int)2)
+#define isNDSBinaryV3 ((int)3)
+#define isTWLBinary ((int)4)
 #define notTWLOrNTRBinary ((int)-1)
+
+#define NTRIdentifier ((char*)"NTRModePayload")
+#define TWLIdentifier ((char*)"TWLModePayload")
 
 //Interfaces / Callbacks to connect to libutils
 
@@ -73,6 +78,9 @@ typedef void(*wifiDeinitARM7ARM9LibUtils_fn)();
 typedef void(*wifiUpdateVBLANKARM7LibUtils_fn)();
 typedef void(*wifiInterruptARM7LibUtils_fn)();
 typedef void(*timerWifiInterruptARM9LibUtils_fn)();
+typedef void(*DeInitWIFIARM7LibUtils_fn)();
+typedef void(*wifiAddressHandlerARM7LibUtils_fn)(void * address, void * userdata);
+
 
 //Wifi (ARM9)
 typedef bool(*wifiswitchDsWnifiModeARM9LibUtils_fn)(sint32 dswnifi_mode); 
@@ -152,7 +160,13 @@ extern int	setBacklight(int flags);
 extern void RenderTGDSLogoMainEngine(u8 * compressedLZSSBMP, int compressedLZSSBMPSize);
 
 //ARGV 
-extern int thisArgc;
+extern void setGlobalArgc(int argcVal);
+extern int getGlobalArgc();
+extern void setGlobalArgv(char** argvVal);
+extern char** getGlobalArgv();
+extern int globalArgc;
+extern char **globalArgv;
+extern char * thisArgvPosix[argvItems];
 extern char thisArgv[argvItems][MAX_TGDSFILENAME_LENGTH];
 extern void handleARGV();
 
@@ -219,6 +233,8 @@ extern wifiDeinitARM7ARM9LibUtils_fn wifiDeinitARM7ARM9LibUtilsCallback;
 extern wifiUpdateVBLANKARM7LibUtils_fn wifiUpdateVBLANKARM7LibUtilsCallback;
 extern wifiInterruptARM7LibUtils_fn wifiInterruptARM7LibUtilsCallback;
 extern timerWifiInterruptARM9LibUtils_fn timerWifiInterruptARM9LibUtilsCallback;
+extern DeInitWIFIARM7LibUtils_fn	DeInitWIFIARM7LibUtilsCallback;
+extern wifiAddressHandlerARM7LibUtils_fn	wifiAddressHandlerARM7LibUtilsCallback;
 
 //Wifi (ARM9)
 extern wifiswitchDsWnifiModeARM9LibUtils_fn wifiswitchDsWnifiModeARM9LibUtilsCallback;
@@ -244,17 +260,17 @@ extern void initializeLibUtils7(
 	SoundStreamSetupSoundARM7LibUtils_fn SoundStreamSetupSoundARM7LibUtilsCall,	//ARM7: void setupSound(uint32 sourceBuf)
 	initMallocARM7LibUtils_fn initMallocARM7LibUtilsCall,	//ARM7: void initARM7Malloc(u32 ARM7MallocStartaddress, u32 ARM7MallocSize);
 	wifiDeinitARM7ARM9LibUtils_fn wifiDeinitARM7ARM9LibUtilsCall, //ARM7: DeInitWIFI()
-	MicInterruptARM7LibUtils_fn MicInterruptARM7LibUtilsCall //ARM7: micInterrupt()
+	MicInterruptARM7LibUtils_fn MicInterruptARM7LibUtilsCall, //ARM7: micInterrupt()
+	DeInitWIFIARM7LibUtils_fn DeInitWIFIARM7LibUtilsCall, //ARM7: DeInitWIFI();
+	wifiAddressHandlerARM7LibUtils_fn	wifiAddressHandlerARM7LibUtilsCall //ARM7: void wifiAddressHandler( void * address, void * userdata )
 );
 #endif
 
 #ifdef ARM9
 extern struct soundPlayerContext soundData;
-extern u32 reloadStatus;
 extern bool updateRequested;
 #endif
 
-extern bool TGDSMultibootRunNDSPayload(char * filename);
 extern char * TGDSPayloadMode;
 
 #ifdef ARM7
@@ -271,20 +287,15 @@ extern void addARGV(int argc, char *argv);
 extern int isNTROrTWLBinary(char * filename);
 #endif
 
+extern int isThisPayloadNTROrTWLMode();
 extern void initSound();
 extern void setupLibUtils();
 
-extern void setGlobalArgc(int argcVal);
-extern int getGlobalArgc();
-extern void setGlobalArgv(char** argvVal);
-extern char** getGlobalArgv();
-
-extern int globalArgc;
-extern char **globalArgv;
 extern bool debugEnabled;
 extern void enableTGDSDebugging();
 extern void disableTGDSDebugging();
 extern bool getTGDSDebuggingState();
+
 #ifdef __cplusplus
 }
 #endif

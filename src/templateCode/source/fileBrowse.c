@@ -60,7 +60,7 @@ bool ShowBrowser(char * Path, char * outBuf){
 	
 	//Sort list alphabetically
 	bool ignoreFirstFileClass = true;
-	sortFileClassListAsc(fileClassListCtx, (char**)ARM7_PAYLOAD, ignoreFirstFileClass);
+	sortFileClassListAsc(fileClassListCtx, (char**)0x23E8000, ignoreFirstFileClass);
 	
 	//actual file lister
 	clrscr();

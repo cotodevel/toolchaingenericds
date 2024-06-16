@@ -86,8 +86,6 @@ export DIRS_ARM7_HEADER = ../source/	\
 
 export DIRS_ARM9_SRC = ../source/	\
 			../source/console/	\
-			../source/console/gui_draw/	\
-			../source/imadecoder/	\
 			../include/	\
 			../../common/	\
 			../../common/twl/	\
@@ -111,6 +109,15 @@ export DIRS_ARM9_HEADER = ../source/	\
 			../../common/twl/	\
 			../../common/hardware/	\
 			../../common/hardware/dldi/	\
+			../../common/libutils/twl9/build/	\
+			../../common/libutils/arm9/source/dswifi_arm9/	\
+			../../common/libutils/arm9/source/dswifi_arm9/arpa/	\
+			../../common/libutils/arm9/source/dswifi_arm9/netinet/	\
+			../../common/libutils/arm9/source/dswifi_arm9/sys/	\
+			../../common/libutils/dswifi/	\
+			../../common/libutils/dswifi/arpa/	\
+			../../common/libutils/dswifi/netinet/	\
+			../../common/libutils/dswifi/sys/	\
 			../../templateCode/source/	\
 			../../templateCode/data/arm9/		\
 			../data/	\

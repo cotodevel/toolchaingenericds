@@ -42,7 +42,7 @@ SOFTWARE.
 //  of connections, provided the memory space.  This option requires the implementation of
 //  two C functions, "void * sgIP_malloc(int)" and "void sgIP_free(void *)", which behave 
 //  similarly to the malloc and free functions commonly used in C.
-#define SGIP_USEDYNAMICMEMORY
+//#define SGIP_USEDYNAMICMEMORY
 
 // SGIP_INTERRUPT_THREADING_MODEL: Provides memory protection in a system that can allow 
 //  multiple processing "threads" by way of interrupts.  This is not required on single
@@ -82,7 +82,7 @@ SOFTWARE.
 
 // SGIP_MEMBLOCK_DYNAMIC_MALLOC_ALL: Who cares what the other memblock defines say, let's
 // Generate all memblocks by mallocing 'em.
-#define SGIP_MEMBLOCK_DYNAMIC_MALLOC_ALL
+//#define SGIP_MEMBLOCK_DYNAMIC_MALLOC_ALL
 
 //////////////////////////////////////////////////////////////////////////
 // Hardware layer settings

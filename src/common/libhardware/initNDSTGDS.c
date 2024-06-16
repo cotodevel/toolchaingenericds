@@ -127,6 +127,7 @@ void resetMemory_ARMCores(u8 DSHardware) {
 	#endif
 }
 
+//Initializes NTR/TWL hardware context for the ToolchainGenericDS ecosystem in ARM7 / ARM9 and sets the current NTR/TWL(__dsimode) mode globally.
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("O0")))
 #endif
@@ -135,7 +136,6 @@ __attribute__ ((optnone))
 #endif
 void initHardware(u8 DSHardware) {
 //---------------------------------------------------------------------------------
-	swiDelay(15000);
 	#ifdef ARM7
 	//Init Shared Address Region and get NDS Header
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
@@ -166,10 +166,11 @@ void initHardware(u8 DSHardware) {
 	*(u32*)0x04004008 = SCFG_EXT7;
 	
 	int TGDSInitLoopCount = 0;
-	while( ((u32)*(u32*)0x04004008) != SCFG_EXT7 ) {
+	while( (((u32)*(u32*)0x04004008) != SCFG_EXT7) && (DSHardware == 0x57) ) {
 		if(TGDSInitLoopCount > 1048576){
-			SendFIFOWords(TGDS_ARM7_STAGE4_ERROR, 0);
-			swiDelay(1);
+			uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+			setValueSafe(&fifomsg[7], (u32)TGDS_ARM7_STAGE4_ERROR);
+			SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
 		}
 		TGDSInitLoopCount++;
 	}
@@ -180,7 +181,7 @@ void initHardware(u8 DSHardware) {
 	#endif
 	
 	#ifdef ARM9
-	
+	swiDelay(15000);
 	#ifdef TWLMODE
 	u32 SCFG_EXT9 = 0x80070180; //yes, override the ones from TWL header to ensure TGDS TWL projects do work even with tampered extended headers
 	
@@ -194,7 +195,7 @@ void initHardware(u8 DSHardware) {
 	*(u32*)0x04004008 = SCFG_EXT9;
 	
 	int TGDSInitLoopCount = 0;
-	while( (u32)(*(u32*)0x04004008) != SCFG_EXT9 ) {
+	while( ((u32)(*(u32*)0x04004008) != SCFG_EXT9) && (DSHardware == 0x57) ) {
 		if(TGDSInitLoopCount > 1048576){
 			u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
 			int stage = 5;
@@ -227,11 +228,25 @@ void initHardware(u8 DSHardware) {
 	TryToDefragmentMemory();
 	
 	//Enable TSC
-	setTouchScreenEnabled(true);	
+	setTouchScreenEnabled(true);
 	
-	handleARM9InitSVC();	
+	handleARM9InitSVC();
 	#endif
+	
+	savedDSHardware = (u32)DSHardware; //Global DS Firmware ARM7/ARM9
 	
 	//Shared ARM Cores
 	disableTGDSDebugging(); //Disable debugging by default
 }
+
+#ifdef ARM7
+void detectAndTurnOffTGDSConsole(){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+	setValueSafe(&fifomsg[7], (u32)TGDS_ARM7_DETECTTURNOFFCONSOLE);
+	SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
+	while( ( ((uint32)getValueSafe(&fifomsg[7])) != ((uint32)0)) ){
+		swiDelay(1);
+	}
+}
+#endif

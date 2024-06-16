@@ -27,22 +27,32 @@ USA
 #include "usrsettingsTGDS.h"
 #include "timerTGDS.h"
 #include "biosTGDS.h"
+#include "dldi.h"
+
+//TGDS-MB v3 bootloader
+void bootfile(){
+
+}
 
 //---------------------------------------------------------------------------------
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 int main(int argc, char **argv) {
 //---------------------------------------------------------------------------------
 	/*			TGDS 1.6 Standard ARM7 Init code start	*/
-	
-	//wait for VRAM D to be assigned from ARM9->ARM7 (ARM7 has load/store on byte/half/words on VRAM)
-	while (!(*((vuint8*)0x04000240) & 0x2));
-	
 	installWifiFIFO();		
-	
+	if(__dsimode == false){
+		while(!(*(u8*)0x04000240 & 2) ){} //wait for VRAM_D block, //can't here
+	}
+	ARM7InitDLDI(TGDS_ARM7_MALLOCSTART, TGDS_ARM7_MALLOCSIZE, TGDSDLDI_ARM7_ADDRESS);
 	/*			TGDS 1.6 Standard ARM7 Init code end	*/
 	
     while (1) {
 		handleARM7SVC();	/* Do not remove, handles TGDS services */
-		IRQWait(0, IRQ_VBLANK | IRQ_VCOUNT | IRQ_IPCSYNC | IRQ_RECVFIFO_NOT_EMPTY | IRQ_SCREENLID);
 	}
 	return 0;
 }
