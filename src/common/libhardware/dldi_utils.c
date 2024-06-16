@@ -3,6 +3,9 @@
 #include "dldi.h"
 #include "typedefsTGDS.h"
 #include "debugNocash.h"
+#include "utilsTGDS.h"
+#include "ipcfifoTGDS.h"
+
 #if defined(WIN32) || defined(ARM9)
 #include "fatfslayerTGDS.h"
 #endif
@@ -15,6 +18,7 @@
 #include "ipcfifoTGDS.h"
 #include "global_settings.h"
 #include "utilsTGDS.h"
+#include "nds_cp15_misc.h"
 #endif
 
 #ifdef TWLMODE
@@ -30,6 +34,51 @@
 #if defined(WIN32)
 FILE * virtualDLDIDISKImg = NULL;
 u8 _io_dldi_stub[16384];
+#endif
+
+#ifdef ARM7
+__attribute__((optimize("O0")))
+bool ARM7InitDLDI(u32 ARM7MallocStartaddress, int ARM7MallocSize, u32 TargetARM7DLDIAddress){
+	u32 dldiStartAddress = getValueSafe((u32*)0x02FFDFE8);	//ARM7_ARM9_DLDI_STATUS
+	
+	setupLibUtils(); //ARM7 libUtils Setup
+	
+	//DSi in NTR mode throws false positives about TWL mode, enforce DSi SD initialization to define, NTR or TWL mode.
+	int detectedTWLModeInternalSDAccess = 0;
+	bool DLDIARM7FSInitStatus = false;
+	
+	if( (!sdio_Startup()) || (!sdio_IsInserted()) ){
+		detectedTWLModeInternalSDAccess = TWLModeDLDIAccessDisabledInternalSDDisabled;
+	}
+	else{
+		detectedTWLModeInternalSDAccess = TWLModeDLDIAccessDisabledInternalSDEnabled;
+		DLDIARM7FSInitStatus = true;
+	}
+	
+	//NTR mode: define DLDI initialization and ARM7DLDI operating mode
+	if((detectedTWLModeInternalSDAccess == TWLModeDLDIAccessDisabledInternalSDDisabled) && (TargetARM7DLDIAddress != 0)){
+		DLDIARM7Address = (u32*)TargetARM7DLDIAddress;
+		dldiRelocateLoader((u32)DLDIARM7Address, dldiStartAddress);
+		DLDIARM7FSInitStatus = dldi_handler_init();
+		if(DLDIARM7FSInitStatus == true){
+			detectedTWLModeInternalSDAccess = TWLModeDLDIAccessEnabledInternalSDDisabled;
+		}
+		else{
+			detectedTWLModeInternalSDAccess = TWLModeDLDIAccessDisabledInternalSDDisabled;
+		}					
+	}
+	
+	//ARM7 custom Malloc libutils implementation
+	if(initMallocARM7LibUtilsCallback != NULL){
+		initMallocARM7LibUtilsCallback(ARM7MallocStartaddress, ARM7MallocSize);
+	}
+	
+	TWLModeInternalSDAccess = detectedTWLModeInternalSDAccess;
+	setValueSafe((u32*)0x02FFDFE8, TWLModeInternalSDAccess); //arm9's FS_init(); go @ARM7_ARM9_DLDI_STATUS
+	
+	return DLDIARM7FSInitStatus;
+}
+
 #endif
 
 const uint32  DLDI_MAGIC_NUMBER = 
@@ -87,12 +136,19 @@ __attribute__((optimize("O0")))
 __attribute__ ((optnone))
 #endif
 bool dldi_handler_init() {	
-	#if defined(ARM7) || defined(ARM9)
-	struct DLDI_INTERFACE* dldiInit = dldiGet();	//NTR Mode
+	//NTR Mode
+	#if defined(ARM9)
+	struct DLDI_INTERFACE* dldiInit = dldiGet();
+	#elif defined(ARM7) 
+	struct DLDI_INTERFACE* dldiInit = (struct DLDI_INTERFACE*)DLDIARM7Address;
+	#endif
+	
+	#if !defined(WIN32)
 	if( (!dldiInit->ioInterface.startup()) || (!dldiInit->ioInterface.isInserted()) ){
 		return false;
 	}
 	#endif
+	
 	#if defined(WIN32)
 	fseek(virtualDLDIDISKImg, 0, SEEK_SET);
 	int res = ftell(virtualDLDIDISKImg);
@@ -131,56 +187,7 @@ void dldi_handler_deinit() {
 	#endif
 }
 
-/////////////////////////////////////////////////// (EWRAM DLDI) RAM Disk DLDI Implementation ////////////////////////////////////////////
-#ifdef ARM9
-bool _DLDI_isInserted(void)
-{
-	return true;	//Always True
-}
 
-bool _DLDI_clearStatus(void)
-{
-    return true;	//Always True
-}
-
-bool _DLDI_shutdown(void)
-{
-    return true;	//Always True
-}
-
-bool _DLDI_startup(void)
-{
-    return true;	//Always True
-} 
-
-bool _DLDI_writeSectors(uint32 sector, uint32 sectorCount, const uint8* buffer)
-{
-	int sectorSize = 512;
-	int curSector = 0;
-	while(sectorCount > 0)
-	{
-        memcpy(((u8*)0x08000000 + ((sector+curSector)*sectorSize)), (buffer + (curSector*sectorSize)), sectorSize);
-		curSector++;
-		--sectorCount;
-	}
-    return true;
-}
-
-bool _DLDI_readSectors(uint32 sector, uint32 sectorCount, uint8* buffer)
-{
-	int sectorSize = 512;
-	int curSector = 0;
-	while(sectorCount > 0)
-	{
-        memcpy(buffer + (curSector*sectorSize), ((u8*)0x08000000 + ((sector+curSector)*sectorSize)), sectorSize);
-		curSector++;
-		--sectorCount;
-	}
-    return true;
-}
-#endif
-//////////////////////////////////////////////// RAM Disk DLDI Implementation End ///////////////////////////////////////////
-//future optimization, make it EWRAM-only so we can DMA directly!
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("O0")))
 #endif
@@ -195,18 +202,18 @@ bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer) {
 	//DLDI Mode
 	if(TWLModeInternalSDAccess == TWLModeDLDIAccessEnabledInternalSDDisabled){
 		#ifdef ARM7
-		struct  DLDI_INTERFACE* dldiInterface = (struct DLDI_INTERFACE*)DLDIARM7Address;
+		struct DLDI_INTERFACE* dldiInterface = dldiGet();
 		return dldiInterface->ioInterface.readSectors(sector, numSectors, buffer);
 		#endif
 		#ifdef ARM9
 		void * targetMem = (void *)((int)&ARM7SharedDLDI[0] + 0x400000); //Uncached NTR, TWL is implemented below
 		uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
-		fifomsg[20] = (uint32)sector;
-		fifomsg[21] = (uint32)numSectors;
-		fifomsg[22] = (uint32)targetMem;
-		fifomsg[23] = (uint32)0xFFFFFFFF;
-		sendByteIPC(IPC_READ_ARM7DLDI_REQBYIRQ);
-		while(fifomsg[23] != (uint32)0){
+		setValueSafe(&fifomsg[20], (uint32)sector);
+		setValueSafe(&fifomsg[21], (uint32)numSectors);
+		setValueSafe(&fifomsg[22], (uint32)targetMem);
+		setValueSafe(&fifomsg[23], (uint32)IPC_READ_ARM7DLDI_REQBYIRQ);
+		sendByteIPC(IPC_SEND_TGDS_CMD);
+		while( ((uint32)getValueSafe(&fifomsg[23])) != ((uint32)0) ){
 			swiDelay(1);
 		}
 		memcpy((uint16_t*)buffer, (uint16_t*)targetMem, (numSectors * 512));
@@ -252,12 +259,12 @@ bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buff
 		void * targetMem = (void *)((int)&ARM7SharedDLDI[0] + 0x400000);	//Uncached NTR, TWL is implemented below
 		memcpy((uint16_t*)targetMem, (uint16_t*)buffer, (numSectors * 512));
 		uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
-		fifomsg[24] = (uint32)sector;
-		fifomsg[25] = (uint32)numSectors;
-		fifomsg[26] = (uint32)targetMem;
-		fifomsg[27] = (uint32)0xFFFFFFFF;
-		sendByteIPC(IPC_WRITE_ARM7DLDI_REQBYIRQ);
-		while(fifomsg[27] != (uint32)0){
+		setValueSafe(&fifomsg[20], (uint32)sector);
+		setValueSafe(&fifomsg[21], (uint32)numSectors);
+		setValueSafe(&fifomsg[22], (uint32)targetMem);
+		setValueSafe(&fifomsg[23], (uint32)IPC_WRITE_ARM7DLDI_REQBYIRQ);
+		sendByteIPC(IPC_SEND_TGDS_CMD);
+		while( ((uint32)getValueSafe(&fifomsg[23])) != ((uint32)0) ){
 			swiDelay(1);
 		}
 		return true;
@@ -280,7 +287,7 @@ bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buff
 	return false;
 }
 
-static const data_t dldiMagicString[12] = "\xED\xA5\x8D\xBF Chishm";	// Normal DLDI file
+const data_t dldiMagicString[12] = "\xED\xA5\x8D\xBF Chishm";	// Normal DLDI file
 //static const data_t dldiMagicLoaderString[12] = "\xEE\xA5\x8D\xBF Chishm";	// Different to a normal DLDI file
 
 enum DldiOffsets {
@@ -344,7 +351,7 @@ __attribute__((optimize("O0")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-static inline addr_t quickFind (const data_t* data, const data_t* search, size_t dataLen, size_t searchLen) {
+addr_t quickFind (const data_t* data, const data_t* search, size_t dataLen, size_t searchLen) {
 	const int* dataChunk = (const int*) data;
 	int searchChunk = ((const int*)search)[0];
 	addr_t i;
@@ -365,8 +372,7 @@ static inline addr_t quickFind (const data_t* data, const data_t* search, size_t
 
 //DldiRelocatedAddress == target DLDI relocated address
 //dldiSourceInRam == physical DLDI section having a proper DLDI driver used as donor 
-//dldiOutWriteAddress == new physical DLDI out buffer, except, relocated to a new DldiRelocatedAddress!
-bool dldiRelocateLoader(bool clearBSS, u32 DldiRelocatedAddress, u32 dldiSourceInRam, u32 dldiOutWriteAddress){
+bool dldiRelocateLoader(u32 DldiRelocatedAddress, u32 dldiSourceInRam){
 	addr_t memOffset;			// Offset of DLDI after the file is loaded into memory
 	//addr_t patchOffset;			// Position of patch destination in the file
 	addr_t relocationOffset;	// Value added to all offsets within the patch to fix it properly
@@ -379,22 +385,15 @@ bool dldiRelocateLoader(bool clearBSS, u32 DldiRelocatedAddress, u32 dldiSourceI
 
 	data_t *pDH;
 	data_t *pAH;
-	#ifdef ARM9
 	size_t dldiFileSize = 0;
-	#endif
+	
 	// Target the DLDI we want to use as stub copy and then relocate it to a DldiRelocatedAddress address
-	pDH = (data_t*)dldiOutWriteAddress;
+	pDH = (data_t*)DldiRelocatedAddress;
 	pAH = (data_t *)dldiSourceInRam;
-	#ifdef ARM9
 	dldiFileSize = 1 << pAH[DO_driverSize];
-	#endif
+	
 	// Copy the DLDI patch into the application
-	#if defined(WIN32)
 	memcpy((void *)pDH, (const void *)pAH, dldiFileSize);
-	#endif
-	#ifdef ARM9
-	dmaTransferWord(3, (uint32)pAH, (uint32)pDH, (uint32)dldiFileSize);	//void dmaTransferWord(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count)
-	#endif
 	if (*((u32*)(pDH + DO_ioType)) == DEVICE_TYPE_DLDI) {
 		// No DLDI patch
 		return false;
@@ -405,9 +404,14 @@ bool dldiRelocateLoader(bool clearBSS, u32 DldiRelocatedAddress, u32 dldiSourceI
 		return false;
 	}
 	
-	memOffset = DldiRelocatedAddress;	//readAddr (pAH, DO_text_start);
+	u32 savedpAHDO_text_start = readAddr(pAH, DO_text_start);
+	
+	writeAddr (pAH, DO_text_start, (addr_t)DldiRelocatedAddress);
+	writeAddr (pDH, DO_text_start, (addr_t)DldiRelocatedAddress);
+	memOffset = DldiRelocatedAddress; //readAddr(pAH, DO_text_start);
+	
 	if (memOffset == 0) {
-			memOffset = readAddr (pAH, DO_startup) - DO_code;
+		memOffset = readAddr (pAH, DO_startup) - DO_code;
 	}
 	ddmemOffset = readAddr (pDH, DO_text_start);
 	relocationOffset = memOffset - ddmemOffset;
@@ -437,15 +441,12 @@ bool dldiRelocateLoader(bool clearBSS, u32 DldiRelocatedAddress, u32 dldiSourceI
 	writeAddr (pDH, DO_clearStatus, readAddr (pAH, DO_clearStatus) + relocationOffset);
 	writeAddr (pDH, DO_shutdown, readAddr (pAH, DO_shutdown) + relocationOffset);
 	
-	if (pDH[DO_fixSections] & FIX_ALL) { 
-		// Search through and fix pointers within the data section of the file
-		for (addrIter = (readAddr(pDH, DO_text_start) - ddmemStart); addrIter < (readAddr(pDH, DO_data_end) - ddmemStart); addrIter++) {
-			if ((ddmemStart <= readAddr(pAH, addrIter)) && (readAddr(pAH, addrIter) < ddmemEnd)) {
-				writeAddr (pAH, addrIter, readAddr(pAH, addrIter) + relocationOffset);
-			}
+	// Search through and fix pointers within the data section of the file
+	for (addrIter = (readAddr(pDH, DO_text_start) - ddmemStart); addrIter < (readAddr(pDH, DO_data_end) - ddmemStart); addrIter++) {
+		if ((ddmemStart <= readAddr(pAH, addrIter)) && (readAddr(pAH, addrIter) < ddmemEnd)) {
+			writeAddr (pAH, addrIter, readAddr(pAH, addrIter) + relocationOffset);
 		}
 	}
-	
 	
 	if (pDH[DO_fixSections] & FIX_GLUE) { 
 		// Search through and fix pointers within the glue section of the file
@@ -465,16 +466,7 @@ bool dldiRelocateLoader(bool clearBSS, u32 DldiRelocatedAddress, u32 dldiSourceI
 		}
 	}
 	
-	/*
-	if (clearBSS && (pDH[DO_fixSections] & FIX_BSS)) { 
-		// Initialise the BSS to 0, only if the disc is being re-inited
-		for(int i = 0; i < (readAddr(pDH, DO_bss_end) - readAddr(pDH, DO_bss_start)) / 4; i++)
-		{
-			((uint32_t*)&pAH[readAddr(pDH, DO_bss_start) - ddmemStart])[i] = 0;
-		}
-		
-	}
-	*/
+	writeAddr (pAH, DO_text_start, (addr_t)savedpAHDO_text_start);
 	return true;
 }
 
@@ -602,7 +594,9 @@ bool dldiPatchLoader(data_t *binData, u32 binSize, u32 physDLDIAddress)
 		memset (&pAH[readAddr(pDH, DO_bss_start) - ddmemStart] , 0, readAddr(pDH, DO_bss_end) - readAddr(pDH, DO_bss_start));
 	}
 	*/
-
+	#ifdef ARM9
+	coherent_user_range_by_size((uint32)binData, (int)binSize); //Make ARM9 changes coherent
+	#endif
 	return true;
 }
 

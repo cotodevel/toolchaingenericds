@@ -118,7 +118,6 @@ extern void swiDivMod(int numerator, int divisor, int * result, int * remainder)
 extern void swiCopy(const void * source, void * dest, int flags);
 extern int swiSqrt(int value);
 extern void swiSoftReset(void);
-extern void swiSoftResetByAddress(u32 address);
 
 //NDS7 Bios 
 #ifdef ARM7

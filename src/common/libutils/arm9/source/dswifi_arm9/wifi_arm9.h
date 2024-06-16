@@ -156,6 +156,9 @@ extern u32 getRandomSeed();
 
 extern Wifi_AccessPoint * wifi_connect_point;
 
+extern Wifi_MainStruct wifiSharedContext;
+extern Wifi_AccessPoint wifiAPContext;
+
 #ifdef __cplusplus
 }
 #endif

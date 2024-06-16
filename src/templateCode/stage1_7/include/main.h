@@ -18,29 +18,22 @@ USA
 
 */
 
-#ifndef __initnds_h__
-#define __initnds_h__
+#ifndef __main7_h__
+#define __main7_h__
 
 #include "typedefsTGDS.h"
 #include "dsregs.h"
-#include "dmaTGDS.h"
-#include "timerTGDS.h"
-#include <string.h>
-#include <stdio.h>
-
-#ifdef ARM9
-#include "videoTGDS.h"
+#include "soundTGDS.h"
 #endif
 
-#endif
 
 #ifdef __cplusplus
-extern "C"{
+extern "C" {
 #endif
 
-extern void initHardware(u8 DSHardware);
-extern void resetMemory_ARMCores(u8 DSHardware);
+extern int main(int argc, char **argv);
 
 #ifdef __cplusplus
 }
 #endif
+

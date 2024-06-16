@@ -53,6 +53,7 @@ USA
 #include "dswnifi_lib.h"
 #include "debugNocash.h"
 #include "libndsFIFO.h"
+#include "exceptionTGDS.h"
 #endif
 
 #ifdef ARM7
@@ -85,11 +86,11 @@ bool updateRequested = false;
 
 bool __dsimode = false; // set by detecting DS model from firmware
 #ifdef NTRMODE
-char * TGDSPayloadMode = "NTRModePayload";
+char * TGDSPayloadMode = NTRIdentifier;
 #endif
 
 #ifdef TWLMODE
-char * TGDSPayloadMode = "TWLModePayload";
+char * TGDSPayloadMode = TWLIdentifier;
 #endif
 
 #ifdef ARM9
@@ -105,12 +106,15 @@ void reportTGDSPayloadMode7(u32 bufferSource){
 #ifdef ARM9
 void reportTGDSPayloadMode(u32 bufferSource, char * ARM7OutLog, char * ARM9OutLog){
 	//send ARM7 signal, wait for it to be ready, then continue
-	uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
-	setValueSafe(&fifomsg[45], (u32)0xFFFFFFFF);
-	SendFIFOWords(TGDS_ARMCORES_REPORT_PAYLOAD_MODE, (u32)bufferSource);	//ARM7 Setup
-	while((u32)getValueSafe(&fifomsg[45]) == (u32)0xFFFFFFFF){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+	setValueSafe(&fifomsg[0], (u32)bufferSource); //ARM7 Setup
+	setValueSafe(&fifomsg[7], (u32)TGDS_ARMCORES_REPORT_PAYLOAD_MODE);
+	SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
+	while( ( ((uint32)getValueSafe(&fifomsg[7])) != ((uint32)0)) ){
 		swiDelay(1);
 	}
+	
 	sprintf(ARM7OutLog, "TGDS ARM7.bin Payload Mode: %s", (char*)bufferSource);
 	sprintf(ARM9OutLog, "TGDS ARM9.bin Payload Mode: %s", (char*)TGDSPayloadMode);
 	
@@ -118,6 +122,18 @@ void reportTGDSPayloadMode(u32 bufferSource, char * ARM7OutLog, char * ARM9OutLo
 	nocashMessage(ARM9OutLog);
 }
 #endif
+
+//TGDS binaries are always Passme Slot 1 v3+.
+//Note: Since the scope of detecting internal state of current NTR/TWL binary is already ToolchainGenericDS, this method is reliable as a mean to detect internal NTR/TWL mode from the current ARM9 binary running.
+int isThisPayloadNTROrTWLMode(){
+	if(strncasecmp((char*)TGDSPayloadMode, NTRIdentifier, 14) == 0){
+		return isNDSBinaryV3;
+	}
+	else if(strncasecmp((char*)TGDSPayloadMode, TWLIdentifier, 14) == 0){
+		return isTWLBinary;
+	}
+	return notTWLOrNTRBinary;
+}
 
 //!	Checks whether the application is running in DSi mode.
 bool isDSiMode() {
@@ -642,8 +658,8 @@ char** getGlobalArgv(){
 	return globalArgv;
 }
 
-char thisArgv[argvItems][MAX_TGDSFILENAME_LENGTH];
-int thisArgc=0;
+char thisArgv[argvItems][MAX_TGDSFILENAME_LENGTH];	//TGDS's internal ARGV
+char * thisArgvPosix[argvItems]; //TGDS's internal ARGV reference buffer 
 
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("Os")))
@@ -652,16 +668,12 @@ __attribute__((optimize("Os")))
 __attribute__ ((optnone))
 #endif
 void handleARGV(){
-	//Command line vector. Will be reused.
-	char** cmdLineVectorPosixCompatible = ((char**)0x02FFFE70);
-	
 	if(__system_argv->length > 0){
 		//get string count (argc) from commandLine
 		int argCount=0;
 		int internalOffset = 0;
 		int i = 0;
 		for(i = 0; i < __system_argv->length; i++){
-			
 			//End of N ARGV? Pass the pointer into the command line vector
 			if(__system_argv->commandLine[i] == '\0'){
 				thisArgv[argCount][internalOffset] = '\0';
@@ -674,61 +686,55 @@ void handleARGV(){
 			}
 		}
 		
-		//Actually re-count Args, because garbage may be in ARGV code causing false positives.
-		//Also it is safe to trash the original __system_argv->commandLine struct
-		int argBugged = argCount;
-		argCount = 0;
-		
-		//Reset the command line vector
-		memset(cmdLineVectorPosixCompatible, 0, sizeof(struct __argv));
-		
-		for (i=0; i<argBugged; i++){
-			if (thisArgv[i]) {
-				if(strlen(thisArgv[i]) > 8){
-					//Libnds compatibility: If (recv) mainARGV fat:/ change to 0:/
-					char thisARGV[MAX_TGDSFILENAME_LENGTH+1];
-					memset(thisARGV, 0, sizeof(thisARGV));
-					strcpy(thisARGV, thisArgv[i]);
-					
-					if(
-						(thisARGV[0] == 'f')
-						&&
-						(thisARGV[1] == 'a')
-						&&
-						(thisARGV[2] == 't')
-						&&
-						(thisARGV[3] == ':')
-						&&
-						(thisARGV[4] == '/')
-						){
-						char thisARGV2[MAX_TGDSFILENAME_LENGTH+1];
-						memset(thisARGV2, 0, sizeof(thisARGV2));
-						strcpy(thisARGV2, "0:/");
-						strcat(thisARGV2, &thisARGV[5]);
-						
-						//copy back
-						memset(thisArgv[i], 0, 256);
-						strcpy(thisArgv[i], thisARGV2);
-						
-					}
-					
-					//build the command line vector
-					cmdLineVectorPosixCompatible[i] = (char *)&thisArgv[i];
-					argCount++;
+		for(i = 0; i < argCount; i++){
+			//Libnds compatibility: If (recv) mainARGV fat:/ change to 0:/
+			char tmpARGV[MAX_TGDSFILENAME_LENGTH];
+			strcpy(tmpARGV, &thisArgv[i][0]);
+			if(
+				(tmpARGV[0] == 'f')
+				&&
+				(tmpARGV[1] == 'a')
+				&&
+				(tmpARGV[2] == 't')
+				&&
+				(tmpARGV[3] == ':')
+				&&
+				(tmpARGV[4] == '/')
+				){
+				char tmpARGV2[MAX_TGDSFILENAME_LENGTH];
+				memset(tmpARGV2, 0, sizeof(tmpARGV2));
+				strcpy(tmpARGV2, "0:/");
+				strcat(tmpARGV2, &tmpARGV[5]);
+				strcpy(tmpARGV, tmpARGV2);
+			}
+			
+			//Build the command line vector, but sanitize each argument parsed, to prevent corrupted entries.
+			if(i < argvItems){
+				if(strlen((char *)tmpARGV) > 3){ //"0:/x"
+					memset(&thisArgv[i][0], 0, MAX_TGDSFILENAME_LENGTH);
+					strcpy(&thisArgv[i][0], tmpARGV);
+					thisArgv[i][strlen(tmpARGV) + 1] = '\0';
+					thisArgvPosix[i] = (char *)&thisArgv[i][0];
+				}
+				else{
+					thisArgvPosix[i] = NULL;
 				}
 			}
 		}
-		
-		thisArgc = argCount;
+		__system_argv->argc = argCount;
 	}
 	else{
-		thisArgc = 0;
+		__system_argv->argc = 0;
 	}
 	
-	setGlobalArgc(thisArgc);
-	setGlobalArgv((char**)cmdLineVectorPosixCompatible);
+	__system_argv->argvMagic = (int)ARGV_MAGIC;
+	__system_argv->argv = (char **)&thisArgv[0][0];
+	__system_argv->commandLine = (char**)&thisArgvPosix[0];
+	__system_argv->length = argvItems;
+	setGlobalArgc(__system_argv->argc);
+	setGlobalArgv(__system_argv->commandLine);
 	//extern int main(int argc, char **argv);
-	//main(thisArgc,  (char**)cmdLineVectorPosixCompatible);
+	//main(__system_argv->length, __system_argv->commandLine);
 }
 
 #endif
@@ -747,11 +753,11 @@ void shutdownNDSHardware(){
 		#endif		
 	#endif
 	#ifdef ARM9
-		struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-		fifomsg[60] = (uint32)FIFO_SHUTDOWN_DS;
-		fifomsg[61] = (uint32)0;
-		SendFIFOWords(FIFO_POWERMGMT_WRITE, (uint32)fifomsg);
+		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+		setValueSafe(&fifomsg[7], (u32)FIFO_POWERMGMT_WRITE);
+		setValueSafe(&fifomsg[8], (u32)FIFO_SHUTDOWN_DS);
+		SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
 	#endif
 }
 
@@ -768,11 +774,11 @@ void resetNDSHardware(){
 	#endif
 	
 	#ifdef ARM9
-		struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-		fifomsg[60] = (uint32)FIFO_RESET_DS;
-		fifomsg[61] = (uint32)0;
-		SendFIFOWords(FIFO_POWERMGMT_WRITE, (uint32)fifomsg);
+		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+		setValueSafe(&fifomsg[7], (u32)FIFO_POWERMGMT_WRITE);
+		setValueSafe(&fifomsg[8], (u32)FIFO_RESET_DS);
+		SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
 	#endif
 }
 
@@ -791,11 +797,12 @@ int	setBacklight(int flags){
 	#endif
 	
 	#ifdef ARM9
-		struct sIPCSharedTGDS * TGDSIPC = getsIPCSharedTGDS();
-		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueue[0];
-		fifomsg[60] = (uint32)FIFO_SCREENPOWER_WRITE;
-		fifomsg[61] = (uint32)(flags);
-		SendFIFOWords(FIFO_POWERMGMT_WRITE, (uint32)fifomsg);
+		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+		uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+		setValueSafe(&fifomsg[7], (u32)FIFO_POWERMGMT_WRITE);
+		setValueSafe(&fifomsg[8], (u32)FIFO_SCREENPOWER_WRITE);
+		setValueSafe(&fifomsg[9], (u32)flags);
+		SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
 	#endif
 	return 0;
 }
@@ -890,7 +897,13 @@ void enableSlot1() {
 	if(isDSiMode()) twlEnableSlot1();
 	#endif
 	#ifdef ARM9
-	SendFIFOWords(TGDS_ARM7_REQ_SLOT1_ENABLE, 0xFF);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+	setValueSafe(&fifomsg[7], (u32)TGDS_ARM7_REQ_SLOT1_ENABLE);
+	SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
+	while( ( ((uint32)getValueSafe(&fifomsg[7])) != ((uint32)0)) ){
+		swiDelay(1);
+	}
 	#endif
 }
 
@@ -901,7 +914,13 @@ void disableSlot1() {
 	if(isDSiMode()) twlDisableSlot1();
 	#endif
 	#ifdef ARM9
-	SendFIFOWords(TGDS_ARM7_REQ_SLOT1_DISABLE, 0xFF);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+	setValueSafe(&fifomsg[7], (u32)TGDS_ARM7_REQ_SLOT1_DISABLE);
+	SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
+	while( ( ((uint32)getValueSafe(&fifomsg[7])) != ((uint32)0)) ){
+		swiDelay(1);
+	}
 	#endif
 }
 
@@ -1049,12 +1068,12 @@ void addARGV(int argc, char *argv){
 	
 	if(strlen(cmdline) <= 3){
 		strcpy(cmdline,"");
-		__system_argv->argvMagic = ARGV_MAGIC;
+		__system_argv->argvMagic = (int)ARGV_MAGIC;
 		__system_argv->commandLine = cmdline;
 		__system_argv->length = 0;
 	}
 	else{
-		__system_argv->argvMagic = ARGV_MAGIC;
+		__system_argv->argvMagic = (int)ARGV_MAGIC;
 		__system_argv->commandLine = cmdline;
 		__system_argv->length = cmdlineLen;
 		
@@ -1065,88 +1084,19 @@ void addARGV(int argc, char *argv){
 }
 #endif
 
-#ifdef ARM9
-__attribute__((section(".dtcm")))
-u32 reloadStatus = 0;
-
-//ToolchainGenericDS-multiboot NDS Binary loader: Requires tgds_multiboot_payload_ntr.bin / tgds_multiboot_payload_twl.bin (TGDS-multiboot Project) in SD root.
-__attribute__((section(".itcm")))
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-bool TGDSMultibootRunNDSPayload(char * filename) {
-	char msgDebug[96];
-	memset(msgDebug, 0, sizeof(msgDebug));
-	int isNTRTWLBinary = isNTROrTWLBinary(filename);
-	//NTR mode? Can only boot valid NTR binaries, the rest is skipped.
-	if((__dsimode == false) && !(isNTRTWLBinary == isNDSBinaryV1) && !(isNTRTWLBinary == isNDSBinaryV2) ){
-		return false;
-	}
-	//TWL mode? Can only boot valid NTR and TWL binaries, the rest is skipped.
-	else if((__dsimode == true) && !(isNTRTWLBinary == isNDSBinaryV1) && !(isNTRTWLBinary == isNDSBinaryV2) && !(isNTRTWLBinary == isTWLBinary) ){
-		return false;
-	}
-	else{
-		strcpy((char*)(0x02280000 - (MAX_TGDSFILENAME_LENGTH+1)), filename);	//Arg0:	
-		#ifdef NTRMODE
-		char * TGDSMBPAYLOAD = "0:/tgds_multiboot_payload_ntr.bin";	//TGDS NTR SDK (ARM9 binaries) emits TGDSMultibootRunNDSPayload() which reloads into NTR TGDS-MB Reload payload
-		#endif
-		
-		#ifdef TWLMODE
-		char * TGDSMBPAYLOAD = "0:/tgds_multiboot_payload_twl.bin";	//TGDS TWL SDK (ARM9i binaries) emits TGDSMultibootRunNDSPayload() which reloads into TWL TGDS-MB Reload payload
-		#endif
-		
-		FILE * tgdsPayloadFh = fopen(TGDSMBPAYLOAD, "r");
-		if(tgdsPayloadFh != NULL){
-			fseek(tgdsPayloadFh, 0, SEEK_SET);
-			int	tgds_multiboot_payload_size = FS_getFileSizeFromOpenHandle(tgdsPayloadFh);
-			fread((u32*)0x02280000, 1, tgds_multiboot_payload_size, tgdsPayloadFh);
-			coherent_user_range_by_size(0x02280000, (int)tgds_multiboot_payload_size);
-			fclose(tgdsPayloadFh);
-			FS_deinit();
-			//Copy and relocate current TGDS DLDI section into target ARM9 binary
-			if(strncmp((char*)&dldiGet()->friendlyName[0], "TGDS RAMDISK", 12) == 0){
-				nocashMessage("TGDS DLDI detected. Skipping DLDI patch.");
-			}
-			else{
-				bool stat = dldiPatchLoader((data_t *)0x02280000, (u32)tgds_multiboot_payload_size, (u32)&_io_dldi_stub);
-				if(stat == false){
-					sprintf(msgDebug, "%s%s", "TGDSMultibootRunNDSPayload():DLDI Patch failed. APP does not support DLDI format.", "");
-					nocashMessage((char*)&msgDebug[0]);
-				}
-				else{
-					sprintf(msgDebug, "%s%s", "TGDSMultibootRunNDSPayload():DLDI Patch OK.", "");
-					nocashMessage((char*)&msgDebug[0]);
-				}
-			}
-			
-			REG_IME = 0;
-			typedef void (*t_bootAddr)();
-			t_bootAddr bootARM9Payload = (t_bootAddr)0x02280000;
-			bootARM9Payload();
-			
-			return true; //should never jump here
-		}
-		else{
-			sprintf(msgDebug, "%s%s", "TGDSMultibootRunNDSPayload(): Missing Payload:", TGDSMBPAYLOAD);
-			nocashMessage((char*)&msgDebug[0]);
-		}
-	}
-	return false;
-}
-#endif
-
 void initSound(){
 	#ifdef ARM7
 	SoundPowerON(127);		//volume
 	#endif
 	
 	#ifdef ARM9
-	SendFIFOWords(FIFO_INITSOUND, 0xFF);
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+	setValueSafe(&fifomsg[7], (u32)FIFO_INITSOUND);
+	SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
+	while( ( ((uint32)getValueSafe(&fifomsg[7])) != ((uint32)0)) ){
+		swiDelay(1);
+	}
 	#endif
 }
 
@@ -1162,6 +1112,8 @@ wifiDeinitARM7ARM9LibUtils_fn wifiDeinitARM7ARM9LibUtilsCallback = NULL;
 wifiUpdateVBLANKARM7LibUtils_fn wifiUpdateVBLANKARM7LibUtilsCallback = NULL;
 wifiInterruptARM7LibUtils_fn wifiInterruptARM7LibUtilsCallback = NULL;
 timerWifiInterruptARM9LibUtils_fn timerWifiInterruptARM9LibUtilsCallback = NULL;
+DeInitWIFIARM7LibUtils_fn	DeInitWIFIARM7LibUtilsCallback = NULL;
+wifiAddressHandlerARM7LibUtils_fn	wifiAddressHandlerARM7LibUtilsCallback = NULL;
 
 //Wifi (ARM9)
 wifiswitchDsWnifiModeARM9LibUtils_fn wifiswitchDsWnifiModeARM9LibUtilsCallback = NULL;
@@ -1237,7 +1189,9 @@ void initializeLibUtils7(
 	SoundStreamSetupSoundARM7LibUtils_fn SoundStreamSetupSoundARM7LibUtilsCall,	//ARM7: void setupSound(uint32 sourceBuf)
 	initMallocARM7LibUtils_fn initMallocARM7LibUtilsCall,	//ARM7: void initARM7Malloc(u32 ARM7MallocStartaddress, u32 ARM7MallocSize);
 	wifiDeinitARM7ARM9LibUtils_fn wifiDeinitARM7ARM9LibUtilsCall, //ARM7 & ARM9: DeInitWIFI()
-	MicInterruptARM7LibUtils_fn MicInterruptARM7LibUtilsCall //ARM7: micInterrupt()
+	MicInterruptARM7LibUtils_fn MicInterruptARM7LibUtilsCall, //ARM7: micInterrupt()
+	DeInitWIFIARM7LibUtils_fn DeInitWIFIARM7LibUtilsCall,	//ARM7: DeInitWIFI()
+	wifiAddressHandlerARM7LibUtils_fn	wifiAddressHandlerARM7LibUtilsCall //ARM7: void wifiAddressHandler( void * address, void * userdata )
 ){
 	libutilisFifoNotEmptyCallback = HandleFifoNotEmptyWeakRefLibUtilsCall;
 	wifiUpdateVBLANKARM7LibUtilsCallback = wifiUpdateVBLANKARM7LibUtilsCall;
@@ -1248,6 +1202,8 @@ void initializeLibUtils7(
 	initMallocARM7LibUtilsCallback = initMallocARM7LibUtilsCall;
 	wifiDeinitARM7ARM9LibUtilsCallback = wifiDeinitARM7ARM9LibUtilsCall; 
 	MicInterruptARM7LibUtilsCallback = MicInterruptARM7LibUtilsCall;
+	DeInitWIFIARM7LibUtilsCallback = DeInitWIFIARM7LibUtilsCall;
+	wifiAddressHandlerARM7LibUtilsCallback = wifiAddressHandlerARM7LibUtilsCall;
 }
 #endif
 
@@ -1261,10 +1217,10 @@ __attribute__ ((optnone))
 #endif
 int isNTROrTWLBinary(char * filename){
 	int mode = notTWLOrNTRBinary;
-	FILE * fh = fopen(filename, "r+");
+	FILE * fh = fopen(filename, "r");
 	int headerSize = sizeof(struct sDSCARTHEADER);
 	u8 * NDSHeader = (u8 *)TGDSARM9Malloc(headerSize*sizeof(u8));
-	u8 passmeRead[16];
+	u8 passmeRead[24];
 	memset(passmeRead, 0, sizeof(passmeRead));
 	if (fread(NDSHeader, 1, headerSize, fh) != headerSize){
 		TGDSARM9Free(NDSHeader);
@@ -1278,20 +1234,69 @@ int isNTROrTWLBinary(char * filename){
 	struct sDSCARTHEADER * NDSHdr = (struct sDSCARTHEADER *)NDSHeader;
 	u32 arm9EntryAddress = NDSHdr->arm9entryaddress;
 	u32 arm7EntryAddress = NDSHdr->arm7entryaddress;
+	u32 arm9BootCodeOffsetInFile = NDSHdr->arm9romoffset;
+	int arm7BootCodeSize = NDSHdr->arm7size;
+	int arm9BootCodeSize = NDSHdr->arm9size;
 	int checkCounter = 0;
 	int i = 0;
 	for(i = 0; i < sizeof(NDSHdr->reserved1); i++){
 		checkCounter += NDSHdr->reserved1[i];
 	}
 	checkCounter += NDSHdr->reserved2;
-	//NTR: (02000000-023FFFFF) 4M
-	//TWL: (02000000- 02FFFFFF) 16M
+	
+	/*
+	bool gotDLDISection = false;
+	#define chunksPerRead ((int) (256*1024))
+	u8 * workBuf = TGDSARM9Malloc(chunksPerRead);
+	int chunks = (arm9BootCodeSize / chunksPerRead);
+	for(i = 0; i < chunks; i++){
+		fseek(fh, ((int)arm9BootCodeOffsetInFile + (i* chunksPerRead)), SEEK_SET);
+		fread(workBuf, 1, chunksPerRead, fh);
+		//https://github.com/lifehackerhansol/blocksds-bootloader/issues/2#issuecomment-1913182614: Check if we have a DLDI section. If not, it's V1. Else, it's V2+
+		u32 patchOffset = quickFind(workBuf, dldiMagicString, chunksPerRead, sizeof(dldiMagicString));
+		if (patchOffset > 0) {
+			gotDLDISection = true; //if DLDI section found, it's V2+
+			i = chunks;
+		}
+	}
+	TGDSARM9Free(workBuf);
+	*/
+
 	if(
-		(checkCounter == 0) &&
-		(arm9EntryAddress >= 0x02000000) && (arm9EntryAddress < 0x02400000) 
-		&&
+		//(gotDLDISection == false) && //pre-DLDI era could be confused with no filesystem binaries, so skipped.
 		(
-			//passme v1 (pre 2008 NTR homebrew)
+			//Slot 2 passme v1 (pre 2008 NTR homebrew)
+			(0x66 == passmeRead[0x0])
+			&&	(0x72 == passmeRead[0x1])
+			&&	(0x61 == passmeRead[0x2])
+			&&	(0x6D == passmeRead[0x3])
+			&&	(0x65 == passmeRead[0x4])
+			&&	(0x62 == passmeRead[0x5])
+			&&	(0x75 == passmeRead[0x6])
+			&&	(0x66 == passmeRead[0x7])
+			&&	(0x66 == passmeRead[0x8])
+			&&	(0x65 == passmeRead[0x9])
+			&&	(0x72 == passmeRead[0xA])
+			&&	(0x5F == passmeRead[0xB])
+			&&	(0x50 == passmeRead[0xC])
+			&&	(0x41 == passmeRead[0xD])
+			&&	(0x53 == passmeRead[0xE])
+			&&	(0x53 == passmeRead[0xF])
+			&&	(0x44 == passmeRead[0x10])
+			&&	(0x46 == passmeRead[0x11])
+			&&	(0x96 == passmeRead[0x12])
+			&&	(0x00 == passmeRead[0x13])
+		)
+	){
+		mode = isNDSBinaryV1Slot2;
+	}
+
+	else if(
+		(checkCounter == 0) &&
+		(arm9EntryAddress >= 0x02000000) &&
+		//(gotDLDISection == false) && //pre-DLDI era could be confused with no filesystem binaries, so skipped.
+		(
+			//Slot 1 passme v1 (pre 2008 NTR homebrew)
 			(0x00 == passmeRead[0x0])
 			&&	(0x00 == passmeRead[0x1])
 			&&	(0x00 == passmeRead[0x2])
@@ -1308,16 +1313,48 @@ int isNTROrTWLBinary(char * filename){
 			&&	(0x41 == passmeRead[0xD])
 			&&	(0x53 == passmeRead[0xE])
 			&&	(0x53 == passmeRead[0xF])
+			&&	(0x00 == passmeRead[0x10])
+			&&	(0x00 == passmeRead[0x11])
+			&&	(0x00 == passmeRead[0x12])
+			&&	(0x00 == passmeRead[0x13])
 		)
 	){
 		mode = isNDSBinaryV1;
 	}
 	else if(
 		(checkCounter == 0) &&
-		(arm9EntryAddress >= 0x02000000) && (arm9EntryAddress < 0x02400000) 
-		&&
+		(arm9EntryAddress >= 0x02000000) &&
 		(
-			//passme v2 (2009+ NTR homebrew)
+			//Slot 1 passme v2 (pre 2008 NTR homebrew)
+			(0x00 == passmeRead[0x0])
+			&&	(0x00 == passmeRead[0x1])
+			&&	(0x00 == passmeRead[0x2])
+			&&	(0x00 == passmeRead[0x3])
+			&&	(0x00 == passmeRead[0x4])
+			&&	(0x00 == passmeRead[0x5])
+			&&	(0x00 == passmeRead[0x6])
+			&&	(0x00 == passmeRead[0x7])
+			&&	(0x00 == passmeRead[0x8])
+			&&	(0x00 == passmeRead[0x9])
+			&&	(0x00 == passmeRead[0xA])
+			&&	(0x00 == passmeRead[0xB])
+			&&	(0x50 == passmeRead[0xC])
+			&&	(0x41 == passmeRead[0xD])
+			&&	(0x53 == passmeRead[0xE])
+			&&	(0x53 == passmeRead[0xF])
+			&&	(0x30 == passmeRead[0x10])
+			&&	(0x31 == passmeRead[0x11])
+			&&	(0x96 == passmeRead[0x12])
+			&&	(0x00 == passmeRead[0x13])
+		)
+	){
+		mode = isNDSBinaryV2;
+	}
+	else if(
+		(checkCounter == 0) &&
+		(arm9EntryAddress >= 0x02000000) &&
+		//(gotDLDISection == true) && //some v2+ homebrew may have the DLDI section stripped (such as barebones demos without filesystem at the time the translation unit built the ARM9 payload)
+			//Slot 1 passme v3 (2009+ NTR homebrew)
 			(0x53 == passmeRead[0x0])
 			&&	(0x52 == passmeRead[0x1])
 			&&	(0x41 == passmeRead[0x2])
@@ -1330,28 +1367,74 @@ int isNTROrTWLBinary(char * filename){
 			&&	(0x00 == passmeRead[0x9])
 			&&	(0x00 == passmeRead[0xA])
 			&&	(0x00 == passmeRead[0xB])
-		)
+			&&	(0x50 == passmeRead[0xC])
+			&&	(0x41 == passmeRead[0xD])
+			&&	(0x53 == passmeRead[0xE])
+			&&	(0x53 == passmeRead[0xF])
+			&&	(0x30 == passmeRead[0x10])
+			&&	(0x31 == passmeRead[0x11])
+			&&	(0x96 == passmeRead[0x12])
+			&&	(0x00 == passmeRead[0x13])
 	){
-		mode = isNDSBinaryV2;
+		mode = isNDSBinaryV3;
 	}
 	
-	//TWL validates both ARM7 and ARM9 entry address
+	//TWL Slot 1 / Internal SD mode: (2009+ TWL homebrew)
 	else if( 
-		(checkCounter >= 0) && (arm9EntryAddress >= 0x02000000) && (arm9EntryAddress <= 0x02FFFFFF) &&
+		(checkCounter > 0) && (arm9EntryAddress >= 0x02000000) && (arm9EntryAddress <= 0x02FFFFFF) &&
 		(
 			((arm7EntryAddress >= 0x02000000) && (arm7EntryAddress <= 0x02FFFFFF))
 			||
 			((arm7EntryAddress >= 0x037F8000) && (arm7EntryAddress <= 0x03810000))
 		)
+		//&&
+		//(gotDLDISection == true) //some homebrew may have the DLDI section stripped (such as barebones demos without filesystem at the time the translation unit built the ARM9 payload)
 	){
 		mode = isTWLBinary;
 	}
+	
+	//Check for Headerless NTR binary (2004 homebrew on custom devkits, or custom devkits overall)
+	if( 
+		(arm7EntryAddress >= 0x02000000)
+		&&
+		(arm9EntryAddress >= 0x02000000)
+		&&
+		(arm7BootCodeSize > 0)
+		&&
+		(arm9BootCodeSize > 0)
+		&&
+		(arm9BootCodeOffsetInFile > 0) //even headerless Passme NTR binaries reserve the NTR header section of 0x200 bytes
+		&&
+		(mode == notTWLOrNTRBinary)
+		&&
+		(checkCounter == 0)
+	){
+		mode = isNDSBinaryV1;
+	}
+	
 	TGDSARM9Free(NDSHeader);
 	fclose(fh);
 	return mode;
 }
 #endif
 
+
+#ifdef ARM9
+/*
+	Array used to fill secure area, marked weak to allow nds files to be
+	built with no secure area.
+
+	To disable this add 'const int __secure_area__ = 0;'
+
+	Value and type are unimportant the symbol only needs to exist
+	elsewhere to prevent this one being linked.
+
+*/
+
+__attribute__((section(".secure")))
+__attribute__((weak))
+const char __secure_area__[2048];
+#endif
 
 bool debugEnabled = false;
 void enableTGDSDebugging(){

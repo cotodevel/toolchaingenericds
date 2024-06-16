@@ -85,6 +85,7 @@ extern int writeFirmwareSPI(uint32 address, void * source, uint32 size);
 //powerManagement SPI
 extern int PowerManagementDeviceWrite(int reg, int command) ;
 extern int PowerManagementDeviceRead(int reg);
+extern u32 savedDSHardware;
 
 #ifdef __cplusplus
 }

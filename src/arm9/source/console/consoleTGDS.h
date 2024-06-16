@@ -349,8 +349,5 @@ static inline void ToggleOnOffConsoleBacklight(){
 	}
 }
 
-//todo: extern void TGDSLCDSwap(bool disableTSCWhenTGDSConsoleTop, bool isDirectFramebuffer, bool SaveConsoleContext, u8 * currentVRAMContext);
-
-
 #endif
 
