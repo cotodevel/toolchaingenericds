@@ -498,26 +498,21 @@ void InitTGDSDual3DSpecificConsole(){
 }
 
 void TGDS_ProcessDual(TGDS_Voidfunc topscreen, TGDS_Voidfunc downscreen){
-	if( ((REG_VCOUNT&0xFF) >= 192) ){ // is Capture VRAM B done?
-		NE_Screen ^= 1;
+	if ( (!(REG_DISPCAPCNT & (1<<31))) && !(DMAXCNT(3) & DMAENABLED) ){
 		REG_POWERCNT ^= (POWER_SWAP_LCDS);
 		
 		if(NE_Screen == 0){
-			downscreen();
-		}
-		else{
 			topscreen();
 		}
-		
-		if( !(REG_DISPCAPCNT & (1<<31)) ){	
-			u32 src = 0x6820000;
-			u32 dest = 0x6200000; //Sub Engine is updated here: Move VRAM B into Sub Engine VRAM C
-			dmaTransferWord(3, (u32)src, (u32)dest, 128 * 1024); //B       128K  0    -     6820000h-683FFFFh
+		else{
+			downscreen();
 		}
-		IRQWait(0, IRQ_VBLANK);
-	}
-	
-	if( !(REG_DISPCAPCNT & (1<<31)) ){	
+		NE_Screen ^= 1;
+		
+		//Copy 3D framebuffer
+		u32 src = 0x6820000;
+		u32 dest = 0x6200000; //Sub Engine is updated here: Move VRAM B into Sub Engine VRAM C
+		dmaTransferWordAsync(3, (u32)src, (u32)dest, 128 * 1024); //B       128K  0    -     6820000h-683FFFFh
 		SetRegCapture(true, 0, 1); //start capture Engine A into VRAM B
 	}
 }
