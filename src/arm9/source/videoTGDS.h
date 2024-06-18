@@ -591,6 +591,7 @@ extern void restoreFBModeMainEngine();	//restore from old MainEngine context dis
 extern void InitTGDSDual3DSpecificConsole();
 extern vramSetup * TGDSDUAL3D_VRAM_SETUP();
 extern void TGDS_ProcessDual(TGDS_Voidfunc topscreen, TGDS_Voidfunc downscreen);
+extern u8 NE_Screen;
 
 #ifdef __cplusplus
 }

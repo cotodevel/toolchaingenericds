@@ -130,6 +130,9 @@ extern void dmaFillHalfWordSlot2(sint32 dmachannel,uint32 value, uint32 dest, ui
 extern void dmaTransferHalfWordSlot2(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count);
 extern void dmaTransferWordSlot2(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count);
 
+extern void dmaTransferHalfWordAsync(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count);
+extern void dmaTransferWordAsync(sint32 dmachannel, uint32 source, uint32 dest, uint32 word_count);
+
 #ifdef ARM9
 extern void dmaFillWordVBlank(sint32 dmachannel,uint32 value, uint32 dest, uint32 word_count);
 extern void dmaFillHalfWordVBlank(sint32 dmachannel,uint32 value, uint32 dest, uint32 word_count);
