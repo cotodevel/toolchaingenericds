@@ -1488,6 +1488,8 @@ extern GLboolean glIsEnabled(
    GLenum cap
 );
 
+extern void glDepthFunc(GLenum func); 
+
 #ifdef __cplusplus
 }
 #endif
