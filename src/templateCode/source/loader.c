@@ -40,7 +40,7 @@ __attribute__((optimize("O0")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-bool TGDSMultibootRunNDSPayload(char * filename) {
+bool TGDSMultibootRunNDSPayload(char * filename, u8 * tgdsMbv3ARM7Bootldr) {
 	char * TGDSMBPAYLOAD = NULL;
 	register int isNTRTWLBinary = isNTROrTWLBinary(filename);
 	memset(msgDebugException, 0, MAX_TGDSFILENAME_LENGTH);
@@ -61,6 +61,11 @@ bool TGDSMultibootRunNDSPayload(char * filename) {
 			TGDSMBPAYLOAD = "0:/tgds_multiboot_payload_ntr.bin";	//TGDS NTR SDK (ARM9 binaries) emits TGDSMultibootRunNDSPayload() which reloads into NTR TGDS-MB Reload payload
 		}
 		
+		//Execute Stage 1: IWRAM ARM7 payload: NTR/TWL (0x03800000)
+		executeARM7Payload((u32)0x02380000, 96*1024, (u32*)TGDS_MB_V3_ARM7_STAGE1_ADDR);
+			
+		//Execute Stage 2: VRAM ARM7 payload: NTR/TWL (0x06000000)
+		executeARM7Payload((u32)0x02380000, 96*1024, tgdsMbv3ARM7Bootldr);
 		
 		//Copy the file into non-case sensitive "tgdsboot.bin" into ARM7,
 		//since PetitFS only understands 8.3 DOS format filenames.

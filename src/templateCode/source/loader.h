@@ -67,7 +67,7 @@ extern "C"{
 #endif
 
 #ifdef ARM9
-extern bool TGDSMultibootRunNDSPayload(char * filename);
+extern bool TGDSMultibootRunNDSPayload(char * filename, u8 * tgdsMbv3ARM7Bootldr);
 extern void executeARM7Payload(u32 arm7entryaddress, int arm7BootCodeSize, u32 * payload);
 #endif
 

@@ -46,6 +46,11 @@ USA
 #include "dmaTGDS.h"
 #include "loader.h"
 
+//todo
+//ARM7 VRAM core
+//#include "arm7bootldr.h"
+//#include "arm7bootldr_twl.h"
+
 //TGDS Soundstreaming API
 int internalCodecType = SRC_NONE; //Returns current sound stream format: WAV, ADPCM or NONE
 struct fd * _FileHandleVideo = NULL; 
@@ -195,9 +200,20 @@ int main(int argc, char **argv) {
 			strcpy(&thisArgv[1][0], thisTGDSProject);	//Arg1:	NDS Binary reloaded through ChainLoad
 			strcpy(&thisArgv[2][0], (char*)arg0);	//Arg2: NDS Binary reloaded through ChainLoad's ARG0
 			addARGV(newArgc, (char*)&thisArgv);				
-			if(TGDSMultibootRunNDSPayload(curChosenBrowseFile) == false){ //should never reach here, nor even return true. Should fail it returns false
+			
+			//todo
+			/*
+			u32 * payload = NULL;
+			if(__dsimode == false){
+				payload = (u32*)&arm7bootldr[0];	
+			}
+			else{
+				payload = (u32*)&arm7bootldr_twl[0];
+			}
+			if(TGDSMultibootRunNDSPayload(curChosenBrowseFile, payload) == false){ //should never reach here, nor even return true. Should fail it returns false
 				
 			}
+			*/
 		}
 	}
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
