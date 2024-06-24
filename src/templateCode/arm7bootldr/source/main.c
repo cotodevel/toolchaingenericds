@@ -314,7 +314,7 @@ void bootfile(){
 	
 	uint8_t fresult;
 	FATFS * currentFH = &fileHandle;
-	char * filename = (char*)(*ARM9_STRING_PTR);
+	char * filename = (char*)(TGDS_MB_V3_BOOTSTUB_FILENAME);
 	strcpy((char*)fname, &filename[2]);
 	
 	fresult = pf_mount(currentFH);

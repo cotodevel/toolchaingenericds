@@ -32,7 +32,6 @@ USA
 #define FIFO_ARM7_RELOAD (u32)(0xFFFFABCA)
 
 #define TGDS_MB_V3_MEMBASE ((int)0x02FFE000) //can't be 0x02FFF000 or 0x027FF000 due to shared ram IO and header section otherwise breaks stuff
-#define ARM9_STRING_PTR ((u32*)(TGDS_MB_V3_MEMBASE-(4*0)))
 #define ARM9_BOOT_SIZE ((u32*)(TGDS_MB_V3_MEMBASE-(4*1)))
 #define ARM7_BOOT_SIZE ((u32*)(TGDS_MB_V3_MEMBASE-(4*2)))
 #define ARM7_BOOTCODE_OFST ((u32*)(TGDS_MB_V3_MEMBASE-(4*3)))
@@ -50,16 +49,15 @@ USA
 //The base address all four ARM7/ARM9/ARM7i/ARM9i should have at least to be ran through TGDS-MB v3
 #define ARM_MININUM_LOAD_ADDR ((u32)0x01000000)
 
-
 //tgds_mb_payload.bin (NTR/TWL): 
 //0x02400000 - 304K (0x4C000) = Entrypoint: 0x023B0000
 #define TGDS_MB_V3_PAYLOAD_ADDR ((u32*)0x023B0000)
 #define TGDS_MB_V3_ARM7_STAGE1_ADDR ( ((int)TGDS_MB_V3_PAYLOAD_ADDR) -  (96*1024) )	//0x02398000
 
-//Workram (0x02000000 ~ 0x80000) = 512K 
-#define TGDS_MB_V3_WORKBUFFER ((int)(0x02000000 + (512*1024)))
-
-
+//Workram
+#define TGDS_MB_V3_WORKBUFFER_SIZE ((int)64*1024)
+#define TGDS_MB_V3_BOOTSTUB_FILENAME ((char*)"0:/tgdsboot.bin")
+#define TGDS_MB_V3_MAGICWORD ((u32)0xc070F8F8)
 
 #endif
 

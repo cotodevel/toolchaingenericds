@@ -42,7 +42,7 @@ __attribute__ ((optnone))
 #endif
 bool TGDSMultibootRunNDSPayload(char * filename) {
 	char * TGDSMBPAYLOAD = NULL;
-	int isNTRTWLBinary = isNTROrTWLBinary(filename);
+	register int isNTRTWLBinary = isNTROrTWLBinary(filename);
 	memset(msgDebugException, 0, MAX_TGDSFILENAME_LENGTH);
 	//NTR mode? Can only boot valid NTR binaries, the rest is skipped.
 	if((__dsimode == false) && !(isNTRTWLBinary == isNDSBinaryV1Slot2) && !(isNTRTWLBinary == isNDSBinaryV1) && !(isNTRTWLBinary == isNDSBinaryV2) && !(isNTRTWLBinary == isNDSBinaryV3) ){
@@ -60,6 +60,98 @@ bool TGDSMultibootRunNDSPayload(char * filename) {
 		else {
 			TGDSMBPAYLOAD = "0:/tgds_multiboot_payload_ntr.bin";	//TGDS NTR SDK (ARM9 binaries) emits TGDSMultibootRunNDSPayload() which reloads into NTR TGDS-MB Reload payload
 		}
+		
+		
+		//Copy the file into non-case sensitive "tgdsboot.bin" into ARM7,
+		//since PetitFS only understands 8.3 DOS format filenames.
+		//File copy in chunks, will be slower to boot TWL homebrew, but will handle them properly regardless of its binary size.
+		FIL fPagingFDRead;
+		FIL fPagingFDWrite;
+		UINT ret;
+		
+		//Homebrew source
+		int flags = charPosixToFlagPosix("r");
+		BYTE mode = posixToFatfsAttrib(flags);
+		FRESULT result = f_open(&fPagingFDRead, (const TCHAR*)filename, mode);
+		if(result != FR_OK){
+			printf("tgds_multiboot_payload.bin: read (1)");
+			printf("payload fail [%s]", filename);
+			while(1==1){}
+		}
+		int payloadSize = (int)f_size(&fPagingFDRead);
+		u8* workBuffer = (u8*)TGDSARM9Malloc(TGDS_MB_V3_WORKBUFFER_SIZE);
+		
+		//Homebrew target
+		char * tempFile = TGDS_MB_V3_BOOTSTUB_FILENAME;
+		flags = charPosixToFlagPosix("w+");
+		mode = posixToFatfsAttrib(flags);
+		result = f_open(&fPagingFDWrite, (const TCHAR*)tempFile, mode);
+		if(result != FR_OK){
+			printf("tgds_multiboot_payload.bin: read (3)");
+			printf("payload fail [%s]", tempFile);
+			while(1==1){}
+		}
+		f_lseek (
+				&fPagingFDWrite,
+				(DWORD)0       
+			);
+			
+		int blocksToRead = (payloadSize / TGDS_MB_V3_WORKBUFFER_SIZE);
+		int blocksWritten = 0;
+		
+		while(blocksToRead > blocksWritten){
+			f_lseek (
+				&fPagingFDRead,
+				(DWORD) (blocksWritten * TGDS_MB_V3_WORKBUFFER_SIZE)
+			);
+			
+			result = f_read(&fPagingFDRead, workBuffer, (int)TGDS_MB_V3_WORKBUFFER_SIZE, (UINT*)&ret);
+			coherent_user_range_by_size((uint32)workBuffer, (int)TGDS_MB_V3_WORKBUFFER_SIZE);
+			
+			int writtenSize=0;
+			result = f_write(&fPagingFDWrite, workBuffer, (int)TGDS_MB_V3_WORKBUFFER_SIZE, (UINT*)&writtenSize); //workbuffer is already coherent
+			if (result != FR_OK){
+				printf("tgds_multiboot_payload.bin: write (4)");
+				printf("payload fail [%s]", tempFile);
+				while(1==1){}
+			}
+			f_sync(&fPagingFDWrite); //make persistent file in filesystem coherent
+			
+			blocksWritten++;
+		}
+		
+		//write last part not considered?
+		blocksToRead = (payloadSize % TGDS_MB_V3_WORKBUFFER_SIZE);
+		if(blocksToRead > 0){
+			f_lseek (
+				&fPagingFDRead,
+				(DWORD) (blocksWritten * TGDS_MB_V3_WORKBUFFER_SIZE)
+			);
+			
+			result = f_read(&fPagingFDRead, workBuffer, (int)blocksToRead, (UINT*)&ret);
+			if(ret != blocksToRead){
+				printf("tgds_multiboot_payload.bin: read (2)");
+				printf("payload fail [%s]", filename);
+				while(1==1){}
+			}
+			coherent_user_range_by_size((uint32)workBuffer, (int)blocksToRead);
+			
+			int writtenSize=0;
+			result = f_write(&fPagingFDWrite, workBuffer, (int)blocksToRead, (UINT*)&writtenSize); //workbuffer is already coherent
+			if (result != FR_OK){
+				printf("tgds_multiboot_payload.bin: write (4)");
+				printf("payload fail [%s]", tempFile);
+				while(1==1){}
+			}
+			f_sync(&fPagingFDWrite); //make persistent file in filesystem coherent
+		}
+		
+		//Free
+		f_close(&fPagingFDRead);
+		f_close(&fPagingFDWrite);
+		TGDSARM9Free(workBuffer);
+		
+		setValueSafe((u32*)ARM9_TWLORNTRPAYLOAD_MODE, (u32)isNTRTWLBinary); 
 		setValueSafe((u32*)ARM7_ARM9_SAVED_DSFIRMWARE, savedDSHardware); //required by TGDS-multiboot's tgds_multiboot_payload.bin
 		FILE * tgdsPayloadFh = fopen(TGDSMBPAYLOAD, "r");
 		if(tgdsPayloadFh != NULL){
