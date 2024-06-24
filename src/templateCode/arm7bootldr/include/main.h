@@ -26,12 +26,6 @@ USA
 #include "pff.h"
 #include "soundTGDS.h"
 #include "exceptionTGDS.h"
-
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Firmware stuff
-
-#define FW_READ        0x03
-
 #endif
 
 
@@ -39,9 +33,6 @@ USA
 extern "C" {
 #endif
 
-extern void boot_readFirmware (uint32 address, uint8 * buffer, uint32 size);
-
-//
 extern int main(int argc, char **argv);
 extern FATFS fileHandle;					// Petit-FatFs work area 
 extern char fname[256];
