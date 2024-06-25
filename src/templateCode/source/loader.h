@@ -52,6 +52,7 @@ USA
 //tgds_mb_payload.bin (NTR/TWL): 
 //0x02400000 - 304K (0x4C000) = Entrypoint: 0x023B0000
 #define TGDS_MB_V3_PAYLOAD_ADDR ((u32*)0x023B0000)
+#define TGDS_MB_V3_PAYLOAD_ADDR_TWL ((u32*)0x02FB0000)
 #define TGDS_MB_V3_ARM7_STAGE1_ADDR ( ((int)TGDS_MB_V3_PAYLOAD_ADDR) -  (96*1024) )	//0x02398000
 
 //Workram
