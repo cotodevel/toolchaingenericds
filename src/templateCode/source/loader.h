@@ -50,10 +50,11 @@ USA
 #define ARM_MININUM_LOAD_ADDR ((u32)0x01000000)
 
 //tgds_mb_payload.bin (NTR/TWL): 
-//0x02400000 - 304K (0x4C000) = Entrypoint: 0x023B0000
-#define TGDS_MB_V3_PAYLOAD_ADDR ((u32*)0x023B0000)
-#define TGDS_MB_V3_PAYLOAD_ADDR_TWL ((u32*)0x02FB0000)
-#define TGDS_MB_V3_ARM7_STAGE1_ADDR ( ((int)TGDS_MB_V3_PAYLOAD_ADDR) -  (96*1024) )	//0x02398000
+#define TGDS_MB_V3_PAYLOAD_ADDR ((u32*)0x2328000) //NTR homebrew up to 3.3M~ is executable, because of TGDS-mb remoteboot
+#define TGDS_MB_V3_PAYLOAD_ADDR_TWL ((u32*)0x2F28000)
+#define TGDS_MB_V3_ARM7_STAGE1_ADDR ( ((int)TGDS_MB_V3_PAYLOAD_ADDR) -  (96*1024) )
+#define TGDS_MB_V3_FREEMEM_NTR ((int)0x328000)
+#define TGDS_MB_V3_FREEMEM_TWL ((int)0xF28000)
 
 //Workram
 #define TGDS_MB_V3_WORKBUFFER_SIZE ((int)64*1024)

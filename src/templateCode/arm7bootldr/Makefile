@@ -47,7 +47,7 @@ d_objs_arm7:=	${file_arm7_src_c:.c=.d}	${file_arm7_src_s:.s=.d}	${file_arm7_src_
 #ARM7 specific definitions.	-fno-common so we force initialized data to rodata
 MAPFILE = $(DIR_ARM7).map
 AS_ASFLAGS		=	$(GLOBAL_SHARED_FLAGS_7)	$(SPECIFIC_AS_COMPILER_FLAGS_7)		$(GLOBAL_AS_COMPILER_FLAGS)
-CC_ASFLAGS		=	-march=armv4t	-mthumb-interwork	-marm	-mfloat-abi=soft	-Ofast	-DARM7	-fno-exceptions	-fno-unwind-tables -fno-asynchronous-unwind-tables -fno-tree-loop-distribute-patterns -ffunction-sections	-fdata-sections	-fno-common	-Dappver='$(EXECUTABLE_VERSION)'	-DIGNORELIBS
+CC_ASFLAGS		=	-march=armv4t	-mthumb-interwork	-marm	-mfloat-abi=soft	-Ofast	-DARM7	-fno-exceptions	-fno-unwind-tables -fno-asynchronous-unwind-tables -fno-tree-loop-distribute-patterns -ffunction-sections	-fdata-sections	-fno-common	-Dappver='$(EXECUTABLE_VERSION)'
 CPP_FLAGS		=	$(CC_ASFLAGS)	-nostdinc++	
 BUILD			= 	$(BUILD_ARM7)
 DIR_SRC			=	$(DIRS_ARM7_SRC)	$(DIRS_ARM7_HEADER)

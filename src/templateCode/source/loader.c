@@ -181,7 +181,7 @@ bool TGDSMultibootRunNDSPayload(char * filename, u8 * tgdsMbv3ARM7Bootldr) {
 			t_bootAddr bootARM9Payload = (t_bootAddr)TGDS_MB_V3_PAYLOAD_ADDR_TWL;
 			
 			//TWL mode? then: 
-			//1) Upcoming bootloader will run from mirror #2 of @0x023B0000 (NTR 4MB EWRAM) or @0x02FB0000 (TWL 16MB EWRAM by copying bootloader section)
+			//1) Upcoming bootloader will run from mirror #2 of @0x2328000 (NTR 4MB EWRAM) or @0x2F28000 (TWL 16MB EWRAM by copying bootloader section)
 			//2) Go back to NTR 4MB EWRAM, in order to read binary context mirrored properly on NTR/TWL hardware. 
 			if (__dsimode == true){
 				//Enable 16M EWRAM (TWL)
@@ -190,7 +190,6 @@ bool TGDSMultibootRunNDSPayload(char * filename, u8 * tgdsMbv3ARM7Bootldr) {
 				SFGEXT9 = (SFGEXT9 & ~(0x3 << 14)) | (0x2 << 14);
 				*(u32*)0x04004008 = SFGEXT9;
 				
-				#define TGDS_MB_V3_PAYLOAD_ADDR_TWL ((u32*)0x02FB0000)
 				memcpy((void *)TGDS_MB_V3_PAYLOAD_ADDR_TWL, (const void *)TGDS_MB_V3_PAYLOAD_ADDR, tgds_multiboot_payload_size);
 				coherent_user_range_by_size((uint32)TGDS_MB_V3_PAYLOAD_ADDR_TWL, (int)tgds_multiboot_payload_size);
 				
