@@ -249,3 +249,73 @@ void executeARM7Payload(u32 arm7entryaddress, int arm7BootCodeSize, u32 * payloa
 	}
 }
 #endif
+
+
+
+#ifdef ARM7
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void initMBK(void) {
+	// This function has no effect with ARM7 SCFG locked
+
+	// ARM7 is master of WRAM-A, arm9 of WRAM-B & C
+	REG_MBK9 = 0x3000000F;
+
+	// WRAM-A fully mapped to ARM7
+	*(vu32*)REG_MBK1 = 0x8185898D; // Same as DSiWare
+
+	// WRAM-B fully mapped to ARM7 // inverted order
+	*(vu32*)REG_MBK2 = 0x9195999D;
+	*(vu32*)REG_MBK3 = 0x8185898D;
+
+	// WRAM-C fully mapped to arm7 // inverted order
+	*(vu32*)REG_MBK4 = 0x9195999D;
+	*(vu32*)REG_MBK5 = 0x8185898D;
+
+	// WRAM mapped to the 0x3700000 - 0x37FFFFF area 
+	// WRAM-A mapped to the 0x3000000 - 0x303FFFF area : 256k
+	REG_MBK6=0x00403000; // same as dsi-enhanced and certain dsiware
+	// WRAM-B mapped to the 0x3740000 - 0x37BFFFF area : 512k // why? only 256k real memory is there
+	REG_MBK7=0x07C03740; // same as dsiware
+	// WRAM-C mapped to the 0x3700000 - 0x373FFFF area : 256k
+	REG_MBK8=0x07403700; // same as dsiware
+}
+
+#endif
+
+
+#ifdef ARM9
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void initMBKARM9(void) {
+	// Default DSiWare settings
+
+	// WRAM-B fully mapped to arm7 // inverted order
+	*(vu32*)REG_MBK2 = 0x9195999D;
+	*(vu32*)REG_MBK3 = 0x8185898D;
+
+	// WRAM-C fully mapped to arm7 // inverted order
+	*(vu32*)REG_MBK4 = 0x9195999D;
+	*(vu32*)REG_MBK5 = 0x8185898D;
+
+	// WRAM-A not mapped (reserved to arm7)
+	REG_MBK6=0x00000000;
+	// WRAM-B mapped to the 0x3740000 - 0x37BFFFF area : 512k // why? only 256k real memory is there
+	REG_MBK7=0x07C03740; // same as dsiware
+	// WRAM-C mapped to the 0x3700000 - 0x373FFFF area : 256k
+	REG_MBK8=0x07403700; // same as dsiware
+}
+
+#endif

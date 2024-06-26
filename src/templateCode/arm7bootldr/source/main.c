@@ -452,6 +452,14 @@ void bootfile(){
 			REG_IE = 0;
 			REG_IF = ~0;
 			
+			if(
+				(__dsimode == true)
+				&&
+				(isNTRTWLBinary == isTWLBinary)
+			){
+				initMBK();
+			}
+			
 			//Bios can now be changed @ ARM9 (from ARM7, keep reading)
 			//BIOS NTR/TWL switch (backwards compatibility mode): ARM9 has 4004000h - DSi9 - SCFG_A9ROM - ROM Status (R) [0000h] bits as read-only. 
 			//Needs to be set on ARM7 side

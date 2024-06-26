@@ -61,6 +61,27 @@ USA
 #define TGDS_MB_V3_BOOTSTUB_FILENAME ((char*)"0:/tgdsboot.bin")
 #define TGDS_MB_V3_MAGICWORD ((u32)0xc070F8F8)
 
+
+#ifdef ARM9
+#define REG_EXMEMCNT (*(volatile uint16*)0x04000204)
+#else
+#define REG_EXMEMSTAT (*(volatile uint16*)0x04000204)
+#endif
+
+#define ARM7_MAIN_RAM_PRIORITY (1 << 15)
+#define ARM7_OWNS_CARD (1 << 11)
+#define ARM7_OWNS_ROM  (1 << 7)
+
+#define REG_MBK1 ((volatile uint8*)0x04004040) /* WRAM_A 0..3 */
+#define REG_MBK2 ((volatile uint8*)0x04004044) /* WRAM_B 0..3 */
+#define REG_MBK3 ((volatile uint8*)0x04004048) /* WRAM_B 4..7 */
+#define REG_MBK4 ((volatile uint8*)0x0400404C) /* WRAM_C 0..3 */
+#define REG_MBK5 ((volatile uint8*)0x04004050) /* WRAM_C 4..7 */
+#define REG_MBK6 (*(volatile uint32*)0x04004054)
+#define REG_MBK7 (*(volatile uint32*)0x04004058)
+#define REG_MBK8 (*(volatile uint32*)0x0400405C)
+#define REG_MBK9 (*(volatile uint32*)0x04004060)
+
 #endif
 
 
@@ -71,6 +92,14 @@ extern "C"{
 #ifdef ARM9
 extern bool TGDSMultibootRunNDSPayload(char * filename, u8 * tgdsMbv3ARM7Bootldr);
 extern void executeARM7Payload(u32 arm7entryaddress, int arm7BootCodeSize, u32 * payload);
+#endif
+
+#ifdef ARM7
+extern void initMBK();
+#endif
+
+#ifdef ARM9
+extern void initMBKARM9();
 #endif
 
 #ifdef __cplusplus
