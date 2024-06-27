@@ -48,186 +48,23 @@ __attribute__((optimize("O0")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-int isNTROrTWLBinaryTGDSMB7(FATFS * currentFH){
-	int mode = notTWLOrNTRBinary;
+int isNTROrTWLBinaryTGDSMB7(FATFS * currentFH, u8 * NDSHeaderStructInst, int NDSHeaderStructSize, u32 * ARM7i_HEADER_SCFG_EXT7Inst){
 	uint8_t fresult;
-	int headerSize = sizeof(NDSHeaderStruct);
+	int headerSize = NDSHeaderStructSize;
 	u8 passmeRead[24];
 	memset(passmeRead, 0, sizeof(passmeRead));
-	memset(&NDSHeaderStruct, 0, headerSize);
+	memset(NDSHeaderStructInst, 0, headerSize);
 	pf_lseek(0, currentFH);
 	UINT nbytes_read;
-	pf_read((u8*)&NDSHeaderStruct, headerSize, &nbytes_read, currentFH);
+	pf_read((u8*)NDSHeaderStructInst, headerSize, &nbytes_read, currentFH);
 	if(nbytes_read != headerSize){
-		return mode;
+		return notTWLOrNTRBinary;
 	}
 	else{
 		pf_lseek(0xA0, currentFH);
 		pf_read((u8*)&passmeRead[0], sizeof(passmeRead), &nbytes_read, currentFH);
 	}
-	struct sDSCARTHEADER * NDSHdr = (struct sDSCARTHEADER *)&NDSHeaderStruct;
-	u32 arm9EntryAddress = NDSHdr->arm9entryaddress;
-	u32 arm7EntryAddress = NDSHdr->arm7entryaddress;
-	u32 arm9BootCodeOffsetInFile = NDSHdr->arm9romoffset;
-	int arm7BootCodeSize = NDSHdr->arm7size;
-	int arm9BootCodeSize = NDSHdr->arm9size;
-	int checkCounter = 0;
-	int i = 0;
-	for(i = 0; i < sizeof(NDSHdr->reserved1); i++){
-		checkCounter += NDSHdr->reserved1[i];
-	}
-	checkCounter += NDSHdr->reserved2;
-	if(
-		//(gotDLDISection == false) && //pre-DLDI era could be confused with no filesystem binaries, so skipped.
-		(
-			//Slot 2 passme v1 (pre 2008 NTR homebrew)
-			(0x66 == passmeRead[0x0])
-			&&	(0x72 == passmeRead[0x1])
-			&&	(0x61 == passmeRead[0x2])
-			&&	(0x6D == passmeRead[0x3])
-			&&	(0x65 == passmeRead[0x4])
-			&&	(0x62 == passmeRead[0x5])
-			&&	(0x75 == passmeRead[0x6])
-			&&	(0x66 == passmeRead[0x7])
-			&&	(0x66 == passmeRead[0x8])
-			&&	(0x65 == passmeRead[0x9])
-			&&	(0x72 == passmeRead[0xA])
-			&&	(0x5F == passmeRead[0xB])
-			&&	(0x50 == passmeRead[0xC])
-			&&	(0x41 == passmeRead[0xD])
-			&&	(0x53 == passmeRead[0xE])
-			&&	(0x53 == passmeRead[0xF])
-			&&	(0x44 == passmeRead[0x10])
-			&&	(0x46 == passmeRead[0x11])
-			&&	(0x96 == passmeRead[0x12])
-			&&	(0x00 == passmeRead[0x13])
-		)
-	){
-		mode = isNDSBinaryV1Slot2;
-	}
-
-	else if(
-		(checkCounter == 0) &&
-		(arm9EntryAddress >= 0x02000000) &&
-		//(gotDLDISection == false) && //pre-DLDI era could be confused with no filesystem binaries, so skipped.
-		(
-			//Slot 1 passme v1 (pre 2008 NTR homebrew)
-			(0x00 == passmeRead[0x0])
-			&&	(0x00 == passmeRead[0x1])
-			&&	(0x00 == passmeRead[0x2])
-			&&	(0x00 == passmeRead[0x3])
-			&&	(0x00 == passmeRead[0x4])
-			&&	(0x00 == passmeRead[0x5])
-			&&	(0x00 == passmeRead[0x6])
-			&&	(0x00 == passmeRead[0x7])
-			&&	(0x00 == passmeRead[0x8])
-			&&	(0x00 == passmeRead[0x9])
-			&&	(0x00 == passmeRead[0xA])
-			&&	(0x00 == passmeRead[0xB])
-			&&	(0x50 == passmeRead[0xC])
-			&&	(0x41 == passmeRead[0xD])
-			&&	(0x53 == passmeRead[0xE])
-			&&	(0x53 == passmeRead[0xF])
-			&&	(0x00 == passmeRead[0x10])
-			&&	(0x00 == passmeRead[0x11])
-			&&	(0x00 == passmeRead[0x12])
-			&&	(0x00 == passmeRead[0x13])
-		)
-	){
-		mode = isNDSBinaryV1;
-	}
-	else if(
-		(checkCounter == 0) &&
-		(arm9EntryAddress >= 0x02000000) &&
-		(
-			//Slot 1 passme v2 (pre 2008 NTR homebrew)
-			(0x00 == passmeRead[0x0])
-			&&	(0x00 == passmeRead[0x1])
-			&&	(0x00 == passmeRead[0x2])
-			&&	(0x00 == passmeRead[0x3])
-			&&	(0x00 == passmeRead[0x4])
-			&&	(0x00 == passmeRead[0x5])
-			&&	(0x00 == passmeRead[0x6])
-			&&	(0x00 == passmeRead[0x7])
-			&&	(0x00 == passmeRead[0x8])
-			&&	(0x00 == passmeRead[0x9])
-			&&	(0x00 == passmeRead[0xA])
-			&&	(0x00 == passmeRead[0xB])
-			&&	(0x50 == passmeRead[0xC])
-			&&	(0x41 == passmeRead[0xD])
-			&&	(0x53 == passmeRead[0xE])
-			&&	(0x53 == passmeRead[0xF])
-			&&	(0x30 == passmeRead[0x10])
-			&&	(0x31 == passmeRead[0x11])
-			&&	(0x96 == passmeRead[0x12])
-			&&	(0x00 == passmeRead[0x13])
-		)
-	){
-		mode = isNDSBinaryV2;
-	}
-	else if(
-		(checkCounter == 0) &&
-		(arm9EntryAddress >= 0x02000000) &&
-		//(gotDLDISection == true) && //some v2+ homebrew may have the DLDI section stripped (such as barebones demos without filesystem at the time the translation unit built the ARM9 payload)
-			//Slot 1 passme v3 (2009+ NTR homebrew)
-			(0x53 == passmeRead[0x0])
-			&&	(0x52 == passmeRead[0x1])
-			&&	(0x41 == passmeRead[0x2])
-			&&	(0x4D == passmeRead[0x3])
-			&&	(0x5F == passmeRead[0x4])
-			&&	(0x56 == passmeRead[0x5])
-			&&	(0x31 == passmeRead[0x6])
-			&&	(0x31 == passmeRead[0x7])
-			&&	(0x30 == passmeRead[0x8])
-			&&	(0x00 == passmeRead[0x9])
-			&&	(0x00 == passmeRead[0xA])
-			&&	(0x00 == passmeRead[0xB])
-			&&	(0x50 == passmeRead[0xC])
-			&&	(0x41 == passmeRead[0xD])
-			&&	(0x53 == passmeRead[0xE])
-			&&	(0x53 == passmeRead[0xF])
-			&&	(0x30 == passmeRead[0x10])
-			&&	(0x31 == passmeRead[0x11])
-			&&	(0x96 == passmeRead[0x12])
-			&&	(0x00 == passmeRead[0x13])
-	){
-		mode = isNDSBinaryV3;
-	}
-	
-	//TWL Slot 1 / Internal SD mode: (2009+ TWL homebrew)
-	else if( 
-		(checkCounter > 0) && (arm9EntryAddress >= 0x02000000) && (arm9EntryAddress <= 0x02FFFFFF) &&
-		(
-			((arm7EntryAddress >= 0x02000000) && (arm7EntryAddress <= 0x02FFFFFF))
-			||
-			((arm7EntryAddress >= 0x037F8000) && (arm7EntryAddress <= 0x03810000))
-		)
-		//&&
-		//(gotDLDISection == true) //some homebrew may have the DLDI section stripped (such as barebones demos without filesystem at the time the translation unit built the ARM9 payload)
-	){
-		mode = isTWLBinary;
-		*ARM7i_HEADER_SCFG_EXT7 = *(u32*)&NDSHeaderStruct[0x1B8];	//0x1B8h 4    ARM7 SCFG_EXT7 setting (bit0,1,2,10,18,31)
-	}
-	
-	//Check for Headerless NTR binary (2004 homebrew on custom devkits, or custom devkits overall)
-	if( 
-		(arm7EntryAddress >= 0x02000000)
-		&&
-		(arm9EntryAddress >= 0x02000000)
-		&&
-		(arm7BootCodeSize > 0)
-		&&
-		(arm9BootCodeSize > 0)
-		&&
-		(arm9BootCodeOffsetInFile > 0) //even headerless Passme NTR binaries reserve the NTR header section of 0x200 bytes
-		&&
-		(mode == notTWLOrNTRBinary)
-		&&
-		(checkCounter == 0)
-	){
-		mode = isNDSBinaryV1;
-	}
-	return mode;
+	return isNTROrTWLBinaryTGDSShared(NDSHeaderStructInst, (u8*)&passmeRead[0], ARM7i_HEADER_SCFG_EXT7Inst);
 }
 
 
@@ -336,7 +173,8 @@ void bootfile(){
 		}
 		
 		pf_lseek(0, currentFH);
-		int isNTRTWLBinary = isNTROrTWLBinaryTGDSMB7(currentFH);
+		int isNTRTWLBinary = isNTROrTWLBinaryTGDSMB7(currentFH, &NDSHeaderStruct, sizeof(NDSHeaderStruct), ARM7i_HEADER_SCFG_EXT7);
+
 		if(
 			(isNTRTWLBinary == isNDSBinaryV1) || (isNTRTWLBinary == isNDSBinaryV2) || (isNTRTWLBinary == isNDSBinaryV3) || (isNTRTWLBinary == isNDSBinaryV1Slot2)
 			||

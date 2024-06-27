@@ -89,6 +89,8 @@ USA
 extern "C"{
 #endif
 
+extern int isNTROrTWLBinaryTGDSShared(u8 * NDSHeaderStruct, u8 * passmeRead, u32 * ARM7i_HEADER_SCFG_EXT7Inst);
+
 #ifdef ARM9
 extern bool TGDSMultibootRunNDSPayload(char * filename, u8 * tgdsMbv3ARM7Bootldr);
 extern void executeARM7Payload(u32 arm7entryaddress, int arm7BootCodeSize, u32 * payload);

@@ -40,7 +40,7 @@ extern u8 NDSHeaderStruct[4096];
 extern char debugBuf7[256];
 extern bool stopSoundStreamUser();
 extern void bootfile();
-extern int isNTROrTWLBinaryTGDSMB7(FATFS * currentFH);
+extern int isNTROrTWLBinaryTGDSMB7(FATFS * currentFH, u8 * NDSHeaderStructInst, int NDSHeaderStructSize, u32 * ARM7i_HEADER_SCFG_EXT7Inst);
 
 #ifdef __cplusplus
 }
