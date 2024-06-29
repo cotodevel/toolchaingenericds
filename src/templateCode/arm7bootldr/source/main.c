@@ -17,6 +17,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 USA
 */
 
+
+////////////////////////////////TGDS-MB v3 VRAM Bootcode start////////////////////////////////
 #include "main.h"
 #include "biosTGDS.h"
 #include "spifwTGDS.h"
@@ -28,19 +30,26 @@ USA
 #include "exceptionTGDS.h"
 #include "dmaTGDS.h"
 
-////////////////////////////////TGDS-MB v3 VRAM Bootcode start////////////////////////////////
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
 FATFS fileHandle;					// Petit-FatFs work area 
 char fname[256];
 u8 NDSHeaderStruct[4096];
 char debugBuf7[256];
+struct addrList addresses[TGDS_MB_V3_ADDR_COUNT];
 
-/*
-//If NTR/TWL Binary
-	int isNTRTWLBinary = isNTROrTWLBinaryTGDSMB7(fh);
-	//Trying to boot a TWL binary in NTR mode? 
-	if(!(isNTRTWLBinary == isNDSBinaryV1) && !(isNTRTWLBinary == isNDSBinaryV2) && !(isNTRTWLBinary == isNDSBinaryV3) && !(isNTRTWLBinary == isTWLBinary) && !(isNTRTWLBinary == isNDSBinaryV1Slot2)){
-	}
-*/
+// Comparison function
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+int compare(const void* a, const void* b) {
+    return ( ((struct addrList*)a)->armRamAddress > ((struct addrList*)b)->armRamAddress);
+}
 
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("O0")))
@@ -142,6 +151,24 @@ __attribute__((optimize("Os")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
+u32 getEntryPointByType(u32 inType){
+	int count = sizeof(addresses) / sizeof(struct addrList);
+	qsort(addresses, count, sizeof(struct addrList), compare);
+	int i = 0;
+	for(i = 0; i < count; i++){
+		if(addresses[i].type == inType){
+			return addresses[i].armEntryAddress;
+		}
+	}
+	return -1;
+}
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void bootfile(){
 	//Wait for 96K ARM7 mapped @ 0x037f8000 ~ 0x03810000 & Clean IWRAM
 	while( !(WRAM_CR & WRAM_0KARM9_32KARM7) ){
@@ -152,6 +179,7 @@ void bootfile(){
 	uint8_t fresult;
 	FATFS * currentFH = &fileHandle;
 	char * filename = (char*)(TGDS_MB_V3_BOOTSTUB_FILENAME);
+	memset(&addresses, 0, sizeof(addresses));
 	strcpy((char*)fname, &filename[2]);
 	
 	fresult = pf_mount(currentFH);
@@ -204,6 +232,13 @@ void bootfile(){
 			u32 arm7EntryAddress = NDSHdr->arm7entryaddress;	
 			u32 arm7ramaddress = NDSHdr->arm7ramaddress;
 			
+			//Incoming address list: ARM7 [arm7.bin]
+			addresses[0].armRamAddress = arm7ramaddress;
+			addresses[0].armEntryAddress = arm7EntryAddress;
+			addresses[0].armBootCodeOffsetInFile = arm7BootCodeOffsetInFile;
+			addresses[0].armBootCodeSize = arm7BootCodeSize;
+			addresses[0].type = TGDS_MB_V3_TYPE_ENTRYPOINT_ARM7;
+			
 			//Clear arm7 ram
 			dmaFillHalfWord(0, 0, ((uint32)arm7ramaddress), ((uint32)arm7BootCodeSize) );
 			
@@ -221,69 +256,12 @@ void bootfile(){
 			//Clear arm9 ram
 			dmaFillHalfWord(0, 0, ((uint32)arm9ramaddress), ((uint32)arm9BootCodeSize) );
 			
-			pf_lseek(arm9BootCodeOffsetInFile, currentFH);
-			pf_read((u8*)arm9ramaddress, arm9BootCodeSize, &nbytes_read, currentFH);
-			if( ((int)nbytes_read) != ((int)arm9BootCodeSize) ){
-				int stage = 10;
-				strcpy(debugBuf7, "TGDS-MB: arm7bootldr/bootfile():[");
-				strcat(debugBuf7, filename);
-				strcat(debugBuf7, "] ARM9 payload write FAIL...");
-				handleDSInitOutputMessage((char*)&debugBuf7[0]);
-				handleDSInitError7(stage, (u32)savedDSHardware);
-			}
-			/*
-			else{
-				int stage = 10;
-				char buffer[sizeof(int) * 10 + 1];
-				
-				itoa(arm9ramaddress, buffer, 16);
-				
-				strcpy(debugBuf7, "TGDS-MB: arm7bootldr/bootfile():");
-				strcat(debugBuf7, "ARM9 payload[");
-				strcat(debugBuf7, buffer);
-				strcat(debugBuf7, "]:size(0x");
-				
-				itoa(arm9BootCodeSize, buffer, 16);
-				
-				strcat(debugBuf7, buffer);
-				strcat(debugBuf7, ")");
-				
-				handleDSInitOutputMessage((char*)&debugBuf7[0]);
-				handleDSInitError7(stage, (u32)savedDSHardware);
-			}
-			*/
-			
-			pf_lseek(arm7BootCodeOffsetInFile, currentFH);
-			pf_read((u8*)arm7ramaddress, arm7BootCodeSize, &nbytes_read, currentFH);
-			if( ((int)nbytes_read) != ((int)arm7BootCodeSize) ){
-				int stage = 10;
-				strcpy(debugBuf7, "TGDS-MB: arm7bootldr/bootfile():[");
-				strcat(debugBuf7, filename);
-				strcat(debugBuf7, "] ARM7 payload write FAIL...");
-				handleDSInitOutputMessage((char*)&debugBuf7[0]);
-				handleDSInitError7(stage, (u32)savedDSHardware);
-			}
-			/*
-			else{
-				int stage = 10;
-				char buffer[sizeof(int) * 10 + 1];
-				
-				itoa(arm7ramaddress, buffer, 16);
-				
-				strcpy(debugBuf7, "TGDS-MB: arm7bootldr/bootfile():");
-				strcat(debugBuf7, "ARM7 payload[");
-				strcat(debugBuf7, buffer);
-				strcat(debugBuf7, "]:size(0x");
-				
-				itoa(arm7BootCodeSize, buffer, 16);
-				
-				strcat(debugBuf7, buffer);
-				strcat(debugBuf7, ")");
-				
-				handleDSInitOutputMessage((char*)&debugBuf7[0]);
-				handleDSInitError7(stage, (u32)savedDSHardware);
-			}
-			*/
+			//Incoming address list: ARM9 [arm9.bin]
+			addresses[1].armRamAddress = arm9ramaddress;
+			addresses[1].armEntryAddress = arm9EntryAddress;
+			addresses[1].armBootCodeOffsetInFile = arm9BootCodeOffsetInFile;
+			addresses[1].armBootCodeSize = arm9BootCodeSize;
+			addresses[1].type = TGDS_MB_V3_TYPE_ENTRYPOINT_ARM9;
 			
 			//Turn off IRQs right now because an interrupt calling to ARM7 exception handler (through bios) crashes ARM7 
 			REG_IME = 0;
@@ -405,32 +383,41 @@ void bootfile(){
 				u32 arm7iBootCodeOffsetInFile = *(u32*)&NDSHeaderStruct[0x1D0];	//0x1D0 DSi7 ROM offset
 				u32 arm7iRamAddress = *(u32*)&NDSHeaderStruct[0x1D8];	//0x1D8   DSi7 RAM address
 				int arm7iBootCodeSize = *(u32*)&NDSHeaderStruct[0x1DC];	//0x1DC   DSi7 code size
-				if((arm7iRamAddress >= ARM_MININUM_LOAD_ADDR) && (arm7iBootCodeSize > 0)){
-					pf_lseek(arm7iBootCodeOffsetInFile, currentFH);
-					pf_read((u8*)arm7iRamAddress, arm7iBootCodeSize, &nbytes_read, currentFH);
-					if( ((int)nbytes_read) != ((int)arm7iBootCodeSize) ){
-						int stage = 10;
-						strcpy(debugBuf7, "TGDS-MB: arm7bootldr/bootfile():[");
-						strcat(debugBuf7, filename);
-						strcat(debugBuf7, "] ARM7i payload write FAIL...");
-						handleDSInitOutputMessage((char*)&debugBuf7[0]);
-						handleDSInitError7(stage, (u32)savedDSHardware);
-					}
-				}
+				
+				//Incoming address list: TWL [arm7i.bin]
+				addresses[2].armRamAddress = arm7iRamAddress;
+				addresses[2].armEntryAddress = 0;
+				addresses[2].armBootCodeOffsetInFile = arm7iBootCodeOffsetInFile;
+				addresses[2].armBootCodeSize = arm7iBootCodeSize;
+				addresses[2].type = TGDS_MB_V3_TYPE_DEFAULT_VALUE;
 				
 				u32 arm9iBootCodeOffsetInFile = *(u32*)&NDSHeaderStruct[0x1C0];	//0x1C0   DSi9 ROM offset
 				u32 arm9iRamAddress = *(u32*)&NDSHeaderStruct[0x1C8];	//0x1C8   DSi9 RAM address
 				int arm9iBootCodeSize = *(u32*)&NDSHeaderStruct[0x1CC];	//0x1CC   DSi9 code size
-				if((arm9iRamAddress >= ARM_MININUM_LOAD_ADDR) && (arm9iBootCodeSize > 0)){
-					pf_lseek(arm9iBootCodeOffsetInFile, currentFH);
-					pf_read((u8*)arm9iRamAddress, arm9iBootCodeSize, &nbytes_read, currentFH);
-					if( ((int)nbytes_read) != ((int)arm9iBootCodeSize) ){
-						int stage = 10;
-						strcpy(debugBuf7, "TGDS-MB: arm7bootldr/bootfile():[");
-						strcat(debugBuf7, filename);
-						strcat(debugBuf7, "] ARM9i payload write FAIL...");
-						handleDSInitOutputMessage((char*)&debugBuf7[0]);
-						handleDSInitError7(stage, (u32)savedDSHardware);
+				
+				//Incoming address list: TWL [arm9i.bin]
+				addresses[3].armRamAddress = arm9iRamAddress;
+				addresses[3].armEntryAddress = 0;
+				addresses[3].armBootCodeOffsetInFile = arm9iBootCodeOffsetInFile;
+				addresses[3].armBootCodeSize = arm9iBootCodeSize;
+				addresses[3].type = TGDS_MB_V3_TYPE_DEFAULT_VALUE;
+				
+				//Copy addresses in lowest to highest order to prevent sections overlapping each other
+				int count = sizeof(addresses) / sizeof(struct addrList);
+				qsort(addresses, count, sizeof(struct addrList), compare);
+				int i = 0;
+				for(i = 0; i < count; i++){
+					if( addresses[i].armBootCodeSize > 0 ){
+						pf_lseek(addresses[i].armBootCodeOffsetInFile, currentFH);
+						pf_read((u8*)addresses[i].armRamAddress, addresses[i].armBootCodeSize, &nbytes_read, currentFH);
+						if( ((int)nbytes_read) != ((int)addresses[i].armBootCodeSize) ){
+							int stage = 10;
+							strcpy(debugBuf7, "TGDS-MB: arm7bootldr/bootfile():[");
+							strcat(debugBuf7, filename);
+							strcat(debugBuf7, "] ARM payload write FAIL...");
+							handleDSInitOutputMessage((char*)&debugBuf7[0]);
+							handleDSInitError7(stage, (u32)savedDSHardware);
+						}
 					}
 				}
 				
@@ -448,28 +435,6 @@ void bootfile(){
 					handleDSInitOutputMessage((char*)&debugBuf7[0]);
 					handleDSInitError7(stage, (u32)savedDSHardware);
 			}
-			
-			/*
-			{
-				int stage = 10;
-				char buffer[sizeof(int) * 10 + 1];
-				
-				itoa(arm7EntryAddress, buffer, 16);
-				
-				strcpy(debugBuf7, "TGDS-MB: arm7bootldr/bootfile():");
-				strcat(debugBuf7, "ARM7 payload execution [");
-				strcat(debugBuf7, buffer);
-				strcat(debugBuf7, "]:size(0x");
-				
-				itoa(arm7BootCodeSize, buffer, 16);
-				
-				strcat(debugBuf7, buffer);
-				strcat(debugBuf7, ")");
-				
-				handleDSInitOutputMessage((char*)&debugBuf7[0]);
-				handleDSInitError7(stage, (u32)savedDSHardware);
-			}
-			*/
 			
 			setValueSafe((u32*)ARM9_TWLORNTRPAYLOAD_MODE, (u32)isNTRTWLBinary);
 			setValueSafe((u32*)ARM9_BOOT_SIZE, (u32)arm9BootCodeSize);
