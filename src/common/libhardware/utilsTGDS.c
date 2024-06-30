@@ -740,17 +740,17 @@ void handleARGV(){
 #endif
 
 //Shuts off NTR/TWL unit
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void shutdownNDSHardware(){
 	#ifdef ARM7
-		#ifdef NTRMODE
-			int PMBitsRead = PowerManagementDeviceRead((int)POWMAN_READ_BIT);
-			PMBitsRead |= (int)(POWMAN_SYSTEM_PWR_BIT);
-			PowerManagementDeviceWrite(POWMAN_WRITE_BIT, (int)PMBitsRead);		
-		#endif
-		
-		#ifdef TWLMODE
-			i2cWriteRegister(I2C_PM, I2CREGPM_PWRCNT, 1);
-		#endif		
+		u32 PMBitsRead = PowerManagementDeviceRead((int)POWMAN_READ_BIT);
+		PMBitsRead |= (u32)(POWMAN_SYSTEM_PWR_BIT);	
+		PowerManagementDeviceWrite(POWMAN_WRITE_BIT, (int)PMBitsRead);
 	#endif
 	#ifdef ARM9
 		struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
@@ -762,6 +762,12 @@ void shutdownNDSHardware(){
 }
 
 //Resets TWL unit (only)
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void resetNDSHardware(){
 	#ifdef ARM7
 		#ifdef NTRMODE
@@ -769,7 +775,7 @@ void resetNDSHardware(){
 		#endif
 		
 		#ifdef TWLMODE
-			i2cWriteRegister(I2C_PM, I2CREGPM_RESETFLAG, 1);
+			i2cWriteRegister(I2C_PM, I2CREGPM_PWRCNT, 1);
 		#endif		
 	#endif
 	
