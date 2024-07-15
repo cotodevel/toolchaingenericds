@@ -32,7 +32,6 @@ USA
 #define FIFO_ARM7_RELOAD (u32)(0xFFFFABCA)
 
 #define TGDS_MB_V3_MEMBASE ((int)0x02FFE000) //can't be 0x02FFF000 or 0x027FF000 due to shared ram IO and header section otherwise breaks stuff
-#define ARM9_STRING_PTR ((u32*)(TGDS_MB_V3_MEMBASE-(4*0)))
 #define ARM9_BOOT_SIZE ((u32*)(TGDS_MB_V3_MEMBASE-(4*1)))
 #define ARM7_BOOT_SIZE ((u32*)(TGDS_MB_V3_MEMBASE-(4*2)))
 #define ARM7_BOOTCODE_OFST ((u32*)(TGDS_MB_V3_MEMBASE-(4*3)))
@@ -50,16 +49,38 @@ USA
 //The base address all four ARM7/ARM9/ARM7i/ARM9i should have at least to be ran through TGDS-MB v3
 #define ARM_MININUM_LOAD_ADDR ((u32)0x01000000)
 
-
 //tgds_mb_payload.bin (NTR/TWL): 
-//0x02400000 - 304K (0x4C000) = Entrypoint: 0x023B0000
-#define TGDS_MB_V3_PAYLOAD_ADDR ((u32*)0x023B0000)
-#define TGDS_MB_V3_ARM7_STAGE1_ADDR ( ((int)TGDS_MB_V3_PAYLOAD_ADDR) -  (96*1024) )	//0x02398000
+#define TGDS_MB_V3_PAYLOAD_ADDR ((u32*)0x2328000) //NTR homebrew up to 3.3M~ is executable, because of TGDS-mb remoteboot
+#define TGDS_MB_V3_PAYLOAD_ADDR_TWL ((u32*)0x2F28000)
+#define TGDS_MB_V3_ARM7_STAGE1_ADDR ( ((int)TGDS_MB_V3_PAYLOAD_ADDR) -  (96*1024) )
+#define TGDS_MB_V3_FREEMEM_NTR ((int)0x328000)
+#define TGDS_MB_V3_FREEMEM_TWL ((int)0xF28000)
 
-//Workram (0x02000000 ~ 0x80000) = 512K 
-#define TGDS_MB_V3_WORKBUFFER ((int)(0x02000000 + (512*1024)))
+//Workram
+#define TGDS_MB_V3_WORKBUFFER_SIZE ((int)64*1024)
+#define TGDS_MB_V3_BOOTSTUB_FILENAME ((char*)"0:/tgdsboot.bin")
+#define TGDS_MB_V3_MAGICWORD ((u32)0xc070F8F8)
 
 
+#ifdef ARM9
+#define REG_EXMEMCNT (*(volatile uint16*)0x04000204)
+#else
+#define REG_EXMEMSTAT (*(volatile uint16*)0x04000204)
+#endif
+
+#define ARM7_MAIN_RAM_PRIORITY (1 << 15)
+#define ARM7_OWNS_CARD (1 << 11)
+#define ARM7_OWNS_ROM  (1 << 7)
+
+#define REG_MBK1 ((volatile uint8*)0x04004040) /* WRAM_A 0..3 */
+#define REG_MBK2 ((volatile uint8*)0x04004044) /* WRAM_B 0..3 */
+#define REG_MBK3 ((volatile uint8*)0x04004048) /* WRAM_B 4..7 */
+#define REG_MBK4 ((volatile uint8*)0x0400404C) /* WRAM_C 0..3 */
+#define REG_MBK5 ((volatile uint8*)0x04004050) /* WRAM_C 4..7 */
+#define REG_MBK6 (*(volatile uint32*)0x04004054)
+#define REG_MBK7 (*(volatile uint32*)0x04004058)
+#define REG_MBK8 (*(volatile uint32*)0x0400405C)
+#define REG_MBK9 (*(volatile uint32*)0x04004060)
 
 #endif
 
@@ -68,9 +89,19 @@ USA
 extern "C"{
 #endif
 
+extern int isNTROrTWLBinaryTGDSShared(u8 * NDSHeaderStruct, u8 * passmeRead, u32 * ARM7i_HEADER_SCFG_EXT7Inst);
+
 #ifdef ARM9
-extern bool TGDSMultibootRunNDSPayload(char * filename);
+extern bool TGDSMultibootRunNDSPayload(char * filename, u8 * tgdsMbv3ARM7Bootldr);
 extern void executeARM7Payload(u32 arm7entryaddress, int arm7BootCodeSize, u32 * payload);
+#endif
+
+#ifdef ARM7
+extern void initMBK();
+#endif
+
+#ifdef ARM9
+extern void initMBKARM9();
 #endif
 
 #ifdef __cplusplus
