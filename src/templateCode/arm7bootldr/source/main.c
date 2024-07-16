@@ -153,7 +153,6 @@ __attribute__ ((optnone))
 #endif
 u32 getEntryPointByType(u32 inType){
 	int count = sizeof(addresses) / sizeof(struct addrList);
-	qsort(addresses, count, sizeof(struct addrList), compare);
 	int i = 0;
 	for(i = 0; i < count; i++){
 		if(addresses[i].type == inType){
@@ -404,7 +403,7 @@ void bootfile(){
 				
 				//Copy addresses in lowest to highest order to prevent sections overlapping each other
 				int count = sizeof(addresses) / sizeof(struct addrList);
-				qsort(addresses, count, sizeof(struct addrList), compare);
+				//qsort(addresses, count, sizeof(struct addrList), compare); //unused
 				int i = 0;
 				for(i = 0; i < count; i++){
 					if( addresses[i].armBootCodeSize > 0 ){
@@ -429,13 +428,59 @@ void bootfile(){
 			//NTR hardware trying to boot TWL binaries? Throw exception
 			else if( (__dsimode == false) && (isNTRTWLBinary == isTWLBinary) ){
 				int stage = 10;
-					strcpy(debugBuf7, "TGDS-MB: arm7bootldr/bootfile():[");
-					strcat(debugBuf7, filename);
-					strcat(debugBuf7, "] TWL Binary UNSUPPORTED in NTR Unit.");
-					handleDSInitOutputMessage((char*)&debugBuf7[0]);
-					handleDSInitError7(stage, (u32)savedDSHardware);
+				strcpy(debugBuf7, "TGDS-MB: arm7bootldr/bootfile():[");
+				strcat(debugBuf7, filename);
+				strcat(debugBuf7, "] TWL Binary UNSUPPORTED in NTR Unit.");
+				handleDSInitOutputMessage((char*)&debugBuf7[0]);
+				handleDSInitError7(stage, (u32)savedDSHardware);
 			}
 			
+			bool isTGDSTWLHomebrew = false;
+			u32 * TGDSHdr = (u32*)&NDSHeaderStruct[0];
+			u16 * TGDSHdr2 = (u16*)&TGDSHdr[4];
+			//"NDS.TinyFB..TGDSNN" TGDS-TWL homebrew
+			if(
+				(TGDSHdr[0] == (u32)0x2E53444E)
+				&&
+				(TGDSHdr[1] == (u32)0x796E6954)
+				&&
+				(TGDSHdr[2] == (u32)0x00004246)
+				&&
+				(TGDSHdr[3] == (u32)0x53444754)
+				&&
+				(TGDSHdr2[0] == (u16)0x4E4E)
+				&&
+				(isNTRTWLBinary == isTWLBinary)
+			){
+				isTGDSTWLHomebrew = true;
+			}
+			
+			//SM64 DSi port (DKARM): (https://github.com/Hydr8gon/sm64/commit/7d50caa3856be22dd167f1bfa874f8e5f3ad2b0e) 
+			//has a libnds bug in its initialization routines (segfaults). Since TGDS don't use them, stub them.
+			uint32 crc0 = (u32)swiCRC16( 0xffff, (uint8*)arm9ramaddress, 512*1024);
+			if(	
+				(__dsimode == true)
+				&&
+				(isNTRTWLBinary == isTWLBinary)
+				&&
+				(isTGDSTWLHomebrew == false)
+				&&
+				((uint32)crc0 == ((uint32)0x000021DC))
+			){
+				*(u16*)0x020D5340 = 0x2500;
+			}
+			
+			//Sound fix on DKARM homebrew
+			if(
+				(isNTRTWLBinary == isTWLBinary)
+				&&
+				(isTGDSTWLHomebrew == false)
+			){
+				*(u32*)0x04004008 = *ARM7i_HEADER_SCFG_EXT7;
+			}
+			initSound();
+			
+			setValueSafe((u32*)TGDS_IS_TGDS_HOMEBREW, (u32)isTGDSTWLHomebrew);
 			setValueSafe((u32*)ARM9_TWLORNTRPAYLOAD_MODE, (u32)isNTRTWLBinary);
 			setValueSafe((u32*)ARM9_BOOT_SIZE, (u32)arm9BootCodeSize);
 			setValueSafe((u32*)ARM7_BOOT_SIZE, (u32)arm7BootCodeSize);
