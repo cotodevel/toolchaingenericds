@@ -35,7 +35,7 @@ __attribute__((optimize("O0")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-int isNTROrTWLBinaryTGDSShared(u8 * NDSHeaderStructInst, u8 * passmeRead, u32 * ARM7i_HEADER_SCFG_EXT7Inst) {
+int isNTROrTWLBinaryTGDSShared(u8 * NDSHeaderStructInst, u8 * passmeRead, u32 * ARM7i_HEADER_SCFG_EXT7Inst, bool * inIsTGDSTWLHomebrew) {
 	int mode = notTWLOrNTRBinary;
 	struct sDSCARTHEADER * NDSHdr = (struct sDSCARTHEADER *)NDSHeaderStructInst;
 	u32 arm9EntryAddress = NDSHdr->arm9entryaddress;
@@ -199,6 +199,29 @@ int isNTROrTWLBinaryTGDSShared(u8 * NDSHeaderStructInst, u8 * passmeRead, u32 * 
 	){
 		mode = isNDSBinaryV1;
 	}
+	
+	u32 * TGDSHdr = (u32*)&NDSHeaderStructInst[0];
+	u16 * TGDSHdr2 = (u16*)&TGDSHdr[4];
+	//"NDS.TinyFB..TGDSNN" TGDS-TWL homebrew
+	if(
+		(TGDSHdr[0] == (u32)0x2E53444E)
+		&&
+		(TGDSHdr[1] == (u32)0x796E6954)
+		&&
+		(TGDSHdr[2] == (u32)0x00004246)
+		&&
+		(TGDSHdr[3] == (u32)0x53444754)
+		&&
+		(TGDSHdr2[0] == (u16)0x4E4E)
+		&&
+		(mode == isTWLBinary)
+	){
+		*inIsTGDSTWLHomebrew = true;
+	}
+	else{
+		*inIsTGDSTWLHomebrew = false;
+	}
+	
 	return mode;
 }
 
@@ -207,7 +230,6 @@ int isNTROrTWLBinaryTGDSShared(u8 * NDSHeaderStructInst, u8 * passmeRead, u32 * 
 #include "videoTGDS.h"
 
 //ToolchainGenericDS-multiboot NDS Binary loader: Requires tgds_multiboot_payload_ntr.bin / tgds_multiboot_payload_twl.bin (TGDS-multiboot Project) in SD root.
-__attribute__((section(".itcm")))
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("O0")))
 #endif
@@ -217,7 +239,8 @@ __attribute__ ((optnone))
 #endif
 bool TGDSMultibootRunNDSPayload(char * filename, u8 * tgdsMbv3ARM7Bootldr) {
 	char * TGDSMBPAYLOAD = NULL;
-	register int isNTRTWLBinary = isNTROrTWLBinary(filename);
+	bool isTGDSTWLHomebrew = false;
+	register int isNTRTWLBinary = isNTROrTWLBinary(filename, &isTGDSTWLHomebrew);
 	memset(msgDebugException, 0, MAX_TGDSFILENAME_LENGTH);
 	//NTR mode? Can only boot valid NTR binaries, the rest is skipped.
 	if((__dsimode == false) && !(isNTRTWLBinary == isNDSBinaryV1Slot2) && !(isNTRTWLBinary == isNDSBinaryV1) && !(isNTRTWLBinary == isNDSBinaryV2) && !(isNTRTWLBinary == isNDSBinaryV3) ){
@@ -333,6 +356,8 @@ bool TGDSMultibootRunNDSPayload(char * filename, u8 * tgdsMbv3ARM7Bootldr) {
 		
 		setValueSafe((u32*)ARM9_TWLORNTRPAYLOAD_MODE, (u32)isNTRTWLBinary); 
 		setValueSafe((u32*)ARM7_ARM9_SAVED_DSFIRMWARE, savedDSHardware); //required by TGDS-multiboot's tgds_multiboot_payload.bin
+		setValueSafe((u32*)TGDS_IS_TGDS_TWL_HOMEBREW, (u32)isTGDSTWLHomebrew); //is TGDS TWL homebrew? Uses special map
+		
 		FILE * tgdsPayloadFh = fopen(TGDSMBPAYLOAD, "r");
 		if(tgdsPayloadFh != NULL){
 			fseek(tgdsPayloadFh, 0, SEEK_SET);

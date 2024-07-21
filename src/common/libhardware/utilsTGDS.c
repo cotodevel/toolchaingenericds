@@ -1221,7 +1221,7 @@ __attribute__((optimize("O0")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-int isNTROrTWLBinary(char * filename){
+int isNTROrTWLBinary(char * filename, bool * inIsTGDSTWLHomebrew){
 	FILE * fh = fopen(filename, "r");
 	int headerSize = sizeof(struct sDSCARTHEADER);
 	u8 * NDSHeader = (u8 *)TGDSARM9Malloc(headerSize*sizeof(u8));
@@ -1237,7 +1237,7 @@ int isNTROrTWLBinary(char * filename){
 		fread(&passmeRead[0], 1, sizeof(passmeRead), fh);
 	}
 	u32 ARM7i_HEADER_SCFG_EXT7Def = 0; //unused, just stub it
-	int mode = isNTROrTWLBinaryTGDSShared(NDSHeader, (u8*)&passmeRead[0], &ARM7i_HEADER_SCFG_EXT7Def);
+	int mode = isNTROrTWLBinaryTGDSShared(NDSHeader, (u8*)&passmeRead[0], &ARM7i_HEADER_SCFG_EXT7Def, inIsTGDSTWLHomebrew);
 	TGDSARM9Free(NDSHeader);
 	fclose(fh);
 	return mode;
