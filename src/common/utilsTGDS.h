@@ -284,7 +284,7 @@ extern void reportTGDSPayloadMode(u32 bufferSource, char * ARM7OutLog, char * AR
 #ifdef ARM9
 extern char bufModeARM7[256];
 extern void addARGV(int argc, char *argv);
-extern int isNTROrTWLBinary(char * filename);
+extern int isNTROrTWLBinary(char * filename, bool * inIsTGDSTWLHomebrew);
 #endif
 
 extern int isThisPayloadNTROrTWLMode();

@@ -54,7 +54,7 @@ extern u8 NDSHeaderStruct[4096];
 extern char debugBuf7[256];
 extern bool stopSoundStreamUser();
 extern void bootfile();
-extern int isNTROrTWLBinaryTGDSMB7(FATFS * currentFH, u8 * NDSHeaderStructInst, int NDSHeaderStructSize, u32 * ARM7i_HEADER_SCFG_EXT7Inst);
+extern int isNTROrTWLBinaryTGDSMB7(FATFS * currentFH, u8 * NDSHeaderStructInst, int NDSHeaderStructSize, u32 * ARM7i_HEADER_SCFG_EXT7Inst, bool * inIsTGDSTWLHomebrew);
 extern struct addrList addresses[TGDS_MB_V3_ADDR_COUNT];
 extern u32 getEntryPointByType(u32 inType);
 

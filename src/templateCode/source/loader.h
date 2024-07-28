@@ -46,6 +46,9 @@ USA
 #define ARM7i_RAM_ADDRESS ((u32*)(TGDS_MB_V3_MEMBASE-(4*11)))
 #define ARM7i_BOOT_SIZE ((u32*)(TGDS_MB_V3_MEMBASE-(4*12)))
 #define TGDS_IS_TGDS_HOMEBREW ((u32*)(TGDS_MB_V3_MEMBASE-(4*13)))
+#define TGDS_IS_TGDS_TWL_HOMEBREW ((u32*)(TGDS_MB_V3_MEMBASE-(4*14)))
+#define TGDS_MB_V3_PAYLOAD_SIZE ((u32*)(TGDS_MB_V3_MEMBASE-(4*15)))
+
 #define TGDS_ARGV_BUFFER ((u32*)(((int)0x02000000)-(512)))	//itcm
 
 //The base address all four ARM7/ARM9/ARM7i/ARM9i should have at least to be ran through TGDS-MB v3
@@ -91,10 +94,10 @@ USA
 extern "C"{
 #endif
 
-extern int isNTROrTWLBinaryTGDSShared(u8 * NDSHeaderStruct, u8 * passmeRead, u32 * ARM7i_HEADER_SCFG_EXT7Inst);
+extern int isNTROrTWLBinaryTGDSShared(u8 * NDSHeaderStruct, u8 * passmeRead, u32 * ARM7i_HEADER_SCFG_EXT7Inst, bool * inIsTGDSTWLHomebrew);
 
 #ifdef ARM9
-extern bool TGDSMultibootRunNDSPayload(char * filename, u8 * tgdsMbv3ARM7Bootldr);
+extern bool TGDSMultibootRunNDSPayload(char * filename, u8 * tgdsMbv3ARM7Bootldr, int argc, char *argv);
 extern void executeARM7Payload(u32 arm7entryaddress, int arm7BootCodeSize, u32 * payload);
 #endif
 

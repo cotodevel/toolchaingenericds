@@ -57,7 +57,7 @@ __attribute__((optimize("O0")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-int isNTROrTWLBinaryTGDSMB7(FATFS * currentFH, u8 * NDSHeaderStructInst, int NDSHeaderStructSize, u32 * ARM7i_HEADER_SCFG_EXT7Inst){
+int isNTROrTWLBinaryTGDSMB7(FATFS * currentFH, u8 * NDSHeaderStructInst, int NDSHeaderStructSize, u32 * ARM7i_HEADER_SCFG_EXT7Inst, bool * inIsTGDSTWLHomebrew){
 	uint8_t fresult;
 	int headerSize = NDSHeaderStructSize;
 	u8 passmeRead[24];
@@ -73,7 +73,7 @@ int isNTROrTWLBinaryTGDSMB7(FATFS * currentFH, u8 * NDSHeaderStructInst, int NDS
 		pf_lseek(0xA0, currentFH);
 		pf_read((u8*)&passmeRead[0], sizeof(passmeRead), &nbytes_read, currentFH);
 	}
-	return isNTROrTWLBinaryTGDSShared(NDSHeaderStructInst, (u8*)&passmeRead[0], ARM7i_HEADER_SCFG_EXT7Inst);
+	return isNTROrTWLBinaryTGDSShared(NDSHeaderStructInst, (u8*)&passmeRead[0], ARM7i_HEADER_SCFG_EXT7Inst, inIsTGDSTWLHomebrew);
 }
 
 
@@ -174,7 +174,7 @@ void bootfile(){
 		swiDelay(1);
 	}
 	dmaFillHalfWord(0, 0, ((uint32)0x037f8000), (uint32)(96*1024));
-	
+	bool isTGDSTWLHomebrew = false;
 	uint8_t fresult;
 	FATFS * currentFH = &fileHandle;
 	char * filename = (char*)(TGDS_MB_V3_BOOTSTUB_FILENAME);
@@ -200,7 +200,7 @@ void bootfile(){
 		}
 		
 		pf_lseek(0, currentFH);
-		int isNTRTWLBinary = isNTROrTWLBinaryTGDSMB7(currentFH, &NDSHeaderStruct, sizeof(NDSHeaderStruct), ARM7i_HEADER_SCFG_EXT7);
+		int isNTRTWLBinary = isNTROrTWLBinaryTGDSMB7(currentFH, &NDSHeaderStruct, sizeof(NDSHeaderStruct), ARM7i_HEADER_SCFG_EXT7, &isTGDSTWLHomebrew);
 
 		if(
 			(isNTRTWLBinary == isNDSBinaryV1) || (isNTRTWLBinary == isNDSBinaryV2) || (isNTRTWLBinary == isNDSBinaryV3) || (isNTRTWLBinary == isNDSBinaryV1Slot2)
@@ -435,25 +435,6 @@ void bootfile(){
 				handleDSInitError7(stage, (u32)savedDSHardware);
 			}
 			
-			bool isTGDSTWLHomebrew = false;
-			u32 * TGDSHdr = (u32*)&NDSHeaderStruct[0];
-			u16 * TGDSHdr2 = (u16*)&TGDSHdr[4];
-			//"NDS.TinyFB..TGDSNN" TGDS-TWL homebrew
-			if(
-				(TGDSHdr[0] == (u32)0x2E53444E)
-				&&
-				(TGDSHdr[1] == (u32)0x796E6954)
-				&&
-				(TGDSHdr[2] == (u32)0x00004246)
-				&&
-				(TGDSHdr[3] == (u32)0x53444754)
-				&&
-				(TGDSHdr2[0] == (u16)0x4E4E)
-				&&
-				(isNTRTWLBinary == isTWLBinary)
-			){
-				isTGDSTWLHomebrew = true;
-			}
 			
 			//SM64 DSi port (DKARM): (https://github.com/Hydr8gon/sm64/commit/7d50caa3856be22dd167f1bfa874f8e5f3ad2b0e) 
 			//has a libnds bug in its initialization routines (segfaults). Since TGDS don't use them, stub them.

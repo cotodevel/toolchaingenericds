@@ -718,23 +718,29 @@ void handleARGV(){
 				}
 				else{
 					thisArgvPosix[i] = NULL;
+					argCount--;
 				}
 			}
 		}
-		__system_argv->argc = argCount;
+		
+		if(argCount <= 0){
+			argCount = 0;
+			memset((char *)__system_argv, 0, 256);
+		}
+		
+		__system_argv->argc = argCount;	
+		__system_argv->argvMagic = (int)ARGV_MAGIC;
+		__system_argv->argv = (char **)&thisArgv[0][0];
+		__system_argv->commandLine = (char**)&thisArgvPosix[0];
+		__system_argv->length = argvItems;
+		setGlobalArgc(__system_argv->argc);
+		setGlobalArgv(__system_argv->commandLine);
+		//extern int main(int argc, char **argv);
+		//main(__system_argv->length, __system_argv->commandLine);
 	}
 	else{
-		__system_argv->argc = 0;
+		memset((char *)__system_argv, 0, 256);
 	}
-	
-	__system_argv->argvMagic = (int)ARGV_MAGIC;
-	__system_argv->argv = (char **)&thisArgv[0][0];
-	__system_argv->commandLine = (char**)&thisArgvPosix[0];
-	__system_argv->length = argvItems;
-	setGlobalArgc(__system_argv->argc);
-	setGlobalArgv(__system_argv->commandLine);
-	//extern int main(int argc, char **argv);
-	//main(__system_argv->length, __system_argv->commandLine);
 }
 
 #endif
@@ -1035,10 +1041,11 @@ __attribute__((optimize("O0")))
 __attribute__ ((optnone))
 #endif
 void addARGV(int argc, char *argv){
+	memset(cmdline, 0, 512);
 	if((argc <= 0) || (argv == NULL)){
+		memset((char *)__system_argv, 0, 256);
 		return;
 	}
-	memset(cmdline, 0, 512);
 	int cmdlineLen = 0;
 	int i= 0;
 	for(i = 0; i < argc; i++){
@@ -1221,7 +1228,7 @@ __attribute__((optimize("O0")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-int isNTROrTWLBinary(char * filename){
+int isNTROrTWLBinary(char * filename, bool * inIsTGDSTWLHomebrew){
 	FILE * fh = fopen(filename, "r");
 	int headerSize = sizeof(struct sDSCARTHEADER);
 	u8 * NDSHeader = (u8 *)TGDSARM9Malloc(headerSize*sizeof(u8));
@@ -1237,7 +1244,7 @@ int isNTROrTWLBinary(char * filename){
 		fread(&passmeRead[0], 1, sizeof(passmeRead), fh);
 	}
 	u32 ARM7i_HEADER_SCFG_EXT7Def = 0; //unused, just stub it
-	int mode = isNTROrTWLBinaryTGDSShared(NDSHeader, (u8*)&passmeRead[0], &ARM7i_HEADER_SCFG_EXT7Def);
+	int mode = isNTROrTWLBinaryTGDSShared(NDSHeader, (u8*)&passmeRead[0], &ARM7i_HEADER_SCFG_EXT7Def, inIsTGDSTWLHomebrew);
 	TGDSARM9Free(NDSHeader);
 	fclose(fh);
 	return mode;
