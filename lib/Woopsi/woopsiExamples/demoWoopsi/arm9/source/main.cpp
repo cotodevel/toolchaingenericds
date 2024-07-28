@@ -199,7 +199,6 @@ int main(int argc, char **argv) {
 			strcpy(&thisArgv[0][0], curChosenBrowseFile);	//Arg0:	Chainload caller: TGDS-MB
 			strcpy(&thisArgv[1][0], thisTGDSProject);	//Arg1:	NDS Binary reloaded through ChainLoad
 			strcpy(&thisArgv[2][0], (char*)arg0);	//Arg2: NDS Binary reloaded through ChainLoad's ARG0
-			addARGV(newArgc, (char*)&thisArgv);				
 			
 			//todo
 			/*
