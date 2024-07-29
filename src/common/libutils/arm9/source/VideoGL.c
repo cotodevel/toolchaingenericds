@@ -774,7 +774,11 @@ void glEnable(int bits){
 	if((bits&GL_LIGHT3) == GL_LIGHT3){
 		globalGLCtx.GXPolygonAttributes |= GX_LIGHT3;
 	}
-
+	
+	if((bits&GL_DEPTH_TEST) == GL_DEPTH_TEST){
+		globalGLCtx.GXPolygonAttributes	|= (1 << 11);	// 11    Depth-value for Translucent Pixels    (0=Keep Old, 1=Set New Depth)
+	}
+	
 	//Enable blending direct colors into both vertice and normal light reflection matrices
 	if((bits&GL_COLOR_MATERIAL) == GL_COLOR_MATERIAL){
 		globalGLCtx.blendVertexAndNormalsFromColor = true;
@@ -820,6 +824,10 @@ void glDisable(int bits){
 
 	if((bits&GL_LIGHT3) == GL_LIGHT3){
 		globalGLCtx.GXPolygonAttributes &= ~(GX_LIGHT3);
+	}
+	
+	if((bits&GL_DEPTH_TEST) == GL_DEPTH_TEST){
+		globalGLCtx.GXPolygonAttributes	&= ~(1 << 11);	// 11    Depth-value for Translucent Pixels    (0=Keep Old, 1=Set New Depth)
 	}
 	
 	//Disable blending direct colors into both vertice and normal light reflection matrices
@@ -5529,6 +5537,23 @@ GLboolean glIsEnabled(
 		}break;
 	}
 	return GL_FALSE;
+}
+
+void glDepthFunc(GLenum func){
+	switch(func){
+		
+		//14    Depth Test, Draw Pixels with Depth    (0=Less, 1=Equal) (usually 0)
+			case GL_LESS:{
+				globalGLCtx.GXPolygonAttributes	&= ~(1 << 14);
+			}break;
+			case GL_EQUAL:{
+				globalGLCtx.GXPolygonAttributes	|= (1 << 14);
+			}break;
+		
+		default:{
+			errorStatus = GL_INVALID_ENUM;
+		}break;
+	}
 }
 
 //////////////////////////////////////////////////////////// Extended Vertex Array Buffers and Vertex Buffer Objects OpenGL 1.1 end //////////////////////////////////////////

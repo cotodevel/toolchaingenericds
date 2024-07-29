@@ -338,14 +338,7 @@ void free_crc32_table (void){
 	crc32_table = NULL;
 }
 
-#ifdef ARM9
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os"))) __attribute__((section(".itcm")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-#endif
+#ifdef _MSC_VER
 unsigned int crc32 (unsigned int *crc, const void *buffer, unsigned int size){
 	unsigned char *p = (unsigned char *)buffer;
 	if (!crc32_table){
@@ -359,6 +352,7 @@ unsigned int crc32 (unsigned int *crc, const void *buffer, unsigned int size){
 	free_crc32_table();
 	return ~(*crc);
 }
+#endif
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))

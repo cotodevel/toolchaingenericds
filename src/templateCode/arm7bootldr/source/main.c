@@ -17,6 +17,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 USA
 */
 
+
+////////////////////////////////TGDS-MB v3 VRAM Bootcode start////////////////////////////////
 #include "main.h"
 #include "biosTGDS.h"
 #include "spifwTGDS.h"
@@ -27,52 +29,27 @@ USA
 #include "dldi.h"
 #include "exceptionTGDS.h"
 #include "dmaTGDS.h"
-#include "spiTGDS.h"
-#include "timerTGDS.h"
 
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Firmware stuff
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
-void boot_readFirmware (uint32 address, uint8 * buffer, uint32 size) {
-  uint32 index;
-
-  // Read command
-  while (REG_SPI_CR & SPI_BUSY);
-  REG_SPI_CR = SPI_ENABLE | SPI_CONTINUOUS | SPI_DEVICE_NVRAM;
-  REG_SPIDATA = FW_READ;
-  while (REG_SPI_CR & SPI_BUSY);
-
-  // Set the address
-  REG_SPIDATA =  (address>>16) & 0xFF;
-  while (REG_SPI_CR & SPI_BUSY);
-  REG_SPIDATA =  (address>>8) & 0xFF;
-  while (REG_SPI_CR & SPI_BUSY);
-  REG_SPIDATA =  (address) & 0xFF;
-  while (REG_SPI_CR & SPI_BUSY);
-
-  for (index = 0; index < size; index++) {
-    REG_SPIDATA = 0;
-    while (REG_SPI_CR & SPI_BUSY);
-    buffer[index] = REG_SPIDATA & 0xFF;
-  }
-  REG_SPI_CR = 0;
-}
-
-
-
-////////////////////////////////TGDS-MB v3 VRAM Bootcode start////////////////////////////////
 FATFS fileHandle;					// Petit-FatFs work area 
 char fname[256];
 u8 NDSHeaderStruct[4096];
 char debugBuf7[256];
+struct addrList addresses[TGDS_MB_V3_ADDR_COUNT];
 
-/*
-//If NTR/TWL Binary
-	int isNTRTWLBinary = isNTROrTWLBinaryTGDSMB7(fh);
-	//Trying to boot a TWL binary in NTR mode? 
-	if(!(isNTRTWLBinary == isNDSBinaryV1) && !(isNTRTWLBinary == isNDSBinaryV2) && !(isNTRTWLBinary == isNDSBinaryV3) && !(isNTRTWLBinary == isTWLBinary) && !(isNTRTWLBinary == isNDSBinaryV1Slot2)){
-	}
-*/
+// Comparison function
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+int compare(const void* a, const void* b) {
+    return ( ((struct addrList*)a)->armRamAddress > ((struct addrList*)b)->armRamAddress);
+}
 
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("O0")))
@@ -80,186 +57,23 @@ __attribute__((optimize("O0")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-int isNTROrTWLBinaryTGDSMB7(FATFS * currentFH){
-	int mode = notTWLOrNTRBinary;
+int isNTROrTWLBinaryTGDSMB7(FATFS * currentFH, u8 * NDSHeaderStructInst, int NDSHeaderStructSize, u32 * ARM7i_HEADER_SCFG_EXT7Inst, bool * inIsTGDSTWLHomebrew){
 	uint8_t fresult;
-	int headerSize = sizeof(NDSHeaderStruct);
+	int headerSize = NDSHeaderStructSize;
 	u8 passmeRead[24];
 	memset(passmeRead, 0, sizeof(passmeRead));
-	memset(&NDSHeaderStruct, 0, headerSize);
+	memset(NDSHeaderStructInst, 0, headerSize);
 	pf_lseek(0, currentFH);
 	UINT nbytes_read;
-	pf_read((u8*)&NDSHeaderStruct, headerSize, &nbytes_read, currentFH);
+	pf_read((u8*)NDSHeaderStructInst, headerSize, &nbytes_read, currentFH);
 	if(nbytes_read != headerSize){
-		return mode;
+		return notTWLOrNTRBinary;
 	}
 	else{
 		pf_lseek(0xA0, currentFH);
 		pf_read((u8*)&passmeRead[0], sizeof(passmeRead), &nbytes_read, currentFH);
 	}
-	struct sDSCARTHEADER * NDSHdr = (struct sDSCARTHEADER *)&NDSHeaderStruct;
-	u32 arm9EntryAddress = NDSHdr->arm9entryaddress;
-	u32 arm7EntryAddress = NDSHdr->arm7entryaddress;
-	u32 arm9BootCodeOffsetInFile = NDSHdr->arm9romoffset;
-	int arm7BootCodeSize = NDSHdr->arm7size;
-	int arm9BootCodeSize = NDSHdr->arm9size;
-	int checkCounter = 0;
-	int i = 0;
-	for(i = 0; i < sizeof(NDSHdr->reserved1); i++){
-		checkCounter += NDSHdr->reserved1[i];
-	}
-	checkCounter += NDSHdr->reserved2;
-	if(
-		//(gotDLDISection == false) && //pre-DLDI era could be confused with no filesystem binaries, so skipped.
-		(
-			//Slot 2 passme v1 (pre 2008 NTR homebrew)
-			(0x66 == passmeRead[0x0])
-			&&	(0x72 == passmeRead[0x1])
-			&&	(0x61 == passmeRead[0x2])
-			&&	(0x6D == passmeRead[0x3])
-			&&	(0x65 == passmeRead[0x4])
-			&&	(0x62 == passmeRead[0x5])
-			&&	(0x75 == passmeRead[0x6])
-			&&	(0x66 == passmeRead[0x7])
-			&&	(0x66 == passmeRead[0x8])
-			&&	(0x65 == passmeRead[0x9])
-			&&	(0x72 == passmeRead[0xA])
-			&&	(0x5F == passmeRead[0xB])
-			&&	(0x50 == passmeRead[0xC])
-			&&	(0x41 == passmeRead[0xD])
-			&&	(0x53 == passmeRead[0xE])
-			&&	(0x53 == passmeRead[0xF])
-			&&	(0x44 == passmeRead[0x10])
-			&&	(0x46 == passmeRead[0x11])
-			&&	(0x96 == passmeRead[0x12])
-			&&	(0x00 == passmeRead[0x13])
-		)
-	){
-		mode = isNDSBinaryV1Slot2;
-	}
-
-	else if(
-		(checkCounter == 0) &&
-		(arm9EntryAddress >= 0x02000000) &&
-		//(gotDLDISection == false) && //pre-DLDI era could be confused with no filesystem binaries, so skipped.
-		(
-			//Slot 1 passme v1 (pre 2008 NTR homebrew)
-			(0x00 == passmeRead[0x0])
-			&&	(0x00 == passmeRead[0x1])
-			&&	(0x00 == passmeRead[0x2])
-			&&	(0x00 == passmeRead[0x3])
-			&&	(0x00 == passmeRead[0x4])
-			&&	(0x00 == passmeRead[0x5])
-			&&	(0x00 == passmeRead[0x6])
-			&&	(0x00 == passmeRead[0x7])
-			&&	(0x00 == passmeRead[0x8])
-			&&	(0x00 == passmeRead[0x9])
-			&&	(0x00 == passmeRead[0xA])
-			&&	(0x00 == passmeRead[0xB])
-			&&	(0x50 == passmeRead[0xC])
-			&&	(0x41 == passmeRead[0xD])
-			&&	(0x53 == passmeRead[0xE])
-			&&	(0x53 == passmeRead[0xF])
-			&&	(0x00 == passmeRead[0x10])
-			&&	(0x00 == passmeRead[0x11])
-			&&	(0x00 == passmeRead[0x12])
-			&&	(0x00 == passmeRead[0x13])
-		)
-	){
-		mode = isNDSBinaryV1;
-	}
-	else if(
-		(checkCounter == 0) &&
-		(arm9EntryAddress >= 0x02000000) &&
-		(
-			//Slot 1 passme v2 (pre 2008 NTR homebrew)
-			(0x00 == passmeRead[0x0])
-			&&	(0x00 == passmeRead[0x1])
-			&&	(0x00 == passmeRead[0x2])
-			&&	(0x00 == passmeRead[0x3])
-			&&	(0x00 == passmeRead[0x4])
-			&&	(0x00 == passmeRead[0x5])
-			&&	(0x00 == passmeRead[0x6])
-			&&	(0x00 == passmeRead[0x7])
-			&&	(0x00 == passmeRead[0x8])
-			&&	(0x00 == passmeRead[0x9])
-			&&	(0x00 == passmeRead[0xA])
-			&&	(0x00 == passmeRead[0xB])
-			&&	(0x50 == passmeRead[0xC])
-			&&	(0x41 == passmeRead[0xD])
-			&&	(0x53 == passmeRead[0xE])
-			&&	(0x53 == passmeRead[0xF])
-			&&	(0x30 == passmeRead[0x10])
-			&&	(0x31 == passmeRead[0x11])
-			&&	(0x96 == passmeRead[0x12])
-			&&	(0x00 == passmeRead[0x13])
-		)
-	){
-		mode = isNDSBinaryV2;
-	}
-	else if(
-		(checkCounter == 0) &&
-		(arm9EntryAddress >= 0x02000000) &&
-		//(gotDLDISection == true) && //some v2+ homebrew may have the DLDI section stripped (such as barebones demos without filesystem at the time the translation unit built the ARM9 payload)
-			//Slot 1 passme v3 (2009+ NTR homebrew)
-			(0x53 == passmeRead[0x0])
-			&&	(0x52 == passmeRead[0x1])
-			&&	(0x41 == passmeRead[0x2])
-			&&	(0x4D == passmeRead[0x3])
-			&&	(0x5F == passmeRead[0x4])
-			&&	(0x56 == passmeRead[0x5])
-			&&	(0x31 == passmeRead[0x6])
-			&&	(0x31 == passmeRead[0x7])
-			&&	(0x30 == passmeRead[0x8])
-			&&	(0x00 == passmeRead[0x9])
-			&&	(0x00 == passmeRead[0xA])
-			&&	(0x00 == passmeRead[0xB])
-			&&	(0x50 == passmeRead[0xC])
-			&&	(0x41 == passmeRead[0xD])
-			&&	(0x53 == passmeRead[0xE])
-			&&	(0x53 == passmeRead[0xF])
-			&&	(0x30 == passmeRead[0x10])
-			&&	(0x31 == passmeRead[0x11])
-			&&	(0x96 == passmeRead[0x12])
-			&&	(0x00 == passmeRead[0x13])
-	){
-		mode = isNDSBinaryV3;
-	}
-	
-	//TWL Slot 1 / Internal SD mode: (2009+ TWL homebrew)
-	else if( 
-		(checkCounter > 0) && (arm9EntryAddress >= 0x02000000) && (arm9EntryAddress <= 0x02FFFFFF) &&
-		(
-			((arm7EntryAddress >= 0x02000000) && (arm7EntryAddress <= 0x02FFFFFF))
-			||
-			((arm7EntryAddress >= 0x037F8000) && (arm7EntryAddress <= 0x03810000))
-		)
-		//&&
-		//(gotDLDISection == true) //some homebrew may have the DLDI section stripped (such as barebones demos without filesystem at the time the translation unit built the ARM9 payload)
-	){
-		mode = isTWLBinary;
-		*ARM7i_HEADER_SCFG_EXT7 = *(u32*)&NDSHeaderStruct[0x1B8];	//0x1B8h 4    ARM7 SCFG_EXT7 setting (bit0,1,2,10,18,31)
-	}
-	
-	//Check for Headerless NTR binary (2004 homebrew on custom devkits, or custom devkits overall)
-	if( 
-		(arm7EntryAddress >= 0x02000000)
-		&&
-		(arm9EntryAddress >= 0x02000000)
-		&&
-		(arm7BootCodeSize > 0)
-		&&
-		(arm9BootCodeSize > 0)
-		&&
-		(arm9BootCodeOffsetInFile > 0) //even headerless Passme NTR binaries reserve the NTR header section of 0x200 bytes
-		&&
-		(mode == notTWLOrNTRBinary)
-		&&
-		(checkCounter == 0)
-	){
-		mode = isNDSBinaryV1;
-	}
-	return mode;
+	return isNTROrTWLBinaryTGDSShared(NDSHeaderStructInst, (u8*)&passmeRead[0], ARM7i_HEADER_SCFG_EXT7Inst, inIsTGDSTWLHomebrew);
 }
 
 
@@ -337,16 +151,34 @@ __attribute__((optimize("Os")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
+u32 getEntryPointByType(u32 inType){
+	int count = sizeof(addresses) / sizeof(struct addrList);
+	int i = 0;
+	for(i = 0; i < count; i++){
+		if(addresses[i].type == inType){
+			return addresses[i].armEntryAddress;
+		}
+	}
+	return -1;
+}
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void bootfile(){
 	//Wait for 96K ARM7 mapped @ 0x037f8000 ~ 0x03810000 & Clean IWRAM
 	while( !(WRAM_CR & WRAM_0KARM9_32KARM7) ){
 		swiDelay(1);
 	}
 	dmaFillHalfWord(0, 0, ((uint32)0x037f8000), (uint32)(96*1024));
-	
+	bool isTGDSTWLHomebrew = false;
 	uint8_t fresult;
 	FATFS * currentFH = &fileHandle;
-	char * filename = (char*)(*ARM9_STRING_PTR);
+	char * filename = (char*)(TGDS_MB_V3_BOOTSTUB_FILENAME);
+	memset(&addresses, 0, sizeof(addresses));
 	strcpy((char*)fname, &filename[2]);
 	
 	fresult = pf_mount(currentFH);
@@ -368,7 +200,8 @@ void bootfile(){
 		}
 		
 		pf_lseek(0, currentFH);
-		int isNTRTWLBinary = isNTROrTWLBinaryTGDSMB7(currentFH);
+		int isNTRTWLBinary = isNTROrTWLBinaryTGDSMB7(currentFH, &NDSHeaderStruct, sizeof(NDSHeaderStruct), ARM7i_HEADER_SCFG_EXT7, &isTGDSTWLHomebrew);
+
 		if(
 			(isNTRTWLBinary == isNDSBinaryV1) || (isNTRTWLBinary == isNDSBinaryV2) || (isNTRTWLBinary == isNDSBinaryV3) || (isNTRTWLBinary == isNDSBinaryV1Slot2)
 			||
@@ -398,6 +231,13 @@ void bootfile(){
 			u32 arm7EntryAddress = NDSHdr->arm7entryaddress;	
 			u32 arm7ramaddress = NDSHdr->arm7ramaddress;
 			
+			//Incoming address list: ARM7 [arm7.bin]
+			addresses[0].armRamAddress = arm7ramaddress;
+			addresses[0].armEntryAddress = arm7EntryAddress;
+			addresses[0].armBootCodeOffsetInFile = arm7BootCodeOffsetInFile;
+			addresses[0].armBootCodeSize = arm7BootCodeSize;
+			addresses[0].type = TGDS_MB_V3_TYPE_ENTRYPOINT_ARM7;
+			
 			//Clear arm7 ram
 			dmaFillHalfWord(0, 0, ((uint32)arm7ramaddress), ((uint32)arm7BootCodeSize) );
 			
@@ -415,74 +255,25 @@ void bootfile(){
 			//Clear arm9 ram
 			dmaFillHalfWord(0, 0, ((uint32)arm9ramaddress), ((uint32)arm9BootCodeSize) );
 			
-			pf_lseek(arm9BootCodeOffsetInFile, currentFH);
-			pf_read((u8*)arm9ramaddress, arm9BootCodeSize, &nbytes_read, currentFH);
-			if( ((int)nbytes_read) != ((int)arm9BootCodeSize) ){
-				int stage = 10;
-				strcpy(debugBuf7, "TGDS-MB: arm7bootldr/bootfile():[");
-				strcat(debugBuf7, filename);
-				strcat(debugBuf7, "] ARM9 payload write FAIL...");
-				handleDSInitOutputMessage((char*)&debugBuf7[0]);
-				handleDSInitError7(stage, (u32)savedDSHardware);
-			}
-			/*
-			else{
-				int stage = 10;
-				char buffer[sizeof(int) * 10 + 1];
-				
-				itoa(arm9ramaddress, buffer, 16);
-				
-				strcpy(debugBuf7, "TGDS-MB: arm7bootldr/bootfile():");
-				strcat(debugBuf7, "ARM9 payload[");
-				strcat(debugBuf7, buffer);
-				strcat(debugBuf7, "]:size(0x");
-				
-				itoa(arm9BootCodeSize, buffer, 16);
-				
-				strcat(debugBuf7, buffer);
-				strcat(debugBuf7, ")");
-				
-				handleDSInitOutputMessage((char*)&debugBuf7[0]);
-				handleDSInitError7(stage, (u32)savedDSHardware);
-			}
-			*/
-			
-			pf_lseek(arm7BootCodeOffsetInFile, currentFH);
-			pf_read((u8*)arm7ramaddress, arm7BootCodeSize, &nbytes_read, currentFH);
-			if( ((int)nbytes_read) != ((int)arm7BootCodeSize) ){
-				int stage = 10;
-				strcpy(debugBuf7, "TGDS-MB: arm7bootldr/bootfile():[");
-				strcat(debugBuf7, filename);
-				strcat(debugBuf7, "] ARM7 payload write FAIL...");
-				handleDSInitOutputMessage((char*)&debugBuf7[0]);
-				handleDSInitError7(stage, (u32)savedDSHardware);
-			}
-			/*
-			else{
-				int stage = 10;
-				char buffer[sizeof(int) * 10 + 1];
-				
-				itoa(arm7ramaddress, buffer, 16);
-				
-				strcpy(debugBuf7, "TGDS-MB: arm7bootldr/bootfile():");
-				strcat(debugBuf7, "ARM7 payload[");
-				strcat(debugBuf7, buffer);
-				strcat(debugBuf7, "]:size(0x");
-				
-				itoa(arm7BootCodeSize, buffer, 16);
-				
-				strcat(debugBuf7, buffer);
-				strcat(debugBuf7, ")");
-				
-				handleDSInitOutputMessage((char*)&debugBuf7[0]);
-				handleDSInitError7(stage, (u32)savedDSHardware);
-			}
-			*/
+			//Incoming address list: ARM9 [arm9.bin]
+			addresses[1].armRamAddress = arm9ramaddress;
+			addresses[1].armEntryAddress = arm9EntryAddress;
+			addresses[1].armBootCodeOffsetInFile = arm9BootCodeOffsetInFile;
+			addresses[1].armBootCodeSize = arm9BootCodeSize;
+			addresses[1].type = TGDS_MB_V3_TYPE_ENTRYPOINT_ARM9;
 			
 			//Turn off IRQs right now because an interrupt calling to ARM7 exception handler (through bios) crashes ARM7 
 			REG_IME = 0;
 			REG_IE = 0;
 			REG_IF = ~0;
+			
+			if(
+				(__dsimode == true)
+				&&
+				(isNTRTWLBinary == isTWLBinary)
+			){
+				initMBK();
+			}
 			
 			//Bios can now be changed @ ARM9 (from ARM7, keep reading)
 			//BIOS NTR/TWL switch (backwards compatibility mode): ARM9 has 4004000h - DSi9 - SCFG_A9ROM - ROM Status (R) [0000h] bits as read-only. 
@@ -591,32 +382,41 @@ void bootfile(){
 				u32 arm7iBootCodeOffsetInFile = *(u32*)&NDSHeaderStruct[0x1D0];	//0x1D0 DSi7 ROM offset
 				u32 arm7iRamAddress = *(u32*)&NDSHeaderStruct[0x1D8];	//0x1D8   DSi7 RAM address
 				int arm7iBootCodeSize = *(u32*)&NDSHeaderStruct[0x1DC];	//0x1DC   DSi7 code size
-				if((arm7iRamAddress >= ARM_MININUM_LOAD_ADDR) && (arm7iBootCodeSize > 0)){
-					pf_lseek(arm7iBootCodeOffsetInFile, currentFH);
-					pf_read((u8*)arm7iRamAddress, arm7iBootCodeSize, &nbytes_read, currentFH);
-					if( ((int)nbytes_read) != ((int)arm7iBootCodeSize) ){
-						int stage = 10;
-						strcpy(debugBuf7, "TGDS-MB: arm7bootldr/bootfile():[");
-						strcat(debugBuf7, filename);
-						strcat(debugBuf7, "] ARM7i payload write FAIL...");
-						handleDSInitOutputMessage((char*)&debugBuf7[0]);
-						handleDSInitError7(stage, (u32)savedDSHardware);
-					}
-				}
+				
+				//Incoming address list: TWL [arm7i.bin]
+				addresses[2].armRamAddress = arm7iRamAddress;
+				addresses[2].armEntryAddress = 0;
+				addresses[2].armBootCodeOffsetInFile = arm7iBootCodeOffsetInFile;
+				addresses[2].armBootCodeSize = arm7iBootCodeSize;
+				addresses[2].type = TGDS_MB_V3_TYPE_DEFAULT_VALUE;
 				
 				u32 arm9iBootCodeOffsetInFile = *(u32*)&NDSHeaderStruct[0x1C0];	//0x1C0   DSi9 ROM offset
 				u32 arm9iRamAddress = *(u32*)&NDSHeaderStruct[0x1C8];	//0x1C8   DSi9 RAM address
 				int arm9iBootCodeSize = *(u32*)&NDSHeaderStruct[0x1CC];	//0x1CC   DSi9 code size
-				if((arm9iRamAddress >= ARM_MININUM_LOAD_ADDR) && (arm9iBootCodeSize > 0)){
-					pf_lseek(arm9iBootCodeOffsetInFile, currentFH);
-					pf_read((u8*)arm9iRamAddress, arm9iBootCodeSize, &nbytes_read, currentFH);
-					if( ((int)nbytes_read) != ((int)arm9iBootCodeSize) ){
-						int stage = 10;
-						strcpy(debugBuf7, "TGDS-MB: arm7bootldr/bootfile():[");
-						strcat(debugBuf7, filename);
-						strcat(debugBuf7, "] ARM9i payload write FAIL...");
-						handleDSInitOutputMessage((char*)&debugBuf7[0]);
-						handleDSInitError7(stage, (u32)savedDSHardware);
+				
+				//Incoming address list: TWL [arm9i.bin]
+				addresses[3].armRamAddress = arm9iRamAddress;
+				addresses[3].armEntryAddress = 0;
+				addresses[3].armBootCodeOffsetInFile = arm9iBootCodeOffsetInFile;
+				addresses[3].armBootCodeSize = arm9iBootCodeSize;
+				addresses[3].type = TGDS_MB_V3_TYPE_DEFAULT_VALUE;
+				
+				//Copy addresses in lowest to highest order to prevent sections overlapping each other
+				int count = sizeof(addresses) / sizeof(struct addrList);
+				//qsort(addresses, count, sizeof(struct addrList), compare); //unused
+				int i = 0;
+				for(i = 0; i < count; i++){
+					if( addresses[i].armBootCodeSize > 0 ){
+						pf_lseek(addresses[i].armBootCodeOffsetInFile, currentFH);
+						pf_read((u8*)addresses[i].armRamAddress, addresses[i].armBootCodeSize, &nbytes_read, currentFH);
+						if( ((int)nbytes_read) != ((int)addresses[i].armBootCodeSize) ){
+							int stage = 10;
+							strcpy(debugBuf7, "TGDS-MB: arm7bootldr/bootfile():[");
+							strcat(debugBuf7, filename);
+							strcat(debugBuf7, "] ARM payload write FAIL...");
+							handleDSInitOutputMessage((char*)&debugBuf7[0]);
+							handleDSInitError7(stage, (u32)savedDSHardware);
+						}
 					}
 				}
 				
@@ -628,84 +428,45 @@ void bootfile(){
 			//NTR hardware trying to boot TWL binaries? Throw exception
 			else if( (__dsimode == false) && (isNTRTWLBinary == isTWLBinary) ){
 				int stage = 10;
-					strcpy(debugBuf7, "TGDS-MB: arm7bootldr/bootfile():[");
-					strcat(debugBuf7, filename);
-					strcat(debugBuf7, "] TWL Binary UNSUPPORTED in NTR Unit.");
-					handleDSInitOutputMessage((char*)&debugBuf7[0]);
-					handleDSInitError7(stage, (u32)savedDSHardware);
-			}
-			
-			/*
-			{
-				int stage = 10;
-				char buffer[sizeof(int) * 10 + 1];
-				
-				itoa(arm7EntryAddress, buffer, 16);
-				
-				strcpy(debugBuf7, "TGDS-MB: arm7bootldr/bootfile():");
-				strcat(debugBuf7, "ARM7 payload execution [");
-				strcat(debugBuf7, buffer);
-				strcat(debugBuf7, "]:size(0x");
-				
-				itoa(arm7BootCodeSize, buffer, 16);
-				
-				strcat(debugBuf7, buffer);
-				strcat(debugBuf7, ")");
-				
+				strcpy(debugBuf7, "TGDS-MB: arm7bootldr/bootfile():[");
+				strcat(debugBuf7, filename);
+				strcat(debugBuf7, "] TWL Binary UNSUPPORTED in NTR Unit.");
 				handleDSInitOutputMessage((char*)&debugBuf7[0]);
 				handleDSInitError7(stage, (u32)savedDSHardware);
 			}
-			*/
 			
+			
+			//SM64 DSi port (DKARM): (https://github.com/Hydr8gon/sm64/commit/7d50caa3856be22dd167f1bfa874f8e5f3ad2b0e) 
+			//has a libnds bug in its initialization routines (segfaults). Since TGDS don't use them, stub them.
+			uint32 crc0 = (u32)swiCRC16( 0xffff, (uint8*)arm9ramaddress, 512*1024);
+			if(	
+				(__dsimode == true)
+				&&
+				(isNTRTWLBinary == isTWLBinary)
+				&&
+				(isTGDSTWLHomebrew == false)
+				&&
+				((uint32)crc0 == ((uint32)0x000021DC))
+			){
+				*(u16*)0x020D5340 = 0x2500;
+			}
+			
+			//Sound fix on DKARM homebrew
+			if(
+				(isNTRTWLBinary == isTWLBinary)
+				&&
+				(isTGDSTWLHomebrew == false)
+			){
+				*(u32*)0x04004008 = *ARM7i_HEADER_SCFG_EXT7;
+			}
+			initSound();
+			
+			setValueSafe((u32*)TGDS_IS_TGDS_HOMEBREW, (u32)isTGDSTWLHomebrew);
 			setValueSafe((u32*)ARM9_TWLORNTRPAYLOAD_MODE, (u32)isNTRTWLBinary);
 			setValueSafe((u32*)ARM9_BOOT_SIZE, (u32)arm9BootCodeSize);
 			setValueSafe((u32*)ARM7_BOOT_SIZE, (u32)arm7BootCodeSize);
 			setValueSafe((u32*)ARM7_BOOTCODE_OFST, (u32)arm7BootCodeOffsetInFile);
 			setValueSafe((u32*)ARM9_BOOTCODE_OFST, (u32)arm9BootCodeOffsetInFile);
-			
-			
-			// Reload DS Firmware settings start
-			int i;
-			u8 settings1, settings2;
-			u32 settingsOffset = 0;
-			
-			for (i=0; i<16; i++) {
-				SCHANNEL_CR(i) = 0;
-				SCHANNEL_TIMER(i) = 0;
-				SCHANNEL_SOURCE(i) = 0;
-				SCHANNEL_LENGTH(i) = 0;
-			}
-
-			REG_SOUNDCNT = 0;
-
-			//clear out ARM7 DMA channels and timers
-			for (i=0; i<4; i++) {
-				DMAXCNT(i) = 0;
-				DMAXSAD(i) = 0;
-				DMAXDAD(i) = 0;
-				TIMERXCNT(i) = 0;
-				TIMERXDATA(i) = 0;
-			}
-			
-			(*(vu32*)(0x04000000-4)) = 0;  //IRQ_HANDLER ARM7 version
-			(*(vu32*)(0x04000000-8)) = ~0; //VBLANK_INTR_WAIT_FLAGS, ARM7 version
-			REG_POWERCNT = 1;  //turn off power to stuff
-
-			// Get settings location
-			boot_readFirmware((u32)0x00020, (u8*)&settingsOffset, 0x2);
-			settingsOffset *= 8;
-
-			boot_readFirmware(settingsOffset + 0x070, &settings1, 0x1);
-			boot_readFirmware(settingsOffset + 0x170, &settings2, 0x1);
-
-			if ((settings1 & 0x7F) == ((settings2+1) & 0x7F)) {
-				boot_readFirmware(settingsOffset + 0x000, (u8*)0x027FFC80, 0x70);
-			} else {
-				boot_readFirmware(settingsOffset + 0x100, (u8*)0x027FFC80, 0x70);
-			}
-			
-			// Reload DS Firmware settings end
-			
 			setValueSafe((u32*)0x02FFFE34, (u32)arm7EntryAddress);
 			setValueSafe((u32*)0x02FFFE24, (u32)arm9EntryAddress); //ARM9 go (skip NTR v3/TWL ARM9(i) secure section)
 			
@@ -745,13 +506,14 @@ __attribute__ ((optnone))
 int main(int argc, char **argv) {
 //---------------------------------------------------------------------------------
 	/*			TGDS 1.6 Standard ARM7 Init code start	*/
-	//installWifiFIFO(); //causes issues if enabled + removing -DIGNORELIBS from ToolchainGenericDS\src\templateCode\arm7bootldr\Makefile
+	installWifiFIFO();
 	while(!(*(u8*)0x04000240 & 2) ){} //wait for VRAM_D block
 	ARM7InitDLDI(TGDS_ARM7_MALLOCSTART, TGDS_ARM7_MALLOCSIZE, TGDSDLDI_ARM7_ADDRESS);
 	/*			TGDS 1.6 Standard ARM7 Init code end	*/
 	
 	while (1) {
 		handleARM7SVC();	/* Do not remove, handles TGDS services */
+		HaltUntilIRQ(); //Save power until next irq
 	}
 	return 0;
 }
