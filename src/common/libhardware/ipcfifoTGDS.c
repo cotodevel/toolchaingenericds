@@ -225,29 +225,13 @@ void HandleFifoNotEmpty(){
 								
 								//Shutdown NDS hardware (NTR/TWL)
 								case(FIFO_SHUTDOWN_DS):{
-									if(__dsimode == false){
-										int PMBitsRead = PowerManagementDeviceRead((int)POWMAN_READ_BIT);
-										PMBitsRead |= (int)(POWMAN_SYSTEM_PWR_BIT);
-										PowerManagementDeviceWrite(POWMAN_WRITE_BIT, (int)PMBitsRead);
-									}
-									else{
-										#ifdef TWLMODE
-										i2cWriteRegister(I2C_PM, I2CREGPM_PWRCNT, 1);
-										#endif
-									}
+									shutdownNDSHardware();
 								}
 								break;
 								
 								//Reset TWL hardware (only)
 								case(FIFO_RESET_DS):{
-									if(__dsimode == false){
-										//reset supported on TWL only
-									}
-									else{
-										#ifdef TWLMODE
-										i2cWriteRegister(I2C_PM, I2CREGPM_RESETFLAG, 1);
-										#endif
-									}
+									resetNDSHardware();
 								}
 								break;
 							}

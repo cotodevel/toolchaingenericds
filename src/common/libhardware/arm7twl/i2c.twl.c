@@ -33,6 +33,12 @@
 static u32 i2cCurrentDelay = 0;
 
 //---------------------------------------------------------------------------------
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void i2cDelay() {
 //---------------------------------------------------------------------------------
 	i2cWaitBusy();
@@ -40,6 +46,12 @@ void i2cDelay() {
 }
 
 //---------------------------------------------------------------------------------
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void i2cStop(u8 arg0) {
 //---------------------------------------------------------------------------------
 	if(i2cCurrentDelay) {
@@ -51,6 +63,12 @@ void i2cStop(u8 arg0) {
 
 
 //---------------------------------------------------------------------------------
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 u8 i2cGetResult() {
 //---------------------------------------------------------------------------------
 	i2cWaitBusy();
@@ -58,6 +76,12 @@ u8 i2cGetResult() {
 }
 
 //---------------------------------------------------------------------------------
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 u8 i2cGetData() {
 //---------------------------------------------------------------------------------
 	i2cWaitBusy();
@@ -65,6 +89,12 @@ u8 i2cGetData() {
 }
 
 //---------------------------------------------------------------------------------
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void i2cSetDelay(u8 device) {
 //---------------------------------------------------------------------------------
 	if (device == I2C_PM ) {
@@ -75,6 +105,12 @@ void i2cSetDelay(u8 device) {
 }
 
 //---------------------------------------------------------------------------------
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 u8 i2cSelectDevice(u8 device) {
 //---------------------------------------------------------------------------------
 	i2cWaitBusy();
@@ -84,6 +120,12 @@ u8 i2cSelectDevice(u8 device) {
 }
 
 //---------------------------------------------------------------------------------
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 u8 i2cSelectRegister(u8 reg) {
 //---------------------------------------------------------------------------------
 	i2cDelay();
@@ -93,6 +135,12 @@ u8 i2cSelectRegister(u8 reg) {
 }
 
 //---------------------------------------------------------------------------------
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 u8 i2cWriteRegister(u8 device, u8 reg, u8 data) {
 //---------------------------------------------------------------------------------
 	i2cSetDelay(device);
@@ -112,6 +160,12 @@ u8 i2cWriteRegister(u8 device, u8 reg, u8 data) {
 }
 
 //---------------------------------------------------------------------------------
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 u8 i2cReadRegister(u8 device, u8 reg) {
 //---------------------------------------------------------------------------------
 	i2cSetDelay(device);
