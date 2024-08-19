@@ -77,7 +77,7 @@ bool ShowBrowser(char * Path, char * outBuf){
 	int itemRead=1;
 	
 	while(1){
-		int fileClassListSize = getCurrentDirectoryCount(fileClassListCtx) + 1;	//+1 the stub
+		int fileClassListSize = getCurrentDirectoryCount(fileClassListCtx);
 		int itemsToLoad = (fileClassListSize - curjoffset);
 		
 		//check if remaining items are enough

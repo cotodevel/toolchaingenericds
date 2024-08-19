@@ -1009,7 +1009,7 @@ bool readDirectoryIntoFileClass(char * dir, struct FileClassList * thisClassList
 	//Use TGDS Dir API context
 	struct FileClass filStub;
 	{
-		filStub.type = FT_FILE;
+		filStub.type = FT_NONE;
 		strcpy(filStub.fd_namefullPath, "[notVisibleDirByPrintfIsIgnored]");
 		filStub.isIterable = true;
 		filStub.d_ino = -1;
@@ -1066,12 +1066,13 @@ int buildFileClassByExtensionFromList(struct FileClassList * inputClassList, str
 	char * outBuf = (char *)scratchPadMemory;
 	int i = 0, j = 0;
 	int matchCount = str_split((char*)filterString, (char*)"/", outBuf, 50, 256); //30 items
+	
+	int fileClassListSize = getCurrentDirectoryCount(inputClassList) + 1; 
 	for(i = 0; i < (matchCount + 3); i++){
 		char * token_rootpath = (char*)&outBuf[256*i];
 		char extToFind[256];
 		strcpy(extToFind, ".");
 		strcat(extToFind, token_rootpath);
-		int fileClassListSize = getCurrentDirectoryCount(inputClassList) + 1; 
 		for(j = 0; j < fileClassListSize; j++){
 			if(j < fileClassListSize){
 				FileClass * curFile = (FileClass *)&inputClassList->fileList[j];
@@ -1080,14 +1081,21 @@ int buildFileClassByExtensionFromList(struct FileClassList * inputClassList, str
 				strcpy(tmpName, curFile->fd_namefullPath);	
 				separateExtension(tmpName, extInFile);
 				strlwr(extInFile);		
-				if(
-					(strcmpi(extToFind, extInFile) == 0)
-					){
+				if(strcmpi(extToFind, extInFile) == 0){
 					pushEntryToFileClassList(true, curFile->fd_namefullPath, curFile->type, -1, targetClassList);
 				}
 			}
 		}
 	}
+	
+	//Add directories
+	for(j = 0; j < fileClassListSize; j++){
+		FileClass * curFile = (FileClass *)&inputClassList->fileList[j];
+		if(curFile->type == FT_DIR){
+			pushEntryToFileClassList(true, curFile->fd_namefullPath, curFile->type, -1, targetClassList);
+		}
+	}
+	
 	return targetClassList->FileDirCount;
 }
 
@@ -1099,9 +1107,10 @@ __attribute__((optimize("O0")))
 __attribute__ ((optnone))
 #endif
 int pcmpstr(const void* a, const void* b){
-    const char* aa = *(const char**)a;
-    const char* bb = *(const char**)b;
-    return stricmp(aa,bb);
+    const FileClass * aa = (const FileClass *)a;
+    const FileClass * bb = (const FileClass *)b;
+	
+    return stricmp((char*)&aa->fd_namefullPath, (char*)&bb->fd_namefullPath);
 }
 
 //Returns:	true if success
@@ -1115,56 +1124,7 @@ __attribute__((optimize("O0")))
 __attribute__ ((optnone))
 #endif
 void sortFileClassListAsc(struct FileClassList * thisClassList, char ** scratchPadMemory, bool ignoreFirstFileClass){
-	/* //code segfaults randomly. Must be reimplemented without using qsort
-	struct FileClassList * playlistfileClassListCtx = NULL;
-	playlistfileClassListCtx = initFileList();
-	cleanFileList(playlistfileClassListCtx);
-
-	char ** listItems = scratchPadMemory;
-	char * listItemsArg[FileClassItems];
-	int startOffset = 0;
-	if(ignoreFirstFileClass == true){
-		startOffset = 1;
-	}
-	for(int i = 0; i < thisClassList->FileDirCount + startOffset; i++){
-		FileClass * curFile = (FileClass *)&thisClassList->fileList[i + startOffset];
-		FileClass * curFileDest = (FileClass *)&playlistfileClassListCtx->fileList[i];
-		if(curFile->fd_namefullPath[0] != '\0'){
-			memcpy(curFileDest, curFile, sizeof(FileClass));
-			playlistfileClassListCtx->CurrentFileDirEntry++;
-		}
-	}
-	playlistfileClassListCtx->FileDirCount = playlistfileClassListCtx->CurrentFileDirEntry;
-	for(int i = 0; i < playlistfileClassListCtx->FileDirCount; i++){
-		listItemsArg[i] = (char*)((int)listItems + (i*256));
-		FileClass * curFile = (FileClass *)&playlistfileClassListCtx->fileList[i];
-		strcpy(listItemsArg[i], curFile->fd_namefullPath);
-	}
-	qsort( listItemsArg, playlistfileClassListCtx->FileDirCount, sizeof(char*), pcmpstr);
-	for (int n = 0; n < playlistfileClassListCtx->FileDirCount + startOffset; n++){
-		FileClass * curFile = (FileClass *)&playlistfileClassListCtx->fileList[n];
-		strcpy((char*)&curFile->fd_namefullPath[0], listItemsArg[n]);
-	}
-	for(int i = 0; i < playlistfileClassListCtx->FileDirCount + startOffset; i++){
-		FileClass * curFile = (FileClass *)&playlistfileClassListCtx->fileList[i]; 
-		FileClass * curFileDest = (FileClass *)&thisClassList->fileList[i + startOffset];
-		if(curFile->fd_namefullPath[0] != '\0'){
-			memcpy(curFileDest, curFile, sizeof(FileClass));
-			//Update file/directory type
-			if(curFile->fd_namefullPath[0] == '/'){
-				curFileDest->type = FT_DIR;
-			}
-			else{
-				curFileDest->type = FT_FILE;
-			}
-			playlistfileClassListCtx->CurrentFileDirEntry++;
-		}
-	}
-	if((ignoreFirstFileClass == true) && (thisClassList->FileDirCount > 0)){
-		thisClassList->FileDirCount--;
-	}
-	freeFileList(playlistfileClassListCtx);
-	*/
+	qsort((struct FileClass*)&thisClassList->fileList, thisClassList->FileDirCount, sizeof(FileClass), pcmpstr);
 }
 
 ///////////////////////////////////////////////////////TGDS FS API extension end. /////////////////////////////////////////////////////
