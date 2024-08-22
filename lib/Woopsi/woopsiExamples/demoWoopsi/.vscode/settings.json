@@ -1,0 +1,7 @@
+{
+    "terminal.integrated.defaultProfile.windows": "msys2",
+    "files.associations": {
+        "typedefstgds.h": "c",
+        "main.h": "c"
+    },
+}

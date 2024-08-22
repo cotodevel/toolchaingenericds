@@ -18,9 +18,9 @@
 
 #TGDS1.6 compatible Makefile
 
-#ToolchainGenericDS specific: 
+#ToolchainGenericDS specific: Use Makefiles from either TGDS, or custom
 export SOURCE_MAKEFILE7 = default
-export SOURCE_MAKEFILE9 = default
+export SOURCE_MAKEFILE9 = custom
 
 #Shared
 ifeq ($(TGDS_ENV),windows)
@@ -54,8 +54,6 @@ export DECOMPRESSOR_BOOTCODE_9 = tgds_multiboot_payload
 export DECOMPRESSOR_BOOTCODE_9i = tgds_multiboot_payload_twl
 
 export BINSTRIP_RULE_7 :=	$(DIR_ARM7).bin
-export BINSTRIP_RULE_arm7bootldr =	arm7bootldr.bin
-
 export BINSTRIP_RULE_9 :=	$(DIR_ARM9).bin
 
 export BINSTRIP_RULE_COMPRESSED_9 :=	$(DECOMPRESSOR_BOOTCODE_9).bin
@@ -78,16 +76,28 @@ export TARGET_LIBRARY_TGDS_TWL_9 = $(TARGET_LIBRARY_TGDS_NTR_9)i
 
 export DIRS_ARM7_SRC = source/	\
 			source/interrupts/	\
-			../common/	\
-			../common/templateCode/source/	\
-			../common/templateCode/data/arm7/	
-			
-export DIRS_ARM7_HEADER = source/	\
+			source/	\
+			source/petitfs-src/	\
 			source/interrupts/	\
-			include/	\
 			../common/	\
 			../common/templateCode/source/	\
 			../common/templateCode/data/arm7/	\
+			../../../common/	\
+			../../../common/templateCode/source/	\
+			../../../common/templateCode/data/arm7/	
+			
+export DIRS_ARM7_HEADER =	include/	\
+			source/	\
+			source/interrupts/	\
+			source/	\
+			source/petitfs-src/	\
+			source/interrupts/	\
+			../common/	\
+			../common/templateCode/source/	\
+			../common/templateCode/data/arm7/	\
+			../../../common/	\
+			../../../common/templateCode/source/	\
+			../../../common/templateCode/data/arm7/	\
 			build/	\
 			../$(PosIndCodeDIR_FILENAME)/$(DIR_ARM7)/include/
 #####################################################ARM9#####################################################
@@ -109,9 +119,7 @@ export DIRS_ARM9_HEADER = data/	\
 			../common/	\
 			../common/templateCode/source/	\
 			../common/templateCode/data/arm9/	\
-			build/	\
 			../$(PosIndCodeDIR_FILENAME)/$(DIR_ARM9)/include/
-			
 # Build Target(s)	(both processors here)
 all: $(EXECUTABLE_FNAME)
 #all:	debug
@@ -126,19 +134,20 @@ compile	:
 	-$(MAKE)	-R	-C	$(PosIndCodeDIR_FILENAME)/$(DIR_ARM7)/
 	-cp	-r	$(TARGET_LIBRARY_MAKEFILES_SRC9_FPIC)	$(CURDIR)/$(PosIndCodeDIR_FILENAME)/$(DIR_ARM9)
 	-$(MAKE)	-R	-C	$(PosIndCodeDIR_FILENAME)/$(DIR_ARM9)/
-ifeq ($(SOURCE_MAKEFILE7),default)
-	cp	-r	$(TARGET_LIBRARY_MAKEFILES_SRC7_NOFPIC)	$(CURDIR)/$(DIR_ARM7)
-endif
-	$(MAKE)	-R	-C	$(DIR_ARM7)/
+	-cp	-r	$(TARGET_LIBRARY_MAKEFILES_SRC7_NOFPIC)	$(CURDIR)/common/templateCode/stage1_7/
+	$(MAKE)	-R	-C	$(CURDIR)/common/templateCode/stage1_7/
+	$(MAKE)	-R	-C	$(CURDIR)/common/templateCode/arm7bootldr/
+	-mv $(CURDIR)/common/templateCode/arm7bootldr/arm7vram.bin	$(DIR_ARM9)/data/arm7vram.bin
+	-mv $(CURDIR)/common/templateCode/arm7bootldr/arm7vram_twl.bin	$(DIR_ARM9)/data/arm7vram_twl.bin
+	
 ifeq ($(SOURCE_MAKEFILE9),default)
 	cp	-r	$(TARGET_LIBRARY_MAKEFILES_SRC9_NOFPIC)	$(CURDIR)/$(DIR_ARM9)
 endif
 	$(MAKE)	-R	-C	$(DIR_ARM9)/
-	
 $(EXECUTABLE_FNAME)	:	compile
 	-@echo 'ndstool begin'
-	$(NDSTOOL)	-v	-c $@	-7  $(CURDIR)/arm7/$(BINSTRIP_RULE_7)	-e7  0x02380000	-9 $(CURDIR)/arm9/$(BINSTRIP_RULE_9) -e9  0x02000800	-r9 0x02000000	-b	icon.bmp "ToolchainGenericDS SDK;$(TGDSPROJECTNAME) NDS Binary; "
-	$(NDSTOOL)	-c 	${@:.nds=.srl} -7 $(CURDIR)/arm7/arm7_twl.bin -e7  0x02380000		-9 $(CURDIR)/arm9/arm9_twl.bin -e9  0x02000800	-r9 0x02000000	\
+	$(NDSTOOL)	-v	-c $@	-7  $(CURDIR)/common/templateCode/stage1_7/$(BINSTRIP_RULE_7)	-e7  0x02380000	-9 $(CURDIR)/arm9/$(BINSTRIP_RULE_9) -e9  0x02000800	-r9 0x02000000	-b	icon.bmp "ToolchainGenericDS SDK;$(TGDSPROJECTNAME) NDS Binary; "
+	$(NDSTOOL)	-c 	${@:.nds=.srl} -7  $(CURDIR)/common/templateCode/stage1_7/arm7_twl.bin	-e7  0x02380000	-9 $(CURDIR)/arm9/arm9_twl.bin -e9  0x02000800	-r9 0x02000000	\
 	-g "TGDS" "NN" "NDS.TinyFB"	\
 	-z 80040000 -u 00030004 -a 00000138 \
 	-b icon.bmp "$(TGDSPROJECTNAME);$(TGDSPROJECTNAME) TWL Binary;" \
@@ -152,11 +161,8 @@ $(EXECUTABLE_FNAME)	:	compile
 each_obj = $(foreach dirres,$(dir_read_arm9_files),$(dirres).)
 	
 clean:
-	$(MAKE)	clean	-C	$(DIR_ARM7)/
 	$(MAKE) clean	-C	$(PosIndCodeDIR_FILENAME)/$(DIR_ARM7)/
-ifeq ($(SOURCE_MAKEFILE7),default)
-	-@rm -rf $(CURDIR)/$(DIR_ARM7)/Makefile
-endif
+	$(MAKE) clean	-C	$(CURDIR)/common/templateCode/arm7bootldr/
 #--------------------------------------------------------------------
 	$(MAKE)	clean	-C	$(DIR_ARM9)/
 	$(MAKE) clean	-C	$(PosIndCodeDIR_FILENAME)/$(DIR_ARM9)/
@@ -166,7 +172,8 @@ endif
 	-@rm -rf $(CURDIR)/$(PosIndCodeDIR_FILENAME)/$(DIR_ARM7)/Makefile
 	-@rm -rf $(CURDIR)/$(PosIndCodeDIR_FILENAME)/$(DIR_ARM9)/Makefile
 	-@rm -fr $(EXECUTABLE_FNAME)	$(TGDSPROJECTNAME).srl	$(CURDIR)/common/templateCode/
-
+	-@rm -rf	$(DIR_ARM9)/data/arm7vram.bin	$(DIR_ARM9)/data/arm7vram_twl.bin
+	
 rebase:
 	git reset --hard HEAD
 	git clean -f -d
@@ -191,7 +198,7 @@ switchMaster:
 #ToolchainGenericDS Package deploy format required by ToolchainGenericDS-OnlineApp.
 BuildTGDSPKG:
 	-@echo 'Build TGDS Package. '
-	-$(TGDSPKGBUILDER) $(TGDSPROJECTNAME) $(TGDSPKG_TARGET_PATH) $(LIBPATH) /release/arm7dldi-ntr/
+	-$(TGDSPKGBUILDER) $(TGDSPROJECTNAME) $(TGDSPROJECTNAME).srl	$(TGDSPKG_TARGET_PATH) $(LIBPATH) /release/arm7dldi-ntr/
 
 #---------------------------------------------------------------------------------
 remotebootTWL:

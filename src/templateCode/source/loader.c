@@ -228,6 +228,7 @@ int isNTROrTWLBinaryTGDSShared(u8 * NDSHeaderStructInst, u8 * passmeRead, u32 * 
 
 #ifdef ARM9
 #include "videoTGDS.h"
+#include "soundTGDS.h"
 
 //ToolchainGenericDS-multiboot NDS Binary loader: Requires tgds_multiboot_payload_ntr.bin / tgds_multiboot_payload_twl.bin (TGDS-multiboot Project) in SD root.
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -265,12 +266,12 @@ bool TGDSMultibootRunNDSPayload(char * filename, u8 * tgdsMbv3ARM7Bootldr, int a
 		coherent_user_range_by_size((uint32)TGDS_ARGV_BUFFER, (int)256);
 
 		//NTR / TWL RAM Setup
+		stopSoundStreamUser();	//Prevents TGDS ARM7 Cores from segfaulting if trying to boot NTR/TWL homebrew after playing a sound stream
+		
 		if(
 			(__dsimode == true)
 			&&
-			
 			(
-			
 				(
 				(isNTRTWLBinary == isNDSBinaryV1Slot2)
 				||
