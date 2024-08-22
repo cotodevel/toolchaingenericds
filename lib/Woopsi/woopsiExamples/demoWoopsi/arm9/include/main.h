@@ -23,8 +23,9 @@ USA
 
 #include "typedefsTGDS.h"
 #include "dsregs.h"
-#include "fatfslayerTGDS.h"
 #include "utilsTGDS.h"
+#include "limitsTGDS.h"
+#include "dldi.h"
 
 #endif
 
@@ -33,6 +34,7 @@ USA
 extern "C" {
 #endif
 
+extern u32 * getTGDSMBV3ARM7Bootloader();
 extern int main(int argc, char **argv);
 extern void ApplicationMainLoop();
 

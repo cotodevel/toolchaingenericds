@@ -81,6 +81,8 @@ __attribute__((section(".itcm")))
 #endif
 void VblankUser(){
 	woopsiVblFunc();
+	
+	//Timing reserved for 2D/3D rendering
 }
 
 #ifdef ARM9
