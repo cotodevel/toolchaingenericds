@@ -222,12 +222,22 @@ void FileListBox::readDirectory() {
 	delete [] path;
 	
 	_listbox->addOption(new FileListBoxDataItem("..", 0, getShineColour(), getBackColour(), getShineColour(), getHighlightColour(), true));	//allow to go back
-	int startFromIndex = 0;
-	struct FileClass * fileClassInst = FAT_FindFirstFile(curPath, fileClassListCtx, startFromIndex);
-	while(fileClassInst != NULL){
+	
+	//Generate an active playlist
+	readDirectoryIntoFileClass(curPath, fileClassListCtx);
+
+	//Sort list alphabetically
+	bool ignoreFirstFileClass = true;
+	sortFileClassListAsc(fileClassListCtx, (char**)0x0, ignoreFirstFileClass);
+
+	int i = 0;
+	int fileClassListSize = getCurrentDirectoryCount(fileClassListCtx) + 1;
+	while(i < fileClassListSize){
+		FileClass * fileClassInst = getFileClassFromList(i, fileClassListCtx);
+
 		//directory?
 		if(fileClassInst->type == FT_DIR){
-			char tmpBuf[MAX_TGDSFILENAME_LENGTH+1];
+			char tmpBuf[MAX_TGDSFILENAME_LENGTH];
 			memset(tmpBuf, 0, sizeof(tmpBuf));
 			strcpy(tmpBuf, fileClassInst->fd_namefullPath);
 			parseDirNameTGDS(tmpBuf);
@@ -236,7 +246,7 @@ void FileListBox::readDirectory() {
 		}
 		//file?
 		else if(fileClassInst->type  == FT_FILE){
-			char tmpBuf[MAX_TGDSFILENAME_LENGTH+1];
+			char tmpBuf[MAX_TGDSFILENAME_LENGTH];
 			memset(tmpBuf, 0, sizeof(tmpBuf));
 			strcpy(tmpBuf, fileClassInst->fd_namefullPath);
 			parsefileNameTGDS(tmpBuf);
@@ -244,8 +254,7 @@ void FileListBox::readDirectory() {
 			_listbox->addOption(new FileListBoxDataItem(tmpBuf, 0, getShadowColour(), getBackColour(), getShadowColour(), getHighlightColour(), false));
 		}
 		
-		//more file/dir objects?
-		fileClassInst = FAT_FindNextFile(curPath, fileClassListCtx);
+		i++;
 	}
 
 	//Free TGDS Dir API context
