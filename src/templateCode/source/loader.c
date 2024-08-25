@@ -289,7 +289,10 @@ bool TGDSMultibootRunNDSPayload(char * filename, u8 * tgdsMbv3ARM7Bootldr, int a
 			SFGEXT9 = (SFGEXT9 & ~(0x3 << 14)) | (0x0 << 14);
 			*(u32*)0x04004008 = SFGEXT9;
 		}
+		//DKARM TWL mode homebrew
 		else if (		
+			(isTGDSTWLHomebrew == false)
+			&&
 			(__dsimode == true)
 			&&
 			(isNTRTWLBinary == isTWLBinary)
@@ -300,9 +303,25 @@ bool TGDSMultibootRunNDSPayload(char * filename, u8 * tgdsMbv3ARM7Bootldr, int a
 			SFGEXT9 = (SFGEXT9 & ~(0x3 << 14)) | (0x2 << 14);
 			*(u32*)0x04004008 = SFGEXT9;
 		}
+		//TGDS TWL mode homebrew self reload fix
+		else if (
+			(isTGDSTWLHomebrew == true)
+			&&
+			(__dsimode == true)
+			&&
+			(isNTRTWLBinary == isTWLBinary)
+		){
+			//Enable 4M EWRAM (TWL)
+			u32 SFGEXT9 = *(u32*)0x04004008;
+			//14-15 Main Memory RAM Limit (0..1=4MB/DS, 2=16MB/DSi, 3=32MB/DSiDebugger)
+			SFGEXT9 = (SFGEXT9 & ~(0x3 << 14)) | (0x0 << 14);
+			*(u32*)0x04004008 = SFGEXT9;
+		}
 		
 		//Execute Stage 2: VRAM ARM7 payload: NTR/TWL (0x06000000)
 		executeARM7Payload((u32)0x02380000, 96*1024, tgdsMbv3ARM7Bootldr);
+		
+		remove(TGDS_MB_V3_BOOTSTUB_FILENAME);
 		
 		//Copy the file into non-case sensitive "tgdsboot.bin" into ARM7,
 		//since PetitFS only understands 8.3 DOS format filenames.
@@ -357,6 +376,7 @@ bool TGDSMultibootRunNDSPayload(char * filename, u8 * tgdsMbv3ARM7Bootldr, int a
 				printf("payload fail [%s]", tempFile);
 				while(1==1){}
 			}
+			f_sync(&fPagingFDRead);
 			f_sync(&fPagingFDWrite); //make persistent file in filesystem coherent
 			
 			blocksWritten++;
