@@ -192,6 +192,7 @@ extern void TryToDefragmentMemory();
 //newlib
 extern uint32 get_lma_libend();		//linear memory top
 extern uint32 get_lma_wramend();	//(ewram end - linear memory top ) = malloc free memory
+extern u32 physical_ewram_end;
 
 #ifdef __cplusplus
 }

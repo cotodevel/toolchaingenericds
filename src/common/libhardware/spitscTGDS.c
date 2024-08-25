@@ -84,7 +84,7 @@ typedef struct tPERSONAL_DATA {
 } PERSONAL_DATA ;
 
 //!	Default location for the user's personal data (see %PERSONAL_DATA).
-#define PersonalData ((PERSONAL_DATA*)&((struct sIPCSharedTGDS *)0x027FF000)->DSFWSETTINGSInst)
+#define PersonalData ((PERSONAL_DATA*)&((struct sIPCSharedTGDS *)TGDSIPCStartAddress)->DSFWSETTINGSInst)
 
 
 static u8 last_time_touched = 0;
@@ -501,7 +501,7 @@ __attribute__ ((optnone))
 #endif
 void doSPIARM7IO(){
 	#ifdef ARM7
-	//struct sIPCSharedTGDS * sIPCSharedTGDSInst = (struct sIPCSharedTGDS *)0x027FF000;
+	//struct sIPCSharedTGDS * sIPCSharedTGDSInst = (struct sIPCSharedTGDS *)TGDSIPCStartAddress;
 	//Handle Clock (should this one run on IRQs instead?)
 	//sIPCSharedTGDSInst->ndsRTCSeconds = nds_get_time7(); //disable clock by default, re-enable it if TGDS Project needs it
 	#endif
