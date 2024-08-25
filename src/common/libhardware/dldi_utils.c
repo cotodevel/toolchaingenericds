@@ -206,7 +206,17 @@ bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer) {
 		return dldiInterface->ioInterface.readSectors(sector, numSectors, buffer);
 		#endif
 		#ifdef ARM9
-		void * targetMem = (void *)((int)&ARM7SharedDLDI[0] + 0x400000); //Uncached NTR, TWL is implemented below
+		void * targetMem = (void *)((int)&ARM7SharedDLDI[0]);
+		//Get TWL RAM Setting
+		u32 SFGEXT9 = *(u32*)0x04004008;
+		//14-15 Main Memory RAM Limit (0..1=4MB/DS, 2=16MB/DSi, 3=32MB/DSiDebugger)
+		u8 TWLRamSetting = (SFGEXT9 >> 14) & 0x3;
+		if((TWLRamSetting == 0)||(TWLRamSetting == 1)){
+			targetMem = (void *)((int)targetMem + 0x400000);
+		}
+		else{
+			targetMem = (void *)((int)targetMem + 0x0A000000);
+		}
 		uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
 		setValueSafe(&fifomsg[20], (uint32)sector);
 		setValueSafe(&fifomsg[21], (uint32)numSectors);
@@ -256,7 +266,17 @@ bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buff
 		return dldiInterface->ioInterface.writeSectors(sector, numSectors, buffer);
 		#endif
 		#ifdef ARM9
-		void * targetMem = (void *)((int)&ARM7SharedDLDI[0] + 0x400000);	//Uncached NTR, TWL is implemented below
+		void * targetMem = (void *)((int)&ARM7SharedDLDI[0]);
+		//Get TWL RAM Setting
+		u32 SFGEXT9 = *(u32*)0x04004008;
+		//14-15 Main Memory RAM Limit (0..1=4MB/DS, 2=16MB/DSi, 3=32MB/DSiDebugger)
+		u8 TWLRamSetting = (SFGEXT9 >> 14) & 0x3;
+		if((TWLRamSetting == 0)||(TWLRamSetting == 1)){
+			targetMem = (void *)((int)targetMem + 0x400000);
+		}
+		else{
+			targetMem = (void *)((int)targetMem + 0x0A000000);
+		}
 		memcpy((uint16_t*)targetMem, (uint16_t*)buffer, (numSectors * 512));
 		uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
 		setValueSafe(&fifomsg[20], (uint32)sector);

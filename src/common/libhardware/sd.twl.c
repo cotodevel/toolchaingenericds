@@ -95,7 +95,18 @@ bool sdio_ReadSectors(sec_t sector, sec_t numSectors,void* buffer) {
 		#endif
 		
 		#ifdef ARM9
-		void * targetMem = (void *)((int)&ARM7SharedDLDI[0]	+ 0x400000); //TWL uncached EWRAM
+		void * targetMem = (void *)((int)&ARM7SharedDLDI[0]);
+		//Get TWL RAM Setting
+		u32 SFGEXT9 = *(u32*)0x04004008;
+		//14-15 Main Memory RAM Limit (0..1=4MB/DS, 2=16MB/DSi, 3=32MB/DSiDebugger)
+		u8 TWLRamSetting = (SFGEXT9 >> 14) & 0x3;
+		if((TWLRamSetting == 0)||(TWLRamSetting == 1)){
+			targetMem = (void *)((int)targetMem + 0x400000);
+		}
+		else{
+			targetMem = (void *)((int)targetMem + 0x0A000000);
+		}
+		
 		uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
 		setValueSafe(&fifomsg[20], (uint32)sector);
 		setValueSafe(&fifomsg[21], (uint32)numSectors);
@@ -135,7 +146,17 @@ bool sdio_WriteSectors(sec_t sector, sec_t numSectors, const void* buffer) {
 		#endif
 		
 		#ifdef ARM9
-		void * targetMem = (void *)((int)&ARM7SharedDLDI[0] + 0x400000); //TWL uncached EWRAM
+		void * targetMem = (void *)((int)&ARM7SharedDLDI[0]);
+		//Get TWL RAM Setting
+		u32 SFGEXT9 = *(u32*)0x04004008;
+		//14-15 Main Memory RAM Limit (0..1=4MB/DS, 2=16MB/DSi, 3=32MB/DSiDebugger)
+		u8 TWLRamSetting = (SFGEXT9 >> 14) & 0x3;
+		if((TWLRamSetting == 0)||(TWLRamSetting == 1)){
+			targetMem = (void *)((int)targetMem + 0x400000);
+		}
+		else{
+			targetMem = (void *)((int)targetMem + 0x0A000000);
+		}
 		coherent_user_range_by_size((uint32)buffer, (numSectors * 512)); //make coherent reads from src buffer
 		memcpy((uint16_t*)targetMem, (uint16_t*)buffer, (numSectors * 512));
 		uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
