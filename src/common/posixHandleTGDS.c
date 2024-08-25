@@ -54,6 +54,8 @@ uint32 get_lma_libend(){
 	return (uint32)(&__vma_stub_end__);	//linear memory top (start)
 }
 
+u32 physical_ewram_end = (u32)(&_ewram_end);
+
 //(ewram end - linear memory top ) = malloc free memory (bottom, end)
 uint32 get_lma_wramend(){
 	#ifdef ARM7
@@ -61,7 +63,7 @@ uint32 get_lma_wramend(){
 	return (uint32)(&sp_USR);
 	#endif
 	#ifdef ARM9
-	return (uint32)(&_ewram_end);	//EWRAM has no stacks shared so we use the end memory 
+	return physical_ewram_end;	//EWRAM has no stacks shared so we use the end memory 
 	#endif
 }
 

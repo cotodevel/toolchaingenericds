@@ -250,11 +250,11 @@ typedef struct sIPCSharedTGDS {
 	uint32 fifoMesaggingQueueSharedRegion[4];	//4 Words for various command handling which can't use the NDS_CACHED_SCRATCHPAD / NDS_UNCACHED_SCRATCHPAD at the time
 } IPCSharedTGDS	__attribute__((aligned (4)));
 
-//Shared Work     027FF000h 4KB    -     -    -    R/W
+//Shared Work     4KB    -     -    -    R/W
+#define TGDSIPCStartAddress (struct sIPCSharedTGDS*)(0x02FFF000)	//TWL or NTR (#3 mirror)
 static inline uint32 getUserIPCAddress(){
-	return (uint32)(0x027FF000+sizeof(struct sIPCSharedTGDS));
+	return (uint32)( ((int)TGDSIPCStartAddress) +sizeof(struct sIPCSharedTGDS));
 }
-#define TGDSIPCStartAddress (struct sIPCSharedTGDS*)(0x027FF000)
 #define TGDSIPCSize (int)(sizeof(struct sIPCSharedTGDS))
 #define TGDSIPCUserStartAddress (u32)( ((u32)TGDSIPCStartAddress) + TGDSIPCSize)	//u32 because it`s unknown at this point. TGDS project will override it to specific USER IPC struct. Known as GetUserIPCAddress()
 #define IPCRegionSize	(sint32)(4*1024)
