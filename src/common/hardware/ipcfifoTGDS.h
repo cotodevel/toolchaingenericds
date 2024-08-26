@@ -259,8 +259,8 @@ static inline uint32 getUserIPCAddress(){
 #define TGDSIPCUserStartAddress (u32)( ((u32)TGDSIPCStartAddress) + TGDSIPCSize)	//u32 because it`s unknown at this point. TGDS project will override it to specific USER IPC struct. Known as GetUserIPCAddress()
 #define IPCRegionSize	(sint32)(4*1024)
 
-#define NDS_CACHED_SCRATCHPAD	(int)(((int)0x02400000 - (4096)) | 0x400000)
-#define NDS_UNCACHED_SCRATCHPAD	(int)(NDS_CACHED_SCRATCHPAD | 0x400000)
+#define NDS_CACHED_SCRATCHPAD	(int)(((int)0x03000000 - (8192)) )
+#define NDS_UNCACHED_SCRATCHPAD	(int)(NDS_CACHED_SCRATCHPAD)
 
 static inline void sendIPCIRQOnly(){
 	REG_IPC_SYNC|=IPC_SYNC_IRQ_REQUEST;
