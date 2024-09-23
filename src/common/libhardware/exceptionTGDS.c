@@ -39,6 +39,7 @@ USA
 #include "global_settings.h"
 #include "keypadTGDS.h"
 #include "posixHandleTGDS.h"
+#include "malloc.h"
 
 #ifdef ARM9
 #include "nds_cp15_misc.h"
@@ -254,6 +255,7 @@ void exception_handler(uint32 arg, int stage, u32 fwNo){
 			//Stage 8 = TGDS NTR App trying to be ran in TWL mode. (unused)
 			//Stage 9 = TGDS ARM7 Payload reloading failed.
 			//Stage 10 = Custom manual exception (ARM7)
+			//Stage 11 = dlmalloc abort (ARM9). Reasons: mis-aligned buffer freed, fragmented reallocation (buffer was not freed/reallocated correctly), NULL ptr @ free();, EWRAM out of memory, etc
 			GUI_printf("TGDS boot fail: Stage [%d], firmware model: [0x%x]", stage, fwNo);
 			
 			int isNTRTWLBinary = isThisPayloadNTROrTWLMode();
@@ -313,6 +315,16 @@ void exception_handler(uint32 arg, int stage, u32 fwNo){
 			}
 			else if(stage == 10){
 				GUI_printf(sharedStringExceptionMessage);
+			}
+			else if(stage == 11){
+				GUI_printf("dlmalloc abort (ARM9). Reasons: mis-aligned buffer freed, ");
+				GUI_printf("fragmented reallocation (buffer was not freed/reallocated correctly), ");
+				GUI_printf("NULL ptr @ free();, EWRAM out of memory, etc.");
+				GUI_printf("-");
+				GUI_printf("Report this bug/issue at:");
+				GUI_printf("https://bitbucket.org/Coto88");
+				GUI_printf("or");
+				GUI_printf("https://github.com/cotodevel");
 			}
 			else{
 				GUI_printf("handleDSInitError(); Unhandled event. Contact developer.");
@@ -417,4 +429,13 @@ __attribute__ ((optnone))
 void handleDSInitError(int stage, u32 fwNo){
 	exception_handler(manualexception_9, stage, fwNo);
 }
+
+//newlib-nds's dlmalloc abort handler
+void ds_malloc_abort(void){
+	//Throw exception always
+	u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
+	int stage = 11;
+	handleDSInitError(stage, (u32)fwNo);
+}
+
 #endif

@@ -223,6 +223,9 @@ struct devoptab_t{
    _ssize_t (*write_r ) ( struct _reent *r, int fd, const sint8 *ptr, int len );
    _ssize_t (*read_r )( struct _reent *r, int fd, sint8 *ptr, int len );
 };
+
+extern u32 mallocGetFreeMemoryInBytes();
+
 #endif
 
 #endif
