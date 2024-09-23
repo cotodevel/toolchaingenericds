@@ -34,7 +34,6 @@ USA
 #include "ipcfifoTGDS.h"
 #include "posixHandleTGDS.h"
 #include "linkerTGDS.h"
-
 #include "dsregs_asm.h"
 #include "devoptab_devices.h"
 #include "errno.h"
@@ -49,6 +48,7 @@ USA
 #include "busTGDS.h"
 #include "initNDSTGDS.h"
 #include "exceptionTGDS.h"
+#include "malloc.h"
 
 uint32 get_lma_libend(){
 	return (uint32)(&__vma_stub_end__);	//linear memory top (start)
@@ -581,9 +581,13 @@ int lstat(const char * path, struct stat *buf){
 	return fatfs_stat((const sint8 *)path,buf);
 }
 
+u32 mallocGetFreeMemoryInBytes(){
+	u32 freeEWRamMemory = (u32) ((int)get_lma_wramend() - (int)sbrk(0));
+	return freeEWRamMemory;
+}
+
 int getMaxRam(){
-	int maxRam = ((int)(&_ewram_end)  - (int)sbrk(0) );
-	return (int)maxRam;
+	return (int)mallocGetFreeMemoryInBytes();
 }
 
 //Memory is too fragmented up to this point, causing to have VERY little memory left. 
@@ -782,10 +786,7 @@ u8 * TGDSARM9Calloc(int blockCount, int blockSize){
 
 u8 * TGDSARM9Realloc(void *ptr, int size){
 	if(customMallocARM9 == false){
-		if(ptr != NULL){
-			free(ptr);
-		}
-		return (u8*)malloc(size);
+		return realloc(ptr, size);
 	}
 	else{
 		if(ptr != NULL){
