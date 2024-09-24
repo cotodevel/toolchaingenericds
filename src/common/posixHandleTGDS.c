@@ -593,6 +593,7 @@ int getMaxRam(){
 //Memory is too fragmented up to this point, causing to have VERY little memory left. 
 //Luckily for us this memory hack allows dmalloc to re-arrange and free more memory for us! Also fixing malloc memory fragmentation!! WTF Dude.
 void TryToDefragmentMemory(){
+	/*
 	int freeRam = getMaxRam();
 	//I'm not kidding, this allows to de-fragment memory. Relative to how much memory we have and re-allocate it
 	char * defragMalloc[1024];	//4M / 4096. DS Mem can't be higher than this
@@ -606,6 +607,7 @@ void TryToDefragmentMemory(){
 			free(defragMalloc[i]);
 		}
 	}
+	*/
 }
 
 
