@@ -269,10 +269,10 @@ typedef struct WIFI_MAINSTRUCT {
 
 	// wifi data
 	u32 rxbufIn, rxbufOut; // bufIn/bufOut have 2-byte granularity.
-	u16 rxbufData[WIFI_RXBUFFER_SIZE/2]; // send raw 802.11 data through! rxbuffer is for rx'd data, arm7->arm9 transfer
+	u16 rxbufData[(WIFI_RXBUFFER_SIZE/2) * 2]; // send raw 802.11 data through! rxbuffer is for rx'd data, arm7->arm9 transfer
 
 	u32 txbufIn, txbufOut;
-	u16 txbufData[WIFI_TXBUFFER_SIZE/2]; // tx buffer is for data to tx, arm9->arm7 transfer
+	u16 txbufData[(WIFI_TXBUFFER_SIZE/2) * 2]; // tx buffer is for data to tx, arm9->arm7 transfer
 
 	// stats data
 	u32 stats[NUM_WIFI_STATS];

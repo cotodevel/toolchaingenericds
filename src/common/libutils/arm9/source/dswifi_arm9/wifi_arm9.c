@@ -323,7 +323,14 @@ int Wifi_RxRawReadPacket(s32 packetID, s32 readlength, u16 * data) {
 			read_data+=readlen;
 			while(readlen>0) {
 				*(data++) = WifiData->rxbufData[packetID++];
-				readlen--;
+				
+				//wrap around to buffer start to prevent segfaults
+				if(packetID >= (WIFI_RXBUFFER_SIZE/2) ){
+					break;
+				}
+				else{
+					readlen--;
+				}
 			}
 			packetID=0;
 		}
@@ -936,7 +943,7 @@ void Wifi_Update() {
 				if(Wifi_RxReadOffset(base2-4,0)==0xAAAA && Wifi_RxReadOffset(base2-4,1)==0x0003 && Wifi_RxReadOffset(base2-4,2)==0) {
 					mb = sgIP_memblock_allocHW(14,len-8-hdrlen);
 					if(mb) {
-						if(base2>=(WIFI_RXBUFFER_SIZE/2)) base2-=(WIFI_RXBUFFER_SIZE/2);
+						if(base2>=(WIFI_RXBUFFER_SIZE/2)) base2= WifiData->rxbufIn;
 						Wifi_RxRawReadPacket(base2,(len-8-hdrlen)&(~1),((u16 *)mb->datastart)+7); // Todo: Improve this to read correctly  in the case that the packet buffer is fragmented
 						if(len&1) ((u8 *)mb->datastart)[len+14-1-8-hdrlen]=Wifi_RxReadOffset(base2,((len-8-hdrlen)/2))&255;
 						Wifi_CopyMacAddr(mb->datastart,framehdr+8); // copy dest
