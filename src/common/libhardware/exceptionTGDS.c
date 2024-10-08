@@ -33,6 +33,7 @@ USA
 #include <time.h>
 #include "dmaTGDS.h"
 #include "biosTGDS.h"
+#include "powerTGDS.h"
 #include "exceptionTGDS.h"
 #include "ipcfifoTGDS.h"
 #include "InterruptsARMCores_h.h"
@@ -187,6 +188,13 @@ void exception_handler(uint32 arg, int stage, u32 fwNo){
 	sint32 fwlanguage = (sint32)getLanguage();
 	GUI_clear();
 	VRAMBLOCK_SETBANK_C(VRAM_C_0x06200000_ENGINE_B_BG);	
+	
+	//Disable timers, and if we eventually use GDB, re-enable one
+	REG_IE &= ~(IRQ_TIMER0|IRQ_TIMER1|IRQ_TIMER2|IRQ_TIMER3);
+	
+	powerOFF3DEngine(); //Power off ARM9 3D Engine to save power
+	powerOFF(POWER_2D_A);
+	setBacklight(POWMAN_BACKLIGHT_BOTTOM_BIT);
 	
 	GUI_printf(" ---- ");
 	
