@@ -199,7 +199,7 @@ bool InitDefaultConsole(){
 	DefaultSessionConsole = (ConsoleInstance *)(&DefaultConsole);
 	
 	//Set subEngine as TGDS Console
-	GUI.consoleAtTopScreen = false;
+	GUI.GBAMacroMode = false;
 	SetEngineConsole(subEngine,DefaultSessionConsole);
 	
 	//Set subEngine properties
@@ -239,6 +239,7 @@ bool InitDefaultConsole(){
 	}
 	
 	InitializeConsole(DefaultSessionConsole);
+	TGDSLCDSwap();
 	return true;
 }
 
@@ -434,8 +435,7 @@ void InitTGDSDual3DSpecificConsole(){
 	DefaultSessionConsole = (ConsoleInstance *)(&DefaultConsole);
 	
 	//Set subEngine as TGDS Console
-	GUI.consoleAtTopScreen = false;
-	GUI.consoleBacklightOn = true;	//Backlight On for console
+	GUI.GBAMacroMode = false;
 	SetEngineConsole(subEngine,DefaultSessionConsole);
 	
 	//Set subEngine properties
@@ -476,7 +476,7 @@ void InitTGDSDual3DSpecificConsole(){
 	REG_BG3PC_SUB = 0;
 	REG_BG3PD_SUB = 1 << 8;
 	
-	
+	TGDSLCDSwap();
 	bool mainEngine = true;
 	setOrientation(ORIENTATION_0, mainEngine);
 	mainEngine = false;
