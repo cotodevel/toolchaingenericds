@@ -56,15 +56,28 @@ struct fd * files = NULL;	//File/Dir MAX handles: OPEN_MAXTGDS
 //Usercall: For initializing Filesystem:
 //if FS_init() init SD equals true: Init success
 //else  FS_init() equals false: Could not init the card SD access 
-int		FS_init(){
-	char * devoptabFSName = (char*)"0:/";
-	initTGDS(devoptabFSName);
+
+//bool minimumFSInitialization
+	//true: uses no extra RAM at all, required in restrictive environments without memory allocation support
+	//false: uses full TGDS Filesystem POSIX functions, normal use.
+int		FS_init(bool minimumFSInitialization){
+	
+	if(minimumFSInitialization == false){
+		char * devoptabFSName = (char*)"0:/";
+		initTGDS(devoptabFSName);
+	}
+	else{
+		initTGDS(NULL);
+	}
 	FRESULT ret = (f_mount(&dldiFs, (const TCHAR*)"0:", 1));
 	if(ret != FR_OK){	//FRESULT: FR_OK == 0
 		//Throw exception always
 		u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
-		int stage = 1;
-		handleDSInitError(stage, (u32)fwNo);
+		int TGDSDebuggerStage = 10;
+		sprintf((char*)ConsolePrintfBuf, "ARM9: FS_init(): f_mount(): failed. (%d)", (u32)ret);
+		handleDSInitOutputMessage((char*)ConsolePrintfBuf);
+		handleDSInitError(TGDSDebuggerStage, (u32)fwNo);
+		
 	}
     return (int)ret; 
 }
@@ -2206,6 +2219,7 @@ struct fd *getStructFD(int fd){
 
 //char * devoptabFSName must be a buffer already allocated if bool defaultDriver == false
 void initTGDS(char * devoptabFSName){
+	memset((u8*)&dldiFs, 0, sizeof(dldiFs));
 	if(devoptabFSName == NULL){
 		return;
 	}
@@ -2231,8 +2245,6 @@ void initTGDS(char * devoptabFSName){
 	}
 	//Set up proper devoptab device mount name.
 	memcpy((uint32*)&devoptab_sdFilesystem.name[0], (uint32*)devoptabFSName, strlen(devoptabFSName));
-	
-	memset((u8*)&dldiFs, 0, sizeof(dldiFs));
 }
 
 FILE * getPosixFileHandleByStructFD(struct fd * fdinst, const char * mode){

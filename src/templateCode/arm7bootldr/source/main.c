@@ -163,12 +163,13 @@ u32 getEntryPointByType(u32 inType){
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Os")))
+__attribute__((optimize("O0")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
 void bootfile(){
+	int stage = 10;
 	//Wait for 96K ARM7 mapped @ 0x037f8000 ~ 0x03810000 & Clean IWRAM
 	while( !(WRAM_CR & WRAM_0KARM9_32KARM7) ){
 		swiDelay(1);
@@ -181,17 +182,15 @@ void bootfile(){
 	memset(&addresses, 0, sizeof(addresses));
 	strcpy((char*)fname, &filename[2]);
 	
+	REG_IME = 1;
 	fresult = pf_mount(currentFH);
 	if (fresult != FR_OK) {
-		//Throw exception
-		int stage = 10;
-		handleDSInitOutputMessage("TGDS-MB: arm7bootldr/bootfile(): pf_mount() failed");
-		handleDSInitError7(stage, (u32)savedDSHardware);
+		setValueSafe((u32*)0x02FFFE24, (u32)0xFFFFFFFE); //ARM9 go handle error
+		while(1==1){}
 	}
 	else{
 		fresult = pf_open(fname, currentFH);
 		if (fresult != FR_OK) {
-			int stage = 10;
 			strcpy(debugBuf7, "TGDS-MB: arm7bootldr/bootfile():[");
 			strcat(debugBuf7, filename);
 			strcat(debugBuf7, "] Open FAIL! Halting.");
@@ -211,7 +210,7 @@ void bootfile(){
 			
 			//Todo: Support isNDSBinaryV1Slot2 binary (Slot2 Passme v1 .ds.gba homebrew)
 			if(isNTRTWLBinary == isNDSBinaryV1Slot2){
-				setValueSafe((u32*)0x02FFFE24, (u32)0xFFFFFFFF); //ARM9 go handle error
+				setValueSafe((u32*)0x02FFFE24, (u32)0xFFFFFFFE); //ARM9 go handle error
 			}
 			
 			setupDisabledExceptionHandler();
@@ -316,7 +315,6 @@ void bootfile(){
 				}
 				else{
 					//Throw exception
-					int stage = 10;
 					strcpy(debugBuf7, "TGDS-MB: arm7bootldr/bootfile():[");
 					strcat(debugBuf7, filename);
 					strcat(debugBuf7, "] Unknown Mode BIOS! ");
@@ -401,65 +399,80 @@ void bootfile(){
 				addresses[3].armBootCodeSize = arm9iBootCodeSize;
 				addresses[3].type = TGDS_MB_V3_TYPE_DEFAULT_VALUE;
 				
-				//Copy addresses in lowest to highest order to prevent sections overlapping each other
-				int count = sizeof(addresses) / sizeof(struct addrList);
-				//qsort(addresses, count, sizeof(struct addrList), compare); //unused
-				int i = 0;
-				for(i = 0; i < count; i++){
-					if( addresses[i].armBootCodeSize > 0 ){
-						pf_lseek(addresses[i].armBootCodeOffsetInFile, currentFH);
-						pf_read((u8*)addresses[i].armRamAddress, addresses[i].armBootCodeSize, &nbytes_read, currentFH);
-						if( ((int)nbytes_read) != ((int)addresses[i].armBootCodeSize) ){
-							int stage = 10;
-							strcpy(debugBuf7, "TGDS-MB: arm7bootldr/bootfile():[");
-							strcat(debugBuf7, filename);
-							strcat(debugBuf7, "] ARM payload write FAIL...");
-							handleDSInitOutputMessage((char*)&debugBuf7[0]);
-							handleDSInitError7(stage, (u32)savedDSHardware);
-						}
-					}
-				}
-				
 				setValueSafe((u32*)ARM7i_RAM_ADDRESS, (u32)arm7iRamAddress);
 				setValueSafe((u32*)ARM7i_BOOT_SIZE, (u32)arm7iBootCodeSize);
 				setValueSafe((u32*)ARM9i_RAM_ADDRESS, (u32)arm9iRamAddress);
 				setValueSafe((u32*)ARM9i_BOOT_SIZE, (u32)arm9iBootCodeSize);
 			}
-			//NTR hardware trying to boot TWL binaries? Throw exception
+			//NTR hardware trying to boot TWL binaries? 
 			else if( (__dsimode == false) && (isNTRTWLBinary == isTWLBinary) ){
-				int stage = 10;
 				strcpy(debugBuf7, "TGDS-MB: arm7bootldr/bootfile():[");
 				strcat(debugBuf7, filename);
-				strcat(debugBuf7, "] TWL Binary UNSUPPORTED in NTR Unit.");
-				handleDSInitOutputMessage((char*)&debugBuf7[0]);
-				handleDSInitError7(stage, (u32)savedDSHardware);
+				strcat(debugBuf7, "] NTR Unit trying TWL/Hybrid TWL Binary.");
+				asm("nop");
+				asm("nop");
+				asm("nop");
+				asm("nop");
 			}
 			
+			//Copy addresses in lowest to highest order to prevent sections overlapping each other
+			int count = sizeof(addresses) / sizeof(struct addrList);
+			qsort(addresses, count, sizeof(struct addrList), compare);
+			int i = 0;
+			for(i = 0; i < count; i++){
+				if( addresses[i].armBootCodeSize > 0 ){
+					pf_lseek(addresses[i].armBootCodeOffsetInFile, currentFH);
+					pf_read((u8*)addresses[i].armRamAddress, addresses[i].armBootCodeSize, &nbytes_read, currentFH);
+					if( ((int)nbytes_read) != ((int)addresses[i].armBootCodeSize) ){
+						setValueSafe((u32*)0x02FFFE24, (u32)0xFFFFFFFE); //ARM9 go handle error
+						int stage = 10;
+						strcpy(debugBuf7, "TGDS-MB: arm7bootldr/bootfile():[");
+						strcat(debugBuf7, filename);
+						strcat(debugBuf7, "] ARM payload write FAIL...");
+						handleDSInitOutputMessage((char*)&debugBuf7[0]);
+						handleDSInitError7(stage, (u32)savedDSHardware);
+					}
+				}
+			}
 			
+			int wtf = 0;
+			(void)wtf;
+
 			//SM64 DSi port (DKARM): (https://github.com/Hydr8gon/sm64/commit/7d50caa3856be22dd167f1bfa874f8e5f3ad2b0e) 
 			//has a libnds bug in its initialization routines (segfaults). Since TGDS don't use them, stub them.
-			uint32 crc0 = (u32)swiCRC16( 0xffff, (uint8*)arm9ramaddress, 512*1024);
-			if(	
-				(__dsimode == true)
-				&&
-				(isNTRTWLBinary == isTWLBinary)
-				&&
-				(isTGDSTWLHomebrew == false)
-				&&
-				((uint32)crc0 == ((uint32)0x000021DC))
-			){
-				*(u16*)0x020D5340 = 0x2500;
-			}
-			
-			//Sound fix on DKARM homebrew
-			if(
-				(isNTRTWLBinary == isTWLBinary)
-				&&
-				(isTGDSTWLHomebrew == false)
-			){
-				*(u32*)0x04004008 = *ARM7i_HEADER_SCFG_EXT7;
+			if(__dsimode == true){
+				if(
+					(isNTRTWLBinary == isTWLBinary)
+					&&
+					(isTGDSTWLHomebrew == false)
+					&&
+					((uint32)(u32)swiCRC16( 0xffff, (uint8*)arm9ramaddress, 512*1024) == ((uint32)0x000021DC))
+				){
+					*(u16*)0x020D5340 = 0x2500;
+				}
+
+				//Sound fix on DKARM homebrew
+				if(
+					(isNTRTWLBinary == isTWLBinary)
+					&&
+					(isTGDSTWLHomebrew == false)
+				){
+					*(u32*)0x04004008 = *ARM7i_HEADER_SCFG_EXT7;
+				}
 			}
 			initSound();
+			if(__dsimode == true){
+				nocashMessage(" TGDS-MB v3 TWL");
+			}
+			else{
+				nocashMessage(" TGDS-MB v3 NTR");
+			}
+			
+			//NTR mode only. 
+			if(__dsimode == false){
+				REG_IME = 0;
+				dldi_handler_deinit();
+			}
 			
 			setValueSafe((u32*)TGDS_IS_TGDS_HOMEBREW, (u32)isTGDSTWLHomebrew);
 			setValueSafe((u32*)ARM9_TWLORNTRPAYLOAD_MODE, (u32)isNTRTWLBinary);
@@ -478,7 +491,6 @@ void bootfile(){
 			///////////////////////////////////////////////////ARM7 Loader end ///////////////////////////////////////////////////////
 			
 			//Should never read this
-			int stage = 10;
 			strcpy(debugBuf7, "TGDS-MB: arm7bootldr/bootfile():[");
 			strcat(debugBuf7, filename);
 			strcat(debugBuf7, "] NTR or TWL Boot failed! Halting. ");
@@ -487,7 +499,6 @@ void bootfile(){
 			
 		}
 		else{
-			int stage = 10;
 			strcpy(debugBuf7, "TGDS-MB: arm7bootldr/bootfile():[");
 			strcat(debugBuf7, filename);
 			strcat(debugBuf7, "] NOT NTR or TWL Binary! Halting.");
