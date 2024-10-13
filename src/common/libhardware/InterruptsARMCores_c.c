@@ -88,7 +88,6 @@ void IRQInit(u8 DSHardware)  {
 	REG_IE = interrupts_to_wait_armX; 
 	
 	INTERRUPT_VECTOR = (uint32)&NDS_IRQHandler;
-	REG_IME = 1;
 	
 	int isNTRTWLBinary = isThisPayloadNTROrTWLMode();
 	if(isNTRTWLBinary == isTWLBinary){
@@ -118,6 +117,7 @@ void IRQInit(u8 DSHardware)  {
 		//TWL ARM9 IRQ Init
 		#endif
 	#endif
+	REG_IME = 1;
 }
 
 #ifdef ARM7

@@ -72,8 +72,10 @@ DSTATUS disk_initialize (
 		
 		//Throw exception always
 		u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
-		int stage = 1;
-		handleDSInitError(stage, (u32)fwNo);
+		int TGDSDebuggerStage = 10;
+		sprintf((char*)ConsolePrintfBuf, "ARM9: disk_initialize(): failed.");
+		handleDSInitOutputMessage((char*)ConsolePrintfBuf);
+		handleDSInitError(TGDSDebuggerStage, (u32)fwNo);
 		
 		ret = STA_NOINIT;
 	}

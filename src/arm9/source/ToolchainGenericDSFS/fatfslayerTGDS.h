@@ -280,7 +280,7 @@ extern FATFS dldiFs;
 extern bool FS_InitStatus;
 
 ////////////////////////////////////////////////////////////////////////////USER CODE START/////////////////////////////////////////////////////////////////////////////////////
-extern int		FS_init();
+extern int		FS_init(bool minimumFSInitialization);
 extern int		FS_deinit();
 extern sint8 charbuf[MAX_TGDSFILENAME_LENGTH+1];
 extern sint8 * getfatfsPath(sint8 * filename);

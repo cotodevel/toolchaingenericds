@@ -53,6 +53,9 @@ bool ARM7InitDLDI(u32 ARM7MallocStartaddress, int ARM7MallocSize, u32 TargetARM7
 	else{
 		detectedTWLModeInternalSDAccess = TWLModeDLDIAccessDisabledInternalSDEnabled;
 		DLDIARM7FSInitStatus = true;
+
+		DLDIARM7Address = (u32*)TargetARM7DLDIAddress;
+		dldiRelocateLoader((u32)DLDIARM7Address, dldiStartAddress); //Initialize basic DLDI in TWL mode so it can call DLDI functions properly.
 	}
 	
 	//NTR mode: define DLDI initialization and ARM7DLDI operating mode
@@ -500,7 +503,7 @@ __attribute__((optimize("O0")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-bool dldiPatchLoader(data_t *binData, u32 binSize, u32 physDLDIAddress)
+bool dldiPatchLoader(data_t *binData, int binSize, u32 physDLDIAddress)
 {
 	addr_t memOffset;			// Offset of DLDI after the file is loaded into memory
 	addr_t patchOffset;			// Position of patch destination in the file
