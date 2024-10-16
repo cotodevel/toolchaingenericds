@@ -31,8 +31,8 @@ USA
 #include "TGDSTypes.h"
 #include "ff.h"
 
-#define OPEN_MAXTGDS (int)(20)					//Available POSIX File Descriptors (from POSIX -> TGDS)
-#define MAX_TGDSFILENAME_LENGTH (int)(256)				//NAME_MAX: Max filename (POSIX) that inherits into TGDSFILENAME_LENGTH
+#define OPEN_MAXTGDS (int)(5)					//Available POSIX File Descriptors (from POSIX -> TGDS)
+#define MAX_TGDSFILENAME_LENGTH (int)(128)				//NAME_MAX: Max filename (POSIX) that inherits into TGDSFILENAME_LENGTH
 
 enum _flags {
     _READ = 01,     /* file open for reading */

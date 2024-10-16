@@ -127,8 +127,7 @@ int main(int argc, char **argv) {
 	printf("   ");
 	printf("   ");
 	
-	bool minimumFSInitialization = false;
-	int ret=FS_init(minimumFSInitialization);
+	int ret=FS_init();
 	if (ret != 0){
 		printf("%s: FS Init error: %d >%d", TGDSPROJECTNAME, ret, TGDSPrintfColor_Red);
 		while(1==1){

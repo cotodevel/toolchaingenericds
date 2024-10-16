@@ -163,7 +163,7 @@ struct dirent {
 //FileClass parts (not used by POSIX at all, but ToolchainGenericDS high level API (for parsing fullpath directories and high level descriptors, and completely unrelated to TGDS FileOrBuffer handles)
 struct FileClass{
 	int type;	//FT_DIR / FT_FILE / FT_NONE	//  setup on Constructor / updated by getFileFILINFOfromPath(); / must be init from the outside 
-	sint8 fd_namefullPath[MAX_TGDSFILENAME_LENGTH+1];
+	sint8 fd_namefullPath[MAX_TGDSFILENAME_LENGTH];
 	bool isIterable;	//true = usable for buildfrompath / false = ignore lookup in buildfrompath
 	int d_ino;	//if any, assign it here
 	int curIndexInsideFileClassList;	//Current Index inside FileClassList
@@ -197,7 +197,7 @@ struct fd {
 	int descriptor_flags;
 	int status_flags;
 	struct dirent cur_entry;	//dirent POSIX extension used in fopen / fatfs_readdir_r
-	sint8 fd_name[MAX_TGDSFILENAME_LENGTH+1];	/* d_name dirent but holds full file path. Only when this is a file */
+	sint8 fd_name[MAX_TGDSFILENAME_LENGTH];	/* d_name dirent but holds full file path. Only when this is a file */
 	
 	//If buffer mapped as file handle:
 	u8* bufferFD;
@@ -280,7 +280,7 @@ extern FATFS dldiFs;
 extern bool FS_InitStatus;
 
 ////////////////////////////////////////////////////////////////////////////USER CODE START/////////////////////////////////////////////////////////////////////////////////////
-extern int		FS_init(bool minimumFSInitialization);
+extern int		FS_init();
 extern int		FS_deinit();
 extern sint8 charbuf[MAX_TGDSFILENAME_LENGTH+1];
 extern sint8 * getfatfsPath(sint8 * filename);
@@ -402,7 +402,7 @@ extern int _fstat_r ( struct _reent *_r, int fd, struct stat *buf );
 extern int  readdir_r(DIR * dirp,struct dirent * entry,struct dirent ** result);
 extern int OpenFileFromPathGetStructFD(char * fullPath);
 extern bool closeFileFromStructFD(int StructFD);
-extern struct fd * files;	//File/Dir MAX handles: OPEN_MAXTGDS
+extern struct fd files[OPEN_MAXTGDS];	//File/Dir MAX handles: OPEN_MAXTGDS
 
 extern int getStructFDIndexByDIR(DIR *dirp);
 extern sint8 * getDeviceNameByStructFDIndex(int StructFDIndex);
@@ -459,6 +459,7 @@ extern int str_split(char * stream, char * haystack, char * outBuf, int itemSize
 extern void separateExtension(char *str, char *ext);
 extern struct FileClassList * initFileList();
 
+extern bool isNotNullString(const char * str);
 #ifdef __cplusplus
 }
 #endif

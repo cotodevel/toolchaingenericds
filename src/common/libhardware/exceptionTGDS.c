@@ -446,4 +446,62 @@ void ds_malloc_abort(void){
 	handleDSInitError(stage, (u32)fwNo);
 }
 
+//Context: Default callbacks to handle uninitialized, but required functionality at runtime
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void handleUninitializedTGDSMalloc9(){
+	int TGDSDebuggerStage = 10;
+	u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
+	sprintf((char*)ConsolePrintfBuf, "ARM9: TGDSMalloc9(): NOT initialized. Halt.");
+	handleDSInitOutputMessage((char*)ConsolePrintfBuf);
+	handleDSInitError(TGDSDebuggerStage, (u32)fwNo);
+}
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void handleUninitializedTGDSCalloc9(){
+	int TGDSDebuggerStage = 10;
+	u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
+	sprintf((char*)ConsolePrintfBuf, "ARM9: TGDSCalloc9(): NOT initialized. Halt.");
+	handleDSInitOutputMessage((char*)ConsolePrintfBuf);
+	handleDSInitError(TGDSDebuggerStage, (u32)fwNo);
+}
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void handleUninitializedTGDSFree9(){
+	int TGDSDebuggerStage = 10;
+	u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
+	sprintf((char*)ConsolePrintfBuf, "ARM9: TGDSFree9(): NOT initialized. Halt.");
+	handleDSInitOutputMessage((char*)ConsolePrintfBuf);
+	handleDSInitError(TGDSDebuggerStage, (u32)fwNo);
+}
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void handleUninitializedTGDSMallocFreeMemory9(){
+	int TGDSDebuggerStage = 10;
+	u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
+	sprintf((char*)ConsolePrintfBuf, "ARM9: TGDSMallocFreeMemory9(): NOT initialized. Halt.");
+	handleDSInitOutputMessage((char*)ConsolePrintfBuf);
+	handleDSInitError(TGDSDebuggerStage, (u32)fwNo);
+}
+
 #endif
