@@ -103,8 +103,12 @@ extern char * sharedStringExceptionMessageOutput;
 #ifdef ARM9
 extern char sharedStringExceptionMessage[256];
 extern u32 sharedBufHandler[2];
-
 extern void ds_malloc_abort(void);
+
+extern void handleUninitializedTGDSMalloc9();
+extern void handleUninitializedTGDSCalloc9();
+extern void handleUninitializedTGDSFree9();
+extern void handleUninitializedTGDSMallocFreeMemory9();
 #endif
 
 #ifdef __cplusplus

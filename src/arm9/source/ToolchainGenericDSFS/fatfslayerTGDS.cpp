@@ -1,4 +1,4 @@
-#if defined(_MSC_VER) || defined(ARM9) //only WIN32 and NDS has TGDS FS DLDI support for now
+#if (1==1) //only WIN32 and NDS has TGDS FS DLDI support for now
 
 #if defined(_MSC_VER)
 //disable _CRT_SECURE_NO_WARNINGS message to build this in VC++
@@ -49,26 +49,16 @@ FATFS dldiFs;
 bool FS_InitStatus = false;	
 
 // Physical struct fd file handles
-struct fd * files = NULL;	//File/Dir MAX handles: OPEN_MAXTGDS
+struct fd files[OPEN_MAXTGDS];	//File/Dir MAX handles: 
 
 ////////////////////////////////////////////////////////////////////////////USER CODE START/////////////////////////////////////////////////////////////////////////////////////
 
 //Usercall: For initializing Filesystem:
-//if FS_init() init SD equals true: Init success
-//else  FS_init() equals false: Could not init the card SD access 
-
-//bool minimumFSInitialization
-	//true: uses no extra RAM at all, required in restrictive environments without memory allocation support
-	//false: uses full TGDS Filesystem POSIX functions, normal use.
-int		FS_init(bool minimumFSInitialization){
-	
-	if(minimumFSInitialization == false){
-		char * devoptabFSName = (char*)"0:/";
-		initTGDS(devoptabFSName);
-	}
-	else{
-		initTGDS(NULL);
-	}
+//FS_init() returns true: SD card initialization success 
+//FS_init() returns true: SD card initialization failure
+int		FS_init(){
+	char * devoptabFSName = (char*)"0:/";
+	initTGDS(devoptabFSName);
 	FRESULT ret = (f_mount(&dldiFs, (const TCHAR*)"0:", 1));
 	if(ret != FR_OK){	//FRESULT: FR_OK == 0
 		//Throw exception always
@@ -77,7 +67,6 @@ int		FS_init(bool minimumFSInitialization){
 		sprintf((char*)ConsolePrintfBuf, "ARM9: FS_init(): f_mount(): failed. (%d)", (u32)ret);
 		handleDSInitOutputMessage((char*)ConsolePrintfBuf);
 		handleDSInitError(TGDSDebuggerStage, (u32)fwNo);
-		
 	}
     return (int)ret; 
 }
@@ -86,13 +75,10 @@ int		FS_init(bool minimumFSInitialization){
 //if FS_deinit() or sd driver uninitialized (after calling FS_init()) equals true: Deinit sucess
 //else  FS_deinit() equals false: Could not deinit/free the card SD access 
 int		FS_deinit(){
-	if(files != NULL){
-		int fd = 0;
-		/* search in all struct fd instances, close file handle if open*/
-		for (fd = 0; fd < OPEN_MAXTGDS; fd++){	
-			fatfs_close(fd);
-		}
-		TGDSARM9Free(files);
+	int fd = 0;
+	/* search in all struct fd instances, close file handle if open*/
+	for (fd = 0; fd < OPEN_MAXTGDS; fd++){	
+		fatfs_close(fd);
 	}
 	int ret = f_unmount((const TCHAR*)"0:");
 	//dldi_handler_deinit(); //can't because disables SD card permanently 
@@ -105,8 +91,13 @@ int		FS_deinit(){
 //converts a "folder/folder.../file.fil" into a proper filesystem fullpath
 sint8 charbuf[MAX_TGDSFILENAME_LENGTH+1];
 sint8 * getfatfsPath(sint8 * filename){
-	sprintf((sint8*)charbuf,"%s%s",devoptab_sdFilesystem.name,filename);
-	return (sint8*)&charbuf[0];
+	if( isNotNullString((const char *)filename) == true ){
+		sprintf((sint8*)charbuf,"%s%s",devoptab_sdFilesystem.name,filename);
+		return (sint8*)&charbuf[0];
+	}
+	else{
+		return NULL;
+	}
 }
 
 //Extracts the Current Working Directory out of a full FatFS filepath: 
@@ -116,50 +107,55 @@ sint8 * getfatfsPath(sint8 * filename){
 //printf("getDirFromFilePath():%s", outDir);
 
 void getDirFromFilePath(char * filePath, char* outDirectory){
-    char tempDir[256+1] = {0};
-	//char outPath[256+1] = {0};
-	
-    strcpy(tempDir, filePath);
-    int offset = 0;
-    int len = strlen(tempDir)+1;
-    //Remove leading "0:/"
-    char chr = tempDir[offset];
-    while(
-        (chr == '0')
-        ||
-        (chr == ':')
-        ||
-        (chr == '/')
-    )
-    {
-        offset++;
-        if(offset < (len-1)){
-            chr = tempDir[offset];
-        }
-    }
-    strncpy(outDirectory, (char*)&tempDir[offset], len - offset);
-    
-    //Remove last filename and extension
-    chr = outDirectory[len];
-	
-	//int ofst = 0;
-    while(
-        (chr != '/')
-    )
-    {
-		outDirectory[len] = '\0';
-		len--;
+	if( isNotNullString((const char *)filePath) == true ){
+		char tempDir[256+1] = {0};
+		strcpy(tempDir, filePath);
+		int offset = 0;
+		int len = strlen(tempDir)+1;
+		//Remove leading "0:/"
+		char chr = tempDir[offset];
+		while(
+			(chr == '0')
+			||
+			(chr == ':')
+			||
+			(chr == '/')
+		)
+		{
+			offset++;
+			if(offset < (len-1)){
+				chr = tempDir[offset];
+			}
+		}
+		strncpy(outDirectory, (char*)&tempDir[offset], len - offset);
+		
+		//Remove last filename and extension
 		chr = outDirectory[len];
+		
+		//int ofst = 0;
+		while(
+			(chr != '/')
+		)
+		{
+			outDirectory[len] = '\0';
+			len--;
+			chr = outDirectory[len];
+		}
 	}
 }
 
 //these two work together (usually)
 int OpenFileFromPathGetStructFD(char * fullPath){
-	FILE* fil = fopen(fullPath,"r");
-	if(fil != NULL){
-		return fileno(fil);
+	if( isNotNullString((const char *)fullPath) == true ){
+		FILE* fil = fopen(fullPath,"r");
+		if(fil != NULL){
+			return fileno(fil);
+		}
+		return structfd_posixInvalidFileDirOrBufferHandle;
 	}
-	return structfd_posixInvalidFileDirOrBufferHandle;
+	else{
+		return structfd_posixInvalidFileDirOrBufferHandle;
+	}
 }
 bool closeFileFromStructFD(int StructFD){
 	FILE* fh = fdopen(StructFD, "r");
@@ -172,16 +168,21 @@ bool closeFileFromStructFD(int StructFD){
 
 //retcode: FT_NONE , FT_DIR or FT_FILE
 int FileExists(char * filename){
-	int Type = FT_NONE;
-	FILINFO fno;
-	f_stat((const TCHAR*)filename, &fno);
-	if ((fno.fattrib & AM_MASK) & AM_DIR) {
-		Type = FT_DIR;
+	if( isNotNullString((const char *)filename) == true ){
+		int Type = FT_NONE;
+		FILINFO fno;
+		f_stat((const TCHAR*)filename, &fno);
+		if ((fno.fattrib & AM_MASK) & AM_DIR) {
+			Type = FT_DIR;
+		}
+		else if ((fno.fattrib & AM_MASK) & AM_ARC) {
+			Type = FT_FILE;
+		}
+		return Type;
 	}
-	else if ((fno.fattrib & AM_MASK) & AM_ARC) {
-		Type = FT_FILE;
+	else{
+		return FT_NONE;
 	}
-	return Type;
 }
 
 int rename(const sint8 *oldfname, const sint8 *newfname){
@@ -1365,9 +1366,9 @@ int fatfs_open_file(const sint8 *pathname, int flags, const FILINFO *fno){
 	//allocates a new struct fd index, allocating a FIL structure, for the devoptab_sdFilesystem object.
 	structFDIndex = FileHandleAlloc((struct devoptab_t *)&devoptab_sdFilesystem);	
     if (structFDIndex != structfd_posixInvalidFileDirOrBufferHandle){
-		(files + structFDIndex)->filPtr	=	(FIL *)&(files + structFDIndex)->fil;
-		(files + structFDIndex)->dirPtr	= NULL;
-		(files + structFDIndex)->StructFDType = FT_FILE;
+		files[structFDIndex].filPtr	=	(FIL *)&files[structFDIndex].fil;
+		files[structFDIndex].dirPtr	= NULL;
+		files[structFDIndex].StructFDType = FT_FILE;
 	}
 	
 	struct fd * fdinst = getStructFD(structFDIndex);	//getStructFD requires struct fd index
@@ -1453,9 +1454,9 @@ int fatfs_open_dir(const sint8 *pathname, int flags, const FILINFO *fno){
 	//allocates a new struct fd index, allocating a DIR structure, for the devoptab_sdFilesystem object.
 	int structFDIndex = FileHandleAlloc((struct devoptab_t *)&devoptab_sdFilesystem);	
     if (structFDIndex != structfd_posixInvalidFileDirOrBufferHandle){
-		(files + structFDIndex)->dirPtr	=	(DIR *)&(files + structFDIndex)->dir;
-		(files + structFDIndex)->filPtr	= NULL;
-		(files + structFDIndex)->StructFDType = FT_DIR;
+		files[structFDIndex].dirPtr	=	(DIR *)&files[structFDIndex].dir;
+		files[structFDIndex].filPtr	= NULL;
+		files[structFDIndex].StructFDType = FT_DIR;
 	}
 	
 	struct fd * fdinst = getStructFD(structFDIndex);
@@ -1497,28 +1498,48 @@ int fatfs_open_dir(const sint8 *pathname, int flags, const FILINFO *fno){
     return structFDIndex;
 }
 
+//returns true : Valid string!
+//returns false: NULL string!
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+bool isNotNullString(const char * str){
+	if( (str != NULL) && (strlen(str) > 0) ){
+		return true;
+	}
+	return false;
+}
+
 //returns / allocates a new struct fd index with either DIR or FIL structure allocated
 int fatfs_open_file_or_dir(const sint8 *pathname, int flags){
-	FILINFO fno;
-	int structFD = structfd_posixInvalidFileDirOrBufferHandle;
-	fno.fname[0] = '\0'; /* initialize as invalid */
-	FRESULT result = f_stat((const TCHAR*)pathname, &fno);
-	//dir case // todo: same logic as below file if dir does not exists and must be created
-    if ((result == FR_OK) && ((fno.fattrib & AM_MASK) & AM_DIR)){
-        structFD = fatfs_open_dir(pathname, flags, &fno);
+	if( isNotNullString((const char *)pathname) == true ){
+		FILINFO fno;
+		int structFD = structfd_posixInvalidFileDirOrBufferHandle;
+		fno.fname[0] = '\0'; /* initialize as invalid */
+		FRESULT result = f_stat((const TCHAR*)pathname, &fno);
+		//dir case // todo: same logic as below file if dir does not exists and must be created
+		if ((result == FR_OK) && ((fno.fattrib & AM_MASK) & AM_DIR)){
+			structFD = fatfs_open_dir(pathname, flags, &fno);
+		}
+		else if (
+			(result == FR_OK)	//file exists case
+			||
+			(flags & O_CREAT)	//new file?
+		){
+			structFD = fatfs_open_file(pathname, flags, &fno);	//returns / allocates a new struct fd index with either DIR or FIL structure allocated
+		}
+		else {
+			//file/dir does not exist, couldn't create
+			errno = fresultToErrno(result);
+		}
+		return structFD;
 	}
-	else if (
-		(result == FR_OK)	//file exists case
-		||
-		(flags & O_CREAT)	//new file?
-	){
-        structFD = fatfs_open_file(pathname, flags, &fno);	//returns / allocates a new struct fd index with either DIR or FIL structure allocated
+	else{
+		return structfd_posixInvalidFileDirOrBufferHandle;
 	}
-    else {
-		//file/dir does not exist, couldn't create
-		errno = fresultToErrno(result);
-	}
-    return structFD;
 }
 
 // Use NDS RTC to update timestamps into files when certain operations require it
@@ -1575,35 +1596,37 @@ int fatfs_closeDirectStructFD(struct fd * pfd){
     if ( (pfd == NULL) || (pfd->filPtr == NULL) ){
 		errno = EBADF;
     }
-	FIL *filp;
-	FRESULT result;
-	filp = pfd->filPtr;
-	result = f_close(filp);
-	if (
-	(result == FR_OK)			//file sync with hardware SD ok
-	||
-	(result == FR_DISK_ERR)		//create file (fwrite + w): file didn't exist before open(); thus file descriptor didn't have any data of sectors to compare with. Exception expected
-	){
-		//struct stat buf;	//flush stat
-		memset (&pfd->stat, 0, sizeof(pfd->stat));
-		
-		//free struct fd
-		if(pfd->filPtr){	//must we clean a FIL?
-			pfd->filPtr = NULL;
-		}
-		if(pfd->dirPtr){	//must we clean a DIR?
-			pfd->dirPtr = NULL;
-		}
-		//clean filename
-		sprintf((char*)&pfd->fd_name[0],"%s",(char*)&devoptab_stub.name[0]);
-		
-		ret = 0;
-		//update d_ino here (POSIX compliant)
-		pfd->cur_entry.d_ino = (sint32)structfd_posixInvalidFileDirOrBufferHandle;
-		pfd->loc = 0;
-	}
 	else{
-		errno = fresultToErrno(result);
+		FIL *filp;
+		FRESULT result;
+		filp = pfd->filPtr;
+		result = f_close(filp);
+		if (
+		(result == FR_OK)			//file sync with hardware SD ok
+		||
+		(result == FR_DISK_ERR)		//create file (fwrite + w): file didn't exist before open(); thus file descriptor didn't have any data of sectors to compare with. Exception expected
+		){
+			//struct stat buf;	//flush stat
+			memset (&pfd->stat, 0, sizeof(pfd->stat));
+			
+			//free struct fd
+			if(pfd->filPtr){	//must we clean a FIL?
+				pfd->filPtr = NULL;
+			}
+			if(pfd->dirPtr){	//must we clean a DIR?
+				pfd->dirPtr = NULL;
+			}
+			//clean filename
+			sprintf((char*)&pfd->fd_name[0],"%s",(char*)&devoptab_stub.name[0]);
+			
+			ret = 0;
+			//update d_ino here (POSIX compliant)
+			pfd->cur_entry.d_ino = (sint32)structfd_posixInvalidFileDirOrBufferHandle;
+			pfd->loc = 0;
+		}
+		else{
+			errno = fresultToErrno(result);
+		}
 	}
 	return ret;
 }
@@ -1623,9 +1646,12 @@ int fatfs_open_fileIntoTargetStructFD(const sint8 *pathname, char * posixFlags, 
 		//allocates a new struct fd index, allocating a FIL structure, for the devoptab_sdFilesystem object.
 		structFDIndex = FileHandleAlloc((struct devoptab_t *)&devoptab_sdFilesystem);	
 		if (structFDIndex != structfd_posixInvalidFileDirOrBufferHandle){
-			(files + structFDIndex)->filPtr	=	(FIL *)&(files + structFDIndex)->fil;
-			(files + structFDIndex)->dirPtr	= NULL;
-			(files + structFDIndex)->StructFDType = FT_FILE;
+			files[structFDIndex].filPtr	=	(FIL *)&files[structFDIndex].fil;
+			files[structFDIndex].dirPtr	= NULL;
+			files[structFDIndex].StructFDType = FT_FILE;
+		}
+		else{
+			//ran out of filehandles
 		}
 		fdinst = getStructFD(structFDIndex);	//getStructFD requires struct fd index
 	}
@@ -1636,7 +1662,7 @@ int fatfs_open_fileIntoTargetStructFD(const sint8 *pathname, char * posixFlags, 
 		fdinst->dirPtr	= NULL;
 		fdinst->StructFDType = FT_FILE;
 	}
-	if (fdinst == NULL){
+	if ((fdinst == NULL) || (isNotNullString((const char *)pathname) == false) || (isNotNullString((const char *)posixFlags) == false) || (tgdsfd == NULL) ){
 		result = FR_TOO_MANY_OPEN_FILES;
     }
 	else{
@@ -1731,80 +1757,85 @@ int fatfs_open(const sint8 *pathname, int flags){
 off_t fatfs_lseek(int structFDIndex, off_t offset, int whence){	//(FileDescriptor :struct fd index)
     off_t ret = (off_t)structfd_posixInvalidFileDirOrBufferHandle;
     struct fd *pfd = getStructFD(structFDIndex);
-    if ((pfd == NULL) || (pfd->filPtr == NULL) || (pfd->isused == structfd_isunused) ){
-		errno = EBADF;
-    }
-	else if (S_ISSOCK(pfd->stat.st_mode)){	//socket? cant use
-		ret = EPIPE;
-	}
-    else if (S_ISREG(pfd->stat.st_mode)){	//only file allows this
-        FIL * filp = pfd->filPtr;
-        FRESULT result;
-        DWORD pos = 0;
-        int topFile = f_size(filp);
-		bool validArg = false;
-		switch(whence&0x3){
-			//<<SEEK_SET>>---<[offset]> is the absolute file position (an offset
-			//from the beginning of the file) desired.  <[offset]> must be positive.
-			case(SEEK_SET):{
-				if(offset < 0){
-					offset = 0;
-				}
-				if(offset > (topFile - 1)){
-					offset = (topFile - 1);	//Mapped SEEK_SET is treated as inmediate offset, which starts from 0 so -1 here
-				}
-				pos = offset;
-				validArg = true;
+	if(pfd != NULL){
+		if(pfd->filPtr != NULL){
+			if (pfd->isused == structfd_isunused){
+				errno = EBADF;
 			}
-			break;
-			//<<SEEK_CUR>>---<[offset]> is relative to the current file position.
-			//<[offset]> can meaningfully be either positive or negative.
-			case(SEEK_CUR):{
-				pos = f_tell(filp);
-				pos += offset;
-				if((int)pos < 0){
-					pos = 0;
-				}
-				if((int)pos > topFile){
-					pos = topFile;	//Mapped SEEK_CUR is treated as inmediate offset, which starts from 0, BUT (current) ahead offset-by-1 must not exceed physical filesize
-				}
-				validArg = true;
+			else if (S_ISSOCK(pfd->stat.st_mode)){	//socket? cant use
+				ret = EPIPE;
 			}
-			break;
-			//<<SEEK_END>>---<[offset]> is relative to the current end of file.
-			//<[offset]> can meaningfully be either positive (to increase the size
-			//of the file) or negative.
-			case(SEEK_END):{
-				pos = topFile;				//file end is fileSize
-				pos += offset;
-				if((int)pos < 0){
-					pos = 0;
+			else if (S_ISREG(pfd->stat.st_mode)){	//only file allows this
+				FIL * filp = pfd->filPtr;
+				FRESULT result;
+				DWORD pos = 0;
+				int topFile = f_size(filp);
+				bool validArg = false;
+				switch(whence&0x3){
+					//<<SEEK_SET>>---<[offset]> is the absolute file position (an offset
+					//from the beginning of the file) desired.  <[offset]> must be positive.
+					case(SEEK_SET):{
+						if(offset < 0){
+							offset = 0;
+						}
+						if(offset > (topFile - 1)){
+							offset = (topFile - 1);	//Mapped SEEK_SET is treated as inmediate offset, which starts from 0 so -1 here
+						}
+						pos = offset;
+						validArg = true;
+					}
+					break;
+					//<<SEEK_CUR>>---<[offset]> is relative to the current file position.
+					//<[offset]> can meaningfully be either positive or negative.
+					case(SEEK_CUR):{
+						pos = f_tell(filp);
+						pos += offset;
+						if((int)pos < 0){
+							pos = 0;
+						}
+						if((int)pos > topFile){
+							pos = topFile;	//Mapped SEEK_CUR is treated as inmediate offset, which starts from 0, BUT (current) ahead offset-by-1 must not exceed physical filesize
+						}
+						validArg = true;
+					}
+					break;
+					//<<SEEK_END>>---<[offset]> is relative to the current end of file.
+					//<[offset]> can meaningfully be either positive (to increase the size
+					//of the file) or negative.
+					case(SEEK_END):{
+						pos = topFile;				//file end is fileSize
+						pos += offset;
+						if((int)pos < 0){
+							pos = 0;
+						}
+						if((int)pos > topFile){
+							pos = topFile;
+						}
+						validArg = true;
+					}
+					break;	
 				}
-				if((int)pos > topFile){
-					pos = topFile;
+				if(validArg == true){
+					result = f_lseek(filp, pos);
+					if (result == FR_OK){
+						ret = pos;
+						//update stat st here
+						
+						//update current offset
+						pfd->loc = pos;
+					}
+					else{
+						errno = fresultToErrno(result);
+					}
 				}
-				validArg = true;
-			}
-			break;	
-		}
-		if(validArg == true){
-			result = f_lseek(filp, pos);
-			if (result == FR_OK){
-				ret = pos;
-				//update stat st here
-				
-				//update current offset
-				pfd->loc = pos;
 			}
 			else{
-				errno = fresultToErrno(result);
+				errno = EINVAL;
 			}
 		}
 	}
-    else{
-        errno = EINVAL;
-    }
-    return ret;
+
+	return ret;
 }
 
 //delete / remove
@@ -1830,14 +1861,16 @@ int fatfs_link(const sint8 *path1, const sint8 *path2){
 
 int fatfs_rename(const sint8 *oldfname, const sint8 * newfname){
     int ret = structfd_posixInvalidFileDirOrBufferHandle;
-    FRESULT result;
-    result = f_rename((const TCHAR*)oldfname, (const TCHAR*)newfname);
-    if (result != FR_OK){
-        errno = fresultToErrno(result);
-    }
-    else{
-        ret = 0;
-    }
+	if( (isNotNullString((const char *)oldfname) == true) && (isNotNullString((const char *)newfname) == true) ){
+		FRESULT result;
+		result = f_rename((const TCHAR*)oldfname, (const TCHAR*)newfname);
+		if (result != FR_OK){
+			errno = fresultToErrno(result);
+		}
+		else{
+			ret = 0;
+		}
+	}
     return ret;
 }
 
@@ -1870,15 +1903,17 @@ int fatfs_fsync(int structFDIndex){	//uses struct fd indexing
 //else if error return structfd_posixInvalidFileDirOrBufferHandle / struct stat * is empty or invalid
 int fatfs_stat(const sint8 *path, struct stat *buf){
     int ret = structfd_posixInvalidFileDirOrBufferHandle;
-    FILINFO fno;
-	FRESULT result = f_stat((const TCHAR*)path, &fno);
-    if ((result == FR_OK) && (buf != NULL)){
-        fillPosixStatStruct(&fno, buf);
-        ret = 0;
-    }
-    else{
-        errno = fresultToErrno(result);
-    }
+	if( (isNotNullString((const char *)path) == true) && (buf != NULL) ){
+		FILINFO fno;
+		FRESULT result = f_stat((const TCHAR*)path, &fno);
+		if ((result == FR_OK) && (buf != NULL)){
+			fillPosixStatStruct(&fno, buf);
+			ret = 0;
+		}
+		else{
+			errno = fresultToErrno(result);
+		}
+	}
     return ret;
 }
 
@@ -1886,13 +1921,15 @@ int fatfs_stat(const sint8 *path, struct stat *buf){
 //else if error return structfd_posixInvalidFileDirOrBufferHandle if path exists or failed due to other IO reason
 int fatfs_mkdir(const sint8 *path, mode_t mode){
     int ret = structfd_posixInvalidFileDirOrBufferHandle;
-    FRESULT result = f_mkdir((const TCHAR*)path);
-    if (result == FR_OK){
-        ret = 0;
-    }
-    else{
-        errno = fresultToErrno(result);
-    }
+	if(isNotNullString((const char *)path) == true){
+		FRESULT result = f_mkdir((const TCHAR*)path);
+		if (result == FR_OK){
+			ret = 0;
+		}
+		else{
+			errno = fresultToErrno(result);
+		}
+	}
     return ret;
 }
 
@@ -1900,29 +1937,31 @@ int fatfs_mkdir(const sint8 *path, mode_t mode){
 //else if error return structfd_posixInvalidFileDirOrBufferHandle if readonly or not empty, or failed due to other IO reason
 int fatfs_rmdir(const sint8 *path){
     int ret = structfd_posixInvalidFileDirOrBufferHandle;
-    FRESULT result = f_unlink((const TCHAR*)path);
-    if (result == FR_OK){
-        ret = 0;
-    }
-    else if (result == FR_DENIED){
-        FILINFO fno;
-        // the dir was readonly or not empty: check 
-        result = f_stat((const TCHAR*)path, &fno);
-        if (result == FR_OK){
-            if ((fno.fattrib & AM_MASK) & AM_RDO){
-                errno = EACCES;
-            }
-            else{
-                errno = ENOTEMPTY;
-            }
-        }
-        else{
-            errno = fresultToErrno(result);
-        }
-    }
-    else{
-        errno = fresultToErrno(result);
-    }
+	if(isNotNullString((const char *)path) == true){
+		FRESULT result = f_unlink((const TCHAR*)path);
+		if (result == FR_OK){
+			ret = 0;
+		}
+		else if (result == FR_DENIED){
+			FILINFO fno;
+			// the dir was readonly or not empty: check 
+			result = f_stat((const TCHAR*)path, &fno);
+			if (result == FR_OK){
+				if ((fno.fattrib & AM_MASK) & AM_RDO){
+					errno = EACCES;
+				}
+				else{
+					errno = ENOTEMPTY;
+				}
+			}
+			else{
+				errno = fresultToErrno(result);
+			}
+		}
+		else{
+			errno = fresultToErrno(result);
+		}
+	}
     return ret;
 }
 
@@ -1930,13 +1969,15 @@ int fatfs_rmdir(const sint8 *path){
 //else if error return structfd_posixInvalidFileDirOrBufferHandle if incorrect path, or failed due to other IO reason
 int fatfs_chdir(const sint8 *path){
     int ret = structfd_posixInvalidFileDirOrBufferHandle;
-    FRESULT result = f_chdir((const TCHAR*)path);
-    if (result == FR_OK){
-        ret = 0;
-    }
-    else{
-        errno = fresultToErrno(result);   
-    }
+    if(isNotNullString((const char *)path) == true){
+		FRESULT result = f_chdir((const TCHAR*)path);
+		if (result == FR_OK){
+			ret = 0;
+		}
+		else{
+			errno = fresultToErrno(result);   
+		}
+	}
     return ret;
 }
 
@@ -2019,7 +2060,7 @@ struct dirent *fatfs_readdir(DIR *dirp){
     struct dirent *ret = NULL;
     int structFDIndex = getStructFDIndexByDIR(dirp);	//we need a conversion from DIR * to struct fd *
 	struct fd * fdinst = getStructFD(structFDIndex);
-	if(fatfs_readdir_r(dirp, (struct dirent *)&fdinst->cur_entry, &ret) != structfd_posixInvalidFileDirOrBufferHandle){
+	if( (fdinst != NULL) && (fatfs_readdir_r(dirp, (struct dirent *)&fdinst->cur_entry, &ret) != structfd_posixInvalidFileDirOrBufferHandle) ){
 		return ret;
 	}
 	else{
@@ -2039,7 +2080,7 @@ int fatfs_readdir_r(
     int ret = structfd_posixInvalidFileDirOrBufferHandle;
 	int structFDIndex = getStructFDIndexByDIR(dirp);
 	struct fd * fdinst = getStructFD(structFDIndex);
-	if(fdinst != NULL){
+	if( (fdinst != NULL) && (entry != NULL) && (result != NULL) ){
 		FRESULT fresult;
 		FILINFO fno;
 		fresult = f_readdir(dirp, &fno);
@@ -2081,56 +2122,64 @@ int fatfs_readdir_r(
 
 void fatfs_rewinddir(DIR *dirp){
 	int structFDIndex = getStructFDIndexByDIR(dirp);
-	struct fd * fdinst = getStructFD(structFDIndex);
-	FRESULT result = f_readdir(dirp, NULL);
-	if (result == FR_OK){
-		fdinst->loc	= 0;
-	}
-	else if (S_ISDIR(fdinst->stat.st_mode)){
-		//Not Directory!	/* POSIX says no errors are defined */
-    }
-	else{
-		//Error handling the request.	/* POSIX says no errors are defined */
+	if(dirp != NULL){
+		struct fd * fdinst = getStructFD(structFDIndex);
+		if(fdinst != NULL){
+			FRESULT result = f_readdir(dirp, NULL);
+			if (result == FR_OK){
+				fdinst->loc	= 0;
+			}
+			else if (S_ISDIR(fdinst->stat.st_mode)){
+				//Not Directory!	/* POSIX says no errors are defined */
+			}
+			else{
+				//Error handling the request.	/* POSIX says no errors are defined */
+			}
+		}
 	}
 }
 
-long fatfs_tell(struct fd *f){	//NULL check already outside
+long fatfs_tell(struct fd *f){
     long ret = structfd_posixInvalidFileDirOrBufferHandle;
-	//dir
-	if ((f->dirPtr) && (S_ISDIR(f->stat.st_mode))){
-		ret = f->loc;
-    }
-	//file
-	else if ((f->filPtr) && (S_ISREG(f->stat.st_mode))){
-		ret = f->loc;
+	if(f != NULL){
+		//dir
+		if ((f->dirPtr) && (S_ISDIR(f->stat.st_mode))){
+			ret = f->loc;
+		}
+		//file
+		else if ((f->filPtr) && (S_ISREG(f->stat.st_mode))){
+			ret = f->loc;
+		}
 	}
     return ret;
 }
 
 void fatfs_seekdir(DIR *dirp, long loc){
-	int structFDIndex = getStructFDIndexByDIR(dirp);
-	struct fd * fdinst = getStructFD(structFDIndex);
-    if (S_ISDIR(fdinst->stat.st_mode)){
-        long cur_loc = fatfs_tell(fdinst);
-        if (loc < cur_loc){
-            fatfs_rewinddir(dirp);
-        }
-        while(loc > cur_loc){
-            int ret = structfd_posixInvalidFileDirOrBufferHandle;
-            struct dirent entry;
-            struct dirent *result = NULL;
-            ret = fatfs_readdir_r(dirp, &entry, &result);
-            if ((result == NULL) || (ret != 0))
-            {
-                /* POSIX says no errors are defined */
-                break;
-            }
-            cur_loc = fatfs_tell(fdinst);
-        }
-    }
-    else{
-        /* POSIX says no errors are defined */
-    }
+	if(dirp != NULL){
+		int structFDIndex = getStructFDIndexByDIR(dirp);
+		struct fd * fdinst = getStructFD(structFDIndex);
+		if ( (fdinst != NULL) && S_ISDIR(fdinst->stat.st_mode)){
+			long cur_loc = fatfs_tell(fdinst);
+			if (loc < cur_loc){
+				fatfs_rewinddir(dirp);
+			}
+			while(loc > cur_loc){
+				int ret = structfd_posixInvalidFileDirOrBufferHandle;
+				struct dirent entry;
+				struct dirent *result = NULL;
+				ret = fatfs_readdir_r(dirp, &entry, &result);
+				if ((result == NULL) || (ret != 0))
+				{
+					/* POSIX says no errors are defined */
+					break;
+				}
+				cur_loc = fatfs_tell(fdinst);
+			}
+		}
+		else{
+			/* POSIX says no errors are defined */
+		}
+	}
 }
 
 //this copies stat from internal struct fd to output stat
@@ -2138,7 +2187,13 @@ void fatfs_seekdir(DIR *dirp, long loc){
 //else return structfd_posixInvalidFileDirOrBufferHandle (not valid struct stat * entry, being NULL)
 int _fstat_r( struct _reent *_r, int structFDIndex, struct stat *buf ){	//(FileDescriptor :struct fd index)
     struct fd * f = getStructFD(structFDIndex);
-    if ((f == NULL) || (f->isused == structfd_isunused)){
+	if ((f == NULL) || (buf == NULL)){
+		#ifdef ARM9
+		_r->_errno = EBADF;
+		#endif
+		return structfd_posixInvalidFileDirOrBufferHandle;
+	}
+	else if (f->isused == structfd_isunused){
         #ifdef ARM9
 		_r->_errno = EBADF;
 		#endif
@@ -2204,17 +2259,17 @@ int	FS_getFileSizeFromOpenStructFD(struct fd * tgdsfd){
 }
 
 struct fd *getStructFD(int fd){
-    struct fd *f = NULL;
+    struct fd *fhandle = NULL;
     if((fd < OPEN_MAXTGDS) && (fd >= 0)){
-        f = (struct fd *)(files + fd);
-		if(f->dirPtr){
-			f->dirPtr = (DIR *)&(files + fd)->dir;
+		fhandle = &files[fd];
+        if(files[fd].dirPtr){
+			fhandle->dirPtr = (DIR *)&files[fd].dir;
 		}
-		if(f->filPtr){
-			f->filPtr = (FIL *)&(files + fd)->fil;
+		if(files[fd].filPtr){
+			fhandle->filPtr = (FIL *)&files[fd].fil;
 		}
-    }
-    return f;
+	}
+    return fhandle;
 }
 
 //char * devoptabFSName must be a buffer already allocated if bool defaultDriver == false
@@ -2225,30 +2280,29 @@ void initTGDS(char * devoptabFSName){
 	}
 	
 	initTGDSDevoptab();
-	
+	memset((uint8*)&files, 0, sizeof(files));
 	int fd = 0;
 	/* search in all struct fd instances*/
 	for (fd = 0; fd < OPEN_MAXTGDS; fd++){
-		memset((uint8*)(files + fd), 0, sizeof(struct fd));
-		(files + fd)->isused = (sint32)structfd_isunused;
+		files[fd].isused = (sint32)structfd_isunused;
 		//Internal default invalid value (overriden later)
-		(files + fd)->cur_entry.d_ino = (sint32)structfd_posixInvalidFileDirOrBufferHandle;	//Posix File Descriptor
-		(files + fd)->StructFD = (sint32)structfd_posixInvalidFileDirOrBufferHandle;		//TGDS File Descriptor (struct fd)
-		(files + fd)->StructFDType = FT_NONE;	//struct fd type invalid.
-		(files + fd)->isatty = (sint32)structfd_isattydefault;
-		(files + fd)->descriptor_flags = (sint32)structfd_descriptorflagsdefault;
-		(files + fd)->status_flags = (sint32)structfd_status_flagsdefault;
-		(files + fd)->loc = (sint32)structfd_fildir_offsetdefault;
+		files[fd].cur_entry.d_ino = (sint32)structfd_posixInvalidFileDirOrBufferHandle;	//Posix File Descriptor
+		files[fd].StructFD = (sint32)structfd_posixInvalidFileDirOrBufferHandle;		//TGDS File Descriptor (struct fd)
+		files[fd].StructFDType = FT_NONE;	//struct fd type invalid.
+		files[fd].isatty = (sint32)structfd_isattydefault;
+		files[fd].descriptor_flags = (sint32)structfd_descriptorflagsdefault;
+		files[fd].status_flags = (sint32)structfd_status_flagsdefault;
+		files[fd].loc = (sint32)structfd_fildir_offsetdefault;
 		
-		(files + fd)->filPtr = NULL;
-		(files + fd)->dirPtr = NULL;
+		files[fd].filPtr = NULL;
+		files[fd].dirPtr = NULL;
 	}
 	//Set up proper devoptab device mount name.
 	memcpy((uint32*)&devoptab_sdFilesystem.name[0], (uint32*)devoptabFSName, strlen(devoptabFSName));
 }
 
 FILE * getPosixFileHandleByStructFD(struct fd * fdinst, const char * mode){
-	if(fdinst != NULL){
+	if((fdinst != NULL) && (mode != NULL)){
 		return fdopen(fdinst->cur_entry.d_ino, mode);
 	}
 	return NULL;
@@ -2264,13 +2318,15 @@ struct fd * getStructFDByFileHandle(FILE * fh){
 
 int getStructFDIndexByFileName(char * filename){
 	int ret = structfd_posixInvalidFileDirOrBufferHandle;
-	int fd = 0;
-	/* search in all struct fd instances*/
-	for (fd = 0; fd < OPEN_MAXTGDS; fd++){
-		if((files + fd)->isused == (sint32)structfd_isused){
-			if(strcmp((char*)&(files + fd)->fd_name, filename) == 0){
-				//printfDebugger("getStructFDIndexByFileName(): idx:%d - f:%s",fd, (files + fd)->fd_name);
-				return fd;
+	if(isNotNullString((const char *)filename) == true){
+		int fd = 0;
+		/* search in all struct fd instances*/
+		for (fd = 0; fd < OPEN_MAXTGDS; fd++){
+			if(files[fd].isused == (sint32)structfd_isused){
+				if(strcmp((char*)&files[fd].fd_name, filename) == 0){
+					//printfDebugger("getStructFDIndexByFileName(): idx:%d - f:%s",fd, files[fd]->fd_name);
+					return fd;
+				}
 			}
 		}
 	}
@@ -2281,75 +2337,78 @@ int getStructFDIndexByFileName(char * filename){
 int FileHandleAlloc(struct devoptab_t * devoptabInst){
     int fd = 0;
     int ret = structfd_posixInvalidFileDirOrBufferHandle;
-    for (fd = 0; fd < OPEN_MAXTGDS; fd++){
-        if ((sint32)(files + fd)->isused == (sint32)structfd_isunused){
-			(files + fd)->isused = (sint32)structfd_isused;
-			
-			//PosixFD default valid value (overriden now)
-			(files + fd)->devoptabFileDescriptor = devoptabInst;
-			
-			//Internal default value (overriden now)
-			(files + fd)->cur_entry.d_ino = (sint32)fd;	//Posix File Descriptor
-			(files + fd)->StructFD = (sint32)structfd_posixInvalidFileDirOrBufferHandle;		//TGDS File Descriptor (struct fd) not valid yet. Set up by initStructFDHandle()
-			(files + fd)->StructFDType = FT_NONE;	//struct fd type not valid yet. Will be assigned by fatfs_open_file (FT_FILE), or fatfs_open_dir (FT_DIR)
-			
-			(files + fd)->isatty = (sint32)structfd_isattydefault;
-			(files + fd)->descriptor_flags = (sint32)structfd_descriptorflagsdefault;
-			(files + fd)->status_flags = (sint32)structfd_status_flagsdefault;
-			(files + fd)->loc = (sint32)structfd_fildir_offsetdefault;
-			
-			(files + fd)->filPtr = NULL;
-			(files + fd)->dirPtr = NULL;
-			
-            ret = fd;
-            break;
-        }
-    }
-	//if for some reason all the file handles are exhausted, discard the last one and assign that one. (fixes homebrew that opens a lot of file handles and doesn't close them up accordingly)
-	if(ret == structfd_posixInvalidFileDirOrBufferHandle){
-		int retClose = fatfs_close(OPEN_MAXTGDS - 1);	//requires a struct fd(file descriptor), returns 0 if success, structfd_posixInvalidFileDirOrBufferHandle if error
-		if(retClose == structfd_posixInvalidFileDirOrBufferHandle){
-			//couldnt really close file handle
-			ret = retClose;
+	if(devoptabInst != NULL){
+		for (fd = 0; fd < OPEN_MAXTGDS; fd++){
+			struct fd * internalFHandle = &files[fd];
+			if ((sint32)internalFHandle->isused == (sint32)structfd_isunused){
+				internalFHandle->isused = (sint32)structfd_isused;
+				
+				//PosixFD default valid value (overriden now)
+				internalFHandle->devoptabFileDescriptor = devoptabInst;
+				
+				//Internal default value (overriden now)
+				internalFHandle->cur_entry.d_ino = (sint32)fd;	//Posix File Descriptor
+				internalFHandle->StructFD = (sint32)structfd_posixInvalidFileDirOrBufferHandle;		//TGDS File Descriptor (struct fd) not valid yet. Set up by initStructFDHandle()
+				internalFHandle->StructFDType = FT_NONE;	//struct fd type not valid yet. Will be assigned by fatfs_open_file (FT_FILE), or fatfs_open_dir (FT_DIR)
+				
+				internalFHandle->isatty = (sint32)structfd_isattydefault;
+				internalFHandle->descriptor_flags = (sint32)structfd_descriptorflagsdefault;
+				internalFHandle->status_flags = (sint32)structfd_status_flagsdefault;
+				internalFHandle->loc = (sint32)structfd_fildir_offsetdefault;
+				
+				internalFHandle->filPtr = NULL;
+				internalFHandle->dirPtr = NULL;
+				
+				ret = fd;
+				break;
+			}
 		}
-		else{
-			//file handle close success!
-			return FileHandleAlloc(devoptabInst);	//ret == return value here
+		//if for some reason all the file handles are exhausted, discard the last one and assign that one. (fixes homebrew that opens a lot of file handles and doesn't close them up accordingly)
+		if(ret == structfd_posixInvalidFileDirOrBufferHandle){
+			int retClose = fatfs_close(OPEN_MAXTGDS - 1);	//requires a struct fd(file descriptor), returns 0 if success, structfd_posixInvalidFileDirOrBufferHandle if error
+			if(retClose == structfd_posixInvalidFileDirOrBufferHandle){
+				//couldnt really close file handle
+				ret = retClose;
+			}
+			else{
+				//file handle close success!
+				return FileHandleAlloc(devoptabInst);	//ret == return value here
+			}
 		}
 	}
-
     return ret;
 }
 
 //deallocates a posix index, returns such index deallocated
 int FileHandleFree(int fd){
 	int ret = structfd_posixInvalidFileDirOrBufferHandle;
-    if ((fd < OPEN_MAXTGDS) && (fd >= 0) && ((files + fd)->isused == structfd_isused)){
-        (files + fd)->isused = (sint32)structfd_isunused;
-		(files + fd)->cur_entry.d_ino = (sint32)structfd_posixInvalidFileDirOrBufferHandle;	//Posix File Descriptor
-		(files + fd)->StructFD = (sint32)structfd_posixInvalidFileDirOrBufferHandle;		//TGDS File Descriptor (struct fd)
-		(files + fd)->StructFDType = FT_NONE;	//struct fd type invalid.
-		(files + fd)->loc = structfd_posixInvalidFileHandleOffset;
-		ret = fd;
-    }
+    if( (fd < OPEN_MAXTGDS) && (fd >= 0) ){
+		struct fd * internalFHandle = &files[fd];
+		if(internalFHandle->isused == structfd_isused){
+			internalFHandle->isused = (sint32)structfd_isunused;
+			internalFHandle->cur_entry.d_ino = (sint32)structfd_posixInvalidFileDirOrBufferHandle;	//Posix File Descriptor
+			internalFHandle->StructFD = (sint32)structfd_posixInvalidFileDirOrBufferHandle;		//TGDS File Descriptor (struct fd)
+			internalFHandle->StructFDType = FT_NONE;	//struct fd type invalid.
+			internalFHandle->loc = structfd_posixInvalidFileHandleOffset;
+			ret = fd;
+		}
+	}
 	return ret;
 }
 
 sint8 * getDeviceNameByStructFDIndex(int StructFDIndex){
 	sint8 * out = NULL;
-	if((StructFDIndex < 0) || (StructFDIndex > OPEN_MAXTGDS)){
-		out = NULL;
-	}
-	
-	sint32 i = 0;
-	/* search in all struct fd instances*/
-    for (i = 0; i < OPEN_MAXTGDS; i++)
-    {
-        if ((files + i)->cur_entry.d_ino == StructFDIndex)
-        {
-			out = (sint8*)(&devoptab_struct[i]->name);
+	if( (StructFDIndex < OPEN_MAXTGDS) && (StructFDIndex >= 0) ){
+		sint32 i = 0;
+		/* search in all struct fd instances*/
+		for (i = 0; i < OPEN_MAXTGDS; i++)
+		{
+			if (files[i].cur_entry.d_ino == StructFDIndex)
+			{
+				out = (sint8*)(&devoptab_struct[i]->name);
+			}
 		}
-    }
+	}
 	return out;
 }
 
@@ -2357,17 +2416,20 @@ sint8 * getDeviceNameByStructFDIndex(int StructFDIndex){
 int getStructFDIndexByDIR(DIR *dirp){
 	int fd = 0;
     int ret = structfd_posixInvalidFileDirOrBufferHandle;
-    /* search in all struct fd instances*/
-    for (fd = 0; fd < OPEN_MAXTGDS; fd++)
-    {
-        if ((files + fd)->dirPtr)
-        {
-			if((files + fd)->dirPtr->obj.id == dirp->obj.id){
-				ret = (files + fd)->cur_entry.d_ino;
-				break;
+	if(dirp != NULL){
+		/* search in all struct fd instances*/
+		for (fd = 0; fd < OPEN_MAXTGDS; fd++)
+		{
+			struct fd * fhandleInst = &files[fd];
+			if (fhandleInst->dirPtr)
+			{
+				if(fhandleInst->dirPtr->obj.id == dirp->obj.id){
+					ret = fhandleInst->cur_entry.d_ino;
+					break;
+				}
 			}
 		}
-    }
+	}
 	return ret;
 }
 
@@ -2383,7 +2445,7 @@ u32 flength(FILE* fh){
 }
 
 bool FAT_feof(FILE * fh){
-	if(ftell(fh) < (int)(flength(fh)-1)){
+	if( (fh != NULL) && ( (int)ftell(fh) < (int)(((int)flength(fh))-1) ) ){
 		return false;	
 	}
 	return true;
@@ -2396,7 +2458,7 @@ bool FAT_feof(FILE * fh){
 //returns the first free StructFD
 bool buildFileClassListFromPath(char * path, struct FileClassList * lst, int startFromGivenIndex){
 	//Decide wether we have a Working directory or not, if valid dir, enter that dir. If not, use the default dir and point to it. + Clear TGDS FS Directory Iterator context
-	if((cleanFileList(lst) == true) && (updateTGDSFSDirectoryIteratorCWD(path, lst) == true) && (chdir(path) == 0) ){
+	if( (isNotNullString((const char *)path) == true) && (lst != NULL) && (cleanFileList(lst) == true) && (updateTGDSFSDirectoryIteratorCWD(path, lst) == true) && (chdir(path) == 0) ){
 		//rebuild filelist
 		FRESULT result;
 		DIR dir;
@@ -2488,10 +2550,12 @@ bool leaveDir(char* oldNewDir){
 //Step 1): The Global CWD will be overriden by the char * path passed
 //Step 2): If any File or Directory is found then char * path will be destroyed by the current iterated File / Directory item.
 bool updateTGDSFSDirectoryIteratorCWD(char * newCWD, struct FileClassList * lst){
-	char * CurrentWorkingDirectory = (char*)&lst->TGDSCurrentWorkingDirectory[0];
-	if(strlen(newCWD) > 0){
-		strcpy(CurrentWorkingDirectory, (const char*)newCWD);
-		return true;
+	if( (newCWD != NULL) && (lst != NULL) ){
+		char * CurrentWorkingDirectory = (char*)&lst->TGDSCurrentWorkingDirectory[0];
+		if(strlen(newCWD) > 0){
+			strcpy(CurrentWorkingDirectory, (const char*)newCWD);
+			return true;
+		}
 	}
 	return false;
 }
@@ -2516,26 +2580,35 @@ int ARM7FS_close_ARM9ImplementationTGDSFD(struct fd * fdinstOut){
 ///////////////////////////////////////////////TGDS FileDescriptor Callbacks Implementation End ///////////////////////////////////////////////
 //FATFS layer which allows to open N file handles for a file (because TGDS FS forces 1 File Handle to a file)
 int TGDSFSUserfatfs_write(u8 *ptr, int len, int offst, struct fd *tgdsfd){	//(FileDescriptor :struct fd index)
-	f_lseek (
-			tgdsfd->filPtr,   /* Pointer to the file object structure */
-			(DWORD)offst       /* File offset in unit of byte */
-		);
-	return fatfs_write(tgdsfd->cur_entry.d_ino, ptr, len);
+	if( (tgdsfd != NULL) && (ptr != NULL) ){
+		f_lseek (
+				tgdsfd->filPtr,   /* Pointer to the file object structure */
+				(DWORD)offst       /* File offset in unit of byte */
+			);
+		return fatfs_write(tgdsfd->cur_entry.d_ino, ptr, len);
+	}
+	return structfd_posixInvalidFileDirOrBufferHandle;
 }
 
 //read (get struct FD index from FILE * handle)
 int TGDSFSUserfatfs_read(u8 *ptr, int len, int offst, struct fd *tgdsfd){
-	f_lseek (
-			tgdsfd->filPtr,   /* Pointer to the file object structure */
-			(DWORD)offst       /* File offset in unit of byte */
-		);
-	return fatfs_read(tgdsfd->cur_entry.d_ino, ptr, len);
+	if( (tgdsfd != NULL) && (ptr != NULL) ){
+		f_lseek (
+				tgdsfd->filPtr,   /* Pointer to the file object structure */
+				(DWORD)offst       /* File offset in unit of byte */
+			);
+		return fatfs_read(tgdsfd->cur_entry.d_ino, ptr, len);
+	}
+	return structfd_posixInvalidFileDirOrBufferHandle;
 }
 
 //receives a new struct fd index with either DIR or FIL structure allocated so it can be closed.
 //returns 0 if success, 1 if error
 int TGDSFSUserfatfs_close(struct fd * tgdsfd){
-	return fatfs_close(tgdsfd->cur_entry.d_ino);
+	if(tgdsfd != NULL){
+		return fatfs_close(tgdsfd->cur_entry.d_ino);
+	}
+	return structfd_posixInvalidFileDirOrBufferHandle;
 }
 
 //returns an internal index struct fd allocated. Requires DLDI enabled
@@ -2556,20 +2629,24 @@ off_t TGDSFSUserfatfs_lseek(struct fd *pfd, off_t offset, int whence){	//(FileDe
 }
 
 bool openDualTGDSFileHandleFromFile(char * filenameToOpen, int * tgdsStructFD1, int * tgdsStructFD2){
-	//Test case for 2 file handles out a single file
-	int retStatus1 = TGDSFSUserfatfs_open_file((const sint8 *)filenameToOpen, (char *)"r", tgdsStructFD1);	//returns structFD Video File Handle as posix file descriptor (int fd) and struct fd *
-	int retStatus2 = TGDSFSUserfatfs_open_file((const sint8 *)filenameToOpen, (char *)"r", tgdsStructFD2);	//returns structFD Audio File Handle as posix file descriptor (int fd) and struct fd *
+
+	if( (isNotNullString((const char *)filenameToOpen) == true) && (tgdsStructFD1 != NULL) && (tgdsStructFD2 != NULL) ){
+		//Test case for 2 file handles out a single file
+		int retStatus1 = TGDSFSUserfatfs_open_file((const sint8 *)filenameToOpen, (char *)"r", tgdsStructFD1);	//returns structFD Video File Handle as posix file descriptor (int fd) and struct fd *
+		int retStatus2 = TGDSFSUserfatfs_open_file((const sint8 *)filenameToOpen, (char *)"r", tgdsStructFD2);	//returns structFD Audio File Handle as posix file descriptor (int fd) and struct fd *
+		
+		*tgdsStructFD1 = retStatus1;
+		*tgdsStructFD2 = retStatus2;
+		
+		if( (retStatus1 != -1) && (retStatus2 != -1)){
+			return true;
+		}
+		
+		struct fd * fd1 = getStructFD(*tgdsStructFD1);
+		struct fd * fd2 = getStructFD(*tgdsStructFD2); 	
+		closeDualTGDSFileHandleFromFile(fd1, fd2);
+	}	
 	
-	*tgdsStructFD1 = retStatus1;
-	*tgdsStructFD2 = retStatus2;
-	
-	if( (retStatus1 != -1) && (retStatus2 != -1)){
-		return true;
-	}
-	
-	struct fd * fd1 = getStructFD(*tgdsStructFD1);
-	struct fd * fd2 = getStructFD(*tgdsStructFD2); 	
-	closeDualTGDSFileHandleFromFile(fd1, fd2);
 	return false;
 }
 
@@ -2592,6 +2669,10 @@ __attribute__ ((optnone))
 #endif
 void separateExtension(char *str, char *ext)
 {
+	if( (str == NULL) || (ext == NULL) ){
+		return;
+	}
+
 	int x = 0;
 	int y = 0;
 	for(y = strlen(str) - 1; y > 0; y--)

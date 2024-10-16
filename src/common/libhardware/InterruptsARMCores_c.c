@@ -24,6 +24,7 @@ USA
 
 #ifdef ARM9
 #include "nds_cp15_misc.h"
+#include "posixHandleTGDS.h"
 #include "exceptionTGDS.h"
 #endif
 
@@ -46,14 +47,24 @@ USA
 #include "i2c.h"
 #include "sdmmc.h"
 #endif
-
 #endif
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void IRQInit(u8 DSHardware)  {
 	#ifdef ARM9
-	
 	DrainWriteBuffer();
 	setTGDSARM9PrintfCallback((printfARM9LibUtils_fn)&TGDSDefaultPrintf2DConsole); //Setup default TGDS Project: console 2D printf 
+	
+	//Initialize default memory callbacks. Instead of segfaults, when the memory context is not initialized, it'll correctly trigger these exceptions.
+	TGDSMalloc9 = (TGDSARM9MallocHandler)&handleUninitializedTGDSMalloc9;
+	TGDSCalloc9 = (TGDSARM9CallocHandler)&handleUninitializedTGDSCalloc9;
+	TGDSFree9 = (TGDSARM9FreeHandler)&handleUninitializedTGDSFree9;
+	TGDSMallocFreeMemory9 = (TGDSARM9MallocFreeMemoryHandler)&handleUninitializedTGDSMallocFreeMemory9;
 	#endif
 	
 	//FIFO IRQ Init
