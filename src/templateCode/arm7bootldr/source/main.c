@@ -468,11 +468,8 @@ void bootfile(){
 				nocashMessage(" TGDS-MB v3 NTR");
 			}
 			
-			//NTR mode only. 
-			if(__dsimode == false){
-				REG_IME = 0;
-				dldi_handler_deinit();
-			}
+			REG_IME = 0;
+			dldi_handler_deinit();
 			
 			setValueSafe((u32*)TGDS_IS_TGDS_HOMEBREW, (u32)isTGDSTWLHomebrew);
 			setValueSafe((u32*)ARM9_TWLORNTRPAYLOAD_MODE, (u32)isNTRTWLBinary);
