@@ -47,6 +47,7 @@ int main(int argc, char **argv)  {
 	
     while (1) {
 		handleARM7SVC();	/* Do not remove, handles TGDS services */
+		HaltUntilIRQ();
 	}
 	return 0;
 }
