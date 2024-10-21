@@ -156,7 +156,10 @@ typedef struct vramSetup
 
 //VRAM Setup 5: 3D Engine uses VRAM as Texture memory
 #define VRAM_A_ENGINE_A_3DENGINE_TEXTURE 	(3)		//VRAM A: 3d texture slot 0.
-#define VRAM_B_ENGINE_A_3DENGINE_TEXTURE 	(3 | (1<<3) )		//VRAM B: 3d texture slot 0.
+#define VRAM_B_ENGINE_A_3DENGINE_TEXTURE 	(3 | (1<<3) )		//VRAM B: 3d texture slot 1.
+#define VRAM_C_ENGINE_A_3DENGINE_TEXTURE 	(3 | (2<<3) )		//VRAM C: 3d texture slot 2.
+#define VRAM_D_ENGINE_A_3DENGINE_TEXTURE 	(3 | (3<<3) )		//VRAM D: 3d texture slot 3.
+
 
 //VRAM Setup 7
 //Vram C (128K)

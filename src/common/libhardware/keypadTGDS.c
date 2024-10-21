@@ -68,7 +68,7 @@ static u32 keysold=0;
 void scanKeys()
 {
 	keysold=keys;
-	uint16 buttonsARM7 = ((struct sIPCSharedTGDS*)0x027FF000)->buttons7;
+	uint16 buttonsARM7 = ((struct sIPCSharedTGDS*)TGDSIPCStartAddress)->buttons7;
 	keys=(uint32)(( ((~KEYINPUT)&0x3ff) | (((~buttonsARM7)&3)<<10) | (((~buttonsARM7)<<6) & (KEY_TOUCH|KEY_LID) ))^KEY_LID);
 }
 

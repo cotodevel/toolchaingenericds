@@ -34,7 +34,26 @@ USA
 #include "dsregs_asm.h"
 #include "InterruptsARMCores_h.h"
 
+//4000304h - NDS9 - POWCNT1 - Graphics Power Control Register (R/W)
+//  0     Enable Flag for both LCDs (0=Disable) (Prohibited, see notes)
+//  1     2D Graphics Engine A      (0=Disable) (Ports 008h-05Fh, Pal 5000000h)
+//  2     3D Rendering Engine       (0=Disable) (Ports 320h-3FFh)
+//  3     3D Geometry Engine        (0=Disable) (Ports 400h-6FFh)
+//  4-8   Not used
+//  9     2D Graphics Engine B      (0=Disable) (Ports 1008h-105Fh, Pal 5000400h)
+//  10-14 Not used
+//  15    Display Swap (0=Send Display A to Lower Screen, 1=To Upper Screen)
+//  16-31 Not used
+void powerOFF3DEngine(){
+	REG_POWERCNT = (REG_POWERCNT & 0xFFFF) & ~(POWER_3D_CORE | POWER_MATRIX);
+}
+
+void powerON3DEngine(){
+	REG_POWERCNT = (REG_POWERCNT & 0xFFFF) | (POWER_3D_CORE | POWER_MATRIX);
+}
+
 #endif
+
 
 //Turn On the BG/3D engines if ARM9
 //Turn On Sound Speakers / Wifi if ARM7

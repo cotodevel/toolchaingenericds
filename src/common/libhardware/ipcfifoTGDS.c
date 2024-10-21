@@ -70,7 +70,7 @@ void Write16bitAddrExtArm(u32 address, u16 bits){
 __attribute__((section(".itcm")))
 #endif
 struct sIPCSharedTGDS* getsIPCSharedTGDS(){
-	struct sIPCSharedTGDS* getsIPCSharedTGDSInst = (__attribute__((aligned (4))) struct sIPCSharedTGDS*)0x027FF000;
+	struct sIPCSharedTGDS* getsIPCSharedTGDSInst = (__attribute__((aligned (4))) struct sIPCSharedTGDS*)TGDSIPCStartAddress;
 	return getsIPCSharedTGDSInst;
 }
 

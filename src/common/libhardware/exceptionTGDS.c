@@ -33,12 +33,14 @@ USA
 #include <time.h>
 #include "dmaTGDS.h"
 #include "biosTGDS.h"
+#include "powerTGDS.h"
 #include "exceptionTGDS.h"
 #include "ipcfifoTGDS.h"
 #include "InterruptsARMCores_h.h"
 #include "global_settings.h"
 #include "keypadTGDS.h"
 #include "posixHandleTGDS.h"
+#include "malloc.h"
 
 #ifdef ARM9
 #include "nds_cp15_misc.h"
@@ -187,6 +189,13 @@ void exception_handler(uint32 arg, int stage, u32 fwNo){
 	GUI_clear();
 	VRAMBLOCK_SETBANK_C(VRAM_C_0x06200000_ENGINE_B_BG);	
 	
+	//Disable timers, and if we eventually use GDB, re-enable one
+	REG_IE &= ~(IRQ_TIMER0|IRQ_TIMER1|IRQ_TIMER2|IRQ_TIMER3);
+	
+	powerOFF3DEngine(); //Power off ARM9 3D Engine to save power
+	powerOFF(POWER_2D_A);
+	setBacklight(POWMAN_BACKLIGHT_BOTTOM_BIT);
+	
 	GUI_printf(" ---- ");
 	
 	if(arg == (uint32)unexpectedsysexit_9){
@@ -254,6 +263,7 @@ void exception_handler(uint32 arg, int stage, u32 fwNo){
 			//Stage 8 = TGDS NTR App trying to be ran in TWL mode. (unused)
 			//Stage 9 = TGDS ARM7 Payload reloading failed.
 			//Stage 10 = Custom manual exception (ARM7)
+			//Stage 11 = dlmalloc abort (ARM9). Reasons: mis-aligned buffer freed, fragmented reallocation (buffer was not freed/reallocated correctly), NULL ptr @ free();, EWRAM out of memory, etc
 			GUI_printf("TGDS boot fail: Stage [%d], firmware model: [0x%x]", stage, fwNo);
 			
 			int isNTRTWLBinary = isThisPayloadNTROrTWLMode();
@@ -313,6 +323,16 @@ void exception_handler(uint32 arg, int stage, u32 fwNo){
 			}
 			else if(stage == 10){
 				GUI_printf(sharedStringExceptionMessage);
+			}
+			else if(stage == 11){
+				GUI_printf("dlmalloc abort (ARM9). Reasons: mis-aligned buffer freed, ");
+				GUI_printf("fragmented reallocation (buffer was not freed/reallocated correctly), ");
+				GUI_printf("NULL ptr @ free();, EWRAM out of memory, etc.");
+				GUI_printf("-");
+				GUI_printf("Report this bug/issue at:");
+				GUI_printf("https://bitbucket.org/Coto88");
+				GUI_printf("or");
+				GUI_printf("https://github.com/cotodevel");
 			}
 			else{
 				GUI_printf("handleDSInitError(); Unhandled event. Contact developer.");
@@ -417,4 +437,71 @@ __attribute__ ((optnone))
 void handleDSInitError(int stage, u32 fwNo){
 	exception_handler(manualexception_9, stage, fwNo);
 }
+
+//newlib-nds's dlmalloc abort handler
+void ds_malloc_abort(void){
+	//Throw exception always
+	u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
+	int stage = 11;
+	handleDSInitError(stage, (u32)fwNo);
+}
+
+//Context: Default callbacks to handle uninitialized, but required functionality at runtime
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void handleUninitializedTGDSMalloc9(){
+	int TGDSDebuggerStage = 10;
+	u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
+	sprintf((char*)ConsolePrintfBuf, "ARM9: TGDSMalloc9(): NOT initialized. Halt.");
+	handleDSInitOutputMessage((char*)ConsolePrintfBuf);
+	handleDSInitError(TGDSDebuggerStage, (u32)fwNo);
+}
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void handleUninitializedTGDSCalloc9(){
+	int TGDSDebuggerStage = 10;
+	u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
+	sprintf((char*)ConsolePrintfBuf, "ARM9: TGDSCalloc9(): NOT initialized. Halt.");
+	handleDSInitOutputMessage((char*)ConsolePrintfBuf);
+	handleDSInitError(TGDSDebuggerStage, (u32)fwNo);
+}
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void handleUninitializedTGDSFree9(){
+	int TGDSDebuggerStage = 10;
+	u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
+	sprintf((char*)ConsolePrintfBuf, "ARM9: TGDSFree9(): NOT initialized. Halt.");
+	handleDSInitOutputMessage((char*)ConsolePrintfBuf);
+	handleDSInitError(TGDSDebuggerStage, (u32)fwNo);
+}
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void handleUninitializedTGDSMallocFreeMemory9(){
+	int TGDSDebuggerStage = 10;
+	u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
+	sprintf((char*)ConsolePrintfBuf, "ARM9: TGDSMallocFreeMemory9(): NOT initialized. Halt.");
+	handleDSInitOutputMessage((char*)ConsolePrintfBuf);
+	handleDSInitError(TGDSDebuggerStage, (u32)fwNo);
+}
+
 #endif
