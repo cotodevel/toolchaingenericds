@@ -318,12 +318,26 @@
 ---------------------------------------------------------------------------*/
 
 /* Fill memory */
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void mem_set (void* dst, int val, int cnt) {
 	char *d = (char*)dst;
 	while (cnt--) *d++ = (char)val;
 }
 
 /* Compare memory to memory */
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 int mem_cmp (const void* dst, const void* src, int cnt) {
 	const char *d = (const char *)dst, *s = (const char *)src;
 	int r = 0;
@@ -335,7 +349,13 @@ int mem_cmp (const void* dst, const void* src, int cnt) {
 /* FAT access - Read value of a FAT entry                                */
 /*-----------------------------------------------------------------------*/
 
-static
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 CLUST get_fat (	/* 1:IO error, Else:Cluster status */
 	CLUST clst,	/* Cluster# to get the link information */
 	FATFS *fs
@@ -385,7 +405,13 @@ CLUST get_fat (	/* 1:IO error, Else:Cluster status */
 /* Get sector# from cluster# / Get cluster field from directory entry    */
 /*-----------------------------------------------------------------------*/
 
-static
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 DWORD clust2sect (	/* !=0: Sector number, 0: Failed - invalid cluster# */
 	CLUST clst,		/* Cluster# to be converted */
 	FATFS *fs
@@ -397,7 +423,13 @@ DWORD clust2sect (	/* !=0: Sector number, 0: Failed - invalid cluster# */
 }
 
 
-static
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 CLUST get_clust (
 	BYTE* dir,		/* Pointer to directory entry */
 	FATFS *fs
@@ -420,7 +452,13 @@ CLUST get_clust (
 /* Directory handling - Rewind directory index                           */
 /*-----------------------------------------------------------------------*/
 
-static
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 FRESULT dir_rewind (
 	DIR *dj,			/* Pointer to directory object */
 	FATFS *fs
@@ -447,7 +485,13 @@ FRESULT dir_rewind (
 /* Directory handling - Move directory index next                        */
 /*-----------------------------------------------------------------------*/
 
-static
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 FRESULT dir_next (	/* FR_OK:Succeeded, FR_NO_FILE:End of table */
 	DIR *dj,			/* Pointer to directory object */
 	FATFS *fs
@@ -491,7 +535,13 @@ FRESULT dir_next (	/* FR_OK:Succeeded, FR_NO_FILE:End of table */
 /* Directory handling - Find an object in the directory                  */
 /*-----------------------------------------------------------------------*/
 
-static
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 FRESULT dir_find (
 	DIR *dj,		/* Pointer to the directory object linked to the file name */
 	BYTE *dir,		/* 32-byte working buffer */
@@ -563,7 +613,13 @@ FRESULT dir_read (
 /*-----------------------------------------------------------------------*/
 
 
-static
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 FRESULT create_name (
 	DIR *dj,			/* Pointer to the directory object */
 	const char **path	/* Pointer to pointer to the segment in the path string */
@@ -705,7 +761,13 @@ FRESULT follow_path (	/* FR_OK(0): successful, !=0: error code */
 /*-----------------------------------------------------------------------*/
 /* Check a sector if it is an FAT boot record                            */
 /*-----------------------------------------------------------------------*/
-static
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 BYTE check_fs (	/* 0:The FAT boot record, 1:Valid boot record but not an FAT, 2:Not a boot record, 3:Error */
 	BYTE *buf,	/* Working buffer */
 	DWORD sect	/* Sector# (lba) to check if it is an FAT boot record or not */
@@ -737,6 +799,13 @@ BYTE check_fs (	/* 0:The FAT boot record, 1:Valid boot record but not an FAT, 2:
 /*-----------------------------------------------------------------------*/
 /* Mount/Unmount a Locical Drive                                         */
 /*-----------------------------------------------------------------------*/
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 FRESULT pf_mount (
 	FATFS *fs		/* Pointer to new file system object */
 )
@@ -807,7 +876,11 @@ FRESULT pf_mount (
 /*-----------------------------------------------------------------------*/
 /* Open or Create a File                                                 */
 /*-----------------------------------------------------------------------*/
-#ifdef ARM7
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
 FRESULT pf_open (
@@ -843,8 +916,12 @@ FRESULT pf_open (
 /* Read File                                                             */
 /*-----------------------------------------------------------------------*/
 #if _USE_READ
-#ifdef ARM7
-__attribute__ ((optnone)) 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
 #endif
 FRESULT pf_read (
 	void* buff,		/* Pointer to the read buffer (NULL:Forward data to the stream)*/
@@ -965,11 +1042,25 @@ FRESULT pf_write (
 #endif
 
 /* Returns: Current File size */
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 DWORD pf_size(FATFS *fs){
 	return fs->fsize;
 }
 
 /* Returns: Current File pointer */
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 DWORD pf_tell (FATFS *fs){
 	return fs->fptr;
 }
@@ -979,7 +1070,13 @@ DWORD pf_tell (FATFS *fs){
 /* Seek File R/W Pointer                                                 */
 /*-----------------------------------------------------------------------*/
 #if _USE_LSEEK
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
 
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 FRESULT pf_lseek (
 	DWORD ofs,		/* File pointer from top of file */
 	FATFS *fs
@@ -1029,7 +1126,13 @@ FRESULT pf_lseek (
 /* Create a Directroy Object                                             */
 /*-----------------------------------------------------------------------*/
 #if _USE_DIR
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
 
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 FRESULT pf_opendir (
 	DIR *dj,			/* Pointer to directory object to create */
 	const char *path,	/* Pointer to the directory path */
@@ -1066,7 +1169,13 @@ FRESULT pf_opendir (
 /*-----------------------------------------------------------------------*/
 /* Read Directory Entry in Sequense                                      */
 /*-----------------------------------------------------------------------*/
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("Os")))
+#endif
 
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 FRESULT pf_readdir (
 	DIR *dj,			/* Pointer to the open directory object */
 	FILINFO *fno,		/* Pointer to file information to return */

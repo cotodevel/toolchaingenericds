@@ -109,7 +109,7 @@ extern void touchReadXY(touchPosition *touchPos);
 extern bool touchPenDown();
 
 extern bool touchInit;
-extern s32 xscale, yscale;
+extern s32 xscaleTGDSScr, yscaleTGDSScr;
 extern s32 xoffset, yoffset;
 #endif
 

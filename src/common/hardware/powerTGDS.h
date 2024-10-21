@@ -29,6 +29,32 @@ USA
 #define LED_SHORTBLINK	3
 #define LED_ON			0
 
+#ifdef ARM9
+#undef POWER_LCD
+#define POWER_LCD			(1 << 0)
+
+#undef POWER_2D_A
+#define POWER_2D_A			(1 << 1)
+
+#undef POWER_MATRIX
+#define POWER_MATRIX		(1 << 2)
+
+#undef POWER_3D_CORE
+#define POWER_3D_CORE		(1 << 3)
+
+#undef POWER_2D_B
+#define POWER_2D_B			(1 << 9)
+
+#undef POWER_SWAP_LCDS
+#define POWER_SWAP_LCDS		(1 << 15)
+
+#undef POWER_ALL_2D
+#define POWER_ALL_2D     (POWER_LCD | POWER_2D_A | POWER_2D_B)
+
+#undef POWER_ALL
+#define POWER_ALL		 (POWER_ALL_2D | POWER_3D_CORE | POWER_MATRIX)
+#endif
+
 #endif
 
 #ifdef __cplusplus
@@ -40,6 +66,11 @@ extern void powerOFF(uint32 values);
 
 #ifdef ARM7
 extern void SoundPowerON(u8 volume); //aka : enableSound()
+#endif
+
+#ifdef ARM9
+extern void powerOFF3DEngine();
+extern void powerON3DEngine();
 #endif
 
 #ifdef __cplusplus

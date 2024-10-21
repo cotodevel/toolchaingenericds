@@ -84,7 +84,7 @@ typedef struct tPERSONAL_DATA {
 } PERSONAL_DATA ;
 
 //!	Default location for the user's personal data (see %PERSONAL_DATA).
-#define PersonalData ((PERSONAL_DATA*)&((struct sIPCSharedTGDS *)0x027FF000)->DSFWSETTINGSInst)
+#define PersonalData ((PERSONAL_DATA*)&((struct sIPCSharedTGDS *)TGDSIPCStartAddress)->DSFWSETTINGSInst)
 
 
 static u8 last_time_touched = 0;
@@ -205,7 +205,7 @@ uint32 touchReadTemperature(int * t1, int * t2) {
 
 
 bool touchInit = false;
-s32 xscale, yscale;
+s32 xscaleTGDSScr, yscaleTGDSScr;
 s32 xoffset, yoffset;
 
 //---------------------------------------------------------------------------------
@@ -394,10 +394,10 @@ __attribute__ ((optnone))
 void touchReadXY(struct touchPosition *touchPos) {
 //---------------------------------------------------------------------------------	
 	if ( !touchInit ) {
-		xscale = ((PersonalData->calX2px - PersonalData->calX1px) << 19) / ((PersonalData->calX2) - (PersonalData->calX1));
-		yscale = ((PersonalData->calY2px - PersonalData->calY1px) << 19) / ((PersonalData->calY2) - (PersonalData->calY1));
-		xoffset = ((PersonalData->calX1 + PersonalData->calX2) * xscale  - ((PersonalData->calX1px + PersonalData->calX2px) << 19) ) / 2;
-		yoffset = ((PersonalData->calY1 + PersonalData->calY2) * yscale  - ((PersonalData->calY1px + PersonalData->calY2px) << 19) ) / 2;
+		xscaleTGDSScr = ((PersonalData->calX2px - PersonalData->calX1px) << 19) / ((PersonalData->calX2) - (PersonalData->calX1));
+		yscaleTGDSScr = ((PersonalData->calY2px - PersonalData->calY1px) << 19) / ((PersonalData->calY2) - (PersonalData->calY1));
+		xoffset = ((PersonalData->calX1 + PersonalData->calX2) * xscaleTGDSScr  - ((PersonalData->calX1px + PersonalData->calX2px) << 19) ) / 2;
+		yoffset = ((PersonalData->calY1 + PersonalData->calY2) * yscaleTGDSScr  - ((PersonalData->calY1px + PersonalData->calY2px) << 19) ) / 2;
 		
 		#ifdef TWLMODE
 		if (cdcIsAvailable() && (useTWLTSC == true)) {
@@ -416,8 +416,8 @@ void touchReadXY(struct touchPosition *touchPos) {
 	if (cdcIsAvailable() && (useTWLTSC == true)) {	//TWL Mode
 		#ifdef TWLMODE
 		cdcTouchRead(touchPos);	
-		s16 px = ( touchPos->rawx * xscale - xoffset + xscale/2 ) >>19;
-		s16 py = ( touchPos->rawy * yscale - yoffset + yscale/2 ) >>19;
+		s16 px = ( touchPos->rawx * xscaleTGDSScr - xoffset + xscaleTGDSScr/2 ) >>19;
+		s16 py = ( touchPos->rawy * yscaleTGDSScr - yoffset + yscaleTGDSScr/2 ) >>19;
 		if ( px < 0) px = 0;
 		if ( py < 0) py = 0;
 		if ( px > (SCREEN_WIDTH -1)) px = SCREEN_WIDTH -1;
@@ -470,8 +470,8 @@ void touchReadXY(struct touchPosition *touchPos) {
 
 					break;
 			}
-			s16 px = ( touchPos->rawx * xscale - xoffset + xscale/2 ) >>19;
-			s16 py = ( touchPos->rawy * yscale - yoffset + yscale/2 ) >>19;
+			s16 px = ( touchPos->rawx * xscaleTGDSScr - xoffset + xscaleTGDSScr/2 ) >>19;
+			s16 py = ( touchPos->rawy * yscaleTGDSScr - yoffset + yscaleTGDSScr/2 ) >>19;
 			if ( px < 0) px = 0;
 			if ( py < 0) py = 0;
 			if ( px > (SCREEN_WIDTH -1)) px = SCREEN_WIDTH -1;
@@ -501,7 +501,7 @@ __attribute__ ((optnone))
 #endif
 void doSPIARM7IO(){
 	#ifdef ARM7
-	//struct sIPCSharedTGDS * sIPCSharedTGDSInst = (struct sIPCSharedTGDS *)0x027FF000;
+	//struct sIPCSharedTGDS * sIPCSharedTGDSInst = (struct sIPCSharedTGDS *)TGDSIPCStartAddress;
 	//Handle Clock (should this one run on IRQs instead?)
 	//sIPCSharedTGDSInst->ndsRTCSeconds = nds_get_time7(); //disable clock by default, re-enable it if TGDS Project needs it
 	#endif

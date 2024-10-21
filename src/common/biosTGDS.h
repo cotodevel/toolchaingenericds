@@ -115,7 +115,6 @@ extern int swiIsDebugger(void);
 extern int swiDivide(int numerator, int divisor);
 extern int swiRemainder(int numerator, int divisor);
 extern void swiDivMod(int numerator, int divisor, int * result, int * remainder);
-extern void swiCopy(const void * source, void * dest, int flags);
 extern int swiSqrt(int value);
 extern void swiSoftReset(void);
 

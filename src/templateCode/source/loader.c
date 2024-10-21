@@ -228,6 +228,7 @@ int isNTROrTWLBinaryTGDSShared(u8 * NDSHeaderStructInst, u8 * passmeRead, u32 * 
 
 #ifdef ARM9
 #include "videoTGDS.h"
+#include "consoleTGDS.h"
 #include "soundTGDS.h"
 
 //ToolchainGenericDS-multiboot NDS Binary loader: Requires tgds_multiboot_payload_ntr.bin / tgds_multiboot_payload_twl.bin (TGDS-multiboot Project) in SD root.
@@ -243,12 +244,8 @@ bool TGDSMultibootRunNDSPayload(char * filename, u8 * tgdsMbv3ARM7Bootldr, int a
 	bool isTGDSTWLHomebrew = false;
 	register int isNTRTWLBinary = isNTROrTWLBinary(filename, &isTGDSTWLHomebrew);
 	memset(msgDebugException, 0, MAX_TGDSFILENAME_LENGTH);
-	//NTR mode? Can only boot valid NTR binaries, the rest is skipped.
-	if((__dsimode == false) && !(isNTRTWLBinary == isNDSBinaryV1Slot2) && !(isNTRTWLBinary == isNDSBinaryV1) && !(isNTRTWLBinary == isNDSBinaryV2) && !(isNTRTWLBinary == isNDSBinaryV3) ){
-		return false;
-	}
-	//TWL mode? Can only boot valid NTR and TWL binaries, the rest is skipped.
-	else if((__dsimode == true) && !(isNTRTWLBinary == isNDSBinaryV1Slot2) && !(isNTRTWLBinary == isNDSBinaryV1) && !(isNTRTWLBinary == isNDSBinaryV2) && !(isNTRTWLBinary == isNDSBinaryV3) && !(isNTRTWLBinary == isTWLBinary) ){
+	//NTR/TWL mode? Can only boot valid NTR/TWL binaries, the rest is skipped.
+	if(!(isNTRTWLBinary == isNDSBinaryV1Slot2) && !(isNTRTWLBinary == isNDSBinaryV1) && !(isNTRTWLBinary == isNDSBinaryV2) && !(isNTRTWLBinary == isNDSBinaryV3) && !(isNTRTWLBinary == isTWLBinary) ){
 		return false;
 	}
 	else{
@@ -289,7 +286,10 @@ bool TGDSMultibootRunNDSPayload(char * filename, u8 * tgdsMbv3ARM7Bootldr, int a
 			SFGEXT9 = (SFGEXT9 & ~(0x3 << 14)) | (0x0 << 14);
 			*(u32*)0x04004008 = SFGEXT9;
 		}
+		//DKARM TWL mode homebrew
 		else if (		
+			(isTGDSTWLHomebrew == false)
+			&&
 			(__dsimode == true)
 			&&
 			(isNTRTWLBinary == isTWLBinary)
@@ -300,9 +300,37 @@ bool TGDSMultibootRunNDSPayload(char * filename, u8 * tgdsMbv3ARM7Bootldr, int a
 			SFGEXT9 = (SFGEXT9 & ~(0x3 << 14)) | (0x2 << 14);
 			*(u32*)0x04004008 = SFGEXT9;
 		}
+		//TGDS TWL mode homebrew self reload fix
+		else if (
+			(isTGDSTWLHomebrew == true)
+			&&
+			(__dsimode == true)
+			&&
+			(isNTRTWLBinary == isTWLBinary)
+		){
+			//Enable 4M EWRAM (TWL)
+			u32 SFGEXT9 = *(u32*)0x04004008;
+			//14-15 Main Memory RAM Limit (0..1=4MB/DS, 2=16MB/DSi, 3=32MB/DSiDebugger)
+			SFGEXT9 = (SFGEXT9 & ~(0x3 << 14)) | (0x0 << 14);
+			*(u32*)0x04004008 = SFGEXT9;
+		}
 		
-		//Execute Stage 2: VRAM ARM7 payload: NTR/TWL (0x06000000)
-		executeARM7Payload((u32)0x02380000, 96*1024, tgdsMbv3ARM7Bootldr);
+		//NTR TGDS-MB v3 compatibility
+		if(__dsimode == false){
+			//Execute Stage 1: IWRAM ARM7 payload: NTR/TWL (0x03800000)
+			executeARM7Payload((u32)0x02380000, 96*1024, TGDS_MB_V3_ARM7_STAGE1_ADDR);
+		}
+
+		//Save Stage 2: VRAM ARM7 payload: NTR/TWL (0x06000000). To be ran on the upcoming TGDS-MB v3 ARM9 bootstrap core.
+		memcpy(TGDS_MB_V3_ARM7_STAGE1_ADDR, tgdsMbv3ARM7Bootldr, 96*1024);
+
+		//rudimentary debugger
+		//initFBModeMainEngine0x06000000();
+		//dmaFillHalfWord(0, 0xF800, (uint32)0x06000000, (uint32)(128*1024)); //blue
+		//dmaFillHalfWord(0, 0x87c0, (uint32)0x06000000, (uint32)(128*1024)); //green
+		//dmaFillHalfWord(0, 0x801f, (uint32)0x06000000, (uint32)(128*1024)); //red
+		
+		remove(TGDS_MB_V3_BOOTSTUB_FILENAME);
 		
 		//Copy the file into non-case sensitive "tgdsboot.bin" into ARM7,
 		//since PetitFS only understands 8.3 DOS format filenames.
@@ -316,7 +344,7 @@ bool TGDSMultibootRunNDSPayload(char * filename, u8 * tgdsMbv3ARM7Bootldr, int a
 		BYTE mode = posixToFatfsAttrib(flags);
 		FRESULT result = f_open(&fPagingFDRead, (const TCHAR*)filename, mode);
 		if(result != FR_OK){
-			printf("tgds_multiboot_payload.bin: read (1)");
+			printf("%s: read (1)", TGDSMBPAYLOAD);
 			printf("payload fail [%s]", filename);
 			while(1==1){}
 		}
@@ -329,7 +357,7 @@ bool TGDSMultibootRunNDSPayload(char * filename, u8 * tgdsMbv3ARM7Bootldr, int a
 		mode = posixToFatfsAttrib(flags);
 		result = f_open(&fPagingFDWrite, (const TCHAR*)tempFile, mode);
 		if(result != FR_OK){
-			printf("tgds_multiboot_payload.bin: read (3)");
+			printf("%s: read (3)", TGDSMBPAYLOAD);
 			printf("payload fail [%s]", tempFile);
 			while(1==1){}
 		}
@@ -353,10 +381,13 @@ bool TGDSMultibootRunNDSPayload(char * filename, u8 * tgdsMbv3ARM7Bootldr, int a
 			int writtenSize=0;
 			result = f_write(&fPagingFDWrite, workBuffer, (int)TGDS_MB_V3_WORKBUFFER_SIZE, (UINT*)&writtenSize); //workbuffer is already coherent
 			if (result != FR_OK){
-				printf("tgds_multiboot_payload.bin: write (4)");
-				printf("payload fail [%s]", tempFile);
-				while(1==1){}
+				if(__dsimode == true){
+					printf("%s: write (4)", TGDSMBPAYLOAD);
+					printf("payload fail [%s]", tempFile);
+					while(1==1){}
+				}
 			}
+			f_sync(&fPagingFDRead);
 			f_sync(&fPagingFDWrite); //make persistent file in filesystem coherent
 			
 			blocksWritten++;
@@ -372,7 +403,7 @@ bool TGDSMultibootRunNDSPayload(char * filename, u8 * tgdsMbv3ARM7Bootldr, int a
 			
 			result = f_read(&fPagingFDRead, workBuffer, (int)blocksToRead, (UINT*)&ret);
 			if(ret != blocksToRead){
-				printf("tgds_multiboot_payload.bin: read (2)");
+				printf("%s: read (2)", TGDSMBPAYLOAD);
 				printf("payload fail [%s]", filename);
 				while(1==1){}
 			}
@@ -381,9 +412,11 @@ bool TGDSMultibootRunNDSPayload(char * filename, u8 * tgdsMbv3ARM7Bootldr, int a
 			int writtenSize=0;
 			result = f_write(&fPagingFDWrite, workBuffer, (int)blocksToRead, (UINT*)&writtenSize); //workbuffer is already coherent
 			if (result != FR_OK){
-				printf("tgds_multiboot_payload.bin: write (4)");
-				printf("payload fail [%s]", tempFile);
-				while(1==1){}
+				if(__dsimode == true){
+					printf("%s: write (4)", TGDSMBPAYLOAD);
+					printf("payload fail [%s]", tempFile);
+					while(1==1){}
+				}
 			}
 			f_sync(&fPagingFDWrite); //make persistent file in filesystem coherent
 		}
@@ -405,7 +438,7 @@ bool TGDSMultibootRunNDSPayload(char * filename, u8 * tgdsMbv3ARM7Bootldr, int a
 			coherent_user_range_by_size(TGDS_MB_V3_PAYLOAD_ADDR_TWL, (int)tgds_multiboot_payload_size);
 			fclose(tgdsPayloadFh);
 			FS_deinit();
-			bool stat = dldiPatchLoader((data_t *)TGDS_MB_V3_PAYLOAD_ADDR_TWL, (u32)tgds_multiboot_payload_size, (u32)&_io_dldi_stub);
+			bool stat = dldiPatchLoader((data_t *)TGDS_MB_V3_PAYLOAD_ADDR_TWL, (int)tgds_multiboot_payload_size, (u32)&_io_dldi_stub);
 			if(stat == false){
 				sprintf(msgDebugException, "%s%s", "TGDSMultibootRunNDSPayload(): DLDI Patch failed. NTR/TWL binary missing DLDI section.", "");
 				nocashMessage((char*)&msgDebugException[0]);
@@ -414,17 +447,10 @@ bool TGDSMultibootRunNDSPayload(char * filename, u8 * tgdsMbv3ARM7Bootldr, int a
 				sprintf(msgDebugException, "%s", "TGDSMultibootRunNDSPayload(): DLDI Patch OK.");
 				nocashMessage((char*)&msgDebugException[0]);
 			}
-			REG_IME = 0;
 				
-			if (		
-				(__dsimode == true)
-				&&
-				(isNTRTWLBinary == isTWLBinary)
-			){
-				dmaTransferWord(0, (u32)TGDS_MB_V3_PAYLOAD_ADDR_TWL, (u32)TGDS_MB_V3_PAYLOAD_ADDR, (uint32)tgds_multiboot_payload_size);
-				coherent_user_range_by_size((uint32)TGDS_MB_V3_PAYLOAD_ADDR, tgds_multiboot_payload_size); //Make ARM9 
-			}
-			
+			dmaTransferWord(0, (u32)TGDS_MB_V3_PAYLOAD_ADDR_TWL, (u32)TGDS_MB_V3_PAYLOAD_ADDR, (uint32)tgds_multiboot_payload_size);
+			coherent_user_range_by_size((uint32)TGDS_MB_V3_PAYLOAD_ADDR, tgds_multiboot_payload_size); //Make ARM9
+	
 			setValueSafe((u32*)TGDS_MB_V3_PAYLOAD_SIZE, (u32)tgds_multiboot_payload_size);
 			typedef void (*t_bootAddr)();
 			t_bootAddr bootARM9Payload = (t_bootAddr)TGDS_MB_V3_PAYLOAD_ADDR_TWL;
@@ -432,7 +458,13 @@ bool TGDSMultibootRunNDSPayload(char * filename, u8 * tgdsMbv3ARM7Bootldr, int a
 			//Restore ARGV-CMD line
 			memcpy((char*)__system_argv, (void *)TGDS_ARGV_BUFFER, 256);
 			coherent_user_range_by_size((uint32)__system_argv, (int)256);
-		
+
+			REG_IME = 0;
+			REG_IE = 0;
+			
+			//Disable mpu
+			CP15ControlRegisterDisable(CR_M);
+			
 			bootARM9Payload();
 			return true; //should never jump here
 		}
@@ -456,6 +488,7 @@ __attribute__((optimize("O0")))
 __attribute__ ((optnone))
 #endif
 void executeARM7Payload(u32 arm7entryaddress, int arm7BootCodeSize, u32 * payload){
+	REG_IME = 1;
 	//1) Give VRAM_D to ARM7 @0x06000000
 	*(u8*)0x04000243 = (VRAM_D_0x06000000_ARM7 | VRAM_ENABLE);
 	//2) Initialize ARM7DLDI: ARM9 passes its DLDI section to ARM7
@@ -480,6 +513,8 @@ void executeARM7Payload(u32 arm7entryaddress, int arm7BootCodeSize, u32 * payloa
 		TGDSInitLoopCount++;
 		swiDelay(1);
 	}
+	TWLModeInternalSDAccess = getValueSafe((u32*)0x02FFDFE8); //ARM7DLDI mode: TWL SD @ ARM7 or DLDI SD @ ARM7: @ARM7_ARM9_DLDI_STATUS
+	REG_IPC_FIFO_CR = (REG_IPC_FIFO_CR | IPC_FIFO_SEND_CLEAR);	//Clear FIFO messages to prevent further ones being blocked
 }
 #endif
 

@@ -31,10 +31,7 @@ USA
 #include "spifwTGDS.h"
 #include "biosTGDS.h"
 #include "limitsTGDS.h"
-
-#ifdef ARM7
 #include "powerTGDS.h"
-#endif
 
 #ifdef TWLMODE
 #ifdef ARM7
@@ -42,7 +39,6 @@ USA
 #endif
 #include "utils.twl.h"
 #endif
-
 
 #ifdef ARM9
 #include "fatfslayerTGDS.h"
@@ -1002,6 +998,10 @@ void TurnOnScreens(){
 	#ifdef ARM7
 	SetLedState(LED_ON);
 	#endif
+	
+	#ifdef ARM9
+	powerON(POWER_ALL|POWERMAN_ARM9);
+	#endif
 }
 
 void TurnOffScreens(){
@@ -1011,6 +1011,7 @@ void TurnOffScreens(){
 	#endif
 	
 	#ifdef ARM9
+	powerOFF(POWER_ALL|POWERMAN_ARM9);
 	setBacklight(0);
 	#endif
 }

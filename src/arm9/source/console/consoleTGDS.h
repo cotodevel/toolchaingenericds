@@ -240,9 +240,13 @@ typedef struct
 	t_GUIImgList	*img_list;
 	
 	uint16	printfy;
-	bool consoleAtTopScreen;	//true: Console rendering at top screen / false: Console rendering at bottom screen
-	bool consoleBacklightOn;	//true: Backlight is on for console / false: Backlight is off for console
 	
+	
+	//Moves the TGDS Console: 
+	//GUI.GBAMacroMode == 1 / TGDS Console on Top Screen (Display Engine A on Bottom Screen)
+	//GUI.GBAMacroMode == 0 / TGDS Console on Bottom Screen (Display Engine A on Top Screen)
+	//TGDSLCDSwap(); //make changes effective
+	bool GBAMacroMode;	
 } t_GUI;
 
 // GUI Colors
@@ -318,35 +322,18 @@ extern int 	GUI_drawAlignText(t_GUIZone *zone, int flags, int y, int col, sint8 
 extern void clrscr();
 extern bool globalTGDSCustomConsole;
 extern void	GUI_init(bool project_specific_console);
-
-extern void restoreTGDSConsoleFromSwapEngines(u8 * currentVRAMContext);
-extern void swapTGDSConsoleBetweenPPUEngines(u8 * currentVRAMContext);
-extern void TGDSLCDSwap(bool disableTSCWhenTGDSConsoleTop, bool isDirectFramebuffer, bool SaveConsoleContext, u8 * currentVRAMContext);
-
+extern void TGDSLCDSwap();
 
 #ifdef __cplusplus
 }
 #endif
 
 static inline void detectAndTurnOffConsole(){
-	//Read the console location register and shut down
-	if(GUI.consoleAtTopScreen == true){
-		setBacklight(POWMAN_BACKLIGHT_BOTTOM_BIT);
-	}
-	else{
-		setBacklight(POWMAN_BACKLIGHT_TOP_BIT);	
-	}
+	//deprecated
 }
 
 static inline void ToggleOnOffConsoleBacklight(){
-	if(GUI.consoleBacklightOn == true){
-		detectAndTurnOffConsole();
-		GUI.consoleBacklightOn = false;
-	}
-	else{
-		setBacklight(POWMAN_BACKLIGHT_BOTTOM_BIT | POWMAN_BACKLIGHT_TOP_BIT);
-		GUI.consoleBacklightOn = true;
-	}
+	//deprecated
 }
 
 #endif

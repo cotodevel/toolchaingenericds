@@ -34,7 +34,6 @@ USA
 #include "ipcfifoTGDS.h"
 #include "posixHandleTGDS.h"
 #include "linkerTGDS.h"
-
 #include "dsregs_asm.h"
 #include "devoptab_devices.h"
 #include "errno.h"
@@ -49,10 +48,13 @@ USA
 #include "busTGDS.h"
 #include "initNDSTGDS.h"
 #include "exceptionTGDS.h"
+#include "malloc.h"
 
 uint32 get_lma_libend(){
 	return (uint32)(&__vma_stub_end__);	//linear memory top (start)
 }
+
+u32 physical_ewram_end = (u32)(&_ewram_end);
 
 //(ewram end - linear memory top ) = malloc free memory (bottom, end)
 uint32 get_lma_wramend(){
@@ -61,7 +63,7 @@ uint32 get_lma_wramend(){
 	return (uint32)(&sp_USR);
 	#endif
 	#ifdef ARM9
-	return (uint32)(&_ewram_end);	//EWRAM has no stacks shared so we use the end memory 
+	return physical_ewram_end;	//EWRAM has no stacks shared so we use the end memory 
 	#endif
 }
 
@@ -579,14 +581,19 @@ int lstat(const char * path, struct stat *buf){
 	return fatfs_stat((const sint8 *)path,buf);
 }
 
+u32 mallocGetFreeMemoryInBytes(){
+	u32 freeEWRamMemory = (u32) ((int)get_lma_wramend() - (int)sbrk(0));
+	return freeEWRamMemory;
+}
+
 int getMaxRam(){
-	int maxRam = ((int)(&_ewram_end)  - (int)sbrk(0) );
-	return (int)maxRam;
+	return (int)mallocGetFreeMemoryInBytes();
 }
 
 //Memory is too fragmented up to this point, causing to have VERY little memory left. 
 //Luckily for us this memory hack allows dmalloc to re-arrange and free more memory for us! Also fixing malloc memory fragmentation!! WTF Dude.
 void TryToDefragmentMemory(){
+	/*
 	int freeRam = getMaxRam();
 	//I'm not kidding, this allows to de-fragment memory. Relative to how much memory we have and re-allocate it
 	char * defragMalloc[1024];	//4M / 4096. DS Mem can't be higher than this
@@ -600,6 +607,7 @@ void TryToDefragmentMemory(){
 			free(defragMalloc[i]);
 		}
 	}
+	*/
 }
 
 
@@ -780,10 +788,7 @@ u8 * TGDSARM9Calloc(int blockCount, int blockSize){
 
 u8 * TGDSARM9Realloc(void *ptr, int size){
 	if(customMallocARM9 == false){
-		if(ptr != NULL){
-			free(ptr);
-		}
-		return (u8*)malloc(size);
+		return realloc(ptr, size);
 	}
 	else{
 		if(ptr != NULL){
