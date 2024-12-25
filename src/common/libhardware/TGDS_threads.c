@@ -117,7 +117,7 @@ int worker_thread(struct task_def * curTask){
 			int time_in_millStart = (startTask_t.tv_sec) * 1000 + (startTask_t.tv_usec) / 1000 ; // convert tv_sec & tv_usec to millisecond
 			#endif
 			#ifdef ARM9
-			startTimerCounter(tUnitsMilliseconds, 1); //tUnitsMilliseconds equals 1 millisecond/unit. A single unit (1) is the default value for normal timer count-up scenarios.  //timerTicks explanation: reset internal getTimerCounter() counter. Each timerTicks unit equals to 1 (one) millisecond, same as waitTotalMS as well curTask->timeQty.
+			startTimerCounter(tUnitsMilliseconds, 1, IRQ_TIMER2); //tUnitsMilliseconds equals 1 millisecond/unit. A single unit (1) is the default value for normal timer count-up scenarios.  //timerTicks explanation: reset internal getTimerCounter() counter. Each timerTicks unit equals to 1 (one) millisecond, same as waitTotalMS as well curTask->timeQty.
 			int time_in_millStart = (int)getTimerCounter();
 			#endif
 			

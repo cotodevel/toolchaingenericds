@@ -157,6 +157,11 @@ void NDS_IRQHandler(){
 	
 	////			Common
 	if(REG_IE_SET & IRQ_TIMER0){
+		#ifdef ARM9
+		if(timerIRQDest == IRQ_TIMER0){
+			timerTicks+=timerUnitsPerTick;
+		}
+		#endif
 		Timer0handlerUser();
 		REG_IF = IRQ_TIMER0;
 	}
@@ -165,6 +170,11 @@ void NDS_IRQHandler(){
 		#ifdef ARM7
 		if(SoundStreamTimerHandlerARM7LibUtilsCallback != NULL){
 			SoundStreamTimerHandlerARM7LibUtilsCallback(); //Audio playback handler
+		}
+		#endif
+		#ifdef ARM9
+		if(timerIRQDest == IRQ_TIMER1){
+			timerTicks+=timerUnitsPerTick;
 		}
 		#endif
 		Timer1handlerUser();
@@ -177,6 +187,11 @@ void NDS_IRQHandler(){
 			MicInterruptARM7LibUtilsCallback(); //Microphone recording handler
 		}
 		#endif
+		#ifdef ARM9
+		if(timerIRQDest == IRQ_TIMER2){
+			timerTicks+=timerUnitsPerTick;
+		}
+		#endif
 		Timer2handlerUser();
 		REG_IF = IRQ_TIMER2;
 	}
@@ -186,7 +201,9 @@ void NDS_IRQHandler(){
 		if(timerWifiInterruptARM9LibUtilsCallback != NULL){
 			timerWifiInterruptARM9LibUtilsCallback();	//wifi arm9 irq
 		}
-		timerTicks+=timerUnitsPerTick;
+		if(timerIRQDest == IRQ_TIMER3){
+			timerTicks+=timerUnitsPerTick;
+		}
 		#endif
 		Timer3handlerUser();
 		REG_IF = IRQ_TIMER3;

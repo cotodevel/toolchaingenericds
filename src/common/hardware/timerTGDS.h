@@ -67,7 +67,8 @@ extern "C"{
 #ifdef ARM9
 extern unsigned int timerTicks;
 extern unsigned int timerUnitsPerTick;
-extern void startTimerCounter(enum timerUnits units, int timerUnitsPERTick);
+extern u32 timerIRQDest;
+extern void startTimerCounter(enum timerUnits units, int timerUnitsPERTick, u32 timerIRQ);
 extern unsigned int getTimerCounter();
 extern void stopTimerCounter();
 #endif
