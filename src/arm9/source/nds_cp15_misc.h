@@ -193,7 +193,7 @@ extern void dcacheenable(int); //Cachability Bits for Data/Unified Protection Re
 extern uint32 getdtcmbase();
 extern uint32 getitcmbase();
 
-
+extern void ARMEnterSysMode();
 #ifdef __cplusplus
 }
 #endif

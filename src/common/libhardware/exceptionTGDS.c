@@ -41,13 +41,13 @@ USA
 #include "keypadTGDS.h"
 #include "posixHandleTGDS.h"
 #include "malloc.h"
+#include "utilsTGDS.h"
 
 #ifdef ARM9
 #include "nds_cp15_misc.h"
 #include "debugNocash.h"
 #include "dldi.h"
 #include "videoTGDS.h"
-
 #endif
 
 #ifdef ARM7
@@ -179,10 +179,30 @@ void generalARMExceptionHandler(){
 }
 
 #ifdef ARM9
+
+//Internal callback for TGDS Project IRQ handlers. Required for Exception Handling, so TGDS Project interrupts do not cause issues on Exceptions. 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void TGDSStubbedUserHandlerIRQCallback_Exception(){
+
+}
+
 static bool GDBSession;
 char msgDebugException[MAX_TGDSFILENAME_LENGTH];
+
 //__attribute__((section(".itcm"))) //cant be at ITCM
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void exception_handler(uint32 arg, int stage, u32 fwNo){
+	bool isWirelessAvailable = isTGDSWirelessServiceAvailable();
 	bool isTGDSCustomConsole = false;	//reloading cause issues. Thus this ensures Console to be inited even when reloading
 	GUI_init(isTGDSCustomConsole);
 	sint32 fwlanguage = (sint32)getLanguage();
@@ -192,6 +212,17 @@ void exception_handler(uint32 arg, int stage, u32 fwNo){
 	//Disable timers, and if we eventually use GDB, re-enable one
 	REG_IE &= ~(IRQ_TIMER0|IRQ_TIMER1|IRQ_TIMER2|IRQ_TIMER3);
 	
+	//Stub out TGDS Project IRQ Handlers
+	*(u32*)&Timer0handlerUser = (u32)&TGDSStubbedUserHandlerIRQCallback_Exception;
+	*(u32*)&Timer1handlerUser = (u32)&TGDSStubbedUserHandlerIRQCallback_Exception;
+	*(u32*)&Timer2handlerUser = (u32)&TGDSStubbedUserHandlerIRQCallback_Exception;
+	*(u32*)&Timer3handlerUser = (u32)&TGDSStubbedUserHandlerIRQCallback_Exception;
+	*(u32*)&VblankUser = (u32)&TGDSStubbedUserHandlerIRQCallback_Exception;
+	*(u32*)&VcounterUser = (u32)&TGDSStubbedUserHandlerIRQCallback_Exception;
+	if(isWirelessAvailable == true){
+		REG_IME = 1;
+	}
+
 	powerOFF3DEngine(); //Power off ARM9 3D Engine to save power
 	powerOFF(POWER_2D_A);
 	setBacklight(POWMAN_BACKLIGHT_BOTTOM_BIT);
@@ -351,33 +382,44 @@ void exception_handler(uint32 arg, int stage, u32 fwNo){
 		BG_PALETTE_SUB[0] = RGB15(0,0,31);
 		BG_PALETTE_SUB[255] = RGB15(31,31,31);
 		
-		//Todo: Restore GDB support from TGDS1.64
-		//GUI_printf("A: Enable GDB Debugging. ");
-		//GUI_printf("(check: toolchaingenericds-gdbstub-example project)");
-		//GUI_printf("B: Skip GDB Debugging");
-		
-		while(1){
-			scanKeys();
-			int isdaas = keysDown();
-			if (isdaas&KEY_A)
-			{
-				GDBSession =  true;
-				break;
+		if( (isWirelessAvailable == true) && (GdbStubUserCodeHandlerLibUtilsCallback != NULL) ){
+			GUI_printf("(A): Enable GDB Debugging. ");
+			GUI_printf("(check: toolchaingenericds-gdbstub-example project)");
+			GUI_printf("(B): Skip GDB Debugging. ");
+			
+			while(1){
+				scanKeys();
+				int keysDwn = keysDown();
+				if (keysDwn&KEY_A)
+				{
+					GDBSession =  true;
+					ARMEnterSysMode();	//Enter Sys mode: Disable MPU, Allows the GDB process to run.
+					if(wifiswitchDsWnifiModeARM9LibUtilsCallback != NULL){
+						wifiswitchDsWnifiModeARM9LibUtilsCallback((sint32)9);	//dswifi_gdbstubmode (sint32)(9)	//GDB Stub mode
+					}
+					break;
+				}
+				if(keysDwn&KEY_B)
+				{
+					GDBSession =  false;
+					break;
+				}
 			}
-			if(isdaas&KEY_B)
-			{
-				GDBSession =  false;
-				break;
+
+			if(GDBSession == false){
+				GUI_printf("(B pressed): GDB Debugging disabled. Halt.");
 			}
 		}
-	
-		if(GDBSession == true){
-			LeaveExceptionMode();	//code works in ITCM now
+		else{
+			GUI_printf("TGDS Project Missing Wifi: GDB disabled. ");
 		}
 	}
 	
 	while(1){
-		IRQVBlankWait();
+		if( (isWirelessAvailable == true) && (GdbStubUserCodeHandlerLibUtilsCallback != NULL) && (GDBSession == true) ){
+			GdbStubUserCodeHandlerLibUtilsCallback();
+		}
+		HaltUntilIRQ();
 	}
 }
 #endif

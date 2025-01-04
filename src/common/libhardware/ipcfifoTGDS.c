@@ -120,6 +120,13 @@ void HandleFifoNotEmpty(){
 					}
 					break;
 					
+					case(TGDS_GETEXTERNALCPU_COMMAND_MODE):{
+						u32 which = (u32)getValueSafe(&fifomsg[8]);
+						bool ExtCoreResult = queryTGDSARMBinaryFeaturesCurrentCore(which);
+						setValueSafe(&fifomsg[8], (u32)ExtCoreResult);
+					}
+					break;
+					
 					#ifdef ARM7
 						//ARM7 TGDS-Multiboot loader 
 						case(FIFO_ARM7_RELOAD):{	//TGDS-MB v3 VRAM Loader's tgds_multiboot_payload.bin: void executeARM7Payload(u32 arm7entryaddress, int arm7BootCodeSize);

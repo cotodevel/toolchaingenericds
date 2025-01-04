@@ -1168,27 +1168,26 @@ u32 getRandomSeed(){	//updated at vblank/wifi irq intervals. Always enabled by d
 //use DSWNIFI_MODE flags
 bool WNifi_InitSafeDefault(int DSWNIFI_MODE){
 	DeInitWIFI();	//disable wifi card always
-	
 	if(DSWNIFI_MODE == DSWNIFI_ENTER_IDLEMODE){
-		bool useWIFI = false;		//bare minimum start: idle
-		Wifi_InitDefault(useWIFI);
+		setWIFISetup(false);
 		return false;
 	}
 	else if(DSWNIFI_MODE == DSWNIFI_ENTER_WIFIMODE){
 		bool useWIFI = true;		//enter dswifi wifi mode
 		if(Wifi_InitDefault(useWIFI) == true){
-			//Connected!
-			return true;
+			setWIFISetup(true);
+			//Connected AP!
 		}
 		else{
+			setWIFISetup(false);
 			return false;
 		}
 	}
 	else if(DSWNIFI_MODE == DSWNIFI_ENTER_NIFIMODE){
 		initNiFi();
-		return true;
+		setWIFISetup(false);
+		//Connected local!
 	}
-	
-	return false;
+	return true;
 }
 

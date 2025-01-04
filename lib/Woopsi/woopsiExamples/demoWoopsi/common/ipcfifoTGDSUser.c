@@ -134,7 +134,8 @@ void setupLibUtils(){
 		(SoundStreamStopSoundStreamARM9LibUtils_fn)&stopSoundStream,	//ARM9: bool stopSoundStream(struct fd * tgdsStructFD1, struct fd * tgdsStructFD2, int * internalCodecType)
 		(SoundStreamUpdateSoundStreamARM9LibUtils_fn)&updateStream, //ARM9: void updateStream() 
 		(wifiDeinitARM7ARM9LibUtils_fn)&DeInitWIFI, //ARM7 & ARM9: DeInitWIFI()
-		(wifiswitchDsWnifiModeARM9LibUtils_fn)&switch_dswnifi_mode //ARM9: bool switch_dswnifi_mode(sint32 mode)
+		(wifiswitchDsWnifiModeARM9LibUtils_fn)&switch_dswnifi_mode, //ARM9: bool switch_dswnifi_mode(sint32 mode)
+		(GdbStubUserCodeHandlerLibUtils_fn)&userCodeGDBStubProcess	//ARM9: void userCodeGDBStubProcess()
 	);
 	#endif
 	

@@ -91,7 +91,6 @@ extern void DebugException();
 extern void setupCustomExceptionHandler(uint32 * Handler);
 extern uint32 CustomHandler;
 extern void CustomDebugException();
-extern void LeaveExceptionMode();
 
 extern void handleDSInitError(int stage, u32 fwNo);
 extern int TGDSInitLoopCount;
@@ -109,6 +108,8 @@ extern void handleUninitializedTGDSMalloc9();
 extern void handleUninitializedTGDSCalloc9();
 extern void handleUninitializedTGDSFree9();
 extern void handleUninitializedTGDSMallocFreeMemory9();
+
+extern void TGDSStubbedUserHandlerIRQCallback_Exception();
 #endif
 
 #ifdef __cplusplus

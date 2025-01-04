@@ -268,7 +268,8 @@ extern void initializeLibUtils9(
 	SoundStreamStopSoundStreamARM9LibUtils_fn SoundStreamStopSoundStreamARM9LibUtilsCall,	//ARM9: bool stopSoundStream(struct fd * tgdsStructFD1, struct fd * tgdsStructFD2, int * internalCodecType)
 	SoundStreamUpdateSoundStreamARM9LibUtils_fn SoundStreamUpdateSoundStreamARM9LibUtilsCall, //ARM9: void updateStream() 
 	wifiDeinitARM7ARM9LibUtils_fn wifiDeinitARM7ARM9LibUtilsCall, //ARM7 & ARM9: DeInitWIFI()
-	wifiswitchDsWnifiModeARM9LibUtils_fn wifiswitchDsWnifiModeARM9LibUtilsCall //ARM9: bool switch_dswnifi_mode(sint32 mode)
+	wifiswitchDsWnifiModeARM9LibUtils_fn wifiswitchDsWnifiModeARM9LibUtilsCall, //ARM9: bool switch_dswnifi_mode(sint32 mode)
+	GdbStubUserCodeHandlerLibUtils_fn GdbStubUserCodeHandlerLibUtilsCall	//ARM9: void userCodeGDBStubProcess()
 );
 
 extern void setTGDSARM9PrintfCallback(printfARM9LibUtils_fn printfCallback);
