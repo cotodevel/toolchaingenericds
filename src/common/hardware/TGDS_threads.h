@@ -25,7 +25,6 @@ USA
 //Linux timer code
 #include <unistd.h>
 #include <sys/time.h>
-
 typedef unsigned char u8;
 typedef unsigned short u16;
 typedef unsigned int u32;
@@ -33,6 +32,8 @@ typedef unsigned int u32;
 
 #include <stdio.h>
 #include <string.h>
+#include "InterruptsARMCores_h.h"
+#include "timerTGDS.h"
 
 #define MAX_THREADS_AVAILABLE ((int)32)
 
@@ -46,6 +47,8 @@ typedef unsigned int u32;
 
 typedef void (*TaskFn)(u32 *);
 
+
+
 struct task_def{
     int taskStatus;
     int timeQty;	//User defined thread waiting time in milliseconds
@@ -53,11 +56,71 @@ struct task_def{
 	TaskFn fn_task;
     u32 * fn_args; //format: TaskFn
 	TaskFn fn_taskOnOverflow;
+    struct task_Context * parentTaskCtx;
 }  __attribute__ ((aligned(4)));
 
 struct task_Context{
     struct task_def tasksList[MAX_THREADS_AVAILABLE];
+    int tasksCount;
+    enum timerUnits timerFormat;
 }  __attribute__ ((aligned(4)));
+
+//Microseconds on NDS timers cause 100% CPU usage when timer interrupts are enabled.
+//Wrap around timer objects to solve that, by preventing timer interrupts on microseconds.
+extern int timerDest;
+extern int currentTimerUnits;
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+static inline void thread_StartTimerCounter(enum timerUnits units, u32 timerIRQ){
+    switch(timerIRQ){
+		case(IRQ_TIMER0):{
+			timerDest = 0;
+		}break;
+		case(IRQ_TIMER1):{
+			timerDest = 1;
+		}break;
+		case(IRQ_TIMER2):{
+			timerDest = 2;
+		}break;
+		case(IRQ_TIMER3):{
+			timerDest = 3;
+		}break;
+		default:{
+			return;
+		}break;
+	}
+	currentTimerUnits=(int)units;
+	TIMERXDATA(timerDest) = TIMER_FREQ(currentTimerUnits);
+	TIMERXCNT(timerDest) = TIMER_DIV_1 | TIMER_ENABLE;
+	irqDisable(timerIRQ);
+}
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+static inline unsigned int thread_GetTimerCounter(){
+    return (TIMERXDATA(timerDest) / (int)currentTimerUnits);
+}
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+static inline void thread_StopTimerCounter(){
+    TIMERXCNT(timerDest) = 0;
+    TIMERXDATA(timerDest) = 0;
+    currentTimerUnits = 0;
+}
 
 
 #endif
@@ -68,9 +131,9 @@ extern "C" {
 #endif
 
 extern struct task_Context threadQueue;
-extern void initThreadSystem(struct task_Context * taskCtx);
+extern void initThreadSystem(struct task_Context * taskCtx, enum timerUnits timerMethod);
 extern int registerThread(struct task_Context * taskCtx, TaskFn incomingTask, u32 * taskArgs, int threadTimeInMS, TaskFn OnOverflowExceptionIncomingTask);
-extern int worker_thread(struct task_def * curTask);
+extern int worker_thread(struct task_def * curTask, enum timerUnits inTimerFormat);
 extern int runThreads(struct task_Context * taskCtx);
 
 #ifdef __cplusplus
