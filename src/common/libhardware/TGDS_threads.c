@@ -18,7 +18,12 @@ USA
 
 */
 
+//Note:
+//TGDS Project Threads Implementation: https://bitbucket.org/Coto88/toolchaingenericds-multiboot
+
+
 //Changelog:
+//7 Jan. 2025: Update specs
 //24 Dec. 2024: Add TGDS Thread System 1.0 (Linux)
 //25 Dec. 2024: Port TGDS Thread System 1.0 (NDS)
 
@@ -45,7 +50,10 @@ int currentTimerUnits=0;
 
 //ARM9: Initializes TGDS threading system.
 //	argument 1: struct task_Context * taskCtx 	->	[Instance of the task context loading N threads]
-//	argument 2: enum timerUnits timerMethod		->	[Timer intervals used to measure time a Task. Can be milliseconds or microseconds]
+//	argument 2: enum timerUnits timerMethod		->	[Timer intervals used to count-up a Task assigned]
+	//Note on argument2:
+	//tUnitsMilliseconds(Milliseconds) are queued and counted up to NDS timers. Useful for less resource intensive tasks.
+	//tUnitsMicroseconds(Microseconds) are given the highest thread priority available, required for resource intensive tasks.
 
 //returns:
 	//nothing.
@@ -190,6 +198,14 @@ int runThreads(struct task_Context * taskCtx){
 			int retCode = worker_thread(curTask, timerFmt);
             if((retCode != INVAL_THREAD) && !(retCode == THREAD_OVERFLOW) && (retCode == THREAD_EXECUTE_OK_WAIT_FOR_SLEEP) ){
                 
+				//Microseconds gets the highest priority available
+				if(timerFmt == tUnitsMicroseconds){
+					curTask->internalRemainingThreadTime = 0;
+					#ifdef ARM9
+					HaltUntilIRQ();	//IRQWait(0, IRQ_TIMER3); //allow ARM9 to rely on Timer (1 ms) + other interrupts, so it wastes less cycles idling.
+					#endif
+				}
+
 				//Thread's idling here (CPU sleep). Until available later
 				if(curTask->internalRemainingThreadTime > 0){
 					curTask->internalRemainingThreadTime--; //Each unit equals to enum timerUnits (1 millisecond or 1 microsecond)
