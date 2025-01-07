@@ -81,7 +81,6 @@ typedef void(*timerWifiInterruptARM9LibUtils_fn)();
 typedef void(*DeInitWIFIARM7LibUtils_fn)();
 typedef void(*wifiAddressHandlerARM7LibUtils_fn)(void * address, void * userdata);
 
-
 //Wifi (ARM9)
 typedef bool(*wifiswitchDsWnifiModeARM9LibUtils_fn)(sint32 dswnifi_mode); 
 
@@ -95,6 +94,9 @@ typedef void(*initMallocARM7LibUtils_fn)(u32 ARM7MallocStartaddress, u32 ARM7Mal
 
 //ARM7 Microphone
 typedef void(*MicInterruptARM7LibUtils_fn)();
+
+//GDBStub UserCode Handler (ARM9)
+typedef void(*GdbStubUserCodeHandlerLibUtils_fn)();
 
 #endif
 
@@ -239,6 +241,9 @@ extern wifiAddressHandlerARM7LibUtils_fn	wifiAddressHandlerARM7LibUtilsCallback;
 //Wifi (ARM9)
 extern wifiswitchDsWnifiModeARM9LibUtils_fn wifiswitchDsWnifiModeARM9LibUtilsCallback;
 
+//GDBStub UserCode Handler (ARM9)
+extern GdbStubUserCodeHandlerLibUtils_fn GdbStubUserCodeHandlerLibUtilsCallback;
+
 //SS
 extern SoundStreamTimerHandlerARM7LibUtils_fn SoundStreamTimerHandlerARM7LibUtilsCallback;
 extern SoundStreamStopSoundARM7LibUtils_fn SoundStreamStopSoundARM7LibUtilsCallback;
@@ -295,6 +300,13 @@ extern bool debugEnabled;
 extern void enableTGDSDebugging();
 extern void disableTGDSDebugging();
 extern bool getTGDSDebuggingState();
+
+extern bool queryTGDSARMBinaryFeaturesCurrentCore(u32 which);
+extern bool queryTGDSARMBinaryFeaturesExternalCore(u32 which);
+
+#ifdef ARM9
+extern bool isTGDSWirelessServiceAvailable();
+#endif
 
 #ifdef __cplusplus
 }

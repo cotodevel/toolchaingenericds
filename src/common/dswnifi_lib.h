@@ -97,8 +97,6 @@ USA
 #define frameDSBufferSize (sint32)(256 + 104)	//remaining struct dsnwifisrvStr size within a frameDSsize
 
 //remoteStubMain retcodes
-#define remoteStubMainWIFINotConnected (sint32)(-1)	
-#define remoteStubMainWIFIConnectedNoGDB (sint32)(16)	//Wifi alone connected, GDB not running
 #define remoteStubMainWIFIConnectedGDBRunning (sint32)(17)	//Wifi & GDB running
 #define remoteStubMainWIFIConnectedGDBDisconnected (sint32)(18)	//Wifi running, GDB disconnected
 
@@ -422,6 +420,8 @@ extern struct gdbStubMapBuffer * getGDBMapBuffer();
 extern bool initGDBMapBuffer(u32 * bufferStart, int GDBMapBufferSize, uint32 newRelocatableAddr);
 extern void closeGDBMapBuffer();
 extern uint32 readu32GDBMapBuffer(uint32 address);
+
+extern void userCodeGDBStubProcess();
 
 #endif //ARM9 end
 

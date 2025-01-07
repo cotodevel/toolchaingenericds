@@ -97,6 +97,9 @@ TGDS Project whitescreens:
   to "custom". Then open the processor folder: /arm7 or /arm9 depending on the above SOURCE_MAKEFILE setting, open the Makefile inside it, and change CPU processor flags at CC_ASFLAGS between:
   -Os, -O1, -Ofast, -O2, then save Makefile, clean TGDS project and rebuild it again, until you have a working TGDS Project again. Repeat these steps to ensure compatibility in NTR and TWL modes!
 
+GDB Stub availability:
+- GDB stub exists by default on TGDS binaries. After an Exception occurs, if you press (A), you'll be able to open a GDB session using GCC's GDB debugger for ARM devices. 
+
 ---------------------------------------------
 License guidelines:
 

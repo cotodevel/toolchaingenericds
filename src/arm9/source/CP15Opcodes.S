@@ -74,6 +74,13 @@ bic	r1,r1,r0
 mcr	p15, 0, r1, c1, c0, 0
 bx lr
 
+.global ARMEnterSysMode
+.type   ARMEnterSysMode STT_FUNC
+ARMEnterSysMode:
+mov	r0, #0x1f	@Enter Sys mode: Disable MPU, Allows the GDB process to run.
+msr	cpsr, r0
+bx lr
+
 .global DrainWriteBuffer
 .type   DrainWriteBuffer STT_FUNC
 DrainWriteBuffer:

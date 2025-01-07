@@ -52,7 +52,7 @@ USA
 
 
 //tUnitsMilliseconds = 1000hz = 1ms irq
-//tUnitsMicroseconds = 1000000hz = 1us irq (DS is too slow to handle microseconds in hardware timers lol)
+//tUnitsMicroseconds = 1000000hz = 1us irq (DS is too slow to handle microseconds through hardware timers interupts, lol)
 enum timerUnits
 {
 	tUnitsMilliseconds=1000, tUnitsMicroseconds=1000000
@@ -67,7 +67,8 @@ extern "C"{
 #ifdef ARM9
 extern unsigned int timerTicks;
 extern unsigned int timerUnitsPerTick;
-extern void startTimerCounter(enum timerUnits units, int timerUnitsPERTick);
+extern u32 timerIRQDest;
+extern void startTimerCounter(enum timerUnits units, int timerUnitsPERTick, u32 timerIRQ);
 extern unsigned int getTimerCounter();
 extern void stopTimerCounter();
 #endif

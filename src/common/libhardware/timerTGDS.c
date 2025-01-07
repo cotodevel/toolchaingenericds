@@ -38,9 +38,14 @@ __attribute__((section(".dtcm")))
 #endif
 unsigned int timerUnitsPerTick = 0;
 
+#ifdef ARM9
+__attribute__((section(".dtcm")))
+#endif
+u32 timerIRQDest = -1;
+
 /* Example:
 //Timer start: Measured in milliseconds
-	startTimerCounter(tUnitsMilliseconds, 1); //tUnitsMilliseconds equals 1 millisecond/unit. A single unit (1) is the default value for normal timer count-up scenarios. 
+	startTimerCounter(tUnitsMilliseconds, 1, IRQ_TIMER2); //tUnitsMilliseconds equals 1 millisecond/unit. A single unit (1) is the default value for normal timer count-up scenarios. Use timer 2 to perform the count.
 	
 	//do stuff
 	int j = 0;
@@ -59,13 +64,32 @@ unsigned int timerUnitsPerTick = 0;
 
 #ifdef ARM9
 __attribute__((section(".itcm")))
-void startTimerCounter(enum timerUnits units, int timerUnitsPERTick){
+void startTimerCounter(enum timerUnits units, int timerUnitsPERTick, u32 timerIRQ){
 	timerTicks = 0;
 	timerUnitsPerTick = timerUnitsPERTick;
-	TIMERXDATA(3) = TIMER_FREQ((int)units);
-	TIMERXCNT(3) = TIMER_DIV_1 | TIMER_IRQ_REQ | TIMER_ENABLE;
-	irqEnable(IRQ_TIMER3);
+	int timerDest = -1;
+	timerIRQDest = timerIRQ;
+	switch(timerIRQDest){
+		case(IRQ_TIMER0):{
+			timerDest = 0;
+		}break;
+		case(IRQ_TIMER1):{
+			timerDest = 1;
+		}break;
+		case(IRQ_TIMER2):{
+			timerDest = 2;
+		}break;
+		case(IRQ_TIMER3):{
+			timerDest = 3;
+		}break;
+		default:{
+			return;
+		}break;
+	}
 	
+	TIMERXDATA(timerDest) = TIMER_FREQ((int)units);
+	TIMERXCNT(timerDest) = TIMER_DIV_1 | TIMER_IRQ_REQ | TIMER_ENABLE;
+	irqEnable(timerIRQDest);
 }
 
 __attribute__((section(".itcm")))
@@ -75,6 +99,6 @@ unsigned int getTimerCounter(){
 
 __attribute__((section(".itcm")))
 void stopTimerCounter(){
-	irqDisable(IRQ_TIMER3);
+	irqDisable(timerIRQDest);
 }
 #endif

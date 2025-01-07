@@ -1138,6 +1138,9 @@ SoundStreamStopSoundARM7LibUtils_fn SoundStreamStopSoundARM7LibUtilsCallback = N
 
 SoundStreamSetupSoundARM7LibUtils_fn SoundStreamSetupSoundARM7LibUtilsCallback = NULL;
 
+//GDBStub UserCode Handler (ARM9)
+GdbStubUserCodeHandlerLibUtils_fn GdbStubUserCodeHandlerLibUtilsCallback = NULL;
+
 #ifdef ARM7
 initMallocARM7LibUtils_fn initMallocARM7LibUtilsCallback = NULL;
 MicInterruptARM7LibUtils_fn MicInterruptARM7LibUtilsCallback = NULL;
@@ -1158,7 +1161,8 @@ void initializeLibUtils9(
 		SoundStreamStopSoundStreamARM9LibUtils_fn SoundStreamStopSoundStreamARM9LibUtilsCall,	//ARM9: bool stopSoundStream(struct fd * tgdsStructFD1, struct fd * tgdsStructFD2, int * internalCodecType)
 		SoundStreamUpdateSoundStreamARM9LibUtils_fn SoundStreamUpdateSoundStreamARM9LibUtilsCall, //ARM9: void updateStream() 
 		wifiDeinitARM7ARM9LibUtils_fn wifiDeinitARM7ARM9LibUtilsCall, //ARM7 & ARM9: DeInitWIFI()
-		wifiswitchDsWnifiModeARM9LibUtils_fn wifiswitchDsWnifiModeARM9LibUtilsCall //ARM9: bool switch_dswnifi_mode(sint32 mode)
+		wifiswitchDsWnifiModeARM9LibUtils_fn wifiswitchDsWnifiModeARM9LibUtilsCall, //ARM9: bool switch_dswnifi_mode(sint32 mode)
+		GdbStubUserCodeHandlerLibUtils_fn GdbStubUserCodeHandlerLibUtilsCall	//ARM9: void userCodeGDBStubProcess()
 	){
 	libutilisFifoNotEmptyCallback = HandleFifoNotEmptyWeakRefLibUtilsCall;
 	timerWifiInterruptARM9LibUtilsCallback = timerWifiInterruptARM9LibUtilsCall;
@@ -1167,6 +1171,8 @@ void initializeLibUtils9(
 	
 	wifiDeinitARM7ARM9LibUtilsCallback = wifiDeinitARM7ARM9LibUtilsCall; 
 	wifiswitchDsWnifiModeARM9LibUtilsCallback = wifiswitchDsWnifiModeARM9LibUtilsCall;
+	
+	GdbStubUserCodeHandlerLibUtilsCallback = GdbStubUserCodeHandlerLibUtilsCall;
 	
 	//ARM9 libUtils component initialization
 	fifoInit();
@@ -1280,3 +1286,88 @@ void disableTGDSDebugging(){
 bool getTGDSDebuggingState(){
 	return debugEnabled;
 }
+
+
+
+//Query for TGDS specific features available in TGDS ARM7/ARM9 payloads
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+bool queryTGDSARMBinaryFeaturesCurrentCore(u32 which){
+	
+	switch(which){
+		case(TGDS_EXTERNAL_COMMAND_GET_CORE_WIRELESS_AVAILABILITY):{		
+			
+			//Used to detect if TGDS ARM7/ARM9 payloads have WIFI sections, in order to execute WIFI operations
+			#ifdef ARM7
+			if(
+				(wifiUpdateVBLANKARM7LibUtilsCallback != NULL)
+				&&
+				(wifiInterruptARM7LibUtilsCallback != NULL)
+				&&
+				(wifiInterruptARM7LibUtilsCallback != NULL)
+				&&
+				(DeInitWIFIARM7LibUtilsCallback != NULL)
+				&&
+				(wifiAddressHandlerARM7LibUtilsCallback != NULL)
+			){
+				return true;
+			}
+			#endif
+			
+			#ifdef ARM9
+			if(
+				(timerWifiInterruptARM9LibUtilsCallback != NULL)
+				&&
+				(wifiDeinitARM7ARM9LibUtilsCallback != NULL)
+				&&
+				(wifiswitchDsWnifiModeARM9LibUtilsCallback != NULL)
+			){
+				return true;
+			}
+			#endif
+			
+		}break;
+	}
+	return false;
+}
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+bool queryTGDSARMBinaryFeaturesExternalCore(u32 which){
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
+	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
+	setValueSafe(&fifomsg[7], (u32)TGDS_GETEXTERNALCPU_COMMAND_MODE);
+	setValueSafe(&fifomsg[8], (u32)which);
+	SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
+	while( ( ((uint32)getValueSafe(&fifomsg[7])) != ((uint32)0)) ){
+		swiDelay(1);
+	}
+	return (bool)getValueSafe(&fifomsg[8]);
+}
+
+
+//ARM9: Reports on TGDS ARM7 and ARM9 cores wireless abilities.
+//returns:
+	//true: Wireless available for usage.
+	//false: Wireless missing.
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+bool isTGDSWirelessServiceAvailable(){
+	bool arm7WirelessCoreAvailable = queryTGDSARMBinaryFeaturesExternalCore(TGDS_EXTERNAL_COMMAND_GET_CORE_WIRELESS_AVAILABILITY);
+	bool arm9WirelessCoreAvailable = queryTGDSARMBinaryFeaturesCurrentCore(TGDS_EXTERNAL_COMMAND_GET_CORE_WIRELESS_AVAILABILITY);
+	return ( (arm7WirelessCoreAvailable == true) && (arm9WirelessCoreAvailable == true) );
+}
+#endif

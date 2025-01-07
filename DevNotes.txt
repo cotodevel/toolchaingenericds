@@ -1,6 +1,0 @@
-Compare and exchange:
-
-When accessing timing dependant memory such as the shared region independently from ARM cores, the API must implement atomic read/write functions...
-otherwise, because of a mixture of cache and compiler optimizations (consisting of optimized subsequent I/O accesses), ARM cores semaphore compare and exchange 
-methods will fail. 
-
