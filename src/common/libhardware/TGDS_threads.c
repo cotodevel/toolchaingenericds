@@ -18,11 +18,13 @@ USA
 
 */
 
+//Threading Systems, relies on a single timer to perform concurrent threading of tasks. Implementation is non-blocking so threads do not lockstep each other. 
 //Note:
 //TGDS Project Threads Implementation: https://bitbucket.org/Coto88/toolchaingenericds-multiboot
 
 
 //Changelog:
+//16 Jan. 2025: Update specs
 //7 Jan. 2025: Update specs
 //24 Dec. 2024: Add TGDS Thread System 1.0 (Linux)
 //25 Dec. 2024: Port TGDS Thread System 1.0 (NDS)
@@ -50,10 +52,6 @@ int currentTimerUnits=0;
 
 //ARM9: Initializes TGDS threading system.
 //	argument 1: struct task_Context * taskCtx 	->	[Instance of the task context loading N threads]
-//	argument 2: enum timerUnits timerMethod		->	[Timer intervals used to count-up a Task assigned]
-	//Note on argument2:
-	//tUnitsMilliseconds(Milliseconds) are queued and counted up to NDS timers. Useful for less resource intensive tasks.
-	//tUnitsMicroseconds(Microseconds) are given the highest thread priority available, required for resource intensive tasks.
 
 //returns:
 	//nothing.
@@ -66,7 +64,7 @@ __attribute__((optimize("O0")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-void initThreadSystem(struct task_Context * taskCtx, enum timerUnits timerMethod){
+void initThreadSystem(struct task_Context * taskCtx){
     memset((u8*)taskCtx, 0, sizeof(struct task_Context));
     int i = 0;
     for(i = 0; i < MAX_THREADS_AVAILABLE; i++){
@@ -75,15 +73,26 @@ void initThreadSystem(struct task_Context * taskCtx, enum timerUnits timerMethod
         taskCtx->tasksList[i].fn_task = NULL;
         taskCtx->tasksList[i].fn_args = NULL;
 		taskCtx->tasksList[i].fn_taskOnOverflow = NULL;
+		taskCtx->tasksList[i].timerFormat = 0;
     }
 	taskCtx->tasksCount = 0;
-	taskCtx->timerFormat = timerMethod;
+	thread_StartTimerCounter(tUnitsMicroseconds, IRQ_TIMER2);
 }
 
 //Registers a thread to run
 //Returns: 
 //  Thread index if thread was registered successfully
 //  THREAD_OVERFLOW if there's no room for more threads
+
+//	argument 1: struct task_Context * taskCtx 	->	[Instance of the task context loading N threads]
+//	argument 2: task assigned to a thread
+//	argument 3: task arguments
+//	argument 4: thread assigned time, in microseconds 
+//	argument 5: task exception handler. Should a thread run abnormally, this task is called.
+//	argument 6: enum timerUnits timerMethod:
+	//tUnitsMilliseconds(Milliseconds) are queued and counted up to NDS timers. Useful for less resource intensive tasks.
+	//tUnitsMicroseconds(Microseconds) are given the highest thread priority available, required for resource intensive tasks.
+
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
@@ -94,7 +103,7 @@ __attribute__((optimize("O0")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-int registerThread(struct task_Context * taskCtx, TaskFn incomingTask, u32 * taskArgs, int threadTimeInMS, TaskFn OnOverflowExceptionIncomingTask){
+int registerThread(struct task_Context * taskCtx, TaskFn incomingTask, u32 * taskArgs, int threadTimeInMS, TaskFn OnOverflowExceptionIncomingTask, enum timerUnits timerMethod){
     int i = 0;
     for(i = 0; i < MAX_THREADS_AVAILABLE; i++){
         if(taskCtx->tasksList[i].taskStatus == INVAL_THREAD){
@@ -104,6 +113,7 @@ int registerThread(struct task_Context * taskCtx, TaskFn incomingTask, u32 * tas
             taskCtx->tasksList[i].fn_args   = taskArgs;
             taskCtx->tasksList[i].fn_taskOnOverflow = OnOverflowExceptionIncomingTask;
 			taskCtx->tasksList[i].parentTaskCtx = taskCtx;
+			taskCtx->tasksList[i].timerFormat = timerMethod;
 			break;
         }
     }
@@ -129,44 +139,42 @@ __attribute__((optimize("O0")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-int worker_thread(struct task_def * curTask, enum timerUnits inTimerFormat){
+int worker_thread(struct task_def * curTask){
     if( curTask != NULL ){
         
 		//Execute current thread here if available & ready to run
 		if(curTask->taskStatus == THREAD_EXECUTE_OK_WAKEUP_FROM_SLEEP_GO_IDLE){
 			//1) If threadQueue took less than curTask->timeQty, override timer value with (curTask->timeQty - timeQtyExecuted ), go idle, then run next thread
-
 			//2) If threadQueue took more than curTask->timeQty, write timeQtyExecutedMS into curTask->timeQty, then return THREAD_OVERFLOW
-			#ifndef ARM9
-			struct timeval startTask_t;
-			struct timeval endTask_t;
-			gettimeofday(&startTask_t, 0);
-			int time_in_millStart = (startTask_t.tv_sec) * 1000 + (startTask_t.tv_usec) / 1000 ; // convert tv_sec & tv_usec to millisecond
-			#endif
-			#ifdef ARM9
-			thread_StartTimerCounter(inTimerFormat, IRQ_TIMER2);	//tUnitsMilliseconds equals 1 millisecond/unit. A single unit (1) is the default value for normal timer count-up scenarios.  //timerTicks explanation: reset internal getTimerCounter() counter. Each timerTicks unit equals to 1 (one) millisecond, same as waitTotalMS as well curTask->timeQty.
-			int time_in_millStart = (int)thread_GetTimerCounter();
-			#endif
+			int time_in_millStart = curTask->elapsedThreadTime;
 			
 			curTask->fn_task(curTask->fn_args);
 
+			int thisTimerCount = 0;
+
 			#ifndef ARM9
+			struct timeval endTask_t;
 			gettimeofday(&endTask_t, 0);
-			int time_in_millEnd = (endTask_t.tv_sec) * 1000 + (endTask_t.tv_usec) / 1000 ; // convert tv_sec & tv_usec to millisecond
+			thisTimerCount = (endTask_t.tv_sec) * 1000 + (endTask_t.tv_usec) / 1000 ; // convert tv_sec & tv_usec to millisecond
 			#endif
 			#ifdef ARM9
-			int time_in_millEnd = (int)thread_GetTimerCounter();
-			thread_StopTimerCounter();
+			thisTimerCount = (int)thread_GetTimerCounter();
 			#endif
 			
+			curTask->elapsedThreadTime += thisTimerCount;
+			
+			int time_in_millEnd = curTask->elapsedThreadTime;
 			int timeQtyExecutedMS = (time_in_millEnd - time_in_millStart);
 			int waitTotalMS = curTask->timeQty - timeQtyExecutedMS;
 			if((waitTotalMS >= 0)	&& (curTask->timeQty < MAX_THREAD_OVERFLOW_CAPACITY_TIME_MILLISECONDS) ){
-				curTask->internalRemainingThreadTime = waitTotalMS;
-				curTask->taskStatus = THREAD_EXECUTE_OK_WAIT_FOR_SLEEP;	//printf("Task: [Took: %d ms]-[Slept: %d ms]", timeQtyExecutedMS, waitTotalMS);
+				
+				//3) Now re-use hardware timers to perform count-up waiting for this thread to get free.
+				//Concurrently, or non-blocking, to prevent wasting cycles and potentially slowing down other threads.
+				curTask->remainingThreadTime = (int)waitTotalMS;
+				curTask->taskStatus = THREAD_EXECUTE_OK_WAIT_FOR_SLEEP;
 			}
 			else{
-				curTask->internalRemainingThreadTime = -waitTotalMS;
+				curTask->remainingThreadTime = -waitTotalMS;
 				curTask->taskStatus = THREAD_OVERFLOW;
 			}
 		}
@@ -194,30 +202,35 @@ int runThreads(struct task_Context * taskCtx){
         struct task_def * curTask = &taskCtx->tasksList[i];
 
         if(taskCtx->tasksList[i].taskStatus != INVAL_THREAD){
-            enum timerUnits timerFmt = taskCtx->timerFormat;
-			int retCode = worker_thread(curTask, timerFmt);
+			int retCode = worker_thread(curTask);
             if((retCode != INVAL_THREAD) && !(retCode == THREAD_OVERFLOW) && (retCode == THREAD_EXECUTE_OK_WAIT_FOR_SLEEP) ){
                 
-				//Microseconds gets the highest priority available
-				if(timerFmt == tUnitsMicroseconds){
-					curTask->internalRemainingThreadTime = 0;
-					#ifdef ARM9
-					HaltUntilIRQ();	//IRQWait(0, IRQ_TIMER3); //allow ARM9 to rely on Timer (1 ms) + other interrupts, so it wastes less cycles idling.
-					#endif
-				}
-
-				//Thread's idling here (CPU sleep). Until available later
-				if(curTask->internalRemainingThreadTime > 0){
-					curTask->internalRemainingThreadTime--; //Each unit equals to enum timerUnits (1 millisecond or 1 microsecond)
+				//Sync to timers. Also, microseconds gets the highest priority available.
+				enum timerUnits timerFmt = curTask->timerFormat;
+				int totalThreadTime = (curTask->elapsedThreadTime + curTask->remainingThreadTime);
+				if(  (timerFmt != tUnitsMicroseconds) && (((int)thread_GetTimerCounter()) > totalThreadTime) ){
+					
+					//CPU Sleep will make the rest of the other threads to stutter. Just rely on timers for low-priority threads.
+					/*
 					#ifndef ARM9
 					usleep(1 * (int)timerFmt); //usleep() takes microseconds, so you will have to multiply the input by 1000 in order to sleep in milliseconds.
 					#endif
 					
 					#ifdef ARM9
-					HaltUntilIRQ();	//IRQWait(0, IRQ_TIMER3); //allow ARM9 to rely on Timer (1 ms) + other interrupts, so it wastes less cycles idling.
+					HaltUntilIRQ();	//allow ARM9 to rely on Timer (1 ms) + other interrupts, so it wastes less cycles idling.
 					#endif
+					*/
 				}
 				else{
+					#ifndef ARM9
+					usleep(1 * (int)timerFmt); //usleep() takes microseconds, so you will have to multiply the input by 1000 in order to sleep in milliseconds.
+					#endif
+					
+					#ifdef ARM9
+					HaltUntilIRQ();	//allow ARM9 to rely on Timer (1 ms) + other interrupts, so it wastes less cycles idling.
+					#endif
+
+					curTask->remainingThreadTime = 0;
 					curTask->taskStatus = THREAD_EXECUTE_OK_WAKEUP_FROM_SLEEP_GO_IDLE;
 					threadRunOK++;
 				}
@@ -226,7 +239,7 @@ int runThreads(struct task_Context * taskCtx){
 				if(curTask->fn_taskOnOverflow != NULL){
 					curTask->fn_taskOnOverflow((u32*)curTask);
 				}
-				curTask->internalRemainingThreadTime = 0;
+				curTask->remainingThreadTime = 0;
 				curTask->taskStatus = THREAD_EXECUTE_OK_WAKEUP_FROM_SLEEP_GO_IDLE;
 				HaltUntilIRQ(); //After thread overflow, CPU goes to sleep.
 			}
