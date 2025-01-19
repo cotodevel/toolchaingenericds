@@ -209,27 +209,9 @@ int runThreads(struct task_Context * taskCtx){
 				enum timerUnits timerFmt = curTask->timerFormat;
 				int totalThreadTime = (curTask->elapsedThreadTime + curTask->remainingThreadTime);
 				if(  (timerFmt != tUnitsMicroseconds) && (((int)thread_GetTimerCounter()) > totalThreadTime) ){
-					
-					//CPU Sleep will make the rest of the other threads to stutter. Just rely on timers for low-priority threads.
-					/*
-					#ifndef ARM9
-					usleep(1 * (int)timerFmt); //usleep() takes microseconds, so you will have to multiply the input by 1000 in order to sleep in milliseconds.
-					#endif
-					
-					#ifdef ARM9
-					HaltUntilIRQ();	//allow ARM9 to rely on Timer (1 ms) + other interrupts, so it wastes less cycles idling.
-					#endif
-					*/
+					//CPU Sleep will make the rest of the other threads to stutter. Just skip cycles on timers for low-priority threads.
 				}
 				else{
-					#ifndef ARM9
-					usleep(1 * (int)timerFmt); //usleep() takes microseconds, so you will have to multiply the input by 1000 in order to sleep in milliseconds.
-					#endif
-					
-					#ifdef ARM9
-					HaltUntilIRQ();	//allow ARM9 to rely on Timer (1 ms) + other interrupts, so it wastes less cycles idling.
-					#endif
-
 					curTask->remainingThreadTime = 0;
 					curTask->taskStatus = THREAD_EXECUTE_OK_WAKEUP_FROM_SLEEP_GO_IDLE;
 					threadRunOK++;
@@ -249,6 +231,14 @@ int runThreads(struct task_Context * taskCtx){
 			HaltUntilIRQ(); //If threads aren't assigned, CPU goes to sleep.
 		}
     }
+
+	#ifndef ARM9
+	usleep(1); //usleep() takes microseconds, so you will have to multiply the input by 1000 in order to sleep in milliseconds.
+	#endif
+	
+	#ifdef ARM9
+	HaltUntilIRQ();	//allow ARM9 to rely on Timer (1 ms) + other interrupts, so it wastes less cycles idling.
+	#endif
     return threadRunOK;
 }
 
