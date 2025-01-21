@@ -34,6 +34,8 @@ __attribute__((optimize("O0")))
 __attribute__ ((optnone))
 #endif
 void WoopsiTemplate::startup(int argc, char **argv) {
+	
+	Woopsi_TGDSThreads = getTGDSThreadSystem();
 	Rect rect;
 
 	// Create SuperBitmap test screen
@@ -340,6 +342,9 @@ void WoopsiTemplate::handleLidOpen() {
 	}
 }
 
+__attribute__((section(".dtcm")))
+struct task_Context * Woopsi_TGDSThreads = NULL;
+
 //Called once Woopsi events are ended: TGDS Main Loop
 //Called once Woopsi events are ended: TGDS Main Loop
 __attribute__((section(".itcm")))
@@ -354,4 +359,5 @@ void Woopsi::ApplicationMainLoop(){
 	//Earlier.. main from Woopsi SDK.
 	
 	//Handle TGDS stuff...
+	int threadsRan = runThreads(Woopsi_TGDSThreads);
 }

@@ -18,10 +18,12 @@ USA
 
 */
 
-//Threading Systems, relies on a single timer to perform concurrent threading of tasks. Implementation is non-blocking so threads do not lockstep each other. 
-//Note:
-//TGDS Project Threads Implementation: https://bitbucket.org/Coto88/toolchaingenericds-multiboot
+//TGDS Threading System: 
+//It relies on a single timer, per ARM core, to perform threading per tasks, through slices of time.
+//Implementation is non-blocking, so, threads do not interlock each other. This maximizes efficiency and power saving.
 
+//Implementation: 
+//https://bitbucket.org/Coto88/toolchaingenericds-multiboot
 
 //Changelog:
 //16 Jan. 2025: Update specs
@@ -50,7 +52,23 @@ __attribute__((section(".dtcm")))
 #endif
 int currentTimerUnits=0;
 
-//ARM9: Initializes TGDS threading system.
+//Gets the internal TGDS threading system.
+//returns:
+	//struct task_Context * taskCtx 	->	[Instance of the task context loading N threads]
+#ifdef ARM9
+__attribute__((section(".itcm")))
+#endif
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+struct task_Context * getTGDSThreadSystem(){
+	return (struct task_Context *)&threadQueue;
+}
+
+//Initializes TGDS threading system.
 //	argument 1: struct task_Context * taskCtx 	->	[Instance of the task context loading N threads]
 
 //returns:
@@ -76,7 +94,14 @@ void initThreadSystem(struct task_Context * taskCtx){
 		taskCtx->tasksList[i].timerFormat = 0;
     }
 	taskCtx->tasksCount = 0;
+
+	#ifdef ARM7
+	thread_StartTimerCounter(tUnitsMicroseconds, IRQ_TIMER3);
+	#endif
+
+	#ifdef ARM9
 	thread_StartTimerCounter(tUnitsMicroseconds, IRQ_TIMER2);
+	#endif
 }
 
 //Registers a thread to run
@@ -124,6 +149,85 @@ int registerThread(struct task_Context * taskCtx, TaskFn incomingTask, u32 * tas
     return i;
 }
 
+//Pauses a running thread
+//	argument 1: struct task_Context * taskCtx 	->	[Instance of the task context loading N threads]
+//	argument 2: usercode task assigned to a thread, to pause
+//Returns: 
+//  true if thread was paused successfully
+//  false if thread doesn't exist
+bool pauseThread(struct task_Context * taskCtx, TaskFn fn_taskToPause){
+    if( (taskCtx != NULL) && (fn_taskToPause != NULL) ){ 
+		int i = 0;
+		for(i = 0; i < MAX_THREADS_AVAILABLE; i++){
+			struct task_def * internalTask = &taskCtx->tasksList[i];
+			if(internalTask->fn_task == fn_taskToPause){
+				//Thread pauses:
+				internalTask->taskStatus = THREAD_EXECUTION_PAUSED;
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+//Resumes a paused thread
+//	argument 1: struct task_Context * taskCtx 	->	[Instance of the task context loading N threads]
+//	argument 2: usercode task assigned to a thread, to resume
+//Returns: 
+//  true if thread was resumed successfully
+//  false if thread doesn't exist
+bool resumeThread(struct task_Context * taskCtx, TaskFn fn_taskToResume){
+	if( (taskCtx != NULL) && (fn_taskToResume != NULL) ){ 
+		int i = 0;
+		for(i = 0; i < MAX_THREADS_AVAILABLE; i++){
+			struct task_def * internalTask = &taskCtx->tasksList[i];
+			if(internalTask->fn_task == fn_taskToResume){
+				//Thread resumes:
+				internalTask->taskStatus = THREAD_EXECUTE_OK_WAKEUP_FROM_SLEEP_GO_IDLE;
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+
+//Unregisters a running thread from the threading queue
+//	argument 1: struct task_Context * taskCtx 	->	[Instance of the task context loading N threads]
+//	argument 2: usercode task assigned to a thread, to remove permanently
+//Returns: 
+//  true if thread was removed permanently
+//  false if thread to remove is not registered
+#ifdef ARM9
+__attribute__((section(".itcm")))
+#endif
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+bool removeThread(struct task_Context * taskCtx, TaskFn fn_taskToRemove){
+    if( (taskCtx != NULL) && (fn_taskToRemove != NULL) ){ 
+		int i = 0;
+		for(i = 0; i < MAX_THREADS_AVAILABLE; i++){
+			struct task_def * internalTask = &taskCtx->tasksList[i];
+			if(internalTask->fn_task == fn_taskToRemove){
+				internalTask->taskStatus = INVAL_THREAD;
+				internalTask->timeQty = 0;
+				internalTask->fn_task = NULL;
+				internalTask->fn_args = NULL;
+				internalTask->fn_taskOnOverflow = NULL;
+				internalTask->timerFormat = 0;
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+
 //Runs a thread once then CPU goes to sleep
 //Returns: Various Thread Execution Results
 //  INVAL_THREAD if not assigned
@@ -152,12 +256,12 @@ int worker_thread(struct task_def * curTask){
 
 			int thisTimerCount = 0;
 
-			#ifndef ARM9
+			#if !defined(ARM7) && !defined(ARM9)
 			struct timeval endTask_t;
 			gettimeofday(&endTask_t, 0);
 			thisTimerCount = (endTask_t.tv_sec) * 1000 + (endTask_t.tv_usec) / 1000 ; // convert tv_sec & tv_usec to millisecond
 			#endif
-			#ifdef ARM9
+			#if defined(ARM7) || defined(ARM9)
 			thisTimerCount = (int)thread_GetTimerCounter();
 			#endif
 			
@@ -223,21 +327,17 @@ int runThreads(struct task_Context * taskCtx){
 				}
 				curTask->remainingThreadTime = 0;
 				curTask->taskStatus = THREAD_EXECUTE_OK_WAKEUP_FROM_SLEEP_GO_IDLE;
-				HaltUntilIRQ(); //After thread overflow, CPU goes to sleep.
 			}
 			
         }
-		else{
-			HaltUntilIRQ(); //If threads aren't assigned, CPU goes to sleep.
-		}
     }
 
-	#ifndef ARM9
+	#if !defined(ARM7) && !defined(ARM9)
 	usleep(1); //usleep() takes microseconds, so you will have to multiply the input by 1000 in order to sleep in milliseconds.
 	#endif
 	
-	#ifdef ARM9
-	HaltUntilIRQ();	//allow ARM9 to rely on Timer (1 ms) + other interrupts, so it wastes less cycles idling.
+	#if defined(ARM7) || defined(ARM9)
+	HaltUntilIRQ();	//allow ARM cores to rely on Timer (1 ms) + other interrupts, so it wastes less cycles idling.
 	#endif
     return threadRunOK;
 }
@@ -401,7 +501,7 @@ void runTests(){
 	}
 }
 
-#ifndef ARM9
+#if !defined(ARM7) && !defined(ARM9)
 int main()
 {
 	runTests();

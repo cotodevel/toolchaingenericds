@@ -42,6 +42,11 @@ USA
 #include "posixHandleTGDS.h"
 #include "malloc.h"
 #include "utilsTGDS.h"
+#include "TGDS_threads.h"
+
+#ifdef ARM7
+#include "spifwTGDS.h"
+#endif
 
 #ifdef ARM9
 #include "nds_cp15_misc.h"
@@ -464,6 +469,58 @@ void handleDSInitError7(int stage, u32 fwNo){
 	}
 }
 #endif
+
+#ifdef ARM7
+
+//////////////////////////////////////////////////////// ARM7 Threading exception handler: TGDS Project template ////////////////////////////////////////////////////////
+//User callback when Task Overflows. Intended for debugging purposes only, as normal user code tasks won't overflow if a task is implemented properly.
+//	u32 * args = This Task context
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void onThreadOverflowARM7InternalCode(u32 * args){
+	struct task_def * thisTask = (struct task_def *)args;
+	struct task_Context * parentTaskCtx = thisTask->parentTaskCtx;	//get parent Task Context node 
+
+	char threadStatus[64];
+	switch(thisTask->taskStatus){
+		case(INVAL_THREAD):{
+			strcpy(threadStatus, "INVAL_THREAD");
+		}break;
+		
+		case(THREAD_OVERFLOW):{
+			strcpy(threadStatus, "THREAD_OVERFLOW");
+		}break;
+		
+		case(THREAD_EXECUTE_OK_WAIT_FOR_SLEEP):{
+			strcpy(threadStatus, "THREAD_EXECUTE_OK_WAIT_FOR_SLEEP");
+		}break;
+		
+		case(THREAD_EXECUTE_OK_WAKEUP_FROM_SLEEP_GO_IDLE):{
+			strcpy(threadStatus, "THREAD_EXECUTE_OK_WAKEUP_FROM_SLEEP_GO_IDLE");
+		}break;
+	}
+	
+	char debOut2[256];
+	int TGDSDebuggerStage = 10;
+	strcpy(debOut2, "onThreadOverflowARM7InternalCode():[");
+	strcat(debOut2, threadStatus);
+	strcat(debOut2, "]! Halting. ");
+	handleDSInitOutputMessage((char*)&debOut2[0]);
+	handleDSInitError7(TGDSDebuggerStage, (u32)savedDSHardware);
+	
+	while(1==1){
+		HaltUntilIRQ();
+	}
+}
+
+#endif
+
+
 
 #ifdef ARM9
 

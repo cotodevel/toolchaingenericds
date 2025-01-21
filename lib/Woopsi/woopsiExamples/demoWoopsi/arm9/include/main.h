@@ -45,6 +45,8 @@ extern struct fd * _FileHandleAudio;
 extern bool stopSoundStreamUser();
 extern void closeSoundUser();
 
+extern void onThreadOverflowUserCode(u32 * args);
+
 #ifdef __cplusplus
 }
 #endif

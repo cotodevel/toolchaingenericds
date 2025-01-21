@@ -334,10 +334,11 @@ void initWoopsiGfxMode() {
 
 __attribute__((section(".itcm")))
 void woopsiWaitVBL(bool needsToWaitForHardwareVblank) {
-	handleARM9SVC();	/* Do not remove, handles TGDS services */
 	if(needsToWaitForHardwareVblank == true){
 		IRQWait(0, IRQ_VBLANK);
 	}
+	
+	//Remember to inject runThreads(TGDSThreads); in WoopsiSDK apps! Or functionality will stop working after this commit.
 }
 
 #endif

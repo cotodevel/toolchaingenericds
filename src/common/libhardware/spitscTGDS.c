@@ -587,3 +587,92 @@ void TWLSetTouchscreenNTRMode(){
 	}
 	#endif
 }
+
+#ifdef ARM7
+
+static bool penDown = false;
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void taskARM7TouchScreen(u32 * args){
+	struct sIPCSharedTGDS * sIPCSharedTGDSInst = (struct sIPCSharedTGDS *)TGDSIPCStartAddress;
+	struct touchPosition * sTouchPosition = (struct touchPosition *)&sIPCSharedTGDSInst->tscIPC;
+	
+	//ARM7 Keypad has access to X/Y/Hinge/Pen down bits
+	sIPCSharedTGDSInst->KEYINPUT7 = (uint16)REG_KEYINPUT;
+	
+	u16 keys= REG_KEYXY;	
+	#ifdef TWLMODE
+	keys |= (1 << 6);
+	if(touchPenDown() == true){
+		keys &= ~(1 << 6);
+	}
+	#endif
+	/*
+	4000136h - NDS7 - EXTKEYIN - Key X/Y Input (R)
+	0      Button X     (0=Pressed, 1=Released)
+	1      Button Y     (0=Pressed, 1=Released)
+	3      DEBUG button (0=Pressed, 1=Released/None such)
+	6      Pen down     (0=Pressed, 1=Released/Disabled) (always 0 in DSi mode)
+	7      Hinge/folded (0=Open, 1=Closed)
+	2,4,5  Unknown / set
+	8..15  Unknown / zero
+	*/
+	if(keys & KEY_TOUCH){
+		penDown = false;
+	}
+	else{	
+		//reset state
+		sTouchPosition->rawy    = 0;
+		sTouchPosition->py = 0;
+		sTouchPosition->rawx    = 0;
+		sTouchPosition->px = 0;
+		sTouchPosition->z1 = 0;
+		sTouchPosition->z2 = 0;
+		
+		if(penDown){
+			keys |= KEY_TOUCH;	//tsc event must be before coord handling to give priority over touch events
+			
+			touchPosition tempPos = {0};
+			touchReadXY(&tempPos);
+			
+			if(tempPos.rawx && tempPos.rawy){
+				sTouchPosition->rawy    = tempPos.rawy;
+				sTouchPosition->py = tempPos.py;
+				sTouchPosition->rawx    = tempPos.rawx;
+				sTouchPosition->px = tempPos.px;
+				sTouchPosition->z1 = tempPos.z1;
+				sTouchPosition->z2 = tempPos.z2;
+			}
+			else{
+				penDown = false;
+			}
+			
+		}
+		else{
+			penDown = true;
+		}
+		
+		//handle re-click
+		
+		#ifdef NTRMODE
+		if( !(((uint16)REG_KEYINPUT) & KEY_TOUCH) ){
+			penDown = true;
+		}
+		#endif
+		
+		#ifdef TWLMODE
+		if(touchPenDown() == false){
+			penDown = true;
+		}
+		#endif
+	}
+	
+	sIPCSharedTGDSInst->buttons7	= keys;
+}
+
+#endif

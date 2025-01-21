@@ -132,15 +132,18 @@ extern struct LZSSContext LZS_DecodeFromBuffer(unsigned char *pak_buffer, unsign
 extern void swiDecompressLZSSWram(void * source, void * destination);
 extern void swiFastCopy(uint32 * source, uint32 * dest, int flags);
 
+//weak symbols : the implementation of this is project-defined
+extern void onThreadOverflowUserCode(u32 * args);
+
 //Init SVCs
 #ifdef ARM7
 extern void handleARM7InitSVC();
-extern void handleARM7SVC();
+extern void taskARM7SVC(u32 * args);
 #endif
 
 #ifdef ARM9
 extern void handleARM9InitSVC();
-extern void handleARM9SVC();
+extern void taskARM9SVC(u32 * args);
 
 extern HandledoMULTIDaemonWeakRefLibHardware9_fn HandledoMULTIDaemonWeakRefLibHardware9Callback;
 

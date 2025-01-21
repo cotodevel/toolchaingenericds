@@ -26,6 +26,11 @@ USA
 #include "dmaTGDS.h"
 #include "InterruptsARMCores_h.h"
 #include "posixHandleTGDS.h"
+#include "TGDS_threads.h"
+
+#ifdef ARM7
+#include "spitscTGDS.h"
+#endif
 
 #ifdef ARM9
 #include "dldi.h"
@@ -82,15 +87,42 @@ struct LZSSContext LZS_DecodeFromBuffer(unsigned char *pak_buffer, unsigned int 
 
 //TGDS Services:
 #ifdef ARM7
-
 bool isArm7ClosedLid=false;
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void handleARM7InitSVC(){
 	isArm7ClosedLid=false;
-	handleARM7SVC();
+	
+	//Thread context initialized here. Do not initialize it later or it'll get destroyed.
+	struct task_Context * TGDSThreads = getTGDSThreadSystem();
+	initThreadSystem(TGDSThreads);
+	
+	//ARM7 Lid Services
+	int taskARM7SVCTimeMS = 2; //Task execution requires at least 2ms
+	if(registerThread(TGDSThreads, (TaskFn)&taskARM7SVC, (u32*)NULL, taskARM7SVCTimeMS, (TaskFn)&onThreadOverflowARM7InternalCode, tUnitsMilliseconds) != THREAD_OVERFLOW){
+        
+    }
+
+	//ARM7 Touchscreen
+	int taskARM7TouchScreenTimeMS = 10; //Task execution requires at least 10ms
+	if(registerThread(TGDSThreads, (TaskFn)&taskARM7TouchScreen, (u32*)NULL, taskARM7TouchScreenTimeMS, (TaskFn)&onThreadOverflowARM7InternalCode, tUnitsMicroseconds) != THREAD_OVERFLOW){
+			
+	}
 }
 
-void handleARM7SVC(){
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void taskARM7SVC(u32 * args){
 	//Lid Closing + backlight events (ARM7)
 	if( ((REG_KEYXY & KEY_HINGE) == KEY_HINGE) && (isArm7ClosedLid == false)){
 		isArm7ClosedLid = true;
@@ -101,14 +133,31 @@ void handleARM7SVC(){
 #endif
 
 #ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void handleARM9InitSVC(){
-
+	//Thread context initialized here. Do not initialize it later or it'll get destroyed.
+	struct task_Context * TGDSThreads = getTGDSThreadSystem();
+	initThreadSystem(TGDSThreads);
+	
+	int taskARM9SVCTimeMS = 5; //Task execution requires at least 5ms
+	if(registerThread(TGDSThreads, (TaskFn)&taskARM9SVC, (u32*)NULL, taskARM9SVCTimeMS, (TaskFn)&onThreadOverflowUserCode, tUnitsMilliseconds) != THREAD_OVERFLOW){
+        
+    }
 }
 
-#ifdef ARM9
 __attribute__((section(".itcm")))
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
 #endif
-void handleARM9SVC(){
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void taskARM9SVC(u32 * args){
 	//handles Local/UDP Nifi / GDB Server
 	if(HandledoMULTIDaemonWeakRefLibHardware9Callback != NULL){
 		HandledoMULTIDaemonWeakRefLibHardware9Callback(); //returns: currentDSWNIFIMode
