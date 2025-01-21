@@ -35,13 +35,14 @@ typedef unsigned int u32;
 #include "InterruptsARMCores_h.h"
 #include "timerTGDS.h"
 
-#define MAX_THREADS_AVAILABLE ((int)32)
+#define MAX_THREADS_AVAILABLE ((int)10)
 
 //Thread Status
 #define INVAL_THREAD ((int)-1)
 #define THREAD_OVERFLOW ((int)-2)
 #define THREAD_EXECUTE_OK_WAIT_FOR_SLEEP ((int)-3)
 #define THREAD_EXECUTE_OK_WAKEUP_FROM_SLEEP_GO_IDLE ((int)-4)
+#define THREAD_EXECUTION_PAUSED ((int)-5)
 
 #define MAX_THREAD_OVERFLOW_CAPACITY_TIME_MILLISECONDS ((int)90) //This is the maximum capacity in milliseconds a thread can take before overflows on hardware (100% CPU usage). This value is not accurate on emulators.
 
@@ -132,8 +133,12 @@ extern "C" {
 #endif
 
 extern struct task_Context threadQueue;
+extern struct task_Context * getTGDSThreadSystem();
 extern void initThreadSystem(struct task_Context * taskCtx);
 extern int registerThread(struct task_Context * taskCtx, TaskFn incomingTask, u32 * taskArgs, int threadTimeInMS, TaskFn OnOverflowExceptionIncomingTask, enum timerUnits timerMethod);
+extern bool pauseThread(struct task_Context * taskCtx, TaskFn fn_taskToPause);
+extern bool resumeThread(struct task_Context * taskCtx, TaskFn fn_taskToResume);
+extern bool removeThread(struct task_Context * taskCtx, TaskFn fn_taskToRemove);
 extern int worker_thread(struct task_def * curTask);
 extern int runThreads(struct task_Context * taskCtx);
 

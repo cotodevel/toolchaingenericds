@@ -111,6 +111,8 @@ extern bool touchPenDown();
 extern bool touchInit;
 extern s32 xscaleTGDSScr, yscaleTGDSScr;
 extern s32 xoffset, yoffset;
+
+extern void taskARM7TouchScreen(u32 * args);
 #endif
 
 extern bool penIRQread();

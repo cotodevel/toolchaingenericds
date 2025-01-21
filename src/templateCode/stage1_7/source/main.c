@@ -24,6 +24,7 @@ USA
 #include "wifi_arm7.h"
 #include "dldi.h"
 #include "ipcfifoTGDSUser.h"
+#include "TGDS_threads.h"
 
 //TGDS-MB v3 bootloader
 void bootfile(){
@@ -43,11 +44,11 @@ int main(int argc, char **argv)  {
 	//installWifiFIFO(); //causes issues if enabled + removing -DIGNORELIBS from ToolchainGenericDS\src\templateCode\arm7bootldr\Makefile
 	while(!(*(u8*)0x04000240 & 2) ){} //wait for VRAM_D block
 	ARM7InitDLDI(TGDS_ARM7_MALLOCSTART, TGDS_ARM7_MALLOCSIZE, TGDSDLDI_ARM7_ADDRESS);
+	struct task_Context * TGDSThreads = getTGDSThreadSystem();
 	/*			TGDS 1.6 Standard ARM7 Init code end	*/
 	
     while (1) {
-		handleARM7SVC();	/* Do not remove, handles TGDS services */
-		HaltUntilIRQ();
+		int threadsRan = runThreads(TGDSThreads);
 	}
 	return 0;
 }

@@ -1,6 +1,8 @@
 #ifndef _DEMO_H_
 #define _DEMO_H_
 
+#include "TGDS_threads.h"
+
 #ifdef __cplusplus
 #include "alert.h"
 #include "woopsi.h"
@@ -40,6 +42,7 @@ extern "C" {
 #endif
 
 extern WoopsiTemplate * WoopsiTemplateProc;
+extern struct task_Context * Woopsi_TGDSThreads;
 
 #ifdef __cplusplus
 }

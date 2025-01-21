@@ -97,6 +97,7 @@ extern int TGDSInitLoopCount;
 
 #ifdef ARM7
 extern char * sharedStringExceptionMessageOutput;
+extern void onThreadOverflowARM7InternalCode(u32 * args);
 #endif
 
 #ifdef ARM9
