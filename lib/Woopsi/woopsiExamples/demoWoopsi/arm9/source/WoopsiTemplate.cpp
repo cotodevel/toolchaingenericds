@@ -359,5 +359,6 @@ void Woopsi::ApplicationMainLoop(){
 	//Earlier.. main from Woopsi SDK.
 	
 	//Handle TGDS stuff...
-	int threadsRan = runThreads(Woopsi_TGDSThreads);
+	bool waitForVblank = false;
+	int threadsRan = runThreads(Woopsi_TGDSThreads, waitForVblank);
 }
