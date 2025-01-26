@@ -521,7 +521,8 @@ int main(int argc, char **argv) {
 	/*			TGDS 1.6 Standard ARM7 Init code end	*/
 	
 	while (1) {
-		int threadsRan = runThreads(TGDSThreads);
+		bool waitForVblank = false;
+		int threadsRan = runThreads(TGDSThreads, waitForVblank);
 	}
 	return 0;
 }

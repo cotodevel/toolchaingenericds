@@ -140,7 +140,7 @@ extern bool pauseThread(struct task_Context * taskCtx, TaskFn fn_taskToPause);
 extern bool resumeThread(struct task_Context * taskCtx, TaskFn fn_taskToResume);
 extern bool removeThread(struct task_Context * taskCtx, TaskFn fn_taskToRemove);
 extern int worker_thread(struct task_def * curTask);
-extern int runThreads(struct task_Context * taskCtx);
+extern int runThreads(struct task_Context * taskCtx, bool waitForVblk);
 
 #ifdef __cplusplus
 }

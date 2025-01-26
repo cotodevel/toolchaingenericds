@@ -229,6 +229,7 @@ bool removeThread(struct task_Context * taskCtx, TaskFn fn_taskToRemove){
 
 
 //Runs a thread once then CPU goes to sleep
+//	argument 1: struct task_def * curTask 	->	[Instance of a single thread about to execute.]
 //Returns: Various Thread Execution Results
 //  INVAL_THREAD if not assigned
 //  THREAD_OVERFLOW time qty was exceeded
@@ -288,7 +289,9 @@ int worker_thread(struct task_def * curTask){
 }
 
 //Runs registered threads through a Time slots system (every n milliseconds, while CPU goes to sleep). 
-//	Returns: Total of threads ran successfully. (Neither INVAL_THREAD or THREAD_OVERFLOW counts)
+//	argument 1: struct task_Context * taskCtx 	->	[Instance of the task context loading N threads]
+//	argument 2: CPU wait for interrupt method: if true, CPU sleeps until the next Vblank interrupt, otherwise, false, CPU sleeps until any incoming interrupt.
+//Returns: Total of threads ran successfully. (Neither INVAL_THREAD or THREAD_OVERFLOW count)
 #ifdef ARM9
 __attribute__((section(".itcm")))
 #endif
@@ -299,7 +302,7 @@ __attribute__((optimize("O0")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-int runThreads(struct task_Context * taskCtx){
+int runThreads(struct task_Context * taskCtx, bool waitForVblk){
     int threadRunOK = 0;
     int i = 0;
     for(i = 0; i < taskCtx->tasksCount; i++){
@@ -336,9 +339,16 @@ int runThreads(struct task_Context * taskCtx){
 	usleep(1); //usleep() takes microseconds, so you will have to multiply the input by 1000 in order to sleep in milliseconds.
 	#endif
 	
-	#if defined(ARM7) || defined(ARM9)
-	HaltUntilIRQ();	//allow ARM cores to rely on Timer (1 ms) + other interrupts, so it wastes less cycles idling.
-	#endif
+	if(waitForVblk == true){
+		#if defined(ARM7) || defined(ARM9)
+		IRQVBlankWait();
+		#endif
+	}
+	else{
+		#if defined(ARM7) || defined(ARM9)
+		HaltUntilIRQ();
+		#endif
+	}
     return threadRunOK;
 }
 
@@ -461,23 +471,23 @@ void runTests(){
     char taskCarg[256];
     strcpy(taskCarg, "*Task C's arguments*");
 	
-    //Init + Register 2 tasks to run + run them
-    initThreadSystem(&threadQueue);
-
-    if(registerThread(&threadQueue, (TaskFn)&taskA, (u32*)&taskAarg, taskATimeMS, (TaskFn)&onThreadOverflowUserCode) != THREAD_OVERFLOW){
+    //Register 3 tasks to run + run them through independently. One thread will take 15ms, and the other 2 threads will take 8ms each.
+    struct task_Context * TGDSThreads = getTGDSThreadSystem();
+    if(registerThread(TGDSThreads, (TaskFn)&taskA, (u32*)&taskAarg, taskATimeMS, (TaskFn)&onThreadOverflowUserCode, tUnitsMilliseconds) != THREAD_OVERFLOW){
         
     } 
 
-    if(registerThread(&threadQueue, (TaskFn)&taskB, (u32*)&taskBarg, taskBTimeMS, (TaskFn)&onThreadOverflowUserCode) != THREAD_OVERFLOW){
+    if(registerThread(TGDSThreads, (TaskFn)&taskB, (u32*)&taskBarg, taskBTimeMS, (TaskFn)&onThreadOverflowUserCode, tUnitsMilliseconds) != THREAD_OVERFLOW){
         
     }
 	
-	if(registerThread(&threadQueue, (TaskFn)&taskC, (u32*)&taskCarg, taskCTimeMS, (TaskFn)&onThreadOverflowUserCode) != THREAD_OVERFLOW){
+	if(registerThread(TGDSThreads, (TaskFn)&taskC, (u32*)&taskCarg, taskCTimeMS, (TaskFn)&onThreadOverflowUserCode, tUnitsMilliseconds) != THREAD_OVERFLOW){
         
     }
 	
 	while(1==1){
-		int threadsRan = runThreads(&threadQueue);
+		bool waitForVblank = false;
+		int threadsRan = runThreads(TGDSThreads, waitForVblank);
 		
 		clrscr();
 		printf(" ---- ");
