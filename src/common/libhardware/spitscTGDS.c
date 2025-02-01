@@ -675,4 +675,14 @@ void taskARM7TouchScreen(u32 * args){
 	sIPCSharedTGDSInst->buttons7	= keys;
 }
 
+bool ARM7TouchScreenEnabled = false;
+
+void enableARM7TouchScreen(){
+	ARM7TouchScreenEnabled = true;
+}
+
+void disableARM7TouchScreen(){
+	ARM7TouchScreenEnabled = false;
+}
+
 #endif
