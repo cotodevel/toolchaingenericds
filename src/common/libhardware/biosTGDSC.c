@@ -108,11 +108,13 @@ void handleARM7InitSVC(){
         
     }
 
-	//ARM7 Touchscreen
-	int taskARM7TouchScreenTimeMS = 10; //Task execution requires at least 10ms
-	if(registerThread(TGDSThreads, (TaskFn)&taskARM7TouchScreen, (u32*)NULL, taskARM7TouchScreenTimeMS, (TaskFn)&onThreadOverflowARM7InternalCode, tUnitsMicroseconds) != THREAD_OVERFLOW){
+	//ARM7 Touchscreen. can't be enabled here because it's blocking. Needs to be ran on vcount interrupts.
+	//int taskARM7TouchScreenTimeMS = 10; //Task execution requires at least 10ms
+	//if(registerThread(TGDSThreads, (TaskFn)&taskARM7TouchScreen, (u32*)NULL, taskARM7TouchScreenTimeMS, (TaskFn)&onThreadOverflowARM7InternalCode, tUnitsMicroseconds) != THREAD_OVERFLOW){
 			
-	}
+	//}
+	enableARM7TouchScreen();
+
 }
 
 

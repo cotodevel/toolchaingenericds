@@ -47,6 +47,7 @@ USA
 #include "i2c.h"
 #include "sdmmc.h"
 #endif
+#include "spitscTGDS.h"
 #endif
 
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -221,6 +222,11 @@ void NDS_IRQHandler(){
 	}
 	
 	if(REG_IE_SET & IRQ_VCOUNT){
+		#ifdef ARM7
+		if(ARM7TouchScreenEnabled == true){
+			taskARM7TouchScreen(NULL);
+		}
+		#endif
 		VcounterUser();
 		REG_IF = IRQ_VCOUNT;
 	}
