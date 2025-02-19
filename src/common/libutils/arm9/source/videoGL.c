@@ -775,8 +775,9 @@ void glEnable(int bits){
 		globalGLCtx.GXPolygonAttributes |= GX_LIGHT3;
 	}
 	
+	//GX hardware reads directly from polygon attributes
 	if((bits&GL_DEPTH_TEST) == GL_DEPTH_TEST){
-		globalGLCtx.GXPolygonAttributes	|= (1 << 11);	// 11    Depth-value for Translucent Pixels    (0=Keep Old, 1=Set New Depth)
+		//globalGLCtx.GXPolygonAttributes	|= (1 << 11);	// 11    Depth-value for Translucent Pixels    (0=Keep Old, 1=Set New Depth)
 	}
 	
 	//Enable blending direct colors into both vertice and normal light reflection matrices
@@ -830,8 +831,9 @@ void glDisable(int bits){
 		globalGLCtx.GXPolygonAttributes &= ~(GX_LIGHT3);
 	}
 	
+	//GX hardware reads directly from polygon attributes
 	if((bits&GL_DEPTH_TEST) == GL_DEPTH_TEST){
-		globalGLCtx.GXPolygonAttributes	&= ~(1 << 11);	// 11    Depth-value for Translucent Pixels    (0=Keep Old, 1=Set New Depth)
+		//globalGLCtx.GXPolygonAttributes	&= ~(1 << 11);	// 11    Depth-value for Translucent Pixels    (0=Keep Old, 1=Set New Depth)
 	}
 	
 	//Disable blending direct colors into both vertice and normal light reflection matrices
@@ -5493,7 +5495,7 @@ void glColorMaterial(
 
 //The gllsEnabled function tests whether a capability is enabled.
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Ofast"))) 
+__attribute__((optimize("O0"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -5580,14 +5582,28 @@ GLboolean glIsEnabled(
 	return GL_FALSE;
 }
 
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0"))) 
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
 void glDepthFunc(GLenum func){
-	switch(func){
-		
-		//14    Depth Test, Draw Pixels with Depth    (0=Less, 1=Equal) (usually 0)
+	switch(func){	
+			/*
+			40004A4h - Cmd 29h - POLYGON_ATTR - Set Polygon Attributes (W)
+				14    Depth Test, Draw Pixels with Depth    (0=Less, 1=Equal) (usually 0)
+			*/
+
+			// gx: enable depth testing
 			case GL_LESS:{
 				globalGLCtx.GXPolygonAttributes	&= ~(1 << 14);
 			}break;
-			case GL_EQUAL:{
+
+			// gx: disable depth testing
+			case GL_EQUAL:
+			case GL_ALWAYS: 
+			{
 				globalGLCtx.GXPolygonAttributes	|= (1 << 14);
 			}break;
 		
