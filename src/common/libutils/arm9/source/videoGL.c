@@ -747,7 +747,7 @@ void glTranslatef(float x, float y, float z){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Ofast"))) 
+__attribute__((optimize("O0"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -787,8 +787,12 @@ void glEnable(int bits){
 	if((bits&GL_BLEND) == GL_BLEND){
 		globalGLCtx.glBlendEnabled = true;
 	}
-
-	enable_bits |= bits & (GL_TEXTURE_2D|GL_TOON_HIGHLIGHT|GL_OUTLINE|GL_ANTIALIAS|GL_BLEND);
+	
+	if((bits&GL_ALPHA_TEST) == GL_ALPHA_TEST){
+		bits	|= (GL_ALPHA_TEST_GX);
+	}
+	
+	enable_bits |= (bits & (GL_TEXTURE_2D|GL_TOON_HIGHLIGHT|GL_OUTLINE|GL_ANTIALIAS|GL_BLEND|GL_ALPHA_TEST_GX));
 	#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 	GFX_CONTROL = enable_bits;
 	#endif
@@ -797,7 +801,7 @@ void glEnable(int bits){
 
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("Ofast"))) 
+__attribute__((optimize("O0"))) 
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
@@ -839,7 +843,11 @@ void glDisable(int bits){
 		globalGLCtx.glBlendEnabled = false;
 	}
 	
-	enable_bits &= ~(bits & (GL_TEXTURE_2D|GL_TOON_HIGHLIGHT|GL_OUTLINE|GL_ANTIALIAS));	
+	if((bits&GL_ALPHA_TEST) == GL_ALPHA_TEST){
+		bits	|= (GL_ALPHA_TEST_GX);
+	}
+	
+	enable_bits &= ~(bits & (GL_TEXTURE_2D|GL_TOON_HIGHLIGHT|GL_OUTLINE|GL_ANTIALIAS|GL_ALPHA_TEST_GX));	
 	#if !defined(_MSC_VER) && defined(ARM9) //TGDS ARM9?
 	GFX_CONTROL = enable_bits;
 	#endif
@@ -4095,6 +4103,39 @@ void glCullFace(GLenum mode){
 		case GL_BACK:{
 			u32 polyAttr = (globalGLCtx.GXPolygonAttributes & ~(POLY_CULL_BACK | POLY_CULL_FRONT | POLY_CULL_NONE));
 			globalGLCtx.GXPolygonAttributes = polyAttr | POLY_CULL_BACK;
+		}break;
+		default:{
+			errorStatus = GL_INVALID_ENUM;
+		}break;
+	}
+}
+
+// set the alpha test function
+    // GL_GREATER means fragments with alpha greater than 0.1 will be drawn. 
+	// NDS supports GL_GREATER only (or GL_ALWAYS with value 0)
+#ifdef ARM9
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0"))) 
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+#endif
+void glAlphaFunc(
+   GLenum   func,
+   GLfloat ref
+){
+	switch(func){
+		/*
+		Requires enabled (if GL_GREATER)
+		4000060h - DISP3DCNT - 3D Display Control Register (R/W)
+		  2     Alpha-Test           (0=Disable, 1=Enable) (see ALPHA_TEST_REF)
+		*/
+		case GL_GREATER:{
+			GFX_ALPHATEST_REF = (((u8)ref)&0x1F);	//0-4   Alpha-Test Comparision Value (0..31) (Draw pixels if Alpha>AlphaRef)
+		}break;
+		case GL_ALWAYS:{
+			GFX_ALPHATEST_REF = 0;
 		}break;
 		default:{
 			errorStatus = GL_INVALID_ENUM;

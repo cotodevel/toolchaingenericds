@@ -531,13 +531,6 @@ static inline void SetRegCapture(bool enable, uint8 source, uint8 vram){
 	REG_DISPCAPCNT = value;
 }
 
-#define GFX_ALPHA_TEST        (*(vu16*) 0x04000340)
-//Set the minimum alpha value that will be used;
-//alphaThreshold minimum alpha value that will be used (0-15)
-static inline void glAlphaFunc(int alphaThreshold) {
-	GFX_ALPHA_TEST = alphaThreshold;
-}
-
 #endif
 
 #ifdef __cplusplus

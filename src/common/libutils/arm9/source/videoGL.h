@@ -121,6 +121,9 @@
 
 #define GFX_POLY_FORMAT       (*(vuint32*) 0x040004A4)
 #define GFX_FLUSH             (*(vuint32*) 0x04000540)
+#define GFX_ALPHATEST_REF     (*(vuint8*) 0x04000340)
+
+
 #define GX_ERROR_BIT ((u32)(1<<15))
 
 //////////////////////////////////////////////////////////////////////
@@ -402,7 +405,8 @@ enum GL_MATRIX_MODE_ENUM {
 
 #define GL_TEXTURE_2D		1
 #define GL_TOON_HIGHLIGHT	(1<<1)
-#define GL_BLEND (1<<3)
+#define GL_ALPHA_TEST_GX 	(1<<2)
+#define GL_BLEND 			(1<<3)
 #define GL_ANTIALIAS		(1<<4)
 #define GL_OUTLINE			(1<<5)
 
@@ -1489,6 +1493,10 @@ extern GLboolean glIsEnabled(
 );
 
 extern void glDepthFunc(GLenum func); 
+extern void glAlphaFunc(
+   GLenum   func,
+   GLfloat ref
+);
 
 #ifdef __cplusplus
 }
