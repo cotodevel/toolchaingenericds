@@ -1032,7 +1032,7 @@ Note:
 	TGDS binaries parse it into TGDS format internally.
 
 Implementation:
-	https://bitbucket.org/Coto88/toolchaingenericds-argvtest/
+	https://github.com/cotodevel/toolchaingenericds-argvtest/
 */
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("O0")))

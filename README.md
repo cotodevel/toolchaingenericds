@@ -10,34 +10,14 @@ OS Support:
 
 ---------------------------------------------
 [Building the devkit]:
-- Recompile Newlib for Nintendo DS (mandatory, not on this guide). See: https://bitbucket.org/Coto88/newlib-nds
+- Recompile Newlib for Nintendo DS (mandatory, not on this guide). See: https://github.com/cotodevel/newlib-nds
 - Recompile ToolchainGenericDS (this guide)
 - Recompile ToolchainGenericDS Project (optional, not on this guide)
 
 After you followed "Recompile Newlib for Nintendo DS" you can follow the upcoming steps.
 
-Build Steps:
-
-[Windows]
-
-1.1
--	Extract to some directory the ToolchainGenericDS sources, open msys.bat, and go to the desired directory (through msys2)
-
-1.2
-Then:
- - make clean 
- - make
-
-
-[Linux]
-
-1.1
--	Extract to some directory the ToolchainGenericDS sources, open the shell/Terminal, and go to the desired directory (through shell).
-	[Now follow 1a) step in the below link]
-	https://bitbucket.org/Coto88/newlib-nds/src/master/newlib-nds/
-	
-1.2
-Then:
+Build:
+[Windows/Linux]
  - make clean 
  - make
 
@@ -113,7 +93,7 @@ Features:
 - Default Makefiles per project, through template Makefiles. Or you add your own Makefile for each ARM7/9 Core.
 - Fat16/32/exFat (fatfs layer that extends POSIX file calls), interrupts, exceptions, touchscreen, spi, clock (from inferno DS), etc
 - Console render
-- Newlib nano (featuring POSIX filesystem: https://bitbucket.org/Coto88/toolchaingenericds/src/master/src/arm9/source/ToolchainGenericDSFS/, this means UNIX file POSIX layer: fread/fwrite/fopen/fclose/fprintf/etc supports natively DLDI driver)
+- Newlib nano (featuring POSIX filesystem: https://github.com/cotodevel/toolchaingenericds/tree/TGDS1.65/src/arm9/source/ToolchainGenericDSFS/ , this means UNIX file POSIX layer: fread/fwrite/fopen/fclose/fprintf/etc supports natively DLDI driver)
 - Modified dswifi library so it supports valid frames sent/received between DS's:
 	-udp nifi 	(like local but through internet, requires a server that forwards WANIP-> local IP).
 	-localnifi	
@@ -123,11 +103,11 @@ Features:
 	- Default ARM7 DLDI driver, FIFO, interrupt handlers, keypad, touchscreen through the TGDS driver (embedded in all TGDS Projects) so you can focus right into coding rather than NDS hardware.
 	- TGDS Sound API: WAV Mono - Stereo 8-bit signed -- 16-bit signed -- 24-bit signed -- 32-bit signed sound streaming support + sound samples. ADPCM sound stream decoding.
 	- TGDS Events: Allow to set several events (like screen power off, keypress or sound play samples, etc depending on scripted files). WIP: Add record event methods.
-	- 3D: OpenGL 1.1 featuring Standard OpenGL DisplayLists, VBO & VBA support: (https://bitbucket.org/Coto88/toolchaingenericds/src/master/src/common/libutils/arm9/source/)
+	- 3D: OpenGL 1.1 featuring Standard OpenGL DisplayLists, VBO & VBA support: (https://github.com/cotodevel/toolchaingenericds/tree/TGDS1.65/src/common/libutils/arm9/source/)
 	- DLDI RAMDISK Support. DLDI in emulator environment.
 		Notes:
 		DLDI RAMDisk: Download http://memory.dataram.com/products-and-services/software/ramdisk#freeware, mount a RAMDisk, copy files to it. Then use Desmume, choose Slot-2 (Gba slot) -> GBA Cartridge, choose the RAMDisk!. Launch emulator, TGDS Project now works with DLDI (32MB @ 0x08000000)!
-	- Optional VSCode IDE: See https://bitbucket.org/Coto88/toolchaingenericds-ide
+	- Optional VSCode IDE: See https://github.com/cotodevel/toolchaingenericds-ide
 
 ---------------------------------------------
 Changelog:
@@ -190,6 +170,6 @@ TGDS 1.0:
 
 ---------------------------------------------
 How to code things:
--	Once you follow [Building the devkit], you can grab a TGDS Project template such as: https://bitbucket.org/Coto88/toolchaingenericds-template/ and rebuild it (a TGDS Project Makefile has some properties you can override).
+-	Once you follow [Building the devkit], you can grab a TGDS Project template such as: https://github.com/cotodevel/toolchaingenericds-template and rebuild it (a TGDS Project Makefile has some properties you can override).
 
 Coto.

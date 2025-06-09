@@ -18,11 +18,11 @@ USA
 
 */
 
-//ndsDisplayListUtils. src: https://bitbucket.org/Coto88/ndsdisplaylistutils/src
+//ndsDisplayListUtils: VideoGL NintendoDS driver rewrite for ToolchainGenericDS.
 //Changelog:
 //0.4: Implementation finished.
-//0.3: Standardized format so it's conformant with Open GL Display Lists: (https://bitbucket.org/Coto88/toolchaingenericds-displaylist/src)
-//0.2: Ported to NintendoDS, unit test implemented at: https://bitbucket.org/Coto88/toolchaingenericds-unittest/src (5th Test Case)
+//0.3: Standardized format so it's conformant with Open GL Display Lists
+//0.2: Ported to NintendoDS, unit test implemented at: https://github.com/cotodevel/toolchaingenericds-unittest (5th Test Case)
 //0.1: First release, WIN32 only.
 
 #ifdef WIN32

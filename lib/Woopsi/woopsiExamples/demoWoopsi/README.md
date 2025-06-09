@@ -3,7 +3,7 @@
 This is the ToolchainGenericDS Woopsi template project:
 
 1.	Compile Toolchain:
-To compile this project you will need to follow the steps at https://bitbucket.org/Coto88/toolchaingenericds :
+To compile this project you will need to follow the steps at https://github.com/cotodevel/toolchaingenericds :
 Then simply extract the project somewhere.
 
 2.	Compile this project: 

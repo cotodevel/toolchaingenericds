@@ -2923,7 +2923,7 @@ void glVertex2v16(v16 x, v16 y){
 //-
 
 //To be called right before vertices, normals, texCoords and colors are rendered, but right after the polygon scene has been prepared.
-//Usage: https://bitbucket.org/Coto88/toolchaingenericds-unittest/src example
+//Usage: https://github.com/cotodevel/toolchaingenericds-unittest example
 #ifdef ARM9
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("Ofast"))) 

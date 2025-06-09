@@ -389,7 +389,7 @@ void setOrientation(int orientation, bool mainEngine){
 	}
 }
 
-//TGDS Dual3D implementation. See https://bitbucket.org/Coto88/snakegl/src for Dual3D implementation
+//TGDS Dual3D implementation. See https://github.com/cotodevel/snakegl for Dual3D implementation
 u8 NE_Screen=0;
 
 //Definition that overrides the weaksymbol expected from toolchain to init console video subsystem
