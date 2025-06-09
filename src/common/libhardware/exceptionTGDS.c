@@ -365,10 +365,8 @@ void exception_handler(uint32 arg, int stage, u32 fwNo){
 				GUI_printf("fragmented reallocation (buffer was not freed/reallocated correctly), ");
 				GUI_printf("NULL ptr @ free();, EWRAM out of memory, etc.");
 				GUI_printf("-");
-				GUI_printf("Report this bug/issue at:");
-				GUI_printf("https://bitbucket.org/Coto88");
-				GUI_printf("or");
-				GUI_printf("https://github.com/cotodevel");
+				GUI_printf("Report this issue at:");
+				GUI_printf("https://github.com/cotodevel/toolchaingenericds/issues");
 			}
 			else{
 				GUI_printf("handleDSInitError(); Unhandled event. Contact developer.");
