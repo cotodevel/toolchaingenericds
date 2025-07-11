@@ -93,6 +93,7 @@ USA
 #define SRC_STREAM_OGG		(int)(13)
 #define SRC_STREAM_AAC		(int)(14)
 #define SRC_WAVADPCM		(int)(15)
+#define SRC_VGM				(int)(16)
 
 #define WAV_READ_SIZE 4096
 
