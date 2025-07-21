@@ -25,6 +25,7 @@ USA
 #ifdef ARM7
 #include <string.h>
 #include "spifwTGDS.h"
+#include "biosTGDS.h"
 #endif
 
 #ifdef ARM9
@@ -101,7 +102,7 @@ void powerOFF(uint32 values){
 void SoundPowerON(u8 volume){
 	powerON(POWER_SOUND);
 	PowerManagementDeviceWrite(PM_CONTROL_REG, ( PowerManagementDeviceRead(PM_CONTROL_REG) & ~PM_SOUND_MUTE ) | PM_SOUND_AMP );
-	REG_SOUNDCNT = SOUND_ENABLE;
-	REG_MASTER_VOLUME = volume;
+	REG_SOUNDCNT = SOUND_ENABLE | SOUND_VOL(volume);
+	swiChangeSoundBias(1,0x400);
 }
 #endif
