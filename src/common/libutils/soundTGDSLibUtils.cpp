@@ -26,13 +26,13 @@ USA
 #include "posixHandleTGDS.h"
 #include "InterruptsARMCores_h.h"
 #include "debugNocash.h"
+#include "biosTGDS.h"
 
 #ifdef ARM9
 #include "utilsTGDS.h"
 #include "fatfslayerTGDS.h"
 #include "videoTGDS.h"
 #include "ima_adpcm.h"
-#include "biosTGDS.h"
 #endif
 
 //Sound stream code taken from DSOrganize because it works 100% through interrupts and that's wonderful
@@ -156,7 +156,7 @@ void setupSound(uint32 sourceBuf) {
 	for(ch=0;ch<4;++ch)
 	{
 		SCHANNEL_CR(ch) = 0;
-		SCHANNEL_TIMER(ch) = SOUND_FREQ((sndRate * multRate));
+		SCHANNEL_TIMER(ch) = SOUND_FREQ(sndRate * multRate);
 		SCHANNEL_LENGTH(ch) = (sampleLen * multRate) >> 1;
 		SCHANNEL_REPEAT_POINT(ch) = 0;
 	}
@@ -165,6 +165,9 @@ void setupSound(uint32 sourceBuf) {
 	//irqDisable(IRQ_VBLANK);
 	REG_IE&=~IRQ_VBLANK;
 	REG_IE |= IRQ_TIMER1;
+	
+	// prevent accidentally reading garbage from buffer 0, by waiting for buffer 1 instead
+	swiDelay((0x10000 - (sampleLen * multRate)) >> 1);
 	
 	lastL = 0;
 	lastR = 0;
