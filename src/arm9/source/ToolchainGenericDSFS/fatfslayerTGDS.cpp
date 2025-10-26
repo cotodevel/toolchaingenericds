@@ -1061,12 +1061,11 @@ bool readDirectoryIntoFileClass(char * dir, struct FileClassList * thisClassList
 //playlistfileClassListCtx = initFileList();
 //cleanFileList(playlistfileClassListCtx);
 //bool ret = readDirectoryIntoFileClass("/music", playlistfileClassListCtx);
-//char scratchPadMem[256*40];
 //#define pattern "/ima/wav/it/mod/s3m/xm/mp3/mp2/mpa/ogg/aac/m4a/m4b/flac/sid/nsf/spc/sndh/snd/sc68/gbs"
 //struct FileClassList * foundPlayList = NULL;
 //foundPlayList = initFileList();
 //cleanFileList(foundPlayList);
-//int itemsFound = buildFileClassByExtensionFromList(playlistfileClassListCtx, foundPlayList, (char**)&scratchPadMem, pattern);
+//int itemsFound = buildFileClassByExtensionFromList(playlistfileClassListCtx, foundPlayList, pattern);
 
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("O0")))
@@ -1074,14 +1073,21 @@ __attribute__((optimize("O0")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-int buildFileClassByExtensionFromList(struct FileClassList * inputClassList, struct FileClassList * targetClassList, char ** scratchPadMemory, char * filterString){
-	char * outBuf = (char *)scratchPadMemory;
+int buildFileClassByExtensionFromList(struct FileClassList * inputClassList, struct FileClassList * targetClassList, char * filterString){
+	char * outBuf = (char *)TGDSARM9Malloc(256 * FileClassItems);
 	int i = 0, j = 0;
-	int matchCount = str_split((char*)filterString, (char*)"/", outBuf, 50, 256); //30 items
+	int matchCount = str_split((char*)filterString, (char*)"/", outBuf, FileClassItems, 256);
+	
+	if ((matchCount + 3) > FileClassItems){
+		matchCount = FileClassItems;
+	}
+	else{
+		matchCount = (matchCount + 3);
+	}
 	
 	int fileClassListSize = getCurrentDirectoryCount(inputClassList) + 1; 
-	for(i = 0; i < (matchCount + 3); i++){
-		char * token_rootpath = (char*)&outBuf[256*i];
+	for(i = 0; i < matchCount; i++){
+		char * token_rootpath = (char*)(outBuf + (256*i));
 		char extToFind[256];
 		strcpy(extToFind, ".");
 		strcat(extToFind, token_rootpath);
@@ -1108,6 +1114,7 @@ int buildFileClassByExtensionFromList(struct FileClassList * inputClassList, str
 		}
 	}
 	
+	TGDSARM9Free(outBuf);
 	return targetClassList->FileDirCount;
 }
 
@@ -1127,7 +1134,6 @@ int pcmpstr(const void* a, const void* b){
 
 //Returns:	true if success
 //			false if error
-//Note: scratchPadMemory must be at least (FileClassItems * 256) = 76800 bytes
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("O0")))
 #endif
@@ -1135,7 +1141,7 @@ __attribute__((optimize("O0")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-void sortFileClassListAsc(struct FileClassList * thisClassList, char ** scratchPadMemory, bool ignoreFirstFileClass){
+void sortFileClassListAsc(struct FileClassList * thisClassList, bool ignoreFirstFileClass){
 	qsort((struct FileClass*)&thisClassList->fileList, thisClassList->FileDirCount, sizeof(FileClass), pcmpstr);
 }
 

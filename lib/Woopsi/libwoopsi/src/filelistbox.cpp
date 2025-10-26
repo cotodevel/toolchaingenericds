@@ -228,7 +228,7 @@ void FileListBox::readDirectory() {
 
 	//Sort list alphabetically
 	bool ignoreFirstFileClass = true;
-	sortFileClassListAsc(fileClassListCtx, (char**)0x0, ignoreFirstFileClass);
+	sortFileClassListAsc(fileClassListCtx, ignoreFirstFileClass);
 
 	int i = 0;
 	int fileClassListSize = getCurrentDirectoryCount(fileClassListCtx) + 1;

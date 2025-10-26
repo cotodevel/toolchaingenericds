@@ -123,9 +123,8 @@ void initDLDISnemulDS(char * snesFileName) {
 				cleanFileList(playlistfileClassListCtx);
 				bool ret = readDirectoryIntoFileClass("/", playlistfileClassListCtx);
 				if (ret == true) {
-					char scratchPadMem[76800];
 					bool ignoreFirstFileClass = true;
-					sortFileClassListAsc(playlistfileClassListCtx, (char**)&scratchPadMem[0], ignoreFirstFileClass);
+					sortFileClassListAsc(playlistfileClassListCtx, ignoreFirstFileClass);
 				}
 				else {
 					printf("fail");
