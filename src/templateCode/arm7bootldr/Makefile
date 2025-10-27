@@ -19,8 +19,7 @@
 
 #put here the custom stage_2 vram loader bits
 #for 0x02380000 -> 0x06000000 arm7bootldr payload
-export BINSTRIP_RULE_arm7bootldr =	arm7bootldr.bin
-#for 0x02380000 -> 0x06000000 arm7bootldr payload
+export BINSTRIP_RULE_arm7bootldr =	arm7bootldr.binlzss
 export TARGET_LIBRARY_CRT0_FILE_7custom = nds_arm_ld_crt0custom
 export TARGET_LIBRARY_LINKER_FILE_7custom = $(TARGET_LIBRARY_PATH)$(TARGET_LIBRARY_LINKER_SRC)/$(TARGET_LIBRARY_CRT0_FILE_7custom).S
 
@@ -136,17 +135,18 @@ $(ELF_ARM7): $(OBJPROG)
 	$(OBJSTRIP)	-s -R .comment -R .gnu.version	$<
 	$(OBJSTRIP)	-s -R .comment -R .gnu.version	${@:.elf=-nonstripped_dsi.elf}
 	-mv	$<	$@
-	
+
+#not LZSS compressed here, just rename it as LZSS compressed *.bin, so ARM9 can compress any *.binlzss file
 $(BINSTRIP_RULE_arm7bootldr): $(ELF_ARM7)
 	-@echo 'STRIP End: Remove ELF header and build baremetal Binary executable: $<	->	$@ !'
 	$(OBJCOPY) 	-S -O binary	$<	$@
-	$(OBJCOPY) 	-S -O binary	${<:.elf=-nonstripped_dsi.elf}	${@:.bin=_twl.bin}
+	$(OBJCOPY) 	-S -O binary	${<:.elf=-nonstripped_dsi.elf}	${@:.binlzss=_twl.binlzss}
 	-rm	$<
-	-mv $@	../data/arm9/
-	-mv ${@:.bin=_twl.bin}	../data/arm9/
+	-mv ${@:.binlzss=.binlzss}	../data/arm9/
+	-mv ${@:.binlzss=_twl.binlzss}	../data/arm9/
 ################################################################################################
 	
 clean:
 	-@echo 'cleanup $(DIR_ARM7)'
-	-@rm -fr $(BINSTRIP_RULE_arm7bootldr)	$(MAPFILE)	$(CURDIR)/dsi_arm7_ld_stage2.specs	$(CURDIR)/dsi_arm7_ld_stage2.ld	${BINSTRIP_RULE_arm7bootldr:.bin=_twl.bin}	$(BUILD)	$(CURDIR)/arm7-nonstripped_dsi.elf $(CURDIR)/arm7-nonstripped_dsi.map
+	-@rm -fr $(BINSTRIP_RULE_arm7bootldr)	$(MAPFILE)	$(CURDIR)/dsi_arm7_ld_stage2.specs	$(CURDIR)/dsi_arm7_ld_stage2.ld	${BINSTRIP_RULE_arm7bootldr:.binlzss=_twl.binlzss}	$(BUILD)	$(CURDIR)/arm7-nonstripped_dsi.elf $(CURDIR)/arm7-nonstripped_dsi.map
 

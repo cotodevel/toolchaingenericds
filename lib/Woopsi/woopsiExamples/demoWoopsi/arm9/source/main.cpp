@@ -59,11 +59,12 @@ USA
 
 u32 * getTGDSMBV3ARM7Bootloader(){
 	if(__dsimode == false){
-		return (u32*)&arm7bootldr[0];	
+		swiDecompressLZSSWram((u8*)&arm7bootldr[0], (u8*)TGDS_MB_V3_ARM7_SCRATCHPAD_LZSS_DECOMP_BUF);
 	}
 	else{
-		return (u32*)&arm7bootldr_twl[0];
+		swiDecompressLZSSWram((u8*)&arm7bootldr_twl[0], (u8*)TGDS_MB_V3_ARM7_SCRATCHPAD_LZSS_DECOMP_BUF);
 	}
+	return (u32*)TGDS_MB_V3_ARM7_SCRATCHPAD_LZSS_DECOMP_BUF;
 }
 
 //TGDS Soundstreaming API
