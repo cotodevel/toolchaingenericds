@@ -230,8 +230,9 @@ int isNTROrTWLBinaryTGDSShared(u8 * NDSHeaderStructInst, u8 * passmeRead, u32 * 
 #include "videoTGDS.h"
 #include "consoleTGDS.h"
 #include "soundTGDS.h"
+#include "fatfslayerTGDS.h"
 
-//ToolchainGenericDS-multiboot NDS Binary loader: Requires tgds_multiboot_payload_ntr.bin / tgds_multiboot_payload_twl.bin (TGDS-multiboot Project) in SD root.
+//ToolchainGenericDS-multiboot NDS Binary loader: Requires TGDS_MB_V3_NTR_PAYLOAD_FILENAME & TGDS_MB_V3_TWL_PAYLOAD_FILENAME (TGDS-multiboot Project) in SD root.
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("O0")))
 #endif
@@ -252,10 +253,10 @@ bool TGDSMultibootRunNDSPayload(char * filename, u8 * tgdsMbv3ARM7Bootldr, int a
 		addARGV(argc, argv);
 		//Run payload depending on current NTR/TWL Hardware supported.
 		if (__dsimode == true){
-			TGDSMBPAYLOAD = "0:/tgds_multiboot_payload_twl.bin";	//TGDS TWL SDK (ARM9i binaries) emits TGDSMultibootRunNDSPayload() which reloads into TWL TGDS-MB Reload payload
+			TGDSMBPAYLOAD = getfatfsPath((sint8 *)TGDS_MB_V3_TWL_PAYLOAD_FILENAME);	//TGDS TWL SDK (ARM9i binaries) emits TGDSMultibootRunNDSPayload() which reloads into TWL TGDS-MB Reload payload
 		}
 		else {
-			TGDSMBPAYLOAD = "0:/tgds_multiboot_payload_ntr.bin";	//TGDS NTR SDK (ARM9 binaries) emits TGDSMultibootRunNDSPayload() which reloads into NTR TGDS-MB Reload payload
+			TGDSMBPAYLOAD = getfatfsPath((sint8 *)TGDS_MB_V3_NTR_PAYLOAD_FILENAME);	//TGDS NTR SDK (ARM9 binaries) emits TGDSMultibootRunNDSPayload() which reloads into NTR TGDS-MB Reload payload
 		}
 		
 		//Save ARGV-CMD line
@@ -434,10 +435,16 @@ bool TGDSMultibootRunNDSPayload(char * filename, u8 * tgdsMbv3ARM7Bootldr, int a
 		if(tgdsPayloadFh != NULL){
 			fseek(tgdsPayloadFh, 0, SEEK_SET);
 			int	tgds_multiboot_payload_size = FS_getFileSizeFromOpenHandle(tgdsPayloadFh);
-			fread((u32*)TGDS_MB_V3_PAYLOAD_ADDR_TWL, 1, tgds_multiboot_payload_size, tgdsPayloadFh);
-			coherent_user_range_by_size(TGDS_MB_V3_PAYLOAD_ADDR_TWL, (int)tgds_multiboot_payload_size);
+			u8 * TGDSMBPAYLOADLZSSCompressed = TGDSARM9Malloc(tgds_multiboot_payload_size);
+			fread((u32*)TGDSMBPAYLOADLZSSCompressed, 1, tgds_multiboot_payload_size, tgdsPayloadFh); //NTR = read into uncached mirror / TWL = read into uncached memory
+			coherent_user_range_by_size(TGDSMBPAYLOADLZSSCompressed, (int)tgds_multiboot_payload_size);
 			fclose(tgdsPayloadFh);
+			int decompressed_tgds_multiboot_payload_size = *(unsigned int *)(TGDSMBPAYLOADLZSSCompressed) >> 8;
+			swiDecompressLZSSWram((u8*)TGDSMBPAYLOADLZSSCompressed, (u8*)TGDS_MB_V3_PAYLOAD_ADDR_TWL);
+			coherent_user_range_by_size(TGDS_MB_V3_PAYLOAD_ADDR_TWL, (int)decompressed_tgds_multiboot_payload_size);
+			TGDSARM9Free(TGDSMBPAYLOADLZSSCompressed);
 			FS_deinit();
+			
 			bool stat = dldiPatchLoader((data_t *)TGDS_MB_V3_PAYLOAD_ADDR_TWL, (int)tgds_multiboot_payload_size, (u32)&_io_dldi_stub);
 			if(stat == false){
 				sprintf(msgDebugException, "%s%s", "TGDSMultibootRunNDSPayload(): DLDI Patch failed. NTR/TWL binary missing DLDI section.", "");

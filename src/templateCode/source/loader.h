@@ -54,10 +54,14 @@ USA
 //The base address all four ARM7/ARM9/ARM7i/ARM9i should have at least to be ran through TGDS-MB v3
 #define ARM_MININUM_LOAD_ADDR ((u32)0x01000000)
 
-//tgds_mb_payload.bin (NTR/TWL): 
+//tgds_mb_payload.bin LZSS compressed (NTR/TWL): 
 #define TGDS_MB_V3_PAYLOAD_ADDR ((u32*)0x2328000) //NTR homebrew up to 3.3M~ is executable, because of TGDS-mb remoteboot
 #define TGDS_MB_V3_PAYLOAD_ADDR_TWL ((u32*)0x2F28000)
-#define TGDS_MB_V3_ARM7_STAGE1_ADDR ( ((int)TGDS_MB_V3_PAYLOAD_ADDR) -  (96*1024) )
+#define TGDS_MB_V3_ARM7_STAGE1_ADDR ( ((int)TGDS_MB_V3_PAYLOAD_ADDR) -  (96*1024) ) /* can't be used as scratchpad buffer for LZSS binaries */
+#define TGDS_MB_V3_ARM7_SCRATCHPAD_LZSS_DECOMP_BUF ( ((int)TGDS_MB_V3_ARM7_STAGE1_ADDR) -  (96*1024) ) /* default scratchpad buffer for executing ARM7 LZSS compressed binaries */
+#define TGDS_MB_V3_NTR_PAYLOAD_FILENAME ((char*)"tgds_multiboot_payload_ntr.binlzss")
+#define TGDS_MB_V3_TWL_PAYLOAD_FILENAME ((char*)"tgds_multiboot_payload_twl.binlzss")
+
 #define TGDS_MB_V3_FREEMEM_NTR ((int)0x328000)
 #define TGDS_MB_V3_FREEMEM_TWL ((int)0xF28000)
 
