@@ -155,6 +155,22 @@ namespace WoopsiUI {
 		};
 		
 		/**
+		 * Expose the OK button object.
+		 * @return the OK button object.
+		 */
+		virtual inline Button* getInternalOKButtonObject() const {
+			return _okButton;
+		};
+
+		/**
+		 * Expose the Cancel button object.
+		 * @return the Cancel button object.
+		 */
+		virtual inline Button* getInternalCancelButtonObject() const {
+			return _cancelButton;
+		};
+		
+		/**
 		 * Set the displayed path.
 		 * @param path The new path.
 		 */
