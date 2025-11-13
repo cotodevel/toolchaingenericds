@@ -39,8 +39,9 @@ namespace WoopsiUI {
 		 * @param height The height of the listbox.
 		 * @param flags Standard flags.
 		 * @param style Optional gadget style.
+		 * @param extensionsSupported Optional, if not blank, FileListBox object will only list extensions supported.
 		 */
-		FileListBox(s16 x, s16 y, u16 width, u16 height, u32 flags, GadgetStyle* style = NULL);
+		FileListBox(s16 x, s16 y, u16 width, u16 height, u32 flags, GadgetStyle* style = NULL, WoopsiString extensionsSupported = WoopsiString(""));
 	
 		/**
 		 * Handles events raised by its sub-gadgets.
@@ -164,6 +165,7 @@ namespace WoopsiUI {
 	protected:
 		ScrollingListBox* _listbox;			/**< Pointer to the list box */
 		FilePath* _path;					/**< Path currently displayed */
+		WoopsiString _extensionsSupported;
 
 		/**
 		 * Draw the area of this gadget that falls within the clipping region.

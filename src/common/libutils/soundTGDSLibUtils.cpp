@@ -866,9 +866,11 @@ int playSoundStream(char * audioStreamFilename, struct fd * _FileHandleVideo, st
 			if(player.play(getPosixFileHandleByStructFD(_FileHandleAudio, "r"), loop_audio, automatic_updates, ADPCM_SIZE, stopSoundStreamUser, sourceBuf) == 0){
 				//ADPCM Playback!
 			}
+			soundData.sourceFmt = SRC_WAVADPCM;
 		}
 		else if(intCodecType == SRC_WAV){
 			//WAV Playback!
+			soundData.sourceFmt = SRC_WAV;
 		}
 		return intCodecType;
 	}

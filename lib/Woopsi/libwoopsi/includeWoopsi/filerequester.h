@@ -45,8 +45,9 @@ namespace WoopsiUI {
 		 * @param path The initial path that the requester will show.
 		 * @param flags Standard flags.
 		 * @param style Optional gadget style.
+		 * @param extensionsSupported Optional, if not blank, FileRequester object will only list extensions supported.
 		 */
-		FileRequester(s16 x, s16 y, u16 width, u16 height, const WoopsiString& title, const WoopsiString& path, u32 flags, GadgetStyle* style = NULL);
+		FileRequester(s16 x, s16 y, u16 width, u16 height, const WoopsiString& title, const WoopsiString& path, u32 flags, GadgetStyle* style = NULL, WoopsiString extensionsSupported = WoopsiString(""));
 
 		/**
 		 * Handles events raised by its sub-gadgets.
