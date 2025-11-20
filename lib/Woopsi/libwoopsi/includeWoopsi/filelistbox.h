@@ -162,6 +162,14 @@ namespace WoopsiUI {
 		 */
 		virtual const FilePath* getPath() const;
 
+		/**
+		 * Expose the ScrollingListBox object.
+		 * @return the ScrollingListBox object.
+		 */
+		virtual inline ScrollingListBox* getInternalScrollingListBoxObject() const {
+			return _listbox;
+		};
+
 	protected:
 		ScrollingListBox* _listbox;			/**< Pointer to the list box */
 		FilePath* _path;					/**< Path currently displayed */

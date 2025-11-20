@@ -132,6 +132,22 @@ namespace WoopsiUI {
 		 */
 		virtual void handleValueChangeEvent(const GadgetEventArgs& e);
 
+		/**
+		 * Expose the upper arrow button object.
+		 * @return the upper arrow button object.
+		 */
+		virtual inline Button* getInternalUpperArrowButtonObject() const {
+			return _upButton;
+		};
+
+		/**
+		 * Expose the lower arrow button object.
+		 * @return the lower arrow button object.
+		 */
+		virtual inline Button* getInternalLowerArrowButtonObject() const {
+			return _downButton;
+		};
+
 	protected:
 		SliderVertical* _slider;					/**< Pointer to the slider gadget */
 		Button* _upButton;							/**< Pointer to the up button */

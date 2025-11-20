@@ -257,6 +257,14 @@ namespace WoopsiUI {
 		 */
 		virtual void getPreferredDimensions(Rect& rect) const;
 
+		/**
+		 * Expose the ScrollbarVertical object.
+		 * @return the ScrollbarVertical object.
+		 */
+		virtual inline ScrollbarVertical* getInternalScrollbarVerticalObject() const {
+			return _scrollbar;
+		};
+
 	protected:
 		ListBox* _listbox;									/**< Pointer to the list box. */
 		ScrollbarVertical* _scrollbar;						/**< Pointer to the scrollbar. */
