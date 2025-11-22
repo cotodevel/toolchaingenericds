@@ -170,6 +170,11 @@ namespace WoopsiUI {
 			return _listbox;
 		};
 
+		/**
+		 * Populate list with directory data.
+		 */
+		virtual void readDirectory();
+		
 	protected:
 		ScrollingListBox* _listbox;			/**< Pointer to the list box */
 		FilePath* _path;					/**< Path currently displayed */
@@ -195,11 +200,6 @@ namespace WoopsiUI {
 		 */
 		virtual ~FileListBox();
 
-		/**
-		 * Populate list with directory data.
-		 */
-		virtual void readDirectory();
-		
 		/**
 		 * Copy constructor is protected to prevent usage.
 		 */
