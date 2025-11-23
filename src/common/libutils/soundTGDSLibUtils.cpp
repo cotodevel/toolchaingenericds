@@ -23,6 +23,7 @@ USA
 #include "ipcfifoTGDS.h"
 #include "powerTGDS.h"
 #include "timerTGDS.h"
+#include "dmaTGDS.h"
 #include "posixHandleTGDS.h"
 #include "InterruptsARMCores_h.h"
 #include "debugNocash.h"
@@ -65,35 +66,15 @@ __attribute__ ((optnone))
 #endif
 void mallocDataARM7(int size, uint16* sourceBuf)
 {
-    // this no longer uses malloc due to using vram bank d.
+    // this no longer uses malloc due to using dynamic memory.
 	strpcmL0 = (s16*)sourceBuf;
 	strpcmL1 = strpcmL0 + (size >> 1);
 	strpcmR0 = strpcmL1 + (size >> 1);
 	strpcmR1 = strpcmR0 + (size >> 1);
 	
-	// clear vram d bank to not have sound leftover
-	int i = 0;
-	
-	for(i=0;i<(size);++i)
-	{
-		strpcmL0[i] = 0;
-	}
-	
-	for(i=0;i<(size);++i)
-	{
-		strpcmR0[i] = 0;
-	}
-}
-
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-void freeData()  
-{	
-	//free(strpcmR0);
+	// clear memory to not have sound leftover
+	dmaFillHalfWord(0, 0, (uint32)strpcmL0, (uint32)((size + 3) & ~3) );
+	dmaFillHalfWord(0, 0, (uint32)strpcmR0, (uint32)((size + 3) & ~3) );
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -150,9 +131,7 @@ void setupSound(uint32 sourceBuf) {
 	TIMERXDATA(1) = 0x10000 - (sampleLen * 2 * multRate);
 	TIMERXCNT(1) = TIMER_CASCADE | TIMER_IRQ_REQ | TIMER_ENABLE;
 	
-	//irqSet(IRQ_TIMER1, TIMER1Handler);
 	int ch;
-	
 	for(ch=0;ch<4;++ch)
 	{
 		SCHANNEL_CR(ch) = 0;
@@ -161,9 +140,7 @@ void setupSound(uint32 sourceBuf) {
 		SCHANNEL_REPEAT_POINT(ch) = 0;
 	}
 
-	//irqSet(IRQ_VBLANK, 0);
-	//irqDisable(IRQ_VBLANK);
-	REG_IE&=~IRQ_VBLANK;
+	REG_IE&=~IRQ_VBLANK; //Not sure this is needed, could be removed in the future.
 	REG_IE |= IRQ_TIMER1;
 	
 	// prevent accidentally reading garbage from buffer 0, by waiting for buffer 1 instead
@@ -180,7 +157,6 @@ __attribute__((optimize("O0")))
 __attribute__ ((optnone))
 #endif
 void stopSound() {
-	//irqSet(IRQ_TIMER1, 0);
 	TIMERXCNT(0) = 0;
 	TIMERXCNT(1) = 0;
 	
@@ -189,10 +165,7 @@ void stopSound() {
 	SCHANNEL_CR(2) = 0;
 	SCHANNEL_CR(3) = 0;
 	
-	freeData();
-	//irqSet(IRQ_VBLANK, VblankHandler);
-	//irqEnable(IRQ_VBLANK);
-	REG_IE|=IRQ_VBLANK;
+	REG_IE|=IRQ_VBLANK;	//Not sure this is needed, could be removed in the future.
 	REG_IE &= ~IRQ_TIMER1;
 }
 
@@ -207,9 +180,6 @@ void TIMER1Handler(){
 //Handles current file playback status
 __attribute__((section(".dtcm")))
 bool soundLoaded = false;
-
-__attribute__((section(".dtcm")))
-bool canSend = false;
 
 __attribute__((section(".dtcm")))
 int bufCursor;
@@ -244,25 +214,17 @@ int seekUpdate = -1;
 // sound out
 __attribute__((section(".dtcm")))
 s16 *lBuffer = NULL;
+
 __attribute__((section(".dtcm")))
 s16 *rBuffer = NULL;
 
-// wav
-
-__attribute__((section(".dtcm")))
-char *memoryContents = NULL;
-
-__attribute__((section(".dtcm")))
-u32 memoryPos = 0;
-
-__attribute__((section(".dtcm")))
-u32 memorySize = 0;
-
 __attribute__((section(".dtcm")))
 void (*wavDecode)() = NULL;
+
 // alternate malloc stuff
 __attribute__((section(".dtcm")))
 int m_SIWRAM = 0;
+
 __attribute__((section(".dtcm")))
 int m_size = 0;
 
@@ -284,12 +246,6 @@ void mallocData(int size)
 	TGDSIPC->soundIPC.arm9L = NULL; // temporary
 	TGDSIPC->soundIPC.arm9R = NULL; // temporary
 	TGDSIPC->soundIPC.interlaced = NULL;
-}
-
-void freeData()
-{
-	lBuffer = NULL;
-	rBuffer = NULL;
 }
 
 __attribute__((section(".itcm")))
@@ -384,16 +340,13 @@ void updateStream()
 		return;
 	}
 	
-	//checkKeys();
-	
 	switch(soundData.sourceFmt)
 	{
 		case SRC_WAV:
+		case SRC_WAVADPCM:
 		{
 			swapAndSend(ARM7COMMAND_SOUND_COPY);
 			wavDecode();
-			
-			soundData.loc = ftell(soundData.filePointer) - soundData.dataOffset;
 		}
 		break;
 		default:{
@@ -401,14 +354,6 @@ void updateStream()
 		}
 		break;
 	}
-}
-
-void setSoundInterrupt()
-{
-	//irqSet(IRQ_FIFO_NOT_EMPTY, FIFO_Receive);
-	//irqEnable(IRQ_FIFO_NOT_EMPTY);
-
-	//REG_IPC_FIFO_CR = IPC_FIFO_ENABLE | IPC_FIFO_SEND_CLEAR | IPC_FIFO_RECV_IRQ;
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -491,20 +436,11 @@ void stopSound()
 }
 
 void closeSound(){
-	freeSound();
-	closeSoundUser();
-	soundLoaded = false;
-}
-
-void freeSound()
-{
 	switch(internalCodecType)
 	{
-		case SRC_WAV:{
-			
-		}
-		break;
-		case SRC_WAVADPCM:{
+		case (SRC_WAVADPCM):
+		case (SRC_WAV):
+		{
 			player.stop();
 		}
 		break;
@@ -516,7 +452,8 @@ void freeSound()
 	}
 	
 	stopSound();
-	freeData();
+	lBuffer = NULL;
+	rBuffer = NULL;
 	
 	if(soundData.filePointer != NULL){
 		fclose(soundData.filePointer);
@@ -524,6 +461,9 @@ void freeSound()
 	
 	soundData.filePointer = NULL;
 	soundData.sourceFmt = SRC_NONE;	
+
+	closeSoundUser();
+	soundLoaded = false;	
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -584,258 +524,6 @@ void setWavDecodeCallback(void (*cb)()){
 	wavDecode = cb;
 }
 
-u32 getWavData(void *outLoc, int amount, FILE *fh)
-{
-	return fread(outLoc, 1, amount, fh);
-}
-
-void wavDecode8Bit()
-{
-	// 8bit wav file
-	
-	u8 *s8Data = (u8 *)TGDSARM9Malloc(WAV_READ_SIZE * soundData.channels);
-	int rSize = getWavData(s8Data, (WAV_READ_SIZE * soundData.channels), soundData.filePointer);
-	
-	if(rSize < (WAV_READ_SIZE * soundData.channels))
-	{
-		cutOff = true;
-		memset(s8Data + rSize, 0, (WAV_READ_SIZE * soundData.channels) - rSize);
-	}
-	
-	//checkKeys();
-	
-	u8 *lData = (u8 *)lBuffer + 1;
-	u8 *rData = (u8 *)rBuffer + 1;
-	
-	if(soundData.channels == 2)
-	{
-		uint i=0;
-		for(i=0;i<(WAV_READ_SIZE << 1);i+=2)
-		{
-			lData[i] = (s8Data[i] - 128);
-			rData[i] = (s8Data[i + 1] - 128);
-		}
-	}
-	else
-	{
-		uint i=0,j=0;
-		for(i=0,j=0;i<(WAV_READ_SIZE << 1);i+=2,++j)
-		{
-			lData[i] = (s8Data[j] - 128);
-			rData[i] = lData[i];
-		}
-	}
-	
-	//checkKeys();
-	
-	TGDSARM9Free(s8Data);
-}
-
-void wavDecode16Bit()
-{
-	// 16bit wav file
-	
-	s16 *tmpData = (s16 *)TGDSARM9Malloc(WAV_READ_SIZE * 2 * soundData.channels);
-	int rSize = getWavData(tmpData, (WAV_READ_SIZE * soundData.channels * 2), soundData.filePointer);
-	
-	if(rSize < (WAV_READ_SIZE * soundData.channels * 2))
-	{
-		cutOff = true;
-		memset(tmpData + (rSize >> 1), 0, (WAV_READ_SIZE * soundData.channels * 2) - rSize);
-	}
-	
-	//checkKeys();
-	
-	if(soundData.channels == 2)
-	{
-		uint i=0;
-		for(i=0;i<WAV_READ_SIZE;++i)
-		{					
-			lBuffer[i] = tmpData[i << 1];
-			rBuffer[i] = tmpData[(i << 1) | 1];
-		}
-	}
-	else
-	{
-		uint i=0;
-		for(i=0;i<WAV_READ_SIZE;++i)
-		{
-			lBuffer[i] = tmpData[i];
-			rBuffer[i] = tmpData[i];
-		}
-	}
-	
-	//checkKeys();
-	
-	TGDSARM9Free(tmpData);
-}
-
-void wavDecode24Bit()
-{
-	// 24bit wav file
-	
-	u8 *tmpData = (u8 *)TGDSARM9Malloc(WAV_READ_SIZE * soundData.channels * 3);
-	int rSize = getWavData(tmpData, (WAV_READ_SIZE * soundData.channels * 3), soundData.filePointer);	
-	
-	if(rSize < (WAV_READ_SIZE * soundData.channels * 3))
-	{
-		cutOff = true;
-		memset(tmpData + rSize, 0, (WAV_READ_SIZE * soundData.channels * 3) - rSize);
-	}
-	
-	//checkKeys();
-	
-	void *oldPointer = tmpData;
-	
-	u16 tmpVal;
-	s16 *tmpSound = (s16 *)&tmpVal;
-	
-	if(soundData.channels == 2)
-	{
-		uint i=0;
-		for(i=0;i<WAV_READ_SIZE;++i)
-		{					
-			tmpVal = (tmpData[1]) | ((tmpData[2]) << 8);
-			lBuffer[i] = *tmpSound;
-			tmpData+=3;
-			
-			tmpVal = (tmpData[1]) | ((tmpData[2]) << 8);
-			rBuffer[i] = *tmpSound;
-			tmpData+=3;
-		}
-	}
-	else
-	{
-		uint i=0;
-		for(i=0;i<WAV_READ_SIZE;++i)
-		{	
-			tmpVal = (tmpData[1]) | ((tmpData[2]) << 8);
-			
-			lBuffer[i] = *tmpSound;
-			rBuffer[i] = *tmpSound;
-			
-			tmpData+=3;
-		}
-	}
-	
-	//checkKeys();
-	
-	TGDSARM9Free(oldPointer);
-}
-
-void wavDecode32Bit()
-{
-	// 32bit wav file
-	
-	s16 *tmpData = (s16 *)TGDSARM9Malloc(WAV_READ_SIZE * 4 * soundData.channels);	
-	int rSize = getWavData(tmpData, (WAV_READ_SIZE * soundData.channels * 4), soundData.filePointer);
-	
-	if(rSize < (WAV_READ_SIZE * soundData.channels * 4))
-	{
-		cutOff = true;
-		memset(tmpData + (rSize >> 1), 0, (WAV_READ_SIZE * soundData.channels * 4) - rSize);
-	}
-	
-	//checkKeys();
-	
-	if(soundData.channels == 2)
-	{
-		uint i=0;
-		for(i=0;i<WAV_READ_SIZE;++i)
-		{					
-			lBuffer[i] = tmpData[(i << 2) + 1];
-			rBuffer[i] = tmpData[(i << 2) + 3];
-		}
-	}
-	else
-	{
-		uint i=0;
-		for(i=0;i<WAV_READ_SIZE;++i)
-		{
-			lBuffer[i] = tmpData[(i << 1) + 1];
-			rBuffer[i] = lBuffer[i];
-		}
-	}
-	
-	//checkKeys();
-	
-	TGDSARM9Free(tmpData);
-}
-
-//WAV Header: Searches for u32chunkToSeek and returns file offset if found.
-int parseWaveData(struct fd * fdinst, u32 u32chunkToSeek){
-    u32 bytes[4];
-	int fileOffset = 0;
-	
-	// Read first 4 bytes.
-	// (Should be RIFF descriptor.)
-	//if (fread((u8*)&bytes[0], 1, 4, fh) < 0) {
-	//	return -1;
-	//}
-	int read = fatfs_read(fdinst->cur_entry.d_ino, (u8*)&bytes[0], 4); //fread(&len, 1, sizeof(len), fp);
-	if(read < 0){
-		return -1;
-	}
-	fdinst->loc += (read); fatfs_lseek(fdinst->cur_entry.d_ino, fdinst->loc, SEEK_SET);
-	
-	fileOffset+=4;
-	
-	//If we looking for "data" skip other headers
-	if((u32)u32chunkToSeek == (u32)0x64617461){
-		// First subchunk will always be at byte 12.
-		// (There is no other dependable constant.)
-		fdinst->loc += (12); fatfs_lseek(fdinst->cur_entry.d_ino, fdinst->loc, SEEK_SET); //fseek(fh, 12, SEEK_CUR);
-		fileOffset+=12;
-	}
-	
-	for (;;) {
-		// Read chunk length.
-		//if (fread((u8*)&bytes[0], 1, sizeof(bytes), fh) < 0) {
-		//	return -1;
-		//}
-		read = fatfs_read(fdinst->cur_entry.d_ino, (u8*)&bytes[0], sizeof(bytes)); //fread(&len, 1, sizeof(len), fp);
-		if(read < 0){
-			return -1;
-		}
-		fdinst->loc += (read); fatfs_lseek(fdinst->cur_entry.d_ino, fdinst->loc, SEEK_SET);
-		
-		//Way over the header area, exit
-		if(fileOffset > 96){
-			return -2;
-		}
-		
-		u8 bytesNonAligned[16];
-		memcpy(bytesNonAligned, (u8*)&bytes[0], sizeof(bytesNonAligned));
-		
-		u8 lastVar0 = 0;
-		u8 lastVar1 = 0;
-		u8 lastVar2 = 0;
-		u8 lastVar3 = 0;
-		//int match = 0;
-		int j = 0;
-		for(j=0; j < (int)sizeof(bytesNonAligned); j++){
-			if(j>0){
-				lastVar0 = bytesNonAligned[j-1];
-			}
-			if(j>1){
-				lastVar1 = bytesNonAligned[j-2];
-			}
-			if(j>2){
-				lastVar2 = bytesNonAligned[j-3];
-			}
-			if(j>3){
-				lastVar3 = bytesNonAligned[j-4];
-			}
-			u32 read = (u32)((lastVar3<<24) | (lastVar2<<16) | (lastVar1<<8) | (lastVar0<<0));
-			if(read == u32chunkToSeek){
-				return (fileOffset+j);
-			}
-		}
-		fileOffset+=16;
-	}
-	return -1;
-}
-
 //Usercode: Opens a .WAV or IMA-ADPCM (Intel) file and begins to stream it. Copies the file handles 
 //Returns: the stream format.
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -845,7 +533,6 @@ __attribute__((optimize("O0")))
 __attribute__ ((optnone))
 #endif
 int playSoundStream(char * audioStreamFilename, struct fd * _FileHandleVideo, struct fd * _FileHandleAudio, uint32 sourceBuf) {
-	
 	//If trying to play SoundStream code while Shared RAM is mapped @ ARM7, throw error
 	if((WRAM_CR & WRAM_0KARM9_32KARM7) == WRAM_0KARM9_32KARM7){
 		nocashMessage("TGDS:playSoundStream(): Trying to play a Sound Stream ");
@@ -853,28 +540,27 @@ int playSoundStream(char * audioStreamFilename, struct fd * _FileHandleVideo, st
 		return SRC_NONE;
 	}
 	
-	int physFh1 = -1;
-	int physFh2 = -1;
-	if(openDualTGDSFileHandleFromFile(audioStreamFilename, &physFh1, &physFh2) == true){
-		//OK
-		_FileHandleVideo = getStructFD(physFh1);
-		_FileHandleAudio = getStructFD(physFh2);
-		int intCodecType = initSoundStreamFromStructFD(_FileHandleAudio, (char*)".wav", sourceBuf);
-		if(intCodecType == SRC_WAVADPCM){
+	int physFh1 = TGDSFSUserfatfs_open_file((const sint8 *)audioStreamFilename, (char *)"r");
+	if(physFh1 != -1){ //struct fd index open ok?
+		_FileHandleAudio = getStructFD(physFh1); //assign struct fd
+		soundData.sourceFmt = initSoundStreamFromStructFD(_FileHandleAudio, sourceBuf);
+		if(
+			(soundData.sourceFmt == SRC_WAV)
+			||
+			(soundData.sourceFmt == SRC_WAVADPCM)
+		){
 			bool loop_audio = false;
 			bool automatic_updates = false;
 			if(player.play(getPosixFileHandleByStructFD(_FileHandleAudio, "r"), loop_audio, automatic_updates, ADPCM_SIZE, stopSoundStreamUser, sourceBuf) == 0){
 				//ADPCM Playback!
 			}
-			soundData.sourceFmt = SRC_WAVADPCM;
 		}
-		else if(intCodecType == SRC_WAV){
-			//WAV Playback!
-			soundData.sourceFmt = SRC_WAV;
+		else{
+			//Custom codecs require the file handle to be freed. TGDS FS does not support multiple file handles from the same file.
+			TGDSFSUserfatfs_close(_FileHandleAudio);
 		}
-		return intCodecType;
 	}
-	return SRC_NONE;
+	return soundData.sourceFmt;
 }
 
 //Checkout a Specific TGDS Project implementing a default close audio stream (supporting audio stream that is)
@@ -893,223 +579,44 @@ __attribute__ ((optnone))
 bool stopSoundStream(struct fd * tgdsStructFD1, struct fd * tgdsStructFD2, int * internalCodecType) {
 	closeSound(); 
 	*internalCodecType = SRC_NONE;
-	
 	swiDelay(888);
-	closeDualTGDSFileHandleFromFile(tgdsStructFD1, tgdsStructFD2);
+	TGDSFSUserfatfs_close(tgdsStructFD2);
 	swiDelay(1);
 	return true;
 }
 
-//Internal: Opens a .WAV file (or returns the detected header), otherwise returns SRC_NONE
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("O0")))
 #endif
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-int initSoundStream(char * audioStreamFilename, uint32 sourceBuf) {
-	char tmpName[256];
-	char ext[256];
-	
-	strcpy(tmpName, audioStreamFilename);	
-	separateExtension(tmpName, ext);
-	strlwr(ext);
-	
-	freeSound();	
-	cutOff = false;
-	sndPaused = false;
-	playing = false;
-	seekUpdate = -1;
-	
-	FILE *fp = fopen(audioStreamFilename, "r");
-	int StructFD = fileno(fp);
-	struct fd *tgdsfd = getStructFD(StructFD);
-	return initSoundStreamFromStructFD(tgdsfd, ext, sourceBuf);
-}
-
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-int initSoundStreamFromStructFD(struct fd * _FileHandleAudio, char * ext, uint32 sourceBuf) {	//ARM9 Impl.
-	// try this first to prevent false positives with other streams
-	/*
-	if(isURL(fName))
-	{	
-		//it's a url
-		if(!urlFromString(fName, &curSite))
-		{
-			return false;
-		}
-		
-		strcpy(tmpName, curSite.remotePath);
-		separateExtension(tmpName, ext);
-		strlwr(ext);
-		
-		if(strcmp(ext, ".ogg") == 0)
-			soundData.sourceFmt = SRC_STREAM_OGG;
-		else if(strcmp(ext, ".aac") == 0)
-			soundData.sourceFmt = SRC_STREAM_AAC;		
-		else
-			soundData.sourceFmt = SRC_STREAM_MP3;
-		
-		soundData.bufLoc = 0;
-		
-		if(isWIFIConnected())
-		{
-			disconnectWifi();
-		}
-		
-		streamMode = STREAM_DISCONNECTED;
-		streamOpened = false;
-		mp3Buf = NULL;
-		
-		freeStreamBuffer();
-		
-		tmpMeta = (char *)trackMalloc(4081, "metadata");
-		memset(&curIcy, 0, sizeof(ICY_HEADER));	
-		memset(tmpMeta, 0, 4081);
-		
-		return true;
-	}
-	*/
-	
+int initSoundStreamFromStructFD(struct fd * _FileHandleAudio, uint32 sourceBuf) {	//ARM9 Impl.
 	initComplexSound(); // initialize sound variables
 	soundData.filePointerStructFD = _FileHandleAudio;	//Global StructDS handle -> WAV stream
-	if(strcmp(ext,".wav") == 0){
-		// wav file!
+	
+	// is it wav file?
+	soundData.filePointerStructFD->loc = soundData.bufLoc = 0;
+	char header[13];
+	fatfs_lseek(soundData.filePointerStructFD->cur_entry.d_ino, soundData.filePointerStructFD->loc, SEEK_SET);
+	int read = fatfs_read(soundData.filePointerStructFD->cur_entry.d_ino, (u8*)&header[0], 12);
+	soundData.filePointerStructFD->loc += (read); 
+	fatfs_lseek(soundData.filePointerStructFD->cur_entry.d_ino, soundData.filePointerStructFD->loc, SEEK_SET);
+	
+	header[12] = 0;
+	header[4] = ' ';
+	header[5] = ' ';
+	header[6] = ' ';
+	header[7] = ' ';
+	
+	if(strcmp(header, "RIFF    WAVE") == 0){
 		soundData.sourceFmt = SRC_WAV;
-		soundData.bufLoc = 0;
-		
-		wavFormatChunk headerChunk;
-		char header[13];
-		soundData.filePointerStructFD->loc = 0; fatfs_lseek(soundData.filePointerStructFD->cur_entry.d_ino, soundData.filePointerStructFD->loc, SEEK_SET);
-		int read = fatfs_read(soundData.filePointerStructFD->cur_entry.d_ino, (u8*)&header[0], 12);
-		soundData.filePointerStructFD->loc += (read); fatfs_lseek(soundData.filePointerStructFD->cur_entry.d_ino, soundData.filePointerStructFD->loc, SEEK_SET);
-		
-		header[12] = 0;
-		header[4] = ' ';
-		header[5] = ' ';
-		header[6] = ' ';
-		header[7] = ' ';
-		
-		if(strcmp(header, "RIFF    WAVE") != 0)
-		{
-			// Wrong header
-			fatfs_close(soundData.filePointerStructFD->cur_entry.d_ino);
-			return SRC_NONE;
-		}
-		
-		//fread((char*)&headerChunk, 1, sizeof(wavFormatChunk), fp);
-		read = fatfs_read(soundData.filePointerStructFD->cur_entry.d_ino, (u8*)&headerChunk, sizeof(wavFormatChunk)); 
-		soundData.filePointerStructFD->loc += (read); fatfs_lseek(soundData.filePointerStructFD->cur_entry.d_ino, soundData.filePointerStructFD->loc, SEEK_SET);
-		
-		if(strncmp((char*)&headerChunk.chunkID[0], "fmt ", 4) != 0)	
-		{
-			// Wrong chunk at beginning
-			fatfs_close(soundData.filePointerStructFD->cur_entry.d_ino);
-			return SRC_NONE;
-		}
-		
-		//RAW PCM
-		if(headerChunk.wFormatTag == WAVE_FORMAT_RAW_PCM)
-		{
-			if(headerChunk.wChannels > 2)
-			{
-				// more than 2 channels.... uh no!
-				fatfs_close(soundData.filePointerStructFD->cur_entry.d_ino);
-				return SRC_NONE;
-			}
-			else
-			{
-				soundData.channels = headerChunk.wChannels;
-			}
-			
-			if(headerChunk.wBitsPerSample <= 8)
-			{
-				soundData.bits = 8;
-				wavDecode = wavDecode8Bit;
-			}
-			else if(headerChunk.wBitsPerSample <= 16)
-			{
-				soundData.bits = 16;
-				wavDecode = wavDecode16Bit;
-			}
-			else if(headerChunk.wBitsPerSample <= 24)
-			{
-				soundData.bits = 24;
-				wavDecode = wavDecode24Bit;
-			}
-			else if(headerChunk.wBitsPerSample <= 32)
-			{
-				soundData.bits = 32;
-				wavDecode = wavDecode32Bit;
-			}
-			else
-			{
-				// more than 32bit sound, not supported
-				fatfs_close(soundData.filePointerStructFD->cur_entry.d_ino);
-				return SRC_NONE;	
-			}
-			
-			//rewind
-			soundData.filePointerStructFD->loc = 0; fatfs_lseek(soundData.filePointerStructFD->cur_entry.d_ino, soundData.filePointerStructFD->loc, SEEK_SET);
-			int wavStartOffset = parseWaveData(soundData.filePointerStructFD, (u32)(0x64617461));	//Seek for ASCII "data" and return 4 bytes after that: Waveform length (4 bytes), then 
-																		//4 bytes after that the raw Waveform
-			
-			if(wavStartOffset == -1)
-			{
-				// wav block not found
-				fatfs_close(soundData.filePointerStructFD->cur_entry.d_ino);
-				return SRC_NONE;
-			}
-			
-			soundData.filePointerStructFD->loc = 0;
-			
-			u32 len = 0;
-			//data section not found, use filesize as size...
-			if(wavStartOffset == -2)
-			{
-				len = FS_getFileSizeFromOpenStructFD(soundData.filePointerStructFD);
-				wavStartOffset = 96;	//Assume header size: 96 bytes
-			}
-			else{
-				soundData.filePointerStructFD->loc = wavStartOffset; fatfs_lseek(soundData.filePointerStructFD->cur_entry.d_ino, soundData.filePointerStructFD->loc, SEEK_SET);
-				read = fatfs_read(soundData.filePointerStructFD->cur_entry.d_ino, (u8*)&len, sizeof(len)); //fread(&len, 1, sizeof(len), fp);
-				soundData.filePointerStructFD->loc += (read); fatfs_lseek(soundData.filePointerStructFD->cur_entry.d_ino, soundData.filePointerStructFD->loc, SEEK_SET);
-				wavStartOffset+=4;
-			}
-			
-			soundData.filePointerStructFD->loc = wavStartOffset;	//not really used, but kept anyway. WAV decoding reads from soundData.loc
-			soundData.len = len;
-			soundData.loc = 0;
-			soundData.dataOffset = wavStartOffset;	
-			soundData.filePointer = getPosixFileHandleByStructFD(soundData.filePointerStructFD, "r");
-			bufCursor = 0;
-			
-			setSoundInterpolation(1);
-			setSoundFrequency(headerChunk.dwSamplesPerSec);
-			
-			setSoundLength(WAV_READ_SIZE);		
-			mallocData(WAV_READ_SIZE);
-			
-			memoryContents = NULL;
-			wavDecode();
-			startSound9(sourceBuf);
-			internalCodecType = SRC_WAV;
-			return SRC_WAV;
-		}
-		if(headerChunk.wFormatTag == WAVE_FORMAT_IMA_ADPCM){
-		
-			//If ADPCM do not close the file handle because it was initialized earlier
-			return SRC_WAVADPCM;
-		}	
-		fatfs_close(soundData.filePointerStructFD->cur_entry.d_ino);
+
+		//ok both .wav / .ima detected properly here
 	}
 	
-	return SRC_NONE;
+	//fatfs_close(soundData.filePointerStructFD->cur_entry.d_ino); //can't close yet, because the decoder may rely on an existing struct fd* audio stream context, or not. This is decided later.
+	return soundData.sourceFmt;
 }
 
 #endif

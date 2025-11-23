@@ -134,7 +134,7 @@ void initDLDISnemulDS(char * snesFileName) {
 
 				//copy fileOut.tvs to disk image
 				int tgdsfd = -1;
-				//int res = TGDSFSUserfatfs_open_file("0:/fileOut.tvs", "w+", &tgdsfd);
+				//int res = TGDSFSUserfatfs_open_file("0:/fileOut.tvs", "w+");
 				//if(res >= 0){
 				//	struct fd * fdOpened = getStructFD(tgdsfd);
 				//	//char bufferTestToRead[512];
@@ -152,7 +152,7 @@ void initDLDISnemulDS(char * snesFileName) {
 				tgdsfd = -1;
 				char * tvsFile = "0:/Mega Man X3 (USA).sfc";
 
-				fatfs_open_fileIntoTargetStructFD(tvsFile, "r", &tgdsfd, NULL);
+				fatfs_open_fileIntoTargetStructFD(tvsFile, "r", NULL);
 				videoHandleFD = getStructFD(tgdsfd);
 				
 				if (videoHandleFD != NULL) {

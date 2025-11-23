@@ -124,7 +124,7 @@ public:
 	void setvolume( int vol );
 	int getvolume();
 	bool isactive();
-	int i_stream_request( int length, void * dest, int frmt );
+	int i_stream_request( int length, void * dest );
 	IMA_Adpcm_Stream * getStream();
 	// update function for manual filling
 	void update();
@@ -135,9 +135,8 @@ public:
 
 #ifdef __cplusplus
 extern "C" {
-extern int on_stream_request( int length, void* dest, int format );
+extern int on_stream_request( int length, void* dest );
 extern IMA_Adpcm_Player player;	//Actual PLAYER Instance. See ima_adpcm.cpp -> [PLAYER: section
-
 #endif
 
 extern int ADPCMchunksize;
@@ -149,7 +148,7 @@ extern void swapData();
 extern bool player_loop;
 extern void soundPauseStart();
 
-extern void IMAADPCMDecode();
+extern void WAV_IMAADPCM_Decoder();
 
 #ifdef __cplusplus
 }

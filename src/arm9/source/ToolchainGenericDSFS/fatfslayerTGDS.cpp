@@ -1640,8 +1640,7 @@ int fatfs_closeDirectStructFD(struct fd * pfd){
 
 
 //Maps a new struct fd / Creates filehandles when opening a new file
-//if int * tgdsfd is -2, means a direct struct fd was used instead of allocating a new one
-int fatfs_open_fileIntoTargetStructFD(const sint8 *pathname, char * posixFlags, int * tgdsfd, struct fd * directStructFD){
+int fatfs_open_fileIntoTargetStructFD(const sint8 *pathname, char * posixFlags, struct fd * directStructFD){
 	BYTE mode;
 	FRESULT result;
 	struct fd * fdinst = NULL;
@@ -1666,7 +1665,7 @@ int fatfs_open_fileIntoTargetStructFD(const sint8 *pathname, char * posixFlags, 
 		fdinst->dirPtr	= NULL;
 		fdinst->StructFDType = FT_FILE;
 	}
-	if ((fdinst == NULL) || (isNotNullString((const char *)pathname) == false) || (isNotNullString((const char *)posixFlags) == false) || (tgdsfd == NULL) ){
+	if ((fdinst == NULL) || (isNotNullString((const char *)pathname) == false) || (isNotNullString((const char *)posixFlags) == false) ){
 		result = FR_TOO_MANY_OPEN_FILES;
     }
 	else{
@@ -1688,7 +1687,6 @@ int fatfs_open_fileIntoTargetStructFD(const sint8 *pathname, char * posixFlags, 
 			if ((result == FR_OK) && (TGDSFS_detectUnicode(fdinst) == true)){
 				//Update struct fd with new FIL
 				initStructFDHandle(fdinst, flags, &fno_after, structFDIndex, FT_FILE);
-				*tgdsfd = structFDIndex;
 		
 				//copy full file path (posix <- fatfs)
 				int topsize = strlen(pathname)+1;
@@ -2616,9 +2614,9 @@ int TGDSFSUserfatfs_close(struct fd * tgdsfd){
 }
 
 //returns an internal index struct fd allocated. Requires DLDI enabled
-int TGDSFSUserfatfs_open_file(const sint8 *pathname, char * posixFlags, int * tgdsfd){
+int TGDSFSUserfatfs_open_file(const sint8 *pathname, char * posixFlags){
 	//Copies newly alloced struct fd / Creates duplicate filehandles when opening a new file
-	return fatfs_open_fileIntoTargetStructFD(pathname, posixFlags, tgdsfd, NULL);
+	return fatfs_open_fileIntoTargetStructFD(pathname, posixFlags, NULL);
 }
 
 long TGDSFSUserfatfs_tell(struct fd *f){	//NULL check already outside
@@ -2636,8 +2634,8 @@ bool openDualTGDSFileHandleFromFile(char * filenameToOpen, int * tgdsStructFD1, 
 
 	if( (isNotNullString((const char *)filenameToOpen) == true) && (tgdsStructFD1 != NULL) && (tgdsStructFD2 != NULL) ){
 		//Test case for 2 file handles out a single file
-		int retStatus1 = TGDSFSUserfatfs_open_file((const sint8 *)filenameToOpen, (char *)"r", tgdsStructFD1);	//returns structFD Video File Handle as posix file descriptor (int fd) and struct fd *
-		int retStatus2 = TGDSFSUserfatfs_open_file((const sint8 *)filenameToOpen, (char *)"r", tgdsStructFD2);	//returns structFD Audio File Handle as posix file descriptor (int fd) and struct fd *
+		int retStatus1 = TGDSFSUserfatfs_open_file((const sint8 *)filenameToOpen, (char *)"r");	//returns structFD Video File Handle as posix file descriptor (int fd) and struct fd *
+		int retStatus2 = TGDSFSUserfatfs_open_file((const sint8 *)filenameToOpen, (char *)"r");	//returns structFD Audio File Handle as posix file descriptor (int fd) and struct fd *
 		
 		*tgdsStructFD1 = retStatus1;
 		*tgdsStructFD2 = retStatus2;

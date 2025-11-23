@@ -435,7 +435,7 @@ extern bool setFileClassObj(int FileClassListIndex, struct FileClass * FileClass
 extern int TGDSFSUserfatfs_write(u8 *ptr, int len, int offst, struct fd *tgdsfd);
 extern int TGDSFSUserfatfs_read(u8 *ptr, int len, int offst, struct fd *tgdsfd);
 extern int TGDSFSUserfatfs_close(struct fd * tgdsfd);
-extern int TGDSFSUserfatfs_open_file(const sint8 *pathname, char * posixFlags, int * tgdsfd);
+extern int TGDSFSUserfatfs_open_file(const sint8 *pathname, char * posixFlags); //ret : TGDS filedescriptor index
 extern off_t TGDSFSUserfatfs_lseek(struct fd *pfd, off_t offset, int whence);
 extern long TGDSFSUserfatfs_tell(struct fd *f);
 
@@ -451,7 +451,7 @@ extern int ARM7FS_WriteBuffer_ARM9ImplementationTGDSFD(u8 * inBuffer, int fileOf
 ///////////////////////////////////////////////TGDS FileDescriptor Callbacks Implementation End ///////////////////////////////////////////////
 
 //direct structFD
-extern int fatfs_open_fileIntoTargetStructFD(const sint8 *pathname, char * posixFlags, int * tgdsfd, struct fd * directStructFD);	//Copies newly alloced struct fd / Creates duplicate filehandles when opening a new file
+extern int fatfs_open_fileIntoTargetStructFD(const sint8 *pathname, char * posixFlags, struct fd * directStructFD);	//Copies newly alloced struct fd / Creates duplicate filehandles when opening a new file
 extern int fatfs_readDirectStructFD(struct fd * pfd, u8 *ptr, int len);
 extern int fatfs_closeDirectStructFD(struct fd * pfd);
 extern int fatfs_seekDirectStructFD(struct fd * pfd, int offst);
