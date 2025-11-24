@@ -351,92 +351,80 @@ __attribute__ ((optnone))
 int getWavLength(char *fName){
 	wavFormatChunk headerChunk;	
 	char header[13];
-	u32 len = 0;
 	
 	FILE *fp = fopen(fName, "r");
-	if(fp != NULL){
-		fread(header, 1, 12, fp);
-		
-		header[12] = 0;
-		header[4] = ' ';
-		header[5] = ' ';
-		header[6] = ' ';
-		header[7] = ' ';
-		
-		if(strcmp(header, "RIFF    WAVE") != 0)
-		{
-			// wrong header
-			
-			fclose(fp);
-			return -1;
-		}
-		
-		fread(&headerChunk, 1, sizeof(wavFormatChunk), fp);
-		
-		if(strncmp(headerChunk.chunkID, "fmt ", 4) != 0)
-		{
-			// wrong chunk at beginning
-			
-			fclose(fp);
-			return -1;
-		}
-		
-		if(headerChunk.wFormatTag != 1)
-		{
-			// compression used, hell no to loading this
-			
-			fclose(fp);
-			return -1;
-		}
-		
-		if(headerChunk.wChannels > 2)
-		{
-			// more than 2 channels.... uh no!
-			
-			fclose(fp);
-			return -1;
-		}
-		
-		//rewind
-		int structFD = fileno(fp);
-		struct fd * fdinst=getStructFD(structFD);
-		fseek(fp, 0, SEEK_SET);
-		f_lseek(fdinst->filPtr, 0);
-		int wavStartOffset = parseWaveData(fdinst, (u32)(0x64617461));	//Seek for ASCII "data" and return 4 bytes after that: Waveform length (4 bytes), then 
-																	//4 bytes after that the raw Waveform
-		
-		if(wavStartOffset < 0)
-		{
-			// wav block not found
-			fclose(fp);
-			return false;
-		}
-		fseek(fp, wavStartOffset, SEEK_SET);
-		u32 len = 0;
-		fread(&len, 1, sizeof(len), fp);
-		wavStartOffset+=4;
-		
-		if(headerChunk.wBitsPerSample <= 8)
-		{
-			headerChunk.wBitsPerSample = 8;
-		}
-		else if(headerChunk.wBitsPerSample <= 16)
-		{
-			headerChunk.wBitsPerSample = 16;
-		}
-		else if(headerChunk.wBitsPerSample <= 24)
-		{
-			headerChunk.wBitsPerSample = 24;
-		}
-		else if(headerChunk.wBitsPerSample <= 32)
-		{
-			headerChunk.wBitsPerSample = 32;
-		}
-			
-		fclose(fp);
-		len /= ((headerChunk.wBitsPerSample >> 3) * headerChunk.wChannels * headerChunk.dwSamplesPerSec);
-	}	
+	fread(header, 1, 12, fp);
 	
+	header[12] = 0;
+	header[4] = ' ';
+	header[5] = ' ';
+	header[6] = ' ';
+	header[7] = ' ';
+	
+	if(strcmp(header, "RIFF    WAVE") != 0)
+	{
+		// wrong header
+		fclose(fp);
+		return -1;
+	}
+	
+	fread(&headerChunk, 1, sizeof(wavFormatChunk), fp);
+	
+	if(strncmp(headerChunk.chunkID, "fmt ", 4) != 0)
+	{
+		// wrong chunk at beginning
+		fclose(fp);
+		return -1;
+	}
+	
+	if(headerChunk.wFormatTag != 1)
+	{
+		// compression used, hell no to loading this
+		fclose(fp);
+		return -1;
+	}
+	
+	if(headerChunk.wChannels > 2)
+	{
+		// more than 2 channels.... uh no!
+		fclose(fp);
+		return -1;
+	}
+	
+	fseek(fp, (headerChunk.chunkSize + 8) + 12, SEEK_SET); // seek to next chunk
+	
+	char fmtHeader[5];
+	fread(fmtHeader, 1, 4, fp);
+	fmtHeader[4] = 0;
+	
+	if(strcmp(fmtHeader, "data") != 0)
+	{
+		// wrong chunk next, sorry, doing strict only
+		fclose(fp);
+		return -1;
+	}
+	
+	if(headerChunk.wBitsPerSample <= 8)
+	{
+		headerChunk.wBitsPerSample = 8;
+	}
+	else if(headerChunk.wBitsPerSample <= 16)
+	{
+		headerChunk.wBitsPerSample = 16;
+	}
+	else if(headerChunk.wBitsPerSample <= 24)
+	{
+		headerChunk.wBitsPerSample = 24;
+	}
+	else if(headerChunk.wBitsPerSample <= 32)
+	{
+		headerChunk.wBitsPerSample = 32;
+	}
+	
+	u32 len = 0;
+	fread(&len, 1, 4, fp);	
+	fclose(fp);
+	len /= ((headerChunk.wBitsPerSample >> 3) * headerChunk.wChannels * headerChunk.dwSamplesPerSec);
 	return (int)len;
 }
 
