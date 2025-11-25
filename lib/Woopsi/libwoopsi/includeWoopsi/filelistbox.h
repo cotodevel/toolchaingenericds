@@ -115,6 +115,14 @@ namespace WoopsiUI {
 		};
 
 		/**
+		 * Get option by index.
+		 * @return The option by index.
+		 */
+		virtual inline const FileListBoxDataItem* getOptionByIndex(s32 index) const {
+			return (const FileListBoxDataItem*)_listbox->getOptionByIndex(index);
+		};
+
+		/**
 		 * Sets whether multiple selections are possible or not.
 		 * @param allowMultipleSelections True to allow multiple selections.
 		 */
