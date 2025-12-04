@@ -160,12 +160,10 @@ __attribute__ ((optnone))
 #endif
 int IMA_Adpcm_Stream::stream( s16 *target, int length )
 {
-	/*
 	if( format == WAV_FORMAT_PCM )
 		return stream_pcm( target, length );
 	else
-	*/
-	return decode_ima( target, length );
+		return decode_ima( target, length );
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -536,8 +534,8 @@ __attribute__((optimize("O0")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-int on_stream_request( int length, void* dest, int format )	{
-	return player.i_stream_request( length, dest, format );
+int on_stream_request( int length, void* dest )	{
+	return player.i_stream_request( length, dest );
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -598,12 +596,11 @@ int IMA_Adpcm_Player::play( FILE * ADFileHandle, bool loop_audio, bool automatic
 	
 	setSoundInterpolation(1);
 	setSoundFrequency(headerChunk.dwSamplesPerSec);
-	setWavDecodeCallback(IMAADPCMDecode);
+	setWavDecodeCallback(WAV_IMAADPCM_Decoder);
 	setSoundLength(ADPCMchunksize);		
 	mallocData(ADPCMchunksize*2);
-	IMAADPCMDecode();
-	soundData.sourceFmt = SRC_WAV;
-	internalCodecType = SRC_WAVADPCM;
+	wavDecode();
+	internalCodecType = soundData.sourceFmt = SRC_WAVADPCM;
 	startSound9(sourceBuf);
 	return 0;
 }
@@ -697,7 +694,7 @@ __attribute__((optimize("O0")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-int IMA_Adpcm_Player::i_stream_request( int length, void * dest, int format ){
+int IMA_Adpcm_Player::i_stream_request( int length, void * dest){
 	if( !paused ) {
 		if( !stream.stream( (s16*)dest, length ))
 		{
@@ -736,8 +733,9 @@ __attribute__((optimize("O0")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-void IMAADPCMDecode(){
-	player.i_stream_request(ADPCMchunksize, (void*)&tmpData[0], WAV_FORMAT_IMA_ADPCM);
+void WAV_IMAADPCM_Decoder(){
+
+	player.i_stream_request(ADPCMchunksize, (void*)&tmpData[0]);
 	coherent_user_range((uint32)tmpData, (uint32)(ADPCMchunksize* 2 * ADPCMchannels));
 	if(soundData.channels == 2)
 	{

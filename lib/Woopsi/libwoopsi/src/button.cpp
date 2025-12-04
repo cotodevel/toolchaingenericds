@@ -72,3 +72,9 @@ void Button::onRelease(s16 x, s16 y) {
 void Button::onReleaseOutside(s16 x, s16 y) {
 	redraw();
 }
+
+void Button::ClickButton() {
+	int x = getX() + 1;
+	int y = getY() + 1;
+	click(x, y);
+}

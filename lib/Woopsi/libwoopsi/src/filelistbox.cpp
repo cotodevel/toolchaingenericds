@@ -19,8 +19,8 @@
 
 using namespace WoopsiUI;
 
-FileListBox::FileListBox(s16 x, s16 y, u16 width, u16 height, u32 flags, GadgetStyle* style) : Gadget(x, y, width, height, flags, style) {
-
+FileListBox::FileListBox(s16 x, s16 y, u16 width, u16 height, u32 flags, GadgetStyle* style, WoopsiString extensionsSupported) : Gadget(x, y, width, height, flags, style) {
+	_extensionsSupported = extensionsSupported;
 	_path = NULL;
 
 	setBorderless(true);
@@ -229,6 +229,36 @@ void FileListBox::readDirectory() {
 	//Sort list alphabetically
 	bool ignoreFirstFileClass = true;
 	sortFileClassListAsc(fileClassListCtx, ignoreFirstFileClass);
+	
+	//Optional: Iterate files provided by extensions
+	if(_extensionsSupported.getLength() > 0){
+		//Only iterate files provided by extensions
+		char extListTemp[MAX_TGDSFILENAME_LENGTH];
+		_extensionsSupported.copyToCharArray(extListTemp);
+		
+		struct FileClassList * activePlayListRead = initFileList();
+		cleanFileList(activePlayListRead);
+		
+		int itemsFound = buildFileClassByExtensionFromList(fileClassListCtx, activePlayListRead, extListTemp);
+		//activePlayListRead->FileDirCount--; //skipping the first item pushed before
+		
+		//Sort list alphabetically
+		bool ignoreFirstFileClass = true;
+		sortFileClassListAsc(activePlayListRead, ignoreFirstFileClass);
+		
+		//Clear target list
+		cleanFileList(fileClassListCtx);
+		
+		//Update list
+		int j = 0;
+		for(j = 0; j < activePlayListRead->FileDirCount; j++){
+			FileClass * curFile = (FileClass *)&activePlayListRead->fileList[j];
+			pushEntryToFileClassList(true, curFile->fd_namefullPath, curFile->type, -1, fileClassListCtx);
+		}
+
+		//Free TGDS Dir API context
+		freeFileList(activePlayListRead);
+	}
 
 	int i = 0;
 	int fileClassListSize = getCurrentDirectoryCount(fileClassListCtx) + 1;

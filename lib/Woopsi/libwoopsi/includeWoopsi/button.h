@@ -16,6 +16,11 @@ namespace WoopsiUI {
 	public:
 
 		/**
+		 * Raise a button click.
+		 */
+		virtual void ClickButton();
+
+		/**
 		 * Constructor for buttons that display a string.
 		 * @param x The x co-ordinate of the button, relative to its parent.
 		 * @param y The y co-ordinate of the button, relative to its parent.

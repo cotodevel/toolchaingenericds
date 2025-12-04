@@ -1,12 +1,6 @@
 ![ToolchainGenericDS](img/TGDS-Logo.png)
 
-ToolchainGenericDS SDK for NintendoDS (NTR) / Nintendo DSi (NTR and TWL) / Nintendo 3DS (NTR and TWL):
-Environment: Windows GCC 4.9.3 ARM-EABI / Linux GCC 4.9.1 ARM-EABI to build Newlib 2.1 for Nintendo DS, and ToolchainGenericDS.
-OS Support: 
-- Windows 7+ (x86 or x64)
-- Linux: Ubuntu / Xubuntu / Kubuntu 20.04+ .
-- WSL2 Ubuntu 20.04+ on Windows 10
-- Mac is untested
+ToolchainGenericDS SDK (GCC 4.9.3 ARM-EABI + Newlib 2.1) for NintendoDS (NTR) / Nintendo DSi (NTR and TWL) / Nintendo 3DS (NTR and TWL).
 
 ---------------------------------------------
 [Building the devkit]:

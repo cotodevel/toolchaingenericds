@@ -7,7 +7,7 @@
 
 using namespace WoopsiUI;
 
-FileRequester::FileRequester(s16 x, s16 y, u16 width, u16 height, const WoopsiString& title, const WoopsiString& path, u32 flags, GadgetStyle* style) : AmigaWindow(x, y, width, height, title, flags, AMIGA_WINDOW_SHOW_DEPTH, style) {
+FileRequester::FileRequester(s16 x, s16 y, u16 width, u16 height, const WoopsiString& title, const WoopsiString& path, u32 flags, GadgetStyle* style, WoopsiString extensionsSupported) : AmigaWindow(x, y, width, height, title, flags, AMIGA_WINDOW_SHOW_DEPTH, style) {
 
 	// Increase the size of the border to leave space between gadgets and the 
 	// border decorations
@@ -51,8 +51,8 @@ FileRequester::FileRequester(s16 x, s16 y, u16 width, u16 height, const WoopsiSt
 	listboxRect.x = rect.x;
 	listboxRect.y = rect.y;
 
-	// Create list box
-	_listbox = new FileListBox(listboxRect.x, listboxRect.y, listboxRect.width, listboxRect.height, 0, style);
+	// Create list box (here implement handler)
+	_listbox = new FileListBox(listboxRect.x, listboxRect.y, listboxRect.width, listboxRect.height, 0, style, extensionsSupported);
 	_listbox->addGadgetEventHandler(this);
 	_listbox->setAllowMultipleSelections(false);
 	_listbox->setPath(path);
@@ -96,13 +96,13 @@ void FileRequester::onResize(u16 width, u16 height) {
 void FileRequester::handleReleaseEvent(const GadgetEventArgs& e) {
 	if (e.getSource() != NULL) {
 		if (e.getSource() == _cancelButton) {
-
+			// Raise value changed event to event handler (otherwise Cancel button does not work from FileRequester)
+			_gadgetEventHandlers->raiseValueChangeEvent();
 			// Close the window
 			//close();
 			return;
 		} else if (e.getSource() == _okButton) {
-
-			// Raise value changed event to event handler
+			// Raise value changed event to event handler (otherwise OK button does not work from FileRequester)
 			_gadgetEventHandlers->raiseValueChangeEvent();
 
 			// Close the window

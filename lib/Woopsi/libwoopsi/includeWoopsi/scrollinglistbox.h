@@ -131,6 +131,14 @@ namespace WoopsiUI {
 		};
 		
 		/**
+		 * Get option by index.
+		 * @return The option by index.
+		 */
+		virtual inline const ListBoxDataItem* getOptionByIndex(s32 index) const {
+			return _listbox->getOption(index);
+		};
+
+		/**
 		 * Sets whether multiple selections are possible or not.
 		 * @param allowMultipleSelections True to allow multiple selections.
 		 */
@@ -256,6 +264,14 @@ namespace WoopsiUI {
 		 * @param rect Reference to a rect to populate with data.
 		 */
 		virtual void getPreferredDimensions(Rect& rect) const;
+
+		/**
+		 * Expose the ScrollbarVertical object.
+		 * @return the ScrollbarVertical object.
+		 */
+		virtual inline ScrollbarVertical* getInternalScrollbarVerticalObject() const {
+			return _scrollbar;
+		};
 
 	protected:
 		ListBox* _listbox;									/**< Pointer to the list box. */

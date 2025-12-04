@@ -223,7 +223,6 @@ extern u32 sndCursor;
 extern u32 micBufLoc;
 extern u32 sampleLen;
 extern int sndRate;
-extern void freeData();
 extern void setSwapChannel();
 extern void setupSound(uint32 sourceBuf);
 extern void mallocDataARM7(int size, uint16* sourceBuf);
@@ -233,6 +232,7 @@ extern void initSound();
 extern void stopSound();
 
 #ifdef ARM9
+extern bool soundLoaded;
 extern void mallocData(int size);
 
 //weak symbols : the implementation of these is project-defined, also abstracted from the hardware IPC FIFO Implementation for easier programming.
@@ -244,14 +244,12 @@ extern     bool stopSoundStreamUser();	//abstracts an user class when closing an
 //Stream Sound controls
 extern void closeSound();
 extern void initComplexSound();
-extern void setSoundInterrupt();
 extern void setSoundFrequency(u32 freq);
 extern void setSoundLength(u32 len);
 extern int getVolume();
 extern void setVolume(int volume);
 extern void volumeUp(int x, int y);
 extern void volumeDown(int x, int y);
-extern bool soundLoaded;
 extern char *strlwr(char *str);
 extern void swapAndSend(u32 type);
 extern int getSoundLength();
@@ -261,8 +259,7 @@ extern int getSoundLength();
 extern void TIMER1Handler();
 
 #ifdef ARM9
-extern int initSoundStream(char * audioStreamFilename, uint32 sourceBuf);
-extern int initSoundStreamFromStructFD(struct fd * _FileHandleAudio, char * ext, uint32 sourceBuf);
+extern int initSoundStreamFromStructFD(struct fd * _FileHandleAudio, uint32 sourceBuf);
 extern void setWavDecodeCallback(void (*cb)());
 
 extern int parseWaveData(struct fd * fdinst, u32 u32chunkToSeek);
@@ -270,11 +267,7 @@ extern void setSoundLength(u32 len);
 extern void setSoundFrequency(u32 freq);
 extern void setSoundInterpolation(u32 mult);
 extern void setSoundFrequency(u32 freq);
-
 extern bool updateRequested;
-extern bool soundLoaded;
-extern bool canSend;
-
 extern int bufCursor;
 extern int bytesLeft;
 extern s16 *bytesLeftBuf;
@@ -301,12 +294,7 @@ extern void (*wavDecode)();
 extern int m_SIWRAM;
 extern int m_size;
 
-extern void wavDecode8Bit();
-extern void wavDecode16Bit();
-extern void wavDecode24Bit();
-extern void wavDecode32Bit();
 extern void updateStream();
-extern void freeSound();
 extern void startSound9(uint32 sourceBuf);
 
 //Usercode: Opens a .WAV or IMA-ADPCM (Intel) file and begins to stream it.
