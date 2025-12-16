@@ -24,6 +24,7 @@ USA
 #include "ipcfifoTGDS.h"
 #include "InterruptsARMCores_h.h"
 #include "biosTGDS.h"
+#include "dmaTGDS.h"
 #include "debugNocash.h"
 #include "dldi.h"
 #include "exceptionTGDS.h"
@@ -319,11 +320,11 @@ bool TGDSMultibootRunNDSPayload(char * filename, u8 * tgdsMbv3ARM7Bootldr, int a
 		//NTR TGDS-MB v3 compatibility
 		if(__dsimode == false){
 			//Execute Stage 1: IWRAM ARM7 payload: NTR/TWL (0x03800000)
-			executeARM7Payload((u32)0x02380000, 96*1024, TGDS_MB_V3_ARM7_STAGE1_ADDR);
+			executeARM7Payload((u32)0x02380000, 96*1024, (u32 *)TGDS_MB_V3_ARM7_STAGE1_ADDR);
 		}
 
 		//Save Stage 2: VRAM ARM7 payload: NTR/TWL (0x06000000). To be ran on the upcoming TGDS-MB v3 ARM9 bootstrap core.
-		memcpy(TGDS_MB_V3_ARM7_STAGE1_ADDR, tgdsMbv3ARM7Bootldr, 96*1024);
+		memcpy((u32 *)TGDS_MB_V3_ARM7_STAGE1_ADDR, tgdsMbv3ARM7Bootldr, 96*1024);
 
 		//rudimentary debugger
 		//initFBModeMainEngine0x06000000();
@@ -437,11 +438,11 @@ bool TGDSMultibootRunNDSPayload(char * filename, u8 * tgdsMbv3ARM7Bootldr, int a
 			int	tgds_multiboot_payload_size = FS_getFileSizeFromOpenHandle(tgdsPayloadFh);
 			u8 * TGDSMBPAYLOADLZSSCompressed = TGDSARM9Malloc(tgds_multiboot_payload_size);
 			fread((u32*)TGDSMBPAYLOADLZSSCompressed, 1, tgds_multiboot_payload_size, tgdsPayloadFh); //NTR = read into uncached mirror / TWL = read into uncached memory
-			coherent_user_range_by_size(TGDSMBPAYLOADLZSSCompressed, (int)tgds_multiboot_payload_size);
+			coherent_user_range_by_size((uint32)TGDSMBPAYLOADLZSSCompressed, (int)tgds_multiboot_payload_size);
 			fclose(tgdsPayloadFh);
 			int decompressed_tgds_multiboot_payload_size = *(unsigned int *)(TGDSMBPAYLOADLZSSCompressed) >> 8;
 			swiDecompressLZSSWram((u8*)TGDSMBPAYLOADLZSSCompressed, (u8*)TGDS_MB_V3_PAYLOAD_ADDR_TWL);
-			coherent_user_range_by_size(TGDS_MB_V3_PAYLOAD_ADDR_TWL, (int)decompressed_tgds_multiboot_payload_size);
+			coherent_user_range_by_size((uint32)TGDS_MB_V3_PAYLOAD_ADDR_TWL, (int)decompressed_tgds_multiboot_payload_size);
 			TGDSARM9Free(TGDSMBPAYLOADLZSSCompressed);
 			FS_deinit();
 			
