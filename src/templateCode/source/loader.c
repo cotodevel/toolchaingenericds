@@ -179,7 +179,7 @@ int isNTROrTWLBinaryTGDSShared(u8 * NDSHeaderStructInst, u8 * passmeRead, u32 * 
 		//(gotDLDISection == true) //some homebrew may have the DLDI section stripped (such as barebones demos without filesystem at the time the translation unit built the ARM9 payload)
 	){
 		mode = isTWLBinary;
-		*ARM7i_HEADER_SCFG_EXT7Inst = *(u32*)NDSHeaderStructInst[0x1B8];	//0x1B8h 4    ARM7 SCFG_EXT7 setting (bit0,1,2,10,18,31)
+		*ARM7i_HEADER_SCFG_EXT7Inst = *(u32*)&NDSHeaderStructInst[0x1B8];	//0x1B8h 4    ARM7 SCFG_EXT7 setting (bit0,1,2,10,18,31)
 	}
 	
 	//Check for Headerless NTR binary (2004 homebrew on custom devkits, or custom devkits overall)
