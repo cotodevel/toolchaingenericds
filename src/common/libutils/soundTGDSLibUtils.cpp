@@ -182,18 +182,6 @@ __attribute__((section(".dtcm")))
 bool soundLoaded = false;
 
 __attribute__((section(".dtcm")))
-int bufCursor;
-
-__attribute__((section(".dtcm")))
-int bytesLeft = 0;
-
-__attribute__((section(".dtcm")))
-s16 *bytesLeftBuf = NULL;
-
-__attribute__((section(".dtcm")))
-int maxBytes = 0;
-
-__attribute__((section(".dtcm")))
 bool cutOff = false;	//used to detect if audio stream has ended
 
 __attribute__((section(".dtcm")))
@@ -365,7 +353,6 @@ __attribute__ ((optnone))
 void initComplexSound() {
 	soundData.sourceFmt = SRC_NONE;
 	soundData.filePointer = NULL;
-	setVolume(4);	//Default volume
 }
 
 void setSoundFrequency(u32 freq)
@@ -487,11 +474,11 @@ __attribute__ ((optnone))
 #endif
 void setVolume(int volume) 
 {
-	if(volume > 8){
-		volume = 8;
+	if(volume > SoundSampleContext_max_volume){
+		volume = SoundSampleContext_max_volume;
 	}
-	if(volume < 1){
-		volume = 1;
+	if(volume < SoundSampleContext_min_volume){
+		volume = SoundSampleContext_min_volume;
 	}
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 	
 	coherent_user_range_by_size((uint32)&TGDSIPC->soundIPC, sizeof(TGDSIPC->soundIPC));
@@ -504,7 +491,7 @@ __attribute__((optimize("O0")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-void volumeUp(int x, int y) 
+void volumeUp() 
 {
 	setVolume(getVolume() + 1);
 }
@@ -515,7 +502,7 @@ __attribute__((optimize("O0")))
 #if (!defined(__GNUC__) && defined(__clang__))
 __attribute__ ((optnone))
 #endif
-void volumeDown(int x, int y) 
+void volumeDown() 
 {
 	setVolume(getVolume() - 1);
 }
