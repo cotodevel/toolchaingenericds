@@ -65,6 +65,8 @@ USA
 #include <unistd.h>
 #endif
 
+#define SoundSampleContext_min_volume (int)(1)
+#define SoundSampleContext_max_volume (int)(8)
 #define SoundSampleContextChannels (int)(16)
 
 //Hardware Channels used by soundStream playback
@@ -218,7 +220,7 @@ extern s16 *strpcmR1;
 extern int lastL;
 extern int lastR;
 extern int multRate;
-extern int pollCount; //start with a read
+
 extern u32 sndCursor;
 extern u32 micBufLoc;
 extern u32 sampleLen;
@@ -226,6 +228,11 @@ extern int sndRate;
 extern void setSwapChannel();
 extern void setupSound(uint32 sourceBuf);
 extern void mallocDataARM7(int size, uint16* sourceBuf);
+
+extern s16 *strpcmL0;
+extern s16 *strpcmL1;
+extern s16 *strpcmR0;
+extern s16 *strpcmR1;
 #endif
 
 extern void initSound();
@@ -248,12 +255,11 @@ extern void setSoundFrequency(u32 freq);
 extern void setSoundLength(u32 len);
 extern int getVolume();
 extern void setVolume(int volume);
-extern void volumeUp(int x, int y);
-extern void volumeDown(int x, int y);
+extern void volumeUp();
+extern void volumeDown();
 extern char *strlwr(char *str);
 extern void swapAndSend(u32 type);
 extern int getSoundLength();
-
 #endif
 
 extern void TIMER1Handler();
@@ -261,35 +267,27 @@ extern void TIMER1Handler();
 #ifdef ARM9
 extern int initSoundStreamFromStructFD(struct fd * _FileHandleAudio, uint32 sourceBuf);
 extern void setWavDecodeCallback(void (*cb)());
-
 extern int parseWaveData(struct fd * fdinst, u32 u32chunkToSeek);
 extern void setSoundLength(u32 len);
 extern void setSoundFrequency(u32 freq);
 extern void setSoundInterpolation(u32 mult);
 extern void setSoundFrequency(u32 freq);
 extern bool updateRequested;
-extern int bufCursor;
-extern int bytesLeft;
-extern s16 *bytesLeftBuf;
-extern int maxBytes;
-
 extern bool cutOff;
 extern bool sndPaused;
 extern bool playing;
 extern bool seekSpecial;
-extern bool updateRequested;
 extern int sndLen;
 extern int seekUpdate;
+extern struct soundPlayerContext soundData;
 
 // sound out
 extern s16 *lBuffer;
 extern s16 *rBuffer;
 
-// wav
-extern char *memoryContents;
-extern u32 memoryPos;
-extern u32 memorySize;
+// adpcm / wav
 extern void (*wavDecode)();
+
 // alternate malloc stuff
 extern int m_SIWRAM;
 extern int m_size;

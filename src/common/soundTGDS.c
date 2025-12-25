@@ -24,7 +24,26 @@ USA
 #include "utilsTGDS.h"
 #include "biosTGDS.h"
 
+#ifdef ARM7
+s16 *strpcmL0 = NULL;
+s16 *strpcmL1 = NULL;
+s16 *strpcmR0 = NULL;
+s16 *strpcmR1 = NULL;
+int lastL = 0;
+int lastR = 0;
+int multRate = 1;
+u32 sndCursor = 0;
+u32 micBufLoc = 0;
+u32 sampleLen = 0;
+int sndRate = 0;
+#endif
+
 #ifdef ARM9
+bool updateRequested = false;
+
+__attribute__((section(".dtcm")))
+struct soundPlayerContext soundData;
+
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("Os")))
 #endif

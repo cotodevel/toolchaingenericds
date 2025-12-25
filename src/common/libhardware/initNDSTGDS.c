@@ -174,7 +174,6 @@ void initHardware(u8 DSHardware) {
 		}
 		TGDSInitLoopCount++;
 	}
-	
 	#endif
 	
 	handleARM7InitSVC();
@@ -231,6 +230,7 @@ void initHardware(u8 DSHardware) {
 	setTouchScreenEnabled(true);
 	
 	handleARM9InitSVC();
+	setVolume(4);	//SoundContext: Initial default volume
 	#endif
 	
 	savedDSHardware = (u32)DSHardware; //Global DS Firmware ARM7/ARM9
