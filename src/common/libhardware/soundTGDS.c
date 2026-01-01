@@ -24,7 +24,26 @@ USA
 #include "utilsTGDS.h"
 #include "biosTGDS.h"
 
+#ifdef ARM7
+s16 *strpcmL0 = NULL;
+s16 *strpcmL1 = NULL;
+s16 *strpcmR0 = NULL;
+s16 *strpcmR1 = NULL;
+int lastL = 0;
+int lastR = 0;
+int multRate = 1;
+u32 sndCursor = 0;
+u32 micBufLoc = 0;
+u32 sampleLen = 0;
+int sndRate = 0;
+#endif
+
 #ifdef ARM9
+bool updateRequested = false;
+
+__attribute__((section(".dtcm")))
+struct soundPlayerContext soundData;
+
 #if (defined(__GNUC__) && !defined(__clang__))
 __attribute__((optimize("Os")))
 #endif
@@ -68,4 +87,58 @@ void writeARM7SoundChannelFromSource(int channel, u32 cnt, u16 freq, u32 dataSrc
 	}
 }
 
+//Volume control
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+int getVolume() 
+{
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 
+	coherent_user_range_by_size((uint32)&TGDSIPC->soundIPC, sizeof(TGDSIPC->soundIPC));
+	return TGDSIPC->soundIPC.volume;
+}
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void setVolume(int volume) 
+{
+	if(volume > SoundSampleContext_max_volume){
+		volume = SoundSampleContext_max_volume;
+	}
+	if(volume < SoundSampleContext_min_volume){
+		volume = SoundSampleContext_min_volume;
+	}
+	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 	
+	coherent_user_range_by_size((uint32)&TGDSIPC->soundIPC, sizeof(TGDSIPC->soundIPC));
+	TGDSIPC->soundIPC.volume = volume;
+}
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void volumeUp() 
+{
+	setVolume(getVolume() + 1);
+}
+
+#if (defined(__GNUC__) && !defined(__clang__))
+__attribute__((optimize("O0")))
+#endif
+#if (!defined(__GNUC__) && defined(__clang__))
+__attribute__ ((optnone))
+#endif
+void volumeDown() 
+{
+	setVolume(getVolume() - 1);
+}
 #endif

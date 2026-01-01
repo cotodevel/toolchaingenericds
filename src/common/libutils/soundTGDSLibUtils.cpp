@@ -182,18 +182,6 @@ __attribute__((section(".dtcm")))
 bool soundLoaded = false;
 
 __attribute__((section(".dtcm")))
-int bufCursor;
-
-__attribute__((section(".dtcm")))
-int bytesLeft = 0;
-
-__attribute__((section(".dtcm")))
-s16 *bytesLeftBuf = NULL;
-
-__attribute__((section(".dtcm")))
-int maxBytes = 0;
-
-__attribute__((section(".dtcm")))
 bool cutOff = false;	//used to detect if audio stream has ended
 
 __attribute__((section(".dtcm")))
@@ -365,7 +353,6 @@ __attribute__ ((optnone))
 void initComplexSound() {
 	soundData.sourceFmt = SRC_NONE;
 	soundData.filePointer = NULL;
-	setVolume(4);	//Default volume
 }
 
 void setSoundFrequency(u32 freq)
@@ -464,60 +451,6 @@ void closeSound(){
 
 	closeSoundUser();
 	soundLoaded = false;	
-}
-
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-int getVolume() 
-{
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 
-	coherent_user_range_by_size((uint32)&TGDSIPC->soundIPC, sizeof(TGDSIPC->soundIPC));
-	return TGDSIPC->soundIPC.volume;
-}
-
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-void setVolume(int volume) 
-{
-	if(volume > 8){
-		volume = 8;
-	}
-	if(volume < 1){
-		volume = 1;
-	}
-	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress; 	
-	coherent_user_range_by_size((uint32)&TGDSIPC->soundIPC, sizeof(TGDSIPC->soundIPC));
-	TGDSIPC->soundIPC.volume = volume;
-}
-
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-void volumeUp(int x, int y) 
-{
-	setVolume(getVolume() + 1);
-}
-
-#if (defined(__GNUC__) && !defined(__clang__))
-__attribute__((optimize("O0")))
-#endif
-#if (!defined(__GNUC__) && defined(__clang__))
-__attribute__ ((optnone))
-#endif
-void volumeDown(int x, int y) 
-{
-	setVolume(getVolume() - 1);
 }
 
 void setWavDecodeCallback(void (*cb)()){

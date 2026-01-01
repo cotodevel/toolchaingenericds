@@ -52,32 +52,9 @@ USA
 #include "exceptionTGDS.h"
 #endif
 
-#ifdef ARM7
-s16 *strpcmL0 = NULL;
-s16 *strpcmL1 = NULL;
-s16 *strpcmR0 = NULL;
-s16 *strpcmR1 = NULL;
-
-int lastL = 0;
-int lastR = 0;
-
-int multRate = 1;
-int pollCount = 100; //start with a read
-
-u32 sndCursor = 0;
-u32 micBufLoc = 0;
-u32 sampleLen = 0;
-int sndRate = 0;
-#endif
 
 #ifdef ARM9
-
 extern char * strdup( const char *str1 );
-
-__attribute__((section(".dtcm")))
-struct soundPlayerContext soundData;
-
-bool updateRequested = false;
 #endif
 
 bool __dsimode = false; // set by detecting DS model from firmware

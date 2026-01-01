@@ -189,20 +189,6 @@ extern int sdmmcValueHandler(u32 value, void* user_data);
 extern int PowerChip_ReadWrite(int cmd, int data);
 extern int led_state;
 extern void SetLedState(int state);
-
-extern s16 *strpcmL0;
-extern s16 *strpcmL1;
-extern s16 *strpcmR0;
-extern s16 *strpcmR1;
-
-extern int lastL;
-extern int lastR;
-extern int multRate;
-extern int pollCount;
-extern u32 sndCursor;
-extern u32 micBufLoc;
-extern u32 sampleLen;
-extern int sndRate;
 #endif
 
 
@@ -269,11 +255,6 @@ extern void initializeLibUtils7(
 	DeInitWIFIARM7LibUtils_fn DeInitWIFIARM7LibUtilsCall, //ARM7: DeInitWIFI();
 	wifiAddressHandlerARM7LibUtils_fn	wifiAddressHandlerARM7LibUtilsCall //ARM7: void wifiAddressHandler( void * address, void * userdata )
 );
-#endif
-
-#ifdef ARM9
-extern struct soundPlayerContext soundData;
-extern bool updateRequested;
 #endif
 
 extern char * TGDSPayloadMode;

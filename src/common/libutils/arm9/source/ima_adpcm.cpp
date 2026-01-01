@@ -589,7 +589,6 @@ int IMA_Adpcm_Player::play( FILE * ADFileHandle, bool loop_audio, bool automatic
 	headerChunk.wBitsPerSample = 16;	//Always signed 16 bit PCM out
 	
 	soundData.len = fsize;
-	bufCursor = 0;
 	soundData.loc = 0;
 	soundData.dataOffset = ftell(ADFileHandle);
 	soundData.filePointer = ADFileHandle;
