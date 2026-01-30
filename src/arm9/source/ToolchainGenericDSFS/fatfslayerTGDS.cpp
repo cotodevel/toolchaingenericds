@@ -61,11 +61,9 @@ int		FS_init(){
 	initTGDS(devoptabFSName);
 	FRESULT ret = (f_mount(&dldiFs, (const TCHAR*)"0:", 1));
 	if(ret != FR_OK){	//FRESULT: FR_OK == 0
-		//Throw exception always
+		//Throw ARM7DLDI exception 
 		u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
-		int TGDSDebuggerStage = 10;
-		sprintf((char*)ConsolePrintfBuf, "ARM9: FS_init(): f_mount(): failed. (%d)", (u32)ret);
-		handleDSInitOutputMessage((char*)ConsolePrintfBuf);
+		int TGDSDebuggerStage = 1;
 		handleDSInitError(TGDSDebuggerStage, (u32)fwNo);
 	}
     return (int)ret; 

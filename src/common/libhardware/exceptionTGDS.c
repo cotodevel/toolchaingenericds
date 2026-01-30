@@ -209,10 +209,14 @@ __attribute__ ((optnone))
 void exception_handler(uint32 arg, int stage, u32 fwNo){
 	bool isWirelessAvailable = isTGDSWirelessServiceAvailable();
 	bool isTGDSCustomConsole = false;	//reloading cause issues. Thus this ensures Console to be inited even when reloading
+	
+	//Shut off MPU to prevent nested MPU exceptions
+	MProtectionDisable();
+
+	VRAMBLOCK_SETBANK_C(VRAM_C_0x06200000_ENGINE_B_BG);	
 	GUI_init(isTGDSCustomConsole);
 	sint32 fwlanguage = (sint32)getLanguage();
 	GUI_clear();
-	VRAMBLOCK_SETBANK_C(VRAM_C_0x06200000_ENGINE_B_BG);	
 	
 	//Disable timers, and if we eventually use GDB, re-enable one
 	REG_IE &= ~(IRQ_TIMER0|IRQ_TIMER1|IRQ_TIMER2|IRQ_TIMER3);
@@ -317,11 +321,10 @@ void exception_handler(uint32 arg, int stage, u32 fwNo){
 				GUI_printf("for the time being. ");
 			}
 			else if(stage == 1){
-				GUI_printf("ARM7DLDI failed to initialize.");
-				GUI_printf("Manually patch the correct DLDI for , ");
-				GUI_printf("your card into this TGDS binary ");
-				GUI_printf("and try again. ");
-				GUI_printf("DLDI: [%s]", (char*)&dldiGet()->friendlyName[0]);
+				GUI_printf("DLDI failed to initialize.");
+				GUI_printf("Manually patch this binary with the correct");
+				GUI_printf("DLDI from your card to enable filesystem. ");
+				GUI_printf("[%s]", (char*)&dldiGet()->friendlyName[0]);
 			}
 			else if(stage == 2){
 				GUI_printf("DSWIFI (ARM9) init fail. Didn't link the dswifi lib in ARM9?");

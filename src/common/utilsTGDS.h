@@ -287,6 +287,7 @@ extern bool queryTGDSARMBinaryFeaturesExternalCore(u32 which);
 
 #ifdef ARM9
 extern bool isTGDSWirelessServiceAvailable();
+extern int isValidString(char *B);
 #endif
 
 #ifdef __cplusplus

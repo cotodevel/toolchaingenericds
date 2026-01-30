@@ -24,7 +24,6 @@ USA
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include "dsregs.h"
 #include "dsregs_asm.h"
 #include "ipcfifoTGDS.h"
@@ -158,9 +157,7 @@ size_t ucs2tombs(uint8* dst, const unsigned short* src, size_t len) {
 #include "fatfslayerTGDS.h"
 #include "posixHandleTGDS.h"
 
-#include <stdio.h>
 #include <time.h>
-#include <string.h>
 #include <stdlib.h>
 #include <sys/reent.h>
 #include <sys/select.h>
@@ -169,7 +166,6 @@ size_t ucs2tombs(uint8* dst, const unsigned short* src, size_t len) {
 #include <unistd.h>
 #include <errno.h>
 #include <stdint.h>
-#include <stdbool.h>
 #include <_ansi.h>
 #include <reent.h>
 #include <sys/lock.h>
@@ -1347,4 +1343,29 @@ bool isTGDSWirelessServiceAvailable(){
 	bool arm9WirelessCoreAvailable = queryTGDSARMBinaryFeaturesCurrentCore(TGDS_EXTERNAL_COMMAND_GET_CORE_WIRELESS_AVAILABILITY);
 	return ( (arm7WirelessCoreAvailable == true) && (arm9WirelessCoreAvailable == true) );
 }
+#endif
+
+
+// Function to check if a string is valid (only letters and digits)
+#ifdef ARM9
+//Usage:
+//char input[MAX_LEN + 2]; 
+//if (isValidString(input)) {
+	//Valid string: 
+//} else {
+	//Invalid string: contains non-alphanumeric characters.
+//}
+
+int isValidString(char *B) {
+    int i;
+	for (i = 0; B[i] != '\0'; i++)
+	{
+			if (!(B[i] >= 65 && B[i] <= 90) && !(B[i] >= 97 && B[i] <= 122) && !(B[i] >= 48 && B[i] <= 57))
+			{
+				return 0;
+			}
+	}
+	return 1;
+}
+
 #endif
