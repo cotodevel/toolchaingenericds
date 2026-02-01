@@ -65,20 +65,13 @@ DSTATUS disk_initialize (
 	BYTE pdrv				/* Physical drive nmuber to identify the drive */
 )
 {
-	DSTATUS ret = 0; //init OK!
-	
+	DSTATUS ret = RES_OK; //init OK!
 	TWLModeInternalSDAccess = getValueSafe((u32*)0x02FFDFE8); //ARM7DLDI mode: TWL SD @ ARM7 or DLDI SD @ ARM7: @ARM7_ARM9_DLDI_STATUS
+	
 	if(TWLModeInternalSDAccess == TWLModeDLDIAccessDisabledInternalSDDisabled){
-		
-		//Throw exception always
-		u8 fwNo = *(u8*)(0x027FF000 + 0x5D);
-		int TGDSDebuggerStage = 10;
-		sprintf((char*)ConsolePrintfBuf, "ARM9: disk_initialize(): failed.");
-		handleDSInitOutputMessage((char*)ConsolePrintfBuf);
-		handleDSInitError(TGDSDebuggerStage, (u32)fwNo);
-		
-		ret = STA_NOINIT;
+		ret = RES_ERROR; //ARM7DLDI failed to initialize (TGDS NTR/TWL mode) & the internal SD also failed to initialize (TGDS TWL mode) -> throw exception later 
 	}
+
 	return ret;
 }
 

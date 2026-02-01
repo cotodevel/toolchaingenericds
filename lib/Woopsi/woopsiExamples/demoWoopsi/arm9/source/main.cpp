@@ -128,13 +128,7 @@ int main(int argc, char **argv) {
 	printf("   ");
 	printf("   ");
 	
-	int ret=FS_init();
-	if (ret != 0){
-		printf("%s: FS Init error: %d >%d", TGDSPROJECTNAME, ret, TGDSPrintfColor_Red);
-		while(1==1){
-			swiDelay(1);
-		}
-	}
+	FS_init();
 	/*			TGDS 1.6 Standard ARM9 Init code end	*/
 	
 	REG_IME = 0;

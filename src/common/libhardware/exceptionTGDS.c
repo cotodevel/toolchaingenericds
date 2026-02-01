@@ -323,7 +323,7 @@ void exception_handler(uint32 arg, int stage, u32 fwNo){
 			else if(stage == 1){
 				GUI_printf("DLDI failed to initialize.");
 				GUI_printf("Manually patch this binary with the correct");
-				GUI_printf("DLDI from your card to enable filesystem. ");
+				GUI_printf("DLDI from your card to enable filesystem access. ");
 				GUI_printf("[%s]", (char*)&dldiGet()->friendlyName[0]);
 			}
 			else if(stage == 2){
@@ -390,9 +390,10 @@ void exception_handler(uint32 arg, int stage, u32 fwNo){
 		
 		if( (isWirelessAvailable == true) && (GdbStubUserCodeHandlerLibUtilsCallback != NULL) ){
 			GUI_printf("(A): Enable GDB Debugging. ");
-			GUI_printf("(check: toolchaingenericds-gdbstub-example project)");
 			GUI_printf("(B): Skip GDB Debugging. ");
-			
+			GUI_printf("Usage:");
+			GUI_printf("https://github.com/cotodevel/toolchaingenericds");
+			GUI_printf("Section: Development guidelines -> GDB Stub ");
 			while(1){
 				scanKeys();
 				int keysDwn = keysDown();
