@@ -46,7 +46,7 @@ d_objs_arm7:=	${file_arm7_src_c:.c=.d}	${file_arm7_src_s:.s=.d}	${file_arm7_src_
 #ARM7 specific definitions.	-fno-common so we force initialized data to rodata
 MAPFILE = $(DIR_ARM7).map
 AS_ASFLAGS		=	$(GLOBAL_SHARED_FLAGS_7)	$(SPECIFIC_AS_COMPILER_FLAGS_7)		$(GLOBAL_AS_COMPILER_FLAGS)
-CC_ASFLAGS		=	$(GLOBAL_SHARED_FLAGS_7)	-march=armv4t	-mthumb-interwork	-marm	-mfloat-abi=soft	-Ofast	-DARM7	-fno-unwind-tables -fno-asynchronous-unwind-tables -fno-tree-loop-distribute-patterns	-fno-exceptions	-fno-common	-Dappver='$(EXECUTABLE_VERSION)'
+CC_ASFLAGS		=	-march=armv4t	-mthumb-interwork	-marm	-mfloat-abi=soft	-Ofast	-DARM7	-fno-exceptions	-fno-unwind-tables -fno-asynchronous-unwind-tables -fno-tree-loop-distribute-patterns -ffunction-sections	-fdata-sections	-fno-common	-Dappver='$(EXECUTABLE_VERSION)'
 CPP_FLAGS		=	$(CC_ASFLAGS)	-nostdinc++	
 BUILD			= 	$(BUILD_ARM7)
 DIR_SRC			=	$(DIRS_ARM7_SRC)	$(DIRS_ARM7_HEADER)
@@ -135,8 +135,7 @@ $(ELF_ARM7): $(OBJPROG)
 	$(OBJSTRIP)	-s -R .comment -R .gnu.version	$<
 	$(OBJSTRIP)	-s -R .comment -R .gnu.version	${@:.elf=-nonstripped_dsi.elf}
 	-mv	$<	$@
-
-#not LZSS compressed here, just rename it as LZSS compressed *.bin, so ARM9 can compress any *.binlzss file
+	
 $(BINSTRIP_RULE_arm7bootldr): $(ELF_ARM7)
 	-@echo 'STRIP End: Remove ELF header and build baremetal Binary executable: $<	->	$@ !'
 	$(OBJCOPY) 	-S -O binary	$<	$@

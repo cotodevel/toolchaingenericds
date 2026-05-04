@@ -182,7 +182,10 @@ void bootfile(){
 	memset(&addresses, 0, sizeof(addresses));
 	strcpy((char*)fname, &filename[2]);
 	
-	REG_IME = 1;
+	if(__dsimode == false){
+		REG_IME = 1;
+	}
+	
 	fresult = pf_mount(currentFH);
 	if (fresult != FR_OK) {
 		setValueSafe((u32*)0x02FFFE24, (u32)0xFFFFFFFE); //ARM9 go handle error
@@ -468,8 +471,11 @@ void bootfile(){
 				nocashMessage(" TGDS-MB v3 NTR");
 			}
 			
-			REG_IME = 0;
-			dldi_handler_deinit();
+			//NTR mode only. 
+			if(__dsimode == false){
+				REG_IME = 0;
+				dldi_handler_deinit();
+			}
 			
 			setValueSafe((u32*)TGDS_IS_TGDS_HOMEBREW, (u32)isTGDSTWLHomebrew);
 			setValueSafe((u32*)ARM9_TWLORNTRPAYLOAD_MODE, (u32)isNTRTWLBinary);
