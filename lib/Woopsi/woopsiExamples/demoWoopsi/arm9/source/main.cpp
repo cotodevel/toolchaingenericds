@@ -117,7 +117,7 @@ int main(int argc, char **argv) {
 	GUI_init(isTGDSCustomConsole);
 	GUI_clear();
 
-	bool isCustomTGDSMalloc = true;
+	bool isCustomTGDSMalloc = false;
 	setTGDSMemoryAllocator(getProjectSpecificMemoryAllocatorSetup(isCustomTGDSMalloc));
 	sint32 fwlanguage = (sint32)getLanguage();
 	
@@ -128,7 +128,6 @@ int main(int argc, char **argv) {
 	printf("   ");
 	printf("   ");
 	
-	FS_init();
 	/*			TGDS 1.6 Standard ARM9 Init code end	*/
 	
 	REG_IME = 0;
