@@ -99,7 +99,7 @@ static inline void thread_StartTimerCounter(enum timerUnits units, u32 timerIRQ)
 	currentTimerUnits=(int)units;
 	TIMERXDATA(timerDest) = TIMER_FREQ(currentTimerUnits);
 	TIMERXCNT(timerDest) = TIMER_DIV_1 | TIMER_ENABLE;
-	irqDisable(timerIRQ);
+	irqDisable(timerIRQ); //disable IRQs. Just rely on timer timings to handle threads to prevent saturating local ARM CPU through interrupts
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
