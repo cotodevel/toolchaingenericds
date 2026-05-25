@@ -316,7 +316,7 @@ bool TGDSMultibootRunNDSPayload(char * filename, u8 * tgdsMbv3ARM7Bootldr, int a
 		//dmaFillHalfWord(0, 0x87c0, (uint32)0x06000000, (uint32)(128*1024)); //green
 		//dmaFillHalfWord(0, 0x801f, (uint32)0x06000000, (uint32)(128*1024)); //red
 		
-		remove(TGDS_MB_V3_BOOTSTUB_FILENAME);
+		//remove(TGDS_MB_V3_BOOTSTUB_FILENAME);	//w+ flag already overwrites TGDS_MB_V3_BOOTSTUB_FILENAME
 		
 		//Copy the file into non-case sensitive "tgdsboot.bin" into ARM7,
 		//since PetitFS only understands 8.3 DOS format filenames.
@@ -367,11 +367,9 @@ bool TGDSMultibootRunNDSPayload(char * filename, u8 * tgdsMbv3ARM7Bootldr, int a
 			int writtenSize=0;
 			result = f_write(&fPagingFDWrite, workBuffer, (int)TGDS_MB_V3_WORKBUFFER_SIZE, (UINT*)&writtenSize); //workbuffer is already coherent
 			if (result != FR_OK){
-				if(__dsimode == true){
-					printf("%s: write (4)", TGDSMBPAYLOAD);
-					printf("payload fail [%s]", tempFile);
-					while(1==1){}
-				}
+				printf("%s: write (4)", TGDSMBPAYLOAD);
+				printf("payload fail [%s]", tempFile);
+				while(1==1){}
 			}
 			f_sync(&fPagingFDRead);
 			f_sync(&fPagingFDWrite); //make persistent file in filesystem coherent
@@ -398,12 +396,11 @@ bool TGDSMultibootRunNDSPayload(char * filename, u8 * tgdsMbv3ARM7Bootldr, int a
 			int writtenSize=0;
 			result = f_write(&fPagingFDWrite, workBuffer, (int)blocksToRead, (UINT*)&writtenSize); //workbuffer is already coherent
 			if (result != FR_OK){
-				if(__dsimode == true){
-					printf("%s: write (4)", TGDSMBPAYLOAD);
-					printf("payload fail [%s]", tempFile);
-					while(1==1){}
-				}
+				printf("%s: write (4)", TGDSMBPAYLOAD);
+				printf("payload fail [%s]", tempFile);
+				while(1==1){}
 			}
+			f_sync(&fPagingFDRead);
 			f_sync(&fPagingFDWrite); //make persistent file in filesystem coherent
 		}
 		
