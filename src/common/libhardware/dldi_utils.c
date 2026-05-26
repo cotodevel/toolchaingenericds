@@ -37,17 +37,21 @@ u8 _io_dldi_stub[16384];
 #endif
 
 #ifdef ARM7
+
+int isNTRTWLBinaryGlobal7 = 0;
+
 __attribute__((optimize("O0")))
 bool ARM7InitDLDI(u32 ARM7MallocStartaddress, int ARM7MallocSize, u32 TargetARM7DLDIAddress){
 	u32 dldiStartAddress = getValueSafe((u32*)0x02FFDFE8);	//ARM7_ARM9_DLDI_STATUS
 	
 	setupLibUtils(); //ARM7 libUtils Setup
 	
-	//DSi in NTR mode throws false positives about TWL mode, enforce DSi SD initialization to define, NTR or TWL mode.
+	//Fix TGDS NTR Payload undefined behavior in TWL mode, see: https://github.com/cotodevel/toolchaingenericds/issues/23
+	isNTRTWLBinaryGlobal7 = isThisPayloadNTROrTWLMode();
 	int detectedTWLModeInternalSDAccess = 0;
 	bool DLDIARM7FSInitStatus = false;
 	
-	if( (!sdio_Startup()) || (!sdio_IsInserted()) ){
+	if( (isNTRTWLBinaryGlobal7 == isNDSBinaryV3) || ( (!sdio_Startup()) || (!sdio_IsInserted())) ){
 		detectedTWLModeInternalSDAccess = TWLModeDLDIAccessDisabledInternalSDDisabled;
 	}
 	else{
