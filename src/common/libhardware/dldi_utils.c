@@ -234,6 +234,7 @@ bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buffer) {
 			swiDelay(1);
 		}
 		memcpy((uint16_t*)buffer, (uint16_t*)targetMem, (numSectors * 512));
+		coherent_user_range_by_size((uint32)buffer, (sint32)(numSectors * 512));
 		return true;
 		#endif
 		#if defined(WIN32)
@@ -284,6 +285,7 @@ bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buff
 		else{
 			targetMem = (void *)((int)targetMem + 0x0A000000);
 		}
+		coherent_user_range_by_size((uint32)buffer, (sint32)(numSectors * 512));
 		memcpy((uint16_t*)targetMem, (uint16_t*)buffer, (numSectors * 512));
 		uint32 * fifomsg = (uint32 *)NDS_UNCACHED_SCRATCHPAD;
 		setValueSafe(&fifomsg[20], (uint32)sector);
