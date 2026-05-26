@@ -139,6 +139,7 @@ extern bool dldi_handler_read_sectors(sec_t sector, sec_t numSectors, void* buff
 extern bool dldi_handler_write_sectors(sec_t sector, sec_t numSectors, const void* buffer);
 
 #ifdef ARM7
+extern int isNTRTWLBinaryGlobal7;
 extern u32 * DLDIARM7Address;
 #endif
 
