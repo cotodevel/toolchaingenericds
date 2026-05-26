@@ -278,7 +278,8 @@ __attribute__((section(".itcm")))
 void swapAndSend(u32 type)
 {
 	swapData();
-	SendFIFOWords(type, 0xFF);
+	SendFIFOWords(type, 0xFFFFFFFF);
+	asm("mcr	p15, 0, r0, c7, c10, 4");
 }
 
 // update function
@@ -403,7 +404,8 @@ void startSound9(uint32 sourceBuf)
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
 	setValueSafe(&fifomsg[0], (uint32)sourceBuf);
 	setValueSafe(&fifomsg[7], (u32)ARM7COMMAND_START_SOUND);
-	SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
+	SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFFFFFFFF);
+	asm("mcr	p15, 0, r0, c7, c10, 4");
 	while( ( ((uint32)getValueSafe(&fifomsg[7])) != ((uint32)0)) ){
 		swiDelay(1);
 	}
@@ -415,7 +417,8 @@ void stopSound()
 	struct sIPCSharedTGDS * TGDSIPC = TGDSIPCStartAddress;
 	uint32 * fifomsg = (uint32 *)&TGDSIPC->fifoMesaggingQueueSharedRegion[0];
 	setValueSafe(&fifomsg[7], (u32)ARM7COMMAND_STOP_SOUND);
-	SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFF);
+	SendFIFOWords(FIFO_SEND_TGDS_CMD, 0xFFFFFFFF);
+	asm("mcr	p15, 0, r0, c7, c10, 4");
 	while( ( ((uint32)getValueSafe(&fifomsg[7])) != ((uint32)0)) ){
 		swiDelay(1);
 	}
