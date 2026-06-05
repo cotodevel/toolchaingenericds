@@ -228,11 +228,6 @@ extern int sndRate;
 extern void setSwapChannel();
 extern void setupSound(uint32 sourceBuf);
 extern void mallocDataARM7(int size, uint16* sourceBuf);
-
-extern s16 *strpcmL0;
-extern s16 *strpcmL1;
-extern s16 *strpcmR0;
-extern s16 *strpcmR1;
 #endif
 
 extern void initSound();
@@ -268,10 +263,7 @@ extern void TIMER1Handler();
 extern int initSoundStreamFromStructFD(struct fd * _FileHandleAudio, uint32 sourceBuf);
 extern void setWavDecodeCallback(void (*cb)());
 extern int parseWaveData(struct fd * fdinst, u32 u32chunkToSeek);
-extern void setSoundLength(u32 len);
-extern void setSoundFrequency(u32 freq);
 extern void setSoundInterpolation(u32 mult);
-extern void setSoundFrequency(u32 freq);
 extern bool updateRequested;
 extern bool cutOff;
 extern bool sndPaused;
