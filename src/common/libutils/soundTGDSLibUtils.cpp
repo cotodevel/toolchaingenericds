@@ -476,6 +476,7 @@ int playSoundStream(char * audioStreamFilename, struct fd * _FileHandleVideo, st
 		return SRC_NONE;
 	}
 	
+	updateRequested = false;
 	int physFh1 = TGDSFSUserfatfs_open_file((const sint8 *)audioStreamFilename, (char *)"r");
 	if(physFh1 != -1){ //struct fd index open ok?
 		_FileHandleAudio = getStructFD(physFh1); //assign struct fd
@@ -488,7 +489,7 @@ int playSoundStream(char * audioStreamFilename, struct fd * _FileHandleVideo, st
 			bool loop_audio = false;
 			bool automatic_updates = false;
 			if(player.play(getPosixFileHandleByStructFD(_FileHandleAudio, "r"), loop_audio, automatic_updates, ADPCM_SIZE, stopSoundStreamUser, sourceBuf) == 0){
-				//ADPCM Playback!
+				updateRequested = true; //ADPCM Playback: Request buffer fetch
 			}
 		}
 		else{
