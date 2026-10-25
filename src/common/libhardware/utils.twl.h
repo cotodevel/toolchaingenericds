@@ -27,7 +27,8 @@ USA
 //! values allowed for REG_AUXIE and REG_AUXIF
 enum IRQ_MASKSAUX {
 	IRQ_I2C	=	(1 << 6),	/*!< I2C interrupt mask (DSi ARM7)*/
-	IRQ_SDMMC = (1 << 8)  /*!< Sdmmc interrupt mask (DSi ARM7)*/
+	IRQ_SDMMC = (1 << 8),  /*!< Sdmmc interrupt mask (DSi ARM7)*/
+	IRQ_WIFI_SDIO_CARDIRQ = (1 << 10),	/*!< SDIO Controller     ;\Atheros Wifi Unit*/
 };
 
 /*! \def REG_IE

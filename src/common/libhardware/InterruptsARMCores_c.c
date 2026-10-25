@@ -373,6 +373,14 @@ void NDS_IRQHandler(){
 			//todo
 			REG_AUXIF = IRQ_SDMMC;
 		}
+		
+		if(handledIRQAUX & IRQ_WIFI_SDIO_CARDIRQ){
+			if(wifiInterruptARM7LibUtilsCallback != NULL){
+				wifiInterruptARM7LibUtilsCallback();	//arm7 wifi irq (twl)
+			}
+			REG_AUXIF = IRQ_WIFI_SDIO_CARDIRQ;
+		}
+		
 		#endif
 		
 	#endif
