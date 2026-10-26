@@ -75,6 +75,8 @@ void mallocDataARM7(int size, uint16* sourceBuf)
 	// clear memory to not have sound leftover
 	dmaFillHalfWord(0, 0, (uint32)strpcmL0, (uint32)((size + 3) & ~3) );
 	dmaFillHalfWord(0, 0, (uint32)strpcmR0, (uint32)((size + 3) & ~3) );
+	dmaFillHalfWord(0, 0, (uint32)strpcmL1, (uint32)((size + 3) & ~3) );
+	dmaFillHalfWord(0, 0, (uint32)strpcmR1, (uint32)((size + 3) & ~3) );
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -139,15 +141,13 @@ void setupSound(uint32 sourceBuf) {
 		SCHANNEL_LENGTH(ch) = (sampleLen * multRate) >> 1;
 		SCHANNEL_REPEAT_POINT(ch) = 0;
 	}
-
-	REG_IE&=~IRQ_VBLANK; //Not sure this is needed, could be removed in the future.
-	REG_IE |= IRQ_TIMER1;
 	
 	// prevent accidentally reading garbage from buffer 0, by waiting for buffer 1 instead
 	swiDelay((0x10000 - (sampleLen * multRate)) >> 1);
 	
 	lastL = 0;
 	lastR = 0;
+	REG_IE |= IRQ_TIMER1;
 }
 
 #if (defined(__GNUC__) && !defined(__clang__))
@@ -164,8 +164,6 @@ void stopSound() {
 	SCHANNEL_CR(1) = 0;
 	SCHANNEL_CR(2) = 0;
 	SCHANNEL_CR(3) = 0;
-	
-	REG_IE|=IRQ_VBLANK;	//Not sure this is needed, could be removed in the future.
 	REG_IE &= ~IRQ_TIMER1;
 }
 
@@ -216,6 +214,7 @@ int m_SIWRAM = 0;
 __attribute__((section(".dtcm")))
 int m_size = 0;
 
+#include "nds_cp15_misc.h"
 void mallocData(int size)
 {
 	m_SIWRAM = 0;
@@ -234,6 +233,10 @@ void mallocData(int size)
 	TGDSIPC->soundIPC.arm9L = NULL; // temporary
 	TGDSIPC->soundIPC.arm9R = NULL; // temporary
 	TGDSIPC->soundIPC.interlaced = NULL;
+	
+	// clear memory to not have sound leftover
+	dmaFillHalfWord(0, 0, (uint32)SIWRAM0, (uint32)(( (32*1024) + 3) & ~3) );
+	coherent_user_range((uint32)SIWRAM0, (32*1024));
 }
 
 __attribute__((section(".itcm")))
@@ -245,8 +248,6 @@ __attribute__ ((optnone))
 #endif
 void swapData() 
 {
-	m_SIWRAM = 1 - m_SIWRAM;
-	
 	switch(m_SIWRAM)
 	{
 		case 0:{
@@ -272,6 +273,8 @@ void swapData()
 		}	
 		break;
 	}
+	
+	m_SIWRAM = 1 - m_SIWRAM;
 }
 
 __attribute__((section(".itcm")))
