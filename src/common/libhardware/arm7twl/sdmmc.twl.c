@@ -454,7 +454,6 @@ int sdmmc_readsectors(struct mmcdevice *device, u32 sector_no, u32 numsectors, v
     sdmmc_write16(REG_SDSTOP,0x100);
 
 #ifdef DATA32_SUPPORT
-    sdmmc_write16(REG_SDBLKCOUNT32,numsectors);
     sdmmc_write16(REG_SDBLKLEN32,0x200);
 #endif
 
@@ -481,7 +480,6 @@ int sdmmc_writesectors(struct mmcdevice *device, u32 sector_no, u32 numsectors, 
     sdmmc_write16(REG_SDSTOP,0x100);
 
 #ifdef DATA32_SUPPORT
-    sdmmc_write16(REG_SDBLKCOUNT32,numsectors);
     sdmmc_write16(REG_SDBLKLEN32,0x200);
 #endif
 
